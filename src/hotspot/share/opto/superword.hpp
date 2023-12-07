@@ -246,7 +246,7 @@ class OrderedPair {
 // A solution can be:
 //   1. Invalid with a failure reason.
 //   2. Trivial (any pre-loop limit guarantees alignment).
-//   3. Constrained (r, q, mem_ref, aw, scale, invar)
+//   3. Constrained (r, q, mem_ref, alignment_width, scale, invar)
 //        Where scale is 0 if no scale dependency,
 //        and invar is nullptr if no invar dependency.
 class AlignmentSolution {
@@ -257,7 +257,7 @@ private:
   int _r = 0;
   int _q = 1;
   const MemNode* _mem_ref = nullptr;
-  int _aw = 0;
+  int _alignment_width = 0;
   Node const* _invar_dependency = nullptr;
   int _scale_dependency = 0;
 
@@ -270,7 +270,7 @@ public:
       _r(0),
       _q(1),
       _mem_ref(nullptr),
-      _aw(1),
+      _alignment_width(1),
       _invar_dependency(nullptr),
       _scale_dependency(0) {
     assert(!is_trivial() && !is_valid(), "must be invalid");
@@ -284,7 +284,7 @@ public:
       _r(0),
       _q(1),
       _mem_ref(nullptr),
-      _aw(1),
+      _alignment_width(1),
       _invar_dependency(nullptr),
       _scale_dependency(0) {
     assert(is_trivial() && is_valid(), "must be trivial");
@@ -294,7 +294,7 @@ public:
   AlignmentSolution(const int r,
                     const int q,
                     const MemNode* mem_ref,
-                    int aw,
+                    int alignment_width,
                     const Node* invar_dependency,
                     int scale_dependency) :
       _valid(true),
@@ -303,15 +303,18 @@ public:
       _r(r),
       _q(q),
       _mem_ref(mem_ref),
-      _aw(aw),
+      _alignment_width(alignment_width),
       _invar_dependency(invar_dependency),
       _scale_dependency(scale_dependency) {
     assert(q > 1 && is_power_of_2(q), "q must be power of 2");
     assert(0 <= r && r < q, "r must be in modulo space of q");
     assert(!is_trivial() && is_valid(), "must be constrained");
-    assert(_mem_ref != nullptr && _mem_ref->memory_size() <= _aw,
-           "must have mem_ref and aw");
-    assert(aw > 0 && is_power_of_2(aw), "aw must be power of 2");
+    assert(_mem_ref != nullptr &&
+           _mem_ref->memory_size() <= _alignment_width,
+           "must have mem_ref and alignment_width");
+    assert(alignment_width > 0 &&
+           is_power_of_2(alignment_width),
+           "alignment_width must be power of 2");
   }
 
   bool is_valid() const   { return _valid; }
@@ -337,9 +340,9 @@ public:
     return _mem_ref;
   }
 
-  int aw() const {
+  int alignment_width() const {
     assert(is_valid() && !is_trivial(), "valid and not trivial");
-    return _aw;
+    return _alignment_width;
   }
 
   const Node* invar_dependency() const {
@@ -390,8 +393,8 @@ public:
       if (is_trivial()) {
         tty->print_cr("pre_iter >= 0 (trivial)");
       } else {
-        tty->print("pre_r(%d) + m * pre_q(%d), mem_ref[%d] %% aw(%d),",
-                      r(), q(), mem_ref()->_idx, aw());
+        tty->print("pre_r(%d) + m * pre_q(%d), mem_ref[%d] %% alignment_width(%d),",
+                    r(), q(), mem_ref()->_idx, alignment_width());
         tty->print(" scale = %d, ", scale_dependency());
         if (invar_dependency() == nullptr) {
           tty->print_cr("no invar");
