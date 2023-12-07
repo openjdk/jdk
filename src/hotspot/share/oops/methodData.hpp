@@ -183,7 +183,7 @@ public:
   }
 
   u1 flags() const {
-    return _header._struct._flags;
+    return Atomic::load_acquire(&_header._struct._flags);
   }
 
   u2 bci() const {
@@ -204,11 +204,36 @@ public:
     return _cells[index];
   }
 
-  void set_flag_at(u1 flag_number) {
-    _header._struct._flags |= (u1)(0x1 << flag_number);
+  bool set_flag_at(u1 flag_number) {
+    const u1 bit = 1 << flag_number;
+    u1 compare_value;
+    do {
+      compare_value = _header._struct._flags;
+      if ((compare_value & bit) == bit) {
+        // already set.
+        return false;
+      }
+    } while (compare_value != Atomic::cmpxchg(&_header._struct._flags, compare_value, static_cast<u1>(compare_value | bit)));
+    return true;
   }
+
+  bool clear_flag_at(u1 flag_number) {
+    const u1 bit = 1 << flag_number;
+    u1 compare_value;
+    u1 exchange_value;
+    do {
+      compare_value = _header._struct._flags;
+      if ((compare_value & bit) == 0) {
+        // already cleaed.
+        return false;
+      }
+      exchange_value = compare_value & ~bit;
+    } while (compare_value != Atomic::cmpxchg(&_header._struct._flags, compare_value, exchange_value));
+    return true;
+  }
+
   bool flag_at(u1 flag_number) const {
-    return (_header._struct._flags & (0x1 << flag_number)) != 0;
+    return (flags() & (1 << flag_number)) != 0;
   }
 
   // Low-level support for code generation.
@@ -491,11 +516,12 @@ protected:
   enum : u1 {
     // null_seen:
     //  saw a null operand (cast/aastore/instanceof)
-      null_seen_flag              = DataLayout::first_flag + 0,
-      exception_handler_entered_flag     = null_seen_flag + 1
+      null_seen_flag                  = DataLayout::first_flag + 0,
+      exception_handler_entered_flag  = null_seen_flag + 1,
+      deprecated_method_callsite_flag = exception_handler_entered_flag + 1
 #if INCLUDE_JVMCI
     // bytecode threw any exception
-    , exception_seen_flag         = exception_handler_entered_flag + 1
+    , exception_seen_flag             = deprecated_method_callsite_flag + 1
 #endif
   };
   enum { bit_cell_count = 0 };  // no additional data fields needed.
@@ -519,6 +545,9 @@ public:
   // Consulting it allows the compiler to avoid setting up null_check traps.
   bool null_seen()     { return flag_at(null_seen_flag); }
   void set_null_seen()    { set_flag_at(null_seen_flag); }
+  bool deprecated_method_call_site() const { return flag_at(deprecated_method_callsite_flag); }
+  bool set_deprecated_method_call_site() { return data()->set_flag_at(deprecated_method_callsite_flag); }
+  bool clear_deprecated_method_call_site() { return data()->clear_flag_at(deprecated_method_callsite_flag); }
 
 #if INCLUDE_JVMCI
   // true if an exception was thrown at the specific BCI
