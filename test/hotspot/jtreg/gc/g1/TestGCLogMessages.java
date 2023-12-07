@@ -276,7 +276,7 @@ public class TestGCLogMessages {
                                                                              "-Xmx32M",
                                                                              "-Xmn16M",
                                                                              "-XX:+G1GCAllocationFailureALot",
-                                                                             "-XX:G1GCAllocaitonFailureALotCount=100",
+                                                                             "-XX:G1GCAllocationFailureALotCount=100",
                                                                              "-XX:G1GCAllocationFailureALotInterval=1",
                                                                              "-XX:+UnlockDiagnosticVMOptions",
                                                                              "-Xlog:gc+phases=debug",
@@ -292,7 +292,7 @@ public class TestGCLogMessages {
                                                               "-Xms32M",
                                                               "-XX:+UnlockDiagnosticVMOptions",
                                                               "-Xlog:gc+phases=trace",
-                                                              GCTestWithEvacuationFailure.class.getName());
+                                                              GCTestWithAllocationFailure.class.getName());
 
         output = new OutputAnalyzer(pb.start());
         checkMessagesAtLevel(output, exhFailureMessages, Level.TRACE);
