@@ -92,8 +92,6 @@ public interface SegmentAllocator {
      *
      * @param str the Java string to be converted into a C string
      * @return a new native segment containing the converted C string
-     * @throws IllegalArgumentException if the allocated segment is
-     *         {@linkplain MemorySegment#isReadOnly() read-only}
      */
     @ForceInline
     default MemorySegment allocateFrom(String str) {
@@ -121,8 +119,6 @@ public interface SegmentAllocator {
      * @return a new native segment containing the converted C string
      * @throws IllegalArgumentException if {@code charset} is not a
      *         {@linkplain StandardCharsets standard charset}
-     * @throws IllegalArgumentException if the allocated segment is
-     *         {@linkplain MemorySegment#isReadOnly() read-only}
      * @implSpec The default implementation for this method copies the contents of the
      *           provided Java string into a new memory segment obtained by calling
      *           {@code this.allocate(B + N)}, where:
@@ -174,8 +170,6 @@ public interface SegmentAllocator {
      *
      * @param layout the layout of the block of memory to be allocated
      * @param value  the value to be set in the newly allocated memory segment
-     * @throws IllegalArgumentException if the allocated segment is
-     *         {@linkplain MemorySegment#isReadOnly() read-only}
      */
     default MemorySegment allocateFrom(ValueLayout.OfByte layout, byte value) {
         Objects.requireNonNull(layout);
@@ -201,8 +195,6 @@ public interface SegmentAllocator {
      *
      * @param layout the layout of the block of memory to be allocated
      * @param value  the value to be set in the newly allocated memory segment
-     * @throws IllegalArgumentException if the allocated segment is
-     *         {@linkplain MemorySegment#isReadOnly() read-only}
      */
     default MemorySegment allocateFrom(ValueLayout.OfChar layout, char value) {
         Objects.requireNonNull(layout);
@@ -228,8 +220,6 @@ public interface SegmentAllocator {
      *
      * @param layout the layout of the block of memory to be allocated
      * @param value  the value to be set in the newly allocated memory segment
-     * @throws IllegalArgumentException if the allocated segment is
-     *         {@linkplain MemorySegment#isReadOnly() read-only}
      */
     default MemorySegment allocateFrom(ValueLayout.OfShort layout, short value) {
         Objects.requireNonNull(layout);
@@ -255,8 +245,6 @@ public interface SegmentAllocator {
      *
      * @param layout the layout of the block of memory to be allocated
      * @param value  the value to be set in the newly allocated memory segment
-     * @throws IllegalArgumentException if the allocated segment is
-     *         {@linkplain MemorySegment#isReadOnly() read-only}
      */
     default MemorySegment allocateFrom(ValueLayout.OfInt layout, int value) {
         Objects.requireNonNull(layout);
@@ -282,8 +270,6 @@ public interface SegmentAllocator {
      *
      * @param layout the layout of the block of memory to be allocated
      * @param value  the value to be set in the newly allocated memory segment
-     * @throws IllegalArgumentException if the allocated segment is
-     *         {@linkplain MemorySegment#isReadOnly() read-only}
      */
     default MemorySegment allocateFrom(ValueLayout.OfFloat layout, float value) {
         Objects.requireNonNull(layout);
@@ -309,8 +295,6 @@ public interface SegmentAllocator {
      *
      * @param layout the layout of the block of memory to be allocated
      * @param value  the value to be set in the newly allocated memory segment
-     * @throws IllegalArgumentException if the allocated segment is
-     *         {@linkplain MemorySegment#isReadOnly() read-only}
      */
     default MemorySegment allocateFrom(ValueLayout.OfLong layout, long value) {
         Objects.requireNonNull(layout);
@@ -336,8 +320,6 @@ public interface SegmentAllocator {
      *
      * @param layout the layout of the block of memory to be allocated
      * @param value  the value to be set in the newly allocated memory segment
-     * @throws IllegalArgumentException if the allocated segment is
-     *         {@linkplain MemorySegment#isReadOnly() read-only}
      */
     default MemorySegment allocateFrom(ValueLayout.OfDouble layout, double value) {
         Objects.requireNonNull(layout);
@@ -370,8 +352,6 @@ public interface SegmentAllocator {
      * @param value  the value to be set in the newly allocated memory segment
      * @throws IllegalArgumentException if {@code value} is not
      *         a {@linkplain MemorySegment#isNative() native} segment
-     * @throws IllegalArgumentException if the allocated segment is
-     *         {@linkplain MemorySegment#isReadOnly() read-only}
      */
     default MemorySegment allocateFrom(AddressLayout layout, MemorySegment value) {
         Objects.requireNonNull(value);
@@ -406,8 +386,6 @@ public interface SegmentAllocator {
      *         in the source element layout
      * @throws IllegalArgumentException if {@code elementLayout.byteAlignment() > elementLayout.byteSize()}
      * @throws IllegalArgumentException if {@code sourceElementLayout.byteAlignment() > sourceElementLayout.byteSize()}
-     * @throws IllegalArgumentException if the allocated segment is
-     *         {@linkplain MemorySegment#isReadOnly() read-only}
      * @throws IllegalStateException if the {@linkplain MemorySegment#scope() scope} associated
      *         with {@code source} is not {@linkplain MemorySegment.Scope#isAlive() alive}
      * @throws WrongThreadException if this method is called from a thread {@code T},
@@ -450,8 +428,6 @@ public interface SegmentAllocator {
      *                      memory block
      * @throws IllegalArgumentException if
      *         {@code elementLayout.byteAlignment() > elementLayout.byteSize()}
-     * @throws IllegalArgumentException if the allocated segment is
-     *         {@linkplain MemorySegment#isReadOnly() read-only}
      */
     @ForceInline
     default MemorySegment allocateFrom(ValueLayout.OfByte elementLayout, byte... elements) {
@@ -479,8 +455,6 @@ public interface SegmentAllocator {
      *                      memory block
      * @throws IllegalArgumentException if
      *         {@code elementLayout.byteAlignment() > elementLayout.byteSize()}
-     * @throws IllegalArgumentException if the allocated segment is
-     *         {@linkplain MemorySegment#isReadOnly() read-only}
      */
     @ForceInline
     default MemorySegment allocateFrom(ValueLayout.OfShort elementLayout, short... elements) {
@@ -508,8 +482,6 @@ public interface SegmentAllocator {
      *                      memory block
      * @throws IllegalArgumentException if
      *         {@code elementLayout.byteAlignment() > elementLayout.byteSize()}
-     * @throws IllegalArgumentException if the allocated segment is
-     *         {@linkplain MemorySegment#isReadOnly() read-only}
      */
     @ForceInline
     default MemorySegment allocateFrom(ValueLayout.OfChar elementLayout, char... elements) {
@@ -537,8 +509,6 @@ public interface SegmentAllocator {
      *                      memory block
      * @throws IllegalArgumentException if
      *         {@code elementLayout.byteAlignment() > elementLayout.byteSize()}
-     * @throws IllegalArgumentException if the allocated segment is
-     *         {@linkplain MemorySegment#isReadOnly() read-only}
      */
     @ForceInline
     default MemorySegment allocateFrom(ValueLayout.OfInt elementLayout, int... elements) {
@@ -566,8 +536,6 @@ public interface SegmentAllocator {
      *                 memory block
      * @throws IllegalArgumentException if
      *         {@code elementLayout.byteAlignment() > elementLayout.byteSize()}
-     * @throws IllegalArgumentException if the allocated segment is
-     *         {@linkplain MemorySegment#isReadOnly() read-only}
      */
     @ForceInline
     default MemorySegment allocateFrom(ValueLayout.OfFloat elementLayout, float... elements) {
@@ -595,8 +563,6 @@ public interface SegmentAllocator {
      *                 memory block
      * @throws IllegalArgumentException if
      *         {@code elementLayout.byteAlignment() > elementLayout.byteSize()}
-     * @throws IllegalArgumentException if the allocated segment is
-     *         {@linkplain MemorySegment#isReadOnly() read-only}
      */
     @ForceInline
     default MemorySegment allocateFrom(ValueLayout.OfLong elementLayout, long... elements) {
@@ -624,8 +590,6 @@ public interface SegmentAllocator {
      *                      memory block
      * @throws IllegalArgumentException if
      *         {@code elementLayout.byteAlignment() > elementLayout.byteSize()}
-     * @throws IllegalArgumentException if the allocated segment is
-     *         {@linkplain MemorySegment#isReadOnly() read-only}
      */
     @ForceInline
     default MemorySegment allocateFrom(ValueLayout.OfDouble elementLayout, double... elements) {
@@ -701,18 +665,16 @@ public interface SegmentAllocator {
      * <p>
      * The returned allocator throws {@link IndexOutOfBoundsException} when a slice of
      * the provided segment with the requested size and alignment cannot be found.
-     * <p>
-     * Providing a {@linkplain MemorySegment#isReadOnly() read only} segment is discouraged
-     * as the returned SegmentAllocator will not be able to support {@code allocateFrom()}
-     * operations.
      *
      * @implNote A slicing allocator is not <em>thread-safe</em>.
      *
      * @param segment the segment from which the returned allocator should slice from
      * @return a new slicing allocator
+     * @throws IllegalArgumentException if the {@code segment} is
+     *         {@linkplain MemorySegment#isReadOnly() read-only}
      */
     static SegmentAllocator slicingAllocator(MemorySegment segment) {
-        Objects.requireNonNull(segment);
+        assertWritable(segment);
         return new SlicingAllocator(segment);
     }
 
@@ -728,10 +690,6 @@ public interface SegmentAllocator {
      * }
      * The returned allocator throws {@link IndexOutOfBoundsException} when a slice of
      * the provided segment with the requested size and alignment cannot be found.
-     * <p>
-     * Providing a {@linkplain MemorySegment#isReadOnly() read only} segment is discouraged
-     * as the returned SegmentAllocator will not be able to support {@code allocateFrom()}
-     * operations.
      *
      * @apiNote A prefix allocator can be useful to limit allocation requests in case a
      *          client knows that they have fully processed the contents of the allocated
@@ -744,9 +702,19 @@ public interface SegmentAllocator {
      * @param segment the memory segment to be recycled by the returned allocator
      * @return an allocator that recycles an existing segment upon each new
      *         allocation request
+     * @throws IllegalArgumentException if the {@code segment} is
+     *         {@linkplain MemorySegment#isReadOnly() read-only}
      */
     static SegmentAllocator prefixAllocator(MemorySegment segment) {
-        return (AbstractMemorySegmentImpl)Objects.requireNonNull(segment);
+        assertWritable(segment);
+        return (AbstractMemorySegmentImpl)segment;
+    }
+
+    private static void assertWritable(MemorySegment segment) {
+        // Implicit null check
+        if (segment.isReadOnly()) {
+            throw new IllegalArgumentException("read-only segment");
+        }
     }
 
     @ForceInline

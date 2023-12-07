@@ -100,6 +100,16 @@ public class TestSegmentAllocators {
 
     static final int SIZE_256M = 1024 * 1024 * 256;
 
+    @Test(expectedExceptions = IllegalArgumentException.class)
+    public void testReadOnlySlicingAllocator() {
+        SegmentAllocator.slicingAllocator(MemorySegment.ofArray(new int[0]).asReadOnly());
+    }
+
+    @Test(expectedExceptions = IllegalArgumentException.class)
+    public void testReadOnlyPrefixAllocator() {
+        SegmentAllocator.prefixAllocator(MemorySegment.ofArray(new int[0]).asReadOnly());
+    }
+
     @Test
     public void testBigAllocationInUnboundedSession() {
         try (Arena arena = Arena.ofConfined()) {
