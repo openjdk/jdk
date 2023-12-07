@@ -264,11 +264,13 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  * <p>The default locale is provided mainly for the locale-sensitive methods if no
  * {@code Locale} is explicitly specified as an argument, such as
  * {@link DateFormat#getInstance()}. The default locale is determined at startup
- * of the Java runtime. First, the locale-related system properties are
- * established according to the underlying host environment. The following table
- * lists the locale-related system properties. Some of the system properties
- * (except for {@code user.language}) may not have corresponding values depending
- * on the host environment.
+ * of the Java runtime, and established in the following three phases:
+ * <ol>
+ * <li>The locale-related system properties are established according to the
+ * underlying host environment. The following table lists the locale-related
+ * system properties. Some of the system properties (except for
+ * {@code user.language}) may not have corresponding values depending on the
+ * host environment.
  * <table class="striped">
  * <caption style="display:none">Shows property keys and associated values</caption>
  * <thead>
@@ -293,11 +295,21 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  *     such as "u-ca-japanese" (Japanese Calendar)</td></tr>
  * </tbody>
  * </table>
- * <p>Next, the values for these system properties can be overridden from the values
- * designated on the Java launcher's command line with {@code -D} option. Finally, the
- * default {@code Locale} instance is constructed from these system properties values.
- * <p>These system properties are read only at the Java runtime startup. Altering their
- * values later with {@link System#setProperties(Properties)}/
+ * </li>
+ * <li>The values for these system properties can be overridden from the values
+ * designated on the Java launcher's command line with {@code -D} option. Note that
+ * no check for the specified values, either syntactically or the code validity is
+ * done, except for {@code user.extensions} in which unparsable extensions are
+ * ignored. For example, by specifying {@code -Duser.language=foobarbaz} creates
+ * the default locale that returns "foobarbaz" as the language, while
+ * {@code -Duser.extensions=foobarbaz} returns no extensions.
+ * </li>
+ * <li>The default {@code Locale} instance is constructed from these system
+ * properties values.
+ * </li>
+ * </ol>
+ * <p>These system properties are read only at the Java runtime startup. Altering
+ * their values later with {@link System#setProperties(Properties)}/
  * {@link System#setProperty(String, String)} will have no effect on the established
  * default locale.
  * <p>Once the default locale is established, applications can query the default
