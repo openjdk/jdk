@@ -37,7 +37,7 @@
 
 // TODO assignment operator and copy constructor
 
-// TODO check for trivial deconstructor with arena / resource area
+// TODO check for trivial destructor with arena / resource area
 
 // We have a list of each:
 //  - ModifyClosure
@@ -95,30 +95,30 @@ int* value_factory<int*>(int i) {
 class CtorDtor {
 private:
   static int _constructed;
-  static int _deconstructed;
+  static int _destructed;
   int _i;
 public:
   CtorDtor() : _i(-1) { _constructed++; };
   explicit CtorDtor(int i) : _i(i) { _constructed++; }
   CtorDtor(const CtorDtor& t) : _i(t._i) { _constructed++; }
   CtorDtor& operator =(const CtorDtor& t) = default;
-  CtorDtor(CtorDtor&& t) : _i(t._i) { /* not counted, as t never deconstructed */ }
+  CtorDtor(CtorDtor&& t) : _i(t._i) { /* not counted, as t never destructed */ }
   CtorDtor& operator =(CtorDtor&& t) = default;
-  ~CtorDtor() { _deconstructed++; }
+  ~CtorDtor() { _destructed++; }
 
   bool operator==(const CtorDtor& other) const {
     return _i == other._i;
   }
 
   static int constructed() { return _constructed; }
-  static int deconstructed() { return _deconstructed; }
+  static int destructed() { return _destructed; }
   static void reset() {
     _constructed = 0;
-    _deconstructed = 0;
+    _destructed = 0;
   }
 };
 int CtorDtor::_constructed = 0;
-int CtorDtor::_deconstructed = 0;
+int CtorDtor::_destructed = 0;
 
 template<typename E>
 void reset_type() {}
@@ -145,7 +145,7 @@ void check_constructor_count_consistency_for_type() {
 
 template<>
 void check_constructor_count_consistency_for_type<CtorDtor>() {
-  ASSERT_EQ(CtorDtor::constructed(), CtorDtor::deconstructed());
+  ASSERT_EQ(CtorDtor::constructed(), CtorDtor::destructed());
 }
 
 // -------------- Basic Definitions -------------
@@ -201,10 +201,10 @@ public:
   }
   virtual void do_test(AllocatorClosure<E>* a) = 0;
   virtual void finish(const AllocatorClosure<E>* a) {
-    // After the array is deconstructed, all constructed elements
-    // should again be deconstructed. But this only holds for
+    // After the array is destructed, all constructed elements
+    // should again be destructed. But this only holds for
     // the CHeap version. The Arena / Resource Area allocated
-    // array can simply be abandoned and the deconstructions
+    // array can simply be abandoned and the destructions
     // are not guaranteed for the elements.
     if (a->is_C_heap()) {
       check_constructor_count_consistency_for_type<E>();
@@ -307,7 +307,7 @@ public:
       this->set_array(array);
       modify->do_modify(this);
       test->do_test(this);
-      // no deconstructors called, array just abandoned
+      // no destructors called, array just abandoned
     }
     test->finish(this);
   };
@@ -369,7 +369,7 @@ public:
       this->set_array(array);
       modify->do_modify(this);
       test->do_test(this);
-      // no deconstructors called, array just abandoned
+      // no destructors called, array just abandoned
     }
     test->finish(this);
   };
@@ -424,7 +424,7 @@ public:
       this->set_array(&array);
       modify->do_modify(this);
       test->do_test(this);
-      // deconstructors called implicitly, and it first deconstruct
+      // destructor called implicitly, and it first destructs
       // all elements.
     }
     test->finish(this);
@@ -445,7 +445,7 @@ public:
       this->set_array(array);
       modify->do_modify(this);
       test->do_test(this);
-      // deconstructors called implicitly, and it first deconstruct
+      // destructor called implicitly, and it first destructs
       // all elements.
     }
     test->finish(this);
@@ -465,7 +465,7 @@ public:
       this->set_array(array);
       modify->do_modify(this);
       test->do_test(this);
-      // deconstruction explicit, recursively deconstructs all elements
+      // destruction explicit, recursively destructs all elements
       delete array;
     }
     test->finish(this);
@@ -485,7 +485,7 @@ public:
       this->set_array(array);
       modify->do_modify(this);
       test->do_test(this);
-      // deconstruction explicit, recursively deconstructs all elements
+      // destruction explicit, recursively destructs all elements
       delete array;
     }
     test->finish(this);
@@ -498,7 +498,7 @@ template<typename E>
 class ModifyClosureEmpty : public ModifyClosure<E> {
 public:
   virtual void do_modify(AllocatorClosure<E>* a) override final {
-    // empty, but we can verify constructor / deconstructor count = 0
+    // empty, but we can verify constructor / destructor count = 0
     check_constructor_count_for_type<E>(0);
   }
 };

@@ -123,7 +123,7 @@ public:
 
   void trunc_to(int length)    {
     assert(length <= _len,"cannot increase length");
-    // Deconstruct all elements from new length to old length
+    // Destruct all elements from new length to old length
     for (int i = length; i < _len; i++) {
       this->_data[i].~E();
     }
@@ -187,7 +187,7 @@ public:
     int new_len = _len - 1;
     // copy-construct the return value
     E elem(_data[new_len]);
-    // deconstruct the old value
+    // destruct the old value
     this->_data[new_len].~E();
     _len = new_len;
     return elem;
@@ -274,7 +274,7 @@ public:
 
   void remove_at(int index) {
     assert(0 <= index && index < _len, "illegal index %d for length %d", index, _len);
-    // TODO call deconstructor!
+    // TODO call destructor!
     for (int j = index + 1; j < _len; j++) {
       _data[j-1] = _data[j];
     }
@@ -291,7 +291,7 @@ public:
     assert(0 <= start, "illegal start index %d", start);
     assert(start < end && end <= _len, "erase called with invalid range (%d, %d) for length %d", start, end, _len);
 
-    // TODO call deconstructors
+    // TODO call destructors
     for (int i = start, j = end; j < length(); i++, j++) {
       at_put(i, at(j));
     }
@@ -301,7 +301,7 @@ public:
   // The order is changed.
   void delete_at(int index) {
     assert(0 <= index && index < _len, "illegal index %d for length %d", index, _len);
-    // TODO call deconstructors: difference to remove_at -> rem or document?
+    // TODO call destructors: difference to remove_at -> rem or document?
     if (index < --_len) {
       // Replace removed element with last one.
       _data[index] = _data[_len];
@@ -560,13 +560,13 @@ void GrowableArrayWithAllocator<E, Derived>::expand_to(int new_capacity) {
   // Leave rest of space up to "new_capacity" uninitialized,
   // no construction
 
-  // Remove the old elements, calling the deconstructor
+  // Remove the old elements, calling the destructor
   // (on initialized elements only)
   for (i = 0; i < this->_len; i++) {
     this->_data[i].~E();
   }
 
-  // Now that we have deconstructed all elements on the old
+  // Now that we have destructed all elements on the old
   // data, we can deallocate it.
   if (this->_data != nullptr) {
     static_cast<Derived*>(this)->deallocate(this->_data);
@@ -629,7 +629,7 @@ public:
 //  instance is allocated, that depends on where the data array is allocated.
 //  See: init_checks.
 //
-// TODO talk about deallocation / deconstruction of elements
+// TODO talk about deallocation / destruction of elements
 // TODO talk about shallow-copy
 
 template <typename E>
@@ -727,7 +727,7 @@ private:
 // with compile-time decided MEMFLAGS.
 //
 // TODO verify that it is not arena allocated?
-// TODO talk about deallocation / deconstruction of elements
+// TODO talk about deallocation / destruction of elements
 template <typename E, MEMFLAGS F>
 class GrowableArrayCHeap : public GrowableArrayWithAllocator<E, GrowableArrayCHeap<E, F> > {
   friend class GrowableArrayWithAllocator<E, GrowableArrayCHeap<E, F> >;
@@ -808,7 +808,7 @@ void GrowableArrayCHeap<E, F>::shrink_to_fit() {
     for (int i = 0; i < len; ++i) ::new (&new_data[i]) E(old_data[i]);
   }
 
-  // deconstruct old
+  // destruct old
   for (int i = 0; i < len; ++i) old_data[i].~E();
 
   if (old_data != nullptr) {
