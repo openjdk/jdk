@@ -24,13 +24,13 @@
 /*
  * @test
  * @bug 8320360
- * @summary Testing Classfile limits.
+ * @summary Testing ClassFile limits.
  * @run junit LimitsTest
  */
 import java.lang.constant.ClassDesc;
 import java.lang.constant.ConstantDescs;
 import java.lang.constant.MethodTypeDesc;
-import jdk.internal.classfile.Classfile;
+import java.lang.classfile.ClassFile;
 import jdk.internal.classfile.impl.LabelContext;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
@@ -39,7 +39,7 @@ class LimitsTest {
 
     @Test
     void testCPSizeLimit() {
-        Classfile.of().build(ClassDesc.of("BigClass"), cb -> {
+        ClassFile.of().build(ClassDesc.of("BigClass"), cb -> {
             for (int i = 1; i < 65000; i++) {
                 cb.withField("field" + i, ConstantDescs.CD_int, fb -> {});
             }
@@ -48,7 +48,7 @@ class LimitsTest {
 
     @Test
     void testCPOverLimit() {
-        assertThrows(IllegalArgumentException.class, () -> Classfile.of().build(ClassDesc.of("BigClass"), cb -> {
+        assertThrows(IllegalArgumentException.class, () -> ClassFile.of().build(ClassDesc.of("BigClass"), cb -> {
             for (int i = 1; i < 66000; i++) {
                 cb.withField("field" + i, ConstantDescs.CD_int, fb -> {});
             }
@@ -57,7 +57,7 @@ class LimitsTest {
 
     @Test
     void testCodeOverLimit() {
-        assertThrows(IllegalArgumentException.class, () -> Classfile.of().build(ClassDesc.of("BigClass"), cb -> cb.withMethodBody(
+        assertThrows(IllegalArgumentException.class, () -> ClassFile.of().build(ClassDesc.of("BigClass"), cb -> cb.withMethodBody(
                 "bigMethod", MethodTypeDesc.of(ConstantDescs.CD_void), 0, cob -> {
                     for (int i = 0; i < 65535; i++) {
                         cob.nop();
@@ -68,13 +68,13 @@ class LimitsTest {
 
     @Test
     void testEmptyCode() {
-        assertThrows(IllegalArgumentException.class, () -> Classfile.of().build(ClassDesc.of("EmptyClass"), cb -> cb.withMethodBody(
+        assertThrows(IllegalArgumentException.class, () -> ClassFile.of().build(ClassDesc.of("EmptyClass"), cb -> cb.withMethodBody(
                 "emptyMethod", MethodTypeDesc.of(ConstantDescs.CD_void), 0, cob -> {})));
     }
 
     @Test
     void testCodeRange() {
-        var cf = Classfile.of();
+        var cf = ClassFile.of();
         var lc = (LabelContext)cf.parse(cf.build(ClassDesc.of("EmptyClass"), cb -> cb.withMethodBody(
                 "aMethod", MethodTypeDesc.of(ConstantDescs.CD_void), 0, cob -> cob.return_()))).methods().get(0).code().get();
         assertThrows(IllegalArgumentException.class, () -> lc.getLabel(-1));
@@ -82,8 +82,14 @@ class LimitsTest {
     }
 
     @Test
+    void testSupportedClassVersion() {
+        var cf = ClassFile.of();
+        assertThrows(IllegalArgumentException.class, () -> cf.parse(cf.build(ClassDesc.of("ClassFromFuture"), cb -> cb.withVersion(ClassFile.latestMajorVersion() + 1, 0))));
+    }
+
+    @Test
     void testReadingOutOfBounds() {
-        assertThrows(IllegalArgumentException.class, () -> Classfile.of().parse(new byte[]{(byte)0xCA, (byte)0xFE, (byte)0xBA, (byte)0xBE}), "reading magic only");
-        assertThrows(IllegalArgumentException.class, () -> Classfile.of().parse(new byte[]{(byte)0xCA, (byte)0xFE, (byte)0xBA, (byte)0xBE, 0, 0, 0, 0, 0, 2}), "reading invalid CP size");
+        assertThrows(IllegalArgumentException.class, () -> ClassFile.of().parse(new byte[]{(byte)0xCA, (byte)0xFE, (byte)0xBA, (byte)0xBE}), "reading magic only");
+        assertThrows(IllegalArgumentException.class, () -> ClassFile.of().parse(new byte[]{(byte)0xCA, (byte)0xFE, (byte)0xBA, (byte)0xBE, 0, 0, 0, 0, 0, 2}), "reading invalid CP size");
     }
 }

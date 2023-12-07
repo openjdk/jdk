@@ -264,6 +264,7 @@ public:
   void set_collection_set_candidates_stats(G1MonotonicArenaMemoryStats& stats);
   void set_young_gen_card_set_stats(const G1MonotonicArenaMemoryStats& stats);
 
+  void update_parallel_gc_threads_cpu_time();
 private:
 
   G1HRPrinter _hr_printer;
@@ -560,6 +561,9 @@ public:
     return _monitoring_support;
   }
 
+  void pin_object(JavaThread* thread, oop obj) override;
+  void unpin_object(JavaThread* thread, oop obj) override;
+
   void resize_heap_if_necessary();
 
   // Check if there is memory to uncommit and if so schedule a task to do it.
@@ -613,7 +617,7 @@ public:
   // We register a region with the fast "in collection set" test. We
   // simply set to true the array slot corresponding to this region.
   void register_young_region_with_region_attr(HeapRegion* r) {
-    _region_attr.set_in_young(r->hrm_index());
+    _region_attr.set_in_young(r->hrm_index(), r->has_pinned_objects());
   }
   inline void register_new_survivor_region_with_region_attr(HeapRegion* r);
   inline void register_region_with_region_attr(HeapRegion* r);
@@ -1264,6 +1268,8 @@ public:
   // Performs cleaning of data structures after class unloading.
   void complete_cleaning(bool class_unloading_occurred);
 
+  void unload_classes_and_code(const char* description, BoolObjectClosure* cl, GCTimer* timer);
+
   // Verification
 
   // Perform any cleanup actions necessary before allowing a verification.
@@ -1291,9 +1297,6 @@ public:
 
   G1HeapSummary create_g1_heap_summary();
   G1EvacSummary create_g1_evac_summary(G1EvacStats* stats);
-
-  void pin_object(JavaThread* thread, oop obj) override;
-  void unpin_object(JavaThread* thread, oop obj) override;
 
   // Printing
 private:

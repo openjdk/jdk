@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,21 +23,33 @@
 
 /*
  *
- * @bug 4276227
+ * @test
+ * @bug 4276227 8320443
+ * @key printer
  * @summary Checks that the PrinterGraphics is for a Printer GraphicsDevice.
  * Test doesn't run unless there's a printer on the system.
- * @author prr
  * @run main/othervm PrinterDevice
  */
 
-import java.awt.*;
-import java.awt.geom.*;
-import java.awt.print.*;
-import java.io.*;
-import javax.print.attribute.*;
-import javax.print.attribute.standard.*;
+import java.io.File;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.GraphicsConfiguration;
+import java.awt.GraphicsDevice;
+import java.awt.Rectangle;
+import java.awt.geom.AffineTransform;
+import java.awt.print.PageFormat;
+import java.awt.print.Printable;
+import java.awt.print.PrinterException;
+import java.awt.print.PrinterJob;
+import javax.print.attribute.HashPrintRequestAttributeSet;
+import javax.print.attribute.PrintRequestAttributeSet;
+import javax.print.attribute.standard.Destination;
+import javax.print.attribute.standard.OrientationRequested;
 
 public class PrinterDevice implements Printable {
+
+    static volatile boolean failed = false;
 
     public static void main(String args[]) throws PrinterException {
         System.setProperty("java.awt.headless", "true");
@@ -54,39 +66,52 @@ public class PrinterDevice implements Printable {
         aset.add(OrientationRequested.LANDSCAPE);
         pj.setPrintable(new PrinterDevice());
         pj.print(aset);
+        if (failed) {
+            throw new RuntimeException("Test failed but no exception propagated.");
+        }
     }
 
     public int print(Graphics g, PageFormat pf, int pageIndex) {
-         if (pageIndex > 0 ) {
-             return Printable.NO_SUCH_PAGE;
-         }
+        if (pageIndex > 0) {
+            return Printable.NO_SUCH_PAGE;
+        }
 
-         /* Make sure calls to get DeviceConfig, its transforms,
-          * etc all work without exceptions and as expected */
-         Graphics2D g2 = (Graphics2D)g;
-         GraphicsConfiguration gConfig = g2.getDeviceConfiguration();
-         AffineTransform dt = gConfig.getDefaultTransform();
-         AffineTransform nt = gConfig.getNormalizingTransform();
-         AffineTransform gt = g2.getTransform();
+        Graphics2D g2 = (Graphics2D)g;
+        GraphicsConfiguration gConfig = g2.getDeviceConfiguration();
+        AffineTransform nt = null;
+        try {
+            /* Make sure calls to get DeviceConfig, its transforms,
+             * etc all work without exceptions and as expected */
+            System.out.println("GraphicsConfig="+gConfig);
+            AffineTransform dt = gConfig.getDefaultTransform();
+            System.out.println("Default transform = " + dt);
+            nt = gConfig.getNormalizingTransform();
+            System.out.println("Normalizing transform = " + nt);
+            AffineTransform gt = g2.getTransform();
+            System.out.println("Graphics2D transform = " + gt);
+        } catch (Exception e) {
+            failed = true;
+            System.err.println("Unexpected exception getting transform.");
+            e.printStackTrace();
+            throw e;
+        }
 
-         System.out.println("Graphics2D transform = " + gt);
-         System.out.println("Default transform = " + dt);
-         System.out.println("Normalizing transform = " + nt);
+        Rectangle bounds = gConfig.getBounds();
+        System.out.println("Bounds = " + bounds);
+        if (!nt.isIdentity()) {
+            failed = true;
+            throw new RuntimeException("Expected Identity transform");
+        }
 
-         Rectangle bounds = gConfig.getBounds();
-         System.out.println("Bounds = " + bounds);
-         if (!nt.isIdentity()) {
-             throw new RuntimeException("Expected Identity transdform");
-         }
-
-         /* Make sure that device really is TYPE_PRINTER */
-         GraphicsDevice gd = gConfig.getDevice();
-         System.out.println("Printer Device ID = " + gd.getIDstring());
-         if (!(gd.getType() == GraphicsDevice.TYPE_PRINTER)) {
-             throw new RuntimeException("Expected printer device");
-         }
-         System.out.println(" *** ");
-         System.out.println("");
-         return Printable.PAGE_EXISTS;
+        /* Make sure that device really is TYPE_PRINTER */
+        GraphicsDevice gd = gConfig.getDevice();
+        System.out.println("Printer Device ID = " + gd.getIDstring());
+        if (gd.getType() != GraphicsDevice.TYPE_PRINTER) {
+            failed = true;
+            throw new RuntimeException("Expected printer device");
+        }
+        System.out.println(" *** ");
+        System.out.println("");
+        return Printable.PAGE_EXISTS;
     }
 }
