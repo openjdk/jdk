@@ -24,8 +24,12 @@
 #ifndef _VECT_MATH_H_
 #define _VECT_MATH_H_
 
+#ifndef __has_attribute
+#define __has_attribute(x) 0
+#endif
+
 #ifndef VMATH_EXPORT
-  #if (defined(__GNUC__) && (__GNUC__ >= 4))
+  #if (defined(__GNUC__) && (__GNUC__ >= 4)) || __has_attribute(visibility)
     #define VMATH_EXPORT __attribute__((visibility("default")))
   #else
     #define VMATH_EXPORT
