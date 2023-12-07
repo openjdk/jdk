@@ -2419,15 +2419,14 @@ public class Types {
                             }
                             //fall-through
                         case BYTE, CHAR, SHORT, LONG, FLOAT, INT, DOUBLE, BOOLEAN,
-                             ARRAY, MODULE, TYPEVAR, WILDCARD:
+                             ARRAY, MODULE, TYPEVAR, WILDCARD, BOT:
                             return s.dropMetadata(Annotations.class);
-                        case VOID, METHOD, PACKAGE, FORALL, DEFERRED, BOT,
+                        case VOID, METHOD, PACKAGE, FORALL, DEFERRED,
                              NONE, ERROR, UNKNOWN, UNDETVAR, UNINITIALIZED_THIS,
                              UNINITIALIZED_OBJECT:
                             return s;
                         default:
                             throw new AssertionError(s.getTag().name());
-                        
                     }
                 } else {
                     return s;
