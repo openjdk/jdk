@@ -263,30 +263,31 @@ class VectorElementSizeStats {
   }
 };
 
-// When alignment is required, we must adjust the pre-loop iteration count pre_iter.
-// We find the set of pre_iter which guarantee alignment:
-//
-// TODO restate this a bit with since I changed the new proof!
-//
-//   pre_iter = pre_r + pre_q * m  (for any m >= 0)
-//
-// Such that the address is aligned for any main_iter >= 0:
+// When alignment is required, we must adjust the pre-loop iteration count pre_iter,
+// such that the address is aligned for any main_iter >= 0:
 //
 //   adr = base + offset + invar + scale * init
 //                               + scale * pre_stride * pre_iter
 //                               + scale * main_stride * main_iter
 //
-// Two simplifying restrictions:
-//   1. In the presence of variable init, all solutions must have the same scale.
-//   2. In the presence of an invariant, all solutions must have the same invariant
-//      and the same scale.
-//
-// A solution can be:
+// The AlignmentSolver generates solutions of the following forms:
 //   1. Invalid with a failure reason.
 //   2. Trivial (any pre-loop limit guarantees alignment).
 //   3. Constrained (r, q, mem_ref, alignment_width, scale, invar)
 //        Where scale is 0 if no scale dependency,
 //        and invar is nullptr if no invar dependency.
+//
+// The Constrained solution is of the following form:
+//
+//   pre_iter = pre_iter_C_const  + pre_iter_C_init              + pre_iter_C_invar
+//            = pre_r + pre_q * m + alignment_init(X * var_init) + alignment_invar(Y * var_invar)
+//
+// Essentially, we get a periodic solution for the C_const term, which
+// is shifted by the init and the invar terms. For two solutions to be
+// compatible, they must have the same periodic part (or subset), which
+// we can easily check with p an q. Compatible solutions must also have
+// the same shifting, which we can check with the scale and invar dependency.
+//
 class AlignmentSolution {
 private:
   bool _valid = false;
@@ -455,7 +456,43 @@ public:
   }
 };
 
-// TODO description
+// When strict alignment is required (e.g. -XX:+AlignVector), then we must ensure
+// that all vector memory accesses can be aligned. We acheive this alignment by
+// adjusting the pre-loop limit, which adjusts the number of iterations executed
+// in the pre-loop.
+//
+// This is how the pre-loop and unrolled main-loop look like for a memref (adr):
+//
+// iv = init
+// i = 0 // single-iteration counter
+//
+// pre-loop:
+//   iv = init + i * pre_stride
+//   adr = base + offset + invar + scale * iv
+//   adr = base + offset + invar + scale * (init + i * pre_stride)
+//   iv += pre_stride
+//   i++
+//
+// pre_iter = i // number of iterations in the pre-loop
+// iv = init + pre_iter * pre_stride
+//
+// main_iter = 0 // main-loop iteration counter
+// main_stride = unroll_factor * pre_stride
+//
+// main-loop:
+//   i = pre_iter + main_iter * unroll_factor
+//   iv = init + i * pre_stride = init + pre_iter * pre_stride + main_iter * unroll_factor * pre_stride
+//                              = init + pre_iter * pre_stride + main_iter * main_stride
+//   adr = base + offset + invar + scale * iv // must be aligned
+//   iv += main_stride
+//   i  += unroll_factor
+//   main_iter++
+//
+// For each vector memory access, we can find the set of pre_iter (number of pre-loop
+// iterations) which would align its address. The AlignmentSolver finds such a
+// AlignmentSolution. We can then check which solutions are compatible, and thus
+// decide if we have to (partially) reject vectorization if not all vectors have
+// a compatible solutions.
 class AlignmentSolver {
 private:
   const MemNode* _mem_ref;       // first element

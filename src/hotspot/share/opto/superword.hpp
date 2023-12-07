@@ -489,8 +489,8 @@ private:
   void combine_packs();
   // Ensure all packs are aligned, if AlignVector is on.
   void filter_packs_for_alignment();
-  // Find the set of alignment solutions for load/store pack p.
-  AlignmentSolution pack_alignment_solution(Node_List* p);
+  // Find the set of alignment solutions for load/store pack.
+  AlignmentSolution pack_alignment_solution(Node_List* pack);
   // Compress packset, such that it has no nullptr entries.
   void compress_packset();
   // Construct the map from nodes to packs.

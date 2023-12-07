@@ -1621,7 +1621,7 @@ void print_icon_or_idx_xxx(const Node* n) {
 }
 #endif
 
-// Find the set of alignment solutions for load/store pack p.
+// Find the set of alignment solutions for load/store pack.
 AlignmentSolution SuperWord::pack_alignment_solution(Node_List* pack) {
   assert(pack != nullptr && (pack->at(0)->is_Load() || pack->at(0)->is_Store()), "only load/store packs");
 
@@ -1644,39 +1644,10 @@ AlignmentSolution SuperWord::pack_alignment_solution(Node_List* pack) {
   return solver.solve();
 }
 
-// Ensure that all packs can be aligned. We analyze each pack address, and if and how
-// it can be aligned by adjusting the number of pre-loop iterations. This is how the
-// pre-loop and unrolled main-loop look like for memref (adr):
-//
-// iv = init
-// i = 0 // single-iteration counter
-//
-// pre-loop:
-//   iv = init + i * pre_stride
-//   adr = base + offset + invar + scale * iv
-//   adr = base + offset + invar + scale * (init + i * pre_stride)
-//   iv += pre_stride
-//   i++
-//
-// pre_iter = i // number of iterations in the pre-loop
-// iv = init + pre_iter * pre_stride
-//
-// main_iter = 0 // main-loop iteration counter
-// main_stride = unroll_factor * pre_stride
-//
-// main-loop:
-//   i = pre_iter + main_iter * unroll_factor
-//   iv = init + i * pre_stride = init + pre_iter * pre_stride + main_iter * unroll_factor * pre_stride
-//                              = init + pre_iter * pre_stride + main_iter * main_stride
-//   adr = base + offset + invar + scale * iv // must be aligned
-//   iv += main_stride
-//   i  += unroll_factor
-//   main_iter++
-//
+// Ensure all packs are aligned, if AlignVector is on.
 // Find an alignment solution: find the set of pre_iter that memory align all packs.
 // Start with the maximal set (pre_iter >= 0) and filter it with the constraints
-// that the packs impose. If a pack is not compatible with the current solution, we
-// remove it from the packset.
+// that the packs impose. Remove packs that do not have a compatible solution.
 void SuperWord::filter_packs_for_alignment() {
   // We do not need to filter if no alignment is required.
   if (!vectors_should_be_aligned()) {
@@ -1689,9 +1660,6 @@ void SuperWord::filter_packs_for_alignment() {
   }
 #endif
 
-  // Find an alignment solution: find the set of pre_iter that memory align all packs.
-  // Start with the maximal set (pre_iter >= 0) and filter it with the constraints
-  // that the packs impose.
   AlignmentSolution current; // trivial
   int mem_ops_count = 0;
   int mem_ops_rejected = 0;

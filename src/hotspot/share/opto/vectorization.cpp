@@ -704,6 +704,7 @@ void VPointer::Tracer::offset_plus_k_11(Node* n) {
 }
 #endif
 
+
 AlignmentSolution AlignmentSolver::solve() const {
   DEBUG_ONLY( trace_start_solve(); )
 
@@ -938,7 +939,7 @@ AlignmentSolution AlignmentSolver::solve() const {
   //     same for all mem_refs in the loop). If there is no invariant, then we add
   //     a dependency that there is no invariant.
   //
-  // Other mem_refs must have solutions with  the same dependencies, otherwise we
+  // Other mem_refs must have solutions with the same dependencies, otherwise we
   // cannot ensure that they require the same number of pre-loop iterations.
 
   DEBUG_ONLY( trace_find_pre_q(C_const, C_pre, pre_q); )
