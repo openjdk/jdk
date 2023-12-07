@@ -258,7 +258,7 @@ private:
   int _q = 1;
   const MemNode* _mem_ref = nullptr;
   int _aw = 0;
-  Node* _invar_dependency = nullptr;
+  Node const* _invar_dependency = nullptr;
   int _scale_dependency = 0;
 
 public:
@@ -295,7 +295,7 @@ public:
                     const int q,
                     const MemNode* mem_ref,
                     int aw,
-                    Node* invar_dependency,
+                    const Node* invar_dependency,
                     int scale_dependency) :
       _valid(true),
       _reason(nullptr),
@@ -342,7 +342,7 @@ public:
     return _aw;
   }
 
-  Node* invar_dependency() const {
+  const Node* invar_dependency() const {
     assert(is_valid() && !is_trivial(), "valid and not trivial");
     return _invar_dependency;
   }

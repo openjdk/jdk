@@ -1648,7 +1648,7 @@ AlignmentSolution SuperWord::pack_alignment_solution(Node_List* pack) {
   const int scale         = mem_ref_p.scale_in_bytes();
   const int offset        = mem_ref_p.offset_in_bytes();
   const Node* base        = mem_ref_p.base();
-  Node* invar             = mem_ref_p.invar();
+  const Node* invar       = mem_ref_p.invar();
   const int invar_factor  = mem_ref_p.invar_factor();
 
 #ifndef PRODUCT
@@ -2005,7 +2005,7 @@ AlignmentSolution SuperWord::pack_alignment_solution(Node_List* pack) {
       assert((C_init == 0) == init_node->is_ConI(), "init consistent");
       assert((C_invar == 0) == (invar == nullptr), "invar consistent");
 
-      Node* invar_dependency = invar;
+      const Node* invar_dependency = invar;
       const int scale_dependency  = (invar != nullptr || !init_node->is_ConI()) ? scale : 0;
       return AlignmentSolution(pre_r, pre_q, mem_ref, aw,
                                invar_dependency, scale_dependency);
