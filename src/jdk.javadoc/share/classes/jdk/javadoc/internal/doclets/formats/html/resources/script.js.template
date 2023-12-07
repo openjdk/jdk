@@ -256,7 +256,7 @@ document.addEventListener("DOMContentLoaded", function(e) {
     const navbar = document.querySelector("div#navbar-top");
     const sidebar = document.querySelector(".main-grid nav.toc");
     const main = document.querySelector(".main-grid main");
-    const mainnav = navbar.querySelector("ol.nav-list");
+    const mainnav = navbar.querySelector("ul.nav-list");
     const toggleButton = document.querySelector("button#navbar-toggle-button");
     const toc = sidebar ? sidebar.cloneNode(true) : null;
     if (toc) {
