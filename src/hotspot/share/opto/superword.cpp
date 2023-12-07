@@ -1608,19 +1608,6 @@ void SuperWord::combine_packs() {
   }
 }
 
-#ifndef PRODUCT
-void print_icon_or_idx_xxx(const Node* n) {
-  if (n == nullptr) {
-    tty->print("(0)");
-  } else if (n->is_ConI()) {
-    jint val = n->as_ConI()->get_int();
-    tty->print("(%d)", val);
-  } else {
-    tty->print("[%d]", n->_idx);
-  }
-}
-#endif
-
 // Find the set of alignment solutions for load/store pack.
 AlignmentSolution SuperWord::pack_alignment_solution(Node_List* pack) {
   assert(pack != nullptr && (pack->at(0)->is_Load() || pack->at(0)->is_Store()), "only load/store packs");
