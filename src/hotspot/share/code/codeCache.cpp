@@ -1803,6 +1803,14 @@ void CodeCache::log_state(outputStream* st) {
 void CodeCache::write_perf_map(const char* filename) {
   MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
 
+  // Perf expects to find the map file at /tmp/perf-<pid>.map
+  // if the file name is not specified.
+  char fname[32];
+  if (filename == nullptr) {
+    jio_snprintf(fname, sizeof(fname), "/tmp/perf-%d.map", os::current_process_id());
+    filename = fname;
+  }
+
   fileStream fs(filename, "w");
   if (!fs.is_open()) {
     log_warning(codecache)("Failed to create %s for perf map", filename);
@@ -1820,14 +1828,6 @@ void CodeCache::write_perf_map(const char* filename) {
                 (intptr_t)cb->code_begin(), (intptr_t)cb->code_size(),
                 method_name);
   }
-}
-
-void CodeCache::write_default_perf_map() {
-  // Perf expects to find the map file at /tmp/perf-<pid>.map.
-  // It is used as the default file name.
-  char fname[32];
-  jio_snprintf(fname, sizeof(fname), "/tmp/perf-%d.map", os::current_process_id());
-  write_perf_map(fname);
 }
 #endif // LINUX
 

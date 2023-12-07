@@ -850,11 +850,7 @@ PerfMapDCmd::PerfMapDCmd(outputStream* output, bool heap) :
 }
 
 void PerfMapDCmd::execute(DCmdSource source, TRAPS) {
-  if (_filename.value() != nullptr) {
-    CodeCache::write_perf_map(_filename.value());
-  } else {
-    CodeCache::write_default_perf_map();
-  }
+  CodeCache::write_perf_map(_filename.value());
 }
 #endif // LINUX
 

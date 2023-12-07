@@ -503,7 +503,7 @@ void before_exit(JavaThread* thread, bool halt) {
 
 #ifdef LINUX
   if (DumpPerfMapAtExit) {
-    CodeCache::write_default_perf_map();
+    CodeCache::write_perf_map();
   }
 #endif
 
