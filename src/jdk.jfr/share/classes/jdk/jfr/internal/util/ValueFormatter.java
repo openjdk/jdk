@@ -68,10 +68,10 @@ public final class ValueFormatter {
     private static final int DISPLAY_NANO_DIGIT = 3;
     private static final int BASE = 10;
 
-    // -XX:FlightRecorderOptions:repository=<path> triggers an up call
+    // -XX:FlightRecorderOptions:repository=<path> triggers an upcall
     // which will load this class. If NumberFormat.getNumberInstance()
     // is called during startup, locale settings will not take effect.
-    // Workaround is to create an instance lazily. See numberFormatInstance()
+    // Workaround is to create an instance lazily. See numberFormatInstance().
     private static NumberFormat NUMBER_FORMAT;
 
     public static String formatTimespan(Duration dValue, String separation) {
