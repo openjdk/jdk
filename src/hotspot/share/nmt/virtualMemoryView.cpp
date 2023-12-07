@@ -388,7 +388,7 @@ bool VirtualMemoryView::disjoint(Range a, Range b) {
 bool VirtualMemoryView::overlaps(Range a, Range b) {
   return MAX2(b.start, a.start) < MIN2(b.end(), a.end());
 }
-Range VirtualMemoryView::union_of(Range a, Range b) {
+VirtualMemoryView::Range VirtualMemoryView::union_of(Range a, Range b) {
   precond(!disjoint(a, b));
   const address start = MIN2(b.start, a.start);
   const address end = MAX2(b.end(), a.end());
