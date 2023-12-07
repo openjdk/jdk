@@ -78,9 +78,9 @@ public enum CompilePhase {
     AFTER_RANGE_CHECK_ELIMINATION("After Range Check Elimination"),
     BEFORE_PRE_MAIN_POST("Before Pre/Main/Post Loops"),
     AFTER_PRE_MAIN_POST("After Pre/Main/Post Loops"),
-    BEFORE_SUPERWORD_SCHEDULE("Before Superword Schedule"),
-    BEFORE_SUPERWORD_OUTPUT("Before Superword Output"),
-    AFTER_SUPERWORD_OUTPUT("After Superword Output"),
+    SUPERWORD1_BEFORE_SCHEDULE("Superword 1, Before Schedule"),
+    SUPERWORD2_BEFORE_OUTPUT("Superword 2, Before Output"),
+    SUPERWORD3_AFTER_OUTPUT("Superword 3, After Output"),
     // Match on very first BEFORE_CLOOPS phase (there could be multiple phases for multiple loops in the code).
     BEFORE_CLOOPS("Before CountedLoop", RegexType.IDEAL_INDEPENDENT, ActionOnRepeat.KEEP_FIRST),
     AFTER_CLOOPS("After CountedLoop"),

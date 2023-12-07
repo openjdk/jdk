@@ -67,9 +67,9 @@
   flags(AFTER_RANGE_CHECK_ELIMINATION,  "After Range Check Elimination") \
   flags(BEFORE_PRE_MAIN_POST,           "Before Pre/Main/Post Loops") \
   flags(AFTER_PRE_MAIN_POST,            "After Pre/Main/Post Loops") \
-  flags(BEFORE_SUPERWORD_SCHEDULE,      "Before Superword Schedule")\
-  flags(BEFORE_SUPERWORD_OUTPUT,        "Before Superword Output")\
-  flags(AFTER_SUPERWORD_OUTPUT,         "After Superword Output")\
+  flags(SUPERWORD1_BEFORE_SCHEDULE,     "Superword 1, Before Schedule") \
+  flags(SUPERWORD2_BEFORE_OUTPUT,       "Superword 2, Before Output") \
+  flags(SUPERWORD3_AFTER_OUTPUT,        "Superword 3, After Output") \
   flags(BEFORE_CLOOPS,                  "Before CountedLoop") \
   flags(AFTER_CLOOPS,                   "After CountedLoop") \
   flags(PHASEIDEAL_BEFORE_EA,           "PhaseIdealLoop before EA") \
