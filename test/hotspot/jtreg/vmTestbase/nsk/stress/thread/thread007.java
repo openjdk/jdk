@@ -32,7 +32,7 @@
  *     Try to start the given number of threads starting simultaneously
  *     when notifyall() is signaled at the stopLine object.
  *
- * @run main/othervm nsk.stress.thread.thread007 500 2m 5s
+ * @run main/othervm/timeout=300 nsk.stress.thread.thread007 500 2m 5s
  */
 
 package nsk.stress.thread;
