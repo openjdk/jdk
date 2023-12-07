@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -89,20 +89,18 @@ JNIEXPORT jstring JNICALL Java_sun_awt_windows_WDesktopPeer_ShellExecute
                                         COINIT_DISABLE_OLE1DDE);
     HINSTANCE retval;
     DWORD error;
-    if (SUCCEEDED(hr) || hr == RPC_E_CHANGED_MODE) {
+    if (SUCCEEDED(hr)) {
         retval = ::ShellExecute(NULL, verb_c, fileOrUri_c, NULL, NULL,
                                 SW_SHOWNORMAL);
         error = ::GetLastError();
-        if (SUCCEEDED(hr)) {
-            ::CoUninitialize();
-        }
+        ::CoUninitialize();
     }
     _control87(oldcontrol87, 0xffffffff);
 
     JNU_ReleaseStringPlatformChars(env, fileOrUri_j, fileOrUri_c);
     JNU_ReleaseStringPlatformChars(env, verb_j, verb_c);
 
-    if (FAILED(hr) && hr != RPC_E_CHANGED_MODE) {
+    if (FAILED(hr)) {
         return JNU_NewStringPlatform(env, L"CoInitializeEx() failed.");
     }
     if ((int)((intptr_t)retval) <= 32) {
