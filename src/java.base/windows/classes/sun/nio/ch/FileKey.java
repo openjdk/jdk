@@ -48,7 +48,10 @@ public class FileKey {
 
     @Override
     public int hashCode() {
-        return Objects.hash(dwVolumeSerialNumber, nFileIndexHigh, nFileIndexLow);
+        int h = dwVolumeSerialNumber;
+        h = h << 31 + nFileIndexHigh;
+        h = h << 31 + nFileIndexLow;
+        return h;
     }
 
     @Override
