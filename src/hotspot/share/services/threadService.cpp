@@ -68,6 +68,8 @@ PerfVariable* ThreadService::_daemon_threads_count = NULL;
 volatile int ThreadService::_atomic_threads_count = 0;
 volatile int ThreadService::_atomic_daemon_threads_count = 0;
 
+volatile jlong ThreadService::_exited_allocated_bytes = 0;
+
 ThreadDumpResult* ThreadService::_threaddump_list = NULL;
 
 static const int INITIAL_ARRAY_SIZE = 10;
@@ -154,6 +156,9 @@ void ThreadService::decrement_thread_counts(JavaThread* jt, bool daemon) {
 
 void ThreadService::remove_thread(JavaThread* thread, bool daemon) {
   assert(Threads_lock->owned_by_self(), "must have threads lock");
+
+  // Include hidden thread allcations in exited_allocated_bytes
+  ThreadService::incr_exited_allocated_bytes(thread->cooked_allocated_bytes());
 
   // Do not count hidden threads
   if (is_hidden_thread(thread)) {

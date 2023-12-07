@@ -108,6 +108,42 @@ public interface ThreadMXBean extends java.lang.management.ThreadMXBean {
     public long[] getThreadUserTime(long[] ids);
 
     /**
+     * Returns an approximation of the total amount of memory, in bytes, allocated
+     * in heap memory by all threads since the Java virtual machine started.
+     * The returned value is an approximation because some Java virtual machine
+     * implementations may use object allocation mechanisms that result in a
+     * delay between the time an object is allocated and the time its size is
+     * recorded.
+     *
+     * @implSpec The default implementation throws {@code UnsupportedOperationException}
+     * if the Java virtual machine implementation does not support thread
+     * memory allocation measurement, and otherwise acts as though thread
+     * memory allocation measurement is disabled.
+     *
+     * @return an approximation of the total memory allocated, in bytes, in
+     * heap memory since the Java virtual machine was started,
+     * if thread memory allocation measurement is enabled;
+     * {@code -1} otherwise.
+     *
+     * @throws UnsupportedOperationException if the Java virtual
+     *         machine implementation does not support thread memory allocation
+     *         measurement.
+     *
+     * @see #isThreadAllocatedMemorySupported
+     * @see #isThreadAllocatedMemoryEnabled
+     * @see #setThreadAllocatedMemoryEnabled
+     *
+     * @since 17.0.11
+     */
+    public default long getTotalThreadAllocatedBytes() {
+        if (!isThreadAllocatedMemorySupported()) {
+            throw new UnsupportedOperationException(
+                "Thread allocated memory measurement is not supported.");
+        }
+        return -1;
+    }
+
+    /**
      * Returns an approximation of the total amount of memory, in bytes,
      * allocated in heap memory for the current thread.
      * The returned value is an approximation because some Java virtual machine
