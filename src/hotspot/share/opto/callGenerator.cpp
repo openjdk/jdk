@@ -685,6 +685,19 @@ void CallGenerator::do_late_inline_helper() {
       return;
     }
 
+    C->print_inlining_reset();
+    if (is_mh_late_inline()) {
+      print_inlining_late(InliningResult::SUCCESS, "late inline (method handle)");
+    } else if (is_string_late_inline()) {
+      print_inlining_late(InliningResult::SUCCESS, "late inline (string method)");
+    } else if (is_boxing_late_inline()) {
+      print_inlining_late(InliningResult::SUCCESS, "late inline (boxing method)");
+    } else if (is_vector_reboxing_late_inline()) {
+      print_inlining_late(InliningResult::SUCCESS, "late inline (vector reboxing method)");
+    } else {
+      print_inlining_late(InliningResult::SUCCESS, "late inline");
+    }
+
     // Setup default node notes to be picked up by the inlining
     Node_Notes* old_nn = C->node_notes_at(call->_idx);
     if (old_nn != nullptr) {
@@ -769,6 +782,8 @@ class LateInlineBoxingCallGenerator : public LateInlineCallGenerator {
     return new_jvms;
   }
 
+  virtual bool is_boxing_late_inline() const { return true; }
+
   virtual CallGenerator* with_call_node(CallNode* call) {
     LateInlineBoxingCallGenerator* cg = new LateInlineBoxingCallGenerator(method(), _inline_cg);
     cg->set_call_node(call->as_CallStaticJava());
@@ -796,6 +811,8 @@ class LateInlineVectorReboxingCallGenerator : public LateInlineCallGenerator {
     JVMState* new_jvms = DirectCallGenerator::generate(jvms);
     return new_jvms;
   }
+
+  virtual bool is_vector_reboxing_late_inline() const { return true; }
 
   virtual CallGenerator* with_call_node(CallNode* call) {
     LateInlineVectorReboxingCallGenerator* cg = new LateInlineVectorReboxingCallGenerator(method(), _inline_cg);
