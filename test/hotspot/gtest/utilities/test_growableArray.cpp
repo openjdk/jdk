@@ -96,6 +96,15 @@ private:
   static int _destructed;
   int _i;
 public:
+  // Since this class has a non-trivial destructor, we can only use it with
+  // arena / resource area allocated arrays in ASSERT mode.
+#ifdef ASSERT
+  static const bool is_enabled_for_arena = true;
+#endif // ASSERT
+#ifndef ASSERT
+  static const bool is_enabled_for_arena = false;
+#endif // ASSERT
+
   CtorDtor() : _i(-1) { _constructed++; };
   explicit CtorDtor(int i) : _i(i) { _constructed++; }
   CtorDtor(const CtorDtor& t) : _i(t._i) { _constructed++; }
@@ -137,13 +146,13 @@ void check_constructor_count_for_type<CtorDtor>(int i) {
 }
 
 template<typename E>
-void check_constructor_count_consistency_for_type() {
+void check_alive_elements_for_type(int i) {
   // default no check because no count
 }
 
 template<>
-void check_constructor_count_consistency_for_type<CtorDtor>() {
-  ASSERT_EQ(CtorDtor::constructed(), CtorDtor::destructed());
+void check_alive_elements_for_type<CtorDtor>(int i) {
+  ASSERT_EQ(CtorDtor::constructed(), CtorDtor::destructed() + i);
 }
 
 // -------------- Basic Definitions -------------
@@ -205,7 +214,7 @@ public:
     // array can simply be abandoned and the destructions
     // are not guaranteed for the elements.
     if (a->is_C_heap()) {
-      check_constructor_count_consistency_for_type<E>();
+      check_alive_elements_for_type<E>(0);
     }
   }
 };
@@ -514,6 +523,7 @@ public:
     ASSERT_FALSE(a->is_empty());
 
     ASSERT_EQ(a->length(), 1000);
+    check_alive_elements_for_type<E>(1000);
   }
 };
 
@@ -529,10 +539,13 @@ public:
     }
 
     ASSERT_EQ(a->length(), 1000);
+    check_alive_elements_for_type<E>(1000);
+
     int old_capacity = a->capacity();
 
     // Clear
     a->clear();
+    check_alive_elements_for_type<E>(0);
 
     ASSERT_EQ(a->length(), 0);
     ASSERT_EQ(a->capacity(), old_capacity);
@@ -551,6 +564,7 @@ public:
     }
 
     ASSERT_EQ(a->length(), 1000);
+    check_alive_elements_for_type<E>(1000);
 
     // Clear
     if (a->is_C_heap()) {
@@ -560,6 +574,7 @@ public:
       a->clear();
     }
     ASSERT_EQ(a->length(), 0);
+    check_alive_elements_for_type<E>(0);
   }
 };
 
@@ -569,6 +584,7 @@ template<typename E>
 class TestClosureAppend : public TestClosure<E> {
   virtual void do_test(AllocatorClosure<E>* a) override final {
     a->clear();
+    check_alive_elements_for_type<E>(0);
     ASSERT_EQ(a->length(), 0);
 
     // Add elements
@@ -578,6 +594,7 @@ class TestClosureAppend : public TestClosure<E> {
 
     // Check size
     ASSERT_EQ(a->length(), 10);
+    check_alive_elements_for_type<E>(10);
 
     // Check elements
     for (int i = 0; i < 10; i++) {
@@ -590,6 +607,8 @@ template<typename E>
 class TestClosureClear : public TestClosure<E> {
   virtual void do_test(AllocatorClosure<E>* a) override final {
     a->clear();
+    check_alive_elements_for_type<E>(0);
+
     // Check size
     ASSERT_EQ(a->length(), 0);
     ASSERT_EQ(a->is_empty(), true);
@@ -602,9 +621,11 @@ class TestClosureClear : public TestClosure<E> {
     // Check size
     ASSERT_EQ(a->length(), 10);
     ASSERT_EQ(a->is_empty(), false);
+    check_alive_elements_for_type<E>(10);
 
     // Clear elements
     a->clear();
+    check_alive_elements_for_type<E>(0);
 
     // Check size
     ASSERT_EQ(a->length(), 0);
@@ -616,9 +637,11 @@ class TestClosureClear : public TestClosure<E> {
     // Check size
     ASSERT_EQ(a->length(), 1);
     ASSERT_EQ(a->is_empty(), false);
+    check_alive_elements_for_type<E>(1);
 
     // Clear elements
     a->clear();
+    check_alive_elements_for_type<E>(0);
 
     // Check size
     ASSERT_EQ(a->length(), 0);
@@ -630,10 +653,13 @@ template<typename E>
 class TestClosureIterator : public TestClosure<E> {
   virtual void do_test(AllocatorClosure<E>* a) override final {
     a->clear();
+    check_alive_elements_for_type<E>(0);
+
     // Add elements
     for (int i = 0; i < 10; i++) {
       a->append(value_factory<E>(i));
     }
+    check_alive_elements_for_type<E>(10);
 
     // Iterate
     int counter = 0;
@@ -643,6 +669,7 @@ class TestClosureIterator : public TestClosure<E> {
 
     // Check count
     ASSERT_EQ(counter, 10);
+    check_alive_elements_for_type<E>(10);
   };
 };
 
@@ -650,18 +677,26 @@ template<typename E>
 class TestClosureCapacity : public TestClosure<E> {
   virtual void do_test(AllocatorClosure<E>* a) override final {
     a->clear();
+    check_alive_elements_for_type<E>(0);
+
     int old_capacity = a->capacity();
     ASSERT_EQ(a->length(), 0);
     a->reserve(50);
     ASSERT_EQ(a->length(), 0);
     ASSERT_EQ(a->capacity(), MAX2(50, old_capacity));
+    check_alive_elements_for_type<E>(0);
+
     for (int i = 0; i < 50; ++i) {
       a->append(value_factory<E>(i));
     }
     ASSERT_EQ(a->length(), 50);
     ASSERT_EQ(a->capacity(), MAX2(50, old_capacity));
+    check_alive_elements_for_type<E>(50);
+
     a->append(value_factory<E>(50));
     ASSERT_EQ(a->length(), 51);
+    check_alive_elements_for_type<E>(51);
+
     int capacity = a->capacity();
     ASSERT_GE(capacity, 51);
     for (int i = 0; i < 30; ++i) {
@@ -669,24 +704,29 @@ class TestClosureCapacity : public TestClosure<E> {
     }
     ASSERT_EQ(a->length(), 21);
     ASSERT_EQ(a->capacity(), capacity);
+    check_alive_elements_for_type<E>(21);
 
     if (a->is_C_heap()) {
       // shrink_to_fit only implemented on CHeap
       a->shrink_to_fit();
       ASSERT_EQ(a->length(), 21);
       ASSERT_EQ(a->capacity(), 21);
+      check_alive_elements_for_type<E>(21);
 
       a->reserve(50);
       ASSERT_EQ(a->length(), 21);
       ASSERT_EQ(a->capacity(), 50);
+      check_alive_elements_for_type<E>(21);
 
       a->clear();
       ASSERT_EQ(a->length(), 0);
       ASSERT_EQ(a->capacity(), 50);
+      check_alive_elements_for_type<E>(0);
 
       a->shrink_to_fit();
       ASSERT_EQ(a->length(), 0);
       ASSERT_EQ(a->capacity(), 0);
+      check_alive_elements_for_type<E>(0);
     }
   };
 };
@@ -696,6 +736,7 @@ class TestClosureFindIf : public TestClosure<E> {
   virtual void do_test(AllocatorClosure<E>* a) override final {
     a->clear();
     ASSERT_EQ(a->length(), 0);
+    check_alive_elements_for_type<E>(0);
 
     // Add elements
     for (int i = 0; i < 10; i++) {
@@ -704,6 +745,7 @@ class TestClosureFindIf : public TestClosure<E> {
     a->append(value_factory<E>(20));
     a->append(value_factory<E>(20));
     a->append(value_factory<E>(42));
+    check_alive_elements_for_type<E>(13);
 
     for (int i = 0; i < 10; i++) {
       int index = a->find_if([&](const E& elem) {
@@ -739,6 +781,7 @@ template<typename E>
 class TestClosureFindFromEndIf : public TestClosure<E> {
   virtual void do_test(AllocatorClosure<E>* a) override final {
     a->clear();
+    check_alive_elements_for_type<E>(0);
     ASSERT_EQ(a->length(), 0);
 
     // Add elements
@@ -748,6 +791,7 @@ class TestClosureFindFromEndIf : public TestClosure<E> {
     a->append(value_factory<E>(20));
     a->append(value_factory<E>(20));
     a->append(value_factory<E>(42));
+    check_alive_elements_for_type<E>(13);
 
     for (int i = 0; i < 10; i++) {
       int index = a->find_from_end_if([&](const E& elem) {
@@ -914,7 +958,7 @@ TEST_VM_F(GrowableArrayTest, append_point) {
 }
 
 TEST_VM_F(GrowableArrayTest, append_ctor_dtor) {
-  run_test_append<CtorDtor,true,false>();
+  run_test_append<CtorDtor,true,CtorDtor::is_enabled_for_arena>();
 }
 
 TEST_VM_F(GrowableArrayTest, clear_int) {
@@ -930,7 +974,7 @@ TEST_VM_F(GrowableArrayTest, clear_point) {
 }
 
 TEST_VM_F(GrowableArrayTest, clear_ctor_dtor) {
-  run_test_clear<CtorDtor,true,false>();
+  run_test_clear<CtorDtor,true,CtorDtor::is_enabled_for_arena>();
 }
 
 TEST_VM_F(GrowableArrayTest, iterator_int) {
@@ -946,7 +990,7 @@ TEST_VM_F(GrowableArrayTest, iterator_point) {
 }
 
 TEST_VM_F(GrowableArrayTest, iterator_ctor_dtor) {
-  run_test_iterator<CtorDtor,true,false>();
+  run_test_iterator<CtorDtor,true,CtorDtor::is_enabled_for_arena>();
 }
 
 TEST_VM_F(GrowableArrayTest, capacity_int) {
@@ -962,7 +1006,7 @@ TEST_VM_F(GrowableArrayTest, capacity_point) {
 }
 
 TEST_VM_F(GrowableArrayTest, capacity_ctor_dtor) {
-  run_test_capacity<CtorDtor,true,false>();
+  run_test_capacity<CtorDtor,true,CtorDtor::is_enabled_for_arena>();
 }
 
 TEST_VM_F(GrowableArrayTest, find_if_int) {
@@ -978,7 +1022,7 @@ TEST_VM_F(GrowableArrayTest, find_if_point) {
 }
 
 TEST_VM_F(GrowableArrayTest, find_if_ctor_dtor) {
-  run_test_find_if<CtorDtor,true,false>();
+  run_test_find_if<CtorDtor,true,CtorDtor::is_enabled_for_arena>();
 }
 
 #ifdef ASSERT
