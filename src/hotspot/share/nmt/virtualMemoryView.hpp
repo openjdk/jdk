@@ -103,17 +103,21 @@ public:
   using RegionStorage = GrowableArrayCHeap<TrackedRange, mtNMT>;
 
   struct VirtualMemory : public CHeapObj<mtNMT> {
+    // Reserved memory within this process' memory map
     RegionStorage reserved_regions;
-    GrowableArrayCHeap<OffsetRegionStorage, mtNMT> mapped_regions;
+    // Committed memory per PhysicalMemorySpace
     GrowableArrayCHeap<RegionStorage, mtNMT> committed_regions;
+    // Mappings from virtual memory space to committed memory, per PhysicalMemorySpace.
+    GrowableArrayCHeap<OffsetRegionStorage, mtNMT> mapped_regions;
     VirtualMemory()
-      : reserved_regions(),
-        mapped_regions(),
-        committed_regions() {
+     : reserved_regions(),
+       committed_regions(),
+       mapped_regions() {
     }
     VirtualMemory(const VirtualMemory& other) {
       *this = other;
     }
+    // Deep copying of VirtualMemory
     VirtualMemory& operator=(const VirtualMemory& other) {
       if (this != &other) {
         this->reserved_regions = RegionStorage{other.reserved_regions.length()};
