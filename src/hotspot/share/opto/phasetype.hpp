@@ -54,8 +54,9 @@
   flags(BEFORE_SPLIT_IF,                "Before Split If") \
   flags(AFTER_SPLIT_IF,                 "After Split If") \
   flags(BEFORE_LOOP_PREDICATION_IC,     "Before Loop Predication IC") \
+  flags(AFTER_LOOP_PREDICATION_IC,      "After Loop Predication IC") \
   flags(BEFORE_LOOP_PREDICATION_RC,     "Before Loop Predication RC") \
-  flags(AFTER_LOOP_PREDICATION,         "After Loop Predication") \
+  flags(AFTER_LOOP_PREDICATION_RC,      "After Loop Predication RC") \
   flags(BEFORE_PARTIAL_PEELING,         "Before Partial Peeling") \
   flags(AFTER_PARTIAL_PEELING,          "After Partial Peeling") \
   flags(BEFORE_LOOP_PEELING,            "Before Loop Peeling") \

@@ -592,15 +592,6 @@ void PhaseIdealLoop::handle_use( Node *use, Node *def, small_cache *cache, Node 
 // Split thru the Region.
 void PhaseIdealLoop::do_split_if(Node* iff, RegionNode** new_false_region, RegionNode** new_true_region) {
 
-  C->print_method(PHASE_BEFORE_SPLIT_IF, 4, iff);
-
-  if (PrintOpto && VerifyLoopOptimizations) {
-    tty->print_cr("Split-if");
-  }
-  if (TraceLoopOpts) {
-    tty->print_cr("SplitIf");
-  }
-
   C->set_major_progress();
   RegionNode *region = iff->in(0)->as_Region();
   Node *region_dom = idom(region);
