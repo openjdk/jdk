@@ -849,11 +849,116 @@ AlignmentSolution AlignmentSolver::solve() const {
 
   DEBUG_ONLY( trace_init_and_invar_alignment(C_invar, C_init, C_pre, C_invar_mod_abs_C_pre, C_init_mod_abs_C_pre); )
 
+  if (C_init_mod_abs_C_pre != 0) {
+    return AlignmentSolution("EQ(5a*) not satisfied (cannot align init)");
+  }
+  if (C_invar_mod_abs_C_pre != 0) {
+    return AlignmentSolution("EQ(5b*) not satisfied (cannot align invar)");
+  }
 
+  // Having solved (4a) and (4b), we now want to find solutions for (4c), i.e. we need
+  // to show that the C_const term can be aligned with pre_iter_C_const.
+  //
+  // We can assume that abs(C_pre) as well as aw are both powers of 2.
+  //
+  // If abs(C_pre) >= aw, then:
+  //
+  //   for any pre_iter >= 0:         (C_pre * pre_iter        ) % aw = 0
+  //   for any pre_iter_C_const >= 0: (C_pre * pre_iter_C_const) % aw = 0
+  //
+  // which implies that pre_iter (and pre_iter_C_const) have no effect on the alignment of
+  // the C_const term. We thus either have a trivial solution, and any pre_iter aligns
+  // the address, or there is no solution. To have the trivial solution, we require:
+  //
+  //   C_const % aw = 0                                                       (6*)
+  //
+  assert(abs(C_pre) > 0 && is_power_of_2(abs(C_pre)), "abs(C_pre) must be power of 2");
+  const bool abs_C_pre_ge_aw = abs(C_pre) >= _aw;
 
+  DEBUG_ONLY( trace_abs_C_pre_ge_aw(C_pre, abs_C_pre_ge_aw); )
 
-  // TODO continue
-  return AlignmentSolution("TOOD remove me");
+  if (abs_C_pre_ge_aw) {
+    const int C_const_mod_aw = AlignmentSolution::mod(C_const, _aw);
+
+    DEBUG_ONLY( trace_C_const_mod_aw(C_const, C_const_mod_aw); )
+
+    // The C_init and C_invar terms are trivially aligned.
+    assert(AlignmentSolution::mod(C_init,  _aw) == 0,  "implied by abs(C_pre) >= aw and (5a*)");
+    assert(AlignmentSolution::mod(C_invar, _aw) == 0,  "implied by abs(C_pre) >= aw and (5b*)");
+
+    if (C_const_mod_aw != 0) {
+      return AlignmentSolution("EQ(6*) not satisfied: C_const not aligned");
+    } else {
+      // Solution is trivial, holds for any pre-loop limit.
+      return AlignmentSolution();
+    }
+  }
+
+  // Otherwise, if abs(C_pre) < aw, we find all solutions for pre_iter_C_const in (4c).
+  // We state pre_iter_C_const in terms of the smallest possible pre_q and pre_r, such
+  // that pre_q >= 0 and 0 <= pre_r < pre_q:
+  //
+  //   pre_iter_C_const = pre_r + pre_q * m  (for any m >= 0)                     (7)
+  //
+  // We can now restate (4c) with (7):
+  //
+  //   (C_const + C_pre * pre_r + C_pre * pre_q * m) % aw = 0                     (8)
+  //
+  // Since this holds for any m >= 0, we require:
+  //
+  //   (C_pre * pre_q) % aw = 0                                                   (9)
+  //   (C_const + C_pre * pre_r) % aw = 0                                         (10*)
+  //
+  // Given that abs(C_pre) is a powers of 2, and abs(C_pre) < aw:
+  //
+  const int  pre_q = _aw / abs(C_pre);
+  //
+  // We brute force the solution for pre_r by enumerating all values 0..pre_q-1 and
+  // checking EQ(10*).
+  //
+  // Assuming we found a solution for (4c), and also for (4a) and (4b), we know that
+  // the solution to pre_iter is non-trivial:
+  //
+  //   pre_iter = pre_iter_C_const  + pre_iter_C_init              + pre_iter_C_invar
+  //            = pre_r + pre_q * m + alignment_init(X * var_init) + alignment_invar(Y * var_invar)
+  //
+  // Hence, the solution depends on:
+  //   - Always: pre_r and pre_q
+  //   - If a variable init is present (i.e. C_init = scale), then we know that to
+  //     satisfy (5a*), we must have abs(pre_stride) = 1, X = 1 and C_pre = scale.
+  //     The solution thus depends on var_init = init / scale. We thus have a
+  //     dependency on scale. We could also add a dependency for init, but since
+  //     it is the same for all mem_refs in the loop this is unnecessary. If init
+  //     is constant, then we could add a dependency that there is no variable init.
+  //     But since init is the same for all mem_refs, this is unecessary.
+  //   - If an invariant is present (i.e. C_invar = abs(invar_factor)), then we know
+  //     from (5b*), that Y = abs(invar_factor) / (scale * pre_stride). The solution
+  //     depends on Y * var_invar = abs(invar_factor) * var_invar / (scale * pre_stride),
+  //     hence we have to add a dependency for invar, and scale (pre_stride is the
+  //     same for all mem_refs in the loop). If there is no invariant, then we add
+  //     a dependency that there is no invariant.
+  //
+  // Other mem_refs must have solutions with  the same dependencies, otherwise we
+  // cannot ensure that they require the same number of pre-loop iterations.
+
+  DEBUG_ONLY( trace_find_pre_q(C_const, C_pre, pre_q); )
+
+  for (int pre_r = 0; pre_r < pre_q; pre_r++) {
+    const int eq10_val = AlignmentSolution::mod(C_const + C_pre * pre_r, _aw);
+
+    DEBUG_ONLY( trace_find_pre_r(C_const, C_pre, pre_q, pre_r, eq10_val); )
+
+    if (eq10_val == 0) {
+      assert((C_init == 0) == _init_node->is_ConI(), "init consistent");
+      assert((C_invar == 0) == (_invar == nullptr), "invar consistent");
+
+      const Node* invar_dependency = _invar;
+      const int scale_dependency  = (_invar != nullptr || !_init_node->is_ConI()) ? _scale : 0;
+      return AlignmentSolution(pre_r, pre_q, _mem_ref, _aw,
+                               invar_dependency, scale_dependency);
+    }
+  }
+  return AlignmentSolution("EQ(10*) has no solution for pre_r");
 }
 
 #ifdef ASSERT
@@ -970,6 +1075,52 @@ void AlignmentSolver::trace_init_and_invar_alignment(const int C_invar,
                   C_init, C_pre, C_init_mod_abs_C_pre);
     tty->print_cr("  EQ(5b*): C_invar(%d) %% abs(C_pre(%d)) = %d = 0  (if false: cannot align invar)",
                   C_invar, C_pre, C_invar_mod_abs_C_pre);
+  }
+}
+
+void AlignmentSolver::trace_abs_C_pre_ge_aw(const int C_pre,
+                                            const bool abs_C_pre_ge_aw) const
+{
+  if (is_trace()) {
+    tty->print_cr("  abs(C_pre(%d)) >= aw(%d) -> %s", C_pre, _aw,
+                  abs_C_pre_ge_aw ? "true (pre-loop limit adjustment makes no difference)" :
+                                    "false (pre-loop limit adjustment changes alignment)");
+  }
+}
+
+void AlignmentSolver::trace_C_const_mod_aw(const int C_const,
+                                           const int C_const_mod_aw) const
+{
+  if (is_trace()) {
+      tty->print_cr("  EQ(6* ): C_const(%d) %% aw(%d) = %d = 0 (if true: trivial, else no solution)",
+                    C_const, _aw, C_const_mod_aw);
+  }
+}
+
+void AlignmentSolver::trace_find_pre_q(const int C_const,
+                                       const int C_pre,
+                                       const int pre_q) const
+{
+  if (is_trace()) {
+    tty->print_cr("  Find alignment for C_const(%d), with:", C_const);
+    tty->print_cr("  pre_iter_C_const = pre_r + pre_q * m  (for any m >= 0)");
+    tty->print_cr("  (C_const(%d) + C_pre(%d) * pre_r + C_pre(%d) * pre_q * m) %% aw(%d) = 0:",
+                  C_const, C_pre, C_pre, _aw);
+    tty->print_cr("  pre_q = aw(%d) / abs(C_pre(%d)) = %d",
+                  _aw, C_pre, pre_q);
+    tty->print_cr("  EQ(10*): brute force pre_r = 0..%d", pre_q - 1);
+  }
+}
+
+void AlignmentSolver::trace_find_pre_r(const int C_const,
+                                       const int C_pre,
+                                       const int pre_q,
+                                       const int pre_r,
+                                       const int eq10_val) const
+{
+  if (is_trace()) {
+      tty->print_cr("   try pre_r = %d: (C_const(%d) + C_pre(%d) * pre_r(%d)) %% aw(%d) = %d = 0",
+                    pre_r, C_const, C_pre, pre_r, _aw, eq10_val);
   }
 }
 #endif

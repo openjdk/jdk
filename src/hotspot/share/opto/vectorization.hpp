@@ -552,8 +552,18 @@ private:
                                       const int C_pre,
                                       const int C_invar_mod_abs_C_pre,
                                       const int C_init_mod_abs_C_pre) const;
-
-
+  void trace_abs_C_pre_ge_aw(const int C_pre,
+                             const bool abs_C_pre_ge_aw) const;
+  void trace_C_const_mod_aw(const int C_const,
+                            const int C_const_mod_aw) const;
+  void trace_find_pre_q(const int C_const,
+                        const int C_pre,
+                        const int pre_q) const;
+  void trace_find_pre_r(const int C_const,
+                        const int C_pre,
+                        const int pre_q,
+                        const int pre_r,
+                        const int eq10_val) const;
 #endif
 };
 
