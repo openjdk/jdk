@@ -43,7 +43,7 @@
 #include "utilities/ostream.hpp"
 #include "utilities/vmError.hpp"
 
-MallocMemorySnapshot MallocMemorySummary::_snapshot{};
+MallocMemorySnapshot MallocMemorySummary::_snapshot;
 
 void MemoryCounter::update_peak(size_t size, size_t cnt) {
   size_t peak_sz = peak_size();
