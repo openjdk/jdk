@@ -51,8 +51,8 @@
   flags(AFTER_BEAUTIFY_LOOPS,           "After beautify loops") \
   flags(BEFORE_LOOP_UNROLLING,          "Before Loop Unrolling") \
   flags(AFTER_LOOP_UNROLLING,           "After Loop Unrolling") \
-  flags(BEFORE_SPLIT_IF,                "Before Split If") \
-  flags(AFTER_SPLIT_IF,                 "After Split If") \
+  flags(BEFORE_SPLIT_IF,                "Before Split-If") \
+  flags(AFTER_SPLIT_IF,                 "After Split-If") \
   flags(BEFORE_LOOP_PREDICATION_IC,     "Before Loop Predication IC") \
   flags(AFTER_LOOP_PREDICATION_IC,      "After Loop Predication IC") \
   flags(BEFORE_LOOP_PREDICATION_RC,     "Before Loop Predication RC") \
