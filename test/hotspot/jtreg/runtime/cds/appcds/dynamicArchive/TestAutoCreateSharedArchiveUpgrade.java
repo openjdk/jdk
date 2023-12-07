@@ -103,7 +103,8 @@ public class TestAutoCreateSharedArchiveUpgrade {
 
         newJVM = TEST_JDK + FS + "bin" + FS + "java";
 
-        if (fetchVersion < 19) {
+        //
+        if (fetchVersion < 19 && fetchVersion > 0) {
             throw new RuntimeException("Unsupported JDK version " + fetchVersion);
         } else if (fetchVersion >= 19) {
             oldJVM = fetchJDK(fetchVersion) + FS + "bin" + FS + "java";
@@ -115,6 +116,20 @@ public class TestAutoCreateSharedArchiveUpgrade {
             throw new SkippedException("Use -Dtest.previous.jdk or -Dtest.boot.jdk to specify a " +
                                        "previous version of the JDK that supports " +
                                        "-XX:+AutoCreateSharedArchive");
+        }
+
+        if (fetchVersion >= 19) {
+            oldJVM = fetchJDK(fetchVersion) + FS + "bin" + FS + "java";
+        } else if (fetchVersion > 0) {
+            throw new RuntimeException("Unsupported JDK version " + fetchVersion);
+        } else if (PREV_JDK != null) {
+            oldJVM = PREV_JDK + FS + "bin" + FS + "java";
+        } else if (BOOT_JDK != null) {
+            oldJVM = BOOT_JDK + FS + "bin" + FS + "java";
+        } else {
+            throw new SkippedException("Use -Dtest.previous.jdk or -Dtest.boot.jdk to specify a " +
+                                      "previous version of the JDK that supports " +
+                                      "-XX:+AutoCreateSharedArchive");
         }
 
         System.out.println("Using newJVM = " + newJVM);
