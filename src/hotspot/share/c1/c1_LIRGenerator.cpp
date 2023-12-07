@@ -2977,6 +2977,7 @@ void LIRGenerator::do_Intrinsic(Intrinsic* x) {
   case vmIntrinsics::_dexp :          // fall through
   case vmIntrinsics::_dpow :          do_MathIntrinsic(x); break;
   case vmIntrinsics::_arraycopy:      do_ArrayCopy(x);     break;
+  case vmIntrinsicID::_clone:         do_Clone(x);         break;
 
   case vmIntrinsics::_fmaD:           do_FmaIntrinsic(x); break;
   case vmIntrinsics::_fmaF:           do_FmaIntrinsic(x); break;

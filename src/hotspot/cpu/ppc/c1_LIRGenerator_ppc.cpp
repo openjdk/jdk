@@ -783,6 +783,9 @@ void LIRGenerator::do_ArrayCopy(Intrinsic* x) {
   set_no_result(x);
 }
 
+void LIRGenerator::do_Clone(Intrinsic* x) {
+  Unimplemented();
+}
 
 // _i2l, _i2f, _i2d, _l2i, _l2f, _l2d, _f2i, _f2l, _f2d, _d2i, _d2l, _d2f
 // _i2b, _i2c, _i2s

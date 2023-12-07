@@ -271,7 +271,7 @@ void C1_MacroAssembler::initialize_object(Register obj, Register klass, Register
 
   verify_oop(obj);
 }
-void C1_MacroAssembler::allocate_array(Register obj, Register len, Register t1, Register t2, int header_size, int f, Register klass, Label& slow_case) {
+void C1_MacroAssembler::allocate_array(Register obj, Register len, Register t1, Register t2, int header_size, int f, Register klass, Label& slow_case, bool zero_array) {
   assert_different_registers(obj, len, t1, t2, klass);
 
   // determine alignment mask
@@ -293,7 +293,9 @@ void C1_MacroAssembler::allocate_array(Register obj, Register len, Register t1, 
   initialize_header(obj, klass, len, t1, t2);
 
   // clear rest of allocated space
-  initialize_body(obj, arr_size, header_size * BytesPerWord, t1, t2);
+  if (zero_array) {
+    initialize_body(obj, arr_size, header_size * BytesPerWord, t1, t2);
+  }
   if (Compilation::current()->bailed_out()) {
     return;
   }

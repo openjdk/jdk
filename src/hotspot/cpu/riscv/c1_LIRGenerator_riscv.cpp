@@ -771,6 +771,10 @@ void LIRGenerator::do_ArrayCopy(Intrinsic* x) {
                expected_type, flags, info); // does add_safepoint
 }
 
+void LIRGenerator::do_Clone(Intrinsic* x) {
+  Unimplemented();
+}
+
 void LIRGenerator::do_update_CRC32(Intrinsic* x) {
   ShouldNotReachHere();
 }

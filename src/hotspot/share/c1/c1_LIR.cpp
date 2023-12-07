@@ -1365,7 +1365,7 @@ void LIR_List::allocate_object(LIR_Opr dst, LIR_Opr t1, LIR_Opr t2, LIR_Opr t3, 
                            stub));
 }
 
-void LIR_List::allocate_array(LIR_Opr dst, LIR_Opr len, LIR_Opr t1,LIR_Opr t2, LIR_Opr t3,LIR_Opr t4, BasicType type, LIR_Opr klass, CodeStub* stub) {
+void LIR_List::allocate_array(LIR_Opr dst, LIR_Opr len, LIR_Opr t1,LIR_Opr t2, LIR_Opr t3,LIR_Opr t4, BasicType type, LIR_Opr klass, CodeStub* stub, bool zero_array) {
   append(new LIR_OpAllocArray(
                            klass,
                            len,
@@ -1375,7 +1375,8 @@ void LIR_List::allocate_array(LIR_Opr dst, LIR_Opr len, LIR_Opr t1,LIR_Opr t2, L
                            t3,
                            t4,
                            type,
-                           stub));
+                           stub,
+                           zero_array));
 }
 
 void LIR_List::shift_left(LIR_Opr value, LIR_Opr count, LIR_Opr dst, LIR_Opr tmp) {

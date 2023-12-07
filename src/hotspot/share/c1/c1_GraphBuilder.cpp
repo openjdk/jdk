@@ -2133,11 +2133,24 @@ void GraphBuilder::invoke(Bytecodes::Code code) {
     if ((code == Bytecodes::_invokestatic && klass->is_initialized()) || // invokestatic involves an initialization barrier on declaring class
         code == Bytecodes::_invokespecial ||
         (code == Bytecodes::_invokevirtual && target->is_final_method()) ||
-        code == Bytecodes::_invokedynamic) {
+        code == Bytecodes::_invokedynamic ||
+        target->get_Method()->intrinsic_id() == vmIntrinsics::_clone) {
       // static binding => check if callee is ok
       ciMethod* inline_target = (cha_monomorphic_target != nullptr) ? cha_monomorphic_target : target;
       bool holder_known = (cha_monomorphic_target != nullptr) || (exact_target != nullptr);
-      bool success = try_inline(inline_target, holder_known, false /* ignore_return */, code, better_receiver);
+      bool success;
+
+      // Clone intrinsic and inlining can only kick when instance is a primitive array,
+      // or when the target of the clone is not a Phi node
+      ciType* receiver_type;
+      if (target->get_Method()->intrinsic_id() == vmIntrinsics::_clone &&
+          ((receiver_type = state()->stack_at(state()->stack_size() - inline_target->arg_size())->exact_type()) == nullptr || // clone target is phi
+          !receiver_type->is_array_klass() || // not array
+          !receiver_type->as_array_klass()->element_type()->is_primitive_type())) { // not primitive array
+        success = false;
+      } else {
+        success = try_inline(inline_target, holder_known, false /* ignore_return */, code, better_receiver);
+      }
 
       CHECK_BAILOUT();
       clear_inline_bailout();
