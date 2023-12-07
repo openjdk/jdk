@@ -23,6 +23,7 @@
 
 /**
  * @test
+ * @summary Do not suspend virtual threads in a critical section.
  * @bug 8311218
  * @requires vm.continuations
  * @library /testlibrary
