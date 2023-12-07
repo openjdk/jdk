@@ -312,7 +312,8 @@ void VirtualMemoryView::merge_committed(RegionStorage& ranges) {
     if (merging_range.end() >=
             potential_range.start // There's overlap, known because of pre-condition
         && _stack_storage->get(merging_range.stack_idx)
-               .equals(_stack_storage->get(potential_range.stack_idx))) {
+               .equals(_stack_storage->get(potential_range.stack_idx))
+        && merging_range.flag == potential_range.flag) {
       // Merge it
       merging_range.size = potential_range.end() - merging_range.start;
     } else {
@@ -335,17 +336,22 @@ void VirtualMemoryView::merge_mapped(OffsetRegionStorage& ranges) {
   ranges.push(ranges.at(j));
   for (int i = 1; i < rlen; i++) {
     TrackedOffsetRange& merging_range = ranges.at(rlen+j);
+    Range merging_physical{merging_range.physical_address, merging_range.size};
     // Take an explicit copy, this is necessary because
     // the push might invalidate the reference and then SIGSEGV.
     const TrackedOffsetRange potential_range = ranges.at(i);
+    const Range potential_physical{potential_range.physical_address, potential_range.end()};
     if (merging_range.end() >=
         potential_range.start // There's overlap, known because of pre-condition
         && _stack_storage->get(merging_range.stack_idx)
-        .equals(_stack_storage->get(potential_range.stack_idx))
-        && merging_range.physical_end() >=
-        potential_range.physical_address) {
+                         .equals(_stack_storage->get(potential_range.stack_idx))
+        && (overlaps(merging_physical, potential_physical)
+            || adjacent(merging_physical, potential_physical))) {
       // Merge it
       merging_range.size = potential_range.end() - merging_range.start;
+      Range physical_union = union_of(merging_physical, potential_physical);
+      assert(merging_range.size == physical_union.size, "invariant");
+      merging_range.physical_address = physical_union.start;
     } else {
       j++;
       ranges.push(potential_range);
@@ -373,12 +379,23 @@ void VirtualMemoryView::sort_regions(OffsetRegionStorage& storage) {
   });
 }
 
-bool VirtualMemoryView::overlaps(Range a, Range b) {
-  return MAX2(b.start, a.start) < MIN2(b.end(), a.end());
-}
 bool VirtualMemoryView::adjacent(Range a, Range b) {
   return (a.start == b.end() || b.start == a.end());
 }
+bool VirtualMemoryView::disjoint(Range a, Range b) {
+  return !(overlaps(a, b) || adjacent(a, b));
+}
+bool VirtualMemoryView::overlaps(Range a, Range b) {
+  return MAX2(b.start, a.start) < MIN2(b.end(), a.end());
+}
+Range VirtualMemoryView::union_of(Range a, Range b) {
+  precond(!disjoint(a, b));
+  const address start = MIN2(b.start, a.start);
+  const address end = MAX2(b.end(), a.end());
+  return Range(start , pointer_delta(end, start, 1));
+}
+
+
 
 VirtualMemoryView::OverlappingResult
 VirtualMemoryView::overlap_of(TrackedOffsetRange to_split, Range to_remove,

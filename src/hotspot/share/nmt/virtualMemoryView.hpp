@@ -151,8 +151,10 @@ public:
 
 private:
   // Utilities
-  static bool overlaps(Range a, Range b);
   static bool adjacent(Range a, Range b);
+  static bool disjoint(Range a, Range b);
+  static bool overlaps(Range a, Range b);
+  static Range union_of(Range a, Range b);
 
   // Pre-condition: ranges is sorted in a left-aligned fashion
   // That is: (a,b) comes before (c,d) if a <= c
