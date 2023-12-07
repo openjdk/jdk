@@ -31,15 +31,15 @@
 
 G1CollectionCandidateList::G1CollectionCandidateList() : _candidates(2, mtGC) { }
 
-void G1CollectionCandidateList::set(G1CollectionCandidateList::CandidateInfo* candidate_infos, uint num_infos) {
+void G1CollectionCandidateList::set(G1CollectionSetCandidateInfo* candidate_infos, uint num_infos) {
   assert(_candidates.is_empty(), "must be");
 
-  GrowableArrayFromArray<G1CollectionCandidateList::CandidateInfo> a(candidate_infos, (int)num_infos);
+  GrowableArrayFromArray<G1CollectionSetCandidateInfo> a(candidate_infos, (int)num_infos);
   _candidates.appendAll(&a);
 }
 
 void G1CollectionCandidateList::append_unsorted(HeapRegion* r) {
-  CandidateInfo c(r, r->calc_gc_efficiency());
+  G1CollectionSetCandidateInfo c(r, r->calc_gc_efficiency());
   _candidates.append(c);
 }
 
@@ -58,7 +58,7 @@ void G1CollectionCandidateList::remove(G1CollectionCandidateRegionList* other) {
   // Create a list from scratch, copying over the elements from the candidate
   // list not in the other list. Finally deallocate and overwrite the old list.
   int new_length = _candidates.length() - other->length();
-  GrowableArray<CandidateInfo> new_list(new_length, mtGC);
+  GrowableArray<G1CollectionSetCandidateInfo> new_list(new_length, mtGC);
 
   uint other_idx = 0;
 
@@ -81,10 +81,10 @@ void G1CollectionCandidateList::clear() {
 
 #ifndef PRODUCT
 void G1CollectionCandidateList::verify() {
-  CandidateInfo* prev = nullptr;
+  G1CollectionSetCandidateInfo* prev = nullptr;
 
   for (uint i = 0; i < (uint)_candidates.length(); i++) {
-    CandidateInfo& ci = _candidates.at(i);
+    G1CollectionSetCandidateInfo& ci = _candidates.at(i);
     assert(prev == nullptr || prev->_gc_efficiency >= ci._gc_efficiency,
            "Stored gc efficiency must be descending from region %u to %u",
            prev->_r->hrm_index(), ci._r->hrm_index());
@@ -94,7 +94,7 @@ void G1CollectionCandidateList::verify() {
 }
 #endif
 
-int G1CollectionCandidateList::compare(CandidateInfo* ci1, CandidateInfo* ci2) {
+int G1CollectionCandidateList::compare(G1CollectionSetCandidateInfo* ci1, G1CollectionSetCandidateInfo* ci2) {
   // Make sure that null entries are moved to the end.
   if (ci1->_r == nullptr) {
     if (ci2->_r == nullptr) {
@@ -182,7 +182,7 @@ void G1CollectionSetCandidates::clear() {
   _last_marking_candidates_length = 0;
 }
 
-void G1CollectionSetCandidates::set_candidates_from_marking(G1CollectionCandidateList::CandidateInfo* candidate_infos,
+void G1CollectionSetCandidates::set_candidates_from_marking(G1CollectionSetCandidateInfo* candidate_infos,
                                                             uint num_infos) {
   assert(_marking_regions.length() == 0, "must be empty before adding new ones");
 

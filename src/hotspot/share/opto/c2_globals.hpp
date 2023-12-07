@@ -783,6 +783,8 @@
           "more than this threshold")                                       \
           range(0, 100)                                                     \
                                                                             \
+  develop(bool, StressPrunedExceptionHandlers, false,                       \
+          "Always prune exception handlers")                                \
 
 // end of C2_FLAGS
 
