@@ -37,6 +37,7 @@ import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.Reflection;
 
 import java.lang.invoke.MethodHandles;
+import java.nio.file.FileSystems;
 import java.nio.file.Path;
 import java.util.Objects;
 import java.util.Optional;
@@ -284,6 +285,7 @@ public interface SymbolLookup {
      * @throws WrongThreadException if {@code arena} is a confined arena, and this method
      *         is called from a thread {@code T}, other than the arena's owner thread
      * @throws IllegalArgumentException if {@code path} does not point to a valid library
+     *         in the default file system
      * @throws IllegalCallerException If the caller is in a module that does not have
      *         native access enabled
      */
@@ -292,6 +294,9 @@ public interface SymbolLookup {
     static SymbolLookup libraryLookup(Path path, Arena arena) {
         Reflection.ensureNativeAccess(Reflection.getCallerClass(),
                 SymbolLookup.class, "libraryLookup");
+        if (path.getFileSystem() != FileSystems.getDefault()) {
+            throw new IllegalArgumentException("Path not in default file system: " + path);
+        }
         return libraryLookup(path, RawNativeLibraries::load, arena);
     }
 

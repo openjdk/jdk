@@ -25,8 +25,6 @@
 #include "precompiled.hpp"
 #include "classfile/classLoaderData.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
-#include "classfile/systemDictionary.hpp"
-#include "code/codeCache.hpp"
 #include "gc/g1/g1BarrierSet.hpp"
 #include "gc/g1/g1BatchedTask.hpp"
 #include "gc/g1/g1CardSetMemory.hpp"
@@ -1255,6 +1253,12 @@ void G1ConcurrentMark::remark() {
   if (mark_finished) {
     weak_refs_work();
 
+    // Unload Klasses, String, Code Cache, etc.
+    if (ClassUnloadingWithConcurrentMark) {
+      G1CMIsAliveClosure is_alive(_g1h);
+      _g1h->unload_classes_and_code("Class Unloading", &is_alive, _gc_timer_cm);
+    }
+
     SATBMarkQueueSet& satb_mq_set = G1BarrierSet::satb_mark_queue_set();
     // We're done with marking.
     // This is the end of the marking cycle, we're expected all
@@ -1290,12 +1294,6 @@ void G1ConcurrentMark::remark() {
     {
       GCTraceTime(Debug, gc, phases) debug("Reclaim Empty Regions", _gc_timer_cm);
       reclaim_empty_regions();
-    }
-
-    // Clean out dead classes
-    if (ClassUnloadingWithConcurrentMark) {
-      GCTraceTime(Debug, gc, phases) debug("Purge Metaspace", _gc_timer_cm);
-      ClassLoaderDataGraph::purge(/*at_safepoint*/true);
     }
 
     // Potentially, some empty-regions have been reclaimed; make this a
@@ -1337,6 +1335,8 @@ void G1ConcurrentMark::remark() {
   _remark_mark_times.add((mark_work_end - start) * 1000.0);
   _remark_weak_ref_times.add((now - mark_work_end) * 1000.0);
   _remark_times.add((now - start) * 1000.0);
+
+  _g1h->update_parallel_gc_threads_cpu_time();
 
   policy->record_concurrent_mark_remark_end();
 }
@@ -1625,9 +1625,6 @@ public:
 void G1ConcurrentMark::weak_refs_work() {
   ResourceMark rm;
 
-  // Is alive closure.
-  G1CMIsAliveClosure g1_is_alive(_g1h);
-
   {
     GCTraceTime(Debug, gc, phases) debug("Reference Processing", _gc_timer_cm);
 
@@ -1684,18 +1681,8 @@ void G1ConcurrentMark::weak_refs_work() {
 
   {
     GCTraceTime(Debug, gc, phases) debug("Weak Processing", _gc_timer_cm);
-    WeakProcessor::weak_oops_do(_g1h->workers(), &g1_is_alive, &do_nothing_cl, 1);
-  }
-
-  // Unload Klasses, String, Code Cache, etc.
-  if (ClassUnloadingWithConcurrentMark) {
-    GCTraceTime(Debug, gc, phases) debug("Class Unloading", _gc_timer_cm);
-    {
-      CodeCache::UnlinkingScope scope(&g1_is_alive);
-      bool unloading_occurred = SystemDictionary::do_unloading(_gc_timer_cm);
-      _g1h->complete_cleaning(unloading_occurred);
-    }
-    CodeCache::flush_unlinked_nmethods();
+    G1CMIsAliveClosure is_alive(_g1h);
+    WeakProcessor::weak_oops_do(_g1h->workers(), &is_alive, &do_nothing_cl, 1);
   }
 }
 

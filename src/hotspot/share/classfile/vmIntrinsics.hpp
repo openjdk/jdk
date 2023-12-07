@@ -997,6 +997,7 @@ class methodHandle;
                                      "I"                                                                                                       \
                                      "Ljava/lang/Object;"                                                                                      \
                                      "J"                                                                                                       \
+                                     "Z"                                                                                                       \
                                      "Ljava/lang/Object;"                                                                                      \
                                      "J"                                                                                                       \
                                      "Ljdk/internal/vm/vector/VectorSupport$VectorSpecies;"                                                    \
@@ -1011,6 +1012,7 @@ class methodHandle;
                                             "I"                                                                                                \
                                             "Ljava/lang/Object;"                                                                               \
                                             "J"                                                                                                \
+                                            "Z"                                                                                                \
                                             "Ljdk/internal/vm/vector/VectorSupport$VectorMask;"                                                \
                                             "I"                                                                                                \
                                             "Ljava/lang/Object;"                                                                               \
@@ -1026,6 +1028,7 @@ class methodHandle;
                                       "I"                                                                                                      \
                                       "Ljava/lang/Object;"                                                                                     \
                                       "J"                                                                                                      \
+                                      "Z"                                                                                                      \
                                       "Ljdk/internal/vm/vector/VectorSupport$VectorPayload;"                                                   \
                                       "Ljava/lang/Object;"                                                                                     \
                                       "J"                                                                                                      \
@@ -1040,6 +1043,7 @@ class methodHandle;
                                              "I"                                                                                               \
                                              "Ljava/lang/Object;"                                                                              \
                                              "J"                                                                                               \
+                                             "Z"                                                                                               \
                                              "Ljdk/internal/vm/vector/VectorSupport$Vector;"                                                   \
                                              "Ljdk/internal/vm/vector/VectorSupport$VectorMask;"                                               \
                                              "Ljava/lang/Object;"                                                                              \
