@@ -36,7 +36,7 @@
 // operation in a counted loop for vectorizable analysis.
 class VPointer : public ArenaObj {
  protected:
-  MemNode*        _mem;      // My memory reference node
+  const MemNode*  _mem;      // My memory reference node
   PhaseIdealLoop* _phase;    // PhaseIdealLoop handle
   IdealLoopTree*  _lpt;      // Current IdealLoopTree
   PhiNode*        _iv;       // The loop induction variable
@@ -80,8 +80,9 @@ class VPointer : public ArenaObj {
     NotComparable = (Less | Greater | Equal)
   };
 
-  VPointer(MemNode* mem, PhaseIdealLoop* phase, IdealLoopTree* lpt,
-            Node_Stack* nstack, bool analyze_only);
+  VPointer(const MemNode* mem,
+           PhaseIdealLoop* phase, IdealLoopTree* lpt,
+           Node_Stack* nstack, bool analyze_only);
   // Following is used to create a temporary object during
   // the pattern match of an address expression.
   VPointer(VPointer* p);
@@ -91,7 +92,7 @@ class VPointer : public ArenaObj {
 
   Node* base()             { return _base; }
   Node* adr()              { return _adr; }
-  MemNode* mem()           { return _mem; }
+  const MemNode* mem()     { return _mem; }
   int   scale_in_bytes()   { return _scale; }
   Node* invar()            { return _invar; }
   int   offset_in_bytes()  { return _offset; }
@@ -168,12 +169,12 @@ class VPointer : public ArenaObj {
     Tracer(bool is_trace_alignment) : _is_trace_alignment(is_trace_alignment) {}
 
     // tracing functions
-    void ctor_1(Node* mem);
+    void ctor_1(const Node* mem);
     void ctor_2(Node* adr);
     void ctor_3(Node* adr, int i);
     void ctor_4(Node* adr, int i);
     void ctor_5(Node* adr, Node* base,  int i);
-    void ctor_6(Node* mem);
+    void ctor_6(const Node* mem);
 
     void scaled_iv_plus_offset_1(Node* n);
     void scaled_iv_plus_offset_2(Node* n);

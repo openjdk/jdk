@@ -1631,7 +1631,7 @@ AlignmentSolution SuperWord::pack_alignment_solution(Node_List* pack) {
   // aligned. For example, the relative offset between two arrays is only guaranteed to
   // be divisible by ObjectAlignmentInBytes.
   const uint pack_size    = pack->size();
-  MemNode* mem_ref  = pack->at(0)->as_Mem();
+  const MemNode* mem_ref  = pack->at(0)->as_Mem();
   const int element_size  = mem_ref->memory_size();
   const int vector_width  = pack_size * element_size;
   const int aw            = MIN2(vector_width, ObjectAlignmentInBytes); // alignment_width
@@ -3871,7 +3871,7 @@ LoadNode::ControlDependency SuperWord::control_dependency(Node_List* p) {
 // the address of "align_to_ref" to the maximal possible vector width. We adjust the pre-loop
 // iteration count by adjusting the pre-loop limit.
 void SuperWord::adjust_pre_loop_limit_to_align_main_loop_vectors() {
-  MemNode* align_to_ref = _align_to_ref;
+  const MemNode* align_to_ref = _align_to_ref;
   assert(align_to_ref != nullptr, "align_to_ref must be set");
   assert(lp()->is_main_loop(), "can only do alignment for main loop");
   Opaque1Node* pre_opaq = lp()->pre_loop_end()->limit()->as_Opaque1();

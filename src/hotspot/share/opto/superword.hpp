@@ -256,7 +256,7 @@ private:
   bool _trivial = true;
   int _r = 0;
   int _q = 1;
-  MemNode* _mem_ref = nullptr;
+  const MemNode* _mem_ref = nullptr;
   int _aw = 0;
   Node* _invar_dependency = nullptr;
   int _scale_dependency = 0;
@@ -293,7 +293,7 @@ public:
   // Constrained solution.
   AlignmentSolution(const int r,
                     const int q,
-                    MemNode* mem_ref,
+                    const MemNode* mem_ref,
                     int aw,
                     Node* invar_dependency,
                     int scale_dependency) :
@@ -332,7 +332,7 @@ public:
     return _q;
   }
 
-  MemNode* mem_ref() const {
+  const MemNode* mem_ref() const {
     assert(is_valid(), "valid and not trivial");
     return _mem_ref;
   }
@@ -436,7 +436,7 @@ class SuperWord : public ResourceObj {
   GrowableArray<Node*> _mem_slice_tail;  // Memory slice tail nodes
   GrowableArray<SWNodeInfo> _node_info;  // Info needed per node
   CloneMap&            _clone_map;       // map of nodes created in cloning
-  MemNode* _align_to_ref;                // Memory reference that pre-loop will align to
+  MemNode const* _align_to_ref;          // Memory reference that pre-loop will align to
 
   GrowableArray<OrderedPair> _disjoint_ptrs; // runtime disambiguated pointer pairs
 
@@ -505,17 +505,17 @@ class SuperWord : public ResourceObj {
   }
   int iv_stride() const            { return lp()->stride_con(); }
 
-  int vector_width(Node* n) {
+  int vector_width(const Node* n) const {
     BasicType bt = velt_basic_type(n);
     return MIN2(ABS(iv_stride()), Matcher::max_vector_size(bt));
   }
-  int vector_width_in_bytes(Node* n) {
+  int vector_width_in_bytes(const Node* n) const {
     BasicType bt = velt_basic_type(n);
     return vector_width(n)*type2aelembytes(bt);
   }
   int get_vw_bytes_special(MemNode* s);
-  MemNode* align_to_ref()            { return _align_to_ref; }
-  void  set_align_to_ref(MemNode* m) { _align_to_ref = m; }
+  const MemNode* align_to_ref() const { return _align_to_ref; }
+  void set_align_to_ref(const MemNode* m) { _align_to_ref = m; }
 
   const Node* ctrl(const Node* n) const { return _phase->has_ctrl(n) ? _phase->get_ctrl(n) : n; }
 
@@ -550,8 +550,8 @@ class SuperWord : public ResourceObj {
   void set_depth(Node* n, int d)             { int i = bb_idx(n); grow_node_info(i); _node_info.adr_at(i)->_depth = d; }
 
   // vector element type
-  const Type* velt_type(Node* n)             { return _node_info.adr_at(bb_idx(n))->_velt_type; }
-  BasicType velt_basic_type(Node* n)         { return velt_type(n)->array_element_basic_type(); }
+  const Type* velt_type(const Node* n) const { return _node_info.adr_at(bb_idx(n))->_velt_type; }
+  BasicType velt_basic_type(const Node* n) const { return velt_type(n)->array_element_basic_type(); }
   void set_velt_type(Node* n, const Type* t) { int i = bb_idx(n); grow_node_info(i); _node_info.adr_at(i)->_velt_type = t; }
   bool same_velt_type(Node* n1, Node* n2);
   bool same_memory_slice(MemNode* best_align_to_mem_ref, MemNode* mem_ref) const;

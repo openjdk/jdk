@@ -35,7 +35,8 @@
 int VPointer::Tracer::_depth = 0;
 #endif
 
-VPointer::VPointer(MemNode* mem, PhaseIdealLoop* phase, IdealLoopTree* lpt,
+VPointer::VPointer(const MemNode* mem,
+                   PhaseIdealLoop* phase, IdealLoopTree* lpt,
                    Node_Stack* nstack, bool analyze_only) :
   _mem(mem), _phase(phase), _lpt(lpt),
   _iv(lpt->_head->as_CountedLoop()->phi()->as_Phi()),
@@ -433,7 +434,7 @@ void VPointer::Tracer::print_depth() const {
   }
 }
 
-void VPointer::Tracer::ctor_1(Node* mem) {
+void VPointer::Tracer::ctor_1(const Node* mem) {
   if (_is_trace_alignment) {
     print_depth(); tty->print(" %d VPointer::VPointer: start alignment analysis", mem->_idx); mem->dump();
   }
@@ -475,7 +476,7 @@ void VPointer::Tracer::ctor_5(Node* adr, Node* base, int i) {
   }
 }
 
-void VPointer::Tracer::ctor_6(Node* mem) {
+void VPointer::Tracer::ctor_6(const Node* mem) {
   if (_is_trace_alignment) {
     //restore_depth();
     print_depth(); tty->print_cr(" %d (adr) VPointer::VPointer: stop analysis", mem->_idx);
