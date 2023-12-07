@@ -570,7 +570,6 @@ java/nio/channels/DatagramChannel/ManySourcesAndTargets.java    8264385 macosx-a
 java/nio/channels/DatagramChannel/Unref.java                    8233437 generic-all
 
 java/nio/file/Path/ToRealPath.java                              8315273 windows-all
-java/nio/file/Files/probeContentType/Basic.java                 8320943 windows-all
 
 jdk/nio/zipfs/TestLocOffsetFromZip64EF.java                     8301183 linux-all
 
@@ -723,7 +722,6 @@ com/sun/jdi/InvokeHangTest.java                                 8218463 linux-al
 
 java/util/Locale/LocaleProvidersRun.java                        8268379 macosx-x64
 sun/util/locale/provider/CalendarDataRegression.java            8268379 macosx-x64
-java/util/stream/GatherersTest.java                             8321124 generic-all
 
 ############################################################################
 
