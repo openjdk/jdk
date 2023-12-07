@@ -503,6 +503,7 @@ public:
   }
 
   void appendAll(const GrowableArrayView<E>* l) {
+    // TODO refactor: reserve and append
     for (int i = 0; i < l->length(); i++) {
       this->at_put_grow(this->_len, l->at(i), E());
     }

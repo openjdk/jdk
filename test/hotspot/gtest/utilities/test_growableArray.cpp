@@ -35,11 +35,9 @@
 
 // TODO initial_capacity? initial_size and fill?
 
-// TODO delete CHeap - and verify!
-
-// TODO negative tests for CHeap allocation (first verify)
-
 // TODO assignment operator and copy constructor
+
+// TODO check for trivial deconstructor with arena / resource area
 
 // We have a list of each:
 //  - ModifyClosure
