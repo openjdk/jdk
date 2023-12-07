@@ -4313,16 +4313,6 @@ operand immLU12()
 %}
 
 // Offset for scaled or unscaled immediate loads and stores
-operand immIOffset()
-%{
-  predicate(Address::offset_ok_for_immed(n->get_int(), 0));
-  match(ConI);
-
-  op_cost(0);
-  format %{ %}
-  interface(CONST_INTER);
-%}
-
 operand immIOffset1()
 %{
   predicate(Address::offset_ok_for_immed(n->get_int(), 0));
@@ -4367,16 +4357,6 @@ operand immIOffset16()
 %{
   predicate(Address::offset_ok_for_immed(n->get_int(), 4));
   match(ConI);
-
-  op_cost(0);
-  format %{ %}
-  interface(CONST_INTER);
-%}
-
-operand immLoffset()
-%{
-  predicate(Address::offset_ok_for_immed(n->get_long(), 0));
-  match(ConL);
 
   op_cost(0);
   format %{ %}
