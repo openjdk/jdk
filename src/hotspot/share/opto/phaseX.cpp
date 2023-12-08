@@ -894,7 +894,7 @@ void PhaseIterGVN::verify_step(Node* n) {
 void PhaseIterGVN::trace_PhaseIterGVN(Node* n, Node* nn, const Type* oldtype) {
   const Type* newtype = type_or_null(n);
   if (nn != n || oldtype != newtype) {
-    C->print_method(PHASE_AFTER_ITER_GVN_STEP, 4, n);
+    C->print_method(PHASE_AFTER_ITER_GVN_STEP, 5, n);
   }
   if (TraceIterativeGVN) {
     uint wlsize = _worklist.size();
@@ -1025,6 +1025,7 @@ void PhaseIterGVN::trace_PhaseIterGVN_verbose(Node* n, int num_processed) {
 void PhaseIterGVN::optimize() {
   DEBUG_ONLY(uint num_processed  = 0;)
   NOT_PRODUCT(init_verifyPhaseIterGVN();)
+  NOT_PRODUCT(C->reset_igv_phase_iter(PHASE_AFTER_ITER_GVN_STEP);)
   C->print_method(PHASE_BEFORE_ITER_GVN, 3);
   if (StressIGVN) {
     shuffle_worklist();
