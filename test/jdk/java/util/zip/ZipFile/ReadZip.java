@@ -24,183 +24,215 @@
 /* @test
    @bug 4241361 4842702 4985614 6646605 5032358 6923692 6233323 8144977 8186464
    @summary Make sure we can read a zip file.
-   @key randomness
    @modules jdk.zipfs
+   @run junit ReadZip
  */
 
-import java.io.*;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
+
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.URI;
-import java.nio.file.Files;
-import java.nio.file.FileSystem;
-import java.nio.file.FileSystems;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.NoSuchFileException;
-import java.nio.file.StandardCopyOption;
-import java.nio.file.StandardOpenOption;
-import java.util.List;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.*;
 import java.util.Map;
-import java.util.zip.*;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
+import java.util.zip.ZipOutputStream;
 
 import static java.nio.charset.StandardCharsets.US_ASCII;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class ReadZip {
-    private static void unreached (Object o)
-        throws Exception
-    {
-        // Should never get here
-        throw new Exception ("Expected exception was not thrown");
+
+    // Binary test vector ZIP used by various tests
+    private Path inputZip = Path.of(System.getProperty("test.src", "."))
+            .resolve("input.zip");
+    // Output file produced during tests
+    private Path outputZip = Path.of("output.zip");
+
+    /**
+     * Make sure we throw NPE calling getEntry or getInputStream with null params
+     *
+     * @throws IOException if an unexpected IOException occurs
+     */
+    @Test
+    public void nullPointerExceptionOnNullParams() throws IOException {
+        try (ZipFile zf = new ZipFile(inputZip.toFile())) {
+
+            assertThrows(NullPointerException.class, () -> zf.getEntry(null));
+            assertThrows(NullPointerException.class, () -> zf.getInputStream(null));
+
+            // Sanity check that we can still read an entry
+            ZipEntry ze = zf.getEntry("ReadZip.java");
+            assertNotNull(ze, "cannot read from zip file");
+        }
     }
 
-    public static void main(String args[]) throws Exception {
-        try (ZipFile zf = new ZipFile(new File(System.getProperty("test.src", "."),
-                                               "input.zip"))) {
-            // Make sure we throw NPE on null objects
-            try { unreached (zf.getEntry(null)); }
-            catch (NullPointerException e) {}
+    /**
+     * Read the zip file that has some garbage bytes padded at the end.
+     * @throws IOException if an unexpected IOException occurs
+     */
+    @Test
+    public void bytesPaddedAtEnd() throws IOException {
 
-            try { unreached (zf.getInputStream(null)); }
-            catch (NullPointerException e) {}
+        Files.copy(inputZip, outputZip, StandardCopyOption.REPLACE_EXISTING);
 
-            ZipEntry ze = zf.getEntry("ReadZip.java");
-            if (ze == null) {
-                throw new Exception("cannot read from zip file");
-            }
-        }
-
-        // Make sure we can read the zip file that has some garbage
-        // bytes padded at the end.
-        File newZip = new File(System.getProperty("test.dir", "."), "input2.zip");
-        Files.copy(Paths.get(System.getProperty("test.src", ""), "input.zip"),
-                   newZip.toPath(), StandardCopyOption.REPLACE_EXISTING);
-
-        newZip.setWritable(true);
+        outputZip.toFile().setWritable(true);
 
         // pad some bytes
-        try (OutputStream os = Files.newOutputStream(newZip.toPath(),
-                                                     StandardOpenOption.APPEND)) {
-            os.write(1); os.write(3); os.write(5); os.write(7);
+        try (OutputStream os = Files.newOutputStream(outputZip,
+                StandardOpenOption.APPEND)) {
+            os.write(1);
+            os.write(3);
+            os.write(5);
+            os.write(7);
         }
 
-        try (ZipFile zf = new ZipFile(newZip)) {
+        try (ZipFile zf = new ZipFile(outputZip.toFile())) {
             ZipEntry ze = zf.getEntry("ReadZip.java");
-            if (ze == null) {
-                throw new Exception("cannot read from zip file");
-            }
-        } finally {
-            newZip.delete();
+            assertNotNull(ze, "cannot read from zip file");
+        }
+    }
+
+    /**
+     * Read a comment from the ZIP file's 'End of Central Directory' header
+     * @throws IOException if an unexpected IOException occurs
+     */
+    @Test
+    public void readZipFileComment() throws IOException {
+
+        // Create a zip file with an entry including a comment
+        try (OutputStream out = Files.newOutputStream(outputZip);
+             ZipOutputStream zos = new ZipOutputStream(out)) {
+            ZipEntry ze = new ZipEntry("ZipEntry");
+            zos.putNextEntry(ze);
+            zos.write(1);
+            zos.write(2);
+            zos.write(3);
+            zos.write(4);
+            zos.closeEntry();
+            zos.setComment("This is the comment for testing");
         }
 
         // Read zip file comment
-        try {
-            try (FileOutputStream fos = new FileOutputStream(newZip);
-                 ZipOutputStream zos = new ZipOutputStream(fos))
-            {
-                ZipEntry ze = new ZipEntry("ZipEntry");
-                zos.putNextEntry(ze);
-                zos.write(1); zos.write(2); zos.write(3); zos.write(4);
-                zos.closeEntry();
-                zos.setComment("This is the comment for testing");
-            }
+        try (ZipFile zf = new ZipFile(outputZip.toFile())) {
+            ZipEntry ze = zf.getEntry("ZipEntry");
+            assertNotNull(ze, "cannot read entry from zip file");
+            assertEquals("This is the comment for testing", zf.getComment());
+        }
+    }
 
-            try (ZipFile zf = new ZipFile(newZip)) {
-                ZipEntry ze = zf.getEntry("ZipEntry");
-                if (ze == null)
-                    throw new Exception("cannot read entry from zip file");
-                if (!"This is the comment for testing".equals(zf.getComment()))
-                    throw new Exception("cannot read comment from zip file");
-            }
-        } finally {
-            newZip.delete();
+    /**
+     * Verify that a directory entry can be found using the
+     * name 'directory/' as well as 'directory/'
+     *
+     * @throws IOException if an unexpected IOException occurs
+     */
+    @Test
+    public void readDirectoryEntry() throws IOException {
+
+        try (OutputStream fos = Files.newOutputStream(outputZip);
+             ZipOutputStream zos = new ZipOutputStream(fos)) {
+            ZipEntry ze = new ZipEntry("directory/");
+            zos.putNextEntry(ze);
+            zos.closeEntry();
         }
 
-        // Read directory entry
-        try {
-            try (FileOutputStream fos = new FileOutputStream(newZip);
-                 ZipOutputStream zos = new ZipOutputStream(fos))
-            {
-                ZipEntry ze = new ZipEntry("directory/");
-                zos.putNextEntry(ze);
-                zos.closeEntry();
-            }
-            try (ZipFile zf = new ZipFile(newZip)) {
-                ZipEntry ze = zf.getEntry("directory/");
-                if (ze == null || !ze.isDirectory())
-                    throw new RuntimeException("read entry \"directory/\" failed");
-                try (InputStream is = zf.getInputStream(ze)) {
-                    is.available();
-                } catch (Exception x) {
-                    x.printStackTrace();
-                }
+        try (ZipFile zf = new ZipFile(outputZip.toFile())) {
+            ZipEntry ze = zf.getEntry("directory/");
+            assertNotNull(ze, "read entry \"directory/\" failed");
+            assertTrue(ze.isDirectory(), "read entry \"directory/\" failed");
 
-                ze = zf.getEntry("directory");
-                if (ze == null || !ze.isDirectory())
-                    throw new RuntimeException("read entry \"directory\" failed");
-                try (InputStream is = zf.getInputStream(ze)) {
-                    is.available();
-                } catch (Exception x) {
-                    x.printStackTrace();
-                }
+            try (InputStream is = zf.getInputStream(ze)) {
+                is.available();
+            } catch (Exception x) {
+                x.printStackTrace();
             }
-        } finally {
-            newZip.delete();
+
+            ze = zf.getEntry("directory");
+            assertNotNull(ze, "read entry \"directory\" failed");
+            assertTrue(ze.isDirectory(), "read entry \"directory\" failed");
+            try (InputStream is = zf.getInputStream(ze)) {
+                is.available();
+            } catch (Exception x) {
+                x.printStackTrace();
+            }
         }
+    }
 
-        // Throw a FNF exception when read a non-existing zip file
-        try { unreached (new ZipFile(
-                             new File(System.getProperty("test.src", "."),
-                                     "input"
-                                      + String.valueOf(new java.util.Random().nextInt())
-                                      + ".zip")));
-        } catch (NoSuchFileException nsfe) {}
+    /**
+     * Throw a NoSuchFileException exception when reading a non-existing zip file
+     */
+    @Test
+    public void nonExistingFile() {
+        File nonExistingFile = new File("non-existing-file-f6804460f.zip");
+        assertThrows(NoSuchFileException.class, () ->
+                new ZipFile(nonExistingFile));
+    }
 
-        // read a zip file with ZIP64 end
-        Path path = Paths.get(System.getProperty("test.dir", ""), "end64.zip");
-        try {
-            URI uri = URI.create("jar:" + path.toUri());
-            Map<String, Object> env = Map.of("create", "true", "forceZIP64End", "true");
-            try (FileSystem fs = FileSystems.newFileSystem(uri, env)) {
-                Files.write(fs.getPath("hello"), "hello".getBytes());
-            }
-            try (ZipFile zf = new ZipFile(path.toFile())) {
-                if (!"hello".equals(new String(zf.getInputStream(new ZipEntry("hello"))
-                                               .readAllBytes(),
-                                               US_ASCII)))
-                    throw new RuntimeException("zipfile: read entry failed");
-            } catch (IOException x) {
-                throw new RuntimeException("zipfile: zip64 end failed");
-            }
-            try (FileSystem fs = FileSystems.newFileSystem(uri, Map.of())) {
-                if (!"hello".equals(new String(Files.readAllBytes(fs.getPath("hello")))))
-                    throw new RuntimeException("zipfs: read entry failed");
-            } catch (IOException x) {
-                throw new RuntimeException("zipfile: zip64 end failed");
-            }
-        } finally {
-            Files.deleteIfExists(path);
+    /**
+     * Read a Zip file with a 'Zip64 End of Central Directory header' which was created
+     * using ZipFileSystem with the 'forceZIP64End' option.
+     * @throws IOException if an unexpected IOException occurs
+     */
+    @Test
+    public void readZip64EndZipFs() throws IOException {
+
+        // Create zip file with Zip64 end
+        URI uri = URI.create("jar:" + outputZip.toUri());
+        Map<String, Object> env = Map.of("create", "true", "forceZIP64End", "true");
+        try (FileSystem fs = FileSystems.newFileSystem(uri, env)) {
+            Files.write(fs.getPath("hello"), "hello".getBytes());
         }
+        // Read using ZipFile
+        try (ZipFile zf = new ZipFile(outputZip.toFile())) {
+            try (InputStream in = zf.getInputStream(zf.getEntry("hello"))) {
+                assertEquals("hello", new String(in.readAllBytes(), StandardCharsets.US_ASCII));
+            }
+        }
+        // Read using ZipFileSystem
+        try (FileSystem fs = FileSystems.newFileSystem(uri, Map.of())) {
+            assertEquals("hello", new String(Files.readAllBytes(fs.getPath("hello"))));
+        }
+    }
 
-        // read a zip file created via "echo hello | zip dst.zip -", which uses
-        // ZIP64 end record
-        if (Files.notExists(Paths.get("/usr/bin/zip")))
+    /**
+     * Read a zip file created via "echo hello | zip dst.zip -",
+     * which includes a 'Zip64 End of Central Directory header'
+     *
+     * @throws IOException if an unexpected IOException occurs
+     * @throws InterruptedException if an unexpected InterruptedException occurs
+     */
+    @Test
+    public void readZip64EndZipProcess() throws IOException, InterruptedException {
+        if (Files.notExists(Paths.get("/usr/bin/zip"))) {
             return;
-        try {
-            Process zip = new ProcessBuilder("zip", path.toString().toString(), "-").start();
-            OutputStream os = zip.getOutputStream();
-            os.write("hello".getBytes(US_ASCII));
-            os.close();
-            zip.waitFor();
-            if (zip.exitValue() == 0 && Files.exists(path)) {
-                try (ZipFile zf = new ZipFile(path.toFile())) {
-                    if (!"hello".equals(new String(zf.getInputStream(new ZipEntry("-"))
-                                                       .readAllBytes())))
-                        throw new RuntimeException("zipfile: read entry failed");
-                } catch (IOException x) {
-                    throw new RuntimeException("zipfile: zip64 end failed");
+        }
+
+        Process zip = new ProcessBuilder("zip", outputZip.toString(), "-").start();
+        OutputStream os = zip.getOutputStream();
+        os.write("hello".getBytes(US_ASCII));
+        os.close();
+        zip.waitFor();
+        if (zip.exitValue() == 0 && Files.exists(outputZip)) {
+            try (ZipFile zf = new ZipFile(outputZip.toFile())) {
+                try (InputStream in = zf.getInputStream(zf.getEntry("-"))) {
+                    String contents = new String(in.readAllBytes(), StandardCharsets.US_ASCII);
+                    assertEquals("hello", contents);
                 }
             }
-        } finally {
-            Files.deleteIfExists(path);
         }
+    }
+
+    /*
+     * Delete the ZIP file produced after each test method
+     */
+    @AfterEach
+    public void cleanup() throws IOException {
+        Files.deleteIfExists(outputZip);
     }
 }
