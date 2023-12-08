@@ -27,7 +27,6 @@ package sun.nio.ch;
 
 import java.io.FileDescriptor;
 import java.io.IOException;
-import java.util.Objects;
 
 /*
  * Represents a key to a specific file on Windows
