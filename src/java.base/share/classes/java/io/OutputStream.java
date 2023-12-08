@@ -205,9 +205,15 @@ public abstract class OutputStream implements Closeable, Flushable {
     }
 
     /**
-     * Checks whether this OutputStream is trusted, i.e. doesn't modify written byte[]
+     * Returns true if this class satisfies two conditions:
+     * <pre>
+     * - the reference to {@code byte[]} is not kept within the class
+     * - the argument of {@link #write(byte[])}} and {@link #write(byte[], int, int)}} is not modified within the methods
+     * </pre>
+     * @see java.io.ByteArrayInputStream#transferTo(OutputStream)
+     * @see java.io.BufferedInputStream#implTransferTo(OutputStream)
      *
-     * @return true if the argument of {@link #write(byte[])}} and {@link #write(byte[], int, int)}} needn't be copied
+     * @return true if this class is trusted
      */
     boolean trusted() {
         var clazz = getClass();
