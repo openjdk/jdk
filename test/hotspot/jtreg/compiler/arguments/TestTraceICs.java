@@ -25,7 +25,8 @@
  * @test
  * @bug 8217447
  * @summary Test running TraceICs enabled.
- * @run main/othervm compiler.arguments.TestTraceICs
+ * @run main/othervm -Xlog:inlinecache=trace
+ *                   compiler.arguments.TestTraceICs
  */
 
 package compiler.arguments;
