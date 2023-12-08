@@ -25,8 +25,7 @@
  * @test
  * @bug 8217447
  * @summary Test running TraceICs enabled.
- * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+TraceICs
- *                   compiler.arguments.TestTraceICs
+ * @run main/othervm compiler.arguments.TestTraceICs
  */
 
 package compiler.arguments;
