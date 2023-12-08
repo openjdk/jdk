@@ -2043,7 +2043,7 @@ WB_ENTRY(jobject, WB_GetMethodStringOption(JNIEnv* env, jobject wb, jobject meth
 WB_END
 
 WB_ENTRY(jobject, WB_GetDefaultArchivePath(JNIEnv* env, jobject wb))
-  const char* p = Arguments::get_default_shared_archive_path();
+  const char* p = CDSConfig::default_archive_path();
   ThreadToNativeFromVM ttn(thread);
   jstring path_string = env->NewStringUTF(p);
 
@@ -2643,6 +2643,10 @@ WB_ENTRY(void, WB_PreTouchMemory(JNIEnv* env, jobject wb, jlong addr, jlong size
   }
 WB_END
 
+WB_ENTRY(void, WB_CleanMetaspaces(JNIEnv* env, jobject target))
+  ClassLoaderDataGraph::safepoint_and_clean_metaspaces();
+WB_END
+
 #define CC (char*)
 
 static JNINativeMethod methods[] = {
@@ -2929,6 +2933,7 @@ static JNINativeMethod methods[] = {
   {CC"unpinObject",     CC"(Ljava/lang/Object;)V",    (void*)&WB_UnpinObject},
   {CC"setVirtualThreadsNotifyJvmtiMode", CC"(Z)Z",    (void*)&WB_SetVirtualThreadsNotifyJvmtiMode},
   {CC"preTouchMemory",  CC"(JJ)V",                    (void*)&WB_PreTouchMemory},
+  {CC"cleanMetaspaces", CC"()V",                      (void*)&WB_CleanMetaspaces},
 };
 
 

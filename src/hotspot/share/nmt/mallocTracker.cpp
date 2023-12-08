@@ -43,7 +43,7 @@
 #include "utilities/ostream.hpp"
 #include "utilities/vmError.hpp"
 
-size_t MallocMemorySummary::_snapshot[CALC_OBJ_SIZE_IN_TYPE(MallocMemorySnapshot, size_t)];
+MallocMemorySnapshot MallocMemorySummary::_snapshot;
 
 void MemoryCounter::update_peak(size_t size, size_t cnt) {
   size_t peak_sz = peak_size();
@@ -78,9 +78,7 @@ void MallocMemorySnapshot::make_adjustment() {
 }
 
 void MallocMemorySummary::initialize() {
-  assert(sizeof(_snapshot) >= sizeof(MallocMemorySnapshot), "Sanity Check");
   // Uses placement new operator to initialize static area.
-  ::new ((void*)_snapshot)MallocMemorySnapshot();
   MallocLimitHandler::initialize(MallocLimit);
 }
 
