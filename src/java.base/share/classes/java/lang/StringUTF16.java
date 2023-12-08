@@ -56,7 +56,7 @@ final class StringUTF16 {
         }
         if (len >= MAX_LENGTH) {
             throw new OutOfMemoryError("UTF16 String size is " + len +
-                                       ", should be less than or equal to " + MAX_LENGTH);
+                                       ", should be less than " + MAX_LENGTH);
         }
         return len << 1;
     }
