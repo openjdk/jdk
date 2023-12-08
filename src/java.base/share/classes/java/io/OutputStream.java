@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -204,4 +204,15 @@ public abstract class OutputStream implements Closeable, Flushable {
     public void close() throws IOException {
     }
 
+    /**
+     * Checks whether this OutputStream is trusted, i.e. doesn't modify written byte[]
+     *
+     * @return true if the argument of {@link #write(byte[])}} and {@link #write(byte[], int, int)}} needn't be copied
+     */
+    boolean trusted() {
+        var clazz = getClass();
+        return clazz == ByteArrayOutputStream.class
+                || clazz == FileOutputStream.class
+                || clazz == PipedOutputStream.class;
+    }
 }

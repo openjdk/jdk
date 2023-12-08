@@ -209,10 +209,7 @@ public class ByteArrayInputStream extends InputStream {
         if (len > 0) {
             // 'tmpbuf' is null if and only if 'out' is trusted
             byte[] tmpbuf;
-            Class<?> outClass = out.getClass();
-            if (outClass == ByteArrayOutputStream.class ||
-                outClass == FileOutputStream.class ||
-                outClass == PipedOutputStream.class)
+            if (out.trusted())
                 tmpbuf = null;
             else
                 tmpbuf = new byte[Integer.min(len, MAX_TRANSFER_SIZE)];
