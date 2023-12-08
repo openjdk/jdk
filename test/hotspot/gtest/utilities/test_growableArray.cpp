@@ -180,7 +180,7 @@ template<typename E> class TestClosure;
 template<typename E> class ModifyClosure;
 
 enum AllocatorArgs {
-  DEFAULT,
+  CAP2,
   CAP0,
   CAP100,
   CAP100LEN100,
@@ -200,8 +200,8 @@ public:
 
   virtual void dispatch_impl(ModifyClosure<E>* modify, TestClosure<E>* test, AllocatorArgs args) = 0;
 
-  void dispatch_inner(ModifyClosure<E>* modify, TestClosure<E>* test) {
-    modify->do_modify(this);
+  void dispatch_inner(ModifyClosure<E>* modify, TestClosure<E>* test, AllocatorArgs args) {
+    modify->do_modify(this, args);
     test->do_test(this);
   }
 
@@ -263,7 +263,7 @@ public:
 template<typename E>
 class ModifyClosure {
 public:
-  virtual void do_modify(AllocatorClosure<E>* a) = 0;
+  virtual void do_modify(AllocatorClosure<E>* a, AllocatorArgs args) = 0;
 };
 
 // ------------ AllocationClosures ------------
@@ -301,14 +301,16 @@ class EmbeddedGrowableArray {
 private:
   GrowableArray<E> _array;
 public:
-  EmbeddedGrowableArray() {}
-  EmbeddedGrowableArray(Arena* arena) : _array(arena) {}
+  explicit EmbeddedGrowableArray(int cap) : _array(cap) {}
+  EmbeddedGrowableArray(int cap, int len, const E& filler) : _array(cap, len, filler) {}
+  EmbeddedGrowableArray(Arena* a, int cap) : _array(a, cap) {}
+  EmbeddedGrowableArray(Arena* a, int cap, int len, const E& filler) : _array(a, cap, len, filler) {}
   GrowableArray<E>* array() { return &_array; }
 };
 
 #define ARGS_CASES(CASE) {                                        \
   switch (args) {                                                 \
-    CASE(DEFAULT, 2)                                              \
+    CASE(CAP2, 2)                                                 \
     CASE(CAP0, 0)                                                 \
     CASE(CAP100, 100)                                             \
     CASE(CAP100LEN100, 100 COMMA 100 COMMA value_factory<E>(-42)) \
@@ -318,14 +320,14 @@ public:
   }                                                               \
 }
 
-#define CASE(args, init) {                       \
-  case args:                                     \
-  {                                              \
-    ResourceMark rm;                             \
-    GrowableArray<E> array(init);                \
-    dispatch_impl_helper(modify, test, &array);  \
-    break;                                       \
-  }                                              \
+#define CASE(args, init) {                            \
+  case args:                                          \
+  {                                                   \
+    ResourceMark rm;                                  \
+    GrowableArray<E> array(init);                     \
+    dispatch_impl_helper(modify, test, &array, args); \
+    break;                                            \
+  }                                                   \
 }
 
 template<typename E>
@@ -336,26 +338,26 @@ public:
     // implicit destructor
   }
 
-  void dispatch_impl_helper(ModifyClosure<E>* modify, TestClosure<E>* test, GrowableArray<E>* array) {
+  void dispatch_impl_helper(ModifyClosure<E>* modify, TestClosure<E>* test, GrowableArray<E>* array, AllocatorArgs args) {
 #ifdef ASSERT
     ASSERT_TRUE(array->allocated_on_stack_or_embedded()); // itself: stack
     ASSERT_TRUE(array->on_resource_area()); // data: resource area
 #endif
     this->set_array(array);
-    this->dispatch_inner(modify, test);
+    this->dispatch_inner(modify, test, args);
   }
 };
 
 #undef CASE
-#define CASE(args, init) {                       \
-  case args:                                     \
-  {                                              \
-    ResourceMark rm;                             \
-    EmbeddedGrowableArray<E> embedded;           \
-    GrowableArray<E>* array = embedded.array();  \
-    dispatch_impl_helper(modify, test, array);   \
-    break;                                       \
-  }                                              \
+#define CASE(args, init) {                           \
+  case args:                                         \
+  {                                                  \
+    ResourceMark rm;                                 \
+    EmbeddedGrowableArray<E> embedded(init);         \
+    GrowableArray<E>* array = embedded.array();      \
+    dispatch_impl_helper(modify, test, array, args); \
+    break;                                           \
+  }                                                  \
 }
 
 template<typename E>
@@ -366,25 +368,25 @@ public:
     // implicit destructor
   };
 
-  void dispatch_impl_helper(ModifyClosure<E>* modify, TestClosure<E>* test, GrowableArray<E>* array) {
+  void dispatch_impl_helper(ModifyClosure<E>* modify, TestClosure<E>* test, GrowableArray<E>* array, AllocatorArgs args) {
 #ifdef ASSERT
     ASSERT_TRUE(array->allocated_on_stack_or_embedded()); // itself: embedded
     ASSERT_TRUE(array->on_resource_area()); // data: resource area
 #endif
     this->set_array(array);
-    this->dispatch_inner(modify, test);
+    this->dispatch_inner(modify, test, args);
   }
 };
 
 #undef CASE
-#define CASE(args, init) {                       \
-  case args:                                     \
-  {                                              \
-    ResourceMark rm;                             \
-    GrowableArray<E>* array = new GrowableArray<E>(); \
-    dispatch_impl_helper(modify, test, array);   \
-    break;                                       \
-  }                                              \
+#define CASE(args, init) {                            \
+  case args:                                          \
+  {                                                   \
+    ResourceMark rm;                                  \
+    GrowableArray<E>* array = new GrowableArray<E>(init); \
+    dispatch_impl_helper(modify, test, array, args);  \
+    break;                                            \
+  }                                                   \
 }
 
 template<typename E>
@@ -395,25 +397,25 @@ public:
     // no destructors called, array just abandoned
   };
 
-  void dispatch_impl_helper(ModifyClosure<E>* modify, TestClosure<E>* test, GrowableArray<E>* array) {
+  void dispatch_impl_helper(ModifyClosure<E>* modify, TestClosure<E>* test, GrowableArray<E>* array, AllocatorArgs args) {
 #ifdef ASSERT
     ASSERT_TRUE(array->allocated_on_res_area()); // itself: resource arena
     ASSERT_TRUE(array->on_resource_area()); // data: resource area
 #endif
     this->set_array(array);
-    this->dispatch_inner(modify, test);
+    this->dispatch_inner(modify, test, args);
   }
 };
 
 #undef CASE
-#define CASE(args, init) {                       \
-  case args:                                     \
-  {                                              \
-    Arena arena(mtTest);                         \
-    GrowableArray<E> array(&arena);              \
-    dispatch_impl_helper(modify, test, &array);  \
-    break;                                       \
-  }                                              \
+#define CASE(args, init) {                            \
+  case args:                                          \
+  {                                                   \
+    Arena arena(mtTest);                              \
+    GrowableArray<E> array(&arena, init);             \
+    dispatch_impl_helper(modify, test, &array, args); \
+    break;                                            \
+  }                                                   \
 }
 
 template<typename E>
@@ -424,26 +426,26 @@ public:
     // implicit destructor
   };
 
-  void dispatch_impl_helper(ModifyClosure<E>* modify, TestClosure<E>* test, GrowableArray<E>* array) {
+  void dispatch_impl_helper(ModifyClosure<E>* modify, TestClosure<E>* test, GrowableArray<E>* array, AllocatorArgs args) {
 #ifdef ASSERT
     ASSERT_TRUE(array->allocated_on_stack_or_embedded()); // itself: stack
     ASSERT_TRUE(!array->on_resource_area()); // data: arena
 #endif
     this->set_array(array);
-    this->dispatch_inner(modify, test);
+    this->dispatch_inner(modify, test, args);
   }
 };
 
 #undef CASE
-#define CASE(args, init) {                       \
-  case args:                                     \
-  {                                              \
-    Arena arena(mtTest);                         \
-    EmbeddedGrowableArray<E> embedded(&arena);   \
-    GrowableArray<E>* array = embedded.array();  \
-    dispatch_impl_helper(modify, test, array);   \
-    break;                                       \
-  }                                              \
+#define CASE(args, init) {                           \
+  case args:                                         \
+  {                                                  \
+    Arena arena(mtTest);                             \
+    EmbeddedGrowableArray<E> embedded(&arena, init); \
+    GrowableArray<E>* array = embedded.array();      \
+    dispatch_impl_helper(modify, test, array, args); \
+    break;                                           \
+  }                                                  \
 }
 
 
@@ -455,13 +457,13 @@ public:
     // implicit destructor
   };
 
-  void dispatch_impl_helper(ModifyClosure<E>* modify, TestClosure<E>* test, GrowableArray<E>* array) {
+  void dispatch_impl_helper(ModifyClosure<E>* modify, TestClosure<E>* test, GrowableArray<E>* array, AllocatorArgs args) {
 #ifdef ASSERT
     ASSERT_TRUE(array->allocated_on_stack_or_embedded()); // itself: embedded
     ASSERT_TRUE(!array->on_resource_area()); // data: arena
 #endif
     this->set_array(array);
-    this->dispatch_inner(modify, test);
+    this->dispatch_inner(modify, test, args);
   }
 };
 
@@ -470,8 +472,8 @@ public:
   case args:                                     \
   {                                              \
     Arena arena(mtTest);                         \
-    GrowableArray<E>* array = new (&arena) GrowableArray<E>(&arena); \
-    dispatch_impl_helper(modify, test, array);   \
+    GrowableArray<E>* array = new (&arena) GrowableArray<E>(&arena, init); \
+    dispatch_impl_helper(modify, test, array, args); \
     break;                                       \
   }                                              \
 }
@@ -485,13 +487,13 @@ public:
     // no destructors called, array just abandoned
   };
 
-  void dispatch_impl_helper(ModifyClosure<E>* modify, TestClosure<E>* test, GrowableArray<E>* array) {
+  void dispatch_impl_helper(ModifyClosure<E>* modify, TestClosure<E>* test, GrowableArray<E>* array, AllocatorArgs args) {
 #ifdef ASSERT
     ASSERT_TRUE(array->allocated_on_arena()); // itself: arena
     ASSERT_TRUE(!array->on_resource_area()); // data: arena
 #endif
     this->set_array(array);
-    this->dispatch_inner(modify, test);
+    this->dispatch_inner(modify, test, args);
   }
 };
 
@@ -534,7 +536,8 @@ class EmbeddedGrowableArrayCHeap {
 private:
   GrowableArrayCHeap<E, mtTest> _array;
 public:
-  EmbeddedGrowableArrayCHeap() {}
+  explicit EmbeddedGrowableArrayCHeap(int cap) : _array(cap) {}
+  EmbeddedGrowableArrayCHeap(int cap, int len, const E& filler) : _array(cap, len, filler) {}
   GrowableArrayCHeap<E, mtTest>* array() { return &_array; }
 };
 
@@ -542,8 +545,8 @@ public:
 #define CASE(args, init) {                       \
   case args:                                     \
   {                                              \
-    GrowableArrayCHeap<E, mtTest> array;         \
-    dispatch_impl_helper(modify, test, &array);  \
+    GrowableArrayCHeap<E, mtTest> array(init);   \
+    dispatch_impl_helper(modify, test, &array, args); \
     break;                                       \
   }                                              \
 }
@@ -556,24 +559,24 @@ public:
     // destructor called implicitly, and it first destructs all elements.
   };
 
-  void dispatch_impl_helper(ModifyClosure<E>* modify, TestClosure<E>* test, GrowableArrayCHeap<E,mtTest>* array) {
+  void dispatch_impl_helper(ModifyClosure<E>* modify, TestClosure<E>* test, GrowableArrayCHeap<E,mtTest>* array, AllocatorArgs args) {
 #ifdef ASSERT
     ASSERT_TRUE(array->allocated_on_stack_or_embedded()); // itself: stack
 #endif
     this->set_array(array);
-    this->dispatch_inner(modify, test);
+    this->dispatch_inner(modify, test, args);
   }
 };
 
 #undef CASE
-#define CASE(args, init) {                       \
-  case args:                                     \
-  {                                              \
-    EmbeddedGrowableArrayCHeap<E> embedded;      \
+#define CASE(args, init) {                        \
+  case args:                                      \
+  {                                               \
+    EmbeddedGrowableArrayCHeap<E> embedded(init); \
     GrowableArrayCHeap<E, mtTest>* array = embedded.array(); \
-    dispatch_impl_helper(modify, test, array);   \
-    break;                                       \
-  }                                              \
+    dispatch_impl_helper(modify, test, array, args); \
+    break;                                        \
+  }                                               \
 }
 
 template<typename E>
@@ -584,12 +587,12 @@ public:
     // destructor called implicitly, and it first destructs all elements.
   };
 
-  void dispatch_impl_helper(ModifyClosure<E>* modify, TestClosure<E>* test, GrowableArrayCHeap<E,mtTest>* array) {
+  void dispatch_impl_helper(ModifyClosure<E>* modify, TestClosure<E>* test, GrowableArrayCHeap<E,mtTest>* array, AllocatorArgs args) {
 #ifdef ASSERT
     ASSERT_TRUE(array->allocated_on_stack_or_embedded()); // itself: embedded
 #endif
     this->set_array(array);
-    this->dispatch_inner(modify, test);
+    this->dispatch_inner(modify, test, args);
   }
 };
 
@@ -597,8 +600,8 @@ public:
 #define CASE(args, init) {                       \
   case args:                                     \
   {                                              \
-    GrowableArrayCHeap<E, mtTest>* array = new GrowableArrayCHeap<E, mtTest>(); \
-    dispatch_impl_helper(modify, test, array);   \
+    GrowableArrayCHeap<E, mtTest>* array = new GrowableArrayCHeap<E, mtTest>(init); \
+    dispatch_impl_helper(modify, test, array, args); \
     delete array;                                \
     break;                                       \
   }                                              \
@@ -612,12 +615,12 @@ public:
     // destruction explicit, recursively destructs all elements
   };
 
-  void dispatch_impl_helper(ModifyClosure<E>* modify, TestClosure<E>* test, GrowableArrayCHeap<E,mtTest>* array) {
+  void dispatch_impl_helper(ModifyClosure<E>* modify, TestClosure<E>* test, GrowableArrayCHeap<E,mtTest>* array, AllocatorArgs args) {
 #ifdef ASSERT
     ASSERT_TRUE(array->allocated_on_C_heap()); // itself: cheap
 #endif
     this->set_array(array);
-    this->dispatch_inner(modify, test);
+    this->dispatch_inner(modify, test, args);
   }
 };
 
@@ -625,8 +628,8 @@ public:
 #define CASE(args, init) {                       \
   case args:                                     \
   {                                              \
-    GrowableArrayCHeap<E, mtTest>* array = new (std::nothrow) GrowableArrayCHeap<E, mtTest>(); \
-    dispatch_impl_helper(modify, test, array);   \
+    GrowableArrayCHeap<E, mtTest>* array = new (std::nothrow) GrowableArrayCHeap<E, mtTest>(init); \
+    dispatch_impl_helper(modify, test, array, args);   \
     delete array;                                \
     break;                                       \
   }                                              \
@@ -640,12 +643,12 @@ public:
     // destruction explicit, recursively destructs all elements
   };
 
-  void dispatch_impl_helper(ModifyClosure<E>* modify, TestClosure<E>* test, GrowableArrayCHeap<E,mtTest>* array) {
+  void dispatch_impl_helper(ModifyClosure<E>* modify, TestClosure<E>* test, GrowableArrayCHeap<E,mtTest>* array, AllocatorArgs args) {
 #ifdef ASSERT
     ASSERT_TRUE(array->allocated_on_C_heap()); // itself: cheap
 #endif
     this->set_array(array);
-    this->dispatch_inner(modify, test);
+    this->dispatch_inner(modify, test, args);
   }
 };
 
@@ -654,16 +657,63 @@ public:
 template<typename E>
 class ModifyClosureEmpty : public ModifyClosure<E> {
 public:
-  virtual void do_modify(AllocatorClosure<E>* a) override final {
-    // empty, but we can verify constructor / destructor count = 0
-    check_constructor_count_for_type<E>(0);
+  virtual void do_modify(AllocatorClosure<E>* a, AllocatorArgs args) override final {
+    // array is freshly initialized. Verify initialization:
+    switch(args) {
+      case CAP2:
+      {
+        ASSERT_TRUE(a->is_empty());
+        ASSERT_EQ(a->length(), 0);
+        ASSERT_EQ(a->capacity(), 2);
+        check_constructor_count_for_type<E>(0);
+        break;
+      }
+      case CAP0:
+      {
+        ASSERT_TRUE(a->is_empty());
+        ASSERT_EQ(a->length(), 0);
+        ASSERT_EQ(a->capacity(), 0);
+        check_constructor_count_for_type<E>(0);
+        break;
+      }
+      case CAP100:
+      {
+        ASSERT_TRUE(a->is_empty());
+        ASSERT_EQ(a->length(), 0);
+        ASSERT_EQ(a->capacity(), 100);
+        check_constructor_count_for_type<E>(0);
+        break;
+      }
+      case CAP100LEN100:
+      {
+        ASSERT_TRUE(!a->is_empty());
+        ASSERT_EQ(a->length(), 100);
+        ASSERT_EQ(a->capacity(), 100);
+        check_alive_elements_for_type<E>(100);
+        break;
+      }
+      case CAP200LEN50:
+      {
+        ASSERT_TRUE(!a->is_empty());
+        ASSERT_EQ(a->length(), 50);
+        ASSERT_EQ(a->capacity(), 200);
+        check_alive_elements_for_type<E>(50);
+        break;
+      }
+      default:
+      {
+        ASSERT_TRUE(false);
+        break;
+      }
+    }
   }
 };
 
 template<typename E>
 class ModifyClosureAppend : public ModifyClosure<E> {
 public:
-  virtual void do_modify(AllocatorClosure<E>* a) override final {
+  virtual void do_modify(AllocatorClosure<E>* a, AllocatorArgs args) override final {
+    a->clear();
     ASSERT_EQ(a->length(), 0);
 
     // Add elements
@@ -680,7 +730,8 @@ public:
 template<typename E>
 class ModifyClosureClear : public ModifyClosure<E> {
 public:
-  virtual void do_modify(AllocatorClosure<E>* a) override final {
+  virtual void do_modify(AllocatorClosure<E>* a, AllocatorArgs args) override final {
+    a->clear();
     ASSERT_EQ(a->length(), 0);
 
     // Add elements
@@ -705,7 +756,8 @@ public:
 template<typename E>
 class ModifyClosureClearAndDeallocate : public ModifyClosure<E> {
 public:
-  virtual void do_modify(AllocatorClosure<E>* a) override final {
+  virtual void do_modify(AllocatorClosure<E>* a, AllocatorArgs args) override final {
+    a->clear();
     ASSERT_EQ(a->length(), 0);
 
     // Add elements
@@ -1149,7 +1201,7 @@ protected:
 
   template<typename E, bool do_cheap, bool do_arena>
   static void run_test_modify_allocate(TestClosure<E>* test, ModifyClosure<E>* modify) {
-    run_test_modify_allocate_args<E,do_cheap,do_arena>(test, modify, DEFAULT);
+    run_test_modify_allocate_args<E,do_cheap,do_arena>(test, modify, CAP2);
     run_test_modify_allocate_args<E,do_cheap,do_arena>(test, modify, CAP0);
     run_test_modify_allocate_args<E,do_cheap,do_arena>(test, modify, CAP100);
     run_test_modify_allocate_args<E,do_cheap,do_arena>(test, modify, CAP100LEN100);
