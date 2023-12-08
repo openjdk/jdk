@@ -306,14 +306,33 @@ public:
   GrowableArray<E>* array() { return &_array; }
 };
 
+#define ARGS_CASES(CASE) {                                        \
+  switch (args) {                                                 \
+    CASE(DEFAULT, 2)                                              \
+    CASE(CAP0, 0)                                                 \
+    CASE(CAP100, 100)                                             \
+    CASE(CAP100LEN100, 100 COMMA 100 COMMA value_factory<E>(-42)) \
+    CASE(CAP200LEN50, 200 COMMA 50 COMMA value_factory<E>(-42))   \
+    default:                                                      \
+      ASSERT_TRUE(false);                                         \
+  }                                                               \
+}
+
+#define CASE(args, init) {                       \
+  case args:                                     \
+  {                                              \
+    ResourceMark rm;                             \
+    GrowableArray<E> array(init);                \
+    dispatch_impl_helper(modify, test, &array);  \
+    break;                                       \
+  }                                              \
+}
+
 template<typename E>
 class AllocatorClosureStackResourceArea : public AllocatorClosureGrowableArray<E> {
 public:
   virtual void dispatch_impl(ModifyClosure<E>* modify, TestClosure<E>* test, AllocatorArgs args) override final {
-    ResourceMark rm;
-    GrowableArray<E> array;
-    dispatch_impl_helper(modify, test, &array);
-    // implicit destructor
+    ARGS_CASES(CASE)
   }
 
   void dispatch_impl_helper(ModifyClosure<E>* modify, TestClosure<E>* test, GrowableArray<E>* array) {
@@ -326,15 +345,23 @@ public:
   }
 };
 
+#undef CASE
+#define CASE(args, init) {                       \
+  case args:                                     \
+  {                                              \
+    ResourceMark rm;                             \
+    EmbeddedGrowableArray<E> embedded;           \
+    GrowableArray<E>* array = embedded.array();  \
+    dispatch_impl_helper(modify, test, array);   \
+    break;                                       \
+  }                                              \
+}
+
 template<typename E>
 class AllocatorClosureEmbeddedResourceArea : public AllocatorClosureGrowableArray<E> {
 public:
   virtual void dispatch_impl(ModifyClosure<E>* modify, TestClosure<E>* test, AllocatorArgs args) override final {
-    ResourceMark rm;
-    EmbeddedGrowableArray<E> embedded;
-    GrowableArray<E>* array = embedded.array();
-    dispatch_impl_helper(modify, test, array);
-    // implicit destructor
+    ARGS_CASES(CASE)
   };
 
   void dispatch_impl_helper(ModifyClosure<E>* modify, TestClosure<E>* test, GrowableArray<E>* array) {
