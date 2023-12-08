@@ -32,8 +32,6 @@
 // TODO go through GA and GACH and see what ops are not tested yet
 // -> add to modify and test
 
-// TODO initial_capacity? initial_size and fill?
-
 // TODO assignment operator and copy constructor
 
 // We have a list of each:
@@ -690,6 +688,10 @@ public:
         ASSERT_EQ(a->length(), 100);
         ASSERT_EQ(a->capacity(), 100);
         check_alive_elements_for_type<E>(100);
+        // Check elements
+        for (int i = 0; i < 100; i++) {
+          EXPECT_EQ(a->at(i), value_factory<E>(-42));
+        }
         break;
       }
       case CAP200LEN50:
@@ -698,6 +700,10 @@ public:
         ASSERT_EQ(a->length(), 50);
         ASSERT_EQ(a->capacity(), 200);
         check_alive_elements_for_type<E>(50);
+        // Check elements
+        for (int i = 0; i < 50; i++) {
+          EXPECT_EQ(a->at(i), value_factory<E>(-42));
+        }
         break;
       }
       default:
