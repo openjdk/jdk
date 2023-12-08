@@ -2591,9 +2591,6 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
     // -Xdebug
     } else if (match_option(option, "-Xdebug")) {
       warning("Option -Xdebug was deprecated in JDK 22 and will likely be removed in a future release.");
-    // -Xnoagent
-    } else if (match_option(option, "-Xnoagent")) {
-      warning("Option -Xnoagent was deprecated in JDK 22 and will likely be removed in a future release.");
     } else if (match_option(option, "-Xloggc:", &tail)) {
       // Deprecated flag to redirect GC output to a file. -Xloggc:<filename>
       log_warning(gc)("-Xloggc is deprecated. Will use -Xlog:gc:%s instead.", tail);
