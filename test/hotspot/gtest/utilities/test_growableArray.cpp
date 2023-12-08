@@ -31,6 +31,32 @@
 
 // TODO go through GA and GACH and see what ops are not tested yet
 // -> add to modify and test
+//
+// trunc_to
+// at assign?
+// adr_at -> read and write?
+// first, top, last
+// at_put
+// at_swap
+// contains, find, find_from_end
+// remove, remove_if_existing
+// remove_till, remove_range, delete_at
+//
+// TODO
+// sort 2 versions
+// compare
+// find_sorted 2 versions
+// print ?
+//
+// allocator only:
+// append_if_missing
+// push = append
+// insert_before 2 versions
+// appendAll
+// insert_sorted 2 versions
+//
+// swap -> refactor!
+// GrowableArrayFilterIterator ? test or remove!
 
 // TODO assignment operator and copy constructor
 
@@ -215,14 +241,35 @@ public:
   int capacity() const   { return _view->capacity(); };
   bool is_empty() const  { return _view->is_empty(); }
   void clear()           { _view->clear(); }
+  void trunc_to(int length) { _view->trunc_to(length); }
 
   E& at(int i)           { return _view->at(i); }
+  E* adr_at(int i) const { return _view->adr_at(i); }
+  E first() const        { return _view->first(); }
+  E top() const          { return _view->top(); }
+  E last() const         { return _view->last(); }
   GrowableArrayIterator<E> begin() const { return _view->begin(); }
   GrowableArrayIterator<E> end() const   { return _view->end(); }
   E pop()                { return _view->pop(); }
 
+  void at_put(int i, const E& elem) { _view->at_put(i, elem); }
+  void at_swap(int i, int j) { _view->at_swap(i, j); }
+  bool contains(const E& elem) const { return _view->contains(elem); }
+  int find(const E& elem) const { return _view->find(elem); }
+  int find_from_end(const E& elem) const { return _view->find_from_end(elem); }
+
   template<typename Predicate>
   int find_if(Predicate predicate) const { return _view->find_if(predicate); }
+
+  template<typename Predicate>
+  int find_from_end_if(Predicate predicate) const { return _view->find_from_end_if(predicate); }
+
+  void remove(const E& elem) { _view->remove(elem); }
+  bool remove_if_existing(const E& elem) { return _view->remove_if_existing(elem); }
+  void remove_at(int i) { _view->remove_at(i); }
+  void remove_till(int i) { _view->remove_till(i); }
+  void remove_range(int start, int end) { _view->remove_range(start, end); }
+  void delete_at(int i) { _view->delete_at(i); }
 
   // forwarding to underlying array with allocation
   virtual void append(const E& e) = 0;
@@ -1376,6 +1423,26 @@ TEST_VM_F(GrowableArrayTest, find_if_point_with_default) {
 
 TEST_VM_F(GrowableArrayTest, find_if_ctor_dtor) {
   run_test_find_if<CtorDtor,true,CtorDtor::is_enabled_for_arena>();
+}
+
+TEST_VM_F(GrowableArrayTest, find_from_end_if_int) {
+  run_test_find_from_end_if<int,true,true>();
+}
+
+TEST_VM_F(GrowableArrayTest, find_from_end_if_ptr) {
+  run_test_find_from_end_if<int*,true,true>();
+}
+
+TEST_VM_F(GrowableArrayTest, find_from_end_if_point) {
+  run_test_find_from_end_if<Point,true,true>();
+}
+
+TEST_VM_F(GrowableArrayTest, find_from_end_if_point_with_default) {
+  run_test_find_from_end_if<PointWithDefault,true,true>();
+}
+
+TEST_VM_F(GrowableArrayTest, find_from_end_if_ctor_dtor) {
+  run_test_find_from_end_if<CtorDtor,true,CtorDtor::is_enabled_for_arena>();
 }
 
 TEST_VM_F(GrowableArrayTest, at_grow_int) {
