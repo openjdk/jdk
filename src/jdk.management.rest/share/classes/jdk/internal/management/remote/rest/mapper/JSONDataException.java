@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,24 +23,23 @@
  * questions.
  */
 
+package jdk.internal.management.remote.rest.mapper;
+
 /**
- * Defines the JMX management agent.
- *
- * <p> This module allows a Java Virtual Machine to be monitored and managed
- * via JMX API.  See more information from the
- * {@extLink monitoring_and_management_using_jmx_technology
- * Monitoring and Management Using JMX} guide.
- *
- * @moduleGraph
- * @since 9
  */
-module jdk.management.agent {
-    requires java.management;
-    requires java.management.rmi;
-    requires jdk.httpserver;
+public class JSONDataException extends Exception {
 
-    exports jdk.internal.agent to jdk.jconsole;
+    private static final long serialVersionUID = 2430707794210680967L;
 
-    exports jdk.internal.agent.spi to jdk.management.rest;
-    uses jdk.internal.agent.spi.AgentProvider;
+    public JSONDataException() {
+        super();
+    }
+
+    public JSONDataException(String s) {
+        super(s);
+    }
+
+    public JSONDataException(String s, Throwable ex) {
+        super(s, ex);
+    }
 }

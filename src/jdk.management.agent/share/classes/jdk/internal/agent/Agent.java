@@ -30,6 +30,13 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import jdk.internal.agent.spi.AgentProvider;
+import jdk.internal.vm.VMSupport;
+import sun.management.jdp.JdpController;
+import sun.management.jdp.JdpException;
+import sun.management.jmxremote.ConnectorBootstrap;
+import javax.management.remote.JMXConnectorServer;
+import javax.management.remote.JMXServiceURL;
 import java.lang.management.ManagementFactory;
 import java.lang.reflect.Method;
 import java.net.InetAddress;
@@ -241,6 +248,11 @@ public class Agent {
     private static ResourceBundle messageRB;
     private static final String CONFIG_FILE =
             "com.sun.management.config.file";
+
+    private static final String REST_PORT =
+            "com.sun.management.jmxremote.rest.port";
+    private static final String REST_ADAPTER_NAME = "RestAdapter";
+
     private static final String JMXREMOTE =
             "com.sun.management.jmxremote";
     private static final String JMXREMOTE_PORT =
@@ -419,6 +431,7 @@ public class Agent {
     }
 
     private static void startAgent(Properties props) throws Exception {
+        String restPort = props.getProperty(REST_PORT);
         String jmxremote = props.getProperty(JMXREMOTE);
         String jmxremotePort = props.getProperty(JMXREMOTE_PORT);
 
@@ -431,7 +444,14 @@ public class Agent {
         }
 
         try {
+            boolean startLocalAgent = false;
+            boolean startDiscovery = false;
 
+            if (restPort != null) {
+                loadRestAdapter(props);
+                startLocalAgent = true;
+                // Consider startDiscovery = true; if REST address is exported in the same way as RMI.
+            }
             /*
              * If the jmxremote.port property is set then we start the
              * RMIConnectorServer for remote M&M.
@@ -445,11 +465,17 @@ public class Agent {
                 if (jmxremotePort != null) {
                     jmxServer = ConnectorBootstrap.
                             startRemoteConnectorServer(jmxremotePort, props);
-                    startDiscoveryService(props);
                 }
+                startDiscovery = true;
+                startLocalAgent = true;
+            }
+            // Then start local agent discvoery if either REST or RMI started.
+            if (startLocalAgent) {
                 startLocalManagementAgent();
             }
-
+            if (startDiscovery) {
+                startDiscoveryService(props);
+            }
         } catch (AgentConfigurationError e) {
             error(e);
         } catch (Exception e) {
@@ -464,9 +490,9 @@ public class Agent {
         String discoveryAddress = props.getProperty("com.sun.management.jdp.address");
         String discoveryShouldStart = props.getProperty("com.sun.management.jmxremote.autodiscovery");
 
-        // Decide whether we should start autodicovery service.
+        // Decide whether we should start autodiscovery service.
         // To start autodiscovery following conditions should be met:
-        // autodiscovery==true OR (autodicovery==null AND jdp.port != NULL)
+        // autodiscovery==true OR (autodiscovery==null AND jdp.port != NULL)
 
         boolean shouldStart = false;
         if (discoveryShouldStart == null){
@@ -535,16 +561,39 @@ public class Agent {
     public static synchronized Properties getManagementProperties() {
         if (mgmtProps == null) {
             String configFile = System.getProperty(CONFIG_FILE);
+            String restPort = System.getProperty(REST_PORT);
             String jmxremote = System.getProperty(JMXREMOTE);
             String jmxremotePort = System.getProperty(JMXREMOTE_PORT);
 
-            if (configFile == null && jmxremote == null && jmxremotePort == null) {
+            if (configFile == null && jmxremote == null && jmxremotePort == null && restPort == null) {
                 // return if out-of-the-management option is not specified
                 return null;
             }
             mgmtProps = loadManagementProperties();
         }
         return mgmtProps;
+    }
+
+    @SuppressWarnings("removal")
+    private static void loadRestAdapter(Properties props) {
+        /*
+         * Load the rest adapter service
+         */
+        AgentProvider provider = AccessController.doPrivileged(
+                (PrivilegedAction<AgentProvider>) () -> {
+                    for (AgentProvider aProvider : ServiceLoader.loadInstalled(AgentProvider.class)) {
+                        if (aProvider.getName().equals(REST_ADAPTER_NAME))
+                            return aProvider;
+                    }
+                    return null;
+                },  null
+        );
+
+        if (provider != null) {
+            provider.startAgent(props);
+        } else { // Rest adapter doesn't exist - initialization fails
+            throw new UnsupportedOperationException("Unsupported management property: " + REST_PORT);
+        }
     }
 
     // read config file and initialize the properties

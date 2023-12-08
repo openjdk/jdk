@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,24 +23,35 @@
  * questions.
  */
 
+package jdk.internal.management.remote.rest.json;
+
+import java.util.ArrayList;
+import java.util.Iterator;
+
 /**
- * Defines the JMX management agent.
- *
- * <p> This module allows a Java Virtual Machine to be monitored and managed
- * via JMX API.  See more information from the
- * {@extLink monitoring_and_management_using_jmx_technology
- * Monitoring and Management Using JMX} guide.
- *
- * @moduleGraph
- * @since 9
  */
-module jdk.management.agent {
-    requires java.management;
-    requires java.management.rmi;
-    requires jdk.httpserver;
+public class JSONArray extends ArrayList<JSONElement> implements JSONElement {
 
-    exports jdk.internal.agent to jdk.jconsole;
+    private static final long serialVersionUID = -506975558678956426L;
 
-    exports jdk.internal.agent.spi to jdk.management.rest;
-    uses jdk.internal.agent.spi.AgentProvider;
+    @Override
+    public String toJsonString() {
+        if (isEmpty()) {
+            return null;
+        }
+        StringBuilder sbuild = new StringBuilder();
+        sbuild.append("[");
+        Iterator<JSONElement> itr = iterator();
+        while (itr.hasNext()) {
+            JSONElement val = itr.next();
+            if (val != null)
+                sbuild.append(val.toJsonString()).append(", ");
+            else
+                sbuild.append("null").append(", ");
+        }
+
+        sbuild.deleteCharAt(sbuild.lastIndexOf(","));
+        sbuild.append("]");
+        return sbuild.toString();
+    }
 }

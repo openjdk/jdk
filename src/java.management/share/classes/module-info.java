@@ -49,9 +49,11 @@ module java.management {
 
     exports com.sun.jmx.remote.internal to
         java.management.rmi,
+        jdk.management.rest,
         jdk.management.agent;
     exports com.sun.jmx.remote.security to
         java.management.rmi,
+        jdk.management.rest,
         jdk.management.agent;
     exports com.sun.jmx.remote.util to
         java.management.rmi;

@@ -1,0 +1,5 @@
+javax.net.ssl.keyStore=keystoreAgent
+javax.net.ssl.keyStorePassword=glopglop
+javax.net.ssl.trustStore=truststoreAgent
+javax.net.ssl.trustStorePassword=glopglop
+
