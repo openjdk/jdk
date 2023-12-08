@@ -29,6 +29,8 @@ package sun.nio.ch;
 
 
 class NativeThreadSet {
+    private final int OTHER_THREAD_INDEX = -99;
+
     private final int initialCapacity;
     private long[] threads;             // array of thread handles, created lazily
     private int used;                   // number of thread handles in threads array
@@ -48,7 +50,7 @@ class NativeThreadSet {
         synchronized (this) {
             if (!NativeThread.isNativeThread(th)) {
                 otherThreads++;
-                return -1;
+                return OTHER_THREAD_INDEX;
             }
 
             // add native thread handle to array, creating or growing array if needed
@@ -75,17 +77,19 @@ class NativeThreadSet {
     }
 
     /**
-     * Removes the thread at the given index.
+     * Removes the thread at the given index. A no-op if index is -1.
      */
     void remove(int i) {
+        assert i >= -1 || i == OTHER_THREAD_INDEX;
         synchronized (this) {
             if (i >= 0) {
                 assert threads[i] == NativeThread.current();
                 threads[i] = 0;
                 used--;
-            } else {
-                assert NativeThread.isNativeThread(NativeThread.current());
+            } else if (i == OTHER_THREAD_INDEX) {
                 otherThreads--;
+            } else {
+                return;
             }
             if (used == 0 && otherThreads == 0 && waitingToEmpty) {
                 notifyAll();
