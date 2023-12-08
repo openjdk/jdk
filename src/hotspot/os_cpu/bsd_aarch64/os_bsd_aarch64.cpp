@@ -50,7 +50,6 @@
 #include "runtime/safepointMechanism.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
-#include "runtime/threadWXSetters.inline.hpp"
 #include "runtime/timer.hpp"
 #include "signals_posix.hpp"
 #include "utilities/align.hpp"
@@ -515,20 +514,7 @@ static inline void atomic_copy64(const volatile void *src, volatile void *dst) {
 
 extern "C" {
   int SpinPause() {
-    using spin_wait_func_ptr_t = void (*)();
-    spin_wait_func_ptr_t func = CAST_TO_FN_PTR(spin_wait_func_ptr_t, StubRoutines::aarch64::spin_wait());
-    assert(func != nullptr, "StubRoutines::aarch64::spin_wait must not be null.");
-    MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXExec, Thread::current()));
-    (*func)();
-    // If StubRoutines::aarch64::spin_wait consists of only a RET,
-    // SpinPause can be considered as implemented. There will be a sequence
-    // of instructions for:
-    // - call of SpinPause
-    // - load of StubRoutines::aarch64::spin_wait stub pointer
-    // - indirect call of the stub
-    // - return from the stub
-    // - return from SpinPause
-    // So '1' always is returned.
+    asm volatile("yield" : : : "memory");
     return 1;
   }
 
