@@ -229,11 +229,10 @@ class StackMapsTest {
                                 .walk().anyMatch(n -> n.name().equals("stack map frames")));
 
         //test transformation to class version 50 with re-generation of StackMapTable attributes
-         assertEmpty(cc.parse(cc.transform(
+         assertEmpty(cc.verify(cc.transform(
                                     version49,
                                     ClassTransform.transformingMethodBodies(CodeTransform.ACCEPT_ALL)
-                                                  .andThen(ClassTransform.endHandler(clb -> clb.withVersion(50, 0)))))
-                              .verify(null));
+                                                  .andThen(ClassTransform.endHandler(clb -> clb.withVersion(50, 0))))));
     }
 
     @Test
@@ -271,7 +270,7 @@ class StackMapsTest {
                                                });
 
         //then verify transformed bytecode
-        assertEmpty(cc.parse(transformedBytes).verify(null));
+        assertEmpty(cc.verify(transformedBytes));
     }
 
     @Test
