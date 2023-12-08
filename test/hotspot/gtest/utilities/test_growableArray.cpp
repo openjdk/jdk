@@ -867,7 +867,7 @@ class TestClosureAtGrow : public TestClosure<E> {
 
     a->reserve(100);
 
-    for (int j = 1; j < 1000; j++) {
+    for (int j = 1; j < 100; j++) {
       int new_len = j * 7;
       a->at_grow(new_len - 1, value_factory<E>(j));
       ASSERT_EQ(a->length(), new_len);
@@ -890,21 +890,23 @@ class TestClosureAtGrow : public TestClosure<E> {
     ASSERT_EQ(a->capacity(), old_capacity);
     check_alive_elements_for_type<E>(old_capacity);
 
-    for (int j = 1; j < 1000; j++) {
-      int target = j * 77;
+    for (int j = 1; j < 100; j++) {
+      int target = j * 31;
       a->at_put_grow(target, value_factory<E>(target), value_factory<E>(-2));
       int new_length = MAX2(target + 1, old_capacity);
       ASSERT_EQ(a->length(), new_length);
 
-      // // Check elements
-      // for (int k = 0; k =< new_length; k++) {
-      //   EXPECT_EQ(a->at_grow(k, value_factory<E>(-1)), value_factory<E>(k / 7 + 1));
-      // }
+      // Check elements
+      for (int k = 0; k < new_length; k++) {
+        if (k != 0 && (k % 31) == 0 && k <= target) {
+          EXPECT_EQ(a->at(k), value_factory<E>(k));
+        } else if (k < old_capacity) {
+          EXPECT_EQ(a->at(k), value_factory<E>(0));
+        } else {
+          EXPECT_EQ(a->at(k), value_factory<E>(-2));
+        }
+      }
     }
-
-    // TODO
-    // at_grow
-    // at_put_grow
   };
 };
 
@@ -916,14 +918,47 @@ class TestClosureAtGrowDefault : public TestClosure<E> {
     ASSERT_EQ(a->length(), 0);
 
     a->reserve(100);
+
+    for (int j = 1; j < 100; j++) {
+      int new_len = j * 7;
+      a->at_grow(new_len - 1, E()); // simulate default argument
+      ASSERT_EQ(a->length(), new_len);
+      check_alive_elements_for_type<E>(new_len);
+
+      // Check elements
+      for (int k = 0; k < new_len; k++) {
+        EXPECT_EQ(a->at_grow(k, value_factory<E>(-1)), E());
+      }
+      ASSERT_EQ(a->length(), new_len);
+    }
+
+    a->clear();
+    check_alive_elements_for_type<E>(0);
+    ASSERT_EQ(a->length(), 0);
+
     int old_capacity = a->capacity();
+    a->at_grow(old_capacity - 1, value_factory<E>(-3));
+    ASSERT_EQ(a->length(), old_capacity);
+    ASSERT_EQ(a->capacity(), old_capacity);
+    check_alive_elements_for_type<E>(old_capacity);
 
-    a->at_grow(10, E()); // simulate default argument
-    ASSERT_EQ(a->length(), 11);
+    for (int j = 1; j < 100; j++) {
+      int target = j * 31;
+      a->at_put_grow(target, value_factory<E>(target), E()); // simulate default argument
+      int new_length = MAX2(target + 1, old_capacity);
+      ASSERT_EQ(a->length(), new_length);
 
-    // TODO
-    // at_grow
-    // at_put_grow
+      // Check elements
+      for (int k = 0; k < new_length; k++) {
+        if (k != 0 && (k % 31) == 0 && k <= target) {
+          EXPECT_EQ(a->at(k), value_factory<E>(k));
+        } else if (k < old_capacity) {
+          EXPECT_EQ(a->at(k), value_factory<E>(-3));
+        } else {
+          EXPECT_EQ(a->at(k), E());
+        }
+      }
+    }
   };
 };
 
