@@ -555,17 +555,6 @@ public class ThreadGroup implements Thread.UncaughtExceptionHandler {
     }
 
     /**
-     * Throws {@code UnsupportedOperationException}.
-     *
-     * @deprecated This method was originally specified to stop all threads in
-     *             the thread group. It was inherently unsafe.
-     */
-    @Deprecated(since="1.2", forRemoval=true)
-    public final void stop() {
-        throw new UnsupportedOperationException();
-    }
-
-    /**
      * Interrupts all {@linkplain Thread#isAlive() live} platform threads in
      * this thread group and its subgroups.
      *
