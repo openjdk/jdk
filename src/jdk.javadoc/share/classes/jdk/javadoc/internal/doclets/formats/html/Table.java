@@ -413,7 +413,7 @@ public class Table extends Content {
             var tabpanel = new HtmlTree(TagName.DIV)
                     .setId(HtmlIds.forTabPanel(id))
                     .put(HtmlAttr.ROLE, "tabpanel")
-                    .put(HtmlAttr.ARIA_LABELLEDBY, defaultTabId.name());
+                    .put(HtmlAttr.ARIA_LABELLEDBY, HtmlIds.forTabPanel(id).name());
             table.add(getTableBody());
             tabpanel.add(table);
             main.add(tablist);
