@@ -21,6 +21,11 @@
  * questions.
  */
 
+import java.io.*;
+import java.util.Arrays;
+import java.util.Objects;
+import java.util.Random;
+
 /*
  * @test
  * @bug 8320971
@@ -29,15 +34,12 @@
  *          parameter is trusted
  * @key randomness
  */
-
-import java.io.*;
-import java.util.Arrays;
-import java.util.Objects;
-import java.util.Random;
 public class TransferToTrusted {
+
     private static final Random RND = new Random(System.nanoTime());
 
     private static class UntrustedOutputStream extends OutputStream {
+
         UntrustedOutputStream() {
             super();
         }
@@ -52,7 +54,7 @@ public class TransferToTrusted {
 
         @Override
         public void write(int b) throws IOException {
-            write(new byte[] {(byte)b});
+            write(new byte[]{(byte) b});
         }
     }
 
@@ -67,14 +69,16 @@ public class TransferToTrusted {
         var baos = new ByteArrayOutputStream();
         bis.transferTo(baos);
         bis.reset();
-        if (!Arrays.equals(buf, bis.readAllBytes()))
+        if (!Arrays.equals(buf, bis.readAllBytes())) {
             throw new RuntimeException("Internal buffer has been modified");
+        }
 
         bis.reset();
         var out = new UntrustedOutputStream();
         bis.transferTo(out);
         bis.reset();
-        if (!Arrays.equals(buf, bis.readAllBytes()))
+        if (!Arrays.equals(buf, bis.readAllBytes())) {
             throw new RuntimeException("Internal buffer has been modified");
+        }
     }
 }
