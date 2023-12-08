@@ -2933,8 +2933,8 @@ public class CSS implements Serializable {
      */
     @SuppressWarnings("serial") // Same-version serialization only
     static class BackgroundImage extends CssValue {
-        private boolean    loadedImage;
-        private ImageIcon  image;
+        private volatile boolean loadedImage;
+        private ImageIcon image;
 
         Object parseCssValue(String value) {
             BackgroundImage retValue = new BackgroundImage();
@@ -2952,7 +2952,6 @@ public class CSS implements Serializable {
                 synchronized(this) {
                     if (!loadedImage) {
                         URL url = CSS.getURL(base, svalue);
-                        loadedImage = true;
                         if (url != null) {
                             image = new ImageIcon();
                             Image tmpImg = Toolkit.getDefaultToolkit().createImage(url);
@@ -2960,6 +2959,7 @@ public class CSS implements Serializable {
                                 image.setImage(tmpImg);
                             }
                         }
+                        loadedImage = true;
                     }
                 }
             }
