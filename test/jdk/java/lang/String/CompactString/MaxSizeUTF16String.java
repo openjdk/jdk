@@ -25,7 +25,6 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
 
 /*
  * @test
@@ -44,23 +43,17 @@ public class MaxSizeUTF16String {
 
     // Create a large UTF-8 byte array with a single non-latin1 character
     private static byte[] generateUTF8Data(int byteSize) {
-        byte[] nonAscii = "\u0100".getBytes();
-        int nonAsciiSize = nonAscii.length;
-        int asciisize = byteSize - nonAsciiSize;
-        byte[] arr = new byte[asciisize + nonAsciiSize];
-        Arrays.fill(arr, (byte)'x');      // fill with latin1
-        System.arraycopy(nonAscii, 0, arr, 0, nonAsciiSize); // non-latin1 at start
+        byte[] nonAscii = "\u0100".getBytes(StandardCharsets.UTF_8);
+        byte[] arr = new byte[byteSize];
+        System.arraycopy(nonAscii, 0, arr, 0, nonAscii.length); // non-latin1 at start
         return arr;
     }
 
     // Create a large char array with a single non-latin1 character
     private static char[] generateCharData(int size) {
         char[] nonAscii = "\u0100".toCharArray();
-        int nonAsciiSize = nonAscii.length;
-        int asciisize = size - nonAsciiSize;
-        char[] arr = new char[asciisize + nonAsciiSize];
-        Arrays.fill(arr, 'x');      // fill with latin1
-        System.arraycopy(nonAscii, 0, arr, 0, nonAsciiSize); // non-latin1 at start
+        char[] arr = new char[size];
+        System.arraycopy(nonAscii, 0, arr, 0, nonAscii.length); // non-latin1 at start
         return arr;
     }
 
