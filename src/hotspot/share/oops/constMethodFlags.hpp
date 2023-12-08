@@ -58,6 +58,8 @@ class ConstMethodFlags {
    flag(is_scoped                 , 1 << 16) \
    flag(changes_current_thread    , 1 << 17) \
    flag(jvmti_mount_transition    , 1 << 18) \
+   flag(deprecated                , 1 << 19) \
+   flag(deprecated_for_removal    , 1 << 20) \
    /* end of list */
 
 #define CM_FLAGS_ENUM_NAME(name, value)    _misc_##name = value,

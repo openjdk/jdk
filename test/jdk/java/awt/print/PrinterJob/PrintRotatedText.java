@@ -26,7 +26,7 @@
  * @bug 4271596
  * @bug 4460699
  * @summary Rotated text printing
- * @author prr
+ * @key printer
  * @run main/manual PrintRotatedText
  */
 

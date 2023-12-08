@@ -84,4 +84,8 @@ public interface Buffer {
 
     void copyFrom(Buffer buffer);
 
+    // JDK specific modification
+    default void zeroOut() {
+        throw new UnsupportedOperationException();
+    }
 }
