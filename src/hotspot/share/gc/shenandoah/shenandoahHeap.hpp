@@ -297,7 +297,8 @@ private:
   
   double* _gc_historical_utilization;
   double* _gc_historical_duration;
-  size_t _gc_history_first;;
+  double _gcu_historical;
+  size_t _gc_history_first;
 
   void set_gc_state_all_threads(char state);
   void set_gc_state_mask(uint mask, bool value);

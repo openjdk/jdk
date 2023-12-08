@@ -442,6 +442,10 @@ jint ShenandoahHeap::initialize() {
 
   _gc_historical_utilization = NEW_C_HEAP_ARRAY(double, GCOverheadLimitThreshold, mtGC);
   _gc_historical_duration = NEW_C_HEAP_ARRAY(double, GCOverheadLimitThreshold, mtGC);
+  for (uint i = 0; i < GCOverheadLimitThreshold; i++) {
+    _gc_historical_utilization[i] = 0.0;
+    _gc_historical_duration[i] = 0.0;
+  }
 
   return JNI_OK;
 }
@@ -508,6 +512,7 @@ ShenandoahHeap::ShenandoahHeap(ShenandoahCollectorPolicy* policy) :
   _regions(nullptr),
   _update_refs_iterator(this),
   _gc_no_progress_count(0),
+  _gcu_historical(0.0),
   _gc_history_first(0),
   _control_thread(nullptr),
   _shenandoah_policy(policy),
@@ -873,17 +878,29 @@ void ShenandoahHeap::report_gc_utilization(double utilization, double duration) 
   if (_gc_history_first >= GCOverheadLimitThreshold) {
     _gc_history_first = 0;
   }
-}
-
-bool ShenandoahHeap::gc_overhead_exceeds_limit() {
   double weighted_sum = 0.0;
   double total_duration = 0.0;
   for (uint i = 0; i < GCOverheadLimitThreshold; i++) {
-    weighted_sum = _gc_historical_utilization[i] * _gc_historical_duration[i];
+    weighted_sum += _gc_historical_utilization[i] * _gc_historical_duration[i];
     total_duration += _gc_historical_duration[i];
+#undef KELVIN_OVERHEAD
+#ifdef KELVIN_OVERHEAD
+    log_info(gc)("history[%u] utilization: %.3f, duration: %.3f, weighted sum: %.3f, total_duration: %.3f",
+                 i, _gc_historical_utilization[i], _gc_historical_duration[i], weighted_sum, total_duration);
+#endif
   }
-  uint weighted_avg = (uint) ((total_duration > 0)? 100 * weighted_sum / total_duration: 0.0);
-  return (weighted_avg > GCTimeLimit);
+  _gcu_historical = ((total_duration > 0)? weighted_sum / total_duration: 0.0);
+#ifdef KELVIN_OVERHEAD
+  log_info(gc)("computed utilization as weighted average: %.3f", _gcu_historical);
+#endif
+}
+
+bool ShenandoahHeap::gc_overhead_exceeds_limit() {
+  double target_threshold = GCTimeLimit / 100.0;
+#ifdef KELVIN_OVERHEAD
+  log_info(gc)("testing gc_overhead %.3f against threshold: %.3f", _gcu_historical, target_threshold);
+#endif
+  return (_gcu_historical > target_threshold);
 }
 
 HeapWord* ShenandoahHeap::allocate_memory(ShenandoahAllocRequest& req, bool* gc_overhead_limit_was_exceeded) {
@@ -913,7 +930,9 @@ HeapWord* ShenandoahHeap::allocate_memory(ShenandoahAllocRequest& req, bool* gc_
         && (get_gc_no_progress_count() == 0 || original_count == shenandoah_policy()->full_gc_count())) {
 
       if (gc_overhead_exceeds_limit()) {
-        *gc_overhead_limit_was_exceeded = true;
+        if (gc_overhead_limit_was_exceeded != nullptr) {
+          *gc_overhead_limit_was_exceeded = true;
+        }
         break;
       }
       control_thread()->handle_alloc_failure(req);

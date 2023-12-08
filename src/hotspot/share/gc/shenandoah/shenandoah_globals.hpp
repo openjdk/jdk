@@ -334,7 +334,7 @@
   product(bool, ShenandoahSuspendibleWorkers, true, EXPERIMENTAL,           \
           "Suspend concurrent GC worker threads at safepoints")             \
                                                                             \
-  product(uint, ShenandoahGCTimeLimit, 75, EXPERIMENTAL,                    \
+  product(uint, ShenandoahGCTimeLimit, 90, EXPERIMENTAL,                    \
           "The percentage of CPU consumed by GC at which GC considers "     \
           "itself to have exceeded the reasonable threshold.  This "        \
           "replaces GCTimeLimit.  The denominator is calculated from "      \
