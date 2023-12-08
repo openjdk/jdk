@@ -333,6 +333,7 @@ class AllocatorClosureStackResourceArea : public AllocatorClosureGrowableArray<E
 public:
   virtual void dispatch_impl(ModifyClosure<E>* modify, TestClosure<E>* test, AllocatorArgs args) override final {
     ARGS_CASES(CASE)
+    // implicit destructor
   }
 
   void dispatch_impl_helper(ModifyClosure<E>* modify, TestClosure<E>* test, GrowableArray<E>* array) {
@@ -362,6 +363,7 @@ class AllocatorClosureEmbeddedResourceArea : public AllocatorClosureGrowableArra
 public:
   virtual void dispatch_impl(ModifyClosure<E>* modify, TestClosure<E>* test, AllocatorArgs args) override final {
     ARGS_CASES(CASE)
+    // implicit destructor
   };
 
   void dispatch_impl_helper(ModifyClosure<E>* modify, TestClosure<E>* test, GrowableArray<E>* array) {
@@ -374,13 +376,22 @@ public:
   }
 };
 
+#undef CASE
+#define CASE(args, init) {                       \
+  case args:                                     \
+  {                                              \
+    ResourceMark rm;                             \
+    GrowableArray<E>* array = new GrowableArray<E>(); \
+    dispatch_impl_helper(modify, test, array);   \
+    break;                                       \
+  }                                              \
+}
+
 template<typename E>
 class AllocatorClosureResourceAreaResourceArea : public AllocatorClosureGrowableArray<E> {
 public:
   virtual void dispatch_impl(ModifyClosure<E>* modify, TestClosure<E>* test, AllocatorArgs args) override final {
-    ResourceMark rm;
-    GrowableArray<E>* array = new GrowableArray<E>();
-    dispatch_impl_helper(modify, test, array);
+    ARGS_CASES(CASE)
     // no destructors called, array just abandoned
   };
 
@@ -394,13 +405,22 @@ public:
   }
 };
 
+#undef CASE
+#define CASE(args, init) {                       \
+  case args:                                     \
+  {                                              \
+    Arena arena(mtTest);                         \
+    GrowableArray<E> array(&arena);              \
+    dispatch_impl_helper(modify, test, &array);  \
+    break;                                       \
+  }                                              \
+}
+
 template<typename E>
 class AllocatorClosureStackArena : public AllocatorClosureGrowableArray<E> {
 public:
   virtual void dispatch_impl(ModifyClosure<E>* modify, TestClosure<E>* test, AllocatorArgs args) override final {
-    Arena arena(mtTest);
-    GrowableArray<E> array(&arena);
-    dispatch_impl_helper(modify, test, &array);
+    ARGS_CASES(CASE)
     // implicit destructor
   };
 
@@ -414,14 +434,24 @@ public:
   }
 };
 
+#undef CASE
+#define CASE(args, init) {                       \
+  case args:                                     \
+  {                                              \
+    Arena arena(mtTest);                         \
+    EmbeddedGrowableArray<E> embedded(&arena);   \
+    GrowableArray<E>* array = embedded.array();  \
+    dispatch_impl_helper(modify, test, array);   \
+    break;                                       \
+  }                                              \
+}
+
+
 template<typename E>
 class AllocatorClosureEmbeddedArena : public AllocatorClosureGrowableArray<E> {
 public:
   virtual void dispatch_impl(ModifyClosure<E>* modify, TestClosure<E>* test, AllocatorArgs args) override final {
-    Arena arena(mtTest);
-    EmbeddedGrowableArray<E> embedded(&arena);
-    GrowableArray<E>* array = embedded.array();
-    dispatch_impl_helper(modify, test, array);
+    ARGS_CASES(CASE)
     // implicit destructor
   };
 
@@ -435,13 +465,23 @@ public:
   }
 };
 
+#undef CASE
+#define CASE(args, init) {                       \
+  case args:                                     \
+  {                                              \
+    Arena arena(mtTest);                         \
+    GrowableArray<E>* array = new (&arena) GrowableArray<E>(&arena); \
+    dispatch_impl_helper(modify, test, array);   \
+    break;                                       \
+  }                                              \
+}
+
+
 template<typename E>
 class AllocatorClosureArenaArena : public AllocatorClosureGrowableArray<E> {
 public:
   virtual void dispatch_impl(ModifyClosure<E>* modify, TestClosure<E>* test, AllocatorArgs args) override final {
-    Arena arena(mtTest);
-    GrowableArray<E>* array = new (&arena) GrowableArray<E>(&arena);
-    dispatch_impl_helper(modify, test, array);
+    ARGS_CASES(CASE)
     // no destructors called, array just abandoned
   };
 
@@ -498,12 +538,21 @@ public:
   GrowableArrayCHeap<E, mtTest>* array() { return &_array; }
 };
 
+#undef CASE
+#define CASE(args, init) {                       \
+  case args:                                     \
+  {                                              \
+    GrowableArrayCHeap<E, mtTest> array;         \
+    dispatch_impl_helper(modify, test, &array);  \
+    break;                                       \
+  }                                              \
+}
+
 template<typename E>
 class AllocatorClosureStackCHeap : public AllocatorClosureGrowableArrayCHeap<E> {
 public:
   virtual void dispatch_impl(ModifyClosure<E>* modify, TestClosure<E>* test, AllocatorArgs args) override final {
-    GrowableArrayCHeap<E, mtTest> array;
-    dispatch_impl_helper(modify, test, &array);
+    ARGS_CASES(CASE)
     // destructor called implicitly, and it first destructs all elements.
   };
 
@@ -516,13 +565,22 @@ public:
   }
 };
 
+#undef CASE
+#define CASE(args, init) {                       \
+  case args:                                     \
+  {                                              \
+    EmbeddedGrowableArrayCHeap<E> embedded;      \
+    GrowableArrayCHeap<E, mtTest>* array = embedded.array(); \
+    dispatch_impl_helper(modify, test, array);   \
+    break;                                       \
+  }                                              \
+}
+
 template<typename E>
 class AllocatorClosureEmbeddedCHeap : public AllocatorClosureGrowableArrayCHeap<E> {
 public:
   virtual void dispatch_impl(ModifyClosure<E>* modify, TestClosure<E>* test, AllocatorArgs args) override final {
-    EmbeddedGrowableArrayCHeap<E> embedded;
-    GrowableArrayCHeap<E, mtTest>* array = embedded.array();
-    dispatch_impl_helper(modify, test, array);
+    ARGS_CASES(CASE)
     // destructor called implicitly, and it first destructs all elements.
   };
 
@@ -535,14 +593,23 @@ public:
   }
 };
 
+#undef CASE
+#define CASE(args, init) {                       \
+  case args:                                     \
+  {                                              \
+    GrowableArrayCHeap<E, mtTest>* array = new GrowableArrayCHeap<E, mtTest>(); \
+    dispatch_impl_helper(modify, test, array);   \
+    delete array;                                \
+    break;                                       \
+  }                                              \
+}
+
 template<typename E>
 class AllocatorClosureCHeapCHeap : public AllocatorClosureGrowableArrayCHeap<E> {
 public:
   virtual void dispatch_impl(ModifyClosure<E>* modify, TestClosure<E>* test, AllocatorArgs args) override final {
-    GrowableArrayCHeap<E, mtTest>* array = new GrowableArrayCHeap<E, mtTest>();
-    dispatch_impl_helper(modify, test, array);
+    ARGS_CASES(CASE)
     // destruction explicit, recursively destructs all elements
-    delete array;
   };
 
   void dispatch_impl_helper(ModifyClosure<E>* modify, TestClosure<E>* test, GrowableArrayCHeap<E,mtTest>* array) {
@@ -554,14 +621,23 @@ public:
   }
 };
 
+#undef CASE
+#define CASE(args, init) {                       \
+  case args:                                     \
+  {                                              \
+    GrowableArrayCHeap<E, mtTest>* array = new (std::nothrow) GrowableArrayCHeap<E, mtTest>(); \
+    dispatch_impl_helper(modify, test, array);   \
+    delete array;                                \
+    break;                                       \
+  }                                              \
+}
+
 template<typename E>
 class AllocatorClosureCHeapCHeapNoThrow : public AllocatorClosureGrowableArrayCHeap<E> {
 public:
   virtual void dispatch_impl(ModifyClosure<E>* modify, TestClosure<E>* test, AllocatorArgs args) override final {
-    GrowableArrayCHeap<E, mtTest>* array = new (std::nothrow) GrowableArrayCHeap<E, mtTest>();
-    dispatch_impl_helper(modify, test, array);
+    ARGS_CASES(CASE)
     // destruction explicit, recursively destructs all elements
-    delete array;
   };
 
   void dispatch_impl_helper(ModifyClosure<E>* modify, TestClosure<E>* test, GrowableArrayCHeap<E,mtTest>* array) {
