@@ -1,12 +1,12 @@
 /*
  * @test /nodynamiccopyright/
- * @bug 8206986 8222169 8224031 8240964 8267119 8268670
+ * @bug 8206986 8222169 8224031 8240964 8267119 8268670 8321582
  * @summary Check expression switch works.
- * @compile/fail/ref=ExpressionSwitch-old.out --release 9 -XDrawDiagnostics ExpressionSwitch.java
  * @compile ExpressionSwitch.java
  * @run main ExpressionSwitch
  */
 
+// * @compile/fail/ref=ExpressionSwitch-old.out --release 9 -XDrawDiagnostics ExpressionSwitch.java
 import java.util.Objects;
 import java.util.function.Supplier;
 
@@ -35,6 +35,16 @@ public class ExpressionSwitch {
         localClass(T.A);
         assertEquals(castSwitchExpressions(T.A), "A");
         testTypeInference(true, 0);
+        assertEquals(yieldPrimiteDotClass("byte"), byte.class);
+        assertEquals(yieldPrimiteDotClass("char"), char.class);
+        assertEquals(yieldPrimiteDotClass("short"), short.class);
+        assertEquals(yieldPrimiteDotClass("int"), int.class);
+        assertEquals(yieldPrimiteDotClass("long"), long.class);
+        assertEquals(yieldPrimiteDotClass("float"), float.class);
+        assertEquals(yieldPrimiteDotClass("double"), double.class);
+        assertEquals(yieldPrimiteDotClass("void"), void.class);
+        assertEquals(yieldPrimiteDotClass("boolean"), boolean.class);
+        assertEquals(yieldPrimiteDotClass("other"), null);
     }
 
     private String print(T t) {
@@ -137,6 +147,21 @@ public class ExpressionSwitch {
         return switch (s) {
             case "a": yield !b; // intentionally repeated !b, test the case clause
             default: yield !b; // intentionally repeated !b, test the default clause
+        };
+    }
+
+    private Class<?> yieldPrimiteDotClass(String s) {
+        return switch (s) {
+            case "byte":    yield byte.class;
+            case "char":    yield char.class;
+            case "short":   yield short.class;
+            case "int":     yield int.class;
+            case "long":    yield long.class;
+            case "float":   yield float.class;
+            case "double":  yield double.class;
+            case "void":    yield void.class;
+            case "boolean": yield boolean.class;
+            default: yield null;
         };
     }
 
