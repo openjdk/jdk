@@ -146,16 +146,16 @@ public class InternalErrorTest {
                 buffer.get(new byte[8]);
                 break;
             case 1:
-                // testing Unsafe.copySwapMemory, trying to access next  page after truncation.
+                // testing Unsafe.copySwapMemory, trying to access next page after truncation.
                 unsafe.copySwapMemory(null, mapAddr + pageSize, new byte[4000], 16, 2000, 2);
                 break;
             case 2:
-                // testing Unsafe.copySwapMemory, trying to access next  page after truncation.
+                // testing Unsafe.copySwapMemory, trying to access next page after truncation.
                 unsafe.copySwapMemory(null, mapAddr + pageSize, null, allocMem, 2000, 2);
                 break;
             case 3:
                 MemorySegment segment = MemorySegment.ofBuffer(buffer);
-                // testing Unsafe.setMemory, trying to access next  page after truncation.
+                // testing Unsafe.setMemory, trying to access next page after truncation.
                 segment.fill((byte) 0xF0);
                 break;
         }
