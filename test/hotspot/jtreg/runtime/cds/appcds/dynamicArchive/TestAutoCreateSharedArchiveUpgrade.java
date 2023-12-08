@@ -90,7 +90,7 @@ public class TestAutoCreateSharedArchiveUpgrade {
             try {
                 setupJVMs(Integer.parseInt(versions[i]));
                 doTest();
-            } catch (RuntimeException e) {
+            } catch (NumberFormatException  e) {
                 throw new RuntimeException("Invalid AutoCreateSharedArchive JDK version: " + versions[i]);
             }
         }
@@ -103,21 +103,8 @@ public class TestAutoCreateSharedArchiveUpgrade {
 
         newJVM = TEST_JDK + FS + "bin" + FS + "java";
 
-        //
-        if (fetchVersion < 19 && fetchVersion > 0) {
-            throw new RuntimeException("Unsupported JDK version " + fetchVersion);
-        } else if (fetchVersion >= 19) {
-            oldJVM = fetchJDK(fetchVersion) + FS + "bin" + FS + "java";
-        } else if (PREV_JDK != null) {
-            oldJVM = PREV_JDK + FS + "bin" + FS + "java";
-        } else if (BOOT_JDK != null) {
-            oldJVM = BOOT_JDK + FS + "bin" + FS + "java";
-        } else {
-            throw new SkippedException("Use -Dtest.previous.jdk or -Dtest.boot.jdk to specify a " +
-                                       "previous version of the JDK that supports " +
-                                       "-XX:+AutoCreateSharedArchive");
-        }
-
+        // Version 0 is used here to indicate that no version is supplied so that
+        // PREV_JDK or BOOT_JDK are used
         if (fetchVersion >= 19) {
             oldJVM = fetchJDK(fetchVersion) + FS + "bin" + FS + "java";
         } else if (fetchVersion > 0) {
