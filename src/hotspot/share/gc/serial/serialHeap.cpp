@@ -46,6 +46,7 @@
 #include "gc/serial/genMarkSweep.hpp"
 #include "gc/serial/markSweep.hpp"
 #include "gc/shared/cardTableBarrierSet.hpp"
+#include "gc/shared/classUnloadingContext.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "gc/shared/collectorCounters.hpp"
 #include "gc/shared/continuationGCSupport.inline.hpp"
@@ -620,6 +621,9 @@ void SerialHeap::do_collection(bool           full,
     }
 
     CodeCache::on_gc_marking_cycle_start();
+
+    ClassUnloadingContext ctx(1 /* num_nmethod_unlink_workers */,
+                              false /* lock_codeblob_free_separately */);
 
     collect_generation(_old_gen,
                        full,
