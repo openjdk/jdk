@@ -261,16 +261,14 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  *
  * <h3><a id="default_locale">Default Locale</a></h3>
  *
- * <p>The default locale is provided mainly for the locale-sensitive methods if no
+ * <p>The default Locale is provided mainly for the locale-sensitive methods if no
  * {@code Locale} is explicitly specified as an argument, such as
- * {@link DateFormat#getInstance()}. The default locale is determined at startup
- * of the Java runtime, and established in the following three phases:
+ * {@link DateFormat#getInstance()}. The default Locale is determined at startup
+ * of the Java runtime and established in the following three phases:
  * <ol>
- * <li>The locale-related system properties are established according to the
- * underlying host environment. The following table lists the locale-related
- * system properties. Some of the system properties (except for
- * {@code user.language}) may not have corresponding values depending on the
- * host environment.
+ * <li>The locale-related system properties listed below are established from the
+ * host environment. Some system properties (except for {@code user.language}) may
+ * not have values from the host environment.
  * <table class="striped">
  * <caption style="display:none">Shows property keys and associated values</caption>
  * <thead>
@@ -279,58 +277,55 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  * </thead>
  * <tbody>
  * <tr><th scope="row">{@systemProperty user.language}</th>
- *     <td>{@link ##def_language language} for the default locale,
+ *     <td>{@link ##def_language language} for the default Locale,
  *     such as "en" (English)</td></tr>
  * <tr><th scope="row">{@systemProperty user.script}</th>
- *     <td>{@link ##def_script script} for the default locale,
+ *     <td>{@link ##def_script script} for the default Locale,
  *     such as "Latn" (Latin)</td></tr>
  * <tr><th scope="row">{@systemProperty user.country}</th>
- *     <td>{@link ##def_region country} for the default locale,
+ *     <td>{@link ##def_region country} for the default Locale,
  *     such as "US" (United States)</td></tr>
  * <tr><th scope="row">{@systemProperty user.variant}</th>
- *     <td>{@link ##def_variant variant} for the default locale,
+ *     <td>{@link ##def_variant variant} for the default Locale,
  *     such as "POSIX"</td></tr>
  * <tr><th scope="row">{@systemProperty user.extensions}</th>
- *     <td>{@link ##def_extensions extensions} for the default locale,
+ *     <td>{@link ##def_extensions extensions} for the default Locale,
  *     such as "u-ca-japanese" (Japanese Calendar)</td></tr>
  * </tbody>
  * </table>
  * </li>
- * <li>The values for these system properties can be overridden from the values
- * designated on the Java launcher's command line with {@code -D} option. Note that
- * no check for the specified values, either syntactically or the code validity is
- * done, except for {@code user.extensions} in which unparsable extensions are
- * ignored. For example, by specifying {@code -Duser.language=foobarbaz} creates
- * the default locale that returns "foobarbaz" as the language, while
- * {@code -Duser.extensions=foobarbaz} returns no extensions.
+ * <li>The values of these system properties can be overridden by values designated
+ * at startup time. If the overriding value of the {@code user.extensions} property
+ * is unparsable, it is ignored. The overriding values of other properties are not
+ * checked for syntax or validity and are used directly in the default Locale.
+ * (Typically, system property values can be provided using the {@code -D} command-line
+ * option of a launcher. For example, specifying {@code -Duser.extensions=foobarbaz}
+ * results in a default Locale with no extensions, while specifying
+ * {@code -Duser.language=foobarbaz} results in a default Locale whose language is
+ * "foobarbaz".)
  * </li>
  * <li>The default {@code Locale} instance is constructed from these system
- * properties values.
+ * properties' values.
  * </li>
  * </ol>
- * <p>These system properties are read only at the Java runtime startup. Altering
- * their values later with {@link System#setProperties(Properties)}/
- * {@link System#setProperty(String, String)} will have no effect on the established
- * default locale.
- * <p>Once the default locale is established, applications can query the default
- * locale with {@link #getDefault()} and change it with {@link #setDefault(Locale)}
- * methods. If the default locale is changed with the setter method, the system
- * properties that established the default locale won't be altered. Thus, it is not
- * recommended that applications read those system properties and parse/interpret
- * them by themselves as their values may be out of sync.
+ * <p>Altering the system property values with {@link System#setProperties(Properties)}/
+ * {@link System#setProperty(String, String)} has no effect on the default Locale.
+ * <p>Once the default Locale is established, applications can query the default
+ * Locale with {@link #getDefault()} and change it with {@link #setDefault(Locale)}.
+ * If the default Locale is changed with {@link #setDefault(Locale)}, the corresponding
+ * system properties are not altered. It is not recommended that applications read
+ * those system properties and parse/interpret them as their values may be out of sync.
  *
- * <p>There are also finer-grained default locales specific for each
- * {@link Locale.Category}. These category specific default locales can also be
- * queried by {@link #getDefault(Category)}, and set by
- * {@link #setDefault(Category, Locale)}. Constructions of these category specific
- * default locales are also determined by the corresponding system properties,
+ * <p>There are finer-grained default Locales specific for each {@link Locale.Category}.
+ * These category specific default Locales can be queried by {@link #getDefault(Category)},
+ * and set by {@link #setDefault(Category, Locale)}. Constructions of these category
+ * specific default Locales are determined by the corresponding system properties,
  * which consist of the base system properties as listed above, appended by either
- * ".display" or ".format" depending on the category. For example, the value to
- * the {@code user.language.display} system property will result in the
- * {@code language} part of the default locale for {@link Locale.Category#DISPLAY}
- * category. In the absence of category specific system properties to construct
- * with, they default to the "category-less" system properties, such as
- * {@code user.language} in the previous example.
+ * {@code ".display"} or {@code ".format"} depending on the category. For example,
+ * the value of the {@code user.language.display} system property will be used in the
+ * {@code language} part of the default Locale for {@link Locale.Category#DISPLAY}
+ * category. In the absence of category specific system properties the "category-less"
+ * system properties are used, such as {@code user.language} in the previous example.
  *
  * <h3><a id="LocaleMatching">Locale Matching</a></h3>
  *
