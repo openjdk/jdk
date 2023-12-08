@@ -685,6 +685,7 @@ void ShenandoahConcurrentGC::op_init_mark() {
     ShenandoahGCPhase phase(ShenandoahPhaseTimings::init_update_region_states);
     ShenandoahInitMarkUpdateRegionStateClosure cl;
     heap->parallel_heap_region_iterate(&cl);
+    heap->old_generation()->ref_processor()->reset_thread_locals();
   } else {
     // Update region state for only young regions
     ShenandoahGCPhase phase(ShenandoahPhaseTimings::init_update_region_states);
