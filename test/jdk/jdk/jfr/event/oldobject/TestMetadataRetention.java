@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -100,10 +100,10 @@ public final class TestMetadataRetention {
                 RecordedEvent chunkRotation = findChunkRotationEvent(events);
                 try {
                     // Sanity check that class was unloaded
-                    Events.hasEvent(recording, EventNames.ClassUnload);
+                    Events.hasEvent(events, EventNames.ClassUnload);
                     validateClassUnloadEvent(events);
                     // Validate that metadata for old object event has survived chunk rotation
-                    Events.hasEvent(recording, EventNames.OldObjectSample);
+                    Events.hasEvent(events, EventNames.OldObjectSample);
                     validateOldObjectEvent(events, chunkRotation.getStartTime());
                 } catch (Throwable t) {
                     t.printStackTrace();

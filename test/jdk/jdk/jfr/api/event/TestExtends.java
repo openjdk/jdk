@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 
 package jdk.jfr.api.event;
 
+import java.util.List;
 import jdk.jfr.Event;
 import jdk.jfr.EventType;
 import jdk.jfr.Recording;
@@ -88,7 +89,8 @@ public class TestExtends {
         m.commit();
 
         r.stop();
-        for (RecordedEvent re : Events.fromRecording(r)) {
+        List<RecordedEvent> events = Events.fromRecording(r);
+        for (RecordedEvent re : events) {
             System.out.println(re);
         }
         // Grandpa
@@ -127,18 +129,18 @@ public class TestExtends {
         verifyField(meType, "hiddenField");
         verifyFieldCount(meType, 11);
 
-        for (RecordedEvent re : Events.fromRecording(r)) {
+        for (RecordedEvent re : events) {
             System.out.println(re);
         }
 
-        RecordedEvent grandpa = findEvent(r, GrandpaEvent.class.getName());
+        RecordedEvent grandpa = findEvent(events, GrandpaEvent.class.getName());
         Asserts.assertEquals(grandpa.getValue("gPublicField"), 4);
         Asserts.assertEquals(grandpa.getValue("gProtectedField"), 3);
         Asserts.assertEquals(grandpa.getValue("gPrivateField"), 2);
         Asserts.assertEquals(grandpa.getValue("gDefaultField"), 1);
         Asserts.assertEquals(grandpa.getValue("hiddenField"), 4711);
 
-        RecordedEvent parent = findEvent(r, ParentEvent.class.getName());
+        RecordedEvent parent = findEvent(events, ParentEvent.class.getName());
         Asserts.assertEquals(parent.getValue("gPublicField"), 4);
         Asserts.assertEquals(parent.getValue("gProtectedField"), 3);
         Asserts.assertEquals(parent.getValue("gDefaultField"), 1);
@@ -148,7 +150,7 @@ public class TestExtends {
         Asserts.assertEquals(parent.getValue("pDefaultField"), 10);
         Asserts.assertEquals(parent.getValue("hiddenField"), true);
 
-        RecordedEvent me = findEvent(r, MeEvent.class.getName());
+        RecordedEvent me = findEvent(events, MeEvent.class.getName());
         Asserts.assertEquals(me.getValue("gPublicField"), 4);
         Asserts.assertEquals(me.getValue("gProtectedField"), 3);
         Asserts.assertEquals(me.getValue("gDefaultField"), 1);
@@ -162,8 +164,8 @@ public class TestExtends {
         Asserts.assertEquals(me.getValue("hiddenField"), "Hidden");
     }
 
-    private static RecordedEvent findEvent(Recording r, String name) throws Exception {
-        for (RecordedEvent re : Events.fromRecording(r)) {
+    private static RecordedEvent findEvent(List<RecordedEvent> events, String name) throws Exception {
+        for (RecordedEvent re : events) {
             if (re.getEventType().getName().equals(name)) {
                 return re;
             }

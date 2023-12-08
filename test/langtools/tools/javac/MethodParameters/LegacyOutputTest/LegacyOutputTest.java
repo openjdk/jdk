@@ -25,19 +25,15 @@
  * @test
  * @bug 8190452
  * @summary javac should not add MethodParameters attributes to v51 and earlier class files
- * @modules java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.constantpool
- *          java.base/jdk.internal.classfile.instruction
- *          java.base/jdk.internal.classfile.components
- *          java.base/jdk.internal.classfile.impl
+ * @enablePreview
+ * @modules java.base/jdk.internal.classfile.impl
  * @build LegacyOutputTest
  * @run main LegacyOutputTest
  */
 
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.attribute.MethodParameterInfo;
-import jdk.internal.classfile.attribute.MethodParametersAttribute;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.MethodParameterInfo;
+import java.lang.classfile.attribute.MethodParametersAttribute;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Paths;
@@ -95,7 +91,7 @@ public class LegacyOutputTest {
         if (!task.call()) {
             throw new AssertionError("compilation failed");
         }
-        ClassModel classFile = Classfile.of().parse(Paths.get("Test.class"));
+        ClassModel classFile = ClassFile.of().parse(Paths.get("Test.class"));
         MethodModel method = getMethod(classFile, "f");
         MethodParametersAttribute attribute = method.findAttribute(Attributes.METHOD_PARAMETERS).orElse(null);
         if (attribute == null) {

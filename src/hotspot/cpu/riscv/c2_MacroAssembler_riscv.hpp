@@ -163,6 +163,8 @@
 
   void signum_fp(FloatRegister dst, FloatRegister one, bool is_double);
 
+  void signum_fp_v(VectorRegister dst, VectorRegister one, BasicType bt, int vlen);
+
   // intrinsic methods implemented by rvv instructions
 
   // compress bits, i.e. j.l.Integer/Long::compress.

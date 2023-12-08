@@ -577,28 +577,6 @@ public class ThreadGroup implements Thread.UncaughtExceptionHandler {
     }
 
     /**
-     * Throws {@code UnsupportedOperationException}.
-     *
-     * @deprecated This method was originally specified to suspend all threads
-     *             in the thread group.
-     */
-    @Deprecated(since="1.2", forRemoval=true)
-    public final void suspend() {
-        throw new UnsupportedOperationException();
-    }
-
-    /**
-     * Throws {@code UnsupportedOperationException}.
-     *
-     * @deprecated This method was originally specified to resume all threads
-     *             in the thread group.
-     */
-    @Deprecated(since="1.2", forRemoval=true)
-    public final void resume() {
-        throw new UnsupportedOperationException();
-    }
-
-    /**
      * Does nothing.
      *
      * @deprecated This method was originally specified to destroy an empty
