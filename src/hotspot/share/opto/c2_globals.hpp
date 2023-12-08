@@ -53,6 +53,9 @@
   product(bool, StressCCP, false, DIAGNOSTIC,                               \
           "Randomize worklist traversal in CCP")                            \
                                                                             \
+  product(bool, StressIncrementalInlining, false, DIAGNOSTIC,               \
+          "Randomize the incremental inlining decision")                    \
+                                                                            \
   product(uint, StressSeed, 0, DIAGNOSTIC,                                  \
           "Seed for randomized stress testing (if unset, a random one is "  \
           "generated). The seed is recorded in the compilation log, if "    \
@@ -468,7 +471,10 @@
           "Try to simplify allocation merges before Scalar Replacement")    \
                                                                             \
   notproduct(bool, TraceReduceAllocationMerges, false,                      \
-          "Trace decision for simplifying allocation merges.")              \
+             "Trace decision for simplifying allocation merges.")           \
+                                                                            \
+  develop(bool, VerifyReduceAllocationMerges, true,                         \
+          "Verify reduce allocation merges in escape analysis")             \
                                                                             \
   product(bool, DoEscapeAnalysis, true,                                     \
           "Perform escape analysis")                                        \
@@ -777,6 +783,8 @@
           "more than this threshold")                                       \
           range(0, 100)                                                     \
                                                                             \
+  develop(bool, StressPrunedExceptionHandlers, false,                       \
+          "Always prune exception handlers")                                \
 
 // end of C2_FLAGS
 

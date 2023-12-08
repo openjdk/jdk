@@ -219,7 +219,6 @@ class HotSpotVMConfig extends HotSpotVMConfigAccess {
     final int constantPoolLengthOffset = getFieldOffset("ConstantPool::_length", Integer.class, "int");
     final int constantPoolFlagsOffset = getFieldOffset("ConstantPool::_flags", Integer.class, "u2");
 
-    final int constantPoolCpCacheIndexTag = getConstant("ConstantPool::CPCACHE_INDEX_TAG", Integer.class);
     final int constantPoolHasDynamicConstant = getConstant("ConstantPool::_has_dynamic_constant", Integer.class);
     final int constantPoolSourceFileNameIndexOffset = getFieldOffset("ConstantPool::_source_file_name_index", Integer.class, "u2");
 

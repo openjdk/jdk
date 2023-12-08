@@ -189,7 +189,7 @@ void JVMCIEnv::init_env_mode_runtime(JavaThread* thread, JNIEnv* parent_env) {
   JNIAccessMark jni(this, thread);
   jint result = _env->PushLocalFrame(32);
   if (result != JNI_OK) {
-    JVMCI_event_1("[%s:%d] Error pushing local JNI frame (err: %d)", _file, _line, _init_error);
+    JVMCI_event_1("[%s:%d] Error pushing local JNI frame (err: %d)", _file, _line, result);
     return;
   }
   _pop_frame_on_close = true;
@@ -589,7 +589,9 @@ jboolean JVMCIEnv::transfer_pending_exception(JavaThread* THREAD, JVMCIEnv* peer
 
 JVMCIEnv::~JVMCIEnv() {
   if (_init_error_msg != nullptr) {
-    os::free((void*) _init_error_msg);
+    // The memory allocated in libjvmci was not allocated with os::malloc
+    // so must not be freed with os::free.
+    ALLOW_C_FUNCTION(::free((void*) _init_error_msg));
   }
   if (_init_error != JNI_OK) {
     return;

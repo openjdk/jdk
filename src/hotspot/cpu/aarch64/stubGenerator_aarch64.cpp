@@ -141,7 +141,8 @@ class StubGenerator: public StubCodeGenerator {
   //     [ return_from_Java     ] <--- sp
   //     [ argument word n      ]
   //      ...
-  // -27 [ argument word 1      ]
+  // -29 [ argument word 1      ]
+  // -28 [ saved Floating-point Control Register ]
   // -26 [ saved v15            ] <--- sp_after_call
   // -25 [ saved v14            ]
   // -24 [ saved v13            ]
@@ -173,8 +174,9 @@ class StubGenerator: public StubCodeGenerator {
 
   // Call stub stack layout word offsets from fp
   enum call_stub_layout {
-    sp_after_call_off = -26,
+    sp_after_call_off  = -28,
 
+    fpcr_off           = sp_after_call_off,
     d15_off            = -26,
     d13_off            = -24,
     d11_off            = -22,
@@ -204,8 +206,9 @@ class StubGenerator: public StubCodeGenerator {
     StubCodeMark mark(this, "StubRoutines", "call_stub");
     address start = __ pc();
 
-    const Address sp_after_call(rfp, sp_after_call_off * wordSize);
+    const Address sp_after_call (rfp, sp_after_call_off * wordSize);
 
+    const Address fpcr_save     (rfp, fpcr_off           * wordSize);
     const Address call_wrapper  (rfp, call_wrapper_off   * wordSize);
     const Address result        (rfp, result_off         * wordSize);
     const Address result_type   (rfp, result_type_off    * wordSize);
@@ -253,6 +256,14 @@ class StubGenerator: public StubCodeGenerator {
     __ stpd(v11, v10,  d11_save);
     __ stpd(v13, v12,  d13_save);
     __ stpd(v15, v14,  d15_save);
+
+    __ get_fpcr(rscratch1);
+    __ str(rscratch1, fpcr_save);
+    // Set FPCR to the state we need. We do want Round to Nearest. We
+    // don't want non-IEEE rounding modes or floating-point traps.
+    __ bfi(rscratch1, zr, 22, 4); // Clear DN, FZ, and Rmode
+    __ bfi(rscratch1, zr, 8, 5);  // Clear exception-control bits (8-12)
+    __ set_fpcr(rscratch1);
 
     // install Java thread in global register now we have saved
     // whatever value it held
@@ -366,6 +377,10 @@ class StubGenerator: public StubCodeGenerator {
     __ ldp(r24, r23,   r24_save);
     __ ldp(r22, r21,   r22_save);
     __ ldp(r20, r19,   r20_save);
+
+    // restore fpcr
+    __ ldr(rscratch1,  fpcr_save);
+    __ set_fpcr(rscratch1);
 
     __ ldp(c_rarg0, c_rarg1,  call_wrapper);
     __ ldrw(c_rarg2, result_type);
@@ -8378,7 +8393,7 @@ class StubGenerator: public StubCodeGenerator {
 
     BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
     if (bs_nm != nullptr) {
-      StubRoutines::aarch64::_method_entry_barrier = generate_method_entry_barrier();
+      StubRoutines::_method_entry_barrier = generate_method_entry_barrier();
     }
 
     StubRoutines::aarch64::_spin_wait = generate_spin_wait();

@@ -15,15 +15,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="nv" draft="contributed">Diné Bizaad</language>
 		</languages>
 	</localeDisplayNames>
-	<layout>
-		<orientation>
-			<characterOrder>left-to-right</characterOrder>
-			<lineOrder>top-to-bottom</lineOrder>
-		</orientation>
-	</layout>
 	<characters>
-		<exemplarCharacters references="R1">[a á ą {ą\u0301} b {ch} {ch’} d {dl} {dz} e é ę {ę\u0301} g {gh} h {hw} i í į {į\u0301} j k {k’} {kw} l ł m n o ó ǫ {ǫ\u0301} s {sh} t {t’} {tł} {tł’} {ts} {ts’} w x y z {zh}]</exemplarCharacters>
-		<exemplarCharacters type="numbers">[\- ‑ , . % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
-		<exemplarCharacters type="punctuation">[\- ‐ ‑ – — , ; \: ! ? . … ' ‘ ’ &quot; “ ” ( ) \[ \] § @ * / \&amp; # † ‡ ′ ″]</exemplarCharacters>
+		<exemplarCharacters references="R1">[aáą{ą́} b {ch} {ch’} d {dl} {dz} eéę{ę́} g {gh} h {hw} iíį{į́} j k {k’} {kw} lł m n oóǫ{ǫ́} s {sh} t {t’} {tł} {tł’} {ts} {ts’} w x y z {zh}]</exemplarCharacters>
+		<exemplarCharacters type="punctuation">[\- ‐‑ – — , ; \: ! ? . … '‘’ &quot;“” ( ) \[ \] § @ * / \&amp; # † ‡ ′ ″]</exemplarCharacters>
 	</characters>
 </ldml>
