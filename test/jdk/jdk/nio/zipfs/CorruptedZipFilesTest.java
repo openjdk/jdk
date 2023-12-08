@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,10 +22,9 @@
  */
 
 /* @test
- * @bug 4770745 6218846 6218848 6237956 8313765 8316141
+ * @bug 8316141
  * @summary test for correct detection and reporting of corrupted zip files
- * @author Martin Buchholz
- * @run junit CorruptedZipFiles
+ * @run junit CorruptedZipFilesTest
  */
 
 
@@ -40,17 +39,19 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.nio.file.FileSystem;
+import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Map;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipException;
-import java.util.zip.ZipFile;
 import java.util.zip.ZipOutputStream;
 
 import static java.util.zip.ZipFile.*;
 import static org.junit.jupiter.api.Assertions.*;
 
-public class CorruptedZipFiles {
+public class CorruptedZipFilesTest {
 
     /*
      * Byte array holding a valid template ZIP.
@@ -243,17 +244,6 @@ public class CorruptedZipFiles {
     }
 
     /*
-     * A ZipException is thrown if the last CEN header is not immediately
-     * followed by the start of the 'End of central directory' record
-     */
-    @Test
-    public void insufficientFilenameLength() throws IOException {
-        short existingNameLength = buffer.getShort(cenpos + CENNAM);
-        buffer.putShort(cenpos+CENNAM, (short) (existingNameLength - 1));
-        assertZipException(".*bad header size.*");
-    }
-
-    /*
      * A ZipException is thrown if a CEN header has an
      * extra field length which makes the CEN header overflow into the
      * End of central directory record.
@@ -266,7 +256,7 @@ public class CorruptedZipFiles {
     }
 
     /*
-     * A ZipException is thrown if a CEN header has an
+     * A ZipException is thrown by Zip FS if a CEN header has an
      * extra field length which makes the CEN header overflow into the
      * End of central directory record.
      */
@@ -294,17 +284,7 @@ public class CorruptedZipFiles {
     @Test
     public void unsupportedCompressionMethod() throws IOException {
         copy[cenpos+CENHOW] = 2;
-        assertZipException(".*bad compression method.*");
-    }
-
-    /*
-     * A ZipException is thrown when a LOC header has an unexpected signature
-     */
-    @Test
-    public void invalidLOCSignature() throws IOException {
-        int existingSignatur = buffer.getInt(locpos);
-        buffer.putInt(locpos, existingSignatur +1);
-        assertZipException(".*bad signature.*");
+        assertZipException(".*unsupported compression method.*");
     }
 
     /*
@@ -319,14 +299,14 @@ public class CorruptedZipFiles {
         Files.write(zip, copy);
 
         ZipException ex = assertThrows(ZipException.class, () -> {
-            try (ZipFile zf = new ZipFile(zip.toFile())) {
-                try (InputStream is = zf.getInputStream(new ZipEntry("x"))) {
+            try (FileSystem fs = FileSystems.newFileSystem(zip, Map.of())) {
+                Path p = fs.getPath("x");
+                try (InputStream is = Files.newInputStream(p)) {
                     is.transferTo(OutputStream.nullOutputStream());
                 }
             }
         });
         assertTrue(ex.getMessage().matches(msgPattern),
                 "Unexpected ZipException message: " + ex.getMessage());
-
     }
 }
