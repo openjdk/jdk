@@ -4262,18 +4262,14 @@ FCVT_SAFE(fcvt_l_d, d);
 void MacroAssembler::java_round_float(Register dst, FloatRegister src, FloatRegister ftmp) {
   Label done;
   mv(dst, zr);
-
-  fclass_s(t0, src);
-
-  // dst = 0
-  // if +/-0, +/-subnormal numbers, signaling/quiet NaN
-  andi(t0, t0, fclass_mask::nan | fclass_mask::zero | fclass_mask::subnorm);
-  bnez(t0, done);
-
-  // dst = (src + 0.5f) rounded down towards negative infinity
-  // if +/-inf, +/-normal numbers
   li(t0, 0x3f000000);
   fmv_w_x(ftmp, t0);
+
+  // dst = 0 if NaN
+  feq_s(t0, src, src);
+  beqz(t0, done);
+
+  // dst = (src + 0.5f) rounded down towards negative infinity
   fadd_s(ftmp, src, ftmp, RoundingMode::rdn);
   fcvt_w_s(dst, ftmp, RoundingMode::rdn);
 
@@ -4283,18 +4279,14 @@ void MacroAssembler::java_round_float(Register dst, FloatRegister src, FloatRegi
 void MacroAssembler::java_round_double(Register dst, FloatRegister src, FloatRegister ftmp) {
   Label done;
   mv(dst, zr);
-
-  fclass_d(t0, src);
-
-  // dst = 0
-  // if +/-0, +/-subnormal numbers, signaling/quiet NaN
-  andi(t0, t0, fclass_mask::nan | fclass_mask::zero | fclass_mask::subnorm);
-  bnez(t0, done);
-
-  // dst = (src + 0.5) rounded down towards negative infinity
-  // if +/-inf, +/-normal numbers
   li(t0, 0x3fe0000000000000);
   fmv_d_x(ftmp, t0);
+
+  // dst = 0 if NaN
+  feq_d(t0, src, src);
+  beqz(t0, done);
+
+  // dst = (src + 0.5) rounded down towards negative infinity
   fadd_d(ftmp, src, ftmp, RoundingMode::rdn);
   fcvt_l_d(dst, ftmp, RoundingMode::rdn);
 
