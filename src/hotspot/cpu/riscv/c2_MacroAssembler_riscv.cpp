@@ -1492,46 +1492,30 @@ void C2_MacroAssembler::arrays_hashcode(Register ary, Register cnt, Register res
 
   beqz(cnt, DONE);
 
-  addiw(pow31_2, zr, 961); // [31^^2]
-
+  addiw(pow31_2, zr, 961);       // [31^^2]
   andi(chunks, cnt, ~(stride-1));
   beqz(chunks, TAIL);
 
   slli(chunks_end, chunks, chunks_end_shift);
   add(chunks_end, ary, chunks_end);
-  andi(cnt, cnt, stride-1); // don't forget about tail!
-
-#define DO_ELEMENT_LOAD(reg, idx) \
-  switch (eltype) { \
-  case T_BOOLEAN: lbu(reg, Address(ary, idx * elsize)); break; \
-  case T_CHAR:    lhu(reg, Address(ary, idx * elsize)); break; \
-  case T_BYTE:     lb(reg, Address(ary, idx * elsize)); break; \
-  case T_SHORT:    lh(reg, Address(ary, idx * elsize)); break; \
-  case T_INT:      lw(reg, Address(ary, idx * elsize)); break; \
-  default:                               ShouldNotReachHere(); \
-  } \
-
+  andi(cnt, cnt, stride-1);      // don't forget about tail!
   ld(pow31_4, ExternalAddress(StubRoutines::riscv::arrays_hashcode_powers_of_31()
                               + 0 * sizeof(jint))); // [31^^3:31^^4]
   srli(pow31_3, pow31_4, 32);
 
   bind(WIDE_LOOP);
   mulw(result, result, pow31_4); // 31^^4 * h
-  DO_ELEMENT_LOAD(t0,   0);
-  DO_ELEMENT_LOAD(t1,   1);
-  DO_ELEMENT_LOAD(tmp5, 2);
-  DO_ELEMENT_LOAD(tmp6, 3);
-
+  arrays_hashcode_elload(t0,   Address(ary, 0 * elsize), eltype);
+  arrays_hashcode_elload(t1,   Address(ary, 1 * elsize), eltype);
+  arrays_hashcode_elload(tmp5, Address(ary, 2 * elsize), eltype);
+  arrays_hashcode_elload(tmp6, Address(ary, 3 * elsize), eltype);
   mulw(t0, t0, pow31_3);         // 31^^3 * ary[i+0]
   addw(result, result, t0);
-
   mulw(t1, t1, pow31_2);         // 31^^2 * ary[i+1]
   addw(result, result, t1);
-
   slli(t0, tmp5, 5);             // optimize 31^^1 * ary[i+2]
   subw(tmp5, t0, tmp5);          // with ary[i+2]<<5 - ary[i+2]
   addw(result, result, tmp5);
-
   addw(result, result, tmp6);    // 31^^4 * h + 31^^3 * ary[i+0] + 31^^2 * ary[i+1]
                                  //           + 31^^1 * ary[i+2] + 31^^0 * ary[i+3]
   addi(ary, ary, elsize * stride);
@@ -1543,14 +1527,12 @@ void C2_MacroAssembler::arrays_hashcode(Register ary, Register cnt, Register res
   add(chunks_end, ary, chunks_end);
 
   bind(TAIL_LOOP);
-  DO_ELEMENT_LOAD(t0, 0)
+  arrays_hashcode_elload(t0, Address(ary), eltype);
   slli(t1, result, 5);           // optimize 31 * result
   subw(result, t1, result);      // with result<<5 - result
   addw(result, result, t0);
   addi(ary, ary, elsize);
   bne(ary, chunks_end, TAIL_LOOP);
-
-#undef DO_ELEMENT_LOAD
 
   bind(DONE);
   BLOCK_COMMENT("} // arrays_hashcode");
@@ -1566,6 +1548,19 @@ int C2_MacroAssembler::arrays_hashcode_elsize(BasicType eltype) {
   default:
     ShouldNotReachHere();
     return -1;
+  }
+}
+
+void C2_MacroAssembler::arrays_hashcode_elload(Register dst, Address src, BasicType eltype) {
+  switch (eltype) {
+  // T_BOOLEAN used as surrogate for unsigned byte
+  case T_BOOLEAN: lbu(dst, src);   break;
+  case T_BYTE:     lb(dst, src);   break;
+  case T_SHORT:    lh(dst, src);   break;
+  case T_CHAR:    lhu(dst, src);   break;
+  case T_INT:      lw(dst, src);   break;
+  default:
+    ShouldNotReachHere();
   }
 }
 

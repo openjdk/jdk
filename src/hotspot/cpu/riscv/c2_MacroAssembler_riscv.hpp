@@ -85,6 +85,7 @@
                        BasicType eltype);
   // helper function for arrays_hashcode
   int arrays_hashcode_elsize(BasicType eltype);
+  void arrays_hashcode_elload(Register dst, Address src, BasicType eltype);
 
   void string_equals(Register r1, Register r2,
                      Register result, Register cnt1,
