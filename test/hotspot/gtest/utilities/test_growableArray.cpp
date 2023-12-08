@@ -179,12 +179,32 @@ void check_alive_elements_for_type<CtorDtor>(int i) {
 template<typename E> class TestClosure;
 template<typename E> class ModifyClosure;
 
+enum AllocatorArgs {
+  DEFAULT,
+  CAP0,
+  CAP100,
+  CAP100LEN100,
+  CAP200LEN50,
+};
+
 template<typename E>
 class AllocatorClosure {
 private:
   GrowableArrayView<E>* _view;
 public:
-  virtual void dispatch(ModifyClosure<E>* m, TestClosure<E>* t) = 0;
+  void dispatch(ModifyClosure<E>* modify, TestClosure<E>* test, AllocatorArgs args) {
+    test->reset();
+    dispatch_impl(modify, test, args);
+    test->finish(this);
+  };
+
+  virtual void dispatch_impl(ModifyClosure<E>* modify, TestClosure<E>* test, AllocatorArgs args) = 0;
+
+  void dispatch_inner(ModifyClosure<E>* modify, TestClosure<E>* test) {
+    modify->do_modify(this);
+    test->do_test(this);
+  }
+
   virtual bool is_C_heap() const = 0;
 
   // at least set the view so that we do not have to repeat
@@ -289,124 +309,98 @@ public:
 template<typename E>
 class AllocatorClosureStackResourceArea : public AllocatorClosureGrowableArray<E> {
 public:
-  virtual void dispatch(ModifyClosure<E>* modify, TestClosure<E>* test) override final {
-    test->reset();
-    {
-      ResourceMark rm;
-      GrowableArray<E> array;
+  virtual void dispatch_impl(ModifyClosure<E>* modify, TestClosure<E>* test, AllocatorArgs args) override final {
+    ResourceMark rm;
+    GrowableArray<E> array;
 #ifdef ASSERT
-      ASSERT_TRUE(array.allocated_on_stack_or_embedded()); // itself: stack
-      ASSERT_TRUE(array.on_resource_area()); // data: resource area
+    ASSERT_TRUE(array.allocated_on_stack_or_embedded()); // itself: stack
+    ASSERT_TRUE(array.on_resource_area()); // data: resource area
 #endif
-      this->set_array(&array);
-      modify->do_modify(this);
-      test->do_test(this);
-    }
-    test->finish(this);
+    this->set_array(&array);
+    this->dispatch_inner(modify, test);
+    // implicit destructor
   };
 };
 
 template<typename E>
 class AllocatorClosureEmbeddedResourceArea : public AllocatorClosureGrowableArray<E> {
 public:
-  virtual void dispatch(ModifyClosure<E>* modify, TestClosure<E>* test) override final {
-    test->reset();
-    {
-      ResourceMark rm;
-      EmbeddedGrowableArray<E> embedded;
-      GrowableArray<E>* array = embedded.array();
+  virtual void dispatch_impl(ModifyClosure<E>* modify, TestClosure<E>* test, AllocatorArgs args) override final {
+    ResourceMark rm;
+    EmbeddedGrowableArray<E> embedded;
+    GrowableArray<E>* array = embedded.array();
 #ifdef ASSERT
-      ASSERT_TRUE(array->allocated_on_stack_or_embedded()); // itself: embedded
-      ASSERT_TRUE(array->on_resource_area()); // data: resource area
+    ASSERT_TRUE(array->allocated_on_stack_or_embedded()); // itself: embedded
+    ASSERT_TRUE(array->on_resource_area()); // data: resource area
 #endif
-      this->set_array(array);
-      modify->do_modify(this);
-      test->do_test(this);
-    }
-    test->finish(this);
+    this->set_array(array);
+    this->dispatch_inner(modify, test);
+    // implicit destructor
   };
 };
 
 template<typename E>
 class AllocatorClosureResourceAreaResourceArea : public AllocatorClosureGrowableArray<E> {
 public:
-  virtual void dispatch(ModifyClosure<E>* modify, TestClosure<E>* test) override final {
-    test->reset();
-    {
-      ResourceMark rm;
-      GrowableArray<E>* array = new GrowableArray<E>();
+  virtual void dispatch_impl(ModifyClosure<E>* modify, TestClosure<E>* test, AllocatorArgs args) override final {
+    ResourceMark rm;
+    GrowableArray<E>* array = new GrowableArray<E>();
 #ifdef ASSERT
-      ASSERT_TRUE(array->allocated_on_res_area()); // itself: resource arena
-      ASSERT_TRUE(array->on_resource_area()); // data: resource area
+    ASSERT_TRUE(array->allocated_on_res_area()); // itself: resource arena
+    ASSERT_TRUE(array->on_resource_area()); // data: resource area
 #endif
-      this->set_array(array);
-      modify->do_modify(this);
-      test->do_test(this);
-      // no destructors called, array just abandoned
-    }
-    test->finish(this);
+    this->set_array(array);
+    this->dispatch_inner(modify, test);
+    // no destructors called, array just abandoned
   };
 };
 
 template<typename E>
 class AllocatorClosureStackArena : public AllocatorClosureGrowableArray<E> {
 public:
-  virtual void dispatch(ModifyClosure<E>* modify, TestClosure<E>* test) override final {
-    test->reset();
-    {
-      Arena arena(mtTest);
-      GrowableArray<E> array(&arena);
+  virtual void dispatch_impl(ModifyClosure<E>* modify, TestClosure<E>* test, AllocatorArgs args) override final {
+    Arena arena(mtTest);
+    GrowableArray<E> array(&arena);
 #ifdef ASSERT
-      ASSERT_TRUE(array.allocated_on_stack_or_embedded()); // itself: stack
-      ASSERT_TRUE(!array.on_resource_area()); // data: arena
+    ASSERT_TRUE(array.allocated_on_stack_or_embedded()); // itself: stack
+    ASSERT_TRUE(!array.on_resource_area()); // data: arena
 #endif
-      this->set_array(&array);
-      modify->do_modify(this);
-      test->do_test(this);
-    }
-    test->finish(this);
+    this->set_array(&array);
+    this->dispatch_inner(modify, test);
+    // implicit destructor
   };
 };
 
 template<typename E>
 class AllocatorClosureEmbeddedArena : public AllocatorClosureGrowableArray<E> {
 public:
-  virtual void dispatch(ModifyClosure<E>* modify, TestClosure<E>* test) override final {
-    test->reset();
-    {
-      Arena arena(mtTest);
-      EmbeddedGrowableArray<E> embedded(&arena);
-      GrowableArray<E>* array = embedded.array();
+  virtual void dispatch_impl(ModifyClosure<E>* modify, TestClosure<E>* test, AllocatorArgs args) override final {
+    Arena arena(mtTest);
+    EmbeddedGrowableArray<E> embedded(&arena);
+    GrowableArray<E>* array = embedded.array();
 #ifdef ASSERT
-      ASSERT_TRUE(array->allocated_on_stack_or_embedded()); // itself: embedded
-      ASSERT_TRUE(!array->on_resource_area()); // data: arena
+    ASSERT_TRUE(array->allocated_on_stack_or_embedded()); // itself: embedded
+    ASSERT_TRUE(!array->on_resource_area()); // data: arena
 #endif
-      this->set_array(array);
-      modify->do_modify(this);
-      test->do_test(this);
-    }
-    test->finish(this);
+    this->set_array(array);
+    this->dispatch_inner(modify, test);
+    // implicit destructor
   };
 };
 
 template<typename E>
 class AllocatorClosureArenaArena : public AllocatorClosureGrowableArray<E> {
 public:
-  virtual void dispatch(ModifyClosure<E>* modify, TestClosure<E>* test) override final {
-    test->reset();
-    {
-      Arena arena(mtTest);
-      GrowableArray<E>* array = new (&arena) GrowableArray<E>(&arena);
+  virtual void dispatch_impl(ModifyClosure<E>* modify, TestClosure<E>* test, AllocatorArgs args) override final {
+    Arena arena(mtTest);
+    GrowableArray<E>* array = new (&arena) GrowableArray<E>(&arena);
 #ifdef ASSERT
-      ASSERT_TRUE(array->allocated_on_arena()); // itself: arena
-      ASSERT_TRUE(!array->on_resource_area()); // data: arena
+    ASSERT_TRUE(array->allocated_on_arena()); // itself: arena
+    ASSERT_TRUE(!array->on_resource_area()); // data: arena
 #endif
-      this->set_array(array);
-      modify->do_modify(this);
-      test->do_test(this);
-      // no destructors called, array just abandoned
-    }
-    test->finish(this);
+    this->set_array(array);
+    this->dispatch_inner(modify, test);
+    // no destructors called, array just abandoned
   };
 };
 
@@ -456,81 +450,59 @@ public:
 template<typename E>
 class AllocatorClosureStackCHeap : public AllocatorClosureGrowableArrayCHeap<E> {
 public:
-  virtual void dispatch(ModifyClosure<E>* modify, TestClosure<E>* test) override final {
-    test->reset();
-    {
-      GrowableArrayCHeap<E, mtTest> array;
+  virtual void dispatch_impl(ModifyClosure<E>* modify, TestClosure<E>* test, AllocatorArgs args) override final {
+    GrowableArrayCHeap<E, mtTest> array;
 #ifdef ASSERT
-      ASSERT_TRUE(array.allocated_on_stack_or_embedded()); // itself: stack
+    ASSERT_TRUE(array.allocated_on_stack_or_embedded()); // itself: stack
 #endif
-      this->set_array(&array);
-      modify->do_modify(this);
-      test->do_test(this);
-      // destructor called implicitly, and it first destructs
-      // all elements.
-    }
-    test->finish(this);
+    this->set_array(&array);
+    this->dispatch_inner(modify, test);
+    // destructor called implicitly, and it first destructs all elements.
   };
 };
 
 template<typename E>
 class AllocatorClosureEmbeddedCHeap : public AllocatorClosureGrowableArrayCHeap<E> {
 public:
-  virtual void dispatch(ModifyClosure<E>* modify, TestClosure<E>* test) override final {
-    test->reset();
-    {
-      EmbeddedGrowableArrayCHeap<E> embedded;
-      GrowableArrayCHeap<E, mtTest>* array = embedded.array();
+  virtual void dispatch_impl(ModifyClosure<E>* modify, TestClosure<E>* test, AllocatorArgs args) override final {
+    EmbeddedGrowableArrayCHeap<E> embedded;
+    GrowableArrayCHeap<E, mtTest>* array = embedded.array();
 #ifdef ASSERT
-      ASSERT_TRUE(array->allocated_on_stack_or_embedded()); // itself: embedded
+    ASSERT_TRUE(array->allocated_on_stack_or_embedded()); // itself: embedded
 #endif
-      this->set_array(array);
-      modify->do_modify(this);
-      test->do_test(this);
-      // destructor called implicitly, and it first destructs
-      // all elements.
-    }
-    test->finish(this);
+    this->set_array(array);
+    this->dispatch_inner(modify, test);
+    // destructor called implicitly, and it first destructs all elements.
   };
 };
 
 template<typename E>
 class AllocatorClosureCHeapCHeap : public AllocatorClosureGrowableArrayCHeap<E> {
 public:
-  virtual void dispatch(ModifyClosure<E>* modify, TestClosure<E>* test) override final {
-    test->reset();
-    {
-      GrowableArrayCHeap<E, mtTest>* array = new GrowableArrayCHeap<E, mtTest>();
+  virtual void dispatch_impl(ModifyClosure<E>* modify, TestClosure<E>* test, AllocatorArgs args) override final {
+    GrowableArrayCHeap<E, mtTest>* array = new GrowableArrayCHeap<E, mtTest>();
 #ifdef ASSERT
-      ASSERT_TRUE(array->allocated_on_C_heap()); // itself: cheap
+    ASSERT_TRUE(array->allocated_on_C_heap()); // itself: cheap
 #endif
-      this->set_array(array);
-      modify->do_modify(this);
-      test->do_test(this);
-      // destruction explicit, recursively destructs all elements
-      delete array;
-    }
-    test->finish(this);
+    this->set_array(array);
+    this->dispatch_inner(modify, test);
+    // destruction explicit, recursively destructs all elements
+    delete array;
   };
 };
 
 template<typename E>
 class AllocatorClosureCHeapCHeapNoThrow : public AllocatorClosureGrowableArrayCHeap<E> {
 public:
-  virtual void dispatch(ModifyClosure<E>* modify, TestClosure<E>* test) override final {
-    test->reset();
-    {
-      GrowableArrayCHeap<E, mtTest>* array = new (std::nothrow) GrowableArrayCHeap<E, mtTest>();
+  virtual void dispatch_impl(ModifyClosure<E>* modify, TestClosure<E>* test, AllocatorArgs args) override final {
+    GrowableArrayCHeap<E, mtTest>* array = new (std::nothrow) GrowableArrayCHeap<E, mtTest>();
 #ifdef ASSERT
-      ASSERT_TRUE(array->allocated_on_C_heap()); // itself: cheap
+    ASSERT_TRUE(array->allocated_on_C_heap()); // itself: cheap
 #endif
-      this->set_array(array);
-      modify->do_modify(this);
-      test->do_test(this);
-      // destruction explicit, recursively destructs all elements
-      delete array;
-    }
-    test->finish(this);
+    this->set_array(array);
+    this->dispatch_inner(modify, test);
+    // destruction explicit, recursively destructs all elements
+    delete array;
   };
 };
 
@@ -981,55 +953,64 @@ class TestClosureAtGrowDefault : public TestClosure<E> {
 class GrowableArrayTest : public ::testing::Test {
 protected:
   template<typename E, bool do_arena, ENABLE_IF(do_arena)>
-  static void run_test_modify_allocate_arena(TestClosure<E>* test, ModifyClosure<E>* modify) {
+  static void run_test_modify_allocate_arena(TestClosure<E>* test, ModifyClosure<E>* modify, AllocatorArgs args) {
     AllocatorClosureStackResourceArea<E> allocator_s_r;
-    allocator_s_r.dispatch(modify, test);
+    allocator_s_r.dispatch(modify, test, args);
 
     AllocatorClosureEmbeddedResourceArea<E> allocator_e_r;
-    allocator_e_r.dispatch(modify, test);
+    allocator_e_r.dispatch(modify, test, args);
 
     AllocatorClosureResourceAreaResourceArea<E> allocator_r_r;
-    allocator_r_r.dispatch(modify, test);
+    allocator_r_r.dispatch(modify, test, args);
 
     AllocatorClosureStackArena<E> allocator_s_a;
-    allocator_s_a.dispatch(modify, test);
+    allocator_s_a.dispatch(modify, test, args);
 
     AllocatorClosureEmbeddedArena<E> allocator_e_a;
-    allocator_e_a.dispatch(modify, test);
+    allocator_e_a.dispatch(modify, test, args);
 
     AllocatorClosureArenaArena<E> allocator_a_a;
-    allocator_a_a.dispatch(modify, test);
+    allocator_a_a.dispatch(modify, test, args);
   }
 
   template<typename E, bool do_arena, ENABLE_IF(!do_arena)>
-  static void run_test_modify_allocate_arena(TestClosure<E>* test, ModifyClosure<E>* modify) {
+  static void run_test_modify_allocate_arena(TestClosure<E>* test, ModifyClosure<E>* modify, AllocatorArgs args) {
     // not enabled
   }
 
   template<typename E, bool do_cheap, ENABLE_IF(do_cheap)>
-  static void run_test_modify_allocate_cheap(TestClosure<E>* test, ModifyClosure<E>* modify) {
+  static void run_test_modify_allocate_cheap(TestClosure<E>* test, ModifyClosure<E>* modify, AllocatorArgs args) {
     AllocatorClosureStackCHeap<E> allocator_s_c;
-    allocator_s_c.dispatch(modify, test);
+    allocator_s_c.dispatch(modify, test, args);
 
     AllocatorClosureEmbeddedCHeap<E> allocator_e_c;
-    allocator_e_c.dispatch(modify, test);
+    allocator_e_c.dispatch(modify, test, args);
 
     AllocatorClosureCHeapCHeap<E> allocator_c_c;
-    allocator_c_c.dispatch(modify, test);
+    allocator_c_c.dispatch(modify, test, args);
 
     AllocatorClosureCHeapCHeapNoThrow<E> allocator_c_c_nt;
-    allocator_c_c_nt.dispatch(modify, test);
+    allocator_c_c_nt.dispatch(modify, test, args);
   }
 
   template<typename E, bool do_cheap, ENABLE_IF(!do_cheap)>
-  static void run_test_modify_allocate_cheap(TestClosure<E>* test, ModifyClosure<E>* modify) {
+  static void run_test_modify_allocate_cheap(TestClosure<E>* test, ModifyClosure<E>* modify, AllocatorArgs args) {
     // not enabled
   }
 
   template<typename E, bool do_cheap, bool do_arena>
+  static void run_test_modify_allocate_args(TestClosure<E>* test, ModifyClosure<E>* modify, AllocatorArgs args) {
+    run_test_modify_allocate_arena<E,do_arena>(test, modify, args);
+    run_test_modify_allocate_cheap<E,do_cheap>(test, modify, args);
+  }
+
+  template<typename E, bool do_cheap, bool do_arena>
   static void run_test_modify_allocate(TestClosure<E>* test, ModifyClosure<E>* modify) {
-    run_test_modify_allocate_arena<E, do_arena>(test, modify);
-    run_test_modify_allocate_cheap<E, do_cheap>(test, modify);
+    run_test_modify_allocate_args<E,do_cheap,do_arena>(test, modify, DEFAULT);
+    run_test_modify_allocate_args<E,do_cheap,do_arena>(test, modify, CAP0);
+    run_test_modify_allocate_args<E,do_cheap,do_arena>(test, modify, CAP100);
+    run_test_modify_allocate_args<E,do_cheap,do_arena>(test, modify, CAP100LEN100);
+    run_test_modify_allocate_args<E,do_cheap,do_arena>(test, modify, CAP200LEN50);
   }
 
   template<typename E, bool do_cheap, bool do_arena>
