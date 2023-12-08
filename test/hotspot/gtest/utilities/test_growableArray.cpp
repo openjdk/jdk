@@ -33,13 +33,7 @@
 // -> add to modify and test
 //
 // trunc_to
-// at assign?
-// adr_at -> read and write?
-// first, top, last
-// at_put
 // at_swap
-// contains, find, find_from_end
-// remove, remove_if_existing
 // remove_till, remove_range, delete_at
 //
 // TODO
@@ -833,6 +827,85 @@ public:
   }
 };
 
+template<typename E>
+class ModifyClosureAccess : public ModifyClosure<E> {
+public:
+  virtual void do_modify(AllocatorClosure<E>* a, AllocatorArgs args) override final {
+    a->clear();
+    ASSERT_EQ(a->length(), 0);
+
+    a->at_grow(999, value_factory<E>(-1));
+    ASSERT_EQ(a->length(), 1000);
+    check_alive_elements_for_type<E>(1000);
+
+    // write over at
+    for (int i = 0; i < 1000; i++) {
+      a->at(i) = value_factory<E>(i);
+    }
+    for (int i = 0; i < 1000; i++) {
+      ASSERT_EQ(a->at(i), value_factory<E>(i));
+      ASSERT_EQ(*a->adr_at(i), value_factory<E>(i));
+    }
+
+    // write over adr_at
+    for (int i = 0; i < 1000; i++) {
+      *a->adr_at(i) = value_factory<E>(2*i);
+    }
+    for (int i = 0; i < 1000; i++) {
+      ASSERT_EQ(a->at(i), value_factory<E>(2*i));
+    }
+
+    // write with at_put
+    for (int i = 0; i < 1000; i++) {
+      a->at_put(i, value_factory<E>(3*i));
+    }
+    for (int i = 0; i < 1000; i++) {
+      ASSERT_EQ(a->at(i), value_factory<E>(3*i));
+    }
+
+    for (int i = 0; i < 1000; i++) {
+      if (i % 3 == 0) {
+        ASSERT_TRUE(a->contains(value_factory<E>(i)));
+        ASSERT_EQ(a->find(value_factory<E>(i)), i/3);
+        ASSERT_EQ(a->find_from_end(value_factory<E>(i)), i/3);
+      } else {
+        ASSERT_FALSE(a->contains(value_factory<E>(i)));
+        ASSERT_EQ(a->find(value_factory<E>(i)), -1);
+        ASSERT_EQ(a->find_from_end(value_factory<E>(i)), -1);
+      }
+    }
+
+    a->at_put(42, value_factory<E>(7));
+    a->at_put(666, value_factory<E>(7));
+    ASSERT_EQ(a->find(value_factory<E>(7)), 42);
+    ASSERT_EQ(a->find_from_end(value_factory<E>(7)), 666);
+
+    // make nice input again
+    for (int i = 0; i < 1000; i++) {
+      a->at_put(i, value_factory<E>(i));
+    }
+    for (int i = 0; i < 1000; i++) {
+      ASSERT_EQ(a->at(i), value_factory<E>(i));
+    }
+    check_alive_elements_for_type<E>(1000);
+
+    // remove all even numbers:
+    for (int i = 0; i < 500; i++) {
+      a->remove(value_factory<E>(2*i));
+      check_alive_elements_for_type<E>(1000 - i - 1);
+      ASSERT_EQ(a->length(), 1000 - i - 1);
+    }
+
+    // remove rest:
+    for (int i = 0; i < 1000; i++) {
+      ASSERT_EQ(a->remove_if_existing(value_factory<E>(i)), i % 2 == 1);
+      ASSERT_EQ(a->length(), 500 - (i+1)/2);
+    }
+    ASSERT_TRUE(a->is_empty());
+    check_alive_elements_for_type<E>(0);
+  }
+};
+
 // ------------ TestClosures ------------
 
 template<typename E>
@@ -845,6 +918,11 @@ class TestClosureAppend : public TestClosure<E> {
     // Add elements
     for (int i = 0; i < 10; i++) {
       a->append(value_factory<E>(i));
+      EXPECT_EQ(a->top(), value_factory<E>(i));
+      EXPECT_EQ(a->last(), value_factory<E>(i));
+      EXPECT_EQ(a->first(), value_factory<E>(0));
+      EXPECT_EQ(a->at(i), value_factory<E>(i));
+      EXPECT_EQ(*a->adr_at(i), value_factory<E>(i));
     }
 
     // Check size
@@ -1268,6 +1346,9 @@ protected:
 
     ModifyClosureAppend<E> modify_append;
     run_test_modify_allocate<E,do_cheap,do_arena>(test, &modify_append);
+
+    ModifyClosureAccess<E> modify_access;
+    run_test_modify_allocate<E,do_cheap,do_arena>(test, &modify_access);
 
     ModifyClosureClear<E> modify_clear;
     run_test_modify_allocate<E,do_cheap,do_arena>(test, &modify_clear);

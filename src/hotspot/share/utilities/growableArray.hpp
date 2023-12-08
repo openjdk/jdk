@@ -269,10 +269,16 @@ public:
 
   void remove_at(int index) {
     assert(0 <= index && index < _len, "illegal index %d for length %d", index, _len);
-    // TODO call destructor!
+
+    // destruct old element
+    this->_data[index].~E();
+
+    // copy-construct, and destruct all the way up. This simulates the move.
     for (int j = index + 1; j < _len; j++) {
-      _data[j-1] = _data[j];
+      ::new ((void*)&this->_data[j-1]) E(_data[j]);
+      this->_data[j].~E();
     }
+
     _len--;
   }
 
