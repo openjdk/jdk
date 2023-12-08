@@ -256,7 +256,8 @@ public abstract sealed class Executable extends AccessibleObject
      * 0 if the underlying executable takes no parameters.
      * Note that the constructors of some inner classes
      * may have an implicitly declared parameter in addition to
-     * explicitly declared ones.
+     * explicitly declared ones.  Also compact constructors of a
+     * record class may have implicitly declared parameters.
      *
      * @return the parameter types for the executable this object
      * represents
@@ -277,21 +278,18 @@ public abstract sealed class Executable extends AccessibleObject
      * Returns an array of {@code Type} objects that represent the
      * formal parameter types, in declaration order, of the executable
      * represented by this object. An array of length 0 is returned if the
-     * underlying executable takes no parameters.  Note that the
-     * constructors of some inner classes may have an implicitly
-     * declared parameter in addition to explicitly declared ones.
-     * Also note that as a <a
+     * underlying executable takes no parameters.  Note that as a <a
      * href="{@docRoot}/java.base/java/lang/reflect/package-summary.html#LanguageJvmModel">modeling
      * artifact</a>, the number of returned parameters can differ
      * depending on whether or not generic information is present. If
      * generic information is present, only parameters explicitly
-     * present in the source will be returned; if generic information
-     * is not present, implicit and synthetic parameters may be
+     * present in the source and mandated parameters will be returned;
+     * if generic information is not present, synthetic parameters may be
      * returned as well.
      *
      * <p>If a formal parameter type is a parameterized type,
      * the {@code Type} object returned for it must accurately reflect
-     * the actual type arguments used in the source code.
+     * the actual type arguments used, explicitly or implicitly, in the source code.
      *
      * <p>If a formal parameter type is a type variable or a parameterized
      * type, it is created. Otherwise, it is resolved.
@@ -337,17 +335,24 @@ public abstract sealed class Executable extends AccessibleObject
             if (realParamData) {
                 final Type[] out = new Type[nonGenericParamTypes.length];
                 final Parameter[] params = getParameters();
-                int fromidx = 0;
-                for (int i = 0; i < out.length; i++) {
+                int fromidx = genericParamTypes.length - 1;
+                for (int i = out.length - 1; i >= 0; i--) {
                     final Parameter param = params[i];
-                    if (param.isSynthetic() || param.isImplicit()) {
-                        // If we hit a synthetic or mandated parameter,
+                    if (param.isSynthetic()) {
+                        // If we hit a synthetic parameter,
                         // use the non generic parameter info.
                         out[i] = nonGenericParamTypes[i];
+                    } else if (param.isImplicit()) { // mandated
+                        if (fromidx >= 0) {
+                            out[i] = genericParamTypes[fromidx]; // I think that this array will have to have nulls for the spaces for which there is no info
+                            fromidx--;
+                        } else {
+                            out[i] = nonGenericParamTypes[i];
+                        }
                     } else {
                         // Otherwise, use the generic parameter info.
                         out[i] = genericParamTypes[fromidx];
-                        fromidx++;
+                        fromidx--;
                     }
                 }
                 return out;
@@ -749,7 +754,8 @@ public abstract sealed class Executable extends AccessibleObject
      * parameters.
      * Note that the constructors of some inner classes
      * may have an implicitly declared parameter in addition to
-     * explicitly declared ones.
+     * explicitly declared ones.  Also compact constructors of a
+     * record class may have implicitly declared parameters.
      *
      * @return an array of objects representing the types of the
      * formal parameters of the method or constructor represented by this

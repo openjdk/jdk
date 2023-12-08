@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8235369 8235550 8247444
+ * @bug 8235369 8235550 8247444 8320575
  * @summary reflection test for records
  * @compile RecordReflectionTest.java
  * @run testng/othervm RecordReflectionTest
@@ -57,6 +57,10 @@ public class RecordReflectionTest {
 
     record R8<A, B>(A a, B b) implements java.io.Serializable { }
 
+    record R9(List<String> ls) {
+        R9 {} // compact constructor, will contain a mandated parameter
+    }
+
     @DataProvider(name = "recordClasses")
     public Object[][] recordClassData() {
         return List.of(R1.class,
@@ -66,7 +70,8 @@ public class RecordReflectionTest {
                        R5.class,
                        R6.class,
                        R7.class,
-                       R8.class)
+                       R8.class,
+                       R9.class)
                    .stream().map(c -> new Object[] {c}).toArray(Object[][]::new);
     }
 
@@ -124,6 +129,11 @@ public class RecordReflectionTest {
                            new Object[]{ new R1(), new R2(6, 7), new R3(List.of("s")) },
                            new String[]{ "r1", "r2", "r3" },
                            new String[]{ R1.class.toString(), R2.class.toString(), R3.class.toString()} },
+            new Object[] { new R9(List.of("1")),
+                        1,
+                        new Object[]{ List.of("1") },
+                        new String[]{ "ls" },
+                        new String[]{ "java.util.List<java.lang.String>"} },
         };
     }
 
@@ -147,6 +157,15 @@ public class RecordReflectionTest {
             assertEquals(rc.getAccessor().getGenericReturnType().toString(), signatures[i],
                          String.format("signature of method \"%s\" different from expected signature \"%s\"",
                                  rc.getAccessor().getGenericReturnType(), signatures[i]));
+            i++;
+        }
+        // now let's check constructors
+        var constructor = recordClass.getDeclaredConstructors()[0];
+        i = 0;
+        for(var p: constructor.getParameters()) {
+            assertEquals(p.getParameterizedType().toString(), signatures[i],
+                    String.format("signature of method \"%s\" different from expected signature \"%s\"",
+                            p.getType().toString(), signatures[i]));
             i++;
         }
     }
