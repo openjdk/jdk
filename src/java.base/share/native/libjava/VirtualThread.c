@@ -37,7 +37,7 @@ static JNINativeMethod methods[] = {
     { "notifyJvmtiMount",        "(Z)V", (void *)&JVM_VirtualThreadMount },
     { "notifyJvmtiUnmount",      "(Z)V", (void *)&JVM_VirtualThreadUnmount },
     { "notifyJvmtiHideFrames",   "(Z)V", (void *)&JVM_VirtualThreadHideFrames },
-    { "notifyJvmtiSync",         "(Z)V", (void *)&JVM_VirtualThreadSync },
+    { "notifyJvmtiCriticalLock", "(Z)V", (void *)&JVM_VirtualThreadCriticalLock },
 };
 
 JNIEXPORT void JNICALL

@@ -358,14 +358,17 @@ final class VirtualThread extends BaseVirtualThread {
         if (interrupted) {
             carrier.setInterrupt();
         } else if (carrier.isInterrupted()) {
-            notifyJvmtiSync(true);
-            synchronized (interruptLock) {
-                // need to recheck interrupt status
-                if (!interrupted) {
-                    carrier.clearInterrupt();
+            try {
+                notifyJvmtiCriticalLock(true);
+                synchronized (interruptLock) {
+                    // need to recheck interrupt status
+                    if (!interrupted) {
+                        carrier.clearInterrupt();
+                    }
                 }
+            } finally {
+                notifyJvmtiCriticalLock(false);
             }
-            notifyJvmtiSync(false);
         }
 
         // set Thread.currentThread() to return this virtual thread
@@ -383,12 +386,15 @@ final class VirtualThread extends BaseVirtualThread {
         Thread carrier = this.carrierThread;
         carrier.setCurrentThread(carrier);
 
-        notifyJvmtiSync(true);
-        // break connection to carrier thread, synchronized with interrupt
-        synchronized (interruptLock) {
-            setCarrierThread(null);
+        try {
+            notifyJvmtiCriticalLock(true);
+            // break connection to carrier thread, synchronized with interrupt
+            synchronized (interruptLock) {
+                setCarrierThread(null);
+            }
+        } finally {
+            notifyJvmtiCriticalLock(false);
         }
-        notifyJvmtiSync(false);
         carrier.clearInterrupt();
 
         // notify JVMTI after unmount
@@ -746,15 +752,18 @@ final class VirtualThread extends BaseVirtualThread {
                     submitRunContinuation();
                 }
             } else if ((s == PINNED) || (s == TIMED_PINNED)) {
-                notifyJvmtiSync(true);
-                // unpark carrier thread when pinned
-                synchronized (carrierThreadAccessLock()) {
-                    Thread carrier = carrierThread;
-                    if (carrier != null && ((s = state()) == PINNED || s == TIMED_PINNED)) {
-                        U.unpark(carrier);
+                try {
+                    notifyJvmtiCriticalLock(true);
+                    // unpark carrier thread when pinned
+                    synchronized (carrierThreadAccessLock()) {
+                        Thread carrier = carrierThread;
+                        if (carrier != null && ((s = state()) == PINNED || s == TIMED_PINNED)) {
+                            U.unpark(carrier);
+                        }
                     }
+                } finally {
+                    notifyJvmtiCriticalLock(false);
                 }
-                notifyJvmtiSync(false);
             }
         }
     }
@@ -850,19 +859,22 @@ final class VirtualThread extends BaseVirtualThread {
     public void interrupt() {
         if (Thread.currentThread() != this) {
             checkAccess();
-            notifyJvmtiSync(true);
-            synchronized (interruptLock) {
-                interrupted = true;
-                Interruptible b = nioBlocker;
-                if (b != null) {
-                    b.interrupt(this);
-                }
+            try {
+                notifyJvmtiCriticalLock(true);
+                synchronized (interruptLock) {
+                    interrupted = true;
+                    Interruptible b = nioBlocker;
+                    if (b != null) {
+                        b.interrupt(this);
+                    }
 
-                // interrupt carrier thread if mounted
-                Thread carrier = carrierThread;
-                if (carrier != null) carrier.setInterrupt();
+                    // interrupt carrier thread if mounted
+                    Thread carrier = carrierThread;
+                    if (carrier != null) carrier.setInterrupt();
+                }
+            } finally {
+                notifyJvmtiCriticalLock(false);
             }
-            notifyJvmtiSync(false);
         } else {
             interrupted = true;
             carrierThread.setInterrupt();
@@ -880,12 +892,15 @@ final class VirtualThread extends BaseVirtualThread {
         assert Thread.currentThread() == this;
         boolean oldValue = interrupted;
         if (oldValue) {
-            notifyJvmtiSync(true);
-            synchronized (interruptLock) {
-                interrupted = false;
-                carrierThread.clearInterrupt();
+            try {
+                notifyJvmtiCriticalLock(true);
+                synchronized (interruptLock) {
+                    interrupted = false;
+                    carrierThread.clearInterrupt();
+                }
+            } finally {
+                notifyJvmtiCriticalLock(false);
             }
-            notifyJvmtiSync(false);
         }
         return oldValue;
     }
@@ -908,8 +923,8 @@ final class VirtualThread extends BaseVirtualThread {
                 // runnable, not mounted
                 return Thread.State.RUNNABLE;
             case RUNNING:
-                notifyJvmtiSync(true);
                 try {
+                    notifyJvmtiCriticalLock(true);
                     // if mounted then return state of carrier thread
                     synchronized (carrierThreadAccessLock()) {
                         Thread carrierThread = this.carrierThread;
@@ -918,7 +933,7 @@ final class VirtualThread extends BaseVirtualThread {
                         }
                     }
                 } finally {
-                    notifyJvmtiSync(false);
+                    notifyJvmtiCriticalLock(false);
                 }
                 // runnable, mounted
                 return Thread.State.RUNNABLE;
@@ -1033,18 +1048,21 @@ final class VirtualThread extends BaseVirtualThread {
         sb.append("]/");
         Thread carrier = carrierThread;
         if (carrier != null) {
-            notifyJvmtiSync(true);
-            // include the carrier thread state and name when mounted
-            synchronized (carrierThreadAccessLock()) {
-                carrier = carrierThread;
-                if (carrier != null) {
-                    String stateAsString = carrier.threadState().toString();
-                    sb.append(stateAsString.toLowerCase(Locale.ROOT));
-                    sb.append('@');
-                    sb.append(carrier.getName());
+            try {
+                notifyJvmtiCriticalLock(true);
+                // include the carrier thread state and name when mounted
+                synchronized (carrierThreadAccessLock()) {
+                    carrier = carrierThread;
+                    if (carrier != null) {
+                        String stateAsString = carrier.threadState().toString();
+                        sb.append(stateAsString.toLowerCase(Locale.ROOT));
+                        sb.append('@');
+                        sb.append(carrier.getName());
+                    }
                 }
+            } finally {
+                notifyJvmtiCriticalLock(false);
             }
-            notifyJvmtiSync(false);
         }
         // include virtual thread state when not mounted
         if (carrier == null) {
@@ -1143,7 +1161,7 @@ final class VirtualThread extends BaseVirtualThread {
     private native void notifyJvmtiHideFrames(boolean hide);
 
     @IntrinsicCandidate
-    private native void notifyJvmtiSync(boolean enter);
+    private native void notifyJvmtiCriticalLock(boolean enter);
 
     private static native void registerNatives();
     static {

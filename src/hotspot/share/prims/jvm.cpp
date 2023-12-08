@@ -4010,7 +4010,7 @@ JVM_END
 
 // Notification from VirtualThread about entering/exiting sync critical section.
 // Needed to avoid deadlocks with JVMTI suspend mechanism.
-JVM_ENTRY(void, JVM_VirtualThreadSync(JNIEnv* env, jobject vthread, jboolean enter))
+JVM_ENTRY(void, JVM_VirtualThreadCriticalLock(JNIEnv* env, jobject vthread, jboolean enter))
 #if INCLUDE_JVMTI
   if (!DoJVMTIVirtualThreadTransitions) {
     assert(!JvmtiExport::can_support_virtual_threads(), "sanity check");

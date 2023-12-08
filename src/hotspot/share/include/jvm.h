@@ -1155,7 +1155,7 @@ JNIEXPORT void JNICALL
 JVM_VirtualThreadHideFrames(JNIEnv* env, jobject vthread, jboolean hide);
 
 JNIEXPORT void JNICALL
-JVM_VirtualThreadSync(JNIEnv* env, jobject vthread, jboolean enter);
+JVM_VirtualThreadCriticalLock(JNIEnv* env, jobject vthread, jboolean enter);
 
 /*
  * Core reflection support.

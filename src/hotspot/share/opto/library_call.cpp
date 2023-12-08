@@ -493,7 +493,7 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_notifyJvmtiVThreadUnmount: return inline_native_notify_jvmti_funcs(CAST_FROM_FN_PTR(address, OptoRuntime::notify_jvmti_vthread_unmount()),
                                                                                          "notifyJvmtiUnmount", false, false);
   case vmIntrinsics::_notifyJvmtiVThreadHideFrames: return inline_native_notify_jvmti_hide();
-  case vmIntrinsics::_notifyJvmtiVThreadSync:       return inline_native_notify_jvmti_sync();
+  case vmIntrinsics::_notifyJvmtiVThreadCriticalLock: return inline_native_notify_jvmti_sync();
 #endif
 
 #ifdef JFR_HAVE_INTRINSICS

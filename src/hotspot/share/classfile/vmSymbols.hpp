@@ -421,7 +421,7 @@ class SerializeClosure;
   template(notifyJvmtiMount_name,                     "notifyJvmtiMount")                         \
   template(notifyJvmtiUnmount_name,                   "notifyJvmtiUnmount")                       \
   template(notifyJvmtiHideFrames_name,                "notifyJvmtiHideFrames")                    \
-  template(notifyJvmtiSync_name,                      "notifyJvmtiSync")                          \
+  template(notifyJvmtiCriticalLock_name,              "notifyJvmtiCriticalLock")                  \
   template(doYield_name,                              "doYield")                                  \
   template(enter_name,                                "enter")                                    \
   template(enterSpecial_name,                         "enterSpecial")                             \
