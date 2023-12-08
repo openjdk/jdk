@@ -60,6 +60,7 @@ import sun.security.x509.PolicyInformation;
 import sun.security.x509.PrivateKeyUsageExtension;
 import sun.security.x509.SubjectAlternativeNameExtension;
 import sun.security.x509.X500Name;
+import sun.security.util.Debug;
 
 /*
  * @test
@@ -191,6 +192,14 @@ public class X509CertSelectorTest {
         // good match
         selector.setSerialNumber(cert.getSerialNumber());
         checkMatch(selector, cert, true);
+
+        // check serial number format
+        String serialNum = Debug.toString(selector.getSerialNumber());
+        String expected = "38:df:82:b8";
+        if (!serialNum.equals(expected)) {
+            throw new RuntimeException("Serial number toString format is incorrect. Got: "
+                + serialNum + " Expected: " + expected);
+        }
     }
 
     // Tests matching on the issuer name contained in the certificate.
