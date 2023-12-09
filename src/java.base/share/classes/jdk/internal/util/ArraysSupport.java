@@ -751,10 +751,8 @@ public class ArraysSupport {
         if (minLength < 0) { // overflow
             throw new OutOfMemoryError(
                 "Required array length " + oldLength + " + " + minGrowth + " is too large");
-        } else if (minLength <= SOFT_MAX_ARRAY_LENGTH) {
-            return SOFT_MAX_ARRAY_LENGTH;
-        } else {
-            return minLength;
+        }  else {
+            return Math.max(minLength, SOFT_MAX_ARRAY_LENGTH);
         }
     }
 
