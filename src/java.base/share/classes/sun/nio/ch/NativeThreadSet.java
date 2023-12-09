@@ -27,9 +27,8 @@ package sun.nio.ch;
 
 // Special-purpose data structure for sets of native threads
 
-
 class NativeThreadSet {
-    private final int OTHER_THREAD_INDEX = -99;
+    private static final int OTHER_THREAD_INDEX = -99;
 
     private final int initialCapacity;
     private long[] threads;             // array of thread handles, created lazily
@@ -80,7 +79,6 @@ class NativeThreadSet {
      * Removes the thread at the given index. A no-op if index is -1.
      */
     void remove(int i) {
-        assert i >= -1 || i == OTHER_THREAD_INDEX;
         synchronized (this) {
             if (i >= 0) {
                 assert threads[i] == NativeThread.current();
@@ -89,6 +87,7 @@ class NativeThreadSet {
             } else if (i == OTHER_THREAD_INDEX) {
                 otherThreads--;
             } else {
+                assert i == -1;
                 return;
             }
             if (used == 0 && otherThreads == 0 && waitingToEmpty) {
