@@ -480,7 +480,7 @@
           range(0, max_uintx)                                               \
                                                                             \
   product(bool, UseGCOverheadLimit, true,                                   \
-          "Use policy to limit of proportion of time spent in GC "          \
+          "Use policy to limit proportion of time spent in GC "             \
           "before an OutOfMemory error is thrown")                          \
                                                                             \
   product(uint, GCTimeLimit, 98,                                            \

@@ -294,7 +294,6 @@ private:
 
   size_t _gc_no_progress_count;
 
-  
   double* _gc_historical_utilization;
   double* _gc_historical_duration;
   double _gcu_historical;
@@ -556,7 +555,7 @@ public:
   void tlabs_retire(bool resize);
   void gclabs_retire(bool resize);
   void report_gc_utilization(double utilization, double duration);
-  
+
 // ---------- Marking support
 //
 private:

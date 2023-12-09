@@ -883,7 +883,7 @@ void ShenandoahHeap::report_gc_utilization(double utilization, double duration) 
   for (uint i = 0; i < GCOverheadLimitThreshold; i++) {
     weighted_sum += _gc_historical_utilization[i] * _gc_historical_duration[i];
     total_duration += _gc_historical_duration[i];
-#undef KELVIN_OVERHEAD
+#undef KELVINy_OVERHEAD
 #ifdef KELVIN_OVERHEAD
     log_info(gc)("history[%u] utilization: %.3f, duration: %.3f, weighted sum: %.3f, total_duration: %.3f",
                  i, _gc_historical_utilization[i], _gc_historical_duration[i], weighted_sum, total_duration);
@@ -918,31 +918,82 @@ HeapWord* ShenandoahHeap::allocate_memory(ShenandoahAllocRequest& req, bool* gc_
       result = allocate_memory_under_lock(req, in_new_region);
     }
 
-    // Block until control thread reacted, then retry allocation.
-    //
-    // It might happen that one of the threads requesting allocation would unblock
-    // way later after GC happened, only to fail the second allocation, because
-    // other threads have already depleted the free storage. In this case, a better
-    // strategy is to try again, as long as GC makes progress (or until at least
-    // one full GC has completed).
-    size_t original_count = shenandoah_policy()->full_gc_count();
-    while (result == nullptr
-        && (get_gc_no_progress_count() == 0 || original_count == shenandoah_policy()->full_gc_count())) {
+    // It might happen that one of the threads requesting allocation would unblock way later after GC happened, only
+    // to fail a second allocation request because other threads have already depleted the free storage.  Repeatedly
+    // retry the allocation after blocking until the control thread has had a chance to perform more GC.
+    
+    if (result == nullptr) {
+      if (UseGCOverheadLimit) {
+        // Use policy to limit proportion of time spent in GC before an OutOfMemory error is thrown.
 
-      if (gc_overhead_exceeds_limit()) {
-        if (gc_overhead_limit_was_exceeded != nullptr) {
-          *gc_overhead_limit_was_exceeded = true;
+        // It appears that GCOverheadLimit alone is not sufficient by itself to detect all scenarios under which
+        // OutOffMemory should be thrown.  The problem is that heuristics limit the number of threads dedicated to
+        // STW degenerated and Full GCs, which may prevent GC overhead from reaching the threshold required by GC
+        // in order to exceed the threshold.
+
+#undef KELVIN_GC_OVERHEAD
+#ifdef KELVIN_GC_OVERHEAD
+        uint iters = 0;
+        double max_gcu = 0;
+#endif
+        // Retry allocation request as long as GC makes progress (or until at least one full GC has completed).
+        size_t original_count = shenandoah_policy()->full_gc_count();
+        while (result == nullptr
+               && (get_gc_no_progress_count() == 0 || original_count == shenandoah_policy()->full_gc_count())) {
+
+          control_thread()->handle_alloc_failure(req);
+          result = allocate_memory_under_lock(req, in_new_region);
+
+          // A first failure to allocate may happen due to unfortunate timing in that memory just happens to have been
+          // consumed by other threads by the time my request arrives.  If we fail a second time after giving GC an opportunity
+          // to clean up memory, we should return nullptr if gc overhead exceeds limit of if there has been at least one full
+          // GC collection and the most recently completed GCs failed to make progress.
+
+          // We are careful to not cascade the throwing of OOM.  Some applications are written to allow a first OOM "handler"
+          // to clean up memory so that other threads will not experience OOM.  Waiting for a second failure to allocate
+          // allows the memory cleanup efforts of a first thread to be realized.  If memory is successfully reclaimed by a
+          // subsequent concurrent GC, the gc overhead will significantly decrease before this quantity is sampled again.
+
+          // This strategy is not perfect.  If the first OOM thread is too slow to clean up memory, or it does not
+          // clean up enough memory, the subsequent concurrent GC will degenerate again, and we may fail to decrease
+          // gc overhead.  In this case, the current thread will also experience OOM.
+
+#ifdef KELVIN_GC_OVERHEAD
+          iters++;
+          max_gcu = MAX2(max_gcu, _gcu_historical);
+#endif
+          if ((result == nullptr) && gc_overhead_exceeds_limit()) {
+            if (gc_overhead_limit_was_exceeded != nullptr) {
+              *gc_overhead_limit_was_exceeded = true;
+            }
+            break;
+          }
         }
-        break;
+#ifdef KELVIN_GC_OVERHEAD
+        log_info(gc)("After %u iterations, allocation result is: " PTR_FORMAT ", max gcu: %.3f", iters, p2i(result), max_gcu);
+#endif
+      } else {
+        // Retry allocation request as long as GC makes progress (or until at least one full GC has completed).
+
+        size_t original_count = shenandoah_policy()->full_gc_count();
+        while (result == nullptr
+               && (get_gc_no_progress_count() == 0 || original_count == shenandoah_policy()->full_gc_count())) {
+          control_thread()->handle_alloc_failure(req);
+          result = allocate_memory_under_lock(req, in_new_region);
+
+          // A first failure to allocate may happen due to unfortunate timing in that memory just happens to have been
+          // consumed by other threads by the time my request arrives.  If we fail a second time after giving GC an opportunity
+          // to clean up memory, we should return nullptr (triggering an OutOfMemoryError) if there has been at least one full
+          // GC collection and the most recently completed GCs failed to make progress.
+        }
       }
-      control_thread()->handle_alloc_failure(req);
-      result = allocate_memory_under_lock(req, in_new_region);
     }
 
     if (log_is_enabled(Debug, gc, alloc)) {
       ResourceMark rm;
-      log_debug(gc, alloc)("Thread: %s, Result: " PTR_FORMAT ", Request: %s, Size: " SIZE_FORMAT ", Original: " SIZE_FORMAT ", Latest: " SIZE_FORMAT,
-                           Thread::current()->name(), p2i(result), req.type_string(), req.size(), original_count, get_gc_no_progress_count());
+      log_debug(gc, alloc)("Thread: %s, Result: " PTR_FORMAT ", Request: %s, Size: " SIZE_FORMAT ", Full count: " SIZE_FORMAT ", Latest: " SIZE_FORMAT,
+                           Thread::current()->name(), p2i(result), req.type_string(), req.size(),
+                           shenandoah_policy()->full_gc_count(), get_gc_no_progress_count());
     }
   } else {
     assert(req.is_gc_alloc(), "Can only accept GC allocs here");
