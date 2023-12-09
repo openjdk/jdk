@@ -24,6 +24,8 @@
 
 package sun.jvm.hotspot.gc.serial;
 
+import java.io.*;
+
 import sun.jvm.hotspot.debugger.*;
 import sun.jvm.hotspot.gc.shared.*;
 import sun.jvm.hotspot.runtime.*;
