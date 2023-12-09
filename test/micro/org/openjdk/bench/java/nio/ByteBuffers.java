@@ -923,4 +923,9 @@ public class ByteBuffers {
         }
         return r;
     }
+
+    @Benchmark
+    public int testHashCode() {
+        return directByteBuffer.hashCode();
+    }
 }
