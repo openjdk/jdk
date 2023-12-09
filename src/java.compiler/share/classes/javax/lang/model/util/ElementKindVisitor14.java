@@ -61,7 +61,7 @@ import javax.lang.model.SourceVersion;
  * @see ElementKindVisitor9
  * @since 16
  */
-@SupportedSourceVersion(RELEASE_22)
+@SupportedSourceVersion(RELEASE_23)
 public class ElementKindVisitor14<R, P> extends ElementKindVisitor9<R, P> {
     /**
      * Constructor for concrete subclasses; uses {@code null} for the
