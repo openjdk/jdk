@@ -110,23 +110,10 @@ public class PointerLocation {
     return (heap != null);
   }
 
-  public boolean isInNewGen() {
-    return ((gen != null) && (gen.equals(((GenCollectedHeap)heap).getGen(0))));
-  }
-
-  public boolean isInOldGen() {
-    return ((gen != null) && (gen.equals(((GenCollectedHeap)heap).getGen(1))));
-  }
-
-  public boolean inOtherGen() {
-    return (!isInNewGen() && !isInOldGen());
-  }
-
   public Generation getGeneration() {
       return gen;
   }
 
-  /** This may be true if isInNewGen is also true */
   public boolean isInTLAB() {
     return inTLAB;
   }
@@ -266,25 +253,11 @@ public class PointerLocation {
             tty.print(" + 0x" + Long.toHexString(diff));
         }
         tty.println();
-    } else if (isInHeap()) {
-      if (isInTLAB()) {
+    } else if (isInHeap() && isInTLAB()) {
         tty.print("In thread-local allocation buffer for thread (");
         getTLABThread().printThreadInfoOn(tty);
         tty.print(") ");
         getTLAB().printOn(tty); // includes "\n"
-      } else {
-        if (isInNewGen()) {
-          tty.print("In new generation ");
-        } else if (isInOldGen()) {
-          tty.print("In old generation ");
-        } else {
-          tty.print("In unknown section of Java heap");
-        }
-        if (getGeneration() != null) {
-          getGeneration().printOn(tty); // does not include "\n"
-        }
-        tty.println();
-      }
     } else if (isInInterpreter()) {
       tty.print("In interpreter codelet: ");
       interpreterCodelet.printOn(tty); // includes "\n"

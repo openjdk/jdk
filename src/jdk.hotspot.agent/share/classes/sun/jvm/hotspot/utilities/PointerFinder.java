@@ -84,43 +84,9 @@ public class PointerFinder {
 
     // Check if address is in the java heap.
     CollectedHeap heap = VM.getVM().getUniverse().heap();
-    if (heap instanceof GenCollectedHeap) {
-      GenCollectedHeap genheap = (GenCollectedHeap) heap;
-      if (genheap.isIn(a)) {
-        loc.heap = heap;
-        for (int i = 0; i < genheap.nGens(); i++) {
-          Generation g = genheap.getGen(i);
-          if (g.isIn(a)) {
-            loc.gen = g;
-            break;
-          }
-        }
-
-        if (Assert.ASSERTS_ENABLED) {
-          Assert.that(loc.gen != null, "Should have found this in a generation");
-        }
-
-        if (VM.getVM().getUseTLAB()) {
-          // Try to find thread containing it
-          for (int i = 0; i < threads.getNumberOfThreads(); i++) {
-            JavaThread t = threads.getJavaThreadAt(i);
-            ThreadLocalAllocBuffer tlab = t.tlab();
-            if (tlab.contains(a)) {
-              loc.inTLAB = true;
-              loc.tlabThread = t;
-              loc.tlab = tlab;
-              break;
-            }
-          }
-        }
-
-        return loc;
-      }
-    } else {
-      if (heap.isIn(a)) {
-        loc.heap = heap;
-        return loc;
-      }
+    if (heap.isIn(a)) {
+      loc.heap = heap;
+      return loc;
     }
 
     // Check if address is in the interpreter
