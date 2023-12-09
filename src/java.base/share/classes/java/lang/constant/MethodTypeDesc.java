@@ -90,7 +90,7 @@ public sealed interface MethodTypeDesc
      * @param index the index of the parameter to retrieve
      * @return a {@link ClassDesc} describing the desired parameter type
      * @throws IndexOutOfBoundsException if the index is outside the half-open
-     * range {[0, parameterCount())}
+     * range {@code [0, parameterCount())}
      */
     ClassDesc parameterType(int index);
 
@@ -127,7 +127,7 @@ public sealed interface MethodTypeDesc
      * @return a {@linkplain MethodTypeDesc} describing the desired method type
      * @throws NullPointerException if any argument is {@code null}
      * @throws IndexOutOfBoundsException if the index is outside the half-open
-     * range {[0, parameterCount)}
+     * range {@code [0, parameterCount)}
      */
     MethodTypeDesc changeParameterType(int index, ClassDesc paramType);
 
@@ -154,7 +154,7 @@ public sealed interface MethodTypeDesc
      * @return a {@linkplain MethodTypeDesc} describing the desired method type
      * @throws NullPointerException if any argument or its contents are {@code null}
      * @throws IndexOutOfBoundsException if {@code pos} is outside the closed
-     * range {[0, parameterCount]}
+     * range {@code [0, parameterCount]}
      * @throws IllegalArgumentException if any element of {@code paramTypes}
      * is a {@link ClassDesc} for {@code void}
      */
