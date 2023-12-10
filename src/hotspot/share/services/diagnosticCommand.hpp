@@ -1053,4 +1053,23 @@ public:
 
 #endif // LINUX
 
+class ZeroUnusedMemoryDCmd : public DCmd {
+public:
+  ZeroUnusedMemoryDCmd(outputStream* output, bool heap) : DCmd(output, heap) {}
+  static const char* name() {
+    return "System.zero_unused_memory";
+  }
+  static const char* description() {
+    return "Call System.gc() and zero unused memory.";
+  }
+  static const char* impact() {
+    return "Medium: depends on the size of the unallocated part of the committed heap";
+  }
+  static const JavaPermission permission() {
+    JavaPermission p = { "java.lang.management.ManagementPermission", "control", nullptr };
+    return p;
+  }
+  virtual void execute(DCmdSource source, TRAPS);
+};
+
 #endif // SHARE_SERVICES_DIAGNOSTICCOMMAND_HPP
