@@ -348,11 +348,9 @@ CardTableRS::CardTableRS(MemRegion whole_heap) :
 // Implemented word-iteration to skip long consecutive clean cards.
 CardTable::CardValue* CardTableRS::find_first_dirty_card(CardValue* const start_card,
                                                          CardValue* const end_card) {
-  using Word = uintptr_t;
-
   CardValue* current_card = start_card;
 
-  while (!is_aligned(current_card, sizeof(Word))) {
+  while (!is_word_aligned(current_card)) {
     if (current_card >= end_card) {
       return end_card;
     }
@@ -363,13 +361,13 @@ CardTable::CardValue* CardTableRS::find_first_dirty_card(CardValue* const start_
   }
 
   // Word comparison
-  while (current_card + sizeof(Word) <= end_card) {
-    Word* current_word = reinterpret_cast<Word*>(current_card);
-    if (*current_word != (Word)clean_card_row_val()) {
+  while (current_card + sizeof(CardWord) <= end_card) {
+    CardWord* current_word = reinterpret_cast<CardWord*>(current_card);
+    if (*current_word != clean_card_word_val()) {
       // Found a dirty card in this word; fall back to per-CardValue comparison.
       break;
     }
-    current_card += sizeof(Word);
+    current_card += sizeof(CardWord);
   }
 
   // Per-CardValue comparison.

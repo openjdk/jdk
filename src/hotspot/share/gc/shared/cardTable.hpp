@@ -40,6 +40,7 @@ public:
   // This code can typically be found by searching for the byte_map_base() method.
   STATIC_ASSERT(sizeof(CardValue) == 1);
 
+  using CardWord = uintptr_t;
 protected:
   // The declaration order of these const fields is important; see the
   // constructor before changing.
@@ -71,8 +72,7 @@ protected:
     CT_MR_BS_last_reserved      =  1
   };
 
-  // a word's worth (row) of clean card values
-  static const intptr_t clean_card_row = (intptr_t)(-1);
+  static const CardWord clean_card_word = (CardWord)(-1);
 
   // CardTable entry size
   static uint _card_shift;
@@ -90,6 +90,10 @@ private:
 public:
   CardTable(MemRegion whole_heap);
   virtual ~CardTable() = default;
+
+  static bool is_word_aligned(const CardValue* const card) {
+    return is_aligned(card, sizeof(CardWord));
+  }
 
   void initialize(void* region0_start, void* region1_start);
 
@@ -195,7 +199,7 @@ public:
 
   static constexpr CardValue clean_card_val()          { return clean_card; }
   static constexpr CardValue dirty_card_val()          { return dirty_card; }
-  static constexpr intptr_t clean_card_row_val()   { return clean_card_row; }
+  static constexpr CardWord clean_card_word_val()   { return clean_card_word; }
 
   // Initialize card size
   static void initialize_card_size();

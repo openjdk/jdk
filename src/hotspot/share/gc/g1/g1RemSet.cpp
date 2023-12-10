@@ -543,7 +543,7 @@ class G1ScanHRForRegionClosure : public HeapRegionClosure {
 
   // To locate consecutive dirty cards inside a chunk.
   class ChunkScanner {
-    using Word = size_t;
+    using CardWord = CardTable::CardWord;
 
     CardValue* const _start_card;
     CardValue* const _end_card;
@@ -555,24 +555,20 @@ class G1ScanHRForRegionClosure : public HeapRegionClosure {
       return (*card & ToScanMask) == 0;
     }
 
-    static bool is_word_aligned(const void* const addr) {
-      return ((uintptr_t)addr) % sizeof(Word) == 0;
-    }
-
     CardValue* find_first_dirty_card(CardValue* i_card) const {
-      while (!is_word_aligned(i_card)) {
+      while (!CardTable::is_word_aligned(i_card)) {
         if (is_card_dirty(i_card)) {
           return i_card;
         }
         i_card++;
       }
 
-      for (/* empty */; i_card < _end_card; i_card += sizeof(Word)) {
-        Word word_value = *reinterpret_cast<Word*>(i_card);
+      for (/* empty */; i_card < _end_card; i_card += sizeof(CardWord)) {
+        CardWord word_value = *reinterpret_cast<CardWord*>(i_card);
         bool has_dirty_cards_in_word = (~word_value & ExpandedToScanMask) != 0;
 
         if (has_dirty_cards_in_word) {
-          for (uint i = 0; i < sizeof(Word); ++i) {
+          for (uint i = 0; i < sizeof(CardWord); ++i) {
             if (is_card_dirty(i_card)) {
               return i_card;
             }
@@ -586,19 +582,19 @@ class G1ScanHRForRegionClosure : public HeapRegionClosure {
     }
 
     CardValue* find_first_non_dirty_card(CardValue* i_card) const {
-      while (!is_word_aligned(i_card)) {
+      while (!CardTable::is_word_aligned(i_card)) {
         if (!is_card_dirty(i_card)) {
           return i_card;
         }
         i_card++;
       }
 
-      for (/* empty */; i_card < _end_card; i_card += sizeof(Word)) {
-        Word word_value = *reinterpret_cast<Word*>(i_card);
+      for (/* empty */; i_card < _end_card; i_card += sizeof(CardWord)) {
+        CardWord word_value = *reinterpret_cast<CardWord*>(i_card);
         bool all_cards_dirty = (word_value == G1CardTable::WordAllDirty);
 
         if (!all_cards_dirty) {
-          for (uint i = 0; i < sizeof(Word); ++i) {
+          for (uint i = 0; i < sizeof(CardWord); ++i) {
             if (!is_card_dirty(i_card)) {
               return i_card;
             }
@@ -615,8 +611,8 @@ class G1ScanHRForRegionClosure : public HeapRegionClosure {
     ChunkScanner(CardValue* const start_card, CardValue* const end_card) :
       _start_card(start_card),
       _end_card(end_card) {
-        assert(is_word_aligned(start_card), "precondition");
-        assert(is_word_aligned(end_card), "precondition");
+        assert(CardTable::is_word_aligned(start_card), "precondition");
+        assert(CardTable::is_word_aligned(end_card), "precondition");
       }
 
     template<typename Func>
