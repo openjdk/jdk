@@ -107,6 +107,10 @@ void ContiguousSpace::print_on(outputStream* st) const {
                p2i(bottom()), p2i(top()), p2i(end()));
 }
 
+size_t ContiguousSpace::zero_unused() {
+  return mangler()->zero_unused();
+}
+
 void ContiguousSpace::verify() const {
   HeapWord* p = bottom();
   HeapWord* t = top();

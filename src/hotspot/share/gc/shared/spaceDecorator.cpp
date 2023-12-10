@@ -137,3 +137,9 @@ void  SpaceMangler::check_mangled_unused_area_complete() {
 }
 #undef DEBUG_MANGLING
 #endif // not PRODUCT
+
+size_t SpaceMangler::zero_unused() {
+  size_t len = pointer_delta(end(), top(), 1);
+  Copy::zero_to_bytes(top(), len);
+  return len;
+}
