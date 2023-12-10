@@ -1520,9 +1520,9 @@ void C2_MacroAssembler::arrays_hashcode(Register ary, Register cnt, Register res
                                  //           + 31^^1 * ary[i+2] + 31^^0 * ary[i+3]
   addi(ary, ary, elsize * stride);
   bne(ary, chunks_end, WIDE_LOOP);
+  beqz(cnt, DONE);
 
   bind(TAIL);
-  beqz(cnt, DONE);
   slli(chunks_end, cnt, chunks_end_shift);
   add(chunks_end, ary, chunks_end);
 
