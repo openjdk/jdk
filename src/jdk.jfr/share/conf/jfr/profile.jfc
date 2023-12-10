@@ -739,7 +739,7 @@
       <setting name="threshold" control="file-threshold">10 ms</setting>
     </event>
 
-    <event name="jdk.Selection">
+    <event name="jdk.SelectorSelect">
       <setting name="enabled">true</setting>
       <setting name="stackTrace">true</setting>
       <setting name="threshold">20 ms</setting>

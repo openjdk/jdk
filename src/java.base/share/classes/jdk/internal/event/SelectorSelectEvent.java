@@ -25,17 +25,20 @@
 
 package jdk.internal.event;
 
+import java.nio.channels.Selector;
+
 /**
- * A JFR event for selection operations.  This event is mirrored in
+ * A JFR event for operations on {@link Selector#select()} and it's variants.
+ * This event is mirrored in
  * {@code jdk.jfr.events.SelectionEvent } where the metadata for the event is
  * provided with annotations.  Some of the methods are replaced by generated
  * methods when jfr is enabled.  Note that the order of the arguments of the
  * {@link #commit(long, long, int)} method
  * must be the same as the order of the fields.
  */
-public class SelectionEvent extends Event {
+public class SelectorSelectEvent extends Event {
 
-    public int count;
+    public int selectionKeyCount;
 
     /**
      * Actually commit a selection event.  The implementation

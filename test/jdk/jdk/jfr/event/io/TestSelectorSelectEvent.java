@@ -45,20 +45,20 @@ import java.util.List;
  * @key jfr
  * @requires vm.hasJFR
  * @library /test/lib /test/jdk
- * @run main/othervm jdk.jfr.event.io.TestSelectionEvents
+ * @run main/othervm jdk.jfr.event.io.TestSelectorSelectEvent
  */
-public class TestSelectionEvents {
+public class TestSelectorSelectEvent {
 
-    private static String COUNT_FIELD = "count";
+    private static String COUNT_FIELD = "selectionKeyCount";
 
     public static void main(String[] args) throws Throwable {
-        new TestSelectionEvents().test();
+        new TestSelectorSelectEvent().test();
     }
 
     public void test() throws Throwable {
         try (Recording recording = new Recording()) {
             try (ServerSocketChannel ssc = ServerSocketChannel.open()) {
-                recording.enable(EventNames.Selection).withoutThreshold();
+                recording.enable(EventNames.SelectorSelect).withoutThreshold();
                 recording.start();
 
                 InetAddress lb = InetAddress.getLoopbackAddress();

@@ -75,7 +75,7 @@ public final class JDKEvents {
         jdk.internal.event.ProcessStartEvent.class,
         jdk.internal.event.SecurityPropertyModificationEvent.class,
         jdk.internal.event.SecurityProviderServiceEvent.class,
-        jdk.internal.event.SelectionEvent.class,
+        jdk.internal.event.SelectorSelectEvent.class,
         jdk.internal.event.SocketReadEvent.class,
         jdk.internal.event.SocketWriteEvent.class,
         jdk.internal.event.ThreadSleepEvent.class,

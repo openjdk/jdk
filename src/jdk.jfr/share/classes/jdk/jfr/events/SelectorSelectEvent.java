@@ -32,14 +32,14 @@ import jdk.jfr.Name;
 import jdk.jfr.internal.MirrorEvent;
 import jdk.jfr.internal.Type;
 
-@Name(Type.EVENT_NAME_PREFIX + "Selection")
-@Label("Selection")
+@Name(Type.EVENT_NAME_PREFIX + "SelectorSelect")
+@Label("SelectorSelect")
 @Category("Java Application")
-@Description("Selection Operation")
-@MirrorEvent(className = "jdk.internal.event.SelectionEvent")
-public class SelectionEvent extends AbstractJDKEvent {
+@Description("Selector Select Operation")
+@MirrorEvent(className = "jdk.internal.event.SelectorSelectEvent")
+public class SelectorSelectEvent extends AbstractJDKEvent {
 
-    @Label("Selection Count")
-    @Description("Number of channels selected")
-    public int count;
+    @Label("SelectionKey Count")
+    @Description("Number of channels ready for I/O or added to ready set")
+    public int selectionKeyCount;
 }

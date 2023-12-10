@@ -25,7 +25,7 @@
 
 package sun.nio.ch;
 
-import jdk.internal.event.SelectionEvent;
+import jdk.internal.event.SelectorSelectEvent;
 
 import java.io.IOException;
 import java.nio.channels.CancelledKeyException;
@@ -140,14 +140,14 @@ public abstract class SelectorImpl
     private int lockAndDoSelect(Consumer<SelectionKey> action, long timeout)
         throws IOException
     {
-        if (!SelectionEvent.enabled()) {
+        if (!SelectorSelectEvent.enabled()) {
             return implLockAndDoSelect(action, timeout);
         }
-        long start = SelectionEvent.timestamp();
+        long start = SelectorSelectEvent.timestamp();
         int n = implLockAndDoSelect(action, timeout);
-        long duration = SelectionEvent.timestamp() - start;
-        if (SelectionEvent.shouldCommit(duration)) {
-            SelectionEvent.commit(start, duration, n);
+        long duration = SelectorSelectEvent.timestamp() - start;
+        if (SelectorSelectEvent.shouldCommit(duration)) {
+            SelectorSelectEvent.commit(start, duration, n);
         }
         return n;
     }
