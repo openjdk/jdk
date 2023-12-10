@@ -63,8 +63,6 @@ public:
   virtual void try_resolve_jobject_in_native(MacroAssembler* masm, Register dst, Register jni_env,
                                              Register obj, Register tmp, Label& slowpath);
 
-  virtual void barrier_stubs_init() {}
-
   virtual NMethodPatchingType nmethod_patching_type() { return NMethodPatchingType::stw_instruction_and_data_patch; }
 
   virtual void nmethod_entry_barrier(MacroAssembler* masm, Register tmp);

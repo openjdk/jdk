@@ -146,6 +146,11 @@ public:
   // Print a description of the memory for the barrier set
   virtual void print_on(outputStream* st) const = 0;
 
+  // Generate the barrier stubs to reuse if needed.
+  // No GC or/and ARCH needs such barrier stubs now,
+  // but this method is remained for future use.
+  virtual void barrier_stubs_init() {}
+
   static BarrierSet* barrier_set() { return _barrier_set; }
   static void set_barrier_set(BarrierSet* barrier_set);
 

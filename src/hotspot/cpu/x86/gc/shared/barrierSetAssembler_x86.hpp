@@ -100,8 +100,6 @@ public:
                              Register t1, Register t2,
                              Label& slow_case);
 
-  virtual void barrier_stubs_init() {}
-
   virtual void nmethod_entry_barrier(MacroAssembler* masm, Label* slow_path, Label* continuation);
   virtual void c2i_entry_barrier(MacroAssembler* masm);
 

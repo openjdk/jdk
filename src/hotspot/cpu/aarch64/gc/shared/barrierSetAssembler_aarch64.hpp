@@ -111,8 +111,6 @@ public:
     Label&   slow_case                 // continuation point if fast allocation fails
   );
 
-  virtual void barrier_stubs_init() {}
-
   virtual NMethodPatchingType nmethod_patching_type() { return NMethodPatchingType::stw_instruction_and_data_patch; }
 
   virtual void nmethod_entry_barrier(MacroAssembler* masm, Label* slow_path, Label* continuation, Label* guard);

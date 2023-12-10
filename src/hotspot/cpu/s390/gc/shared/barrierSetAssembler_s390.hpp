@@ -50,8 +50,6 @@ public:
                                              Register obj, Register tmp, Label& slowpath);
 
   virtual void nmethod_entry_barrier(MacroAssembler* masm);
-
-  virtual void barrier_stubs_init() {}
 };
 
 #endif // CPU_S390_GC_SHARED_BARRIERSETASSEMBLER_S390_HPP

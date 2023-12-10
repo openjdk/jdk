@@ -94,9 +94,8 @@ void BarrierSet::on_thread_attach(Thread* thread) {
 
 // Called from init.cpp
 void gc_barrier_stubs_init() {
-  BarrierSet* bs = BarrierSet::barrier_set();
 #ifndef ZERO
-  BarrierSetAssembler* bs_assembler = bs->barrier_set_assembler();
-  bs_assembler->barrier_stubs_init();
+  BarrierSet* bs = BarrierSet::barrier_set();
+  bs->barrier_stubs_init();
 #endif
 }
