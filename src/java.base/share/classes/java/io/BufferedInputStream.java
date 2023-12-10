@@ -643,7 +643,7 @@ public class BufferedInputStream extends FilterInputStream {
         if (getClass() == BufferedInputStream.class && markpos == -1) {
             int avail = count - pos;
             if (avail > 0) {
-                if (out.trusted()) {
+                if (IOStreams.trusted(out)) {
                     out.write(getBufIfOpen(), pos, count);
                 } else {
                     // Prevent poisoning and leaking of buf

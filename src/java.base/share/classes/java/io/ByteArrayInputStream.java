@@ -209,7 +209,7 @@ public class ByteArrayInputStream extends InputStream {
         if (len > 0) {
             // 'tmpbuf' is null if and only if 'out' is trusted
             byte[] tmpbuf;
-            if (out.trusted())
+            if (IOStreams.trusted(out))
                 tmpbuf = null;
             else
                 tmpbuf = new byte[Integer.min(len, MAX_TRANSFER_SIZE)];

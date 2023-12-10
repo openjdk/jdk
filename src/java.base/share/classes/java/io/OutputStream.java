@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -204,21 +204,4 @@ public abstract class OutputStream implements Closeable, Flushable {
     public void close() throws IOException {
     }
 
-    /**
-     * Returns true if this class satisfies two conditions:
-     * <pre>
-     * - the reference to {@code byte[]} is not kept within the class
-     * - the argument of {@link #write(byte[])}} and {@link #write(byte[], int, int)}} is not modified within the methods
-     * </pre>
-     * @see java.io.ByteArrayInputStream#transferTo(OutputStream)
-     * @see java.io.BufferedInputStream#implTransferTo(OutputStream)
-     *
-     * @return true if this class is trusted
-     */
-    boolean trusted() {
-        var clazz = getClass();
-        return clazz == ByteArrayOutputStream.class
-                || clazz == FileOutputStream.class
-                || clazz == PipedOutputStream.class;
-    }
 }
