@@ -314,7 +314,7 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  * Locale with {@link #getDefault()} and change it with {@link #setDefault(Locale)}.
  * If the default Locale is changed with {@link #setDefault(Locale)}, the corresponding
  * system properties are not altered. It is not recommended that applications read
- * those system properties and parse/interpret them as their values may be out of sync.
+ * these system properties and parse/interpret them as their values may be out of sync.
  *
  * <p>There are finer-grained default Locales specific for each {@link Locale.Category}.
  * These category specific default Locales can be queried by {@link #getDefault(Category)},
