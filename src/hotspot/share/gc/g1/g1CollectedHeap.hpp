@@ -44,7 +44,7 @@
 #include "gc/g1/g1MonotonicArenaFreePool.hpp"
 #include "gc/g1/g1NUMA.hpp"
 #include "gc/g1/g1SurvivorRegions.hpp"
-#include "gc/g1/g1YoungGCEvacFailureInjector.hpp"
+#include "gc/g1/g1YoungGCAllocationFailureInjector.hpp"
 #include "gc/g1/heapRegionManager.hpp"
 #include "gc/g1/heapRegionSet.hpp"
 #include "gc/shared/barrierSet.hpp"
@@ -220,7 +220,7 @@ private:
   // Manages all allocations with regions except humongous object allocations.
   G1Allocator* _allocator;
 
-  G1YoungGCEvacFailureInjector _evac_failure_injector;
+  G1YoungGCAllocationFailureInjector _allocation_failure_injector;
 
   // Manages all heap verification.
   G1HeapVerifier* _verifier;
@@ -264,6 +264,7 @@ public:
   void set_collection_set_candidates_stats(G1MonotonicArenaMemoryStats& stats);
   void set_young_gen_card_set_stats(const G1MonotonicArenaMemoryStats& stats);
 
+  void update_parallel_gc_threads_cpu_time();
 private:
 
   G1HRPrinter _hr_printer;
@@ -549,7 +550,7 @@ public:
     return _allocator;
   }
 
-  G1YoungGCEvacFailureInjector* evac_failure_injector() { return &_evac_failure_injector; }
+  G1YoungGCAllocationFailureInjector* allocation_failure_injector() { return &_allocation_failure_injector; }
 
   G1HeapVerifier* verifier() {
     return _verifier;
@@ -1266,6 +1267,8 @@ public:
 
   // Performs cleaning of data structures after class unloading.
   void complete_cleaning(bool class_unloading_occurred);
+
+  void unload_classes_and_code(const char* description, BoolObjectClosure* cl, GCTimer* timer);
 
   // Verification
 
