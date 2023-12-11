@@ -318,7 +318,7 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  *
  * <p>There are finer-grained default Locales specific for each {@link Locale.Category}.
  * These category specific default Locales can be queried by {@link #getDefault(Category)},
- * and set by {@link #setDefault(Category, Locale)}. Constructions of these category
+ * and set by {@link #setDefault(Category, Locale)}. Construction of these category
  * specific default Locales are determined by the corresponding system properties,
  * which consist of the base system properties as listed above, appended by either
  * {@code ".display"} or {@code ".format"} depending on the category. For example,
