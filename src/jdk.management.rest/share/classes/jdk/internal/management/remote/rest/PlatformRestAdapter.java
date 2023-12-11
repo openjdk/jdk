@@ -332,7 +332,7 @@ public final class PlatformRestAdapter {
     static interface DefaultValues {
 
         public static final String PORT = "0";
-        public static final String HOST = "0.0.0.0";
+        public static final String HOST = "127.0.0.1";
         public static final String USE_SSL = "false";
         public static final String USE_AUTHENTICATION = "false";
         public static final String PASSWORD_FILE_NAME = "jmxremote.password";
