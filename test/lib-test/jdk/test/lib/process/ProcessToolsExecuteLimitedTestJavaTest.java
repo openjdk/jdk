@@ -28,23 +28,16 @@
  * @run main/othervm -Dtest.java.opts=-XX:MaxMetaspaceSize=123456789 ProcessToolsExecuteLimitedTestJavaTest
  */
 
-import java.util.function.Consumer;
-import java.io.File;
-
-import jdk.test.lib.JDKToolLauncher;
-import jdk.test.lib.Utils;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 
 public class ProcessToolsExecuteLimitedTestJavaTest {
-    static void test(int numOfLines, boolean withConsumer) throws Exception {
-    }
-
     public static void main(String[] args) throws Exception {
         if (args.length > 0) {
             // Do nothing. Just let the JVM log its output.
         } else {
-            // Make sure that the flag doesn't get propagated when the "limited" version is used.
+            // In comparison to executeTestJava, executeLimitedTestJava should not add the
+            // -Dtest.java.opts flags. Check that it doesn't.
             OutputAnalyzer output = ProcessTools.executeLimitedTestJava("-XX:+PrintFlagsFinal", "-version");
             output.stdoutShouldNotMatch(".*MaxMetaspaceSize.* = 123456789.*");
         }
