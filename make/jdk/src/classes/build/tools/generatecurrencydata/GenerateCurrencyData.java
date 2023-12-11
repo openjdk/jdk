@@ -343,12 +343,12 @@ public class GenerateCurrencyData {
 
             // Do not allow a future currency to be classified as an otherCurrency,
             // otherwise it will leak out into Currency:getAvailableCurrencies
-            boolean notFutureCurrency = !Arrays.asList(specialCaseNewCurrencies).contains(currencyCode);
-            boolean notSimpleCurrency = tableEntry == INVALID_COUNTRY_ENTRY
-                    || (tableEntry & SPECIAL_CASE_COUNTRY_MASK) != 0
-                    || (tableEntry & SIMPLE_CASE_COUNTRY_FINAL_CHAR_MASK) != (currencyCode.charAt(2) - 'A');
+            boolean futureCurrency = Arrays.asList(specialCaseNewCurrencies).contains(currencyCode);
+            boolean simpleCurrency = (tableEntry & SIMPLE_CASE_COUNTRY_FINAL_CHAR_MASK) == (currencyCode.charAt(2) - 'A');
 
-            if (notFutureCurrency && notSimpleCurrency) {
+            // If neither a simple currency, or one defined in the future
+            // then the current currency is applicable to be added to the otherTable
+            if (!futureCurrency && !simpleCurrency) {
                 if (otherCurrenciesCount == maxOtherCurrencies) {
                     throw new RuntimeException("too many other currencies");
                 }
