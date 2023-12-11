@@ -59,9 +59,9 @@ public class TestUseCompressedOopsFlagsWithUlimit {
     // Convert bytes to kbytes for ulimit -v
     var ulimit_prefix = "ulimit -v " + (ulimit / 1024);
 
-    String cmd = ProcessTools.getCommandLine(ProcessTools.createTestJavaProcessBuilder(args.toArray(String[]::new)));
+    String cmd = ProcessTools.getCommandLine(ProcessTools.createTestJavaProcessBuilder(args));
     ProcessBuilder pb = new ProcessBuilder("sh", "-c", ulimit_prefix + ";" + cmd);
-    OutputAnalyzer output = new OutputAnalyzer(pb.start());
+    OutputAnalyzer output = ProcessTools.executeProcess(pb);
     output.shouldHaveExitValue(0);
     String stdout = output.getStdout();
 

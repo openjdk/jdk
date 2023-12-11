@@ -33,13 +33,13 @@ package gc.epsilon;
 
 import java.io.*;
 import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessExecutor;
 import jdk.test.lib.process.ProcessTools;
 
 public class TestDieWithHeapDump {
 
   public static void passWith(String... args) throws Exception {
-    ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(args);
-    OutputAnalyzer out = new OutputAnalyzer(pb.start());
+    OutputAnalyzer out = ProcessTools.executeLimitedTestJava(args);
     out.shouldNotContain("OutOfMemoryError");
     out.shouldHaveExitValue(0);
   }
