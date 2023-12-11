@@ -211,6 +211,25 @@ public class PriorityQueue<E> extends AbstractQueue<E>
 
     /**
      * Creates a {@code PriorityQueue} containing the elements in the
+     * specified collection that orders its elements according to the 
+     * specified comparator.
+     *
+     * @param  c the collection whose elements are to be placed
+     *         into this priority queue
+     * @param  comparator the comparator that will be used to order this
+     *         priority queue.  If {@code null}, the {@linkplain Comparable
+     *         natural ordering} of the elements will be used.
+     * @throws NullPointerException if the specified collection or any
+     *         of its elements are null
+     */
+    public PriorityQueue(Collection<? extends E> c,
+    		             Comparator<? super E> comparator) {
+        this.comparator = comparator;
+        initFromCollection(c);
+    }
+
+    /**
+     * Creates a {@code PriorityQueue} containing the elements in the
      * specified priority queue.  This priority queue will be
      * ordered according to the same ordering as the given priority
      * queue.
