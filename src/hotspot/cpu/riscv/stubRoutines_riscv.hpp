@@ -74,9 +74,6 @@ class riscv {
 
   static bool _completed;
 
-  // table for arrays_hashcode
-  static const jint _arrays_hashcode_powers_of_31[];
-
  public:
 
   static address get_previous_sp_entry() {
@@ -161,10 +158,6 @@ class riscv {
 
   static void set_completed() {
     _completed = true;
-  }
-
-  static address arrays_hashcode_powers_of_31() {
-    return (address)_arrays_hashcode_powers_of_31;
   }
 };
 

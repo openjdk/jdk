@@ -55,10 +55,4 @@ address StubRoutines::riscv::_string_indexof_linear_ul = nullptr;
 address StubRoutines::riscv::_large_byte_array_inflate = nullptr;
 address StubRoutines::riscv::_method_entry_barrier = nullptr;
 
-ATTRIBUTE_ALIGNED(64) const jint StubRoutines::riscv::_arrays_hashcode_powers_of_31[] =
-{
-         923521, // 31^^4 (0x000E1781)
-          29791, // 31^^3 (0x0000745F)
-};
-
 bool StubRoutines::riscv::_completed = false;

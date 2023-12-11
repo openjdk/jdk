@@ -1492,16 +1492,16 @@ void C2_MacroAssembler::arrays_hashcode(Register ary, Register cnt, Register res
 
   beqz(cnt, DONE);
 
-  addiw(pow31_2, zr, 961);       // [31^^2]
   andi(chunks, cnt, ~(stride-1));
   beqz(chunks, TAIL);
+
+  mv(pow31_4, 923521);           // [31^^4]
+  mv(pow31_3,  29791);           // [31^^3]
+  mv(pow31_2,    961);           // [31^^2]
 
   slli(chunks_end, chunks, chunks_end_shift);
   add(chunks_end, ary, chunks_end);
   andi(cnt, cnt, stride-1);      // don't forget about tail!
-  ld(pow31_4, ExternalAddress(StubRoutines::riscv::arrays_hashcode_powers_of_31()
-                              + 0 * sizeof(jint))); // [31^^3:31^^4]
-  srli(pow31_3, pow31_4, 32);
 
   bind(WIDE_LOOP);
   mulw(result, result, pow31_4); // 31^^4 * h
