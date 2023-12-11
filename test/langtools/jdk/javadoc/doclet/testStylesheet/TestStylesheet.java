@@ -164,7 +164,7 @@ public class TestStylesheet extends JavadocTester {
                         display:inline-block;
                     }""",
                 """
-                    input#reset-button {
+                    input#reset-search, input.reset-filter {
                         background-color: transparent;
                         background-image:url('x.png');
                         background-repeat:no-repeat;
@@ -173,11 +173,8 @@ public class TestStylesheet extends JavadocTester {
                         border-radius:0;
                         width:12px;
                         height:12px;
-                        position:absolute;
-                        right:15px;
-                        top:11px;
                         font-size:0;
-                        display: none;
+                        display:none;
                     }""",
                 """
                     ::placeholder {

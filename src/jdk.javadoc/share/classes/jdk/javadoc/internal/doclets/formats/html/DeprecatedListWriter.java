@@ -107,7 +107,7 @@ public class DeprecatedListWriter extends SummaryListWriter<DeprecatedAPIListBui
         HtmlId htmlId = HtmlId.of("release-" + index);
         String releaseId = isOtherReleases ? "" : Integer.toString(index);
         return HtmlTree.LABEL(htmlId.name(),
-                        HtmlTree.INPUT("checkbox", htmlId)
+                        HtmlTree.INPUT(HtmlAttr.InputType.CHECKBOX, htmlId)
                                 .put(HtmlAttr.CHECKED, "")
                                 .put(HtmlAttr.ONCLICK,
                                         "toggleGlobal(this, '" + releaseId + "', 3)"))

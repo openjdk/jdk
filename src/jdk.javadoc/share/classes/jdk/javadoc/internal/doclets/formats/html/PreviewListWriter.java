@@ -88,7 +88,7 @@ public class PreviewListWriter extends SummaryListWriter<PreviewAPIListBuilder> 
                 HtmlId htmlId = HtmlId.of("feature-" + index);
                 String jepUrl = resources.getText("doclet.Preview_JEP_URL", jep.number());
                 list.add(HtmlTree.LI(HtmlTree.LABEL(htmlId.name(),
-                                HtmlTree.INPUT("checkbox", htmlId)
+                                HtmlTree.INPUT(HtmlAttr.InputType.CHECKBOX, htmlId)
                                         .put(HtmlAttr.CHECKED, "")
                                         .put(HtmlAttr.ONCLICK,
                                                 "toggleGlobal(this, '" + index + "', 3)"))

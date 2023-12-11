@@ -493,12 +493,12 @@ public class Navigation {
 
     private void addSearch(Content target) {
         var resources = configuration.getDocResources();
-        var inputText = HtmlTree.INPUT("text", HtmlIds.SEARCH_INPUT)
+        var inputText = HtmlTree.INPUT(HtmlAttr.InputType.TEXT, HtmlIds.SEARCH_INPUT)
                 .put(HtmlAttr.PLACEHOLDER, resources.getText("doclet.search_placeholder"))
                 .put(HtmlAttr.ARIA_LABEL, resources.getText("doclet.search_in_documentation"))
                 .put(HtmlAttr.AUTOCOMPLETE, "off")
                 .put(HtmlAttr.AUTOCAPITALIZE, "off");
-        var inputReset = HtmlTree.INPUT("reset", HtmlIds.RESET_BUTTON)
+        var inputReset = HtmlTree.INPUT(HtmlAttr.InputType.RESET, HtmlIds.RESET_SEARCH)
                 .put(HtmlAttr.VALUE, resources.getText("doclet.search_reset"));
         var searchDiv = HtmlTree.DIV(HtmlStyle.navListSearch)
                 .add(inputText)

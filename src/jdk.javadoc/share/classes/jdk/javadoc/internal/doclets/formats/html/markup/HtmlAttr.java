@@ -93,6 +93,23 @@ public enum HtmlAttr {
         }
     }
 
+    public enum InputType {
+
+        CHECKBOX,
+        RESET,
+        TEXT;
+
+        private final String type;
+
+        InputType() {
+            type = Utils.toLowerCase(name());
+        }
+
+        public String toString() {
+            return type;
+        }
+    }
+
     HtmlAttr() {
         this.value = Utils.toLowerCase(name());
     }

@@ -403,7 +403,7 @@ $.widget("custom.catcomplete", $.ui.autocomplete, {
 });
 $(function() {
     var search = $("#search-input");
-    var reset = $("#reset-button");
+    var reset = $("#reset-search");
     search.catcomplete({
         minLength: 1,
         delay: 200,

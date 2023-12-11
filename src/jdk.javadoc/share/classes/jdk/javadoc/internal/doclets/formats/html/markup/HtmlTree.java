@@ -586,9 +586,9 @@ public class HtmlTree extends Content {
      * @param id    the id
      * @return the element
      */
-    public static HtmlTree INPUT(String type, HtmlId id) {
+    public static HtmlTree INPUT(HtmlAttr.InputType type, HtmlId id) {
         return new HtmlTree(TagName.INPUT)
-                .put(HtmlAttr.TYPE, type)
+                .put(HtmlAttr.TYPE, type.toString())
                 .setId(id)
                 .put(HtmlAttr.DISABLED, "");
     }
@@ -596,13 +596,13 @@ public class HtmlTree extends Content {
     /**
      * Creates an HTML {@code INPUT} element with the given type
      * and style. The element is marked as initially disabled.
-     * @param type
-     * @param style
-     * @return
+     * @param type  the input type
+     * @param style the input style
+     * @return      the element
      */
-    public static HtmlTree INPUT(String type, HtmlStyle style) {
+    public static HtmlTree INPUT(HtmlAttr.InputType type, HtmlStyle style) {
         return new HtmlTree(TagName.INPUT)
-                .put(HtmlAttr.TYPE, type)
+                .put(HtmlAttr.TYPE, type.toString())
                 .setStyle(style)
                 .put(HtmlAttr.DISABLED, "");
     }

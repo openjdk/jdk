@@ -101,7 +101,7 @@ public class HtmlIds {
     static final HtmlId PROPERTY_DETAIL = HtmlId.of("property-detail");
     static final HtmlId PROPERTY_SUMMARY = HtmlId.of("property-summary");
     static final HtmlId RELATED_PACKAGE_SUMMARY = HtmlId.of("related-package-summary");
-    static final HtmlId RESET_BUTTON = HtmlId.of("reset-button");
+    static final HtmlId RESET_SEARCH = HtmlId.of("reset-search");
     static final HtmlId SEARCH_INPUT = HtmlId.of("search-input");
     static final HtmlId SERVICES = HtmlId.of("services-summary");
     static final HtmlId SKIP_NAVBAR_TOP = HtmlId.of("skip-navbar-top");

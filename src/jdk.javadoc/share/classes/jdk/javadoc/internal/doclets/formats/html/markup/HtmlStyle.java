@@ -123,7 +123,7 @@ public enum HtmlStyle {
     /**
      * The class for the reset button in the sidebar filter input element.
      */
-    resetButton,
+    resetFilter,
 
     /**
      * The class for the {@code button} element to show the sidebar.

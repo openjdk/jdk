@@ -88,7 +88,7 @@ public class NewAPIListWriter extends SummaryListWriter<NewAPIBuilder> {
                 String release = releases.get(i);
                 HtmlId htmlId = HtmlId.of("release-" + releaseIndex);
                 tabs.add(Text.of(" ")).add(HtmlTree.LABEL(htmlId.name(),
-                                HtmlTree.INPUT("checkbox", htmlId)
+                                HtmlTree.INPUT(HtmlAttr.InputType.CHECKBOX, htmlId)
                                         .put(HtmlAttr.CHECKED, "")
                                         .put(HtmlAttr.ONCLICK,
                                                 "toggleGlobal(this, '" + releaseIndex + "', 3)"))

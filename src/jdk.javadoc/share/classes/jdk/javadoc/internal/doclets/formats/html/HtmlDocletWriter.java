@@ -574,12 +574,12 @@ public abstract class HtmlDocletWriter {
         var sidebarHeader =  HtmlTree.DIV(HtmlStyle.tocHeader, contents.contentsHeading);
         if (hasFilterInput) {
             sidebarHeader.add(Entity.NO_BREAK_SPACE)
-                    .add(HtmlTree.INPUT("text", HtmlStyle.filterInput)
+                    .add(HtmlTree.INPUT(HtmlAttr.InputType.TEXT, HtmlStyle.filterInput)
                             .put(HtmlAttr.PLACEHOLDER, resources.getText("doclet.filter_label"))
                             .put(HtmlAttr.ARIA_LABEL, resources.getText("doclet.filter_table_of_contents"))
                             .put(HtmlAttr.AUTOCOMPLETE, "off")
                             .put(HtmlAttr.AUTOCAPITALIZE, "off"))
-                    .add(HtmlTree.INPUT("reset", HtmlStyle.resetButton)
+                    .add(HtmlTree.INPUT(HtmlAttr.InputType.RESET, HtmlStyle.resetFilter)
                             .put(HtmlAttr.VALUE, resources.getText("doclet.filter_reset")));
         }
         sidebar.add(sidebarHeader);

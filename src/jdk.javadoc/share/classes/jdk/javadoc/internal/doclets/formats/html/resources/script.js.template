@@ -283,7 +283,7 @@ document.addEventListener("DOMContentLoaded", function(e) {
             }
         });
     });
-    document.querySelectorAll("input.reset-button").forEach((button) => {
+    document.querySelectorAll("input.reset-filter").forEach((button) => {
         button.removeAttribute("disabled");
         button.addEventListener("click", (e) => {
             const input = button.previousElementSibling;
