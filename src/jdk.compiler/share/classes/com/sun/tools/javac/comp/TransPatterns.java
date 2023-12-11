@@ -501,7 +501,7 @@ public class TransPatterns extends TreeTranslator {
             MethodSymbol bsm = rs.resolveInternalMethod(tree.pos(), env, syms.switchBootstrapsType,
                     bootstrapName, staticArgTypes, List.nil());
 
-            Type resolvedSelectorType = enumSelector || primitiveSelector ? seltype : syms.objectType;
+            Type resolvedSelectorType = seltype;
             MethodType indyType = new MethodType(
                     List.of(resolvedSelectorType, syms.intType),
                     syms.intType,
