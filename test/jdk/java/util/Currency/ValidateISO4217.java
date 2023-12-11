@@ -174,11 +174,6 @@ public class ValidateISO4217 {
                     numeric = tokens.nextToken();
                     minorUnit = tokens.nextToken();
                     testCurrencies.add(Currency.getInstance(currency));
-                } else {
-                    // Still need to add the future currency to testCurrencies
-                    // without updating ISO4217Codes
-                    String futureCurr = tokens.nextToken();
-                    testCurrencies.add(Currency.getInstance(futureCurr));
                 }
             }
         }
