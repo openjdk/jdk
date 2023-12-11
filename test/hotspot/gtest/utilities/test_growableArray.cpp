@@ -946,6 +946,7 @@ public:
     }
     check_alive_elements_for_type<E>(1000);
 
+    // Test remove_range
     for (int i = 0; i < 10; i++) {
       ASSERT_EQ(a->length(), 1000 - i*50);
       check_alive_elements_for_type<E>(1000 - i*50);
@@ -961,6 +962,7 @@ public:
       }
     }
 
+    // Test remove_till
     for (int i = 0; i < 10; i++) {
       check_alive_elements_for_type<E>(500 - i*50);
       ASSERT_EQ(a->length(), 500 - i*50);
@@ -970,6 +972,29 @@ public:
       }
     }
     check_alive_elements_for_type<E>(0);
+
+    // write
+    for (int i = 0; i < 1000; i++) {
+      a->append(value_factory<E>(i));
+    }
+    ASSERT_EQ(a->length(), 1000);
+    check_alive_elements_for_type<E>(1000);
+
+    for (int i = 0; i < 100; i++) {
+      a->delete_at(100 + i);
+    }
+    ASSERT_EQ(a->length(), 900);
+    check_alive_elements_for_type<E>(900);
+
+    for (int i = 0; i < 100; i++) {
+      ASSERT_EQ(a->at(i), value_factory<E>(i));
+    }
+    for (int i = 0; i < 100; i++) {
+      ASSERT_EQ(a->at(100 + i), value_factory<E>(999 - i));
+    }
+    for (int i = 200; i < 900; i++) {
+      ASSERT_EQ(a->at(i), value_factory<E>(i));
+    }
   }
 };
 

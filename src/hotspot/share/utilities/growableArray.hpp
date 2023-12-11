@@ -293,7 +293,6 @@ public:
     assert(0 <= start, "illegal start index %d", start);
     assert(start < end && end <= _len, "erase called with invalid range (%d, %d) for length %d", start, end, _len);
 
-
     // Destruct old elements
     for (int i = start; i < end; i++) {
       this->_data[i].~E();
@@ -310,11 +309,14 @@ public:
   // The order is changed.
   void delete_at(int index) {
     assert(0 <= index && index < _len, "illegal index %d for length %d", index, _len);
-    // TODO call destructors: difference to remove_at -> rem or document?
-    if (index < --_len) {
-      // Replace removed element with last one.
-      _data[index] = _data[_len];
-    }
+
+    _len--;
+    // Destruct old
+    this->_data[index].~E();
+    // Copy-construct last element to deleted slot
+    ::new ((void*)&this->_data[index]) E(_data[_len]);
+    // Destruct last element
+    this->_data[_len].~E();
   }
 
   void sort(int f(E*, E*)) {
