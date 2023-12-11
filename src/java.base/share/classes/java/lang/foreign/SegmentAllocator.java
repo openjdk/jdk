@@ -350,7 +350,7 @@ public interface SegmentAllocator {
      *
      * @param layout the layout of the block of memory to be allocated
      * @param value  the value to be set in the newly allocated memory segment
-     * @throws UnsupportedOperationException if {@code value} is not
+     * @throws IllegalArgumentException if {@code value} is not
      *         a {@linkplain MemorySegment#isNative() native} segment
      */
     default MemorySegment allocateFrom(AddressLayout layout, MemorySegment value) {
@@ -670,9 +670,11 @@ public interface SegmentAllocator {
      *
      * @param segment the segment from which the returned allocator should slice from
      * @return a new slicing allocator
+     * @throws IllegalArgumentException if the {@code segment} is
+     *         {@linkplain MemorySegment#isReadOnly() read-only}
      */
     static SegmentAllocator slicingAllocator(MemorySegment segment) {
-        Objects.requireNonNull(segment);
+        assertWritable(segment);
         return new SlicingAllocator(segment);
     }
 
@@ -700,9 +702,19 @@ public interface SegmentAllocator {
      * @param segment the memory segment to be recycled by the returned allocator
      * @return an allocator that recycles an existing segment upon each new
      *         allocation request
+     * @throws IllegalArgumentException if the {@code segment} is
+     *         {@linkplain MemorySegment#isReadOnly() read-only}
      */
     static SegmentAllocator prefixAllocator(MemorySegment segment) {
-        return (AbstractMemorySegmentImpl)Objects.requireNonNull(segment);
+        assertWritable(segment);
+        return (AbstractMemorySegmentImpl)segment;
+    }
+
+    private static void assertWritable(MemorySegment segment) {
+        // Implicit null check
+        if (segment.isReadOnly()) {
+            throw new IllegalArgumentException("read-only segment");
+        }
     }
 
     @ForceInline
