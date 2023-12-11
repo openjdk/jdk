@@ -25,6 +25,7 @@
 
 package java.io;
 
+import com.sun.io.IOStreams;
 import java.util.Arrays;
 import java.util.Objects;
 

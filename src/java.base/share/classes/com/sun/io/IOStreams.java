@@ -23,8 +23,12 @@
  * questions.
  */
 
-package java.io;
+package com.sun.io;
 
+import java.io.ByteArrayOutputStream;
+import java.io.FileOutputStream;
+import java.io.OutputStream;
+import java.io.PipedOutputStream;
 import java.util.zip.CheckedOutputStream;
 
 /**
@@ -37,13 +41,14 @@ final class IOStreams {
      * <pre>
      * - the reference to {@code byte[]} is not kept within the class
      * - the argument of {@link OutputStream#write(byte[])}} and {@link OutputStream#write(byte[], int, int)}} is not modified within the methods
+     * - the {@code byte[]} is not read outside of the given bounds
      * </pre>
-     * @see java.io.ByteArrayInputStream#transferTo(OutputStream)
-     * @see java.io.BufferedInputStream#implTransferTo(OutputStream)
      *
      * @return true if this class is trusted
+     * @see java.io.ByteArrayInputStream#transferTo(OutputStream)
+     * @see java.io.BufferedInputStream#implTransferTo(OutputStream)
      */
-    static boolean isTrusted(OutputStream os) {
+    public static boolean isTrusted(OutputStream os) {
         var clazz = os.getClass();
         return clazz == ByteArrayOutputStream.class
                 || clazz == FileOutputStream.class
