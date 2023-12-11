@@ -253,6 +253,10 @@ public class ReferenceTest extends AbstractProcessor {
  * @see #methodSearchPrimitive2(long, int)   signature:METHOD:ReferenceTestExtras.methodSearchPrimitive2(long, int)
  * @see #methodSearchPrimitive2(int, long)   signature:METHOD:ReferenceTestExtras.methodSearchPrimitive2(int, long)
  * @see #methodSearchPrimitive2(long, long)   signature:METHOD:ReferenceTestExtras.methodSearchPrimitive2(long, long)
+ *
+ * @see Inner#X    Bad
+ * @see Inner#X()  Bad
+ * @see Inner#m    Bad
  */
 class ReferenceTestExtras {
     int ReferenceTestExtras;            // field
