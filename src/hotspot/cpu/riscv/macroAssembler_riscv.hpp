@@ -1076,12 +1076,8 @@ public:
   void atomic_cas(Register prev, Register newv, Register addr, enum operand_size size,
               Assembler::Aqrl acquire = Assembler::relaxed, Assembler::Aqrl release = Assembler::relaxed);
 
-  static bool far_branches() {
-    return ReservedCodeCacheSize > branch_range;
-  }
-
-  // Emit a direct call/jump if the entry address will always be in range,
-  // otherwise a far call/jump.
+  // Emit a far call/jump. Only invalidates the tmp register which
+  // is used to keep the entry address for jalr.
   // The address must be inside the code cache.
   // Supported entry.rspec():
   // - relocInfo::external_word_type
