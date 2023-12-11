@@ -493,7 +493,8 @@ public class ZipFile implements ZipConstants, Closeable {
      */
     @Override
     public String toString() {
-        return this.fileName + "@" + Integer.toHexString(System.identityHashCode(this));
+        return this.fileName
+                + "@" + Integer.toHexString(System.identityHashCode(this));
     }
 
     private class ZipEntryIterator<T extends ZipEntry>
