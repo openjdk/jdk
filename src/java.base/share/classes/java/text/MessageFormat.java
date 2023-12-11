@@ -624,14 +624,11 @@ public class MessageFormat extends Format {
      *
      * The string is constructed from internal information and therefore
      * does not necessarily equal the previously applied pattern.
-     * @implSpec This method does not convert a subformat to a pattern if the
-     * subformat is a {@code DateTimeFormatter.toFormat()} or a {@code ListFormat}
-     * or {@code CompactNumberFormat} that is not equal to one of the recognized
-     * {@code FormatType} and {@code FormatStyle} combinations, excluding the
-     * <i>SubformatPattern</i> {@code FormatStyle}. Additionally, user-defined
-     * subclasses of {@code Format} cannot be converted to a String pattern.
-     * <p> If a subformat cannot be converted to a String pattern, the {@code FormatType}
-     * and {@code FormatStyle} will be omitted from the {@code FormatElement}.
+     * @implSpec This method does not always guarantee a conversion of a subformat to
+     * a pattern. If a subformat cannot be converted to a String pattern, the {@code
+     * FormatType} and {@code FormatStyle} will be omitted from the {@code
+     * FormatElement}. To check a subformat, it is recommended to use either
+     * {@link #getFormats()} or {@link #getFormatsByArgumentIndex()}.
      */
     public String toPattern() {
         // later, make this more extensible
