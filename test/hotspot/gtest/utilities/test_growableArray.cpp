@@ -32,8 +32,6 @@
 // TODO go through GA and GACH and see what ops are not tested yet
 // -> add to modify and test
 //
-// remove_till, remove_range, delete_at
-//
 // TODO
 // sort 2 versions
 // compare
@@ -41,8 +39,6 @@
 // print ?
 //
 // allocator only:
-// append_if_missing
-// push = append
 // insert_before 2 versions
 // appendAll
 // insert_sorted 2 versions
@@ -283,6 +279,8 @@ public:
 
   // forwarding to underlying array with allocation
   virtual void append(const E& e) = 0;
+  virtual bool append_if_missing(const E& e) = 0;
+  virtual void push(const E& e) = 0;
   virtual void reserve(int new_capacity) = 0;
   virtual E at_grow(int i, const E& fill) = 0;
   virtual void at_put_grow (int i, const E& e, const E& fill) = 0;
@@ -339,6 +337,15 @@ public:
   virtual void append(const E& e) override final {
     _array->append(e);
   }
+
+  virtual bool append_if_missing(const E& e) override final {
+    return _array->append_if_missing(e);
+  }
+
+  virtual void push(const E& e) override final {
+    _array->push(e);
+  }
+
   virtual void reserve(int new_capacity) override final {
     _array->reserve(new_capacity);
   }
@@ -583,12 +590,23 @@ public:
   virtual void append(const E& e) override final {
     _array->append(e);
   }
+
+  virtual bool append_if_missing(const E& e) override final {
+    return _array->append_if_missing(e);
+  }
+
+  virtual void push(const E& e) override final {
+    _array->push(e);
+  }
+
   virtual void reserve(int new_capacity) override final {
     _array->reserve(new_capacity);
   }
+
   virtual void shrink_to_fit() override final {
     _array->shrink_to_fit();
   }
+
   virtual void clear_and_deallocate() override final {
     _array->clear_and_deallocate();
   }
@@ -808,8 +826,9 @@ public:
   virtual void do_modify(AllocatorClosure<E>* a, AllocatorArgs args) override final {
     a->clear();
     ASSERT_EQ(a->length(), 0);
+    check_alive_elements_for_type<E>(0);
 
-    // Add elements
+    // Test append
     for (int i = 0; i < 1000; i++) {
       a->append(value_factory<E>(i * 100));
     }
@@ -817,6 +836,49 @@ public:
 
     ASSERT_EQ(a->length(), 1000);
     check_alive_elements_for_type<E>(1000);
+
+    for (int i = 0; i < 1000; i++) {
+      ASSERT_EQ(a->at(i), value_factory<E>(i * 100));
+    }
+
+    a->clear();
+    ASSERT_EQ(a->length(), 0);
+    check_alive_elements_for_type<E>(0);
+
+    // Test push
+    for (int i = 0; i < 1000; i++) {
+      a->push(value_factory<E>(i * 100));
+    }
+
+    ASSERT_EQ(a->length(), 1000);
+    check_alive_elements_for_type<E>(1000);
+
+    for (int i = 0; i < 1000; i++) {
+      ASSERT_EQ(a->at(i), value_factory<E>(i * 100));
+    }
+
+    a->clear();
+    ASSERT_EQ(a->length(), 0);
+    check_alive_elements_for_type<E>(0);
+
+    // Test append_if_missing
+    for (int i = 0; i < 1000; i++) {
+      ASSERT_TRUE(a->append_if_missing(value_factory<E>(i * 3)));
+    }
+    check_alive_elements_for_type<E>(1000);
+    for (int i = 0; i < 1000; i++) {
+      ASSERT_EQ(a->append_if_missing(value_factory<E>(i)), i % 3 != 0);
+    }
+    check_alive_elements_for_type<E>(1666);
+
+    int j = 0;
+    for (int i = 0; i < 1000; i++) {
+      ASSERT_EQ(a->at(i), value_factory<E>(i * 3));
+      if (i % 3 != 0) {
+        ASSERT_EQ(a->at(1000 + j), value_factory<E>(i));
+        j++;
+      }
+    }
   }
 };
 
