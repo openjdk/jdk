@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,75 +23,44 @@
 
 package separate;
 
-import java.io.*;
-import java.util.*;
+import java.lang.classfile.*;
+import java.lang.classfile.instruction.InvokeInstruction;
+import static java.lang.constant.ConstantDescs.INIT_NAME;
+import static java.lang.classfile.ClassFile.*;
 
 public class ClassToInterfaceConverter implements ClassFilePreprocessor {
 
-    private String whichClass;
+    private final String whichClass;
 
     public ClassToInterfaceConverter(String className) {
         this.whichClass = className;
     }
 
-    private boolean utf8Matches(ClassFile.CpEntry entry, String v) {
-        if (!(entry instanceof ClassFile.CpUtf8)) {
-            return false;
-        }
-        ClassFile.CpUtf8 utf8 = (ClassFile.CpUtf8)entry;
-        if (v.length() != utf8.bytes.length) {
-            return false;
-        }
-        for (int i = 0; i < v.length(); ++i) {
-            if (v.charAt(i) != utf8.bytes[i]) {
-                return false;
+    private byte[] convertToInterface(ClassModel classModel) {
+        //  Convert method tag. Find Methodref which is only invoked by other methods
+        //  in the interface, convert it to InterfaceMethodref.  If opcode is invokevirtual,
+        //  convert it to invokeinterface
+        CodeTransform ct = (b, e) -> {
+            if (e instanceof InvokeInstruction i && i.owner() == classModel.thisClass()) {
+                Opcode opcode = i.opcode() == Opcode.INVOKEVIRTUAL ? Opcode.INVOKEINTERFACE : i.opcode();
+                b.invokeInstruction(opcode, i.owner().asSymbol(),
+                        i.name().stringValue(), i.typeSymbol(), true);
+            } else {
+                b.with(e);
             }
-        }
-        return true;
-    }
+        };
 
-    private void convertToInterface(ClassFile cf) {
-        cf.access_flags = 0x0601; // ACC_INTERFACE | ACC_ABSTRACT | ACC_PUBLIC
-        ArrayList<ClassFile.Method> new_methods = new ArrayList<>();
-        // Find <init> method and delete it
-        for (int i = 0; i < cf.methods.size(); ++i) {
-            ClassFile.Method method = cf.methods.get(i);
-            ClassFile.CpEntry name = cf.constant_pool.get(method.name_index);
-            if (!utf8Matches(name, "<init>")) {
-                new_methods.add(method);
-            }
-        }
-        cf.methods = new_methods;
-        //  Convert method tag. Find Methodref, which is not "<init>" and only invoked by other methods
-        //  in the interface, convert it to InterfaceMethodref
-        ArrayList<ClassFile.CpEntry> cpool = new ArrayList<>();
-        for (int i = 0; i < cf.constant_pool.size(); i++) {
-            ClassFile.CpEntry ce = cf.constant_pool.get(i);
-            if (ce instanceof ClassFile.CpMethodRef) {
-                ClassFile.CpMethodRef me = (ClassFile.CpMethodRef)ce;
-                ClassFile.CpNameAndType nameType = (ClassFile.CpNameAndType)cf.constant_pool.get(me.name_and_type_index);
-                ClassFile.CpEntry name = cf.constant_pool.get(nameType.name_index);
-                if (!utf8Matches(name, "<init>") && cf.this_class == me.class_index) {
-                    ClassFile.CpInterfaceMethodRef newEntry = new ClassFile.CpInterfaceMethodRef();
-                    newEntry.class_index = me.class_index;
-                    newEntry.name_and_type_index = me.name_and_type_index;
-                    ce = newEntry;
-                }
-            }
-            cpool.add(ce);
-        }
-        cf.constant_pool = cpool;
+        return ClassFile.of().transform(classModel,
+            ClassTransform.dropping(ce -> ce instanceof MethodModel mm && mm.methodName().equalsString(INIT_NAME))
+                          .andThen(ClassTransform.transformingMethodBodies(ct))
+                          .andThen(ClassTransform.endHandler(b -> b.withFlags(ACC_INTERFACE | ACC_ABSTRACT | ACC_PUBLIC)))
+        );
     }
 
     public byte[] preprocess(String classname, byte[] bytes) {
-        ClassFile cf = new ClassFile(bytes);
-
-        ClassFile.CpEntry entry = cf.constant_pool.get(cf.this_class);
-        ClassFile.CpEntry name = cf.constant_pool.get(
-            ((ClassFile.CpClass)entry).name_index);
-        if (utf8Matches(name, whichClass)) {
-            convertToInterface(cf);
-            return cf.toByteArray();
+        ClassModel classModel = ClassFile.of().parse(bytes);
+        if (classModel.thisClass().asInternalName().equals(whichClass)) {
+            return convertToInterface(classModel);
         } else {
             return bytes; // unmodified
         }

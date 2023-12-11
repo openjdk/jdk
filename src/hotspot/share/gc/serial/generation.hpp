@@ -50,7 +50,6 @@
 
 class DefNewGeneration;
 class GCMemoryManager;
-class GenerationSpec;
 class ContiguousSpace;
 class CompactPoint;
 class OopClosure;
@@ -113,8 +112,6 @@ class Generation: public CHeapObj<mtGC> {
 
   virtual Generation::Name kind() { return Generation::Other; }
 
-  // Space inquiries (results in bytes)
-  size_t initial_size();
   virtual size_t capacity() const = 0;  // The maximum number of object bytes the
                                         // generation can currently hold.
   virtual size_t used() const = 0;      // The number of used bytes in the gen.
@@ -330,11 +327,6 @@ class Generation: public CHeapObj<mtGC> {
   // may not pack objects densely; a chunk may either be an object or a
   // non-object.
   virtual HeapWord* block_start(const void* addr) const;
-
-  // Requires "addr" to be the start of a chunk, and returns its size.
-  // "addr + size" is required to be the start of a new chunk, or the end
-  // of the active area of the heap.
-  virtual size_t block_size(const HeapWord* addr) const ;
 
   // Requires "addr" to be the start of a block, and returns "TRUE" iff
   // the block is an object.

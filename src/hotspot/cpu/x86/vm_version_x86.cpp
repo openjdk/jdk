@@ -816,7 +816,6 @@ void VM_Version::get_processor_features() {
     _L1_data_cache_line_size = L1_line_size();
   }
 
-  _supports_cx8 = supports_cmpxchg8();
   // xchg and xadd instructions
   _supports_atomic_getset4 = true;
   _supports_atomic_getadd4 = true;
@@ -856,6 +855,12 @@ void VM_Version::get_processor_features() {
     _data_cache_line_flush_size = _cpuid_info.std_cpuid1_ebx.bits.clflush_size * 8;
   }
 #endif
+
+  // Check if processor has Intel Ecore
+  if (FLAG_IS_DEFAULT(EnableX86ECoreOpts) && is_intel() && cpu_family() == 6 &&
+    (_model == 0x97 || _model == 0xAA || _model == 0xAC || _model == 0xAF)) {
+    FLAG_SET_DEFAULT(EnableX86ECoreOpts, true);
+  }
 
   if (UseSSE < 4) {
     _features &= ~CPU_SSE4_1;
@@ -3230,4 +3235,3 @@ bool VM_Version::is_intrinsic_supported(vmIntrinsicID id) {
   }
   return true;
 }
-

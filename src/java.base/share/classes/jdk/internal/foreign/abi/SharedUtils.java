@@ -33,6 +33,7 @@ import jdk.internal.foreign.abi.aarch64.linux.LinuxAArch64Linker;
 import jdk.internal.foreign.abi.aarch64.macos.MacOsAArch64Linker;
 import jdk.internal.foreign.abi.aarch64.windows.WindowsAArch64Linker;
 import jdk.internal.foreign.abi.fallback.FallbackLinker;
+import jdk.internal.foreign.abi.ppc64.aix.AixPPC64Linker;
 import jdk.internal.foreign.abi.ppc64.linux.LinuxPPC64Linker;
 import jdk.internal.foreign.abi.ppc64.linux.LinuxPPC64leLinker;
 import jdk.internal.foreign.abi.riscv64.linux.LinuxRISCV64Linker;
@@ -178,7 +179,7 @@ public final class SharedUtils {
         if (dropReturn) { // no handling for return value, need to drop it
             target = dropReturn(target);
         } else {
-            // adjust return type so it matches the inferred type of the effective
+            // adjust return type so that it matches the inferred type of the effective
             // function descriptor
             target = target.asType(target.type().changeReturnType(MemorySegment.class));
         }
@@ -244,6 +245,7 @@ public final class SharedUtils {
             case LINUX_AARCH_64 -> LinuxAArch64Linker.getInstance();
             case MAC_OS_AARCH_64 -> MacOsAArch64Linker.getInstance();
             case WIN_AARCH_64 -> WindowsAArch64Linker.getInstance();
+            case AIX_PPC_64 -> AixPPC64Linker.getInstance();
             case LINUX_PPC_64 -> LinuxPPC64Linker.getInstance();
             case LINUX_PPC_64_LE -> LinuxPPC64leLinker.getInstance();
             case LINUX_RISCV_64 -> LinuxRISCV64Linker.getInstance();
@@ -312,10 +314,14 @@ public final class SharedUtils {
         }
     }
 
-    public static long unboxSegment(MemorySegment segment) {
+    public static void checkNative(MemorySegment segment) {
         if (!segment.isNative()) {
             throw new IllegalArgumentException("Heap segment not allowed: " + segment);
         }
+    }
+
+    public static long unboxSegment(MemorySegment segment) {
+        checkNative(segment);
         return segment.address();
     }
 

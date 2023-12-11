@@ -2846,7 +2846,7 @@ public abstract class ShortVector extends AbstractVector<Short> {
      *
      * @param i the lane index
      * @return the lane element at lane index {@code i}
-     * @throws IllegalArgumentException if the index is is out of range
+     * @throws IllegalArgumentException if the index is out of range
      * ({@code < 0 || >= length()})
      */
     public abstract short lane(int i);
@@ -2864,7 +2864,7 @@ public abstract class ShortVector extends AbstractVector<Short> {
      * @param e the value to be placed
      * @return the result of replacing the lane element of this vector at lane
      * index {@code i} with value {@code e}.
-     * @throws IllegalArgumentException if the index is is out of range
+     * @throws IllegalArgumentException if the index is out of range
      * ({@code < 0 || >= length()})
      */
     public abstract ShortVector withLane(int i, short e);
@@ -3308,8 +3308,6 @@ public abstract class ShortVector extends AbstractVector<Short> {
      *         if {@code offset+N*2 < 0}
      *         or {@code offset+N*2 >= ms.byteSize()}
      *         for any lane {@code N} in the vector
-     * @throws IllegalArgumentException if the memory segment is a heap segment that is
-     *         not backed by a {@code byte[]} array.
      * @throws IllegalStateException if the memory segment's session is not alive,
      *         or if access occurs from a thread other than the thread owning the session.
      * @since 19
@@ -3365,8 +3363,6 @@ public abstract class ShortVector extends AbstractVector<Short> {
      *         or {@code offset+N*2 >= ms.byteSize()}
      *         for any lane {@code N} in the vector
      *         where the mask is set
-     * @throws IllegalArgumentException if the memory segment is a heap segment that is
-     *         not backed by a {@code byte[]} array.
      * @throws IllegalStateException if the memory segment's session is not alive,
      *         or if access occurs from a thread other than the thread owning the session.
      * @since 19
@@ -3409,7 +3405,7 @@ public abstract class ShortVector extends AbstractVector<Short> {
         ShortSpecies vsp = vspecies();
         VectorSupport.store(
             vsp.vectorType(), vsp.elementType(), vsp.laneCount(),
-            a, arrayAddress(a, offset),
+            a, arrayAddress(a, offset), false,
             this,
             a, offset,
             (arr, off, v)
@@ -3557,7 +3553,7 @@ public abstract class ShortVector extends AbstractVector<Short> {
         ShortSpecies vsp = vspecies();
         VectorSupport.store(
             vsp.vectorType(), vsp.elementType(), vsp.laneCount(),
-            a, charArrayAddress(a, offset),
+            a, charArrayAddress(a, offset), false,
             this,
             a, offset,
             (arr, off, v)
@@ -3760,7 +3756,7 @@ public abstract class ShortVector extends AbstractVector<Short> {
         ShortSpecies vsp = vspecies();
         return VectorSupport.load(
             vsp.vectorType(), vsp.elementType(), vsp.laneCount(),
-            a, arrayAddress(a, offset),
+            a, arrayAddress(a, offset), false,
             a, offset, vsp,
             (arr, off, s) -> s.ldOp(arr, (int) off,
                                     (arr_, off_, i) -> arr_[off_ + i]));
@@ -3777,7 +3773,7 @@ public abstract class ShortVector extends AbstractVector<Short> {
         ShortSpecies vsp = vspecies();
         return VectorSupport.loadMasked(
             vsp.vectorType(), maskClass, vsp.elementType(), vsp.laneCount(),
-            a, arrayAddress(a, offset), m, offsetInRange,
+            a, arrayAddress(a, offset), false, m, offsetInRange,
             a, offset, vsp,
             (arr, off, s, vm) -> s.ldOp(arr, (int) off, vm,
                                         (arr_, off_, i) -> arr_[off_ + i]));
@@ -3836,7 +3832,7 @@ public abstract class ShortVector extends AbstractVector<Short> {
         ShortSpecies vsp = vspecies();
         return VectorSupport.load(
             vsp.vectorType(), vsp.elementType(), vsp.laneCount(),
-            a, charArrayAddress(a, offset),
+            a, charArrayAddress(a, offset), false,
             a, offset, vsp,
             (arr, off, s) -> s.ldOp(arr, (int) off,
                                     (arr_, off_, i) -> (short) arr_[off_ + i]));
@@ -3853,7 +3849,7 @@ public abstract class ShortVector extends AbstractVector<Short> {
         ShortSpecies vsp = vspecies();
         return VectorSupport.loadMasked(
                 vsp.vectorType(), maskClass, vsp.elementType(), vsp.laneCount(),
-                a, charArrayAddress(a, offset), m, offsetInRange,
+                a, charArrayAddress(a, offset), false, m, offsetInRange,
                 a, offset, vsp,
                 (arr, off, s, vm) -> s.ldOp(arr, (int) off, vm,
                                             (arr_, off_, i) -> (short) arr_[off_ + i]));
@@ -3902,7 +3898,7 @@ public abstract class ShortVector extends AbstractVector<Short> {
         ShortSpecies vsp = vspecies();
         VectorSupport.store(
             vsp.vectorType(), vsp.elementType(), vsp.laneCount(),
-            a, arrayAddress(a, offset),
+            a, arrayAddress(a, offset), false,
             this, a, offset,
             (arr, off, v)
             -> v.stOp(arr, (int) off,
@@ -3919,7 +3915,7 @@ public abstract class ShortVector extends AbstractVector<Short> {
         ShortSpecies vsp = vspecies();
         VectorSupport.storeMasked(
             vsp.vectorType(), maskClass, vsp.elementType(), vsp.laneCount(),
-            a, arrayAddress(a, offset),
+            a, arrayAddress(a, offset), false,
             this, m, a, offset,
             (arr, off, v, vm)
             -> v.stOp(arr, (int) off, vm,
@@ -3969,7 +3965,7 @@ public abstract class ShortVector extends AbstractVector<Short> {
         ShortSpecies vsp = vspecies();
         VectorSupport.storeMasked(
             vsp.vectorType(), maskClass, vsp.elementType(), vsp.laneCount(),
-            a, charArrayAddress(a, offset),
+            a, charArrayAddress(a, offset), false,
             this, m, a, offset,
             (arr, off, v, vm)
             -> v.stOp(arr, (int) off, vm,

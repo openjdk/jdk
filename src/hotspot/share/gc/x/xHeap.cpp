@@ -24,6 +24,7 @@
 #include "precompiled.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "gc/shared/gc_globals.hpp"
+#include "gc/shared/classUnloadingContext.hpp"
 #include "gc/shared/locationPrinter.hpp"
 #include "gc/shared/tlab_globals.hpp"
 #include "gc/x/xAddress.inline.hpp"
@@ -319,6 +320,9 @@ void XHeap::process_non_strong_references() {
 
   // Process weak roots
   _weak_roots_processor.process_weak_roots();
+
+  ClassUnloadingContext ctx(_workers.active_workers(),
+                            true /* lock_codeblob_free_separately */);
 
   // Unlink stale metadata and nmethods
   _unload.unlink();

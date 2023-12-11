@@ -55,11 +55,13 @@ enum ScopedFenceType {
 
 class Atomic : AllStatic {
 public:
-  // Atomic operations on int64 types are not available on all 32-bit
-  // platforms. If atomic ops on int64 are defined here they must only
-  // be used from code that verifies they are available at runtime and
-  // can provide an alternative action if not - see supports_cx8() for
-  // a means to test availability.
+  // Atomic operations on int64 types are required to be available on
+  // all platforms. At a minimum a 64-bit cmpxchg must be available
+  // from which other atomic operations can be constructed if needed.
+  // The legacy `Abstract_VMVersion::supports_cx8()` function used to
+  // indicate if this support existed, allowing for alternative lock-
+  // based mechanism to be used. But today this function is required
+  // to return true and in the future will be removed entirely.
 
   // The memory operations that are mentioned with each of the atomic
   // function families come from src/share/vm/runtime/orderAccess.hpp,
@@ -398,11 +400,15 @@ private:
                                 T compare_value,
                                 T exchange_value);
 
-  // Support platforms that do not provide Read-Modify-Write
-  // byte-level atomic access. To use, derive PlatformCmpxchg<1> from
-  // this class.
+  // Support platforms that do not provide Read-Modify-Write atomic
+  // accesses for 1-byte and 8-byte widths. To use, derive PlatformCmpxchg<1>,
+  // PlatformAdd<S>, PlatformXchg<S> from these classes.
 public: // Temporary, can't be private: C++03 11.4/2. Fixed by C++11.
   struct CmpxchgByteUsingInt;
+  template<size_t byte_size>
+  struct XchgUsingCmpxchg;
+  template<size_t byte_size>
+  class AddUsingCmpxchg;
 private:
 
   // Dispatch handler for xchg.  Provides type-based validity
@@ -675,6 +681,47 @@ struct Atomic::CmpxchgByteUsingInt {
                T compare_value,
                T exchange_value,
                atomic_memory_order order) const;
+};
+
+// Define the class before including platform file, which may use this
+// as a base class, requiring it be complete.  The definition is later
+// in this file, near the other definitions related to xchg.
+template<size_t byte_size>
+struct Atomic::XchgUsingCmpxchg {
+  template<typename T>
+  T operator()(T volatile* dest,
+               T exchange_value,
+               atomic_memory_order order) const;
+};
+
+// Define the class before including platform file, which may use this
+// as a base class, requiring it be complete.
+template<size_t byte_size>
+class Atomic::AddUsingCmpxchg {
+public:
+  template<typename D, typename I>
+  static inline D add_then_fetch(D volatile* dest,
+                                 I add_value,
+                                 atomic_memory_order order) {
+    D addend = add_value;
+    return fetch_then_add(dest, add_value, order) + add_value;
+  }
+
+  template<typename D, typename I>
+  static inline D fetch_then_add(D volatile* dest,
+                          I add_value,
+                          atomic_memory_order order) {
+    STATIC_ASSERT(byte_size == sizeof(I));
+    STATIC_ASSERT(byte_size == sizeof(D));
+
+    D old_value;
+    D new_value;
+    do {
+      old_value = Atomic::load(dest);
+      new_value = old_value + add_value;
+    } while (old_value != Atomic::cmpxchg(dest, old_value, new_value, order));
+    return old_value;
+  }
 };
 
 // Define the class before including platform file, which may specialize
@@ -1168,6 +1215,20 @@ inline T Atomic::xchg_using_helper(Fn fn,
 template<typename D, typename T>
 inline D Atomic::xchg(volatile D* dest, T exchange_value, atomic_memory_order order) {
   return XchgImpl<D, T>()(dest, exchange_value, order);
+}
+
+template<size_t byte_size>
+template<typename T>
+inline T Atomic::XchgUsingCmpxchg<byte_size>::operator()(T volatile* dest,
+                                             T exchange_value,
+                                             atomic_memory_order order) const {
+  STATIC_ASSERT(byte_size == sizeof(T));
+
+  T old_value;
+  do {
+    old_value = Atomic::load(dest);
+  } while (old_value != Atomic::cmpxchg(dest, old_value, exchange_value, order));
+  return old_value;
 }
 
 #endif // SHARE_RUNTIME_ATOMIC_HPP

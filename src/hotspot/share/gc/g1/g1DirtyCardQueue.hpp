@@ -28,6 +28,7 @@
 #include "gc/g1/g1FreeIdSet.hpp"
 #include "gc/g1/g1CardTable.hpp"
 #include "gc/g1/g1ConcurrentRefineStats.hpp"
+#include "gc/shared/bufferNode.hpp"
 #include "gc/shared/bufferNodeList.hpp"
 #include "gc/shared/ptrQueue.hpp"
 #include "memory/allocation.hpp"

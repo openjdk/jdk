@@ -51,8 +51,6 @@ compiler/cpuflags/TestAESIntrinsicsOnSupportedConfig.java 8190680 generic-all
 compiler/runtime/Test8168712.java 8211769,8211771 generic-ppc64,generic-ppc64le,linux-s390x
 compiler/loopopts/TestUnreachableInnerLoop.java 8288981 linux-s390x
 
-compiler/rangechecks/TestRangeCheckHoistingScaledIV.java 8315969 generic-all
-
 compiler/rtm/locking/TestRTMAbortRatio.java 8183263 generic-x64,generic-i586
 compiler/rtm/locking/TestRTMAbortThreshold.java 8183263 generic-x64,generic-i586
 compiler/rtm/locking/TestRTMAfterNonRTMDeopt.java 8183263 generic-x64,generic-i586
@@ -69,11 +67,15 @@ compiler/c2/Test8004741.java 8235801 generic-all
 
 compiler/codecache/jmx/PoolsIndependenceTest.java 8264632 macosx-all
 
+compiler/vectorapi/reshape/TestVectorReinterpret.java 8320897 aix-ppc64,linux-ppc64le
 compiler/vectorapi/VectorLogicalOpIdentityTest.java 8302459 linux-x64,windows-x64
 
 compiler/jvmci/TestUncaughtErrorInCompileMethod.java 8309073 generic-all
 
-compiler/sharedstubs/SharedTrampolineTest.java 8318455 generic-all
+compiler/codecache/CheckLargePages.java 8319795 linux-x64
+
+compiler/floatingpoint/TestSubnormalFloat.java 8317810 generic-i586
+compiler/floatingpoint/TestSubnormalDouble.java 8317810 generic-i586
 
 #############################################################################
 
@@ -85,8 +87,8 @@ gc/g1/logging/TestG1LoggingFailure.java 8169634 generic-all
 gc/g1/humongousObjects/TestHeapCounters.java 8178918 generic-all
 gc/stress/gclocker/TestExcessGCLockerCollections.java 8229120 generic-all
 gc/stress/gclocker/TestGCLockerWithParallel.java 8180622 generic-all
-gc/stress/gclocker/TestGCLockerWithG1.java 8180622 generic-all
-gc/stress/TestJNIBlockFullGC/TestJNIBlockFullGC.java 8192647 generic-all
+gc/stress/gclocker/TestGCLockerWithSerial.java 8180622 generic-all
+gc/stress/gclocker/TestGCLockerWithShenandoah.java 8180622 generic-all
 gc/stress/TestStressG1Humongous.java 8286554 windows-x64
 
 #############################################################################
@@ -132,7 +134,6 @@ serviceability/sa/ClhsdbPmap.java#core 8267433 macosx-x64
 serviceability/sa/ClhsdbPstack.java#core 8267433 macosx-x64
 serviceability/sa/TestJmapCore.java 8267433 macosx-x64
 serviceability/sa/TestJmapCoreMetaspace.java 8267433 macosx-x64
-serviceability/sa/ClhsdbDumpclass.java 8316342 generic-all
 
 serviceability/attach/ConcAttachTest.java 8290043 linux-all
 
@@ -144,9 +145,6 @@ serviceability/jvmti/stress/StackTrace/NotSuspended/GetStackTraceNotSuspendedStr
 
 #############################################################################
 
-gtest/GTestWrapper.java 8306561 aix-ppc64
-gtest/NMTGtests.java#nmt-detail 8306561 aix-ppc64
-gtest/NMTGtests.java#nmt-summary 8306561 aix-ppc64
 
 #############################################################################
 

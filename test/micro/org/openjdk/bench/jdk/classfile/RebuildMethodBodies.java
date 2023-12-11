@@ -29,36 +29,34 @@ import java.nio.file.Files;
 import java.util.Iterator;
 import java.util.ArrayList;
 import java.util.List;
-import jdk.internal.classfile.ClassModel;
-import jdk.internal.classfile.Classfile;
-import jdk.internal.classfile.ClassTransform;
-import jdk.internal.classfile.instruction.*;
+import java.lang.classfile.ClassModel;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.ClassTransform;
+import java.lang.classfile.instruction.*;
 import org.openjdk.jmh.annotations.*;
 
 @BenchmarkMode(Mode.Throughput)
 @State(Scope.Benchmark)
 @Fork(value = 1, jvmArgsAppend = {
-        "--add-exports", "java.base/jdk.internal.classfile=ALL-UNNAMED",
-        "--add-exports", "java.base/jdk.internal.classfile.constantpool=ALL-UNNAMED",
-        "--add-exports", "java.base/jdk.internal.classfile.instruction=ALL-UNNAMED"})
+        "--enable-preview"})
 @Warmup(iterations = 2)
 @Measurement(iterations = 4)
 public class RebuildMethodBodies {
 
-    Classfile shared, unshared;
+    ClassFile shared, unshared;
     List<ClassModel> models;
     Iterator<ClassModel> it;
 
     @Setup(Level.Trial)
     public void setup() throws IOException {
-        shared = Classfile.of(
-                            Classfile.ConstantPoolSharingOption.SHARED_POOL,
-                            Classfile.DebugElementsOption.DROP_DEBUG,
-                            Classfile.LineNumbersOption.DROP_LINE_NUMBERS);
-        unshared = Classfile.of(
-                            Classfile.ConstantPoolSharingOption.NEW_POOL,
-                            Classfile.DebugElementsOption.DROP_DEBUG,
-                            Classfile.LineNumbersOption.DROP_LINE_NUMBERS);
+        shared = ClassFile.of(
+                            ClassFile.ConstantPoolSharingOption.SHARED_POOL,
+                            ClassFile.DebugElementsOption.DROP_DEBUG,
+                            ClassFile.LineNumbersOption.DROP_LINE_NUMBERS);
+        unshared = ClassFile.of(
+                            ClassFile.ConstantPoolSharingOption.NEW_POOL,
+                            ClassFile.DebugElementsOption.DROP_DEBUG,
+                            ClassFile.LineNumbersOption.DROP_LINE_NUMBERS);
         models = new ArrayList<>();
         Files.walk(FileSystems.getFileSystem(URI.create("jrt:/")).getPath("modules/java.base/java")).forEach(p -> {
             if (Files.isRegularFile(p) && p.toString().endsWith(".class")) try {
@@ -89,7 +87,7 @@ public class RebuildMethodBodies {
         transform(unshared, it.next());
     }
 
-    private static void transform(Classfile cc, ClassModel clm) {
+    private static void transform(ClassFile cc, ClassModel clm) {
         cc.transform(clm, ClassTransform.transformingMethodBodies((cob, coe) -> {
             switch (coe) {
                 case FieldInstruction i ->
