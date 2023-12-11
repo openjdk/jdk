@@ -82,10 +82,10 @@ public class ProcessToolsExecuteProcessTest {
             // Spawned process
 
             System.out.println("Before sleep");
-            
+
             // Sleep for a while, to get some interesting timestamps for the process logging.
             Thread.sleep(2 * 1000);
-            
+
             System.out.println("After sleep");
         } else {
             // Driver process
