@@ -2575,6 +2575,9 @@ class ZipFileSystem extends FileSystem {
                 if (readNBytesAt(buf, 0, buf.length, pos) != LOCHDR) {
                     throw new ZipException("invalid loc " + pos + " for entry reading");
                 }
+                if (LOCSIG(buf) != LOCSIG) {
+                    throw new ZipException("invalid loc header (bad signature)");
+                }
                 pos += LOCHDR + LOCNAM(buf) + LOCEXT(buf);
             }
         }
