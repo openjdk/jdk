@@ -306,10 +306,6 @@ class PSAdaptiveSizePolicy : public AdaptiveSizePolicy {
   }
   double major_collection_slope() { return _major_collection_estimator->slope();}
 
-  // Given the amount of live data in the heap, should we
-  // perform a Full GC?
-  bool should_full_GC(size_t live_in_old_gen);
-
   // Calculates optimal (free) space sizes for both the young and old
   // generations.  Stores results in _eden_size and _promo_size.
   // Takes current used space in all generations as input, as well

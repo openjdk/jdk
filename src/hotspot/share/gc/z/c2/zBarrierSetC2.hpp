@@ -52,9 +52,9 @@ static void inc_trampoline_stubs_count();
 static int trampoline_stubs_count();
 static int stubs_start_offset();
 
-public:
   ZBarrierStubC2(const MachNode* node);
 
+public:
   RegMask& live() const;
   Label* entry();
   Label* continuation();

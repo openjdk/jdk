@@ -401,6 +401,7 @@ public class Bytecodes {
 
   public static boolean   isZeroConst  (int code) { return (code == _aconst_null || code == _iconst_0
                                                                                  || code == _fconst_0 || code == _dconst_0); }
+  public static boolean   isFieldCode  (int code) { return (_getstatic <= code && code <= _putfield); }
 
   static int         flags          (int code, boolean is_wide) {
     assert code == (code & 0xff) : "must be a byte";

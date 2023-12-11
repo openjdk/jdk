@@ -49,6 +49,7 @@
 #include "memory/universe.hpp"
 #include "nmt/memTracker.hpp"
 #include "oops/oop.inline.hpp"
+#include "runtime/cpuTimeCounters.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/vmThread.hpp"
@@ -127,6 +128,9 @@ jint ParallelScavengeHeap::initialize() {
     return JNI_ENOMEM;
   }
 
+  // Create CPU time counter
+  CPUTimeCounters::create_counter(CPUTimeGroups::CPUTimeType::gc_parallel_workers);
+
   ParallelInitLogger::print();
 
   return JNI_OK;
@@ -192,6 +196,7 @@ void ParallelScavengeHeap::update_counters() {
   young_gen()->update_counters();
   old_gen()->update_counters();
   MetaspaceCounters::update_performance_counters();
+  update_parallel_worker_threads_cpu_time();
 }
 
 size_t ParallelScavengeHeap::capacity() const {
@@ -883,4 +888,24 @@ void ParallelScavengeHeap::pin_object(JavaThread* thread, oop obj) {
 
 void ParallelScavengeHeap::unpin_object(JavaThread* thread, oop obj) {
   GCLocker::unlock_critical(thread);
+}
+
+void ParallelScavengeHeap::update_parallel_worker_threads_cpu_time() {
+  assert(Thread::current()->is_VM_thread(),
+         "Must be called from VM thread to avoid races");
+  if (!UsePerfData || !os::is_thread_cpu_time_supported()) {
+    return;
+  }
+
+  // Ensure ThreadTotalCPUTimeClosure destructor is called before publishing gc
+  // time.
+  {
+    ThreadTotalCPUTimeClosure tttc(CPUTimeGroups::CPUTimeType::gc_parallel_workers);
+    // Currently parallel worker threads in GCTaskManager never terminate, so it
+    // is safe for VMThread to read their CPU times. If upstream changes this
+    // behavior, we should rethink if it is still safe.
+    gc_threads_do(&tttc);
+  }
+
+  CPUTimeCounters::publish_gc_total_cpu_time();
 }

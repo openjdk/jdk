@@ -27,6 +27,7 @@
 #include "cds/archiveHeapWriter.hpp"
 #include "cds/archiveUtils.inline.hpp"
 #include "cds/cds_globals.hpp"
+#include "cds/cdsConfig.hpp"
 #include "cds/classPrelinker.hpp"
 #include "cds/dynamicArchive.hpp"
 #include "cds/regeneratedClasses.hpp"
@@ -409,7 +410,7 @@ void DynamicArchive::append_array_klass(ObjArrayKlass* ak) {
 }
 
 void DynamicArchive::dump_array_klasses() {
-  assert(DynamicDumpSharedSpaces, "DynamicDumpSharedSpaces only");
+  assert(CDSConfig::is_dumping_dynamic_archive(), "sanity");
   if (_array_klasses != nullptr) {
     ArchiveBuilder* builder = ArchiveBuilder::current();
     int num_array_klasses = _array_klasses->length();
@@ -469,7 +470,7 @@ int DynamicArchive::num_array_klasses() {
 }
 
 void DynamicArchive::check_for_dynamic_dump() {
-  if (DynamicDumpSharedSpaces && !UseSharedSpaces) {
+  if (CDSConfig::is_dumping_dynamic_archive() && !UseSharedSpaces) {
     // This could happen if SharedArchiveFile has failed to load:
     // - -Xshare:off was specified
     // - SharedArchiveFile points to an non-existent file.
@@ -485,7 +486,7 @@ void DynamicArchive::check_for_dynamic_dump() {
       log_warning(cds)("-XX:ArchiveClassesAtExit" __THEMSG);
     }
 #undef __THEMSG
-    DynamicDumpSharedSpaces = false;
+    CDSConfig::disable_dumping_dynamic_archive();
   }
 }
 
@@ -493,7 +494,7 @@ void DynamicArchive::dump_at_exit(JavaThread* current, const char* archive_name)
   ExceptionMark em(current);
   ResourceMark rm(current);
 
-  if (!DynamicDumpSharedSpaces || archive_name == nullptr) {
+  if (!CDSConfig::is_dumping_dynamic_archive() || archive_name == nullptr) {
     return;
   }
 
@@ -516,14 +517,14 @@ void DynamicArchive::dump_at_exit(JavaThread* current, const char* archive_name)
   log_error(cds)("%s: %s", ex->klass()->external_name(),
                  java_lang_String::as_utf8_string(java_lang_Throwable::message(ex)));
   CLEAR_PENDING_EXCEPTION;
-  DynamicDumpSharedSpaces = false;  // Just for good measure
+  CDSConfig::disable_dumping_dynamic_archive();  // Just for good measure
 }
 
 // This is called by "jcmd VM.cds dynamic_dump"
 void DynamicArchive::dump_for_jcmd(const char* archive_name, TRAPS) {
   assert(UseSharedSpaces && RecordDynamicDumpInfo, "already checked in arguments.cpp");
   assert(ArchiveClassesAtExit == nullptr, "already checked in arguments.cpp");
-  assert(DynamicDumpSharedSpaces, "already checked by check_for_dynamic_dump() during VM startup");
+  assert(CDSConfig::is_dumping_dynamic_archive(), "already checked by check_for_dynamic_dump() during VM startup");
   MetaspaceShared::link_shared_classes(true/*from jcmd*/, CHECK);
   // copy shared path table to saved.
   VM_PopulateDynamicDumpSharedSpace op(archive_name);

@@ -1,4 +1,4 @@
-.\" Copyright (c) 1994, 2022, Oracle and/or its affiliates. All rights reserved.
+.\" Copyright (c) 1994, 2023, Oracle and/or its affiliates. All rights reserved.
 .\" DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 .\"
 .\" This code is free software; you can redistribute it and/or modify it
@@ -84,8 +84,8 @@ options, package names, and source file names in any order.
 The \f[V]javadoc\f[R] tool parses the declarations and documentation
 comments in a set of Java source files and produces corresponding HTML
 pages that describe (by default) the public and protected classes,
-nested classes (but not anonymous inner classes), interfaces,
-constructors, methods, and fields.
+nested and implicitly declared classes (but not anonymous inner
+classes), interfaces, constructors, methods, and fields.
 You can use the \f[V]javadoc\f[R] tool to generate the API documentation
 or the implementation documentation for a set of source files.
 .PP
@@ -421,6 +421,15 @@ Prints version information.
 .TP
 \f[V]-Werror\f[R]
 Reports an error if any warnings occur.
+.PP
+Note that if a Java source file contains an implicitly declared class,
+then that class and its public, protected, and package members will be
+documented regardless of the options such as \f[V]--show-types\f[R],
+\f[V]--show-members\f[R], \f[V]-private\f[R], \f[V]-protected\f[R],
+\f[V]-package\f[R], and \f[V]-public\f[R].
+If \f[V]--show-members\f[R] is specified with value \f[V]private\f[R] or
+if \f[V]-private\f[R] is used then all private members of an implicitly
+declared class will be documented too.
 .SS Extra \f[V]javadoc\f[R] Options
 .PP
 \f[I]Note:\f[R] The additional options for \f[V]javadoc\f[R] are subject

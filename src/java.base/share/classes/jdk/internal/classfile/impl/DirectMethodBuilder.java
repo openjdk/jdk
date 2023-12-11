@@ -28,16 +28,17 @@ package jdk.internal.classfile.impl;
 import java.lang.constant.MethodTypeDesc;
 import java.util.function.Consumer;
 
-import jdk.internal.classfile.BufWriter;
-import jdk.internal.classfile.Classfile;
-import jdk.internal.classfile.CodeBuilder;
-import jdk.internal.classfile.CodeModel;
-import jdk.internal.classfile.CodeTransform;
-import jdk.internal.classfile.MethodBuilder;
-import jdk.internal.classfile.MethodElement;
-import jdk.internal.classfile.MethodModel;
-import jdk.internal.classfile.WritableElement;
-import jdk.internal.classfile.constantpool.Utf8Entry;
+import java.lang.classfile.BufWriter;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.CodeBuilder;
+import java.lang.classfile.CodeModel;
+import java.lang.classfile.CodeTransform;
+import java.lang.classfile.CustomAttribute;
+import java.lang.classfile.MethodBuilder;
+import java.lang.classfile.MethodElement;
+import java.lang.classfile.MethodModel;
+import java.lang.classfile.WritableElement;
+import java.lang.classfile.constantpool.Utf8Entry;
 
 public final class DirectMethodBuilder
         extends AbstractDirectBuilder<MethodModel>
@@ -50,7 +51,7 @@ public final class DirectMethodBuilder
     MethodTypeDesc mDesc;
 
     public DirectMethodBuilder(SplitConstantPool constantPool,
-                               ClassfileImpl context,
+                               ClassFileImpl context,
                                Utf8Entry nameInfo,
                                Utf8Entry typeInfo,
                                int flags,
@@ -63,8 +64,8 @@ public final class DirectMethodBuilder
     }
 
     void setFlags(int flags) {
-        boolean wasStatic = (this.flags & Classfile.ACC_STATIC) != 0;
-        boolean isStatic = (flags & Classfile.ACC_STATIC) != 0;
+        boolean wasStatic = (this.flags & ClassFile.ACC_STATIC) != 0;
+        boolean isStatic = (flags & ClassFile.ACC_STATIC) != 0;
         if (wasStatic != isStatic)
             throw new IllegalArgumentException("Cannot change ACC_STATIC flag of method");
         this.flags = flags;
@@ -111,7 +112,11 @@ public final class DirectMethodBuilder
 
     @Override
     public MethodBuilder with(MethodElement element) {
-        ((AbstractElement) element).writeTo(this);
+        if (element instanceof AbstractElement ae) {
+            ae.writeTo(this);
+        } else {
+            writeAttribute((CustomAttribute)element);
+        }
         return this;
     }
 
