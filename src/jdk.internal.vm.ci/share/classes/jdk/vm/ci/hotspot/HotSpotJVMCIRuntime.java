@@ -501,19 +501,31 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
     }
 
 
-    static class KlassWeakReference extends WeakReference<ResolvedJavaType> {
+    /**
+     * A weak reference that also tracks the key used to insert the value into {@link #resolvedJavaTypes} so that
+     * it can be removed when the referent is cleared.
+     */
+    static class KlassWeakReference extends WeakReference<HotSpotResolvedObjectTypeImpl> {
 
         private final Long klassPointer;
 
-        public KlassWeakReference(Long klassPointer, ResolvedJavaType referent, ReferenceQueue<ResolvedJavaType>q) {
+        public KlassWeakReference(Long klassPointer, HotSpotResolvedObjectTypeImpl referent, ReferenceQueue<HotSpotResolvedObjectTypeImpl> q) {
             super(referent, q);
             this.klassPointer = klassPointer;
         }
     }
 
+    /**
+     * A mapping from the {@code Klass*} to the corresponding {@link HotSpotResolvedObjectTypeImpl}.  The value is
+     * held weakly through a {@link KlassWeakReference} so that unused types can be unloaded when the compiler no longer needs them.
+     */
     @NativeImageReinitialize private HashMap<Long, KlassWeakReference> resolvedJavaTypes;
 
-    @NativeImageReinitialize private ReferenceQueue<ResolvedJavaType> resolvedJavaTypesQueue;
+    /**
+     * A {@link ReferenceQueue} to track when {@link KlassWeakReference}s have been freed so that the corresponding
+     * entry in {@link #resolvedJavaTypes} can be cleared.
+     */
+    @NativeImageReinitialize private ReferenceQueue<HotSpotResolvedObjectTypeImpl> resolvedJavaTypesQueue;
 
     /**
      * Stores the value set by {@link #excludeFromJVMCICompilation(Module...)} so that it can be
@@ -682,25 +694,25 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
             resolvedJavaTypesQueue = new ReferenceQueue<>();
         }
         assert klassPointer != 0;
-        WeakReference<ResolvedJavaType> klassReference = resolvedJavaTypes.get(klassPointer);
+        KlassWeakReference klassReference = resolvedJavaTypes.get(klassPointer);
         HotSpotResolvedObjectTypeImpl javaType = null;
         if (klassReference != null) {
-            javaType = (HotSpotResolvedObjectTypeImpl) klassReference.get();
+            javaType = klassReference.get();
         }
         if (javaType == null) {
             String name = compilerToVm.getSignatureName(klassPointer);
             javaType = new HotSpotResolvedObjectTypeImpl(klassPointer, name);
             resolvedJavaTypes.put(klassPointer, new KlassWeakReference(klassPointer, javaType, resolvedJavaTypesQueue));
         }
-        expungeStaleEntries();
+        expungeStaleKlassEntries();
         return javaType;
     }
 
 
     /**
-     * Clean up WeakReferences whose referents have been cleared.
+     * Clean up WeakReferences whose referents have been cleared.  This should be called from a synchronized context.
      */
-    private void expungeStaleEntries() {
+    private void expungeStaleKlassEntries() {
         KlassWeakReference current = (KlassWeakReference) resolvedJavaTypesQueue.poll();
         while (current != null) {
             // Make sure the entry is still mapped to the weak reference
