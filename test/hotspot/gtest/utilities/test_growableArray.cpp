@@ -28,13 +28,10 @@
 
 // TODO:
 //       Talk about value factory
-//       Type without assignment operator, only copy-constructor?
 
 // TODO go through GA and GACH and see what ops are not tested yet
 // -> add to modify and test
 //
-// trunc_to
-// at_swap
 // remove_till, remove_range, delete_at
 //
 // TODO
@@ -994,6 +991,7 @@ class TestClosureAssign : public TestClosure<E> {
       ASSERT_EQ(a->at(i), value_factory<E>(i));
       ASSERT_EQ(*a->adr_at(i), value_factory<E>(i));
     }
+    check_alive_elements_for_type<E>(1000);
 
     // write over adr_at
     for (int i = 0; i < 1000; i++) {
@@ -1002,6 +1000,7 @@ class TestClosureAssign : public TestClosure<E> {
     for (int i = 0; i < 1000; i++) {
       ASSERT_EQ(a->at(i), value_factory<E>(2*i));
     }
+    check_alive_elements_for_type<E>(1000);
 
     // write
     for (int i = 0; i < 1000; i++) {
@@ -1011,7 +1010,38 @@ class TestClosureAssign : public TestClosure<E> {
       ASSERT_EQ(a->at(i), value_factory<E>(3*i));
       ASSERT_EQ(*a->adr_at(i), value_factory<E>(3*i));
     }
+    check_alive_elements_for_type<E>(1000);
 
+    // all zero
+    for (int i = 0; i < 1000; i++) {
+      a->at_put(i, value_factory<E>(0));
+    }
+    a->at_put(42,  value_factory<E>(1));
+    a->at_put(666, value_factory<E>(2));
+
+    for (int i = 0; i < 1000; i++) {
+      if (i == 42) {
+        ASSERT_EQ(a->at(i), value_factory<E>(1));
+      } else if (i == 666) {
+        ASSERT_EQ(a->at(i), value_factory<E>(2));
+      } else {
+        ASSERT_EQ(a->at(i), value_factory<E>(0));
+      }
+    }
+    check_alive_elements_for_type<E>(1000);
+
+    a->at_swap(42, 666);
+
+    for (int i = 0; i < 1000; i++) {
+      if (i == 42) {
+        ASSERT_EQ(a->at(i), value_factory<E>(2));
+      } else if (i == 666) {
+        ASSERT_EQ(a->at(i), value_factory<E>(1));
+      } else {
+        ASSERT_EQ(a->at(i), value_factory<E>(0));
+      }
+    }
+    check_alive_elements_for_type<E>(1000);
   };
 };
 
@@ -1058,6 +1088,23 @@ class TestClosureClear : public TestClosure<E> {
     // Check size
     ASSERT_EQ(a->length(), 0);
     ASSERT_EQ(a->is_empty(), true);
+
+    // Add elements
+    for (int i = 0; i < 100; i++) {
+      a->append(value_factory<E>(i));
+    }
+    ASSERT_EQ(a->length(), 100);
+    check_alive_elements_for_type<E>(100);
+
+    int old_capacity = a->capacity();
+    a->trunc_to(50);
+    ASSERT_EQ(a->length(), 50);
+    ASSERT_EQ(a->capacity(), old_capacity);
+
+    // Add elements
+    for (int i = 0; i < 50; i++) {
+      ASSERT_EQ(a->at(i), value_factory<E>(i));
+    }
   };
 };
 

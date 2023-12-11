@@ -118,6 +118,7 @@ public:
 
   void trunc_to(int length)    {
     assert(length <= _len,"cannot increase length");
+    assert(length >= 0,"positive length");
     // Destruct all elements from new length to old length
     for (int i = length; i < _len; i++) {
       this->_data[i].~E();
