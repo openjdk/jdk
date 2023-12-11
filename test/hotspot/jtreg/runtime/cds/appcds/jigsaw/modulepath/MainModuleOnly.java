@@ -65,7 +65,7 @@ public class MainModuleOnly {
     private static Path moduleDir2 = null;
     private static Path destJar = null;
 
-    private static final String jarFileError = "A jar file is not the one used while building the shared archive file:";
+    private static final String jarFileError = "This file is not the one used while building the shared archive file:";
 
     public static void buildTestModule() throws Exception {
 
