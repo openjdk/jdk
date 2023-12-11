@@ -467,7 +467,7 @@ public:
       ::new ((void*)&this->_data[i]) E(elem);
       this->_len = i+1;
     } else {
-      // Eestination is already initialized, so use assignment.
+      // Destination is already initialized, so use assignment.
       this->_data[i] = elem;
     }
   }
@@ -624,15 +624,22 @@ public:
 //
 // Itself, it can be embedded, on stack, resource_arena or arena allocated.
 //
-// For C-Heap allocation use GrowableArrayCHeap.
-//
 // Strict allocation locations: There are rules about where the GrowableArray
 //  instance is allocated, that depends on where the data array is allocated.
 //  See: init_checks.
 //
-// TODO talk about deallocation / destruction of elements
-// TODO talk about shallow-copy
-
+// For C-Heap allocation use GrowableArrayCHeap.
+//
+// Note, that with GrowableArray does not deallocate the allocated memory from
+// the arena / resource area, but rather just abandons it until the memory is
+// released by the arena or by the ResourceMark from the resource area.
+// Because GrowableArrays are often just abandoned rather than properly destructed,
+// we have decided to require that elements are trivially destructible, so that
+// it makes no difference if the destructors are called or not.
+//
+// GrowableArray is copyable, but it only creates a shallow copy. Hence, one has
+// to be careful not to duplicate the state and then diverge while sharing the
+// underlying data.
 template <typename E>
 class GrowableArray : public GrowableArrayWithAllocator<E, GrowableArray<E> > {
   // Since GrowableArray is arena / resource area allocated, it is a custom to
@@ -734,8 +741,13 @@ private:
 // The GrowableArrayCHeap internal data is allocated from C-Heap, 
 // with compile-time decided MEMFLAGS.
 //
-// TODO verify that it is not arena allocated?
-// TODO talk about deallocation / destruction of elements
+// The GrowableArrayCHeap itself can be stack allocated, embedded
+// or C heap allocated. It is up to the user to ensure that the
+// array is eventually destructed / deallocated.
+//
+// When the array is destructed, then all the remaining elements
+// are first destructed. Hence, we allow elements with non-trivial
+// destructors.
 template <typename E, MEMFLAGS F>
 class GrowableArrayCHeap : public GrowableArrayWithAllocator<E, GrowableArrayCHeap<E, F> > {
   friend class GrowableArrayWithAllocator<E, GrowableArrayCHeap<E, F> >;

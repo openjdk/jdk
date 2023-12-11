@@ -28,6 +28,7 @@
 
 // TODO:
 //       Talk about value factory
+//       Type without assignment operator, only copy-constructor?
 
 // TODO go through GA and GACH and see what ops are not tested yet
 // -> add to modify and test
@@ -89,10 +90,10 @@ private:
   int _x;
   int _y;
 public:
-  // On purpose, we have no default constructor:
-  // Point()
+  // On purpose, we have no default constructor
   // This is to test that it is not needed for
   // GrowableArray.
+  Point() = delete;
   Point(int x, int y) : _x(x), _y(y) {}
   bool operator==(const Point& other) const {
     return _x == other._x && _y == other._y;
@@ -111,6 +112,20 @@ public:
   }
 };
 
+class PointNoAssign {
+private:
+  int _x;
+  int _y;
+public:
+  // No default constructor
+  // No copy assign
+  PointNoAssign(int x, int y) : _x(x), _y(y) {}
+  PointNoAssign& operator=(PointNoAssign& other) = delete;
+  bool operator==(const PointNoAssign& other) const {
+    return _x == other._x && _y == other._y;
+  }
+};
+
 template<>
 Point value_factory<Point>(int i) {
   return Point(i, i+1);
@@ -119,6 +134,10 @@ Point value_factory<Point>(int i) {
 template<>
 PointWithDefault value_factory<PointWithDefault>(int i) {
   return PointWithDefault(i, i+1);
+}
+template<>
+PointNoAssign value_factory<PointNoAssign>(int i) {
+  return PointNoAssign(i, i+1);
 }
 
 template<>
@@ -330,8 +349,23 @@ public:
   virtual E at_grow(int i, const E& fill) override final {
     return _array->at_grow(i, fill);
   }
+
+  // The implementation of at_put_grow uses assignment. We should
+  // only instantiate a call to it if assignment is allowed.
+  // I have to do this workaround because the method is virtual.
   virtual void at_put_grow (int i, const E& e, const E& fill) override final {
+    at_put_grow_impl<E>(i, e, fill);
+  }
+
+  template<typename E2, ENABLE_IF(std::is_copy_assignable<E2>::value)>
+  void at_put_grow_impl(int i, const E& e, const E& fill) {
     _array->at_put_grow(i, e, fill);
+  }
+
+  template<typename E2, ENABLE_IF(!std::is_copy_assignable<E2>::value)>
+  void at_put_grow_impl(int i, const E& e, const E& fill) {
+    // do not call if copy-assign not implemented for elements
+    ASSERT_TRUE(false);
   }
 };
 
@@ -565,8 +599,23 @@ public:
   virtual E at_grow(int i, const E& fill) override final {
     return _array->at_grow(i, fill);
   }
+
+  // The implementation of at_put_grow uses assignment. We should
+  // only instantiate a call to it if assignment is allowed.
+  // I have to do this workaround because the method is virtual.
   virtual void at_put_grow (int i, const E& e, const E& fill) override final {
+    at_put_grow_impl<E>(i, e, fill);
+  }
+
+  template<typename E2, ENABLE_IF(std::is_copy_assignable<E2>::value)>
+  void at_put_grow_impl(int i, const E& e, const E& fill) {
     _array->at_put_grow(i, e, fill);
+  }
+
+  template<typename E2, ENABLE_IF(!std::is_copy_assignable<E2>::value)>
+  void at_put_grow_impl(int i, const E& e, const E& fill) {
+    // do not call if copy-assign not implemented for elements
+    ASSERT_TRUE(false);
   }
 };
 
@@ -834,33 +883,16 @@ public:
     a->clear();
     ASSERT_EQ(a->length(), 0);
 
-    a->at_grow(999, value_factory<E>(-1));
+    // write
+    for (int i = 0; i < 1000; i++) {
+      a->append(value_factory<E>(3*i));
+    }
     ASSERT_EQ(a->length(), 1000);
     check_alive_elements_for_type<E>(1000);
 
-    // write over at
-    for (int i = 0; i < 1000; i++) {
-      a->at(i) = value_factory<E>(i);
-    }
-    for (int i = 0; i < 1000; i++) {
-      ASSERT_EQ(a->at(i), value_factory<E>(i));
-      ASSERT_EQ(*a->adr_at(i), value_factory<E>(i));
-    }
-
-    // write over adr_at
-    for (int i = 0; i < 1000; i++) {
-      *a->adr_at(i) = value_factory<E>(2*i);
-    }
-    for (int i = 0; i < 1000; i++) {
-      ASSERT_EQ(a->at(i), value_factory<E>(2*i));
-    }
-
-    // write with at_put
-    for (int i = 0; i < 1000; i++) {
-      a->at_put(i, value_factory<E>(3*i));
-    }
     for (int i = 0; i < 1000; i++) {
       ASSERT_EQ(a->at(i), value_factory<E>(3*i));
+      ASSERT_EQ(*a->adr_at(i), value_factory<E>(3*i));
     }
 
     for (int i = 0; i < 1000; i++) {
@@ -875,15 +907,22 @@ public:
       }
     }
 
-    a->at_put(42, value_factory<E>(7));
-    a->at_put(666, value_factory<E>(7));
-    ASSERT_EQ(a->find(value_factory<E>(7)), 42);
-    ASSERT_EQ(a->find_from_end(value_factory<E>(7)), 666);
+    a->append(value_factory<E>(7));
+    a->append(value_factory<E>(31));
+    a->append(value_factory<E>(7));
 
-    // make nice input again
+    ASSERT_EQ(a->find(value_factory<E>(7)), 1000);
+    ASSERT_EQ(a->find_from_end(value_factory<E>(7)), 1002);
+
+    a->clear();
+    ASSERT_EQ(a->length(), 0);
+    check_alive_elements_for_type<E>(0);
+
+    // write
     for (int i = 0; i < 1000; i++) {
-      a->at_put(i, value_factory<E>(i));
+      a->append(value_factory<E>(i));
     }
+
     for (int i = 0; i < 1000; i++) {
       ASSERT_EQ(a->at(i), value_factory<E>(i));
     }
@@ -933,6 +972,46 @@ class TestClosureAppend : public TestClosure<E> {
     for (int i = 0; i < 10; i++) {
       EXPECT_EQ(a->at(i), value_factory<E>(i));
     }
+  };
+};
+
+template<typename E>
+class TestClosureAssign : public TestClosure<E> {
+  virtual void do_test(AllocatorClosure<E>* a) override final {
+    a->clear();
+    check_alive_elements_for_type<E>(0);
+    ASSERT_EQ(a->length(), 0);
+
+    a->at_grow(999, value_factory<E>(-1));
+    ASSERT_EQ(a->length(), 1000);
+    check_alive_elements_for_type<E>(1000);
+
+    // write over at
+    for (int i = 0; i < 1000; i++) {
+      a->at(i) = value_factory<E>(i);
+    }
+    for (int i = 0; i < 1000; i++) {
+      ASSERT_EQ(a->at(i), value_factory<E>(i));
+      ASSERT_EQ(*a->adr_at(i), value_factory<E>(i));
+    }
+
+    // write over adr_at
+    for (int i = 0; i < 1000; i++) {
+      *a->adr_at(i) = value_factory<E>(2*i);
+    }
+    for (int i = 0; i < 1000; i++) {
+      ASSERT_EQ(a->at(i), value_factory<E>(2*i));
+    }
+
+    // write
+    for (int i = 0; i < 1000; i++) {
+      a->at_put(i, value_factory<E>(3*i));
+    }
+    for (int i = 0; i < 1000; i++) {
+      ASSERT_EQ(a->at(i), value_factory<E>(3*i));
+      ASSERT_EQ(*a->adr_at(i), value_factory<E>(3*i));
+    }
+
   };
 };
 
@@ -1364,6 +1443,12 @@ protected:
   }
 
   template<typename E, bool do_cheap, bool do_arena>
+  static void run_test_assign() {
+    TestClosureAssign<E> test;
+    run_test_modify<E,do_cheap,do_arena>(&test);
+  }
+
+  template<typename E, bool do_cheap, bool do_arena>
   static void run_test_clear() {
     TestClosureClear<E> test;
     run_test_modify<E,do_cheap,do_arena>(&test);
@@ -1422,7 +1507,33 @@ TEST_VM_F(GrowableArrayTest, append_point_with_default) {
   run_test_append<PointWithDefault,true,true>();
 }
 
+TEST_VM_F(GrowableArrayTest, append_point_no_assign) {
+  run_test_append<PointNoAssign,true,true>();
+}
+
 TEST_VM_F(GrowableArrayTest, append_ctor_dtor) {
+  run_test_append<CtorDtor,true,CtorDtor::is_enabled_for_arena>();
+}
+
+TEST_VM_F(GrowableArrayTest, assign_int) {
+  run_test_assign<int,true,true>();
+}
+
+TEST_VM_F(GrowableArrayTest, assign_ptr) {
+  run_test_assign<int*,true,true>();
+}
+
+TEST_VM_F(GrowableArrayTest, assign_point) {
+  run_test_assign<Point,true,true>();
+}
+
+TEST_VM_F(GrowableArrayTest, assign_point_with_default) {
+  run_test_assign<PointWithDefault,true,true>();
+}
+
+// No assign test for PointNoAssign
+
+TEST_VM_F(GrowableArrayTest, assign_ctor_dtor) {
   run_test_append<CtorDtor,true,CtorDtor::is_enabled_for_arena>();
 }
 
@@ -1440,6 +1551,10 @@ TEST_VM_F(GrowableArrayTest, clear_point) {
 
 TEST_VM_F(GrowableArrayTest, clear_point_with_default) {
   run_test_clear<PointWithDefault,true,true>();
+}
+
+TEST_VM_F(GrowableArrayTest, clear_point_no_assign) {
+  run_test_clear<PointNoAssign,true,true>();
 }
 
 TEST_VM_F(GrowableArrayTest, clear_ctor_dtor) {
@@ -1462,6 +1577,10 @@ TEST_VM_F(GrowableArrayTest, iterator_point_with_default) {
   run_test_iterator<PointWithDefault,true,true>();
 }
 
+TEST_VM_F(GrowableArrayTest, iterator_point_no_assign) {
+  run_test_iterator<PointNoAssign,true,true>();
+}
+
 TEST_VM_F(GrowableArrayTest, iterator_ctor_dtor) {
   run_test_iterator<CtorDtor,true,CtorDtor::is_enabled_for_arena>();
 }
@@ -1480,6 +1599,10 @@ TEST_VM_F(GrowableArrayTest, capacity_point) {
 
 TEST_VM_F(GrowableArrayTest, capacity_point_with_default) {
   run_test_capacity<PointWithDefault,true,true>();
+}
+
+TEST_VM_F(GrowableArrayTest, capacity_point_no_assign) {
+  run_test_capacity<PointNoAssign,true,true>();
 }
 
 TEST_VM_F(GrowableArrayTest, capacity_ctor_dtor) {
@@ -1502,6 +1625,10 @@ TEST_VM_F(GrowableArrayTest, find_if_point_with_default) {
   run_test_find_if<PointWithDefault,true,true>();
 }
 
+TEST_VM_F(GrowableArrayTest, find_if_point_no_assign) {
+  run_test_find_if<PointNoAssign,true,true>();
+}
+
 TEST_VM_F(GrowableArrayTest, find_if_ctor_dtor) {
   run_test_find_if<CtorDtor,true,CtorDtor::is_enabled_for_arena>();
 }
@@ -1519,6 +1646,10 @@ TEST_VM_F(GrowableArrayTest, find_from_end_if_point) {
 }
 
 TEST_VM_F(GrowableArrayTest, find_from_end_if_point_with_default) {
+  run_test_find_from_end_if<PointWithDefault,true,true>();
+}
+
+TEST_VM_F(GrowableArrayTest, find_from_end_if_point_no_assign) {
   run_test_find_from_end_if<PointWithDefault,true,true>();
 }
 
@@ -1542,6 +1673,8 @@ TEST_VM_F(GrowableArrayTest, at_grow_point_with_default) {
   run_test_at_grow<PointWithDefault,true,true>();
 }
 
+// PointNoAssign: assign not implemented, cannot test at_put_grow
+
 TEST_VM_F(GrowableArrayTest, at_grow_ctor_dtor) {
   run_test_at_grow<CtorDtor,true,CtorDtor::is_enabled_for_arena>();
 }
@@ -1559,6 +1692,9 @@ TEST_VM_F(GrowableArrayTest, at_grow_default_ptr) {
 TEST_VM_F(GrowableArrayTest, at_grow_default_point_with_default) {
   run_test_at_grow_default<PointWithDefault,true,true>();
 }
+
+// PointNoAssign: default not implemented, so cannot test!
+// PointNoAssign: assign not implemented, cannot test at_put_grow
 
 TEST_VM_F(GrowableArrayTest, at_grow_default_ctor_dtor) {
   run_test_at_grow_default<CtorDtor,true,CtorDtor::is_enabled_for_arena>();
