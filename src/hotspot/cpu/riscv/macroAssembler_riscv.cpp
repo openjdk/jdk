@@ -2750,8 +2750,10 @@ void MacroAssembler::cmpxchgptr(Register oldv, Register newv, Register addr, Reg
     j(retry_load);
 
     bind(nope);
-    membar(AnyAny);
   }
+
+  // neither amocas nor lr/sc have an implied barrier in the failing case
+  membar(AnyAny);
 
   mv(oldv, tmp);
   if (fail != nullptr) {
