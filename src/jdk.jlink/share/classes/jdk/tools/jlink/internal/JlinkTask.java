@@ -305,6 +305,9 @@ public class JlinkTask {
             // is so because cases with an external jimage as run-time image base
             // have not been considered at this point.
             boolean useModulePath = !options.modulePath.isEmpty();
+            if (!useModulePath && options.packagedModulesPath != null) {
+                throw taskHelper.newBadArgs("err.runtime.link.packaged.mods");
+            }
             JlinkConfiguration config = initJlinkConfig(useModulePath);
             outputPath = config.getOutput();
             if (options.suggestProviders) {
