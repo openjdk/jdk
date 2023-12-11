@@ -212,7 +212,7 @@ public class BindingSpecializer {
         }
 
         if (PERFORM_VERIFICATION) {
-            List<VerifyError> errors = ClassFile.of().parse(bytes).verify(null);
+            List<VerifyError> errors = ClassFile.of().verify(bytes);
             if (!errors.isEmpty()) {
                 errors.forEach(System.err::println);
                 throw new IllegalStateException("Verification error(s)");

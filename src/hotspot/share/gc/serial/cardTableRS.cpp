@@ -392,6 +392,10 @@ CardTable::CardValue* CardTableRS::find_first_clean_card(CardValue* const start_
                                                          CardValue* const end_card,
                                                          CardTableRS* ct,
                                                          Func& object_start) {
+
+  // end_card might be just beyond the heap, so need to use the _raw variant.
+  HeapWord* end_address = ct->addr_for_raw(end_card);
+
   for (CardValue* current_card = start_card; current_card < end_card; /* empty */) {
     if (is_dirty(current_card)) {
       current_card++;
@@ -414,8 +418,15 @@ CardTable::CardValue* CardTableRS::find_first_clean_card(CardValue* const start_
       return current_card;
     }
 
+    // This might be the last object in this area, avoid trying to access the
+    // card beyond the allowed area.
+    HeapWord* next_address = obj_start_addr + obj->size();
+    if (next_address >= end_address) {
+      break;
+    }
+
     // Card occupied by next obj.
-    CardValue* next_obj_card = ct->byte_for(obj_start_addr + obj->size());
+    CardValue* next_obj_card = ct->byte_for(next_address);
     if (is_clean(next_obj_card)) {
       return next_obj_card;
     }

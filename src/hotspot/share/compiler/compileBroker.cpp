@@ -1788,7 +1788,7 @@ bool CompileBroker::init_compiler_runtime() {
 void CompileBroker::free_buffer_blob_if_allocated(CompilerThread* thread) {
   BufferBlob* blob = thread->get_buffer_blob();
   if (blob != nullptr) {
-    blob->flush();
+    blob->purge();
     MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
     CodeCache::free(blob);
   }

@@ -140,7 +140,7 @@ class MallocMemorySummary;
 
 // A snapshot of malloc'd memory, includes malloc memory
 // usage by types and memory used by tracking itself.
-class MallocMemorySnapshot : public ResourceObj {
+class MallocMemorySnapshot {
   friend class MallocMemorySummary;
 
  private:
@@ -198,7 +198,7 @@ class MallocMemorySnapshot : public ResourceObj {
 class MallocMemorySummary : AllStatic {
  private:
   // Reserve memory for placement of MallocMemorySnapshot object
-  static size_t _snapshot[CALC_OBJ_SIZE_IN_TYPE(MallocMemorySnapshot, size_t)];
+  static MallocMemorySnapshot _snapshot;
   static bool _have_limits;
 
   // Called when a total limit break was detected.
@@ -245,7 +245,7 @@ class MallocMemorySummary : AllStatic {
    }
 
   static MallocMemorySnapshot* as_snapshot() {
-    return (MallocMemorySnapshot*)_snapshot;
+    return &_snapshot;
   }
 
   // MallocLimit: returns true if allocating s bytes on f would trigger
