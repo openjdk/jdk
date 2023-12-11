@@ -34,7 +34,7 @@ import java.util.zip.CheckedOutputStream;
 /**
  * Package-private utility class
  */
-final class IOStreams {
+public final class IOStreams {
 
     /**
      * Returns true if this class satisfies two conditions:
