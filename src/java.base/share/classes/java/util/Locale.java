@@ -273,7 +273,7 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  * <caption style="display:none">Shows property keys and associated values</caption>
  * <thead>
  * <tr><th scope="col">Locale-related System Properties Key</th>
- *     <th scope="col">Description of Associated Value</th></tr>
+ *     <th scope="col">Description</th></tr>
  * </thead>
  * <tbody>
  * <tr><th scope="row">{@systemProperty user.language}</th>
