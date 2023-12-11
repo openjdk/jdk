@@ -341,6 +341,8 @@ public class GenerateCurrencyData {
             checkCurrencyCode(currencyCode);
             int tableEntry = mainTable[(currencyCode.charAt(0) - 'A') * A_TO_Z + (currencyCode.charAt(1) - 'A')];
 
+            // Do not allow a future currency to be classified as an otherCurrency,
+            // otherwise it will leak out into Currency:getAvailableCurrencies
             boolean notFutureCurrency = !Arrays.asList(specialCaseNewCurrencies).contains(currencyCode);
             boolean notSimpleCurrency = tableEntry == INVALID_COUNTRY_ENTRY
                     || (tableEntry & SPECIAL_CASE_COUNTRY_MASK) != 0
