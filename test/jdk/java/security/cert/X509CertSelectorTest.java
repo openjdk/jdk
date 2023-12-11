@@ -64,7 +64,7 @@ import sun.security.util.Debug;
 
 /*
  * @test
- * @bug 8074931
+ * @bug 8074931 8296787
  * @summary This class tests the X509CertSelector. The tests check particular criteria
  *          by setting them to a value that should match our test certificate and
  *          ensuring that they do match, then setting them to a value that should not
