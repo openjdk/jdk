@@ -27,12 +27,13 @@ package jdk.internal.classfile.impl;
 
 import java.util.function.Consumer;
 
-import jdk.internal.classfile.BufWriter;
-import jdk.internal.classfile.FieldBuilder;
-import jdk.internal.classfile.FieldElement;
-import jdk.internal.classfile.FieldModel;
-import jdk.internal.classfile.WritableElement;
-import jdk.internal.classfile.constantpool.Utf8Entry;
+import java.lang.classfile.BufWriter;
+import java.lang.classfile.CustomAttribute;
+import java.lang.classfile.FieldBuilder;
+import java.lang.classfile.FieldElement;
+import java.lang.classfile.FieldModel;
+import java.lang.classfile.WritableElement;
+import java.lang.classfile.constantpool.Utf8Entry;
 
 public final class DirectFieldBuilder
         extends AbstractDirectBuilder<FieldModel>
@@ -42,7 +43,7 @@ public final class DirectFieldBuilder
     private int flags;
 
     public DirectFieldBuilder(SplitConstantPool constantPool,
-                              ClassfileImpl context,
+                              ClassFileImpl context,
                               Utf8Entry name,
                               Utf8Entry type,
                               FieldModel original) {
@@ -55,7 +56,11 @@ public final class DirectFieldBuilder
 
     @Override
     public FieldBuilder with(FieldElement element) {
-        ((AbstractElement) element).writeTo(this);
+        if (element instanceof AbstractElement ae) {
+            ae.writeTo(this);
+        } else {
+            writeAttribute((CustomAttribute)element);
+        }
         return this;
     }
 

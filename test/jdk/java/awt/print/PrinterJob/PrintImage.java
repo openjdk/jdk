@@ -25,7 +25,7 @@
  * @test %I %W
  * @bug 4298489
  * @summary Confirm that output is same as screen.
- * @author jgodinez
+ * @key printer
  * @run main/manual PrintImage
  */
 import java.awt.*;

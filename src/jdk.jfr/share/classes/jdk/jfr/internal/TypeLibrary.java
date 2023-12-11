@@ -60,6 +60,7 @@ import jdk.jfr.Timestamp;
 import jdk.jfr.ValueDescriptor;
 import jdk.jfr.internal.util.Utils;
 import jdk.jfr.internal.util.ImplicitFields;
+import jdk.internal.module.Modules;
 
 public final class TypeLibrary {
     private static boolean implicitFieldTypes;
@@ -165,7 +166,6 @@ public final class TypeLibrary {
             for (ValueDescriptor v : type.getFields()) {
                 values.add(invokeAnnotation(annotation, v.getName()));
             }
-
             return PrivateAccess.getInstance().newAnnotation(type, values, annotation.annotationType().getClassLoader() == null);
         }
         return null;
@@ -177,6 +177,15 @@ public final class TypeLibrary {
             m = annotation.getClass().getMethod(methodName, new Class<?>[0]);
         } catch (NoSuchMethodException e1) {
             throw (Error) new InternalError("Could not locate method " + methodName + " in annotation " + annotation.getClass().getName());
+        }
+        // Add export from JDK proxy module
+        if (annotation.getClass().getClassLoader() == null) {
+            if (annotation.getClass().getName().contains("Proxy")) {
+                Module proxyModule = annotation.getClass().getModule();
+                String proxyPackage = annotation.getClass().getPackageName();
+                Module jfrModule = TypeLibrary.class.getModule();
+                Modules.addExports(proxyModule, proxyPackage, jfrModule);
+            }
         }
         SecuritySupport.setAccessible(m);
         try {
