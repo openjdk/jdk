@@ -324,7 +324,7 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  * {@code ".display"} or {@code ".format"} depending on the category. For example,
  * the value of the {@code user.language.display} system property will be used in the
  * {@code language} part of the default Locale for {@link Locale.Category#DISPLAY}
- * category. In the absence of category specific system properties the "category-less"
+ * category. In the absence of category specific system properties, the "category-less"
  * system properties are used, such as {@code user.language} in the previous example.
  *
  * <h3><a id="LocaleMatching">Locale Matching</a></h3>
