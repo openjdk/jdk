@@ -90,7 +90,7 @@ public class TestAutoCreateSharedArchiveUpgrade {
             try {
                 setupJVMs(Integer.parseInt(versions[i]));
                 doTest();
-            } catch (NumberFormatException  e) {
+            } catch (NumberFormatException e) {
                 throw new RuntimeException("Invalid AutoCreateSharedArchive JDK version: " + versions[i]);
             }
         }
@@ -115,8 +115,8 @@ public class TestAutoCreateSharedArchiveUpgrade {
             oldJVM = BOOT_JDK + FS + "bin" + FS + "java";
         } else {
             throw new SkippedException("Use -Dtest.previous.jdk or -Dtest.boot.jdk to specify a " +
-                                      "previous version of the JDK that supports " +
-                                      "-XX:+AutoCreateSharedArchive");
+                                       "previous version of the JDK that supports " +
+                                       "-XX:+AutoCreateSharedArchive");
         }
 
         System.out.println("Using newJVM = " + newJVM);
