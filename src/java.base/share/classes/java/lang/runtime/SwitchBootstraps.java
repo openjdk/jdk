@@ -185,14 +185,14 @@ public class SwitchBootstraps {
         if (labelClass != Class.class &&
             labelClass != String.class &&
             labelClass != Integer.class &&
-                
+
             ((labelClass != Float.class &&
               labelClass != Long.class &&
               labelClass != Double.class &&
               labelClass != Boolean.class) ||
               ((selectorType.equals(boolean.class) || selectorType.equals(Boolean.class)) && labelClass != Boolean.class && labelClass != Class.class) ||
              !previewEnabled) &&
-                
+
             labelClass != EnumDesc.class) {
             throw new IllegalArgumentException("label with illegal type found: " + label.getClass());
         }
