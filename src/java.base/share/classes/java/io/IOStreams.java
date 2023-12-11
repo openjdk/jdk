@@ -43,7 +43,7 @@ final class IOStreams {
      *
      * @return true if this class is trusted
      */
-    static boolean trusted(OutputStream os) {
+    static boolean isTrusted(OutputStream os) {
         var clazz = os.getClass();
         return clazz == ByteArrayOutputStream.class
                 || clazz == FileOutputStream.class
