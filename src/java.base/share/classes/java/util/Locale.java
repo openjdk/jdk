@@ -304,8 +304,9 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  * {@code -Duser.language=foobarbaz} results in a default Locale whose language is
  * "foobarbaz".)
  * </li>
- * <li>The default {@code Locale} instance is constructed from these system
- * properties' values.
+ * <li>The default {@code Locale} instance is constructed from the values of these
+ * system properties.
+ * </li>
  * </li>
  * </ol>
  * <p>Altering the system property values with {@link System#setProperties(Properties)}/
