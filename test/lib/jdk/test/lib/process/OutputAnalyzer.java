@@ -107,6 +107,14 @@ public final class OutputAnalyzer {
     }
 
     /**
+     * Delegate waitFor to the OutputBuffer. This ensures that
+     * the progress and timestmaps are logged correctly.
+     */
+    public void waitFor() {
+        buffer.waitFor();
+    }
+
+    /**
      * Verify that the stdout contents of output buffer is empty
      *
      * @throws RuntimeException
