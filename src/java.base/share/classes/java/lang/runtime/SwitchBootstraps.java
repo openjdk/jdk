@@ -586,8 +586,7 @@ public class SwitchBootstraps {
 
                             cb.ldc(integerLabel);
                             cb.if_icmpne(next);
-                        } else if (/*selectorType.isPrimitive() && ??*/
-                                   (element.caseLabel() instanceof Long ||
+                        } else if ((element.caseLabel() instanceof Long ||
                                     element.caseLabel() instanceof Float ||
                                     element.caseLabel() instanceof Double ||
                                     element.caseLabel() instanceof Boolean)) {
@@ -619,7 +618,6 @@ public class SwitchBootstraps {
                     cb.ireturn();
                 });
         });
-        writeClass(classBytes);
         try {
             // this class is linked at the indy callsite; so define a hidden nestmate
             MethodHandles.Lookup lookup;
@@ -707,15 +705,6 @@ public class SwitchBootstraps {
             typePairToName.put(new TypePairs(double.class, long.class),   "isDoubleToLongExact");
             typePairToName.put(new TypePairs(double.class, float.class),  "isDoubleToFloatExact");
             return typePairToName;
-        }
-    }
-
-    private static int idx;
-    private static void writeClass(byte[] bytes) {
-        try (java.io.OutputStream out = new java.io.FileOutputStream("/tmp/classes" + idx++ + ".class")) {
-            out.write(bytes);
-        } catch (java.io.IOException ex) {
-            ex.printStackTrace();
         }
     }
 }
