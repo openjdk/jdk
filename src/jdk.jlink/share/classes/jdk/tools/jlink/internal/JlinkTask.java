@@ -97,6 +97,17 @@ public class JlinkTask {
     private static final TaskHelper taskHelper
             = new TaskHelper(JLINK_BUNDLE);
 
+    // Flag for scratch task validation in run-time image mode
+    private final boolean isScratch;
+
+    public JlinkTask() {
+        this(false);
+    }
+
+    private JlinkTask(boolean isScratch) {
+        this.isScratch = isScratch;
+    }
+
     private static final Option<?>[] recognizedOptions = {
         new Option<JlinkTask>(false, (task, opt, arg) -> {
             task.options.help = true;
@@ -179,7 +190,7 @@ public class JlinkTask {
         }, "--version"),
         new Option<JlinkTask>(true, (task, opt, arg) -> {
             Path path = Paths.get(arg);
-            if (Files.exists(path)) {
+            if (!task.isScratch && Files.exists(path)) {
                 throw taskHelper.newBadArgs("err.dir.exists", path);
             }
             task.options.packagedModulesPath = path;
@@ -665,7 +676,7 @@ public class JlinkTask {
         // parse options, produce plugins maps.
         TaskHelper scratchTaskHelper = new TaskHelper(JLINK_BUNDLE);
         OptionsHelper<JlinkTask> scratchOptionsHelper = scratchTaskHelper.newOptionsHelper(JlinkTask.class, recognizedOptions);
-        JlinkTask scratch = new JlinkTask();
+        JlinkTask scratch = new JlinkTask(true);
 
         Map<Plugin, List<Map<String, String>>> pluginMaps = null;
         try {
