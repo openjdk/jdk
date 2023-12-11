@@ -939,6 +939,37 @@ public:
     }
     ASSERT_TRUE(a->is_empty());
     check_alive_elements_for_type<E>(0);
+
+    // write
+    for (int i = 0; i < 1000; i++) {
+      a->append(value_factory<E>(i));
+    }
+    check_alive_elements_for_type<E>(1000);
+
+    for (int i = 0; i < 10; i++) {
+      ASSERT_EQ(a->length(), 1000 - i*50);
+      check_alive_elements_for_type<E>(1000 - i*50);
+      int start = i * 50 + 50;
+      a->remove_range(start, start + 50);
+    }
+    check_alive_elements_for_type<E>(500);
+    ASSERT_EQ(a->length(), 500);
+
+    for (int i = 0; i < 10; i++) {
+      for (int j = 0; j < 50; j++) {
+        ASSERT_EQ(a->at(i * 50 + j), value_factory<E>(i * 100 + j));
+      }
+    }
+
+    for (int i = 0; i < 10; i++) {
+      check_alive_elements_for_type<E>(500 - i*50);
+      ASSERT_EQ(a->length(), 500 - i*50);
+      a->remove_till(50);
+      if (i < 9) {
+        ASSERT_EQ(a->at(0), value_factory<E>(i*100+100));
+      }
+    }
+    check_alive_elements_for_type<E>(0);
   }
 };
 

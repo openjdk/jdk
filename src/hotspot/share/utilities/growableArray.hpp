@@ -293,11 +293,18 @@ public:
     assert(0 <= start, "illegal start index %d", start);
     assert(start < end && end <= _len, "erase called with invalid range (%d, %d) for length %d", start, end, _len);
 
-    // TODO call destructors
-    for (int i = start, j = end; j < length(); i++, j++) {
-      at_put(i, at(j));
+
+    // Destruct old elements
+    for (int i = start; i < end; i++) {
+      this->_data[i].~E();
     }
-    trunc_to(length() - (end - start));
+
+    // Move down the high elements
+    for (int i = start, j = end; j < length(); i++, j++) {
+      ::new ((void*)&this->_data[i]) E(_data[j]);
+      this->_data[j].~E();
+    }
+    _len -= (end - start);
   }
 
   // The order is changed.
