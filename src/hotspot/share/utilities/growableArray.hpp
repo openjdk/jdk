@@ -485,38 +485,49 @@ public:
   // inserts the given element before the element at index i
   void insert_before(const int idx, const E& elem) {
     assert(0 <= idx && idx <= this->_len, "illegal index %d for length %d", idx, this->_len);
-    if (this->_len == this->_capacity) grow(this->_len);
-    // TODO at least one must be constructed!
-    for (int j = this->_len - 1; j >= idx; j--) {
-      this->_data[j + 1] = this->_data[j];
+
+    if (this->_len == this->_capacity) {
+      grow(this->_len);
     }
+
+    // Move up the high elements (copy-construct / deconstruct)
+    for (int j = this->_len - 1; j >= idx; j--) {
+      ::new ((void*)&this->_data[j + 1]) E(this->_data[j]);
+      this->_data[j].~E();
+    }
+
+    // Place the new element
+    ::new ((void*)&this->_data[idx]) E(elem);
+
     this->_len++;
-    this->_data[idx] = elem;
   }
 
   void insert_before(const int idx, const GrowableArrayView<E>* array) {
     assert(0 <= idx && idx <= this->_len, "illegal index %d for length %d", idx, this->_len);
+
     int array_len = array->length();
     int new_len = this->_len + array_len;
-    if (new_len >= this->_capacity) grow(new_len);
-    // TODO at least one must be constructed!
 
-    for (int j = this->_len - 1; j >= idx; j--) {
-      this->_data[j + array_len] = this->_data[j];
+    if (new_len >= this->_capacity) {
+      grow(new_len);
     }
 
+    // Move up the high elements (copy-construct / deconstruct)
+    for (int j = this->_len - 1; j >= idx; j--) {
+      ::new ((void*)&this->_data[j + array_len]) E(this->_data[j]);
+      this->_data[j].~E();
+    }
+
+    // Place all new elements
     for (int j = 0; j < array_len; j++) {
-      this->_data[idx + j] = array->at(j);
+      ::new ((void*)&this->_data[idx + j]) E(array->at(j));
     }
 
     this->_len += array_len;
   }
 
   void appendAll(const GrowableArrayView<E>* l) {
-    // TODO refactor: reserve and append
-    for (int i = 0; i < l->length(); i++) {
-      this->at_put_grow(this->_len, l->at(i), E());
-    }
+    insert_before(this->_len, l);
   }
 
   // Binary search and insertion utility.  Search array for element

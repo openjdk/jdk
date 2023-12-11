@@ -28,6 +28,7 @@
 
 // TODO:
 //       Talk about value factory
+//       Trigger allocation asserts with resource area
 
 // TODO go through GA and GACH and see what ops are not tested yet
 // -> add to modify and test
@@ -284,6 +285,9 @@ public:
   virtual void reserve(int new_capacity) = 0;
   virtual E at_grow(int i, const E& fill) = 0;
   virtual void at_put_grow (int i, const E& e, const E& fill) = 0;
+  virtual void insert_before(int idx, const E& e) = 0;
+  virtual void insert_before(int idx, const GrowableArrayView<E>* array) = 0;
+  virtual void appendAll(const GrowableArrayView<E>* array) = 0;
 
   // Only defined for CHeap:
   virtual void clear_and_deallocate() {
@@ -370,6 +374,18 @@ public:
   void at_put_grow_impl(int i, const E& e, const E& fill) {
     // do not call if copy-assign not implemented for elements
     ASSERT_TRUE(false);
+  }
+
+  virtual void insert_before(int idx, const E& e) override final{
+    _array->insert_before(idx, e);
+  }
+
+  virtual void insert_before(int idx, const GrowableArrayView<E>* array) override final {
+    _array->insert_before(idx, array);
+  }
+
+  virtual void appendAll(const GrowableArrayView<E>* array) override final {
+    _array->appendAll(array);
   }
 };
 
@@ -632,6 +648,18 @@ public:
     // do not call if copy-assign not implemented for elements
     ASSERT_TRUE(false);
   }
+
+  virtual void insert_before(int idx, const E& e) override final{
+    _array->insert_before(idx, e);
+  }
+
+  virtual void insert_before(int idx, const GrowableArrayView<E>* array) override final {
+    _array->insert_before(idx, array);
+  }
+
+  virtual void appendAll(const GrowableArrayView<E>* array) override final {
+    _array->appendAll(array);
+  }
 };
 
 template<typename E>
@@ -879,6 +907,46 @@ public:
         j++;
       }
     }
+
+    a->clear();
+    ASSERT_EQ(a->length(), 0);
+    check_alive_elements_for_type<E>(0);
+
+    // Test insert_before, single element
+    a->insert_before(0, value_factory<E>(3));
+    a->insert_before(1, value_factory<E>(5));
+    a->insert_before(0, value_factory<E>(0));
+    a->insert_before(1, value_factory<E>(1));
+    a->insert_before(2, value_factory<E>(2));
+    a->insert_before(4, value_factory<E>(4));
+
+    for (int i = 0; i < 6; i++) {
+      ASSERT_EQ(a->at(i), value_factory<E>(i));
+    }
+    ASSERT_EQ(a->length(), 6);
+    check_alive_elements_for_type<E>(6);
+
+    a->clear();
+    ASSERT_EQ(a->length(), 0);
+    check_alive_elements_for_type<E>(0);
+
+    // Test insert_before, with array
+    GrowableArrayCHeap<E,mtTest> array;
+
+    for (int i = 0; i < 100; i++) {
+      array.append(value_factory<E>(i));
+    }
+    ASSERT_EQ(a->length(), 0);
+    ASSERT_EQ(array.length(), 100);
+    check_alive_elements_for_type<E>(100);
+
+    a->insert_before(0, &array);
+
+    ASSERT_EQ(a->length(), 100);
+    ASSERT_EQ(array.length(), 100);
+    check_alive_elements_for_type<E>(200);
+
+    // TODO extend this a bit, and do appendAll
   }
 };
 
