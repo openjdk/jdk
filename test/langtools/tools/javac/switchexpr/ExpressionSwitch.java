@@ -35,16 +35,16 @@ public class ExpressionSwitch {
         localClass(T.A);
         assertEquals(castSwitchExpressions(T.A), "A");
         testTypeInference(true, 0);
-        assertEquals(yieldPrimiteDotClass("byte"), byte.class);
-        assertEquals(yieldPrimiteDotClass("char"), char.class);
-        assertEquals(yieldPrimiteDotClass("short"), short.class);
-        assertEquals(yieldPrimiteDotClass("int"), int.class);
-        assertEquals(yieldPrimiteDotClass("long"), long.class);
-        assertEquals(yieldPrimiteDotClass("float"), float.class);
-        assertEquals(yieldPrimiteDotClass("double"), double.class);
-        assertEquals(yieldPrimiteDotClass("void"), void.class);
-        assertEquals(yieldPrimiteDotClass("boolean"), boolean.class);
-        assertEquals(yieldPrimiteDotClass("other"), null);
+        assertEquals(yieldPrimitiveDotClass("byte"), byte.class);
+        assertEquals(yieldPrimitiveDotClass("char"), char.class);
+        assertEquals(yieldPrimitiveDotClass("short"), short.class);
+        assertEquals(yieldPrimitiveDotClass("int"), int.class);
+        assertEquals(yieldPrimitiveDotClass("long"), long.class);
+        assertEquals(yieldPrimitiveDotClass("float"), float.class);
+        assertEquals(yieldPrimitiveDotClass("double"), double.class);
+        assertEquals(yieldPrimitiveDotClass("void"), void.class);
+        assertEquals(yieldPrimitiveDotClass("boolean"), boolean.class);
+        assertEquals(yieldPrimitiveDotClass("other"), null);
     }
 
     private String print(T t) {
@@ -150,7 +150,7 @@ public class ExpressionSwitch {
         };
     }
 
-    private Class<?> yieldPrimiteDotClass(String s) {
+    private Class<?> yieldPrimitiveDotClass(String s) {
         return switch (s) {
             case "byte":    yield byte.class;
             case "char":    yield char.class;
