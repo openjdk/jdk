@@ -653,7 +653,7 @@ public final class ProcessTools {
      * @return The output from the process.
      */
     public static OutputAnalyzer executeLimitedTestJava(List<String> command) throws Exception {
-        return executeTestJava(command.toArray(String[]::new));
+        return executeLimitedTestJava(command.toArray(String[]::new));
     }
 
     /**
@@ -669,7 +669,7 @@ public final class ProcessTools {
      * @return The output from the process.
      */
     public static OutputAnalyzer executeLimitedTestJava(String... command) throws Exception {
-        ProcessBuilder pb = createTestJavaProcessBuilder(command);
+        ProcessBuilder pb = createLimitedTestJavaProcessBuilder(command);
         return executeProcess(pb);
     }
 
