@@ -25,7 +25,7 @@
   test
   @bug 8023392 8259232
   @summary Swing text components printed with spaces between chars
-  @author Anton Nashatyrev
+  @key printer
   @run applet/manual=yesno bug8023392.html
 */
 

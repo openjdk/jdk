@@ -27,6 +27,7 @@
 #include "memory/allocation.hpp"
 #include "memory/universe.hpp"
 
+#include "gc/shared/classUnloadingContext.hpp"
 #include "gc/shared/gcArguments.hpp"
 #include "gc/shared/gcTimer.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
@@ -1022,7 +1023,7 @@ public:
   void work(uint worker_id) {
     if (_concurrent) {
       ShenandoahConcurrentWorkerSession worker_session(worker_id);
-      ShenandoahSuspendibleThreadSetJoiner stsj(ShenandoahSuspendibleWorkers);
+      ShenandoahSuspendibleThreadSetJoiner stsj;
       ShenandoahEvacOOMScope oom_evac_scope;
       do_work();
     } else {
@@ -1186,13 +1187,9 @@ void ShenandoahHeap::gclabs_retire(bool resize) {
 
 // Returns size in bytes
 size_t ShenandoahHeap::unsafe_max_tlab_alloc(Thread *thread) const {
-  if (ShenandoahElasticTLAB) {
-    // With Elastic TLABs, return the max allowed size, and let the allocation path
-    // figure out the safe size for current allocation.
-    return ShenandoahHeapRegion::max_tlab_size_bytes();
-  } else {
-    return MIN2(_free_set->unsafe_peek_free(), ShenandoahHeapRegion::max_tlab_size_bytes());
-  }
+  // Return the max allowed size, and let the allocation path
+  // figure out the safe size for current allocation.
+  return ShenandoahHeapRegion::max_tlab_size_bytes();
 }
 
 size_t ShenandoahHeap::max_tlab_size() const {
@@ -1824,6 +1821,9 @@ void ShenandoahHeap::stop() {
 
 void ShenandoahHeap::stw_unload_classes(bool full_gc) {
   if (!unload_classes()) return;
+  ClassUnloadingContext ctx(_workers->active_workers(),
+                            false /* lock_codeblob_free_separately */);
+
   // Unload classes and purge SystemDictionary.
   {
     ShenandoahPhaseTimings::Phase phase = full_gc ?
@@ -1841,14 +1841,14 @@ void ShenandoahHeap::stw_unload_classes(bool full_gc) {
       _workers->run_task(&unlink_task);
     }
     // Release unloaded nmethods's memory.
-    CodeCache::flush_unlinked_nmethods();
+    ClassUnloadingContext::context()->purge_and_free_nmethods();
   }
 
   {
     ShenandoahGCPhase phase(full_gc ?
                             ShenandoahPhaseTimings::full_gc_purge_cldg :
                             ShenandoahPhaseTimings::degen_gc_purge_cldg);
-    ClassLoaderDataGraph::purge(/*at_safepoint*/true);
+    ClassLoaderDataGraph::purge(true /* at_safepoint */);
   }
   // Resize and verify metaspace
   MetaspaceGC::compute_new_size();
@@ -2018,19 +2018,13 @@ void ShenandoahHeap::assert_gc_workers(uint nworkers) {
   assert(nworkers > 0 && nworkers <= max_workers(), "Sanity");
 
   if (ShenandoahSafepoint::is_at_shenandoah_safepoint()) {
-    if (UseDynamicNumberOfGCThreads) {
-      assert(nworkers <= ParallelGCThreads, "Cannot use more than it has");
-    } else {
-      // Use ParallelGCThreads inside safepoints
-      assert(nworkers == ParallelGCThreads, "Use ParallelGCThreads within safepoints");
-    }
+    // Use ParallelGCThreads inside safepoints
+    assert(nworkers == ParallelGCThreads, "Use ParallelGCThreads (%u) within safepoint, not %u",
+           ParallelGCThreads, nworkers);
   } else {
-    if (UseDynamicNumberOfGCThreads) {
-      assert(nworkers <= ConcGCThreads, "Cannot use more than it has");
-    } else {
-      // Use ConcGCThreads outside safepoints
-      assert(nworkers == ConcGCThreads, "Use ConcGCThreads outside safepoints");
-    }
+    // Use ConcGCThreads outside safepoints
+    assert(nworkers == ConcGCThreads, "Use ConcGCThreads (%u) outside safepoints, %u",
+           ConcGCThreads, nworkers);
   }
 }
 #endif
@@ -2056,7 +2050,7 @@ public:
   void work(uint worker_id) {
     if (CONCURRENT) {
       ShenandoahConcurrentWorkerSession worker_session(worker_id);
-      ShenandoahSuspendibleThreadSetJoiner stsj(ShenandoahSuspendibleWorkers);
+      ShenandoahSuspendibleThreadSetJoiner stsj;
       do_work<ShenandoahConcUpdateRefsClosure>();
     } else {
       ShenandoahParallelWorkerSession worker_session(worker_id);
@@ -2238,15 +2232,11 @@ bool ShenandoahHeap::uncommit_bitmap_slice(ShenandoahHeapRegion *r) {
 }
 
 void ShenandoahHeap::safepoint_synchronize_begin() {
-  if (ShenandoahSuspendibleWorkers) {
-    SuspendibleThreadSet::synchronize();
-  }
+  SuspendibleThreadSet::synchronize();
 }
 
 void ShenandoahHeap::safepoint_synchronize_end() {
-  if (ShenandoahSuspendibleWorkers) {
-    SuspendibleThreadSet::desynchronize();
-  }
+  SuspendibleThreadSet::desynchronize();
 }
 
 void ShenandoahHeap::entry_uncommit(double shrink_before, size_t shrink_until) {
