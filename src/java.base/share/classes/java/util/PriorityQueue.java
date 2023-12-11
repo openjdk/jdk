@@ -211,7 +211,7 @@ public class PriorityQueue<E> extends AbstractQueue<E>
 
     /**
      * Creates a {@code PriorityQueue} containing the elements in the
-     * specified collection that orders its elements according to the 
+     * specified collection that orders its elements according to the
      * specified comparator.
      *
      * @param  c the collection whose elements are to be placed
@@ -223,7 +223,7 @@ public class PriorityQueue<E> extends AbstractQueue<E>
      *         of its elements are null
      */
     public PriorityQueue(Collection<? extends E> c,
-    		             Comparator<? super E> comparator) {
+                         Comparator<? super E> comparator) {
         this.comparator = comparator;
         initFromCollection(c);
     }
