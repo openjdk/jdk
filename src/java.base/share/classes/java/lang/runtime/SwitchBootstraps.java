@@ -26,20 +26,35 @@
 package java.lang.runtime;
 
 import java.lang.Enum.EnumDesc;
+import java.lang.constant.ClassDesc;
+import java.lang.constant.ConstantDesc;
+import java.lang.constant.ConstantDescs;
+import java.lang.constant.MethodTypeDesc;
 import java.lang.invoke.CallSite;
 import java.lang.invoke.ConstantCallSite;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
-import java.util.HashMap;
+import java.lang.reflect.AccessFlag;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
+import java.util.function.BiPredicate;
 import java.util.stream.Stream;
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.classfile.Classfile;
+import jdk.internal.classfile.Label;
+import jdk.internal.classfile.instruction.SwitchCase;
 import jdk.internal.vm.annotation.Stable;
-import sun.invoke.util.Wrapper;
 
+import static java.lang.invoke.MethodHandles.Lookup.ClassOption.NESTMATE;
+import static java.lang.invoke.MethodHandles.Lookup.ClassOption.STRONG;
+import java.util.HashMap;
+import java.util.Map;
 import static java.util.Objects.requireNonNull;
+import jdk.internal.classfile.CodeBuilder;
+import sun.invoke.util.Wrapper;
 
 /**
  * Bootstrap methods for linking {@code invokedynamic} call sites that implement
@@ -55,45 +70,20 @@ public class SwitchBootstraps {
 
     private static final Object SENTINEL = new Object();
     private static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
+    private static final boolean previewEnabled = true;
 
-    private static final MethodHandle INSTANCEOF_CHECK;
-    private static final MethodHandle IS_ASSIGNABLE_FROM_CHECK;
-    private static final MethodHandle INTEGER_EQ_CHECK;
-    private static final MethodHandle LONG_EQ_CHECK;
-    private static final MethodHandle FLOAT_EQ_CHECK;
-    private static final MethodHandle DOUBLE_EQ_CHECK;
-    private static final MethodHandle BOOLEAN_EQ_CHECK;
-    private static final MethodHandle OBJECT_EQ_CHECK;
-    private static final MethodHandle ENUM_EQ_CHECK;
     private static final MethodHandle NULL_CHECK;
     private static final MethodHandle IS_ZERO;
     private static final MethodHandle CHECK_INDEX;
     private static final MethodHandle MAPPED_ENUM_LOOKUP;
-    private static final HashMap<TypePairs, String> typePairToName;
+
+    private static final MethodTypeDesc TYPES_SWITCH_DESCRIPTOR =
+            MethodTypeDesc.ofDescriptor("(Ljava/lang/Object;ILjava/util/function/BiPredicate;Ljava/util/List;)I");
+
+    private static final Map<TypePairs, String> typePairToName;
 
     static {
-        typePairToName = TypePairs.initialize();
         try {
-            INSTANCEOF_CHECK = MethodHandles.permuteArguments(LOOKUP.findVirtual(Class.class, "isInstance",
-                                                                                 MethodType.methodType(boolean.class, Object.class)),
-                                                              MethodType.methodType(boolean.class, Object.class, Class.class), 1, 0);
-            IS_ASSIGNABLE_FROM_CHECK = MethodHandles.permuteArguments(LOOKUP.findVirtual(Class.class, "isAssignableFrom",
-                                                                                 MethodType.methodType(boolean.class, Class.class)),
-                                                              MethodType.methodType(boolean.class, Class.class, Class.class), 1, 0);
-            INTEGER_EQ_CHECK = LOOKUP.findStatic(SwitchBootstraps.class, "integerEqCheck",
-                                           MethodType.methodType(boolean.class, Object.class, Integer.class));
-            LONG_EQ_CHECK = LOOKUP.findStatic(SwitchBootstraps.class, "longEqCheck",
-                    MethodType.methodType(boolean.class, long.class, Long.class));
-            FLOAT_EQ_CHECK = LOOKUP.findStatic(SwitchBootstraps.class, "floatEqCheck",
-                    MethodType.methodType(boolean.class, float.class, Float.class));
-            DOUBLE_EQ_CHECK = LOOKUP.findStatic(SwitchBootstraps.class, "doubleEqCheck",
-                    MethodType.methodType(boolean.class, double.class, Double.class));
-            BOOLEAN_EQ_CHECK = LOOKUP.findStatic(SwitchBootstraps.class, "booleanEqCheck",
-                    MethodType.methodType(boolean.class, boolean.class, Boolean.class));
-            OBJECT_EQ_CHECK = LOOKUP.findStatic(Objects.class, "equals",
-                                           MethodType.methodType(boolean.class, Object.class, Object.class));
-            ENUM_EQ_CHECK = LOOKUP.findStatic(SwitchBootstraps.class, "enumEqCheck",
-                                           MethodType.methodType(boolean.class, Object.class, EnumDesc.class, MethodHandles.Lookup.class, ResolvedEnumLabel.class));
             NULL_CHECK = LOOKUP.findStatic(Objects.class, "isNull",
                                            MethodType.methodType(boolean.class, Object.class));
             IS_ZERO = LOOKUP.findStatic(SwitchBootstraps.class, "isZero",
@@ -107,6 +97,7 @@ public class SwitchBootstraps {
         catch (ReflectiveOperationException e) {
             throw new ExceptionInInitializerError(e);
         }
+        typePairToName = TypePairs.initialize();
     }
 
     /**
@@ -154,10 +145,12 @@ public class SwitchBootstraps {
      *
      * @throws NullPointerException if any argument is {@code null}
      * @throws IllegalArgumentException if any element in the labels array is null, if the
-     * invocation type is not not a method type of first parameter of a reference type,
+     * invocation type is not a method type of first parameter of a reference type,
      * second parameter of type {@code int} and with {@code int} as its return type,
      * or if {@code labels} contains an element that is not of type {@code String},
-     * {@code Integer}, {@code Class} or {@code EnumDesc}.
+     * {@code Integer}, {@code Long}, {@code Float}, {@code Double}, {@code Boolean},
+     * {@code Class} or {@code EnumDesc}. Additionally, if {@code labels} contains an element
+     * that is not of type {@code Boolean} when {@code target} is a {@code Boolean.class}.
      * @jvms 4.4.6 The CONSTANT_NameAndType_info Structure
      * @jvms 4.4.10 The CONSTANT_Dynamic_info and CONSTANT_InvokeDynamic_info Structures
      */
@@ -165,227 +158,48 @@ public class SwitchBootstraps {
                                       String invocationName,
                                       MethodType invocationType,
                                       Object... labels) {
+        Class<?> selectorType = invocationType.parameterType(0);
         if (invocationType.parameterCount() != 2
             || (!invocationType.returnType().equals(int.class))
+            || (selectorType.isPrimitive() && !previewEnabled)
             || !invocationType.parameterType(1).equals(int.class))
             throw new IllegalArgumentException("Illegal invocation type " + invocationType);
         requireNonNull(labels);
 
         labels = labels.clone();
-        Stream.of(labels).forEach(SwitchBootstraps::verifyLabel);
+        Stream.of(labels).forEach(l -> verifyLabel(l, selectorType));
 
-        MethodHandle target;
-        if (invocationType.parameterType(0).isPrimitive()) {
-            target = createMethodHandleSwitch(lookup, labels, invocationType.parameterType(0));
-        }
-        else {
-            target = createMethodHandleSwitch(lookup, labels, Object.class);
-        }
+        MethodHandle target = generateInnerClass(lookup, selectorType, labels);
+
+        target = withIndexCheck(target, labels.length);
 
         return new ConstantCallSite(target);
     }
 
-    private static void verifyLabel(Object label) {
+    private static void verifyLabel(Object label, Class<?> selectorType) {
         if (label == null) {
             throw new IllegalArgumentException("null label found");
         }
         Class<?> labelClass = label.getClass();
+
         if (labelClass != Class.class &&
             labelClass != String.class &&
             labelClass != Integer.class &&
-            labelClass != Float.class &&
-            labelClass != Long.class &&
-            labelClass != Double.class &&
-            labelClass != Boolean.class &&
+                
+            ((labelClass != Float.class &&
+              labelClass != Long.class &&
+              labelClass != Double.class &&
+              labelClass != Boolean.class) ||
+              ((selectorType.equals(boolean.class) || selectorType.equals(Boolean.class)) && labelClass != Boolean.class && labelClass != Class.class) ||
+             !previewEnabled) &&
+                
             labelClass != EnumDesc.class) {
             throw new IllegalArgumentException("label with illegal type found: " + label.getClass());
         }
     }
 
-    /*
-     * Construct test chains for labels inside switch, to handle switch repeats:
-     * switch (idx) {
-     *     case 0 -> if (selector matches label[0]) return 0; else if (selector matches label[1]) return 1; else ...
-     *     case 1 -> if (selector matches label[1]) return 1; else ...
-     *     ...
-     * }
-     */
-    private static MethodHandle createRepeatIndexSwitch(MethodHandles.Lookup lookup, Object[] labels, Class<?> selectorType) {
-        MethodHandle def = MethodHandles.dropArguments(MethodHandles.constant(int.class, labels.length), 0, selectorType);
-        MethodHandle[] testChains = new MethodHandle[labels.length];
-        List<Object> labelsList = List.of(labels).reversed();
-        // unconditionally exact patterns always match
-        MethodHandle trueDef = MethodHandles.dropArguments(MethodHandles.constant(boolean.class, true), 0, selectorType, Object.class);
-        for (int i = 0; i < labels.length; i++) {
-            MethodHandle test = def;
-            int idx = labels.length - 1;
-            List<Object> currentLabels = labelsList.subList(0, labels.length - i);
-            for (int j = 0; j < currentLabels.size(); j++, idx--) {
-                Object currentLabel = currentLabels.get(j);
-                Object testLabel = currentLabel;
-                if (j + 1 < currentLabels.size() && currentLabels.get(j + 1) == currentLabel) continue;
-                MethodHandle currentTest;
-                if (currentLabel instanceof Class<?> currentLabelClass) {
-                    if (unconditionalExactnessCheck(selectorType, currentLabelClass)) {
-                        currentTest = trueDef;
-                    } else if (currentLabelClass.isPrimitive()) {
-                         if (selectorType.equals(Object.class)) {
-                            currentTest = INSTANCEOF_CHECK;
-                            testLabel = Wrapper.forBasicType(currentLabelClass).wrapperType();
-                        } else {
-                            MethodHandle exactnessCheck;
-                            try {
-                                TypePairs typePair = TypePairs.of(selectorType, currentLabelClass);
-                                String methodName = typePairToName.get(typePair);
-                                MethodType methodType = MethodType.methodType(boolean.class, typePair.from);
-                                exactnessCheck = lookup.findStatic(ExactConversionsSupport.class, methodName, methodType).asType(MethodType.methodType(boolean.class, selectorType));
-                            }
-                            catch (ReflectiveOperationException e) {
-                                throw new ExceptionInInitializerError(e);
-                            }
-                            currentTest = MethodHandles.dropArguments(exactnessCheck, 1, Object.class);
-                        }
-                    } else if (selectorType.isPrimitive()) {
-                        currentTest = IS_ASSIGNABLE_FROM_CHECK;
-                        currentTest = MethodHandles.dropArguments(currentTest, 0, selectorType);
-                        currentTest = MethodHandles.insertArguments(currentTest, 1, Class.class);
-                        testLabel = currentLabelClass;
-                    } else {
-                        currentTest = INSTANCEOF_CHECK;
-                    }
-                }
-                else if (currentLabel instanceof Integer ii) {
-                    if (selectorType.equals(boolean.class)) {
-                        testLabel = ii.intValue() == 1;
-                        currentTest = BOOLEAN_EQ_CHECK;
-                    } else {
-                        currentTest = MethodHandles.explicitCastArguments(INTEGER_EQ_CHECK,
-                                MethodType.methodType(boolean.class, selectorType, Integer.class));
-                    }
-                }
-                else if (selectorType.isPrimitive() && currentLabel instanceof Long) {
-                    currentTest = LONG_EQ_CHECK;
-                }
-                else if (selectorType.isPrimitive() && currentLabel instanceof Float) {
-                    currentTest = FLOAT_EQ_CHECK;
-                }
-                else if (selectorType.isPrimitive() && currentLabel instanceof Double) {
-                    currentTest = DOUBLE_EQ_CHECK;
-                }
-                else if (selectorType.isPrimitive() && currentLabel instanceof Boolean) {
-                    currentTest = BOOLEAN_EQ_CHECK;
-                }
-                else if (currentLabel instanceof EnumDesc) {
-                    currentTest = MethodHandles.insertArguments(ENUM_EQ_CHECK, 2, lookup, new ResolvedEnumLabel());
-                    currentTest = MethodHandles.explicitCastArguments(currentTest,
-                            MethodType.methodType(boolean.class, selectorType, EnumDesc.class));
-                } else {
-                    currentTest = OBJECT_EQ_CHECK;
-                }
-                test = MethodHandles.guardWithTest(MethodHandles.insertArguments(currentTest, 1, testLabel),
-                                                   MethodHandles.dropArguments(MethodHandles.constant(int.class, idx), 0, selectorType),
-                                                   test);
-            }
-            testChains[i] = MethodHandles.dropArguments(test, 0, int.class);
-        }
-
-        return MethodHandles.tableSwitch(MethodHandles.dropArguments(def, 0, int.class), testChains);
-    }
-
-    /*
-     * Construct code that maps the given selector and repeat index to a case label number:
-     * if (selector == null) return -1;
-     * else return "createRepeatIndexSwitch(labels)"
-     */
-    private static MethodHandle createMethodHandleSwitch(MethodHandles.Lookup lookup, Object[] labels, Class<?> selectorType) {
-        if (!selectorType.isPrimitive() && !selectorType.isEnum()) {
-            selectorType = Object.class;
-        }
-
-        MethodHandle mainTest;
-        MethodHandle def = MethodHandles.dropArguments(MethodHandles.constant(int.class, labels.length), 0,  selectorType);
-        if (labels.length > 0) {
-            mainTest = createRepeatIndexSwitch(lookup, labels, selectorType);
-        } else {
-            mainTest = MethodHandles.dropArguments(def, 0, int.class);
-        }
-
-        MethodHandle body;
-        if (!selectorType.isPrimitive()) {
-            var castedNullCheckMT = MethodHandles.explicitCastArguments(NULL_CHECK,
-                    MethodType.methodType(boolean.class, selectorType));
-            body = MethodHandles.guardWithTest(MethodHandles.dropArguments(castedNullCheckMT, 0, int.class),
-                    MethodHandles.dropArguments(MethodHandles.constant(int.class, -1), 0, int.class, selectorType),
-                    mainTest);
-        } else {
-            body = mainTest;
-        }
-
-        MethodHandle switchImpl =
-                MethodHandles.permuteArguments(body, MethodType.methodType(int.class, selectorType, int.class), 1, 0);
-        return withIndexCheck(switchImpl, labels.length);
-    }
-
-    //<editor-fold desc="Equality checks for numerics and boolean">
-    private static boolean floatEqCheck(float value, Float constant) {
-        if (Float.valueOf(value).equals(constant.floatValue())) {
-            return true;
-        }
-        return false;
-    }
-
-    private static boolean doubleEqCheck(double value, Double constant) {
-        if (Double.valueOf(value).equals(constant.doubleValue())) {
-            return true;
-        }
-        return false;
-    }
-
-    private static boolean longEqCheck(long value, Long constant) {
-        if (Long.valueOf(value).equals(constant.longValue())) {
-            return true;
-        }
-        return false;
-    }
-
-    private static boolean booleanEqCheck(boolean value, Boolean constant) {
-        if (Boolean.valueOf(value).equals(constant.booleanValue())) {
-            return true;
-        }
-        return false;
-    }
-
-    private static boolean integerEqCheck(Object value, Integer constant) {
-        if (value instanceof Number input && constant.intValue() == input.intValue()) {
-            return true;
-        } else if (value instanceof Character input && constant.intValue() == input.charValue()) {
-            return true;
-        }
-        else if (value instanceof Boolean input && constant.intValue() == (input.booleanValue() ? 1 : 0)) {
-            return true;
-        }
-        return false;
-    }
-    //</editor-fold>
-
     private static boolean isZero(int value) {
         return value == 0;
-    }
-
-    // this method should be in sync with com.sun.tools.javac.code.Types.checkUnconditionallyExactPrimitives
-    private static boolean unconditionalExactnessCheck(Class<?> selectorType, Class<?> targetType) {
-        Wrapper selectorWrapper = Wrapper.forBasicType(selectorType);
-        Wrapper targetWrapper   = Wrapper.forBasicType(targetType);
-        if (selectorType.isPrimitive() && targetType.equals(selectorWrapper.wrapperType())) {
-            return true;
-        }
-        else if (selectorType.equals(targetType) ||
-                ((selectorType.equals(byte.class) && !targetType.equals(char.class)) ||
-                 (selectorType.equals(short.class) && (selectorWrapper.isStrictSubRangeOf(targetWrapper))) ||
-                 (selectorType.equals(char.class)  && (selectorWrapper.isStrictSubRangeOf(targetWrapper)))  ||
-                 (selectorType.equals(int.class)   && (targetType.equals(double.class) || targetType.equals(long.class))) ||
-                 (selectorType.equals(float.class) && (selectorWrapper.isStrictSubRangeOf(targetWrapper))))) return true;
-        return false;
     }
 
     /**
@@ -468,16 +282,16 @@ public class SwitchBootstraps {
             //If all labels are enum constants, construct an optimized handle for repeat index 0:
             //if (selector == null) return -1
             //else if (idx == 0) return mappingArray[selector.ordinal()]; //mapping array created lazily
-            //else return "createRepeatIndexSwitch(labels)"
+            //else return "typeSwitch(labels)"
             MethodHandle body =
                     MethodHandles.guardWithTest(MethodHandles.dropArguments(NULL_CHECK, 0, int.class),
                                                 MethodHandles.dropArguments(MethodHandles.constant(int.class, -1), 0, int.class, Object.class),
                                                 MethodHandles.guardWithTest(MethodHandles.dropArguments(IS_ZERO, 1, Object.class),
-                                                                            createRepeatIndexSwitch(lookup, labels, invocationType.parameterType(0)),
+                                                                            generateInnerClass(lookup, invocationType.parameterType(0), labels),
                                                                             MethodHandles.insertArguments(MAPPED_ENUM_LOOKUP, 1, lookup, enumClass, labels, new EnumMap())));
             target = MethodHandles.permuteArguments(body, MethodType.methodType(int.class, Object.class, int.class), 1, 0);
         } else {
-            target = createMethodHandleSwitch(lookup, labels, invocationType.parameterType(0));
+            target = generateInnerClass(lookup, invocationType.parameterType(0), labels);
         }
 
         target = target.asType(invocationType);
@@ -498,7 +312,7 @@ public class SwitchBootstraps {
             }
             return label;
         } else if (labelClass == String.class) {
-            return EnumDesc.of(enumClassTemplate.describeConstable().get(), (String) label);
+            return EnumDesc.of(enumClassTemplate.describeConstable().orElseThrow(), (String) label);
         } else {
             throw new IllegalArgumentException("label with illegal type found: " + labelClass +
                                                ", expected label of type either String or Class");
@@ -527,46 +341,333 @@ public class SwitchBootstraps {
         return enumMap.map[value.ordinal()];
     }
 
-    private static boolean enumEqCheck(Object value, EnumDesc<?> label, MethodHandles.Lookup lookup, ResolvedEnumLabel resolvedEnum) {
-        if (resolvedEnum.resolvedEnum == null) {
-            Object resolved;
-
-            try {
-                if (!(value instanceof Enum<?> enumValue)) {
-                    return false;
-                }
-
-                Class<?> clazz = label.constantType().resolveConstantDesc(lookup);
-
-                if (enumValue.getDeclaringClass() != clazz) {
-                    return false;
-                }
-
-                resolved = label.resolveConstantDesc(lookup);
-            } catch (IllegalArgumentException | ReflectiveOperationException ex) {
-                resolved = SENTINEL;
-            }
-
-            resolvedEnum.resolvedEnum = resolved;
-        }
-
-        return value == resolvedEnum.resolvedEnum;
-    }
-
     private static MethodHandle withIndexCheck(MethodHandle target, int labelsCount) {
         MethodHandle checkIndex = MethodHandles.insertArguments(CHECK_INDEX, 1, labelsCount + 1);
 
         return MethodHandles.filterArguments(target, 1, checkIndex);
     }
 
-    private static final class ResolvedEnumLabel {
+    private static final class ResolvedEnumLabels implements BiPredicate<Integer, Object> {
+
+        private final MethodHandles.Lookup lookup;
+        private final EnumDesc<?>[] enumDescs;
         @Stable
-        public Object resolvedEnum;
+        private Object[] resolvedEnum;
+
+        public ResolvedEnumLabels(MethodHandles.Lookup lookup, EnumDesc<?>[] enumDescs) {
+            this.lookup = lookup;
+            this.enumDescs = enumDescs;
+            this.resolvedEnum = new Object[enumDescs.length];
+        }
+
+        @Override
+        public boolean test(Integer labelIndex, Object value) {
+            Object result = resolvedEnum[labelIndex];
+
+            if (result == null) {
+                try {
+                    if (!(value instanceof Enum<?> enumValue)) {
+                        return false;
+                    }
+
+                    EnumDesc<?> label = enumDescs[labelIndex];
+                    Class<?> clazz = label.constantType().resolveConstantDesc(lookup);
+
+                    if (enumValue.getDeclaringClass() != clazz) {
+                        return false;
+                    }
+
+                    result = label.resolveConstantDesc(lookup);
+                } catch (IllegalArgumentException | ReflectiveOperationException ex) {
+                    result = SENTINEL;
+                }
+
+                resolvedEnum[labelIndex] = result;
+            }
+
+            return result == value;
+        }
     }
 
     private static final class EnumMap {
         @Stable
         public int[] map;
+    }
+
+    /*
+     * Construct test chains for labels inside switch, to handle switch repeats:
+     * switch (idx) {
+     *     case 0 -> if (selector matches label[0]) return 0;
+     *     case 1 -> if (selector matches label[1]) return 1;
+     *     ...
+     * }
+     */
+    @SuppressWarnings("removal")
+    private static MethodHandle generateInnerClass(MethodHandles.Lookup caller, Class<?> selectorType, Object[] labels) {
+        List<EnumDesc<?>> enumDescs = new ArrayList<>();
+        List<Class<?>> extraClassLabels = new ArrayList<>();
+
+        byte[] classBytes = Classfile.of().build(ClassDesc.of(typeSwitchClassName(caller.lookupClass())), clb -> {
+            clb.withFlags(AccessFlag.FINAL, AccessFlag.SUPER, AccessFlag.SYNTHETIC)
+               .withMethodBody("typeSwitch",
+                               TYPES_SWITCH_DESCRIPTOR,
+                               Classfile.ACC_FINAL | Classfile.ACC_PUBLIC | Classfile.ACC_STATIC,
+                               cb -> {
+                    cb.aload(0);
+                    Label nonNullLabel = cb.newLabel();
+                    cb.if_nonnull(nonNullLabel);
+                    cb.iconst_m1();
+                    cb.ireturn();
+                    cb.labelBinding(nonNullLabel);
+                    if (labels.length == 0) {
+                        cb.constantInstruction(0)
+                          .ireturn();
+                        return ;
+                    }
+                    cb.iload(1);
+                    Label dflt = cb.newLabel();
+                    record Element(Label target, Label next, Object caseLabel) {}
+                    List<Element> cases = new ArrayList<>();
+                    List<SwitchCase> switchCases = new ArrayList<>();
+                    Object lastLabel = null;
+                    for (int idx = labels.length - 1; idx >= 0; idx--) {
+                        Object currentLabel = labels[idx];
+                        Label target = cb.newLabel();
+                        Label next;
+                        if (lastLabel == null) {
+                            next = dflt;
+                        } else if (lastLabel.equals(currentLabel)) {
+                            next = cases.getLast().next();
+                        } else {
+                            next = cases.getLast().target();
+                        }
+                        lastLabel = currentLabel;
+                        cases.add(new Element(target, next, currentLabel));
+                        switchCases.add(SwitchCase.of(idx, target));
+                    }
+                    cases = cases.reversed();
+                    switchCases = switchCases.reversed();
+                    cb.tableswitch(0, labels.length - 1, dflt, switchCases);
+                    for (int idx = 0; idx < cases.size(); idx++) {
+                        Element element = cases.get(idx);
+                        Label next = element.next();
+                        cb.labelBinding(element.target());
+                        if (element.caseLabel() instanceof Class<?> classLabel) {
+                            if (unconditionalExactnessCheck(selectorType, classLabel)) {
+                                //nothing - unconditionally use this case
+                            } else if (classLabel.isPrimitive()) {
+                                if (!selectorType.isPrimitive() && !Wrapper.isWrapperNumericOrBooleanType(selectorType)) {
+                                    // Object o = ...
+                                    // o instanceof Wrapped(float)
+                                    cb.aload(0);
+                                    cb.instanceof_(Wrapper.forBasicType(classLabel)
+                                                          .wrapperType()
+                                                          .describeConstable()
+                                                          .orElseThrow());
+                                    cb.ifeq(next);
+                                } else if (!unconditionalExactnessCheck(Wrapper.asPrimitiveType(selectorType), classLabel)) {
+                                    // Integer i = ... or int i = ...
+                                    // o instanceof float
+                                    Label notNumber = cb.newLabel();
+                                    cb.aload(0);
+                                    cb.instanceof_(ConstantDescs.CD_Number);
+                                    if (selectorType == long.class || selectorType == float.class || selectorType == double.class) {
+                                        cb.ifeq(next);
+                                    } else {
+                                        cb.ifeq(notNumber);
+                                    }
+                                    cb.aload(0);
+                                    cb.checkcast(ConstantDescs.CD_Number);
+                                    if (selectorType == long.class) {
+                                        cb.invokevirtual(ConstantDescs.CD_Number,
+                                                     "longValue",
+                                                     MethodTypeDesc.of(ConstantDescs.CD_long));
+                                    } else if (selectorType == float.class) {
+                                        cb.invokevirtual(ConstantDescs.CD_Number,
+                                                     "floatValue",
+                                                     MethodTypeDesc.of(ConstantDescs.CD_float));
+                                    } else if (selectorType == double.class) {
+                                        cb.invokevirtual(ConstantDescs.CD_Number,
+                                                     "doubleValue",
+                                                     MethodTypeDesc.of(ConstantDescs.CD_double));
+                                    } else {
+                                        Label compare = cb.newLabel();
+                                        cb.invokevirtual(ConstantDescs.CD_Number,
+                                                         "intValue",
+                                                         MethodTypeDesc.of(ConstantDescs.CD_int));
+                                        cb.goto_(compare);
+                                        cb.labelBinding(notNumber);
+                                        cb.aload(0);
+                                        cb.instanceof_(ConstantDescs.CD_Character);
+                                        cb.ifeq(next);
+                                        cb.aload(0);
+                                        cb.checkcast(ConstantDescs.CD_Character);
+                                        cb.invokevirtual(ConstantDescs.CD_Character,
+                                                         "charValue",
+                                                         MethodTypeDesc.of(ConstantDescs.CD_char));
+                                        cb.labelBinding(compare);
+                                    }
+
+                                    TypePairs typePair = TypePairs.of(Wrapper.asPrimitiveType(selectorType), classLabel);
+                                    String methodName = typePairToName.get(typePair);
+                                    cb.invokestatic(ExactConversionsSupport.class.describeConstable().orElseThrow(),
+                                                    methodName,
+                                                    MethodTypeDesc.of(ConstantDescs.CD_boolean, typePair.from.describeConstable().orElseThrow()));
+                                    cb.ifeq(next);
+                                }
+                            } else {
+                                Optional<ClassDesc> classLabelConstableOpt = classLabel.describeConstable();
+                                if (classLabelConstableOpt.isPresent()) {
+                                    cb.aload(0);
+                                    cb.instanceof_(classLabelConstableOpt.orElseThrow());
+                                    cb.ifeq(next);
+                                } else {
+                                    cb.aload(3);
+                                    cb.constantInstruction(extraClassLabels.size());
+                                    cb.invokeinterface(ConstantDescs.CD_List,
+                                                       "get",
+                                                       MethodTypeDesc.of(ConstantDescs.CD_Object,
+                                                                         ConstantDescs.CD_int));
+                                    cb.checkcast(ConstantDescs.CD_Class);
+                                    cb.aload(0);
+                                    cb.invokevirtual(ConstantDescs.CD_Class,
+                                                     "isInstance",
+                                                     MethodTypeDesc.of(ConstantDescs.CD_boolean,
+                                                                       ConstantDescs.CD_Object));
+                                    cb.ifeq(next);
+                                    extraClassLabels.add(classLabel);
+                                }
+                            }
+                        } else if (element.caseLabel() instanceof EnumDesc<?> enumLabel) {
+                            int enumIdx = enumDescs.size();
+                            enumDescs.add(enumLabel);
+                            cb.aload(2);
+                            cb.constantInstruction(enumIdx);
+                            cb.invokestatic(ConstantDescs.CD_Integer,
+                                            "valueOf",
+                                            MethodTypeDesc.of(ConstantDescs.CD_Integer,
+                                                              ConstantDescs.CD_int));
+                            cb.aload(0);
+                            cb.invokeinterface(BiPredicate.class.describeConstable().orElseThrow(),
+                                               "test",
+                                               MethodTypeDesc.of(ConstantDescs.CD_boolean,
+                                                                 ConstantDescs.CD_Object,
+                                                                 ConstantDescs.CD_Object));
+                            cb.ifeq(next);
+                        } else if (element.caseLabel() instanceof String stringLabel) {
+                            cb.ldc(stringLabel);
+                            cb.aload(0);
+                            cb.invokevirtual(ConstantDescs.CD_Object,
+                                             "equals",
+                                             MethodTypeDesc.of(ConstantDescs.CD_boolean,
+                                                               ConstantDescs.CD_Object));
+                            cb.ifeq(next);
+                        } else if (element.caseLabel() instanceof Integer integerLabel) {
+                            Label compare = cb.newLabel();
+                            Label notNumber = cb.newLabel();
+                            cb.aload(0);
+                            cb.instanceof_(ConstantDescs.CD_Number);
+                            cb.ifeq(notNumber);
+                            cb.aload(0);
+                            cb.checkcast(ConstantDescs.CD_Number);
+                            cb.invokevirtual(ConstantDescs.CD_Number,
+                                             "intValue",
+                                             MethodTypeDesc.of(ConstantDescs.CD_int));
+                            cb.goto_(compare);
+                            cb.labelBinding(notNumber);
+                            cb.aload(0);
+                            cb.instanceof_(ConstantDescs.CD_Character);
+                            cb.ifeq(next);
+                            cb.aload(0);
+                            cb.checkcast(ConstantDescs.CD_Character);
+                            cb.invokevirtual(ConstantDescs.CD_Character,
+                                             "charValue",
+                                             MethodTypeDesc.of(ConstantDescs.CD_char));
+                            cb.labelBinding(compare);
+
+                            cb.ldc(integerLabel);
+                            cb.if_icmpne(next);
+                        } else if (/*selectorType.isPrimitive() && ??*/
+                                   (element.caseLabel() instanceof Long ||
+                                    element.caseLabel() instanceof Float ||
+                                    element.caseLabel() instanceof Double ||
+                                    element.caseLabel() instanceof Boolean)) {
+                            //TODO: should call equals on the constant, not on the selector, check
+                            if (element.caseLabel() instanceof Boolean c) {
+                                cb.constantInstruction(c ? 1 : 0);
+                            } else {
+                                cb.constantInstruction((ConstantDesc) element.caseLabel());
+                            }
+                            cb.invokestatic(element.caseLabel().getClass().describeConstable().orElseThrow(),
+                                            "valueOf",
+                                            MethodTypeDesc.of(element.caseLabel().getClass().describeConstable().orElseThrow(),
+                                                              Wrapper.asPrimitiveType(element.caseLabel().getClass()).describeConstable().orElseThrow()));
+                            cb.aload(0);
+                            cb.invokevirtual(ConstantDescs.CD_Object,
+                                             "equals",
+                                             MethodTypeDesc.of(ConstantDescs.CD_boolean,
+                                                               ConstantDescs.CD_Object));
+                            cb.ifeq(next);
+                        } else {
+                            throw new InternalError("Unsupported label type: " +
+                                                    element.caseLabel().getClass());
+                        }
+                        cb.constantInstruction(idx);
+                        cb.ireturn();
+                    }
+                    cb.labelBinding(dflt);
+                    cb.constantInstruction(cases.size());
+                    cb.ireturn();
+                });
+        });
+        writeClass(classBytes);
+        try {
+            // this class is linked at the indy callsite; so define a hidden nestmate
+            MethodHandles.Lookup lookup;
+            lookup = caller.defineHiddenClass(classBytes, true, NESTMATE, STRONG);
+            MethodHandle typeSwitch = lookup.findStatic(lookup.lookupClass(),
+                                                        "typeSwitch",
+                                                        MethodType.methodType(int.class,
+                                                                              Object.class,
+                                                                              int.class,
+                                                                              BiPredicate.class,
+                                                                              List.class));
+            typeSwitch = MethodHandles.insertArguments(typeSwitch, 2, new ResolvedEnumLabels(caller, enumDescs.toArray(EnumDesc[]::new)),
+                                                       List.copyOf(extraClassLabels));
+            typeSwitch = MethodHandles.explicitCastArguments(typeSwitch,
+                                                             MethodType.methodType(int.class,
+                                                                                   selectorType,
+                                                                                   int.class));
+            return typeSwitch;
+        } catch (Throwable t) {
+            throw new IllegalArgumentException(t);
+        }
+    }
+
+    //based on src/java.base/share/classes/java/lang/invoke/InnerClassLambdaMetafactory.java:
+    private static String typeSwitchClassName(Class<?> targetClass) {
+        String name = targetClass.getName();
+        if (targetClass.isHidden()) {
+            // use the original class name
+            name = name.replace('/', '_');
+        }
+        return name + "$$TypeSwitch";
+    }
+
+    // this method should be in sync with com.sun.tools.javac.code.Types.checkUnconditionallyExactPrimitives
+    private static boolean unconditionalExactnessCheck(Class<?> selectorType, Class<?> targetType) {
+        Wrapper selectorWrapper = Wrapper.forBasicType(selectorType);
+        Wrapper targetWrapper   = Wrapper.forBasicType(targetType);
+        if (selectorType.isPrimitive() && targetType.equals(selectorWrapper.wrapperType())) {
+            return true;
+        }
+        else if (selectorType.equals(targetType) ||
+                ((selectorType.equals(byte.class) && !targetType.equals(char.class)) ||
+                 (selectorType.equals(short.class) && (selectorWrapper.isStrictSubRangeOf(targetWrapper))) ||
+                 (selectorType.equals(char.class)  && (selectorWrapper.isStrictSubRangeOf(targetWrapper)))  ||
+                 (selectorType.equals(int.class)   && (targetType.equals(double.class) || targetType.equals(long.class))) ||
+                 (selectorType.equals(float.class) && (selectorWrapper.isStrictSubRangeOf(targetWrapper))))) return true;
+        return false;
     }
 
     // TypePairs should be in sync with the corresponding record in Lower
@@ -578,8 +679,8 @@ public class SwitchBootstraps {
             return new TypePairs(from, to);
         }
 
-        public static HashMap<TypePairs, String> initialize() {
-            HashMap<TypePairs, String> typePairToName = new HashMap<>();
+        public static Map<TypePairs, String> initialize() {
+            Map<TypePairs, String> typePairToName = new HashMap<>();
             typePairToName.put(new TypePairs(byte.class,   char.class),   "isIntToCharExact");      // redirected
             typePairToName.put(new TypePairs(short.class,  byte.class),   "isIntToByteExact");      // redirected
             typePairToName.put(new TypePairs(short.class,  char.class),   "isIntToCharExact");      // redirected
@@ -607,6 +708,15 @@ public class SwitchBootstraps {
             typePairToName.put(new TypePairs(double.class, long.class),   "isDoubleToLongExact");
             typePairToName.put(new TypePairs(double.class, float.class),  "isDoubleToFloatExact");
             return typePairToName;
+        }
+    }
+
+    private static int idx;
+    private static void writeClass(byte[] bytes) {
+        try (java.io.OutputStream out = new java.io.FileOutputStream("/tmp/classes" + idx++ + ".class")) {
+            out.write(bytes);
+        } catch (java.io.IOException ex) {
+            ex.printStackTrace();
         }
     }
 }

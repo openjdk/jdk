@@ -501,7 +501,7 @@ public class TransPatterns extends TreeTranslator {
             MethodSymbol bsm = rs.resolveInternalMethod(tree.pos(), env, syms.switchBootstrapsType,
                     bootstrapName, staticArgTypes, List.nil());
 
-            Type resolvedSelectorType = enumSelector || primitiveSelector ? seltype : syms.objectType;
+            Type resolvedSelectorType = seltype;
             MethodType indyType = new MethodType(
                     List.of(resolvedSelectorType, syms.intType),
                     syms.intType,
@@ -756,6 +756,26 @@ public class TransPatterns extends TreeTranslator {
                 syms.noSymbol,
                 new Symbol.MethodHandleSymbol(bsm),
                 syms.classType,
+                new LoadableConstant[]{});
+    }
+
+    private Symbol.DynamicVarSymbol makeBooleanConstant(DiagnosticPosition pos, int constant) {
+        Assert.checkNonNull(currentClass);
+
+        List<Type> bsm_staticArgs = List.of(syms.methodHandleLookupType,
+                syms.stringType,
+                new ClassType(syms.classType.getEnclosingType(),
+                        List.of(syms.constantBootstrapsType),
+                        syms.classType.tsym));
+
+        Name bootstrapName = names.fromString("getStaticFinal");
+        MethodSymbol bsm = rs.resolveInternalMethod(pos, env, syms.constantBootstrapsType,
+                bootstrapName, bsm_staticArgs, List.nil());
+
+        return new Symbol.DynamicVarSymbol(constant == 0 ? names.fromString("FALSE") : names.fromString("TRUE"),
+                syms.noSymbol,
+                new Symbol.MethodHandleSymbol(bsm),
+                types.boxedTypeOrType(syms.booleanType),
                 new LoadableConstant[]{});
     }
 
@@ -1017,7 +1037,8 @@ public class TransPatterns extends TreeTranslator {
                 Assert.checkNonNull(expr.type.constValue());
 
                 return switch (expr.type.getTag()) {
-                    case BYTE, CHAR, SHORT, INT, BOOLEAN -> LoadableConstant.Int((Integer) expr.type.constValue());
+                    case BOOLEAN -> makeBooleanConstant(l.pos(), (Integer) expr.type.constValue());
+                    case BYTE, CHAR, SHORT, INT -> LoadableConstant.Int((Integer) expr.type.constValue());
                     case LONG -> LoadableConstant.Long((Long) expr.type.constValue());
                     case FLOAT -> LoadableConstant.Float((Float) expr.type.constValue());
                     case DOUBLE -> LoadableConstant.Double((Double) expr.type.constValue());

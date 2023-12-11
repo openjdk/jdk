@@ -430,6 +430,11 @@ public enum Wrapper {
         return findWrapperType(type) != null;
     }
 
+    /** Query:  Is the given type a wrapper, such as {@code Integer}, {@code Byte}, etc excluding {@code Void} and {@code Object}? */
+    public static boolean isWrapperNumericOrBooleanType(Class<?> type) {
+        return isWrapperType(type) && findWrapperType(type) != VOID && findWrapperType(type) != OBJECT;
+    }
+
     /** Query:  Is the given type a primitive, such as {@code int} or {@code void}? */
     public static boolean isPrimitiveType(Class<?> type) {
         return type.isPrimitive();

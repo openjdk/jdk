@@ -108,6 +108,11 @@ public class PrimitivePatternsSwitch {
         assertEquals(0, testDoubleInEnhancedSwitchStatement(0.0d));
         assertEquals(1, testLongInEnhancedSwitchStatement(1l));
         assertEquals(0, testLongInEnhancedSwitchStatement(0l));
+        assertEquals(1, testBooleanInEnhancedSwitchStatement(true));
+        assertEquals(0, testBooleanInEnhancedSwitchStatement(false));
+        assertEquals(1, testByteWrapperToIntUnconditionallyExact());
+        assertEquals(1, testIntegerWrapperToFloat());
+        assertEquals(-1, testIntegerWrapperToFloatInexact());
     }
 
     public static int primitiveSwitch(int i) {
@@ -536,6 +541,30 @@ public class PrimitivePatternsSwitch {
         }
         return i;
     }
+
+    public static int testByteWrapperToIntUnconditionallyExact() {
+        Byte b = Byte.valueOf((byte) 42);
+        return switch (b) {
+            case int p -> 1;
+        };
+    }
+
+    public static int testIntegerWrapperToFloat() {
+        Integer i = Integer.valueOf(42);
+        return switch (i) {
+            case float p -> 1;
+            default -> -1;
+        };
+    }
+
+    public static int testIntegerWrapperToFloatInexact() {
+        Integer i = Integer.valueOf(Integer.MAX_VALUE);
+        return switch (i) {
+            case float p -> 1;
+            default -> -1;
+        };
+    }
+
 
     record R_Integer(Integer x) {}
     record R_int(int x) {}
