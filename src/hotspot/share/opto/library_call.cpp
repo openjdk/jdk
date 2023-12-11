@@ -1112,6 +1112,7 @@ bool LibraryCallKit::inline_countPositives() {
   Node* ba_start = array_element_address(ba, offset, T_BYTE);
   Node* result = new CountPositivesNode(control(), memory(TypeAryPtr::BYTES), ba_start, len);
   set_result(_gvn.transform(result));
+  clear_upper_avx();
   return true;
 }
 
@@ -1366,6 +1367,7 @@ bool LibraryCallKit::inline_string_indexOfChar(StrIntrinsicNode::ArgEnc ae) {
   set_control(_gvn.transform(region));
   record_for_igvn(region);
   set_result(_gvn.transform(phi));
+  clear_upper_avx();
 
   return true;
 }
@@ -5385,6 +5387,10 @@ bool LibraryCallKit::inline_array_partition() {
     const TypeInstPtr* elem_klass = gvn().type(elementType)->isa_instptr();
     ciType* elem_type = elem_klass->const_oop()->as_instance()->java_mirror_type();
     BasicType bt = elem_type->basic_type();
+    // Disable the intrinsic if the CPU does not support SIMD sort
+    if (!Matcher::supports_simd_sort(bt)) {
+      return false;
+    }
     address stubAddr = nullptr;
     stubAddr = StubRoutines::select_array_partition_function();
     // stub not loaded
@@ -5438,6 +5444,10 @@ bool LibraryCallKit::inline_array_sort() {
   const TypeInstPtr* elem_klass = gvn().type(elementType)->isa_instptr();
   ciType* elem_type = elem_klass->const_oop()->as_instance()->java_mirror_type();
   BasicType bt = elem_type->basic_type();
+  // Disable the intrinsic if the CPU does not support SIMD sort
+  if (!Matcher::supports_simd_sort(bt)) {
+    return false;
+  }
   address stubAddr = nullptr;
   stubAddr = StubRoutines::select_arraysort_function();
   //stub not loaded

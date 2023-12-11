@@ -34,11 +34,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
-import jdk.internal.classfile.AnnotationValue;
-import jdk.internal.classfile.ClassBuilder;
-import jdk.internal.classfile.Classfile;
-import jdk.internal.classfile.Label;
-import jdk.internal.classfile.attribute.RuntimeVisibleAnnotationsAttribute;
+import java.lang.classfile.AnnotationValue;
+import java.lang.classfile.ClassBuilder;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.Label;
+import java.lang.classfile.attribute.RuntimeVisibleAnnotationsAttribute;
 import jdk.jfr.AnnotationElement;
 import jdk.jfr.Event;
 import jdk.jfr.ValueDescriptor;
@@ -66,7 +66,7 @@ public final class EventClassBuilder {
     }
 
     public Class<? extends Event> build() {
-        byte[] bytes = Classfile.of().build(ClassDesc.of(fullClassName), cb -> build(cb));
+        byte[] bytes = ClassFile.of().build(ClassDesc.of(fullClassName), cb -> build(cb));
         Bytecode.log(fullClassName, bytes);
         return SecuritySupport.defineClass(Event.class, bytes).asSubclass(Event.class);
     }
@@ -80,7 +80,7 @@ public final class EventClassBuilder {
 
     private void buildSetMethod(ClassBuilder builder) {
         // void Event::set(int index, Object value);
-        builder.withMethod(SET_METHOD.name(), SET_METHOD.descriptor(), Classfile.ACC_PUBLIC, methodBuilder -> methodBuilder.withCode(codeBuilder -> {
+        builder.withMethod(SET_METHOD.name(), SET_METHOD.descriptor(), ClassFile.ACC_PUBLIC, methodBuilder -> methodBuilder.withCode(codeBuilder -> {
             int index = 0;
             for (ValueDescriptor v : fields) {
                 codeBuilder.iload(1);
@@ -101,7 +101,7 @@ public final class EventClassBuilder {
     }
 
     private void buildConstructor(ClassBuilder builder) {
-        builder.withMethod(ConstantDescs.INIT_NAME, ConstantDescs.MTD_void, Classfile.ACC_PUBLIC, methodBuilder -> methodBuilder.withCode(codeBuilder -> {
+        builder.withMethod(ConstantDescs.INIT_NAME, ConstantDescs.MTD_void, ClassFile.ACC_PUBLIC, methodBuilder -> methodBuilder.withCode(codeBuilder -> {
             codeBuilder.aload(0);
             invokespecial(codeBuilder, TYPE_EVENT, DEFAULT_CONSTRUCTOR);
             codeBuilder.return_();
@@ -111,26 +111,26 @@ public final class EventClassBuilder {
     private void buildClassInfo(ClassBuilder builder) {
         builder.withSuperclass(Bytecode.classDesc(Event.class));
         builder.withFlags(AccessFlag.FINAL, AccessFlag.PUBLIC, AccessFlag.SUPER);
-        List<jdk.internal.classfile.Annotation> annotations = new ArrayList<>();
+        List<java.lang.classfile.Annotation> annotations = new ArrayList<>();
         for (jdk.jfr.AnnotationElement a : annotationElements) {
-            List<jdk.internal.classfile.AnnotationElement> list = new ArrayList<>();
+            List<java.lang.classfile.AnnotationElement> list = new ArrayList<>();
             for (ValueDescriptor v : a.getValueDescriptors()) {
                 // ValueDescriptor can only hold primitive
                 // No need to care about classes/enums
                 var value = a.getValue(v.getName());
                 var av = AnnotationValue.of(value);
-                var ae = jdk.internal.classfile.AnnotationElement.of(v.getName(), av);
+                var ae = java.lang.classfile.AnnotationElement.of(v.getName(), av);
                 list.add(ae);
             }
             ClassDesc cd = ClassDesc.of(a.getTypeName());
-            annotations.add(jdk.internal.classfile.Annotation.of(cd, list));
+            annotations.add(java.lang.classfile.Annotation.of(cd, list));
         }
         builder.with(RuntimeVisibleAnnotationsAttribute.of(annotations));
     }
 
     private void buildFields(ClassBuilder builder) {
         for (ValueDescriptor v : fields) {
-            builder.withField(v.getName(), Bytecode.classDesc(v), Classfile.ACC_PRIVATE);
+            builder.withField(v.getName(), Bytecode.classDesc(v), ClassFile.ACC_PRIVATE);
             // No need to store annotations on field since they will be replaced anyway.
         }
     }

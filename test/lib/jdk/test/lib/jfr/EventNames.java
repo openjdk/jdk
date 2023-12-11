@@ -88,6 +88,7 @@ public class EventNames {
     public static final String NativeMemoryUsageTotal = PREFIX + "NativeMemoryUsageTotal";
     public static final String JavaAgent = PREFIX + "JavaAgent";
     public static final String NativeAgent = PREFIX + "NativeAgent";
+    public static final String DeprecatedInvocation = PREFIX + "DeprecatedInvocation";
 
     // This event is hard to test
     public static final String ReservedStackActivation = PREFIX + "ReservedStackActivation";
@@ -160,6 +161,7 @@ public class EventNames {
     public static final String CompilerPhase = PREFIX + "CompilerPhase";
     public static final String CompilationFailure = PREFIX + "CompilationFailure";
     public static final String CompilerInlining = PREFIX + "CompilerInlining";
+    public static final String CompilerQueueUtilization = PREFIX + "CompilerQueueUtilization";
     public static final String CompilerStatistics = PREFIX + "CompilerStatistics";
     public static final String CompilerConfiguration = PREFIX + "CompilerConfiguration";
     public static final String CodeCacheStatistics = PREFIX + "CodeCacheStatistics";

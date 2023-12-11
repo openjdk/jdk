@@ -69,7 +69,7 @@ int C2EntryBarrierStub::max_size() const {
 
 void C2EntryBarrierStub::emit(C2_MacroAssembler& masm) {
   __ bind(entry());
-  __ call(RuntimeAddress(StubRoutines::x86::method_entry_barrier()));
+  __ call(RuntimeAddress(StubRoutines::method_entry_barrier()));
   __ jmp(continuation(), false /* maybe_short */);
 }
 

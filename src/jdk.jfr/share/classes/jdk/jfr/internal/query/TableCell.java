@@ -25,6 +25,7 @@
 package jdk.jfr.internal.query;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import jdk.jfr.internal.query.Configuration.Truncate;
 
@@ -69,7 +70,7 @@ final class TableCell {
     }
     public void addLine(String text) {
         int contentWidth = getContentWidth();
-        if (text.length() >= contentWidth) {
+        if (text.length() > contentWidth) {
             add(truncate(text, contentWidth));
         } else {
             addAligned(text);
@@ -141,6 +142,10 @@ final class TableCell {
             }
             lines.add(text.substring(index, end));
         }
+    }
+
+    public void sort() {
+        Collections.sort(lines);
     }
 
     public void clear() {

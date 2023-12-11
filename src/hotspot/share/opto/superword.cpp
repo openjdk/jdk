@@ -2381,6 +2381,9 @@ void SuperWord::schedule() {
   }
 #endif
 
+  CountedLoopNode* cl = lpt()->_head->as_CountedLoop();
+  _phase->C->print_method(PHASE_SUPERWORD1_BEFORE_SCHEDULE, 4, cl);
+
   // (4) Use the memops_schedule to re-order the memops in all slices.
   schedule_reorder_memops(memops_schedule);
 }
@@ -2488,6 +2491,7 @@ bool SuperWord::output() {
     lpt()->dump_head();
   }
 #endif
+  _phase->C->print_method(PHASE_SUPERWORD2_BEFORE_OUTPUT, 4, cl);
 
   // Ensure main loop's initial value is properly aligned
   //  (iv_initial_value + min_iv_offset) % vector_width_in_bytes() == 0
@@ -2686,7 +2690,7 @@ bool SuperWord::output() {
           C->record_failure(C2Compiler::retry_no_superword());
           return false; // bailout
         }
-        if (VectorNode::is_invariant_vector(in1) && (node_isa_reduction == false) && (n->is_Add() || n->is_Mul())) {
+        if (in1->Opcode() == Op_Replicate && (node_isa_reduction == false) && (n->is_Add() || n->is_Mul())) {
           // Move invariant vector input into second position to avoid register spilling.
           Node* tmp = in1;
           in1 = in2;
@@ -2807,6 +2811,8 @@ bool SuperWord::output() {
       }
     }
   }
+
+  _phase->C->print_method(PHASE_SUPERWORD3_AFTER_OUTPUT, 4, cl);
 
   return true;
 }
