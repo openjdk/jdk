@@ -1389,6 +1389,15 @@ public final class Files {
      *     Files.move(source, newdir.resolve(source.getFileName()), REPLACE_EXISTING);
      * }
      *
+     * @apiNote
+     * If the options array contains the {@code REPLACE_EXISTING} option, but
+     * the file cannot be moved as an atomic file system operation, then it
+     * might be moved by first deleting the target file and then copying or
+     * renaming the source file to the target location. If some other process
+     * creates a file at the target location after the deletion but before the
+     * copying or renaming, then a {@code FileAlreadyExistsException} may be
+     * thrown despite the {@code REPLACE_EXISTING} option having been specified.
+     *
      * @param   source
      *          the path to the file to move
      * @param   target
