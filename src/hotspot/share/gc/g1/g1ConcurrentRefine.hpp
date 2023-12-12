@@ -30,6 +30,7 @@
 #include "memory/allocation.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/growableArray.hpp"
 #include "utilities/macros.hpp"
 
 // Forward decl
@@ -43,7 +44,7 @@ class ThreadClosure;
 // iterate over them.
 class G1ConcurrentRefineThreadControl {
   G1ConcurrentRefine* _cr;
-  G1ConcurrentRefineThread** _threads;
+  GrowableArray<G1ConcurrentRefineThread*>* _threads;
   uint _max_num_threads;
 
   // Create the refinement thread for the given worker id.
