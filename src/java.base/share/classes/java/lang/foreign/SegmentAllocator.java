@@ -391,7 +391,7 @@ public interface SegmentAllocator {
      *         with {@code source} is not {@linkplain MemorySegment.Scope#isAlive() alive}
      * @throws WrongThreadException if this method is called from a thread {@code T},
      *         such that {@code source.isAccessibleBy(T) == false}
-     * @throws ArithmeticException if {@code elementCount * sourceElementLayout.byteSize()} overflows
+     * @throws IllegalArgumentException if {@code elementCount * sourceElementLayout.byteSize()} overflows
      * @throws IndexOutOfBoundsException if {@code sourceOffset > source.byteSize() - (elementCount * sourceElementLayout.byteSize())}
      * @throws IndexOutOfBoundsException if either {@code sourceOffset} or {@code elementCount} are {@code < 0}
      */
@@ -735,7 +735,7 @@ public interface SegmentAllocator {
 
     @ForceInline
     private MemorySegment allocateNoInit(MemoryLayout layout, long size) {
-        long byteSize = Math.multiplyExact(layout.byteSize(), size);
+        long byteSize = layout.byteSize() * size;
         return this instanceof ArenaImpl arenaImpl ?
                 arenaImpl.allocateNoInit(byteSize, layout.byteAlignment()) :
                 allocate(layout, size);

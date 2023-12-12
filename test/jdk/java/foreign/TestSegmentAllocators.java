@@ -246,7 +246,7 @@ public class TestSegmentAllocators {
             }
 
             // ArithmeticException if {@code elementCount * sourceElementLayout.byteSize()} overflows
-            assertThrows(ArithmeticException.class, () ->
+            assertThrows(IllegalArgumentException.class, () ->
                     arena.allocateFrom(elementLayout, source, sourceElementLayout, 0, Long.MAX_VALUE)
             );
 
