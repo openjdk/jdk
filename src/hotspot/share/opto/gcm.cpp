@@ -1130,11 +1130,41 @@ void PhaseCFG::latency_from_uses(Node *n) {
   set_latency_for_node(n, latency);
 }
 
+//------------------------------is_cheaper_block-------------------------
+// Check if a block between early and LCA block of uses is cheaper by
+// frequency-based policy, latency-based policy and random-based policy
+bool PhaseCFG::is_cheaper_block(Block* LCA, Node* self, uint target_latency,
+                                uint end_latency, double least_freq,
+                                int cand_cnt, bool in_latency) {
+  if (StressGCM) {
+    // Should be randomly accepted in stress mode
+    return C->randomized_select(cand_cnt);
+  }
+
+  // Better Frequency
+  if (LCA->_freq < least_freq) {
+    return true;
+  }
+
+  // Otherwise, choose with latency
+  const double delta = 1 + PROB_UNLIKELY_MAG(4);
+  if (!in_latency                     &&  // No block containing latency
+      LCA->_freq < least_freq * delta &&  // No worse frequency
+      target_latency >= end_latency   &&  // within latency range
+      !self->is_iteratively_computed()    // But don't hoist IV increments
+            // because they may end up above other uses of their phi forcing
+            // their result register to be different from their input.
+  ) {
+    return true;
+  }
+
+  return false;
+}
+
 //------------------------------hoist_to_cheaper_block-------------------------
-// Pick a block for node self, between early and LCA, that is a cheaper
-// alternative to LCA.
+// Pick a block for node self, between early and LCA block of uses, that is a
+// cheaper alternative to LCA.
 Block* PhaseCFG::hoist_to_cheaper_block(Block* LCA, Block* early, Node* self) {
-  const double delta = 1+PROB_UNLIKELY_MAG(4);
   Block* least       = LCA;
   double least_freq  = least->_freq;
   uint target        = get_latency_for_node(self);
@@ -1171,7 +1201,8 @@ Block* PhaseCFG::hoist_to_cheaper_block(Block* LCA, Block* early, Node* self) {
   int cand_cnt = 0;  // number of candidates tried
 
   // Walk up the dominator tree from LCA (Lowest common ancestor) to
-  // the earliest legal location.  Capture the least execution frequency.
+  // the earliest legal location. Capture the least execution frequency,
+  // or choose a random block if -XX:+StressGCM, or using latency-based policy
   while (LCA != early) {
     LCA = LCA->_idom;         // Follow up the dominator tree
 
@@ -1205,16 +1236,7 @@ Block* PhaseCFG::hoist_to_cheaper_block(Block* LCA, Block* early, Node* self) {
     }
 #endif
     cand_cnt++;
-    if (LCA_freq < least_freq              || // Better Frequency
-        (StressGCM && C->randomized_select(cand_cnt)) || // Should be randomly accepted in stress mode
-         (!StressGCM                    &&    // Otherwise, choose with latency
-          !in_latency                   &&    // No block containing latency
-          LCA_freq < least_freq * delta &&    // No worse frequency
-          target >= end_lat             &&    // within latency range
-          !self->is_iteratively_computed() )  // But don't hoist IV increments
-             // because they may end up above other uses of their phi forcing
-             // their result register to be different from their input.
-       ) {
+    if (is_cheaper_block(LCA, self, target, end_lat, least_freq, cand_cnt, in_latency)) {
       least = LCA;            // Found cheaper block
       least_freq = LCA_freq;
       start_latency = start_lat;
