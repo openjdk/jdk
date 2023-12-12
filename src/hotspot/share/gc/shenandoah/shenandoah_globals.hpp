@@ -338,7 +338,7 @@
           "authorized ParallelGCThreads as a fraction of total available "  \
           "CPU cores.")                                                     \
           range(0, 100)                                                     \
-
+                                                                            \
   product(bool, ShenandoahSATBBarrier, true, DIAGNOSTIC,                    \
           "Turn on/off SATB barriers in Shenandoah")                        \
                                                                             \

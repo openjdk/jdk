@@ -29,6 +29,7 @@
 #include "gc/shared/markBitMap.hpp"
 #include "gc/shared/softRefPolicy.hpp"
 #include "gc/shared/collectedHeap.hpp"
+#include "gc/shared/gc_globals.hpp"
 #include "gc/shenandoah/heuristics/shenandoahSpaceInfo.hpp"
 #include "gc/shenandoah/shenandoahAsserts.hpp"
 #include "gc/shenandoah/shenandoahAllocRequest.hpp"
@@ -532,7 +533,10 @@ private:
   inline HeapWord* allocate_from_gclab(Thread* thread, size_t size);
   HeapWord* allocate_from_gclab_slow(Thread* thread, size_t size);
   HeapWord* allocate_new_gclab(size_t min_size, size_t word_size, size_t* actual_size);
-  bool gc_overhead_exceeds_limit();
+  inline bool gc_overhead_exceeds_limit() {
+    double target_threshold = GCTimeLimit / 100.0;
+    return (_gcu_historical > target_threshold);
+  }
 
 public:
   HeapWord* allocate_memory(ShenandoahAllocRequest& request, bool* gc_overhead_limit_was_exceeded = nullptr);

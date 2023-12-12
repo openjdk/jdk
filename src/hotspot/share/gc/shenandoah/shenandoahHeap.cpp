@@ -871,6 +871,7 @@ HeapWord* ShenandoahHeap::allocate_new_gclab(size_t min_size,
   return res;
 }
 
+// This captures GC utilization at end of each GC pass for purposes of detecting GC overhead exceeded.
 void ShenandoahHeap::report_gc_utilization(double utilization, double duration) {
   _gc_historical_utilization[_gc_history_first] = utilization;
   _gc_historical_duration[_gc_history_first] = duration;
@@ -883,24 +884,8 @@ void ShenandoahHeap::report_gc_utilization(double utilization, double duration) 
   for (uint i = 0; i < GCOverheadLimitThreshold; i++) {
     weighted_sum += _gc_historical_utilization[i] * _gc_historical_duration[i];
     total_duration += _gc_historical_duration[i];
-#undef KELVINy_OVERHEAD
-#ifdef KELVIN_OVERHEAD
-    log_info(gc)("history[%u] utilization: %.3f, duration: %.3f, weighted sum: %.3f, total_duration: %.3f",
-                 i, _gc_historical_utilization[i], _gc_historical_duration[i], weighted_sum, total_duration);
-#endif
   }
   _gcu_historical = ((total_duration > 0)? weighted_sum / total_duration: 0.0);
-#ifdef KELVIN_OVERHEAD
-  log_info(gc)("computed utilization as weighted average: %.3f", _gcu_historical);
-#endif
-}
-
-bool ShenandoahHeap::gc_overhead_exceeds_limit() {
-  double target_threshold = GCTimeLimit / 100.0;
-#ifdef KELVIN_OVERHEAD
-  log_info(gc)("testing gc_overhead %.3f against threshold: %.3f", _gcu_historical, target_threshold);
-#endif
-  return (_gcu_historical > target_threshold);
 }
 
 HeapWord* ShenandoahHeap::allocate_memory(ShenandoahAllocRequest& req, bool* gc_overhead_limit_was_exceeded) {
@@ -921,71 +906,75 @@ HeapWord* ShenandoahHeap::allocate_memory(ShenandoahAllocRequest& req, bool* gc_
     // It might happen that one of the threads requesting allocation would unblock way later after GC happened, only
     // to fail a second allocation request because other threads have already depleted the free storage.  Repeatedly
     // retry the allocation after blocking until the control thread has had a chance to perform more GC.
-    
+
     if (result == nullptr) {
-      if (UseGCOverheadLimit) {
-        // Use policy to limit proportion of time spent in GC before an OutOfMemory error is thrown.
-
-        // It appears that GCOverheadLimit alone is not sufficient by itself to detect all scenarios under which
-        // OutOffMemory should be thrown.  The problem is that heuristics limit the number of threads dedicated to
-        // STW degenerated and Full GCs, which may prevent GC overhead from reaching the threshold required by GC
-        // in order to exceed the threshold.
-
-#undef KELVIN_GC_OVERHEAD
-#ifdef KELVIN_GC_OVERHEAD
-        uint iters = 0;
-        double max_gcu = 0;
+#define KELVIN_TRACE
+#ifdef KELVIN_TRACE
+      uint iters = 0;
 #endif
-        // Retry allocation request as long as GC makes progress (or until at least one full GC has completed).
-        size_t original_count = shenandoah_policy()->full_gc_count();
-        while (result == nullptr
-               && (get_gc_no_progress_count() == 0 || original_count == shenandoah_policy()->full_gc_count())) {
+      size_t original_count = shenandoah_policy()->full_gc_count();
+      if (UseGCOverheadLimit) {
+        // "Use policy to limit proportion of time spent in GC before an OutOfMemory error is thrown."
+        //
+        // But this policy alone is not sufficient.  In some cases, heuristics limit the number of threads dedicated to
+        // STW degenerated and Full GCs.  In other cases, contention with other applications running on the same
+        // host may prevent GC threads from consuming the full CPU time to which they might be entitled.  Both scenarios
+        // may prevent GC overhead from reaching the threshold required by GC in order to exceed the threshold.
 
+        do {
           control_thread()->handle_alloc_failure(req);
           result = allocate_memory_under_lock(req, in_new_region);
 
           // A first failure to allocate may happen due to unfortunate timing in that memory just happens to have been
           // consumed by other threads by the time my request arrives.  If we fail a second time after giving GC an opportunity
-          // to clean up memory, we should return nullptr if gc overhead exceeds limit of if there has been at least one full
-          // GC collection and the most recently completed GCs failed to make progress.
+          // to clean up memory, we should return nullptr.
 
           // We are careful to not cascade the throwing of OOM.  Some applications are written to allow a first OOM "handler"
           // to clean up memory so that other threads will not experience OOM.  Waiting for a second failure to allocate
           // allows the memory cleanup efforts of a first thread to be realized.  If memory is successfully reclaimed by a
-          // subsequent concurrent GC, the gc overhead will significantly decrease before this quantity is sampled again.
+          // subsequent concurrent GC, the gc overhead will typically decrease before this quantity is sampled again.
 
           // This strategy is not perfect.  If the first OOM thread is too slow to clean up memory, or it does not
-          // clean up enough memory, the subsequent concurrent GC will degenerate again, and we may fail to decrease
-          // gc overhead.  In this case, the current thread will also experience OOM.
+          // clean up enough memory, or if other threads consume all of the newly available memory before this thread
+          // has an opportunity to repeat its request, the current thread will also experience OOM.
 
-#ifdef KELVIN_GC_OVERHEAD
+#ifdef KELVIN_TRACE
           iters++;
-          max_gcu = MAX2(max_gcu, _gcu_historical);
 #endif
-          if ((result == nullptr) && gc_overhead_exceeds_limit()) {
-            if (gc_overhead_limit_was_exceeded != nullptr) {
-              *gc_overhead_limit_was_exceeded = true;
-            }
-            break;
-          }
-        }
-#ifdef KELVIN_GC_OVERHEAD
-        log_info(gc)("After %u iterations, allocation result is: " PTR_FORMAT ", max gcu: %.3f", iters, p2i(result), max_gcu);
-#endif
-      } else {
-        // Retry allocation request as long as GC makes progress (or until at least one full GC has completed).
+        } while ((result == nullptr) && !gc_overhead_exceeds_limit() && (original_count == shenandoah_policy()->full_gc_count()));
 
-        size_t original_count = shenandoah_policy()->full_gc_count();
-        while (result == nullptr
-               && (get_gc_no_progress_count() == 0 || original_count == shenandoah_policy()->full_gc_count())) {
+#ifdef KELVIN_TRACE
+        log_info(gc)("Upon awaiting %u iterations for result: " PTR_FORMAT ", gcu: %.3f which %s limit, "
+                     "original_count: " SIZE_FORMAT ", full_gc_count :" SIZE_FORMAT ", no progress count: " SIZE_FORMAT,
+                     iters, p2i(result), _gcu_historical, (gc_overhead_exceeds_limit()? "exceeds": "does not exceed"),
+                     original_count, shenandoah_policy()->full_gc_count(), get_gc_no_progress_count());
+#endif
+
+        // With Shenandoah, there are two mechanisms to detect violation of the limit: CPU time or a full GC with no progress. 
+        if ((result == nullptr) &&
+            (gc_overhead_limit_was_exceeded != nullptr) &&
+            (gc_overhead_exceeds_limit() ||
+             ((original_count != shenandoah_policy()->full_gc_count()) && (get_gc_no_progress_count() != 0)))) {
+          *gc_overhead_limit_was_exceeded = true;
+        }
+      } else {
+        // Retry allocation request until at least one full GC has completed
+
+        do {
           control_thread()->handle_alloc_failure(req);
           result = allocate_memory_under_lock(req, in_new_region);
 
           // A first failure to allocate may happen due to unfortunate timing in that memory just happens to have been
           // consumed by other threads by the time my request arrives.  If we fail a second time after giving GC an opportunity
           // to clean up memory, we should return nullptr (triggering an OutOfMemoryError) if there has been at least one full
-          // GC collection and the most recently completed GCs failed to make progress.
-        }
+          // GC collection, whether or not that Full GC had good progress.
+
+          // This strategy is not perfect.  If the full gc made good progress and replenished the free pool, but other threads
+          // consumed all available memory before this thread was able to satisfy its allocation request, we will throw OOM
+          // even though we may have been able to satisfy our allocation request following yet another GC.  If this happens,
+          // we are operating too close to the edge, and an OOM is appropriate.
+
+        } while (result == nullptr && (original_count == shenandoah_policy()->full_gc_count()));
       }
     }
 
