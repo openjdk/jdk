@@ -343,17 +343,10 @@ public abstract sealed class Executable extends AccessibleObject
                 int fromidx = genericParamTypes.length - 1;
                 for (int i = out.length - 1; i >= 0; i--) {
                     final Parameter param = params[i];
-                    if (param.isSynthetic()) {
+                    if (param.isSynthetic() || fromidx < 0) {
                         // If we hit a synthetic parameter,
                         // use the non generic parameter info.
                         out[i] = nonGenericParamTypes[i];
-                    } else if (param.isImplicit()) { // mandated
-                        if (fromidx >= 0) {
-                            out[i] = genericParamTypes[fromidx];
-                            fromidx--;
-                        } else {
-                            out[i] = nonGenericParamTypes[i];
-                        }
                     } else {
                         // Otherwise, use the generic parameter info.
                         out[i] = genericParamTypes[fromidx];
