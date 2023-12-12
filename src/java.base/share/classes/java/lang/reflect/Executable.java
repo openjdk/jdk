@@ -349,7 +349,7 @@ public abstract sealed class Executable extends AccessibleObject
                         out[i] = nonGenericParamTypes[i];
                     } else if (param.isImplicit()) { // mandated
                         if (fromidx >= 0) {
-                            out[i] = genericParamTypes[fromidx]; // I think that this array will have to have nulls for the spaces for which there is no info
+                            out[i] = genericParamTypes[fromidx];
                             fromidx--;
                         } else {
                             out[i] = nonGenericParamTypes[i];
