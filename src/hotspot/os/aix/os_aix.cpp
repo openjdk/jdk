@@ -27,6 +27,9 @@
 // with C++ compiler before referencing the function alloca()
 #pragma alloca
 
+#define __XCOFF32__
+#define __XCOFF64__
+
 // no precompiled headers
 #include "classfile/vmSymbols.hpp"
 #include "code/icBuffer.hpp"
@@ -193,14 +196,14 @@ int       os::Aix::_extshm = -1;
 static pthread_mutex_t g_handletable_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 struct handletableentry{
-    void   *handle;
+    void*   handle;
     ino64_t inode;
     dev64_t devid;
     uint    refcount;
 };
 constexpr int max_handletable = 1024;
 static int g_handletable_used = 0;
-static struct handletableentry g_handletable[max_handletable] = {{0,0,0,0}};
+static struct handletableentry g_handletable[max_handletable] = {{0, 0, 0, 0}};
 
 
 static volatile jlong max_real_time = 0;
@@ -1122,6 +1125,282 @@ bool os::dll_address_to_library_name(address addr, char* buf,
   return true;
 }
 
+// get the library search path burned in to the executable file during linking
+// If the libpath cannot be retrieved return an empty path
+static const char* rtv_linkedin_libpath() {
+  static char buffer[4096];
+  static const char* libpath = 0;
+
+  if (libpath)
+    return libpath;
+
+  char pgmpath[32+1];
+  // retrieve the path to the currently running executable binary
+  snprintf(pgmpath, 32, "/proc/%ld/object/a.out", (long)getpid());
+  // open the currently running executable binary
+  FILE *f = fopen(pgmpath, "r");
+  // read the generic XCOFF header and analyze the substructures
+  // to find the burned in libpath
+  fread(buffer, 1, FILHSZ_64 + _AOUTHSZ_EXEC_64, f);
+
+  if (((struct filehdr*)buffer)->f_magic == U802TOCMAGIC ) {
+    // __XCOFF32__
+    struct xcoffhdr xcoff;
+    struct scnhdr scn;
+    struct ldhdr ldr;
+    memcpy((char*)&xcoff, buffer, FILHSZ + _AOUTHSZ_EXEC);
+    int ldroffset = FILHSZ + xcoff.filehdr.f_opthdr + (xcoff.aouthdr.o_snloader -1)*SCNHSZ;
+    fseek (f, ldroffset, SEEK_SET);
+    fread(buffer, 1, SCNHSZ, f);
+    memcpy((char*)&scn, buffer, SCNHSZ);
+    if (strcmp(scn.s_name, ".loader")) {
+      buffer[0] = 0;
+      libpath = buffer;
+      fclose(f);
+      return libpath;
+    }
+    fseek (f, scn.s_scnptr, SEEK_SET);
+    fread(buffer, 1, LDHDRSZ, f);
+    memcpy((char*)&ldr, buffer, LDHDRSZ);
+    fseek (f, scn.s_scnptr + ldr.l_impoff, SEEK_SET);
+    fread(buffer, 1, 4096, f);
+  }
+  else if (((struct filehdr*)buffer)->f_magic == U64_TOCMAGIC ) {
+    // __XCOFF64__
+    struct _S_(xcoffhdr) xcoff64;
+    struct _S_(scnhdr) scn64;
+    struct _S_(ldhdr) ldr64;
+    memcpy((char*)&xcoff64, buffer, FILHSZ_64 + _AOUTHSZ_EXEC_64);
+    int ldroffset = FILHSZ_64 + xcoff64.filehdr.f_opthdr + (xcoff64.aouthdr.o_snloader -1)*SCNHSZ_64;
+    fseek (f, ldroffset, SEEK_SET);
+    fread(buffer, 1, SCNHSZ_64, f);
+    memcpy((char*)&scn64, buffer, SCNHSZ_64);
+    if (strcmp(scn64.s_name, ".loader")) {
+      buffer[0] = 0;
+      libpath = buffer;
+      fclose(f);
+      return libpath;
+    }
+    fseek (f, scn64.s_scnptr, SEEK_SET);
+    fread(buffer, 1, LDHDRSZ_64, f);
+    memcpy((char*)&ldr64, buffer, LDHDRSZ_64);
+    fseek (f, scn64.s_scnptr + ldr64.l_impoff, SEEK_SET);
+    fread(buffer, 1, 4096, f);
+  }
+  else
+    buffer[0] = 0;
+
+  fclose(f);
+  libpath = buffer;
+
+  return libpath;
+
+}
+
+// Simulate the library search algorithm of dlopen() (in os::dll_load)
+static bool search_file_in_LIBPATH(const char* path, struct stat64x* stat) {
+  if (path == nullptr)
+    return false;
+
+  char* path2 = os::strdup (path);
+  // if exist, strip off trailing (shr_64.o) or similar
+  char* substr;
+  if (path2[strlen(path2) - 1] == ')' && (substr = strrchr(path2, '('))) {
+    *substr = 0;
+  }
+
+  bool ret = false;
+  // If FilePath contains a slash character, FilePath is used directly,
+  // and no directories are searched.
+  // But if FilePath does not start with / or . we have to prepend it with ./
+  if (strchr(path2, '/')) {
+    stringStream combined;
+    if (*path2 == '/' || *path2 == '.')
+      combined.print("%s", path2);
+    else
+      combined.print("./%s", path2);
+    ret = (0 == stat64x(combined.base(), stat));
+    os::free (path2);
+    return ret;
+  }
+
+  const char* env = getenv("LIBPATH");
+  if (env == nullptr) {
+    // no LIBPATH, try with LD_LIBRARY_PATH
+    env = getenv("LD_LIBRARY_PATH");
+  }
+
+  stringStream Libpath;
+  if (env == nullptr) {
+    // no LIBPATH or LD_LIBRARY_PATH given -> try only with burned in libpath
+    Libpath.print("%s", rtv_linkedin_libpath());
+  } else if (*env == 0) {
+    // LIBPATH or LD_LIBRARY_PATH given but empty -> try first with burned
+    //  in libpath and with current working directory second
+    Libpath.print("%s:.", rtv_linkedin_libpath());
+  } else {
+    // LIBPATH or LD_LIBRARY_PATH given with content -> try first with
+    // LIBPATH or LD_LIBRARY_PATH and second with burned in libpath.
+    // No check against current working directory
+    Libpath.print("%s:%s", env, rtv_linkedin_libpath());
+  }
+
+  char* libpath = os::strdup (Libpath.base());
+
+  char *saveptr, *token;
+  for (token = strtok_r(libpath, ":", &saveptr); token != nullptr; token = strtok_r(nullptr, ":", &saveptr)) {
+    stringStream combined;
+    combined.print("%s/%s", token, path2);
+    if ((ret = (0 == stat64x(combined.base(), stat))))
+      break;
+  }
+
+  os::free (libpath);
+  os::free (path2);
+  return ret;
+}
+
+// specific AIX versions for ::dlopen() and ::dlclose(), which handles the struct g_handletable
+// filled by os::dll_load(). This way we mimic dl handle equality for a library
+// opened a second time, as it is implemented on other platforms.
+void* Aix_dlopen(const char* filename, int Flags, char *ebuf, int ebuflen) {
+  void* result;
+  struct stat64x libstat;
+
+  if (false == search_file_in_LIBPATH(filename, &libstat)) {
+    // file with filename does not exist
+  #ifdef ASSERT
+    result = ::dlopen(filename, Flags);
+    assert(result == nullptr, "dll_load: Could not stat() file %s, but dlopen() worked; Have to improve stat()", filename);
+  #endif
+  }
+  else {
+    int i = 0;
+    pthread_mutex_lock(&g_handletable_mutex);
+    // check if library belonging to filename is already loaded.
+    // If yes use stored handle from previous ::dlopen() and increase refcount
+    for (i = 0; i < g_handletable_used; i++) {
+      if (g_handletable[i].handle &&
+          g_handletable[i].inode == libstat.st_ino &&
+          g_handletable[i].devid == libstat.st_dev) {
+        g_handletable[i].refcount++;
+        result = g_handletable[i].handle;
+        break;
+      }
+    }
+    if (i == g_handletable_used) {
+      // library not yet loaded. Check if there is space left in array
+      // to store new ::dlopen() handle
+      if (g_handletable_used == max_handletable) {
+        // Array is already full. No place for new handle. Cry and give up.
+        pthread_mutex_unlock(&g_handletable_mutex);
+        if (ebuf != nullptr && ebuflen > 0) {
+          ::strncpy(ebuf, "dlopen: too many libraries loaded", ebuflen - 1);
+        }
+        assert(false, "max_handletable reached");
+        return nullptr;
+      }
+      // Library not yet loaded; load it, then store its handle in handle table
+      result = ::dlopen(filename, Flags);
+      if (result != nullptr) {
+        g_handletable_used++;
+        g_handletable[i].handle = result;
+        g_handletable[i].inode = libstat.st_ino;
+        g_handletable[i].devid = libstat.st_dev;
+        g_handletable[i].refcount = 1;
+      }
+      else {
+        // error analysis when dlopen fails
+        const char* error_report = ::dlerror();
+        if (error_report == nullptr) {
+          error_report = "dlerror returned no error description";
+        }
+        if (ebuf != nullptr && ebuflen > 0) {
+          snprintf(ebuf, ebuflen - 1, "%s", error_report);
+        }
+      }
+    }
+    pthread_mutex_unlock(&g_handletable_mutex);
+  }
+  return result;
+}
+
+bool os::pd_dll_unload(void* libhandle, char* ebuf, int ebuflen) {
+  int i = 0;
+  bool res = false;
+
+  if (ebuf && ebuflen > 0) {
+    ebuf[0] = '\0';
+    ebuf[ebuflen - 1] = '\0';
+  }
+
+  pthread_mutex_lock(&g_handletable_mutex);
+  // try to find handle in array, which means library was loaded by os::dll_load() call
+  for (i = 0; i < g_handletable_used; i++) {
+    if (g_handletable[i].handle == libhandle) {
+      // handle found, decrease refcount
+      g_handletable[i].refcount--;
+      if (g_handletable[i].refcount > 0) {
+        // if refcount is still >0 then we have to keep library and just return true
+        pthread_mutex_unlock(&g_handletable_mutex);
+        return true;
+      }
+      // refcount == 0, so we have to ::dlclose() the lib
+      // and delete the entry from the array.
+      break;
+    }
+  }
+
+  // If we reach this point either the libhandle was found with refcount == 0, or the libhandle
+  // was not found in the array at all. In both cases we have to ::dlclose the lib and perform
+  // the error handling. In the first case we then also have to delete the entry from the array
+  // while in the second case we simply have to nag.
+  res = (0 == ::dlclose(libhandle));
+  if (!res) {
+    // error analysis when dlopen fails
+    const char* error_report = ::dlerror();
+    if (error_report == nullptr) {
+      error_report = "dlerror returned no error description";
+    }
+    if (ebuf != nullptr && ebuflen > 0) {
+      snprintf(ebuf, ebuflen - 1, "%s", error_report);
+    }
+  #ifdef ASSERT
+    pthread_mutex_unlock(&g_handletable_mutex);
+  #endif
+    assert(false, "os::pd_dll_unload() ::dlclose() failed");
+  }
+
+  if (i < g_handletable_used) {
+    if (res) {
+      // First case: libhandle was found (with refcount == 0) and ::dlclose successful,
+      // so delete entry from array
+      g_handletable_used--;
+      // If the entry was the last one of the array, the previous g_handletable_used--
+      // is sufficient to remove the entry from the array, otherwise we move the last
+      // entry of the array to the place of the entry we want to remove and overwrite it
+      if (i < g_handletable_used) {
+        g_handletable[i] = g_handletable[g_handletable_used];
+      }
+    }
+  }
+  else {
+  #ifdef ASSERT
+    pthread_mutex_unlock(&g_handletable_mutex);
+  #endif
+    // Second case: libhandle was not found (library was not loaded by os::dll_load())
+    // therefore nag
+    assert(false, "os::pd_dll_unload() library was not loaded by os::dll_load()");
+  }
+
+  pthread_mutex_unlock(&g_handletable_mutex);
+
+  // Update the dll cache
+  LoadedLibraries::reload();
+
+  return res;
+} // end: os::pd_dll_unload()
+
 void *os::dll_load(const char *filename, char *ebuf, int ebuflen) {
 
   log_info(os)("attempting shared library load of %s", filename);
@@ -1150,7 +1429,7 @@ void *os::dll_load(const char *filename, char *ebuf, int ebuflen) {
 
   void* result;
   JFR_ONLY(NativeLibraryLoadEvent load_event(filename, &result);)
-  result = os::Aix::dlopen(filename, dflags);
+  result = Aix_dlopen(filename, dflags, ebuf, ebuflen);
   if (result != nullptr) {
     Events::log_dll_message(nullptr, "Loaded shared library %s", filename);
     // Reload dll cache. Don't do this in signal handling.
@@ -3047,136 +3326,3 @@ void os::jfr_report_memory_info() {}
 
 #endif // INCLUDE_JFR
 
-// Simulate the library search algorithm of dlopen() (in os::dll_load)
-int os::Aix::stat64x_via_LIBPATH(const char* path, struct stat64x* stat) {
-  if (path == nullptr)
-    return -1;
-
-  char *path2 = strdup (path);
-  // if exist, strip off trailing (shr_64.o) or similar
-  int idx = strlen(path2) - 1;
-  if (path2[idx] == ')') {
-    while (path2[idx] != '(' && idx > 0) idx--;
-    if (idx > 0)
-      path2[idx] = 0;
-  }
-
-  int ret = -1;
-  if (path2[0] == '/' ||
-      (path2[0] == '.' && (path2[1] == '/' ||
-                          (path2[1] == '.' && path2[2] == '/')))) {
-    ret = stat64x(path2, stat);
-    free (path2);
-    return ret;
-  }
-
-  const char* env = getenv("LIBPATH");
-  if (env == nullptr || *env == 0) {
-    free (path2);
-    return -1;
-  }
-
-  size_t libpathlen = strlen(env);
-  char* libpath = NEW_C_HEAP_ARRAY(char, libpathlen + 1, mtServiceability);
-  char* combined = NEW_C_HEAP_ARRAY(char, libpathlen + strlen(path2) + 1, mtServiceability);
-  char *saveptr, *token;
-  strcpy(libpath, env);
-  for (token = strtok_r(libpath, ":", &saveptr); token != nullptr; token = strtok_r(nullptr, ":", &saveptr)) {
-    sprintf(combined, "%s/%s", token, path2);
-    if (0 == (ret = stat64x(combined, stat)))
-      break;
-  }
-
-  FREE_C_HEAP_ARRAY(char*, combined);
-  FREE_C_HEAP_ARRAY(char*, libpath);
-  free (path2);
-  return ret;
-}
-
-// specific AIX versions for ::dlopen() and ::dlclose(), which handles the struct g_handletable
-// filled by os::dll_load(). This way we mimic dl handle equality for a library
-// opened a second time, as it is implemented on other platforms.
-void* os::Aix::dlopen(const char* filename, int Flags) {
-  void* result;
-  struct stat64x libstat;
-
-  if (os::Aix::stat64x_via_LIBPATH(filename, &libstat)) {
-    // file with filename does not exist
-    result = ::dlopen(filename, Flags);
-    if (result != nullptr) {
-      assert(false, "dll_load: Could not stat() file %s, but dlopen() worked; Have to improve stat()", filename);
-    }
-  }
-  else {
-    int i = 0;
-    pthread_mutex_lock(&g_handletable_mutex);
-    // check if library belonging to filename is already loaded.
-    // If yes use stored handle from previous ::dlopen() and increase refcount
-    for (i = 0; i < g_handletable_used; i++) {
-      if (g_handletable[i].handle &&
-          g_handletable[i].inode == libstat.st_ino &&
-          g_handletable[i].devid == libstat.st_dev) {
-        g_handletable[i].refcount++;
-        result = g_handletable[i].handle;
-        break;
-      }
-    }
-    if (i == g_handletable_used) {
-      // library not still loaded. Check if there is space left in array
-      // to store new ::dlopen() handle
-      if (g_handletable_used == max_handletable) {
-        // Array is already full. No place for new handle. Cry and give up.
-        pthread_mutex_unlock(&g_handletable_mutex);
-        assert(false, "max_handletable reached");
-        return nullptr;
-      }
-      // library not still loaded and still place in array, so load library
-      // and if successful, create new entry at end of array
-      // to store handle, inode/devid with refcount=1
-      result = ::dlopen(filename, Flags);
-      if (result != nullptr) {
-        g_handletable_used++;
-        g_handletable[i].handle = result;
-        g_handletable[i].inode = libstat.st_ino;
-        g_handletable[i].devid = libstat.st_dev;
-        g_handletable[i].refcount = 1;
-      }
-    }
-    pthread_mutex_unlock(&g_handletable_mutex);
-  }
-  return result;
-}
-
-int os::Aix::dlclose(void* lib) {
-  int i = 0, res;
-  pthread_mutex_lock(&g_handletable_mutex);
-  // try to find handle in array, which means library was loaded by os::dll_load() call
-  for (i = 0; i < g_handletable_used; i++) {
-    if (g_handletable[i].handle == lib) {
-      // handle found, decrease refcount
-      g_handletable[i].refcount--;
-      if (g_handletable[i].refcount > 0) {
-        // if refcount is still >0 then we have to keep library and return
-        pthread_mutex_unlock(&g_handletable_mutex);
-        return 0;
-      }
-      // refcount == 0, so we have to ::dlclose() the lib
-      // and delete the entry from the array.
-      res = ::dlclose(lib);
-      g_handletable_used--;
-      // If the entry was the last one of the array, the previous g_handletable_used--
-      // is sufficient to remove the entry from the array, otherwise we move the last
-      // entry of the array to the place of the entry we want to remove and overwrite it
-      if (i < g_handletable_used) {
-        g_handletable[i] = g_handletable[g_handletable_used];
-      }
-      pthread_mutex_unlock(&g_handletable_mutex);
-      return res;
-    }
-  }
-  pthread_mutex_unlock(&g_handletable_mutex);
-  // if we reach this point, the library was not created by os::dll_load()
-  // so nag and perform the plain ::dlclose();
-  assert(false, "os::AIX::dlclose() library was not loaded by os::dll_load()");
-  return ::dlclose(lib);
-} // end: os::AIX::dlclose()
