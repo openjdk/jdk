@@ -46,7 +46,7 @@ import jdk.xml.internal.XMLSecurityManager;
  * @author K Venugopal
  * @author Sunitha Reddy
  *
- * @LastModified: July 2023
+ * @LastModified: Nov 2023
  */
 public class PropertyManager {
 
@@ -150,10 +150,7 @@ public class PropertyManager {
 
         // Initialize Catalog features
         supportedProps.put(XMLConstants.USE_CATALOG, JdkXmlUtils.USE_CATALOG_DEFAULT);
-        for (CatalogFeatures.Feature f : CatalogFeatures.Feature.values()) {
-            supportedProps.put(f.getPropertyName(), null);
-        }
-
+        JdkXmlUtils.initCatalogFeatures(supportedProps);
         supportedProps.put(JdkConstants.CDATA_CHUNK_SIZE, JdkConstants.CDATA_CHUNK_SIZE_DEFAULT);
     }
 

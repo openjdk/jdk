@@ -1470,6 +1470,9 @@ bool os::address_is_in_vm(address addr) {
   return false;
 }
 
+void os::prepare_native_symbols() {
+}
+
 bool os::dll_address_to_function_name(address addr, char *buf,
                                       int buflen, int *offset,
                                       bool demangle) {
@@ -3011,12 +3014,6 @@ size_t os::numa_get_leaf_groups(uint *ids, size_t size) {
   }
   return i;
 }
-
-char *os::scan_pages(char *start, char* end, page_info* page_expected,
-                     page_info* page_found) {
-  return end;
-}
-
 
 int os::Linux::sched_getcpu_syscall(void) {
   unsigned int cpu = 0;

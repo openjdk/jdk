@@ -67,6 +67,7 @@ compiler/c2/Test8004741.java 8235801 generic-all
 
 compiler/codecache/jmx/PoolsIndependenceTest.java 8264632 macosx-all
 
+compiler/vectorapi/reshape/TestVectorReinterpret.java 8320897 aix-ppc64,linux-ppc64le
 compiler/vectorapi/VectorLogicalOpIdentityTest.java 8302459 linux-x64,windows-x64
 
 compiler/jvmci/TestUncaughtErrorInCompileMethod.java 8309073 generic-all
@@ -86,8 +87,8 @@ gc/g1/logging/TestG1LoggingFailure.java 8169634 generic-all
 gc/g1/humongousObjects/TestHeapCounters.java 8178918 generic-all
 gc/stress/gclocker/TestExcessGCLockerCollections.java 8229120 generic-all
 gc/stress/gclocker/TestGCLockerWithParallel.java 8180622 generic-all
-gc/stress/gclocker/TestGCLockerWithG1.java 8180622 generic-all
-gc/stress/TestJNIBlockFullGC/TestJNIBlockFullGC.java 8192647 generic-all
+gc/stress/gclocker/TestGCLockerWithSerial.java 8180622 generic-all
+gc/stress/gclocker/TestGCLockerWithShenandoah.java 8180622 generic-all
 gc/stress/TestStressG1Humongous.java 8286554 windows-x64
 
 #############################################################################
@@ -134,7 +135,7 @@ serviceability/sa/ClhsdbPstack.java#core 8267433 macosx-x64
 serviceability/sa/TestJmapCore.java 8267433 macosx-x64
 serviceability/sa/TestJmapCoreMetaspace.java 8267433 macosx-x64
 
-serviceability/attach/ConcAttachTest.java 8290043 linux-all
+serviceability/attach/ConcAttachTest.java 8290043,8318866 linux-all,macosx-all
 
 serviceability/jvmti/stress/StackTrace/NotSuspended/GetStackTraceNotSuspendedStressTest.java 8315980 linux-all,windows-x64
 

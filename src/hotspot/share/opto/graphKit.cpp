@@ -181,9 +181,9 @@ bool GraphKit::stopped() {
 }
 
 
-//-----------------------------has_ex_handler----------------------------------
+//-----------------------------has_exception_handler----------------------------------
 // Tell if this method or any caller method has exception handlers.
-bool GraphKit::has_ex_handler() {
+bool GraphKit::has_exception_handler() {
   for (JVMState* jvmsp = jvms(); jvmsp != nullptr; jvmsp = jvmsp->caller()) {
     if (jvmsp->has_method() && jvmsp->method()->has_exception_handlers()) {
       return true;
@@ -548,7 +548,7 @@ void GraphKit::builtin_throw(Deoptimization::DeoptReason reason) {
     // as hot if there has been at least one in this method.
     if (C->trap_count(reason) != 0
         && method()->method_data()->trap_count(reason) != 0
-        && has_ex_handler()) {
+        && has_exception_handler()) {
         treat_throw_as_hot = true;
     }
   }

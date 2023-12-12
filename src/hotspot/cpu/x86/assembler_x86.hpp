@@ -1615,6 +1615,9 @@ private:
   void evmovdqul(XMMRegister dst, KRegister mask, Address src, bool merge, int vector_len);
   void evmovdqul(Address dst, KRegister mask, XMMRegister src, bool merge, int vector_len);
 
+  void evmovntdquq(Address dst, KRegister mask, XMMRegister src, bool merge, int vector_len);
+  void evmovntdquq(Address dst, XMMRegister src, int vector_len);
+
   void evmovdquq(Address dst, XMMRegister src, int vector_len);
   void evmovdquq(XMMRegister dst, Address src, int vector_len);
   void evmovdquq(XMMRegister dst, XMMRegister src, int vector_len);

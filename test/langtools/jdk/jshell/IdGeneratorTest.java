@@ -53,7 +53,8 @@ public class IdGeneratorTest {
         return JShell.builder()
                 .in(inStream)
                 .out(new PrintStream(outStream))
-                .err(new PrintStream(errStream));
+                .err(new PrintStream(errStream))
+                .executionEngine(Presets.TEST_DEFAULT_EXECUTION);
     }
 
     public void testTempNameGenerator() {

@@ -264,10 +264,11 @@ public class TestGCLogMessages {
     LogMessageWithLevel exhFailureMessages[] = new LogMessageWithLevel[] {
         new LogMessageWithLevel("Recalculate Used Memory", Level.DEBUG),
         new LogMessageWithLevel("Restore Preserved Marks", Level.DEBUG),
-        new LogMessageWithLevel("Restore Retained Regions", Level.DEBUG),
+        new LogMessageWithLevel("Restore Evacuation Failed Regions", Level.DEBUG),
         new LogMessageWithLevel("Process Evacuation Failed Regions", Level.DEBUG),
         new LogMessageWithLevel("Evacuation Failed Regions", Level.DEBUG),
-        new LogMessageWithLevel("New Retained Regions", Level.DEBUG),
+        new LogMessageWithLevel("Pinned Regions", Level.DEBUG),
+        new LogMessageWithLevel("Allocation Failed Regions", Level.DEBUG),
     };
 
     private void testWithEvacuationFailureLogs() throws Exception {
