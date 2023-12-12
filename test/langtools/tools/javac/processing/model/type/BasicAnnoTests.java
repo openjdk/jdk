@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8013852 8031744
+ * @bug 8013852 8031744 8225377
  * @summary Annotations on types
  * @library /tools/javac/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -33,6 +33,7 @@
  *          jdk.compiler/com.sun.tools.javac.util
  * @build JavacTestingAbstractProcessor DPrinter BasicAnnoTests
  * @compile/process -XDaccessInternalAPI -processor BasicAnnoTests -proc:only BasicAnnoTests.java
+ * @compile/process -XDaccessInternalAPI -processor BasicAnnoTests -proc:only BasicAnnoTests
  */
 
 import java.io.PrintWriter;
