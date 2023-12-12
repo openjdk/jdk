@@ -48,6 +48,8 @@ public:
 
   virtual void print_on(outputStream* st) const;
 
+  static void clone_obj_array(objArrayOop src, objArrayOop dst, size_t size);
+
   template <DecoratorSet decorators, typename BarrierSetT = ZBarrierSet>
   class AccessBarrier : public BarrierSet::AccessBarrier<decorators, BarrierSetT> {
   private:
