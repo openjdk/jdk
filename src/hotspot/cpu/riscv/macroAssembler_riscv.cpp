@@ -2864,7 +2864,7 @@ void MacroAssembler::cmpxchg_narrow_value(Register addr, Register expected,
     andr(tmp, old, not_mask);
     orr(tmp, tmp, new_val);
 
-    atomic_cas(old, tmp, aligned_addr, size, acquire, release);
+    atomic_cas(old, tmp, aligned_addr, operand_size::int32, acquire, release);
     bne(tmp, old, retry);
   } else {
     lr_w(old, aligned_addr, acquire);
@@ -2925,7 +2925,7 @@ void MacroAssembler::weak_cmpxchg_narrow_value(Register addr, Register expected,
     andr(tmp, old, not_mask);
     orr(tmp, tmp, new_val);
 
-    atomic_cas(tmp, new_val, addr, size, acquire, release);
+    atomic_cas(tmp, new_val, addr, operand_size::int32, acquire, release);
     bne(tmp, old, fail);
   } else {
     lr_w(old, aligned_addr, acquire);
