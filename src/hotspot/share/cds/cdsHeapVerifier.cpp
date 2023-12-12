@@ -129,7 +129,23 @@ CDSHeapVerifier::CDSHeapVerifier() : _archived_objs(0), _problems(0)
   // This just points to an empty Map
   ADD_EXCL("jdk/internal/reflect/Reflection",            "methodFilterMap");       // E
   ADD_EXCL("jdk/internal/util/StaticProperty",           "FILE_ENCODING",          // C
-                                                 "JAVA_LOCALE_USE_OLD_ISO_CODES"); // C
+                                                 "JAVA_LOCALE_USE_OLD_ISO_CODES",  // C
+                                                 "USER_LANGUAGE",                  // C
+                                                 "USER_LANGUAGE_DISPLAY",          // C
+                                                 "USER_LANGUAGE_FORMAT",           // C
+                                                 "USER_SCRIPT",                    // C
+                                                 "USER_SCRIPT_DISPLAY",            // C
+                                                 "USER_SCRIPT_FORMAT",             // C
+                                                 "USER_COUNTRY",                   // C
+                                                 "USER_COUNTRY_DISPLAY",           // C
+                                                 "USER_COUNTRY_FORMAT",            // C
+                                                 "USER_VARIANT",                   // C
+                                                 "USER_VARIANT_DISPLAY",           // C
+                                                 "USER_VARIANT_FORMAT",            // C
+                                                 "USER_EXTENSIONS",                // C
+                                                 "USER_EXTENSIONS_DISPLAY",        // C
+                                                 "USER_EXTENSIONS_FORMAT",         // C
+                                                 "USER_REGION");                   // C
 
   // Integer for 0 and 1 are in java/lang/Integer$IntegerCache and are archived
   ADD_EXCL("sun/invoke/util/ValueConversions",           "ONE_INT",                // E
