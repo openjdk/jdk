@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "runtime/os.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/growableArray.hpp"
 #include <type_traits>
