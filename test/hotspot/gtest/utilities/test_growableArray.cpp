@@ -43,9 +43,9 @@
 // insert_sorted 2 versions
 //
 // swap -> refactor!
-// GrowableArrayFilterIterator ? test or remove!
 
 // TODO assignment operator and copy constructor
+//      assign with different arena / resource area???
 
 // We have a list of each:
 //  - ModifyClosure
@@ -77,6 +77,11 @@ E value_factory(int i) {
   return E(i);
 }
 
+template<typename E>
+int value_compare(E* e1, E* e2) {
+  return (*e1) - (*e2);
+}
+
 class Point {
 private:
   int _x;
@@ -95,6 +100,15 @@ public:
   bool operator!=(const Point& other) const {
     return !(*this == other);
   }
+
+  int operator-(const Point& other) const {
+    int i = _x - other._x;
+    if (i == 0) {
+      return _y - other._y;
+    } else {
+      return i;
+    }
+  }
 };
 
 class PointWithDefault {
@@ -111,6 +125,15 @@ public:
 
   bool operator!=(const PointWithDefault& other) const {
     return !(*this == other);
+  }
+
+  int operator-(const PointWithDefault& other) const {
+    int i = _x - other._x;
+    if (i == 0) {
+      return _y - other._y;
+    } else {
+      return i;
+    }
   }
 };
 
@@ -131,6 +154,15 @@ public:
   bool operator!=(const PointNoAssign& other) const {
     return !(*this == other);
   }
+
+  int operator-(const PointNoAssign& other) const {
+    int i = _x - other._x;
+    if (i == 0) {
+      return _y - other._y;
+    } else {
+      return i;
+    }
+  }
 };
 
 template<>
@@ -150,7 +182,10 @@ PointNoAssign value_factory<PointNoAssign>(int i) {
 template<>
 int* value_factory<int*>(int i) {
   // cast int to int ptr, just for sake of test
-  return (int*)(0x100000000L + (long)i);
+  // multiply i by 4, so that pointer subtract can count
+  // the distance in integers, and get different results
+  // for the comparison.
+  return (int*)(0x100000000L + (long)i*4);
 }
 
 class CtorDtor {
@@ -182,6 +217,10 @@ public:
 
   bool operator!=(const CtorDtor& other) const {
     return !(*this == other);
+  }
+
+  int operator-(const CtorDtor& other) const {
+    return _i - other._i;
   }
 
   static int constructed() { return _constructed; }
@@ -1464,7 +1503,6 @@ class TestClosureCompare : public TestClosure<E> {
   };
 };
 
-
 template<typename E>
 class TestClosureFindIf : public TestClosure<E> {
   virtual void do_test(AllocatorClosure<E>* a) override final {
@@ -1661,6 +1699,55 @@ class TestClosureAtGrowDefault : public TestClosure<E> {
   };
 };
 
+template<typename E>
+class TestClosureSort : public TestClosure<E> {
+  virtual void do_test(AllocatorClosure<E>* a) override final {
+    a->clear();
+    check_alive_elements_for_type<E>(0);
+    ASSERT_EQ(a->length(), 0);
+
+    // Test sort
+    for (int i = 0; i < 997; i++) {
+      a->append(value_factory<E>((i * 31) % 997));
+    }
+    check_alive_elements_for_type<E>(997);
+    ASSERT_EQ(a->length(), 997);
+
+    a->view().sort(value_compare<E>);
+
+    check_alive_elements_for_type<E>(997);
+    ASSERT_EQ(a->length(), 997);
+    for (int i = 0; i < 977; i++) {
+      ASSERT_EQ(a->at(i), value_factory<E>(i));
+    }
+
+    a->clear();
+    check_alive_elements_for_type<E>(0);
+    ASSERT_EQ(a->length(), 0);
+
+    // Test sort, strided
+    for (int i = 0; i < 1000; i++) {
+      a->append(value_factory<E>(-i));
+      a->append(value_factory<E>(i));
+      a->append(value_factory<E>(-i));
+    }
+    check_alive_elements_for_type<E>(3000);
+    ASSERT_EQ(a->length(), 3000);
+
+    a->view().sort(value_compare<E>, 3);
+
+    check_alive_elements_for_type<E>(3000);
+    ASSERT_EQ(a->length(), 3000);
+    for (int i = 0; i < 1000; i++) {
+      ASSERT_EQ(a->at(3 * i + 0), value_factory<E>(-999 + i));
+      ASSERT_EQ(a->at(3 * i + 1), value_factory<E>(999 - i));
+      ASSERT_EQ(a->at(3 * i + 2), value_factory<E>(-999 + i));
+    }
+
+    // TODO continue
+  };
+};
+
 // TODO
 // template<typename E>
 // class TestClosureCopy : public TestClosure<E> {
@@ -1815,6 +1902,12 @@ protected:
   template<typename E, bool do_cheap, bool do_arena>
   static void run_test_at_grow_default() {
     TestClosureAtGrowDefault<E> test;
+    run_test_modify<E,do_cheap,do_arena>(&test);
+  }
+
+  template<typename E, bool do_cheap, bool do_arena>
+  static void run_test_sort() {
+    TestClosureSort<E> test;
     run_test_modify<E,do_cheap,do_arena>(&test);
   }
 };
@@ -2050,6 +2143,30 @@ TEST_VM_F(GrowableArrayTest, at_grow_default_point_with_default) {
 
 TEST_VM_F(GrowableArrayTest, at_grow_default_ctor_dtor) {
   run_test_at_grow_default<CtorDtor,true,CtorDtor::is_enabled_for_arena>();
+}
+
+TEST_VM_F(GrowableArrayTest, sort_int) {
+  run_test_sort<int,true,true>();
+}
+
+TEST_VM_F(GrowableArrayTest, sort_ptr) {
+  run_test_sort<int*,true,true>();
+}
+
+TEST_VM_F(GrowableArrayTest, sort_point) {
+  run_test_sort<Point,true,true>();
+}
+
+TEST_VM_F(GrowableArrayTest, sort_point_with_default) {
+  run_test_sort<PointWithDefault,true,true>();
+}
+
+TEST_VM_F(GrowableArrayTest, sort_point_no_assign) {
+  run_test_sort<PointNoAssign,true,true>();
+}
+
+TEST_VM_F(GrowableArrayTest, sort_ctor_dtor) {
+  run_test_sort<CtorDtor,true,CtorDtor::is_enabled_for_arena>();
 }
 
 #ifdef ASSERT
