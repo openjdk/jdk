@@ -393,7 +393,8 @@ public interface SegmentAllocator {
      *         such that {@code source.isAccessibleBy(T) == false}
      * @throws IllegalArgumentException if {@code elementCount * sourceElementLayout.byteSize()} overflows
      * @throws IndexOutOfBoundsException if {@code sourceOffset > source.byteSize() - (elementCount * sourceElementLayout.byteSize())}
-     * @throws IndexOutOfBoundsException if either {@code sourceOffset} or {@code elementCount} are {@code < 0}
+     * @throws IndexOutOfBoundsException if {@code sourceOffset < 0}
+     * @throws IllegalArgumentException if {@code elementCount < 0}
      */
     @ForceInline
     default MemorySegment allocateFrom(ValueLayout elementLayout,
