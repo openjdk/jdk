@@ -38,6 +38,7 @@ public class AddmodsOption {
         final String moduleOption = "jdk.httpserver/sun.net.httpserver.simpleserver.Main";
         final String incubatorModule = "jdk.incubator.vector";
         final String jconsoleModule = "jdk.jconsole";
+        final String multiModules = ",,jdk.jconsole,jdk.compiler,,";
         final String loggingOption = "-Xlog:cds=debug,cds+module=debug,cds+heap=info,module=trace";
         final String versionPattern = "java.[0-9][0-9][-].*";
         final String subgraphCannotBeUsed = "subgraph jdk.internal.module.ArchivedBootLayer cannot be used because full module graph is disabled";
@@ -72,7 +73,8 @@ public class AddmodsOption {
             "-m", moduleOption,
             "-version");
         oa.shouldHaveExitValue(0)
-          .shouldContain("Module jdk.incubator.vector was not part of --add-modules during dump time")
+          .shouldContain("Mismatched --add-modules module name(s).")
+          .shouldContain("dump time: jdk.jconsole runtime: jdk.incubator.vector")
           .shouldContain(subgraphCannotBeUsed);
 
         // no module specified during runtime
@@ -100,8 +102,7 @@ public class AddmodsOption {
             "-m", moduleOption,
             "-version");
         oa.shouldHaveExitValue(0)
-          .shouldContain("Inconsistent number of modules specified via --add-modules between dump time and runtime:")
-          .shouldContain("dump time: 0, runtime: 1")
+          .shouldContain("--add-modules module name(s) specified during runtime but not found in archive: jdk.jconsole")
           // version of the jdk.httpserver module, e.g. java 22-ea
           .shouldMatch(versionPattern)
           .shouldContain(subgraphCannotBeUsed);
@@ -152,5 +153,27 @@ public class AddmodsOption {
             "-version");
         oa.shouldHaveExitValue(0)
           .shouldMatch("cds,module.*Restored from archive: entry.0x.*name jdk.internal.vm.ci");
+
+        // dump an archive with multiple modules in -add-modules
+        archiveName = TestCommon.getNewArchiveName("muti-modules");
+        TestCommon.setCurrentArchiveName(archiveName);
+        oa = TestCommon.dumpBaseArchive(
+            archiveName,
+            loggingOption,
+            "--add-modules", multiModules,
+            "-m", moduleOption,
+            "-version");
+        oa.shouldHaveExitValue(0);
+
+        // run with the same multiple modules with a duplicate module in --add-modules
+        oa = TestCommon.execCommon(
+            loggingOption,
+            "--add-modules", multiModules,
+            "--add-modules", jconsoleModule,
+            "-m", moduleOption,
+            "-version");
+        oa.shouldHaveExitValue(0)
+          .shouldMatch("cds,module.*Restored from archive: entry.0x.*name jdk.compiler")
+          .shouldMatch("cds,module.*Restored from archive: entry.0x.*name jdk.jconsole");
     }
 }
