@@ -199,10 +199,6 @@ void G1ConcurrentRefine::threads_do(ThreadClosure *tc) {
   _thread_control.worker_threads_do(tc);
 }
 
-uint G1ConcurrentRefine::max_num_threads() {
-  return G1ConcRefinementThreads;
-}
-
 void G1ConcurrentRefine::update_pending_cards_target(double logged_cards_time_ms,
                                                      size_t processed_logged_cards,
                                                      size_t predicted_thread_buffer_cards,
