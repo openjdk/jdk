@@ -118,7 +118,6 @@ public class PrintingProcessor extends AbstractProcessor {
         }
 
         @Override @DefinedBy(Api.LANGUAGE_MODEL)
-        @SuppressWarnings("preview") // isUnnamed
         public PrintingElementVisitor visitExecutable(ExecutableElement e, Boolean p) {
             ElementKind kind = e.getKind();
 
@@ -171,7 +170,6 @@ public class PrintingProcessor extends AbstractProcessor {
 
 
         @Override @DefinedBy(Api.LANGUAGE_MODEL)
-        @SuppressWarnings("preview") // isUnnamed
         public PrintingElementVisitor visitType(TypeElement e, Boolean p) {
             ElementKind kind = e.getKind();
             NestingKind nestingKind = e.getNestingKind();
