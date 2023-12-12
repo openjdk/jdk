@@ -153,6 +153,7 @@ public:
 private:
   // Utilities
   static bool adjacent(Range a, Range b);
+  static bool after(Range a, Range b); // a < b
   static bool disjoint(Range a, Range b);
   static bool overlaps(Range a, Range b);
   static Range union_of(Range a, Range b);
@@ -221,6 +222,7 @@ public:
 
   // Produce a report on output.
   static void report(VirtualMemory& mem, outputStream* output, size_t scale = K);
+  static void report_new(VirtualMemory& mem, outputStream* output, size_t scale = K);
   static const VirtualMemory& virtual_memory() {
     return *_virt_mem;
   }

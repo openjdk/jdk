@@ -35,7 +35,32 @@ GrowableArrayCHeap<const char*, mtNMT>* VirtualMemoryView::_names = nullptr;
 NativeCallStackStorage* VirtualMemoryView::_stack_storage = nullptr;
 bool VirtualMemoryView::_is_detailed_mode = false;
 VirtualMemoryView::PhysicalMemorySpace VirtualMemoryView::heap{};
-VirtualMemoryView::VirtualMemory* VirtualMemoryView::_virt_mem = nullptr;;
+VirtualMemoryView::VirtualMemory* VirtualMemoryView::_virt_mem = nullptr;
+
+void VirtualMemoryView::report_new(VirtualMemory& mem, outputStream* output, size_t scale) {
+  for (Id space_id = 0; space_id < PhysicalMemorySpace::unique_id; space_id++) {
+    RegionStorage& reserved_ranges = mem.reserved_regions;
+    OffsetRegionStorage& mapped_ranges = mem.mapped_regions.at(space_id);
+    RegionStorage& committed_ranges = mem.committed_regions.at(space_id);
+
+    for (int ri = 0; ri < reserved_ranges.length(); ri++) {
+      TrackedRange& r = reserved_ranges.at(ri);
+
+      for (int mi = 0; mi < mapped_ranges.length(); mi++) {
+        TrackedOffsetRange& m = mapped_ranges.at(mi);
+
+        if (overlaps(m, r)) {
+          for (int ci = 0; ci < committed_ranges.length(); ci++) {
+            TrackedRange& c = committed_ranges.at(ci);
+            if (overlaps({m.physical_address,m.size}, c)) {
+              
+            }
+          }
+        }
+      }
+    }
+  }
+}
 
 void VirtualMemoryView::report(VirtualMemory& mem, outputStream* output, size_t scale) {
   auto print_mapped_virtual_memory_region = [&](TrackedOffsetRange& mapped_range) -> void {
@@ -95,8 +120,6 @@ void VirtualMemoryView::report(VirtualMemory& mem, outputStream* output, size_t 
     for (int i = 0; i < committed_ranges.length(); i++) {
       found_committed[i] = false;
     }
-    VirtualMemoryView::sort_regions(mapped_ranges);
-    VirtualMemoryView::merge_mapped(mapped_ranges);
 
     output->print_cr("%s:", _names->at(space_id));
     for (int reserved_range_idx = 0; reserved_range_idx < reserved_ranges.length(); reserved_range_idx++) {
@@ -233,6 +256,8 @@ void VirtualMemoryView::remove_view_into_space(const PhysicalMemorySpace& space,
       }
     }
   }
+  VirtualMemoryView::sort_regions(range_array);
+  VirtualMemoryView::merge_mapped(range_array);
 }
 
 // TODO: Maybe sorting the regions makes this easier to understand?
@@ -272,6 +297,8 @@ void VirtualMemoryView::add_view_into_space(const PhysicalMemorySpace& space,
   // or no overlap. Then we must add the original region
   rngs.push(TrackedOffsetRange{base_addr, size, offset, stack_idx, flag});
   // And now we're done.
+  VirtualMemoryView::sort_regions(rngs);
+  VirtualMemoryView::merge_mapped(rngs);
 }
 
 VirtualMemoryView::PhysicalMemorySpace VirtualMemoryView::register_space(const char* descriptive_name) {
