@@ -1609,7 +1609,7 @@ void SuperWord::combine_packs() {
 }
 
 // Find the set of alignment solutions for load/store pack.
-AlignmentSolution SuperWord::pack_alignment_solution(Node_List* pack) {
+const AlignmentSolution* SuperWord::pack_alignment_solution(Node_List* pack) {
   assert(pack != nullptr && (pack->at(0)->is_Load() || pack->at(0)->is_Store()), "only load/store packs");
 
   const MemNode* mem_ref = pack->at(0)->as_Mem();
@@ -1647,7 +1647,10 @@ void SuperWord::filter_packs_for_alignment() {
   }
 #endif
 
-  AlignmentSolution current; // trivial
+  ResourceMark rm;
+
+  // Start with trivial (unconstrained) solution space
+  AlignmentSolution const* current = new AlignmentSolutionTrivial();
   int mem_ops_count = 0;
   int mem_ops_rejected = 0;
   for (int i = 0; i < _packset.length(); i++) {
@@ -1656,25 +1659,25 @@ void SuperWord::filter_packs_for_alignment() {
       if (p->at(0)->is_Load() || p->at(0)->is_Store()) {
         mem_ops_count++;
         // Find solution for pack p, and filter with current solution.
-        AlignmentSolution s = pack_alignment_solution(p);
-        AlignmentSolution intersect = current.filter(s);
+        const AlignmentSolution* s = pack_alignment_solution(p);
+        const AlignmentSolution* intersect = current->filter(s);
 
 #ifndef PRODUCT
         if (is_trace_align_vector()) {
           tty->print("  solution for pack:         ");
-          s.print();
+          s->print();
           tty->print("  intersection with current: ");
-          intersect.print();
+          intersect->print();
         }
 #endif
 
-        if (intersect.is_valid()) {
-          // Solution is compatible.
-          current = intersect;
-        } else {
+        if (intersect->is_empty()) {
           // Solution failed or is not compatible, remove pack i.
           _packset.at_put(i, nullptr);
           mem_ops_rejected++;
+        } else {
+          // Solution is compatible.
+          current = intersect;
         }
       }
     }
@@ -1683,16 +1686,17 @@ void SuperWord::filter_packs_for_alignment() {
 #ifndef PRODUCT
   if (TraceSuperWord || is_trace_align_vector()) {
     tty->print("\n final solution: ");
-    current.print();
+    current->print();
     tty->print_cr(" rejected mem_ops packs: %d of %d", mem_ops_rejected, mem_ops_count);
     tty->cr();
   }
 #endif
 
-  assert(current.is_valid(), "solution must be valid");
-  if (!current.is_trivial()) {
-    // Solution is not trivial -> must change pre-limit to acheive alignment
-    set_align_to_ref(current.mem_ref());
+  assert(!current->is_empty(), "solution must be non-empty");
+  if (current->is_constrained()) {
+    // Solution is constrained (not trivial)
+    // -> must change pre-limit to acheive alignment
+    set_align_to_ref(current->as_constrained()->mem_ref());
   }
 
   // Remove all nullptr from packset

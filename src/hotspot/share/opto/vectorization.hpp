@@ -271,7 +271,7 @@ class VectorElementSizeStats {
 //                               + scale * main_stride * main_iter
 //
 // The AlignmentSolver generates solutions of the following forms:
-//   1. Invalid with a failure reason.
+//   1. Empty with a failure reason.
 //   2. Trivial (any pre-loop limit guarantees alignment).
 //   3. Constrained (r, q, mem_ref, alignment_width, scale, invar)
 //        Where scale is 0 if no scale dependency,
@@ -288,163 +288,24 @@ class VectorElementSizeStats {
 // we can easily check with p an q. Compatible solutions must also have
 // the same shifting, which we can check with the scale and invar dependency.
 //
-class AlignmentSolution {
-private:
-  bool _valid = false;
-  const char* _reason = nullptr;
-  bool _trivial = true;
-  int _r = 0;
-  int _q = 1;
-  const MemNode* _mem_ref = nullptr;
-  int _alignment_width = 0;
-  Node const* _invar_dependency = nullptr;
-  int _scale_dependency = 0;
+class AlignmentSolutionEmpty;
+class AlignmentSolutionTrivial;
+class AlignmentSolutionConstrained;
 
+class AlignmentSolution : public ResourceObj {
 public:
-  // Invalid solution.
-  AlignmentSolution(const char* reason) :
-      _valid(false),
-      _reason(reason),
-      _trivial(false),
-      _r(0),
-      _q(1),
-      _mem_ref(nullptr),
-      _alignment_width(1),
-      _invar_dependency(nullptr),
-      _scale_dependency(0) {
-    assert(!is_trivial() && !is_valid(), "must be invalid");
+  virtual bool is_empty() const       { return false; }
+  virtual bool is_trivial() const     { return false; }
+  virtual bool is_constrained() const { return false; }
+
+  virtual const AlignmentSolutionConstrained* as_constrained() const {
+    assert(is_constrained(), "must be constrained");
+    return nullptr;
   }
 
-  // Trivial Solution.
-  AlignmentSolution() :
-      _valid(true),
-      _reason(nullptr),
-      _trivial(true),
-      _r(0),
-      _q(1),
-      _mem_ref(nullptr),
-      _alignment_width(1),
-      _invar_dependency(nullptr),
-      _scale_dependency(0) {
-    assert(is_trivial() && is_valid(), "must be trivial");
-  }
-
-  // Constrained solution.
-  AlignmentSolution(const int r,
-                    const int q,
-                    const MemNode* mem_ref,
-                    int alignment_width,
-                    const Node* invar_dependency,
-                    int scale_dependency) :
-      _valid(true),
-      _reason(nullptr),
-      _trivial(false),
-      _r(r),
-      _q(q),
-      _mem_ref(mem_ref),
-      _alignment_width(alignment_width),
-      _invar_dependency(invar_dependency),
-      _scale_dependency(scale_dependency) {
-    assert(q > 1 && is_power_of_2(q), "q must be power of 2");
-    assert(0 <= r && r < q, "r must be in modulo space of q");
-    assert(!is_trivial() && is_valid(), "must be constrained");
-    assert(_mem_ref != nullptr &&
-           _mem_ref->memory_size() <= _alignment_width,
-           "must have mem_ref and alignment_width");
-    assert(alignment_width > 0 &&
-           is_power_of_2(alignment_width),
-           "alignment_width must be power of 2");
-  }
-
-  bool is_valid() const   { return _valid; }
-  bool is_trivial() const { return _trivial; }
-
-  const char* reason() const {
-    assert(!is_valid(), "only invalid has reason");
-    return _reason;
-  }
-
-  int r() const {
-    assert(is_valid(), "only valid has solution");
-    return _r;
-  }
-
-  int q() const {
-    assert(is_valid(), "only valid has solution");
-    return _q;
-  }
-
-  const MemNode* mem_ref() const {
-    assert(is_valid(), "valid and not trivial");
-    return _mem_ref;
-  }
-
-  int alignment_width() const {
-    assert(is_valid() && !is_trivial(), "valid and not trivial");
-    return _alignment_width;
-  }
-
-  const Node* invar_dependency() const {
-    assert(is_valid() && !is_trivial(), "valid and not trivial");
-    return _invar_dependency;
-  }
-
-  int scale_dependency() const {
-    assert(is_valid() && !is_trivial(), "valid and not trivial");
-    return _scale_dependency;
-  }
-
-  AlignmentSolution filter(const AlignmentSolution& other) const {
-    // Solution invalid if either is invalid.
-    if (!is_valid() || !other.is_valid()) {
-      return AlignmentSolution("invalid solution input to filter");
-    }
-    AlignmentSolution s1 = *this;
-    AlignmentSolution s2 = other;
-
-    // If one is trivial, return the other.
-    if (s1.is_trivial()) { return s2; }
-    if (s2.is_trivial()) { return s1; }
-
-    // Combine two constrained solutions.
-    if (s1.invar_dependency() != s2.invar_dependency()) {
-      return AlignmentSolution("invar not identical");
-    }
-    if (s1.scale_dependency() != s2.scale_dependency()) {
-      return AlignmentSolution("different scale dependency (init / invar)");
-    }
-    // Make s2 the bigger modulo space
-    if (s1.q() > s2.q()) {
-      swap(s1, s2);
-    }
-    assert(s1.q() <= s2.q(), "s1 is a smaller modulo space than s2");
-    // Subset check:
-    if (mod(s2.r(), s1.q()) != s1.r()) {
-      // neither is subset of the other -> no intersection
-      return AlignmentSolution("empty intersection (r and q)");
-    }
-    // Now we know: "s1 = r1 + m1 * q1" is a superset of "s2 = r2 + m2 * q2"
-    return s2; // return the subset
-  }
-
-  void print() {
-    if (is_valid()) {
-      if (is_trivial()) {
-        tty->print_cr("pre_iter >= 0 (trivial)");
-      } else {
-        tty->print("pre_r(%d) + m * pre_q(%d), mem_ref[%d] %% alignment_width(%d),",
-                    r(), q(), mem_ref()->_idx, alignment_width());
-        tty->print(" scale = %d, ", scale_dependency());
-        if (invar_dependency() == nullptr) {
-          tty->print_cr("no invar");
-        } else {
-          tty->print_cr("invar[%d]", invar_dependency()->_idx);
-        }
-      }
-    } else {
-      tty->print_cr("no solution: %s", reason());
-    }
-  }
+  // Implemented by each subclass
+  virtual const AlignmentSolution* filter(const AlignmentSolution* other) const = 0;
+  virtual void print() const = 0;
 
   // Compute modulo and ensure that we get a positive remainder
   static int mod(int i, int q) {
@@ -454,6 +315,128 @@ public:
     assert(0 <= r && r < q, "remainder must fit in modulo space");
     return r;
   }
+};
+
+class AlignmentSolutionEmpty : public AlignmentSolution {
+private:
+  const char* _reason = nullptr;
+public:
+  AlignmentSolutionEmpty(const char* reason) :  _reason(reason) {}
+  virtual bool is_empty() const override final { return true; }
+  const char* reason() const { return _reason; }
+
+  virtual const AlignmentSolution* filter(const AlignmentSolution* other) const {
+    return new AlignmentSolutionEmpty("invalid solution input to filter");
+  }
+
+  virtual void print() const override final {
+    tty->print_cr("no solution: %s", reason());
+  };
+};
+
+class AlignmentSolutionTrivial : public AlignmentSolution {
+public:
+  AlignmentSolutionTrivial() {}
+  virtual bool is_trivial() const override final { return true; }
+
+  virtual const AlignmentSolution* filter(const AlignmentSolution* other) const {
+    if (other->is_empty()) {
+      return new AlignmentSolutionEmpty("invalid solution input to filter");
+    }
+    return other;
+  }
+
+  virtual void print() const override final {
+    tty->print_cr("pre_iter >= 0 (trivial)");
+  };
+};
+
+class AlignmentSolutionConstrained : public AlignmentSolution {
+private:
+  int _r = 0;
+  int _q = 1;
+  const MemNode* _mem_ref = nullptr;
+  int _alignment_width = 0; // TODO necessary???
+  Node const* _invar_dependency = nullptr;
+  int _scale_dependency = 0;
+public:
+  AlignmentSolutionConstrained(const int r,
+                               const int q,
+                               const MemNode* mem_ref,
+                               int alignment_width,
+                               const Node* invar_dependency,
+                               int scale_dependency) :
+      _r(r),
+      _q(q),
+      _mem_ref(mem_ref),
+      _alignment_width(alignment_width),
+      _invar_dependency(invar_dependency),
+      _scale_dependency(scale_dependency) {
+    assert(q > 1 && is_power_of_2(q), "q must be power of 2");
+    assert(0 <= r && r < q, "r must be in modulo space of q");
+    assert(_mem_ref != nullptr &&
+           _mem_ref->memory_size() <= _alignment_width,
+           "must have mem_ref and alignment_width");
+    assert(alignment_width > 0 &&
+           is_power_of_2(alignment_width),
+           "alignment_width must be power of 2");
+  }
+
+  int r() const                         { return _r; }
+  int q() const                         { return _q; }
+  const MemNode* mem_ref() const        { return _mem_ref; }
+  int alignment_width() const           { return _alignment_width; }
+  const Node* invar_dependency() const  { return _invar_dependency; }
+  int scale_dependency() const          { return _scale_dependency; }
+
+  virtual bool is_constrained() const override final { return true; }
+  virtual const AlignmentSolutionConstrained* as_constrained() const override final { return this; }
+
+  virtual const AlignmentSolution* filter(const AlignmentSolution* other) const {
+    if (other->is_empty()) {
+      return new AlignmentSolutionEmpty("invalid solution input to filter");
+    }
+    if (other->is_trivial()) {
+      return this;
+    }
+
+    // Both are constrained -> find the intersection
+    AlignmentSolutionConstrained const* s1 = this;
+    AlignmentSolutionConstrained const* s2 = other->as_constrained();
+
+    if (s1->invar_dependency() != s2->invar_dependency()) {
+      return new AlignmentSolutionEmpty("invar not identical");
+    }
+    if (s1->scale_dependency() != s2->scale_dependency()) {
+      return new AlignmentSolutionEmpty("different scale dependency (init / invar)");
+    }
+
+    // Make s2 the bigger modulo space
+    if (s1->q() > s2->q()) {
+      swap(s1, s2);
+    }
+    assert(s1->q() <= s2->q(), "s1 is a smaller modulo space than s2");
+
+    // Subset check:
+    if (mod(s2->r(), s1->q()) != s1->r()) {
+      // neither is subset of the other -> no intersection
+      return new AlignmentSolutionEmpty("empty intersection (r and q)");
+    }
+
+    // Now we know: "s1 = r1 + m1 * q1" is a superset of "s2 = r2 + m2 * q2"
+    return s2; // return the subset
+  }
+
+  virtual void print() const override final {
+    tty->print("pre_r(%d) + m * pre_q(%d), mem_ref[%d] %% alignment_width(%d),",
+                r(), q(), mem_ref()->_idx, alignment_width());
+    tty->print(" scale = %d, ", scale_dependency());
+    if (invar_dependency() == nullptr) {
+      tty->print_cr("no invar");
+    } else {
+      tty->print_cr("invar[%d]", invar_dependency()->_idx);
+    }
+  };
 };
 
 // When strict alignment is required (e.g. -XX:+AlignVector), then we must ensure
@@ -566,7 +549,7 @@ public:
            "only load or store vectors allowed");
   }
 
-  AlignmentSolution solve() const;
+  AlignmentSolution* solve() const;
 
 private:
 #ifdef ASSERT

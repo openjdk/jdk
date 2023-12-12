@@ -705,19 +705,19 @@ void VPointer::Tracer::offset_plus_k_11(Node* n) {
 #endif
 
 
-AlignmentSolution AlignmentSolver::solve() const {
+AlignmentSolution* AlignmentSolver::solve() const {
   DEBUG_ONLY( trace_start_solve(); )
 
   // Out of simplicity: non power-of-2 stride not supported.
   if (!is_power_of_2(abs(_pre_stride))) {
-    return AlignmentSolution("non power-of-2 stride not supported");
+    return new AlignmentSolutionEmpty("non power-of-2 stride not supported");
   }
   assert(is_power_of_2(abs(_main_stride)), "main_stride is power of 2");
   assert(_aw > 0 && is_power_of_2(_aw), "aw must be power of 2");
 
   // Out of simplicity: non power-of-2 scale not supported.
   if (abs(_scale) == 0 || !is_power_of_2(abs(_scale))) {
-    return AlignmentSolution("non power-of-2 scale not supported");
+    return new AlignmentSolutionEmpty("non power-of-2 scale not supported");
   }
 
   // We analyze the address of mem_ref. The idea is to disassemble it into a linear
@@ -796,7 +796,7 @@ AlignmentSolution AlignmentSolver::solve() const {
   DEBUG_ONLY( trace_main_iteration_alignment(C_const, C_invar, C_init, C_pre, C_main, C_main_mod_aw); )
 
   if (C_main_mod_aw != 0) {
-    return AlignmentSolution("EQ(2*) not satisfied (cannot align across main-loop iterations)");
+    return new AlignmentSolutionEmpty("EQ(2*) not satisfied (cannot align across main-loop iterations)");
   }
 
   // In what follows, we need to show that the C_const, init and invar terms can be aligned by
@@ -851,10 +851,10 @@ AlignmentSolution AlignmentSolver::solve() const {
   DEBUG_ONLY( trace_init_and_invar_alignment(C_invar, C_init, C_pre, C_invar_mod_abs_C_pre, C_init_mod_abs_C_pre); )
 
   if (C_init_mod_abs_C_pre != 0) {
-    return AlignmentSolution("EQ(5a*) not satisfied (cannot align init)");
+    return new AlignmentSolutionEmpty("EQ(5a*) not satisfied (cannot align init)");
   }
   if (C_invar_mod_abs_C_pre != 0) {
-    return AlignmentSolution("EQ(5b*) not satisfied (cannot align invar)");
+    return new AlignmentSolutionEmpty("EQ(5b*) not satisfied (cannot align invar)");
   }
 
   // Having solved (4a) and (4b), we now want to find solutions for (4c), i.e. we need
@@ -888,10 +888,10 @@ AlignmentSolution AlignmentSolver::solve() const {
     assert(AlignmentSolution::mod(C_invar, _aw) == 0,  "implied by abs(C_pre) >= aw and (5b*)");
 
     if (C_const_mod_aw != 0) {
-      return AlignmentSolution("EQ(6*) not satisfied: C_const not aligned");
+      return new AlignmentSolutionEmpty("EQ(6*) not satisfied: C_const not aligned");
     } else {
       // Solution is trivial, holds for any pre-loop limit.
-      return AlignmentSolution();
+      return new AlignmentSolutionTrivial();
     }
   }
 
@@ -955,11 +955,11 @@ AlignmentSolution AlignmentSolver::solve() const {
 
       const Node* invar_dependency = _invar;
       const int scale_dependency  = (_invar != nullptr || !_init_node->is_ConI()) ? _scale : 0;
-      return AlignmentSolution(pre_r, pre_q, _mem_ref, _aw,
-                               invar_dependency, scale_dependency);
+      return new AlignmentSolutionConstrained(pre_r, pre_q, _mem_ref, _aw,
+                                              invar_dependency, scale_dependency);
     }
   }
-  return AlignmentSolution("EQ(10*) has no solution for pre_r");
+  return new AlignmentSolutionEmpty("EQ(10*) has no solution for pre_r");
 }
 
 #ifdef ASSERT
