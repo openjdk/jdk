@@ -52,6 +52,7 @@ public class TestPinnedObjectTypes {
                                                                              "-XX:+UnlockDiagnosticVMOptions",
                                                                              "-XX:+WhiteBoxAPI",
                                                                              "-Xbootclasspath/a:.",
+                                                                             "-XX:-CreateCoredumpOnCrash",
                                                                              "-Xmx32M",
                                                                              "-Xmn16M",
                                                                              "-Xlog:gc",
