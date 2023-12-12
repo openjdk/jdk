@@ -315,6 +315,10 @@ void VM_Version::c2_initialize() {
     }
   }
 
+  if (FLAG_IS_DEFAULT(UseVectorizedHashCodeIntrinsic)) {
+    FLAG_SET_DEFAULT(UseVectorizedHashCodeIntrinsic, true);
+  }
+
   if (!UseZicbop) {
     if (!FLAG_IS_DEFAULT(AllocatePrefetchStyle)) {
       warning("Zicbop is not available on this CPU");
