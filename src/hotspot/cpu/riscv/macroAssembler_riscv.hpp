@@ -241,9 +241,9 @@ class MacroAssembler: public Assembler {
 
   // idiv variant which deals with MINLONG as dividend and -1 as divisor
   int corrected_idivl(Register result, Register rs1, Register rs2,
-                      bool want_remainder);
+                      bool want_remainder, bool is_signed);
   int corrected_idivq(Register result, Register rs1, Register rs2,
-                      bool want_remainder);
+                      bool want_remainder, bool is_signed);
 
   // interface method calling
   void lookup_interface_method(Register recv_klass,
@@ -253,6 +253,15 @@ class MacroAssembler: public Assembler {
                                Register scan_tmp,
                                Label& no_such_interface,
                                bool return_method = true);
+
+  void lookup_interface_method_stub(Register recv_klass,
+                                    Register holder_klass,
+                                    Register resolved_klass,
+                                    Register method_result,
+                                    Register temp_reg,
+                                    Register temp_reg2,
+                                    int itable_index,
+                                    Label& L_no_such_interface);
 
   // virtual method calling
   // n.n. x86 allows RegisterOrConstant for vtable_index
@@ -709,7 +718,8 @@ public:
                   compare_and_branch_label_insn neg_insn, bool is_far = false);
 
   void la(Register Rd, Label &label);
-  void la(Register Rd, const address dest);
+  void la(Register Rd, const address addr);
+  void la(Register Rd, const address addr, int32_t &offset);
   void la(Register Rd, const Address &adr);
 
   void li16u(Register Rd, uint16_t imm);
@@ -1053,28 +1063,18 @@ public:
   void atomic_xchgwu(Register prev, Register newv, Register addr);
   void atomic_xchgalwu(Register prev, Register newv, Register addr);
 
-  static bool far_branches() {
-    return ReservedCodeCacheSize > branch_range;
-  }
-
-  // Emit a direct call/jump if the entry address will always be in range,
-  // otherwise a far call/jump.
+  // Emit a far call/jump. Only invalidates the tmp register which
+  // is used to keep the entry address for jalr.
   // The address must be inside the code cache.
   // Supported entry.rspec():
   // - relocInfo::external_word_type
   // - relocInfo::runtime_call_type
   // - relocInfo::none
-  // In the case of a far call/jump, the entry address is put in the tmp register.
-  // The tmp register is invalidated.
-  void far_call(Address entry, Register tmp = t0);
-  void far_jump(Address entry, Register tmp = t0);
+  void far_call(const Address &entry, Register tmp = t0);
+  void far_jump(const Address &entry, Register tmp = t0);
 
   static int far_branch_size() {
-    if (far_branches()) {
       return 2 * 4;  // auipc + jalr, see far_call() & far_jump()
-    } else {
-      return 4;
-    }
   }
 
   void load_byte_map_base(Register reg);
@@ -1085,8 +1085,6 @@ public:
     sub(t0, sp, offset);
     sd(zr, Address(t0));
   }
-
-  void la_patchable(Register reg1, const Address &dest, int32_t &offset);
 
   virtual void _call_Unimplemented(address call_site) {
     mv(t1, call_site);
@@ -1200,6 +1198,9 @@ public:
 #ifdef COMPILER2
   void mul_add(Register out, Register in, Register offset,
                Register len, Register k, Register tmp);
+  void wide_mul(Register prod_lo, Register prod_hi, Register n, Register m);
+  void wide_madd(Register sum_lo, Register sum_hi, Register n,
+                 Register m, Register tmp1, Register tmp2);
   void cad(Register dst, Register src1, Register src2, Register carry);
   void cadc(Register dst, Register src1, Register src2, Register carry);
   void adc(Register dst, Register src1, Register src2, Register carry);
@@ -1240,7 +1241,7 @@ public:
   void shadd(Register Rd, Register Rs1, Register Rs2, Register tmp, int shamt);
 
   // test single bit in Rs, result is set to Rd
-  void test_bit(Register Rd, Register Rs, uint32_t bit_pos, Register tmp = t0);
+  void test_bit(Register Rd, Register Rs, uint32_t bit_pos);
 
   // Here the float instructions with safe deal with some exceptions.
   // e.g. convert from NaN, +Inf, -Inf to int, float, double
@@ -1394,11 +1395,17 @@ public:
   void zero_extend(Register dst, Register src, int bits);
   void sign_extend(Register dst, Register src, int bits);
 
+private:
+  void cmp_x2i(Register dst, Register src1, Register src2, Register tmp, bool is_signed = true);
+
+public:
   // compare src1 and src2 and get -1/0/1 in dst.
   // if [src1 > src2], dst = 1;
   // if [src1 == src2], dst = 0;
   // if [src1 < src2], dst = -1;
   void cmp_l2i(Register dst, Register src1, Register src2, Register tmp = t0);
+  void cmp_ul2i(Register dst, Register src1, Register src2, Register tmp = t0);
+  void cmp_uw2i(Register dst, Register src1, Register src2, Register tmp = t0);
 
   // support for argument shuffling
   void move32_64(VMRegPair src, VMRegPair dst, Register tmp = t0);
@@ -1412,6 +1419,8 @@ public:
                    VMRegPair dst,
                    bool is_receiver,
                    int* receiver_offset);
+  // Emit a runtime call. Only invalidates the tmp register which
+  // is used to keep the entry address for jalr/movptr.
   void rt_call(address dest, Register tmp = t0);
 
   void call(const address dest, Register temp = t0) {
@@ -1451,7 +1460,7 @@ private:
       InternalAddress target(const_addr.target());
       relocate(target.rspec(), [&] {
         int32_t offset;
-        la_patchable(dest, target, offset);
+        la(dest, target.target(), offset);
         ld(dest, Address(dest, offset));
       });
     }

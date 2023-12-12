@@ -183,7 +183,7 @@ public class CtwRunner {
         while (!done) {
             String[] cmd = cmd(classStart, classStop);
             try {
-                ProcessBuilder pb = ProcessTools.createTestJvm(cmd);
+                ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(cmd);
                 String commandLine = pb.command()
                         .stream()
                         .collect(Collectors.joining(" "));
@@ -270,7 +270,6 @@ public class CtwRunner {
 
         ArrayList<String> Args = new ArrayList<String>(Arrays.asList(
                 "-Xbatch",
-                "-XX:-UseCounterDecay",
                 "-XX:-ShowMessageBoxOnError",
                 "-XX:+UnlockDiagnosticVMOptions",
                 // redirect VM output to cerr so it won't collide w/ ctw output

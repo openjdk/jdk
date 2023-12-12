@@ -68,7 +68,7 @@ public class TestZNMT {
          *   reservations.
          */
         final int XmsInM = Math.min(16 * XmxInM / (zForceDiscontiguousHeapReservations + 1), XmxInM);
-        OutputAnalyzer oa = ProcessTools.executeProcess(ProcessTools.createTestJvm(
+        OutputAnalyzer oa = ProcessTools.executeProcess(ProcessTools.createTestJavaProcessBuilder(
                                                         "-XX:+UseZGC",
                                                         "-XX:+ZGenerational",
                                                         "-Xms" + XmsInM + "M",

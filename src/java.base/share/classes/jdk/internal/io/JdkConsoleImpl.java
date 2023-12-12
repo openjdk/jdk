@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -195,6 +195,9 @@ public final class JdkConsoleImpl implements JdkConsole {
             System.arraycopy(rcb, 0, b, 0, len);
             if (zeroOut) {
                 Arrays.fill(rcb, 0, len, ' ');
+                if (reader instanceof LineReader lr) {
+                    lr.zeroOut();
+                }
             }
         }
         return b;
@@ -227,6 +230,11 @@ public final class JdkConsoleImpl implements JdkConsole {
             cb = new char[1024];
             nextChar = nChars = 0;
             leftoverLF = false;
+        }
+        public void zeroOut() throws IOException {
+            if (in instanceof StreamDecoder sd) {
+                sd.fillZeroToPosition();
+            }
         }
         public void close () {}
         public boolean ready() throws IOException {

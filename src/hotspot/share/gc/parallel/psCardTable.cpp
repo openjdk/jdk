@@ -48,7 +48,7 @@ class CheckForUnmarkedOops : public BasicOopIterateClosure {
   template <class T> void do_oop_work(T* p) {
     oop obj = RawAccess<>::oop_load(p);
     if (_young_gen->is_in_reserved(obj) &&
-        !_card_table->addr_is_marked_imprecise(p)) {
+        !_card_table->is_dirty_for_addr(p)) {
       // Don't overwrite the first missing card mark
       if (_unmarked_addr == nullptr) {
         _unmarked_addr = (HeapWord*)p;
@@ -90,32 +90,9 @@ class CheckForUnmarkedObjects : public ObjectClosure {
     CheckForUnmarkedOops object_check(_young_gen, _card_table);
     obj->oop_iterate(&object_check);
     if (object_check.has_unmarked_oop()) {
-      guarantee(_card_table->addr_is_marked_imprecise(obj), "Found unmarked young_gen object");
+      guarantee(_card_table->is_dirty_for_addr(obj), "Found unmarked young_gen object");
     }
   }
-};
-
-// Checks for precise marking of oops as newgen.
-class CheckForPreciseMarks : public BasicOopIterateClosure {
- private:
-  PSYoungGen*  _young_gen;
-  PSCardTable* _card_table;
-
- protected:
-  template <class T> void do_oop_work(T* p) {
-    oop obj = RawAccess<IS_NOT_NULL>::oop_load(p);
-    if (_young_gen->is_in_reserved(obj)) {
-      assert(_card_table->addr_is_marked_precise(p), "Found unmarked precise oop");
-      _card_table->set_card_newgen(p);
-    }
-  }
-
- public:
-  CheckForPreciseMarks(PSYoungGen* young_gen, PSCardTable* card_table) :
-    _young_gen(young_gen), _card_table(card_table) { }
-
-  virtual void do_oop(oop* p)       { CheckForPreciseMarks::do_oop_work(p); }
-  virtual void do_oop(narrowOop* p) { CheckForPreciseMarks::do_oop_work(p); }
 };
 
 static void prefetch_write(void *p) {
@@ -410,67 +387,9 @@ void PSCardTable::verify_all_young_refs_imprecise() {
   old_gen->object_iterate(&check);
 }
 
-// This should be called immediately after a scavenge, before mutators resume.
-void PSCardTable::verify_all_young_refs_precise() {
-  ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
-  PSOldGen* old_gen = heap->old_gen();
-
-  CheckForPreciseMarks check(heap->young_gen(), this);
-
-  old_gen->oop_iterate(&check);
-
-  verify_all_young_refs_precise_helper(old_gen->object_space()->used_region());
-}
-
-void PSCardTable::verify_all_young_refs_precise_helper(MemRegion mr) {
-  CardValue* bot = byte_for(mr.start());
-  CardValue* top = byte_for(mr.end());
-  while (bot <= top) {
-    assert(*bot == clean_card || *bot == verify_card, "Found unwanted or unknown card mark");
-    if (*bot == verify_card)
-      *bot = youngergen_card;
-    bot++;
-  }
-}
-
-bool PSCardTable::addr_is_marked_imprecise(void *addr) {
+bool PSCardTable::is_dirty_for_addr(void *addr) {
   CardValue* p = byte_for(addr);
-  CardValue val = *p;
-
-  if (card_is_dirty(val))
-    return true;
-
-  if (card_is_newgen(val))
-    return true;
-
-  if (card_is_clean(val))
-    return false;
-
-  assert(false, "Found unhandled card mark type");
-
-  return false;
-}
-
-// Also includes verify_card
-bool PSCardTable::addr_is_marked_precise(void *addr) {
-  CardValue* p = byte_for(addr);
-  CardValue val = *p;
-
-  if (card_is_newgen(val))
-    return true;
-
-  if (card_is_verify(val))
-    return true;
-
-  if (card_is_clean(val))
-    return false;
-
-  if (card_is_dirty(val))
-    return false;
-
-  assert(false, "Found unhandled card mark type");
-
-  return false;
+  return is_dirty(p);
 }
 
 bool PSCardTable::is_in_young(const void* p) const {
