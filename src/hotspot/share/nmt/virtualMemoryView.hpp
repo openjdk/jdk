@@ -34,8 +34,9 @@
 
 /*
   Remaining issues:
-  3. No baselining
-  4. Reporting not part of Reporter class but part of VirtualMemoryView
+  1. No VirtualMemorySummary accounting.
+  3. No baseline diffing
+  4. Reporting not part of Reporter class but part of VirtualMemoryView, not too bad.
   5. Insufficient amount of unit tests
   6. Need to fix includes, copyright stmts etc
 
@@ -167,6 +168,11 @@ private:
   static void sort_regions(GrowableArrayCHeap<VirtualMemoryView::Range, mtNMT>& storage);
   static void sort_regions(OffsetRegionStorage& storage);
   static void sort_regions(RegionStorage& storage);
+
+  static bool equal_stacks(NativeCallStackStorage::StackIndex a, NativeCallStackStorage::StackIndex b) {
+    return (a.index() == b.index() && a.chunk() == b.chunk()) ||
+            _stack_storage->get(a).equals(_stack_storage->get(b));
+  }
 
   // Split the range to_split by removing to_remove from it, storing the remaining parts in out.
   // Returns true if an overlap was found and will fill the out array with at most 2 elements.
