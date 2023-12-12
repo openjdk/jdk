@@ -23,20 +23,28 @@
 
 /*
  * @test
+ * @modules java.base/java.util.concurrent:open
  * @bug 4992438 6633113
  * @summary Checks that fairness setting is respected.
  */
 
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.VarHandle;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedTransferQueue;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
 public class Fairness {
     private static void testFairness(boolean fair,
-                                     final BlockingQueue<Integer> q)
+                                     final SynchronousQueue<Integer> q,
+                                     final VarHandle underlyingHandle)
         throws Throwable
     {
+        final LinkedTransferQueue<Integer> underlying =
+            (LinkedTransferQueue<Integer>)underlyingHandle.get(q);
+
         final ReentrantLock lock = new ReentrantLock();
         final Condition ready = lock.newCondition();
         final int threadCount = 10;
@@ -53,9 +61,12 @@ public class Fairness {
                 } catch (Throwable t) { badness[0] = t; }}};
             t.start();
             ready.await();
-            // Probably unnecessary, but should be bullet-proof
-            while (t.getState() == Thread.State.RUNNABLE)
+            // Wait until previous put:ing thread is provably parked
+            while (underlying.size() < (i + 1))
                 Thread.yield();
+
+            if (underlying.size() > (i + 1))
+                throw new Error("Unexpected number of waiting producers: " + i);
         }
         for (int i = 0; i < threadCount; i++) {
             int j = q.take();
@@ -68,8 +79,14 @@ public class Fairness {
     }
 
     public static void main(String[] args) throws Throwable {
-        testFairness(false, new SynchronousQueue<Integer>());
-        testFairness(false, new SynchronousQueue<Integer>(false));
-        testFairness(true,  new SynchronousQueue<Integer>(true));
+        var klazz = SynchronousQueue.class;
+        var underlyingKlazz = Class.forName(klazz.getName() + "$Transferer");
+        var underlying =
+            MethodHandles.privateLookupIn(klazz, MethodHandles.lookup())
+                         .findVarHandle(klazz, "transferer", underlyingKlazz);
+
+        testFairness(false, new SynchronousQueue(),      underlying);
+        testFairness(false, new SynchronousQueue(false), underlying);
+        testFairness(true,  new SynchronousQueue(true),  underlying);
     }
 }
