@@ -322,24 +322,21 @@ void VirtualMemoryView::merge_committed(RegionStorage& ranges) {
 }
 
 void VirtualMemoryView::merge_mapped(OffsetRegionStorage& ranges) {
-  // We displace into the array at rlen+j instead of
-  // creating a new array and swapping it out at the end.
-  // This is because of a limitation with GrowableArray
+  OffsetRegionStorage merged_ranges;
   int rlen = ranges.length();
   if (rlen <= 1) return;
+  merged_ranges.push(ranges.at(0));
   int j = 0;
-  ranges.push(ranges.at(j));
   for (int i = 1; i < rlen; i++) {
-    TrackedOffsetRange& merging_range = ranges.at(rlen+j);
-    Range merging_physical{merging_range.physical_address, merging_range.size};
-    // Take an explicit copy, this is necessary because
-    // the push might invalidate the reference and then SIGSEGV.
-    const TrackedOffsetRange potential_range = ranges.at(i);
+    TrackedOffsetRange& merging_range = merged_ranges.at(j);
+    const Range merging_physical{merging_range.physical_address, merging_range.size};
+    TrackedOffsetRange& potential_range = ranges.at(i);
     const Range potential_physical{potential_range.physical_address, potential_range.size};
-    if (merging_range.end() >=
-        potential_range.start // There's overlap, known because of pre-condition
-        && _stack_storage->get(merging_range.stack_idx)
-                         .equals(_stack_storage->get(potential_range.stack_idx))
+    if (
+        // There's overlap, known because of pre-condition
+        merging_range.end() >= potential_range.start
+        && merging_range.flag == potential_range.flag
+        && equal_stacks(merging_range.stack_idx, potential_range.stack_idx)
         && (overlaps(merging_physical, potential_physical)
             || adjacent(merging_physical, potential_physical))) {
       // Merge it
@@ -349,12 +346,10 @@ void VirtualMemoryView::merge_mapped(OffsetRegionStorage& ranges) {
       merging_range.physical_address = physical_union.start;
     } else {
       j++;
-      ranges.push(potential_range);
+      merged_ranges.push(potential_range);
     }
   }
-  // Remove all the old elements, only keeping the merged ones.
-  ranges.remove_till(rlen);
-  return;
+  ranges.swap(&merged_ranges);
 }
 
 void VirtualMemoryView::sort_regions(GrowableArrayCHeap<VirtualMemoryView::Range, mtNMT>& storage) {
