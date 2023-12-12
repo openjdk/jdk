@@ -256,8 +256,8 @@ public abstract sealed class Executable extends AccessibleObject
      * 0 if the underlying executable takes no parameters.
      * Note that the constructors of some inner classes
      * may have an implicitly declared parameter in addition to
-     * explicitly declared ones.  Also compact constructors of a
-     * record class may have implicitly declared parameters.
+     * explicitly declared ones.  Also note that compact constructors
+     * of a record class may have implicitly declared parameters.
      *
      * @return the parameter types for the executable this object
      * represents
@@ -278,8 +278,12 @@ public abstract sealed class Executable extends AccessibleObject
      * Returns an array of {@code Type} objects that represent the
      * formal parameter types, in declaration order, of the executable
      * represented by this object. An array of length 0 is returned if the
-     * underlying executable takes no parameters.  Note that as a <a
-     * href="{@docRoot}/java.base/java/lang/reflect/package-summary.html#LanguageJvmModel">modeling
+     * underlying executable takes no parameters.  Note that the
+     * constructors of some inner classes may have an implicitly
+     * declared parameter in addition to explicitly declared ones.
+     * Also note that compact constructors of a record class may have
+     * implicitly declared parameters.
+     * Finally note that as a <a href="{@docRoot}/java.base/java/lang/reflect/package-summary.html#LanguageJvmModel">modeling
      * artifact</a>, the number of returned parameters can differ
      * depending on whether or not generic information is present. If
      * generic information is present, only parameters implicitly or explicitly
@@ -753,7 +757,7 @@ public abstract sealed class Executable extends AccessibleObject
      * parameters.
      * Note that the constructors of some inner classes
      * may have an implicitly declared parameter in addition to
-     * explicitly declared ones.  Also compact constructors of a
+     * explicitly declared ones.  Also note that compact constructors of a
      * record class may have implicitly declared parameters.
      *
      * @return an array of objects representing the types of the
