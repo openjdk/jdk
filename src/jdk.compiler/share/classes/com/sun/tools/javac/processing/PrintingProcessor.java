@@ -155,14 +155,25 @@ public class PrintingProcessor extends AbstractProcessor {
                     break;
                 }
 
-                writer.print("(");
-                printParameters(e);
-                writer.print(")");
-                AnnotationValue defaultValue = e.getDefaultValue();
-                if (defaultValue != null)
-                    writer.print(" default " + defaultValue);
+                if (elementUtils.isCompactConstructor(e)) {
+                    // A record's compact constructor by definition
+                    // lacks source-explicit parameters and lacks a
+                    // throws clause.
+                    writer.print(" {} /* compact constructor */ ");
+                } else {
+                    writer.print("(");
+                    printParameters(e);
+                    writer.print(")");
 
-                printThrows(e);
+                    // Display any default values for an annotation
+                    // interface element
+                    AnnotationValue defaultValue = e.getDefaultValue();
+                    if (defaultValue != null)
+                        writer.print(" default " + defaultValue);
+
+                    printThrows(e);
+                }
+
                 writer.println(";");
             }
             return this;
