@@ -91,7 +91,7 @@ jint G1ConcurrentRefineThreadControl::initialize(G1ConcurrentRefine* cr, uint ma
   if (max_num_threads > 0) {
     _threads = new(mtGC) GrowableArray<G1ConcurrentRefineThread*>(_max_num_threads, mtGC);
 
-    _threads->at(0) = create_refinement_thread(0, true);
+    _threads->append(create_refinement_thread(0, true));
     if (_threads->at(0) == nullptr) {
       vm_shutdown_during_initialization("Could not allocate primary refinement thread");
       return JNI_ENOMEM;
@@ -99,11 +99,11 @@ jint G1ConcurrentRefineThreadControl::initialize(G1ConcurrentRefine* cr, uint ma
 
     if (UseDynamicNumberOfGCThreads) {
       for (uint i = 1; i < max_num_threads; ++i) {
-        _threads->at(i) = nullptr;
+        _threads->append(nullptr);
       }
     } else {
       for (uint i = 1; i < max_num_threads; ++i) {
-        _threads->at(i) = create_refinement_thread(i, true);
+        _threads->append(create_refinement_thread(i, true));
         if (_threads->at(i) == nullptr) {
           vm_shutdown_during_initialization("Could not allocate refinement threads.");
           return JNI_ENOMEM;
