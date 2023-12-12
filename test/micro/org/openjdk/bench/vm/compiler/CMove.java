@@ -36,8 +36,8 @@ import org.openjdk.jmh.infra.Blackhole;
 public class CMove {
     static final int SIZE = 1000000;
 
-    @Param({"3", "6", "10", "20", "30", "60", "100", "200", "300", "600"})
-    int freq;
+    @Param({"0.003", "0.006", "0.01", "0.02", "0.03", "0.06", "0.1", "0.2", "0.3", "0.6"})
+    double freq;
 
     boolean[] conds;
 
@@ -46,7 +46,7 @@ public class CMove {
         var r = RandomGeneratorFactory.getDefault().create(1);
         conds = new boolean[SIZE];
         for (int i = 0; i < SIZE; i++) {
-            conds[i] = r.nextInt(1000) < freq;
+            conds[i] = r.nextDouble() < freq;
         }
     }
 
