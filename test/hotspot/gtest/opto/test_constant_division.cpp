@@ -29,7 +29,7 @@
 #include "unittest.hpp"
 
 template <class T, class UT>
-static UT random();
+UT random();
 
 template <>
 juint random<jint, juint>() {
