@@ -1149,7 +1149,7 @@ void VM_Version::get_processor_features() {
 #else
   // No support currently for ChaCha20 intrinsics on 32-bit platforms
   if (UseChaCha20Intrinsics) {
-      warning("Support for ChaCha20 intrinsics not available on this CPU.");
+      warning("ChaCha20 intrinsics are not available on this CPU.");
       FLAG_SET_DEFAULT(UseChaCha20Intrinsics, false);
   }
 #endif // _LP64
