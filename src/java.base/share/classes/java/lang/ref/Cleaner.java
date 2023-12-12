@@ -218,8 +218,8 @@ public final class Cleaner {
      * <p>The object being registered is kept strongly-reachable (and therefore not eligible
      * for cleaning) during the register() method.
      *
-     * <p>Memory consistency effects: Actions in a thread prior to calling
-     * Cleaner.register()
+     * <p><a href="{@docRoot}/java.base/java/lang/ref/package-summary.html#MemoryConsistency">Memory consistency effects</a>:
+     * Actions in a thread prior to calling {@code Cleaner.register()}
      * <a href="{@docRoot}/java.base/java/util/concurrent/package-summary.html#MemoryVisibility"><i>happen-before</i></a>
      * the cleaning action is run by the Cleaner's thread.
      *

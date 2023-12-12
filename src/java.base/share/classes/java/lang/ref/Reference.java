@@ -490,7 +490,8 @@ public abstract sealed class Reference<T>
      * (by the garbage collector, or a previous call to {@code enqueue}), this
      * method is <b><i>unnsuccessful</i></b> and returns false.
      *
-     * <p>Memory consistency effects: Actions in a thread prior to calling
+     * <p><a href="{@docRoot}/java.base/java/lang/ref/package-summary.html#MemoryConsistency">Memory consistency effects</a>:
+     * Actions in a thread prior to calling
      * {@code enqueue} <b><i>successfully</i></b>
      * <a href="{@docRoot}/java.base/java/util/concurrent/package-summary.html#MemoryVisibility"><i>happen-before</i></a>
      * the reference is removed from the queue by {@link ReferenceQueue#poll}
@@ -562,10 +563,10 @@ public abstract sealed class Reference<T>
      * performs
      * <a href="{@docRoot}/java.base/java/lang/ref/package-summary.html">reference processing</a>.
      *
-     * <p>Memory consistency effects: Actions in a thread prior to calling
-     * {@code reachabilityFence(x)}
+     * <p><a href="{@docRoot}/java.base/java/lang/ref/package-summary.html#MemoryConsistency">Memory consistency effects</a>:
+     * Actions in a thread prior to calling {@code reachabilityFence(x)}
      * <a href="{@docRoot}/java.base/java/util/concurrent/package-summary.html#MemoryVisibility"><i>happen-before</i></a>
-     * the garbage collector clears any reference to {code x}.
+     * the garbage collector clears any reference to {@code x}.
 
      *
      * @apiNote
