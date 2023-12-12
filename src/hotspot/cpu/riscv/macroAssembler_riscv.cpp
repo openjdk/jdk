@@ -3006,7 +3006,7 @@ void MacroAssembler::cmpxchg_weak(Register addr, Register expected,
                                   Assembler::Aqrl acquire, Assembler::Aqrl release,
                                   Register result) {
   if (UseZacas) {
-    cmpxchg(addr, expected, new_val, size, acquire, release, result, false);
+    cmpxchg(addr, expected, new_val, size, acquire, release, result, true);
     return;
   }
 
