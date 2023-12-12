@@ -105,13 +105,15 @@ static void commit(HelperType& helper) {
   assert(thread != nullptr, "invariant");
   if (thread->is_Java_thread()) {
     JavaThread* jt = JavaThread::cast(thread);
-    if (jt->thread_state() != _thread_in_vm) {
-      assert(jt->thread_state() == _thread_in_native, "invariant");
+    if (jt->thread_state() == _thread_in_native) {
       // For a JavaThread to take a JFR stacktrace, it must be in _thread_in_vm. Can safepoint here.
       ThreadInVMfromNative transition(jt);
       event.commit();
       return;
     }
+    // If a thread comes here still _thread_in_Java, which can happen for example
+    // when loading the disassembler library in response to traps in JIT code - all is ok.
+    // Since there is no ljf, an event will be committed without a stacktrace.
   }
   event.commit();
 }
