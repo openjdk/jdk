@@ -286,13 +286,15 @@ public abstract sealed class Executable extends AccessibleObject
      * Finally note that as a <a href="{@docRoot}/java.base/java/lang/reflect/package-summary.html#LanguageJvmModel">modeling
      * artifact</a>, the number of returned parameters can differ
      * depending on whether or not generic information is present. If
-     * generic information is present, only parameters implicitly or explicitly
-     * present in the source will be returned; if generic information
-     * is not present, synthetic parameters may be returned as well.
+     * generic information is present, only parameters implicitly or
+     * explicitly present in the source will be returned; if generic
+     * information is not present, synthetic parameters may be returned
+     * as well.
      *
      * <p>If a formal parameter type is a parameterized type,
      * the {@code Type} object returned for it must accurately reflect
-     * the actual type arguments used, implicitly or explicitly, in the source code.
+     * the actual type arguments used, implicitly or explicitly, in the
+     * source code.
      *
      * <p>If a formal parameter type is a type variable or a parameterized
      * type, it is created. Otherwise, it is resolved.
