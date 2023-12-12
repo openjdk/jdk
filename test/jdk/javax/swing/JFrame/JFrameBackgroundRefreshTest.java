@@ -42,6 +42,7 @@ import javax.swing.SwingUtilities;
  * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @summary Test to check if JFrame background is refreshed in Linux.
+ * @requires (os.family == "linux")
  * @run main/manual JFrameBackgroundRefreshTest
  */
 
