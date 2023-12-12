@@ -127,6 +127,9 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
   const CallRegs call_regs = ForeignGlobals::parse_call_regs(jconv);
   int code_size = upcall_stub_code_base_size + (total_out_args * upcall_stub_size_per_arg);
   CodeBuffer buffer("upcall_stub", code_size, /* locs_size = */ 1);
+  if (buffer.blob() == nullptr) {
+    return nullptr;
+  }
 
   GrowableArray<VMStorage> unfiltered_out_regs;
   int out_arg_bytes = ForeignGlobals::java_calling_convention(out_sig_bt, total_out_args, unfiltered_out_regs);
@@ -324,6 +327,9 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
                          &buffer,
                          receiver,
                          in_ByteSize(frame_data_offset));
+  if (blob == nullptr) {
+    return nullptr;
+  }
 
 #ifndef PRODUCT
   if (lt.is_enabled()) {
