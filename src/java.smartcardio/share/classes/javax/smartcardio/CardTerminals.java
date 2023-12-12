@@ -205,14 +205,12 @@ public abstract class CardTerminals {
         CARD_ABSENT,
         /**
          * CardTerminals for which a card insertion was detected during the
-         * latest call to {@linkplain State#waitForChange waitForChange()}
-         * call.
+         * latest call to {@linkplain CardTerminals#waitForChange()} call.
          */
         CARD_INSERTION,
         /**
          * CardTerminals for which a card removal was detected during the
-         * latest call to {@linkplain State#waitForChange waitForChange()}
-         * call.
+         * latest call to {@linkplain CardTerminals#waitForChange()} call.
          */
         CARD_REMOVAL,
     }
