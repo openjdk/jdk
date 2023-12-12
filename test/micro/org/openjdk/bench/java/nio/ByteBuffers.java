@@ -925,7 +925,7 @@ public class ByteBuffers {
     }
 
     @Benchmark
-    public int testHashCode() {
+    public int testHeapHashCode() {
         return heapByteBuffer.hashCode();
     }
 }
