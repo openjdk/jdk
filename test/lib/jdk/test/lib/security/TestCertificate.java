@@ -45,7 +45,7 @@ public enum TestCertificate {
     // Subject: CN=SSLCertificate, O=SomeCompany
     // Issuer: CN=Intermediate CA Cert, O=SomeCompany
     // Validity: Tue Aug 30 14:37:19 PDT 2016 to Wed Aug 30 14:37:19 PDT 2017
-    ONE("1000",
+    ONE("10:00",
         "CN=SSLCertificate, O=SomeCompany",
         "CN=Intermediate CA Cert, O=SomeCompany",
         -1063259762,
