@@ -108,7 +108,7 @@ public final class OutputAnalyzer {
 
     /**
      * Delegate waitFor to the OutputBuffer. This ensures that
-     * the progress and timestmaps are logged correctly.
+     * the progress and timestamps are logged correctly.
      */
     public void waitFor() {
         buffer.waitFor();
