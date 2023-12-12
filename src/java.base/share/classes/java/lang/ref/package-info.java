@@ -93,6 +93,7 @@
  * structure, this check will add little overhead to the hashtable
  * access methods.
  *
+ * <a id="MemoryConsistency"></a>
  * <h3>Memory Consistency Properties</h3>
  * Certain interactions between the garbage collector, references, and reference
  * queues form
@@ -110,10 +111,22 @@
  *
  * <li> The enqueueing of a reference (by the garbage collector, or
  * by a successful call to {@link Reference#enqueue}) <i>happens-before</i>
- * the reference is removed from the queue by {@link ReferenceQueue#poll} or
+ * the reference is removed from the queue ("dequeued") by {@link ReferenceQueue#poll} or
  * {@link ReferenceQueue#remove}.</li>
  *
+ * <li>The Cleaner thread dequeues a reference to a registered object before
+ * running the cleaning action for that object.</li>
+ *
  * </ul>
+ *
+ * The above chain of <i>happens-before</i> edges ensures that actions in a
+ * thread prior to a {@link Reference#reachabilityFence Reference.reachabilityFence(x)}
+ * <i>happen-before</i> cleanup code for {@code x} runs on the cleaner thread.
+ *
+ * In particular, changes to the state of {@code x} made before
+ * {@code reachabilityFence(x)} will be visible to the cleanup code running on
+ * the cleaner thread without additional synchronization.
+ * See {@jls 17.4.5}.
  *
  * <a id="reachability"></a>
  * <h3>Reachability</h3>
