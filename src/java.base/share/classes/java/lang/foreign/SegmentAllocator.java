@@ -392,9 +392,9 @@ public interface SegmentAllocator {
      * @throws WrongThreadException if this method is called from a thread {@code T},
      *         such that {@code source.isAccessibleBy(T) == false}
      * @throws IllegalArgumentException if {@code elementCount * sourceElementLayout.byteSize()} overflows
+     * @throws IllegalArgumentException if {@code elementCount < 0}
      * @throws IndexOutOfBoundsException if {@code sourceOffset > source.byteSize() - (elementCount * sourceElementLayout.byteSize())}
      * @throws IndexOutOfBoundsException if {@code sourceOffset < 0}
-     * @throws IllegalArgumentException if {@code elementCount < 0}
      */
     @ForceInline
     default MemorySegment allocateFrom(ValueLayout elementLayout,
