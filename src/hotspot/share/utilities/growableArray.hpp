@@ -503,6 +503,7 @@ public:
   }
 
   void insert_before(const int idx, const GrowableArrayView<E>* array) {
+    assert(this != array, "cannot insert itself to itself");
     assert(0 <= idx && idx <= this->_len, "illegal index %d for length %d", idx, this->_len);
 
     int array_len = array->length();
@@ -534,7 +535,8 @@ public:
   // matching key according to the static compare function.  Insert
   // that element if not already in the list.  Assumes the list is
   // already sorted according to compare function.
-  template <int compare(const E&, const E&)> E insert_sorted(const E& key) {
+  template <int compare(const E&, const E&)>
+  E insert_sorted(const E& key) {
     bool found;
     int location = GrowableArrayView<E>::template find_sorted<E, compare>(key, found);
     if (!found) {

@@ -29,19 +29,17 @@
 // TODO:
 //       Talk about value factory
 //       Trigger allocation asserts with resource area
+//       Trigger assert for insert_before with itself
 
 // TODO go through GA and GACH and see what ops are not tested yet
 // -> add to modify and test
 //
 // TODO
 // sort 2 versions
-// compare
 // find_sorted 2 versions
 // print ?
 //
 // allocator only:
-// insert_before 2 versions
-// appendAll
 // insert_sorted 2 versions
 //
 // swap -> refactor!
@@ -89,8 +87,13 @@ public:
   // GrowableArray.
   Point() = delete;
   Point(int x, int y) : _x(x), _y(y) {}
+
   bool operator==(const Point& other) const {
     return _x == other._x && _y == other._y;
+  }
+
+  bool operator!=(const Point& other) const {
+    return !(*this == other);
   }
 };
 
@@ -101,8 +104,13 @@ private:
 public:
   PointWithDefault(int x, int y) : _x(x), _y(y + 1) {}
   PointWithDefault() : PointWithDefault(0, 0) {}
+
   bool operator==(const PointWithDefault& other) const {
     return _x == other._x && _y == other._y;
+  }
+
+  bool operator!=(const PointWithDefault& other) const {
+    return !(*this == other);
   }
 };
 
@@ -115,8 +123,13 @@ public:
   // No copy assign
   PointNoAssign(int x, int y) : _x(x), _y(y) {}
   PointNoAssign& operator=(PointNoAssign& other) = delete;
+
   bool operator==(const PointNoAssign& other) const {
     return _x == other._x && _y == other._y;
+  }
+
+  bool operator!=(const PointNoAssign& other) const {
+    return !(*this == other);
   }
 };
 
@@ -165,6 +178,10 @@ public:
 
   bool operator==(const CtorDtor& other) const {
     return _i == other._i;
+  }
+
+  bool operator!=(const CtorDtor& other) const {
+    return !(*this == other);
   }
 
   static int constructed() { return _constructed; }
@@ -242,6 +259,7 @@ public:
   // forwarding in the subclasses of AllocatorClosure too
   // much.
   void set_view(GrowableArrayView<E>* view) { _view = view; }
+  GrowableArrayView<E>& view() const { return *_view; }
 
   // forwarding to underlying array view
   int length() const     { return _view->length(); };
@@ -946,7 +964,40 @@ public:
     ASSERT_EQ(array.length(), 100);
     check_alive_elements_for_type<E>(200);
 
-    // TODO extend this a bit, and do appendAll
+    array.clear();
+    check_alive_elements_for_type<E>(100);
+
+    array.append(value_factory<E>(42));
+    array.append(value_factory<E>(42));
+
+    a->insert_before(100, &array);
+    a->insert_before(0, &array);
+
+    ASSERT_EQ(a->at(0), value_factory<E>(42));
+    ASSERT_EQ(a->at(1), value_factory<E>(42));
+    for (int i = 0; i < 100; i++) {
+      ASSERT_EQ(a->at(i + 2), value_factory<E>(i));
+    }
+    ASSERT_EQ(a->at(102), value_factory<E>(42));
+    ASSERT_EQ(a->at(103), value_factory<E>(42));
+
+    a->clear();
+
+    for (int i = 0; i < 10; i++) {
+      array.clear();
+      for (int j = 0; j < 10; j++) {
+        array.append(value_factory<E>(i*10 + j));
+      }
+      a->appendAll(&array);
+    }
+    array.clear();
+
+    for (int i = 0; i < 100; i++) {
+      ASSERT_EQ(a->at(i), value_factory<E>(i));
+    }
+    ASSERT_EQ(a->length(), 100);
+    ASSERT_EQ(array.length(), 0);
+    check_alive_elements_for_type<E>(100);
   }
 };
 
@@ -1377,6 +1428,44 @@ class TestClosureCapacity : public TestClosure<E> {
 };
 
 template<typename E>
+class TestClosureCompare : public TestClosure<E> {
+  virtual void do_test(AllocatorClosure<E>* a) override final {
+    a->clear();
+    check_alive_elements_for_type<E>(0);
+    ASSERT_EQ(a->length(), 0);
+
+    GrowableArrayCHeap<E,mtTest> array;
+    check_alive_elements_for_type<E>(0);
+
+    ASSERT_TRUE(a->view() == array);
+    ASSERT_FALSE(a->view() != array);
+
+    for (int i = 0; i < 100; i++) {
+      array.append(value_factory<E>(i));
+    }
+
+    ASSERT_EQ(a->length(), 0);
+    ASSERT_EQ(array.length(), 100);
+    check_alive_elements_for_type<E>(100);
+
+    ASSERT_FALSE(a->view() == array);
+    ASSERT_TRUE(a->view() != array);
+
+    for (int i = 0; i < 100; i++) {
+      a->append(value_factory<E>(i));
+    }
+
+    ASSERT_EQ(a->length(), 100);
+    ASSERT_EQ(array.length(), 100);
+    check_alive_elements_for_type<E>(200);
+
+    ASSERT_TRUE(a->view() == array);
+    ASSERT_FALSE(a->view() != array);
+  };
+};
+
+
+template<typename E>
 class TestClosureFindIf : public TestClosure<E> {
   virtual void do_test(AllocatorClosure<E>* a) override final {
     a->clear();
@@ -1700,6 +1789,12 @@ protected:
   }
 
   template<typename E, bool do_cheap, bool do_arena>
+  static void run_test_compare() {
+    TestClosureCompare<E> test;
+    run_test_modify<E,do_cheap,do_arena>(&test);
+  }
+
+  template<typename E, bool do_cheap, bool do_arena>
   static void run_test_find_if() {
     TestClosureFindIf<E> test;
     run_test_modify<E,do_cheap,do_arena>(&test);
@@ -1840,6 +1935,30 @@ TEST_VM_F(GrowableArrayTest, capacity_point_no_assign) {
 
 TEST_VM_F(GrowableArrayTest, capacity_ctor_dtor) {
   run_test_capacity<CtorDtor,true,CtorDtor::is_enabled_for_arena>();
+}
+
+TEST_VM_F(GrowableArrayTest, compare_int) {
+  run_test_compare<int,true,true>();
+}
+
+TEST_VM_F(GrowableArrayTest, compare_ptr) {
+  run_test_compare<int*,true,true>();
+}
+
+TEST_VM_F(GrowableArrayTest, compare_point) {
+  run_test_compare<Point,true,true>();
+}
+
+TEST_VM_F(GrowableArrayTest, compare_point_with_default) {
+  run_test_compare<PointWithDefault,true,true>();
+}
+
+TEST_VM_F(GrowableArrayTest, compare_point_no_assign) {
+  run_test_compare<PointNoAssign,true,true>();
+}
+
+TEST_VM_F(GrowableArrayTest, compare_ctor_dtor) {
+  run_test_compare<CtorDtor,true,CtorDtor::is_enabled_for_arena>();
 }
 
 TEST_VM_F(GrowableArrayTest, find_if_int) {
