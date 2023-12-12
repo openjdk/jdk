@@ -340,7 +340,7 @@ void MacroAssembler::call_VM_base(Register oop_result,
     RuntimeAddress target(StubRoutines::forward_exception_entry());
     relocate(target.rspec(), [&] {
       int32_t offset;
-      la_patchable(t0, target, offset);
+      la(t0, target.target(), offset);
       jalr(x0, t0, offset);
     });
     bind(ok);
@@ -421,7 +421,7 @@ void MacroAssembler::_verify_oop(Register reg, const char* s, const char* file, 
   ExternalAddress target(StubRoutines::verify_oop_subroutine_entry_address());
   relocate(target.rspec(), [&] {
     int32_t offset;
-    la_patchable(t1, target, offset);
+    la(t1, target.target(), offset);
     ld(t1, Address(t1, offset));
   });
   jalr(t1);
@@ -466,7 +466,7 @@ void MacroAssembler::_verify_oop_addr(Address addr, const char* s, const char* f
   ExternalAddress target(StubRoutines::verify_oop_subroutine_entry_address());
   relocate(target.rspec(), [&] {
     int32_t offset;
-    la_patchable(t1, target, offset);
+    la(t1, target.target(), offset);
     ld(t1, Address(t1, offset));
   });
   jalr(t1);
@@ -717,13 +717,35 @@ void MacroAssembler::super_call_VM_leaf(address entry_point, Register arg_0, Reg
   MacroAssembler::call_VM_leaf_base(entry_point, 4);
 }
 
-void MacroAssembler::la(Register Rd, const address dest) {
-  int64_t offset = dest - pc();
+void MacroAssembler::la(Register Rd, const address addr) {
+  int64_t offset = addr - pc();
   if (is_simm32(offset)) {
     auipc(Rd, (int32_t)offset + 0x800);  //0x800, Note:the 11th sign bit
     addi(Rd, Rd, ((int64_t)offset << 52) >> 52);
   } else {
-    movptr(Rd, dest);
+    movptr(Rd, addr);
+  }
+}
+
+void MacroAssembler::la(Register Rd, const address addr, int32_t &offset) {
+  assert((uintptr_t)addr < (1ull << 48), "bad address");
+
+  unsigned long target_address = (uintptr_t)addr;
+  unsigned long low_address = (uintptr_t)CodeCache::low_bound();
+  unsigned long high_address = (uintptr_t)CodeCache::high_bound();
+  long offset_low = target_address - low_address;
+  long offset_high = target_address - high_address;
+
+  // RISC-V doesn't compute a page-aligned address, in order to partially
+  // compensate for the use of *signed* offsets in its base+disp12
+  // addressing mode (RISC-V's PC-relative reach remains asymmetric
+  // [-(2G + 2K), 2G - 2K).
+  if (offset_high >= -((1L << 31) + (1L << 11)) && offset_low < (1L << 31) - (1L << 11)) {
+    int64_t distance = addr - pc();
+    auipc(Rd, (int32_t)distance + 0x800);
+    offset = ((int32_t)distance << 20) >> 20;
+  } else {
+    movptr(Rd, addr, offset);
   }
 }
 
@@ -1564,7 +1586,7 @@ void MacroAssembler::reinit_heapbase() {
       ExternalAddress target(CompressedOops::ptrs_base_addr());
       relocate(target.rspec(), [&] {
         int32_t offset;
-        la_patchable(xheapbase, target, offset);
+        la(xheapbase, target.target(), offset);
         ld(xheapbase, Address(xheapbase, offset));
       });
     }
@@ -2119,7 +2141,7 @@ SkipIfEqual::SkipIfEqual(MacroAssembler* masm, const bool* flag_addr, bool value
   ExternalAddress target((address)flag_addr);
   _masm->relocate(target.rspec(), [&] {
     int32_t offset;
-    _masm->la_patchable(t0, target, offset);
+    _masm->la(t0, target.target(), offset);
     _masm->lbu(t0, Address(t0, offset));
   });
   if (value) {
@@ -2386,7 +2408,7 @@ void MacroAssembler::store_heap_oop_null(Address dst) {
 }
 
 int MacroAssembler::corrected_idivl(Register result, Register rs1, Register rs2,
-                                    bool want_remainder)
+                                    bool want_remainder, bool is_signed)
 {
   // Full implementation of Java idiv and irem.  The function
   // returns the (pc) offset of the div instruction - may be needed
@@ -2402,15 +2424,24 @@ int MacroAssembler::corrected_idivl(Register result, Register rs1, Register rs2,
 
   int idivl_offset = offset();
   if (!want_remainder) {
-    divw(result, rs1, rs2);
+    if (is_signed) {
+      divw(result, rs1, rs2);
+    } else {
+      divuw(result, rs1, rs2);
+    }
   } else {
-    remw(result, rs1, rs2); // result = rs1 % rs2;
+    // result = rs1 % rs2;
+    if (is_signed) {
+      remw(result, rs1, rs2);
+    } else {
+      remuw(result, rs1, rs2);
+    }
   }
   return idivl_offset;
 }
 
 int MacroAssembler::corrected_idivq(Register result, Register rs1, Register rs2,
-                                    bool want_remainder)
+                                    bool want_remainder, bool is_signed)
 {
   // Full implementation of Java ldiv and lrem.  The function
   // returns the (pc) offset of the div instruction - may be needed
@@ -2425,9 +2456,18 @@ int MacroAssembler::corrected_idivq(Register result, Register rs1, Register rs2,
 
   int idivq_offset = offset();
   if (!want_remainder) {
-    div(result, rs1, rs2);
+    if (is_signed) {
+      div(result, rs1, rs2);
+    } else {
+      divu(result, rs1, rs2);
+    }
   } else {
-    rem(result, rs1, rs2); // result = rs1 % rs2;
+    // result = rs1 % rs2;
+    if (is_signed) {
+      rem(result, rs1, rs2);
+    } else {
+      remu(result, rs1, rs2);
+    }
   }
   return idivq_offset;
 }
@@ -2499,6 +2539,109 @@ void MacroAssembler::lookup_interface_method(Register recv_klass,
     add(method_result, recv_klass, scan_tmp);
     ld(method_result, Address(method_result));
   }
+}
+
+// Look up the method for a megamorphic invokeinterface call in a single pass over itable:
+// - check recv_klass (actual object class) is a subtype of resolved_klass from CompiledICHolder
+// - find a holder_klass (class that implements the method) vtable offset and get the method from vtable by index
+// The target method is determined by <holder_klass, itable_index>.
+// The receiver klass is in recv_klass.
+// On success, the result will be in method_result, and execution falls through.
+// On failure, execution transfers to the given label.
+void MacroAssembler::lookup_interface_method_stub(Register recv_klass,
+                                                  Register holder_klass,
+                                                  Register resolved_klass,
+                                                  Register method_result,
+                                                  Register temp_itbl_klass,
+                                                  Register scan_temp,
+                                                  int itable_index,
+                                                  Label& L_no_such_interface) {
+  // 'method_result' is only used as output register at the very end of this method.
+  // Until then we can reuse it as 'holder_offset'.
+  Register holder_offset = method_result;
+  assert_different_registers(resolved_klass, recv_klass, holder_klass, temp_itbl_klass, scan_temp, holder_offset);
+
+  int vtable_start_offset_bytes = in_bytes(Klass::vtable_start_offset());
+  int scan_step = itableOffsetEntry::size() * wordSize;
+  int ioffset_bytes = in_bytes(itableOffsetEntry::interface_offset());
+  int ooffset_bytes = in_bytes(itableOffsetEntry::offset_offset());
+  int itmentry_off_bytes = in_bytes(itableMethodEntry::method_offset());
+  const int vte_scale = exact_log2(vtableEntry::size_in_bytes());
+
+  Label L_loop_search_resolved_entry, L_resolved_found, L_holder_found;
+
+  lwu(scan_temp, Address(recv_klass, Klass::vtable_length_offset()));
+  add(recv_klass, recv_klass, vtable_start_offset_bytes + ioffset_bytes);
+  // itableOffsetEntry[] itable = recv_klass + Klass::vtable_start_offset()
+  //                            + sizeof(vtableEntry) * (recv_klass->_vtable_len);
+  // scan_temp = &(itable[0]._interface)
+  // temp_itbl_klass = itable[0]._interface;
+  shadd(scan_temp, scan_temp, recv_klass, scan_temp, vte_scale);
+  ld(temp_itbl_klass, Address(scan_temp));
+  mv(holder_offset, zr);
+
+  // Initial checks:
+  //   - if (holder_klass != resolved_klass), go to "scan for resolved"
+  //   - if (itable[0] == holder_klass), shortcut to "holder found"
+  //   - if (itable[0] == 0), no such interface
+  bne(resolved_klass, holder_klass, L_loop_search_resolved_entry);
+  beq(holder_klass, temp_itbl_klass, L_holder_found);
+  beqz(temp_itbl_klass, L_no_such_interface);
+
+  // Loop: Look for holder_klass record in itable
+  //   do {
+  //     temp_itbl_klass = *(scan_temp += scan_step);
+  //     if (temp_itbl_klass == holder_klass) {
+  //       goto L_holder_found; // Found!
+  //     }
+  //   } while (temp_itbl_klass != 0);
+  //   goto L_no_such_interface // Not found.
+  Label L_search_holder;
+  bind(L_search_holder);
+    add(scan_temp, scan_temp, scan_step);
+    ld(temp_itbl_klass, Address(scan_temp));
+    beq(holder_klass, temp_itbl_klass, L_holder_found);
+    bnez(temp_itbl_klass, L_search_holder);
+
+  j(L_no_such_interface);
+
+  // Loop: Look for resolved_class record in itable
+  //   while (true) {
+  //     temp_itbl_klass = *(scan_temp += scan_step);
+  //     if (temp_itbl_klass == 0) {
+  //       goto L_no_such_interface;
+  //     }
+  //     if (temp_itbl_klass == resolved_klass) {
+  //        goto L_resolved_found;  // Found!
+  //     }
+  //     if (temp_itbl_klass == holder_klass) {
+  //        holder_offset = scan_temp;
+  //     }
+  //   }
+  //
+  Label L_loop_search_resolved;
+  bind(L_loop_search_resolved);
+    add(scan_temp, scan_temp, scan_step);
+    ld(temp_itbl_klass, Address(scan_temp));
+  bind(L_loop_search_resolved_entry);
+    beqz(temp_itbl_klass, L_no_such_interface);
+    beq(resolved_klass, temp_itbl_klass, L_resolved_found);
+    bne(holder_klass, temp_itbl_klass, L_loop_search_resolved);
+    mv(holder_offset, scan_temp);
+    j(L_loop_search_resolved);
+
+  // See if we already have a holder klass. If not, go and scan for it.
+  bind(L_resolved_found);
+  beqz(holder_offset, L_search_holder);
+  mv(scan_temp, holder_offset);
+
+  // Finally, scan_temp contains holder_klass vtable offset
+  bind(L_holder_found);
+  lwu(method_result, Address(scan_temp, ooffset_bytes - ioffset_bytes));
+  add(recv_klass, recv_klass, itable_index * wordSize + itmentry_off_bytes
+                              - vtable_start_offset_bytes - ioffset_bytes); // substract offsets to restore the original value of recv_klass
+  add(method_result, recv_klass, method_result);
+  ld(method_result, Address(method_result));
 }
 
 // virtual method calling
@@ -2875,46 +3018,36 @@ ATOMIC_XCHGU(xchgalwu, xchgalw)
 
 #undef ATOMIC_XCHGU
 
-void MacroAssembler::far_jump(Address entry, Register tmp) {
+void MacroAssembler::far_jump(const Address &entry, Register tmp) {
   assert(ReservedCodeCacheSize < 4*G, "branch out of range");
   assert(CodeCache::find_blob(entry.target()) != nullptr,
          "destination of far call not found in code cache");
   assert(entry.rspec().type() == relocInfo::external_word_type
         || entry.rspec().type() == relocInfo::runtime_call_type
         || entry.rspec().type() == relocInfo::none, "wrong entry relocInfo type");
-  IncompressibleRegion ir(this);  // Fixed length: see MacroAssembler::far_branch_size()
-  if (far_branches()) {
-    // We can use auipc + jalr here because we know that the total size of
-    // the code cache cannot exceed 2Gb.
-    relocate(entry.rspec(), [&] {
-      int32_t offset;
-      la_patchable(tmp, entry, offset);
-      jalr(x0, tmp, offset);
-    });
-  } else {
-    j(entry);
-  }
+  // Fixed length: see MacroAssembler::far_branch_size()
+  relocate(entry.rspec(), [&] {
+    int32_t offset;
+    la(tmp, entry.target(), offset);
+    jalr(x0, tmp, offset);
+  });
 }
 
-void MacroAssembler::far_call(Address entry, Register tmp) {
+void MacroAssembler::far_call(const Address &entry, Register tmp) {
   assert(ReservedCodeCacheSize < 4*G, "branch out of range");
   assert(CodeCache::find_blob(entry.target()) != nullptr,
          "destination of far call not found in code cache");
   assert(entry.rspec().type() == relocInfo::external_word_type
         || entry.rspec().type() == relocInfo::runtime_call_type
         || entry.rspec().type() == relocInfo::none, "wrong entry relocInfo type");
-  IncompressibleRegion ir(this);  // Fixed length: see MacroAssembler::far_branch_size()
-  if (far_branches()) {
-    // We can use auipc + jalr here because we know that the total size of
-    // the code cache cannot exceed 2Gb.
-    relocate(entry.rspec(), [&] {
-      int32_t offset;
-      la_patchable(tmp, entry, offset);
-      jalr(x1, tmp, offset); // link
-    });
-  } else {
-    jal(entry); // link
-  }
+  // Fixed length: see MacroAssembler::far_branch_size()
+  // We can use auipc + jalr here because we know that the total size of
+  // the code cache cannot exceed 2Gb.
+  relocate(entry.rspec(), [&] {
+    int32_t offset;
+    la(tmp, entry.target(), offset);
+    jalr(x1, tmp, offset); // link
+  });
 }
 
 void MacroAssembler::check_klass_subtype_fast_path(Register sub_klass,
@@ -3137,29 +3270,6 @@ void MacroAssembler::load_byte_map_base(Register reg) {
   mv(reg, (uint64_t)byte_map_base);
 }
 
-void MacroAssembler::la_patchable(Register reg1, const Address &dest, int32_t &offset) {
-  unsigned long low_address = (uintptr_t)CodeCache::low_bound();
-  unsigned long high_address = (uintptr_t)CodeCache::high_bound();
-  unsigned long dest_address = (uintptr_t)dest.target();
-  long offset_low = dest_address - low_address;
-  long offset_high = dest_address - high_address;
-
-  assert(dest.getMode() == Address::literal, "la_patchable must be applied to a literal address");
-  assert((uintptr_t)dest.target() < (1ull << 48), "bad address");
-
-  // RISC-V doesn't compute a page-aligned address, in order to partially
-  // compensate for the use of *signed* offsets in its base+disp12
-  // addressing mode (RISC-V's PC-relative reach remains asymmetric
-  // [-(2G + 2K), 2G - 2K).
-  if (offset_high >= -((1L << 31) + (1L << 11)) && offset_low < (1L << 31) - (1L << 11)) {
-    int64_t distance = dest.target() - pc();
-    auipc(reg1, (int32_t)distance + 0x800);
-    offset = ((int32_t)distance << 20) >> 20;
-  } else {
-    movptr(reg1, dest.target(), offset);
-  }
-}
-
 void MacroAssembler::build_frame(int framesize) {
   assert(framesize >= 2, "framesize must include space for FP/RA");
   assert(framesize % (2*wordSize) == 0, "must preserve 2*wordSize alignment");
@@ -3186,21 +3296,16 @@ void MacroAssembler::reserved_stack_check() {
 
     enter();   // RA and FP are live.
     mv(c_rarg0, xthread);
-    RuntimeAddress target(CAST_FROM_FN_PTR(address, SharedRuntime::enable_stack_reserved_zone));
-    relocate(target.rspec(), [&] {
-      int32_t offset;
-      la_patchable(t0, target, offset);
-      jalr(x1, t0, offset);
-    });
+    rt_call(CAST_FROM_FN_PTR(address, SharedRuntime::enable_stack_reserved_zone));
     leave();
 
     // We have already removed our own frame.
     // throw_delayed_StackOverflowError will think that it's been
     // called by our caller.
-    target = RuntimeAddress(StubRoutines::throw_delayed_StackOverflowError_entry());
+    RuntimeAddress target(StubRoutines::throw_delayed_StackOverflowError_entry());
     relocate(target.rspec(), [&] {
       int32_t offset;
-      la_patchable(t0, target, offset);
+      movptr(t0, target.target(), offset);
       jalr(x0, t0, offset);
     });
     should_not_reach_here();
@@ -3262,21 +3367,19 @@ address MacroAssembler::trampoline_call(Address entry) {
   address target = entry.target();
 
   // We need a trampoline if branches are far.
-  if (far_branches()) {
-    if (!in_scratch_emit_size()) {
-      if (entry.rspec().type() == relocInfo::runtime_call_type) {
-        assert(CodeBuffer::supports_shared_stubs(), "must support shared stubs");
-        code()->share_trampoline_for(entry.target(), offset());
-      } else {
-        address stub = emit_trampoline_stub(offset(), target);
-        if (stub == nullptr) {
-          postcond(pc() == badAddress);
-          return nullptr; // CodeCache is full
-        }
+  if (!in_scratch_emit_size()) {
+    if (entry.rspec().type() == relocInfo::runtime_call_type) {
+      assert(CodeBuffer::supports_shared_stubs(), "must support shared stubs");
+      code()->share_trampoline_for(entry.target(), offset());
+    } else {
+      address stub = emit_trampoline_stub(offset(), target);
+      if (stub == nullptr) {
+        postcond(pc() == badAddress);
+        return nullptr; // CodeCache is full
       }
     }
-    target = pc();
   }
+  target = pc();
 
   address call_pc = pc();
 #ifdef ASSERT
@@ -3424,7 +3527,7 @@ void MacroAssembler::cmpptr(Register src1, Address src2, Label& equal) {
   assert_different_registers(src1, t0);
   relocate(src2.rspec(), [&] {
     int32_t offset;
-    la_patchable(t0, src2, offset);
+    la(t0, src2.target(), offset);
     ld(t0, Address(t0, offset));
   });
   beq(src1, t0, equal);
@@ -3539,6 +3642,24 @@ void MacroAssembler::mul_add(Register out, Register in, Register offset,
   j(L_tail_loop);
 
   bind(L_end);
+}
+
+// Multiply and multiply-accumulate unsigned 64-bit registers.
+void MacroAssembler::wide_mul(Register prod_lo, Register prod_hi, Register n, Register m) {
+  assert_different_registers(prod_lo, prod_hi);
+
+  mul(prod_lo, n, m);
+  mulhu(prod_hi, n, m);
+}
+
+void MacroAssembler::wide_madd(Register sum_lo, Register sum_hi, Register n,
+                               Register m, Register tmp1, Register tmp2) {
+  assert_different_registers(sum_lo, sum_hi);
+  assert_different_registers(sum_hi, tmp2);
+
+  wide_mul(tmp1, tmp2, n, m);
+  cad(sum_lo, sum_lo, tmp1, tmp1);  // Add tmp1 to sum_lo with carry output to tmp1
+  adc(sum_hi, sum_hi, tmp2, tmp1);  // Add tmp2 with carry to sum_hi
 }
 
 // add two unsigned input and output carry
@@ -4054,7 +4175,7 @@ address MacroAssembler::zero_words(Register ptr, Register cnt) {
   Label around, done, done16;
   bltu(cnt, t0, around);
   {
-    RuntimeAddress zero_blocks = RuntimeAddress(StubRoutines::riscv::zero_blocks());
+    RuntimeAddress zero_blocks(StubRoutines::riscv::zero_blocks());
     assert(zero_blocks.target() != nullptr, "zero_blocks stub has not been generated");
     if (StubRoutines::riscv::complete()) {
       address tpc = trampoline_call(zero_blocks);
@@ -4228,7 +4349,7 @@ void MacroAssembler::FLOATCVT##_safe(Register dst, FloatRegister src, Register t
   fclass_##FLOATSIG(tmp, src);                                                            \
   mv(dst, zr);                                                                            \
   /* check if src is NaN */                                                               \
-  andi(tmp, tmp, 0b1100000000);                                                           \
+  andi(tmp, tmp, fclass_mask::nan);                                                       \
   bnez(tmp, done);                                                                        \
   FLOATCVT(dst, src);                                                                     \
   bind(done);                                                                             \
@@ -4404,8 +4525,8 @@ void MacroAssembler::sign_extend(Register dst, Register src, int bits) {
   }
 }
 
-void MacroAssembler::cmp_l2i(Register dst, Register src1, Register src2, Register tmp)
-{
+void MacroAssembler::cmp_x2i(Register dst, Register src1, Register src2,
+                             Register tmp, bool is_signed) {
   if (src1 == src2) {
     mv(dst, zr);
     return;
@@ -4424,12 +4545,33 @@ void MacroAssembler::cmp_l2i(Register dst, Register src1, Register src2, Registe
   }
 
   // installs 1 if gt else 0
-  slt(dst, right, left);
+  if (is_signed) {
+    slt(dst, right, left);
+  } else {
+    sltu(dst, right, left);
+  }
   bnez(dst, done);
-  slt(dst, left, right);
+  if (is_signed) {
+    slt(dst, left, right);
+  } else {
+    sltu(dst, left, right);
+  }
   // dst = -1 if lt; else if eq , dst = 0
   neg(dst, dst);
   bind(done);
+}
+
+void MacroAssembler::cmp_l2i(Register dst, Register src1, Register src2, Register tmp)
+{
+  cmp_x2i(dst, src1, src2, tmp);
+}
+
+void MacroAssembler::cmp_ul2i(Register dst, Register src1, Register src2, Register tmp) {
+  cmp_x2i(dst, src1, src2, tmp, false);
+}
+
+void MacroAssembler::cmp_uw2i(Register dst, Register src1, Register src2, Register tmp) {
+  cmp_x2i(dst, src1, src2, tmp, false);
 }
 
 // The java_calling_convention describes stack locations as ideal slots on
@@ -4628,23 +4770,29 @@ void MacroAssembler::rt_call(address dest, Register tmp) {
   CodeBlob *cb = CodeCache::find_blob(dest);
   RuntimeAddress target(dest);
   if (cb) {
-    far_call(target);
+    far_call(target, tmp);
   } else {
     relocate(target.rspec(), [&] {
       int32_t offset;
-      la_patchable(tmp, target, offset);
+      movptr(tmp, target.target(), offset);
       jalr(x1, tmp, offset);
     });
   }
 }
 
-void MacroAssembler::test_bit(Register Rd, Register Rs, uint32_t bit_pos, Register tmp) {
+void MacroAssembler::test_bit(Register Rd, Register Rs, uint32_t bit_pos) {
   assert(bit_pos < 64, "invalid bit range");
   if (UseZbs) {
     bexti(Rd, Rs, bit_pos);
     return;
   }
-  andi(Rd, Rs, 1UL << bit_pos, tmp);
+  int64_t imm = (int64_t)(1UL << bit_pos);
+  if (is_simm12(imm)) {
+    and_imm12(Rd, Rs, imm);
+  } else {
+    srli(Rd, Rs, bit_pos);
+    and_imm12(Rd, Rd, 1);
+  }
 }
 
 // Implements lightweight-locking.
@@ -4656,7 +4804,7 @@ void MacroAssembler::test_bit(Register Rd, Register Rs, uint32_t bit_pos, Regist
 //  - tmp1, tmp2: temporary registers, will be destroyed
 void MacroAssembler::lightweight_lock(Register obj, Register hdr, Register tmp1, Register tmp2, Label& slow) {
   assert(LockingMode == LM_LIGHTWEIGHT, "only used with new lightweight locking");
-  assert_different_registers(obj, hdr, tmp1, tmp2);
+  assert_different_registers(obj, hdr, tmp1, tmp2, t0);
 
   // Check if we would have space on lock-stack for the object.
   lwu(tmp1, Address(xthread, JavaThread::lock_stack_top_offset()));
@@ -4690,7 +4838,7 @@ void MacroAssembler::lightweight_lock(Register obj, Register hdr, Register tmp1,
 // - tmp1, tmp2: temporary registers
 void MacroAssembler::lightweight_unlock(Register obj, Register hdr, Register tmp1, Register tmp2, Label& slow) {
   assert(LockingMode == LM_LIGHTWEIGHT, "only used with new lightweight locking");
-  assert_different_registers(obj, hdr, tmp1, tmp2);
+  assert_different_registers(obj, hdr, tmp1, tmp2, t0);
 
 #ifdef ASSERT
   {

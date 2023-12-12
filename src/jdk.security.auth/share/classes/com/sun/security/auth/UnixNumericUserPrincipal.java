@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,9 @@
 
 package com.sun.security.auth;
 
+import java.io.IOException;
+import java.io.InvalidObjectException;
+import java.io.ObjectInputStream;
 import java.security.Principal;
 
 /**
@@ -44,6 +47,7 @@ import java.security.Principal;
 public class UnixNumericUserPrincipal implements
                                         Principal,
                                         java.io.Serializable {
+    @java.io.Serial
     private static final long serialVersionUID = -4329764253802397821L;
 
     /**
@@ -146,9 +150,7 @@ public class UnixNumericUserPrincipal implements
             return false;
         UnixNumericUserPrincipal that = (UnixNumericUserPrincipal)o;
 
-        if (this.getName().equals(that.getName()))
-            return true;
-        return false;
+        return this.getName().equals(that.getName());
     }
 
     /**
@@ -158,5 +160,25 @@ public class UnixNumericUserPrincipal implements
      */
     public int hashCode() {
         return name.hashCode();
+    }
+
+    /**
+     * Restores the state of this object from the stream.
+     *
+     * @param  stream the {@code ObjectInputStream} from which data is read
+     * @throws IOException if an I/O error occurs
+     * @throws ClassNotFoundException if a serialized class cannot be loaded
+     */
+    @java.io.Serial
+    private void readObject(ObjectInputStream stream)
+            throws IOException, ClassNotFoundException {
+        stream.defaultReadObject();
+        if (name == null) {
+            java.text.MessageFormat form = new java.text.MessageFormat
+                    (sun.security.util.ResourcesMgr.getAuthResourceString
+                            ("invalid.null.input.value"));
+            Object[] source = {"name"};
+            throw new InvalidObjectException(form.format(source));
+        }
     }
 }
