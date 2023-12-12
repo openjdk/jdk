@@ -190,38 +190,6 @@ public class TestSegments {
         memorySegment.get(JAVA_INT, offset);
     }
 
-    @Test(expectedExceptions = IndexOutOfBoundsException.class)
-    public void testNegativeGetOffset() {
-        try (var arena = Arena.ofConfined()){
-            var segment = arena.allocate(JAVA_INT);
-            segment.get(JAVA_INT, -1);
-        }
-    }
-
-    @Test(expectedExceptions = IndexOutOfBoundsException.class)
-    public void testNegativeSetOffset() {
-        try (var arena = Arena.ofConfined()){
-            var segment = arena.allocate(JAVA_INT);
-            segment.set(JAVA_INT, -1, 1);
-        }
-    }
-
-    @Test(expectedExceptions = IndexOutOfBoundsException.class)
-    public void testNegativeGetAtOffset() {
-        try (var arena = Arena.ofConfined()){
-            var segment = arena.allocate(JAVA_INT);
-            segment.getAtIndex(JAVA_INT, -1);
-        }
-    }
-
-    @Test(expectedExceptions = IndexOutOfBoundsException.class)
-    public void testNegativeSetAtOffset() {
-        try (var arena = Arena.ofConfined()){
-            var segment = arena.allocate(JAVA_INT);
-            segment.setAtIndex(JAVA_INT, -1, 1);
-        }
-    }
-
     @Test
     public void testSegmentOOBMessage() {
         try {

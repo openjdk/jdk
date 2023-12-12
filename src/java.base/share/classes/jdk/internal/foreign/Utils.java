@@ -213,12 +213,14 @@ public final class Utils {
         }
     }
 
+    @ForceInline
     public static void checkNonNegativeArgument(long value, String name) {
         if (value < 0) {
             throw new IllegalArgumentException("The provided " + name + " is negative: " + value);
         }
     }
 
+    @ForceInline
     public static void checkNonNegativeIndex(long value, String name) {
         if (value < 0) {
             throw new IndexOutOfBoundsException("The provided " + name + " is negative: " + value);

@@ -227,11 +227,7 @@ public class TestSegmentAllocators {
 
             // IllegalStateException if the {@linkplain MemorySegment#scope() scope} associated
             // with {@code source} is not {@linkplain MemorySegment.Scope#isAlive() alive}
-            Arena closedArena = Arena.ofConfined();
-            closedArena.close();
-            assertThrows(IllegalStateException.class, () ->
-                    closedArena.allocateFrom(elementLayout, source, sourceElementLayout, 0, 1)
-            );
+            // This is tested in TestScopedOperations
 
             // WrongThreadException if this method is called from a thread {@code T},
             // such that {@code source.isAccessibleBy(T) == false}
@@ -245,7 +241,7 @@ public class TestSegmentAllocators {
                 fail("Unable to create arena", e);
             }
 
-            // ArithmeticException if {@code elementCount * sourceElementLayout.byteSize()} overflows
+            // IllegalArgumentException if {@code elementCount * sourceElementLayout.byteSize()} overflows
             assertThrows(IllegalArgumentException.class, () ->
                     arena.allocateFrom(elementLayout, source, sourceElementLayout, 0, Long.MAX_VALUE)
             );
@@ -255,11 +251,13 @@ public class TestSegmentAllocators {
                     arena.allocateFrom(elementLayout, source, sourceElementLayout, source.byteSize() - (1 * sourceElementLayout.byteAlignment()) + elementLayout.byteSize(), 1)
             );
 
-            // IndexOutOfBoundsException if either {@code sourceOffset} or {@code elementCount} are {@code < 0}
+            // IndexOutOfBoundsException if {@code sourceOffset < 0}
             assertThrows(IndexOutOfBoundsException.class, () ->
-                    arena.allocateFrom(elementLayout, source, sourceElementLayout, -1, 1)
+                    arena.allocateFrom(elementLayout, source, sourceElementLayout, -elementLayout.byteSize(), 1)
             );
-            assertThrows(IndexOutOfBoundsException.class, () ->
+
+            // IllegalArgumentException if {@code elementCount < 0}
+            assertThrows(IllegalArgumentException.class, () ->
                     arena.allocateFrom(elementLayout, source, sourceElementLayout, 0, -1)
             );
 

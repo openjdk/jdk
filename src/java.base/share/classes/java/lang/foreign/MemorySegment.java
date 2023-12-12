@@ -1970,7 +1970,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @throws IllegalArgumentException if {@code layout.byteAlignment() > layout.byteSize()}
      * @throws IndexOutOfBoundsException if {@code index * layout.byteSize()} overflows
      * @throws IndexOutOfBoundsException if {@code index * layout.byteSize() > byteSize() - layout.byteSize()}
-     *         or {@code offset < 0}
+     *         or {@code index < 0}
      */
     byte getAtIndex(ValueLayout.OfByte layout, long index);
 
@@ -1993,7 +1993,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @throws IllegalArgumentException if {@code layout.byteAlignment() > layout.byteSize()}
      * @throws IndexOutOfBoundsException if {@code index * layout.byteSize()} overflows
      * @throws IndexOutOfBoundsException if {@code index * layout.byteSize() > byteSize() - layout.byteSize()}
-     *         or {@code offset < 0}
+     *         or {@code index < 0}
      */
     boolean getAtIndex(ValueLayout.OfBoolean layout, long index);
 
@@ -2016,7 +2016,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @throws IllegalArgumentException if {@code layout.byteAlignment() > layout.byteSize()}
      * @throws IndexOutOfBoundsException if {@code index * layout.byteSize()} overflows
      * @throws IndexOutOfBoundsException if {@code index * layout.byteSize() > byteSize() - layout.byteSize()}
-     *         or {@code offset < 0}
+     *         or {@code index < 0}
      */
     char getAtIndex(ValueLayout.OfChar layout, long index);
 
@@ -2039,7 +2039,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @throws IllegalArgumentException if {@code layout.byteAlignment() > layout.byteSize()}
      * @throws IndexOutOfBoundsException if {@code index * layout.byteSize()} overflows
      * @throws IndexOutOfBoundsException if {@code index * layout.byteSize() > byteSize() - layout.byteSize()}
-     *         or {@code offset < 0}
+     *         or {@code index < 0}
      * @throws UnsupportedOperationException if this segment is {@linkplain #isReadOnly() read-only}
      */
     void setAtIndex(ValueLayout.OfChar layout, long index, char value);
@@ -2063,7 +2063,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @throws IllegalArgumentException if {@code layout.byteAlignment() > layout.byteSize()}
      * @throws IndexOutOfBoundsException if {@code index * layout.byteSize()} overflows
      * @throws IndexOutOfBoundsException if {@code index * layout.byteSize() > byteSize() - layout.byteSize()}
-     *         or {@code offset < 0}
+     *         or {@code index < 0}
      */
     short getAtIndex(ValueLayout.OfShort layout, long index);
 
@@ -2085,7 +2085,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @throws IllegalArgumentException if {@code layout.byteAlignment() > layout.byteSize()}
      * @throws IndexOutOfBoundsException if {@code index * layout.byteSize()} overflows
      * @throws IndexOutOfBoundsException if {@code index * layout.byteSize() > byteSize() - layout.byteSize()}
-     *         or {@code offset < 0}
+     *         or {@code index < 0}
      * @throws IllegalArgumentException if this segment is {@linkplain #isReadOnly() read-only}
      */
     void setAtIndex(ValueLayout.OfByte layout, long index, byte value);
@@ -2109,7 +2109,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @throws IllegalArgumentException if {@code layout.byteAlignment() > layout.byteSize()}
      * @throws IndexOutOfBoundsException if {@code index * layout.byteSize()} overflows
      * @throws IndexOutOfBoundsException if {@code index * layout.byteSize() > byteSize() - layout.byteSize()}
-     *         or {@code offset < 0}
+     *         or {@code index < 0}
      * @throws IllegalArgumentException if this segment is {@linkplain #isReadOnly() read-only}
      */
     void setAtIndex(ValueLayout.OfBoolean layout, long index, boolean value);
@@ -2133,7 +2133,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @throws IllegalArgumentException if {@code layout.byteAlignment() > layout.byteSize()}
      * @throws IndexOutOfBoundsException if {@code index * layout.byteSize()} overflows
      * @throws IndexOutOfBoundsException if {@code index * layout.byteSize() > byteSize() - layout.byteSize()}
-     *         or {@code offset < 0}
+     *         or {@code index < 0}
      * @throws IllegalArgumentException if this segment is {@linkplain #isReadOnly() read-only}
      */
     void setAtIndex(ValueLayout.OfShort layout, long index, short value);
@@ -2157,7 +2157,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @throws IllegalArgumentException if {@code layout.byteAlignment() > layout.byteSize()}
      * @throws IndexOutOfBoundsException if {@code index * layout.byteSize()} overflows
      * @throws IndexOutOfBoundsException if {@code index * layout.byteSize() > byteSize() - layout.byteSize()}
-     *         or {@code offset < 0}
+     *         or {@code index < 0}
      */
     int getAtIndex(ValueLayout.OfInt layout, long index);
 
@@ -2180,7 +2180,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @throws IllegalArgumentException if {@code layout.byteAlignment() > layout.byteSize()}
      * @throws IndexOutOfBoundsException if {@code index * layout.byteSize()} overflows
      * @throws IndexOutOfBoundsException if {@code index * layout.byteSize() > byteSize() - layout.byteSize()}
-     *         or {@code offset < 0}
+     *         or {@code index < 0}
      * @throws IllegalArgumentException if this segment is {@linkplain #isReadOnly() read-only}
      */
     void setAtIndex(ValueLayout.OfInt layout, long index, int value);
@@ -2204,7 +2204,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @throws IllegalArgumentException if {@code layout.byteAlignment() > layout.byteSize()}
      * @throws IndexOutOfBoundsException if {@code index * layout.byteSize()} overflows
      * @throws IndexOutOfBoundsException if {@code index * layout.byteSize() > byteSize() - layout.byteSize()}
-     *         or {@code offset < 0}
+     *         or {@code index < 0}
      */
     float getAtIndex(ValueLayout.OfFloat layout, long index);
 
@@ -2227,7 +2227,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @throws IllegalArgumentException if {@code layout.byteAlignment() > layout.byteSize()}
      * @throws IndexOutOfBoundsException if {@code index * layout.byteSize()} overflows
      * @throws IndexOutOfBoundsException if {@code index * layout.byteSize() > byteSize() - layout.byteSize()}
-     *         or {@code offset < 0}
+     *         or {@code index < 0}
      * @throws IllegalArgumentException if this segment is {@linkplain #isReadOnly() read-only}
      */
     void setAtIndex(ValueLayout.OfFloat layout, long index, float value);
@@ -2251,7 +2251,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @throws IllegalArgumentException if {@code layout.byteAlignment() > layout.byteSize()}
      * @throws IndexOutOfBoundsException if {@code index * layout.byteSize()} overflows
      * @throws IndexOutOfBoundsException if {@code index * layout.byteSize() > byteSize() - layout.byteSize()}
-     *         or {@code offset < 0}
+     *         or {@code index < 0}
      */
     long getAtIndex(ValueLayout.OfLong layout, long index);
 
@@ -2274,7 +2274,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @throws IllegalArgumentException if {@code layout.byteAlignment() > layout.byteSize()}
      * @throws IndexOutOfBoundsException if {@code index * layout.byteSize()} overflows
      * @throws IndexOutOfBoundsException if {@code index * layout.byteSize() > byteSize() - layout.byteSize()}
-     *         or {@code offset < 0}
+     *         or {@code index < 0}
      * @throws IllegalArgumentException if this segment is {@linkplain #isReadOnly() read-only}
      */
     void setAtIndex(ValueLayout.OfLong layout, long index, long value);
@@ -2298,7 +2298,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @throws IllegalArgumentException if {@code layout.byteAlignment() > layout.byteSize()}
      * @throws IndexOutOfBoundsException if {@code index * layout.byteSize()} overflows
      * @throws IndexOutOfBoundsException if {@code index * layout.byteSize() > byteSize() - layout.byteSize()}
-     *         or {@code offset < 0}
+     *         or {@code index < 0}
      */
     double getAtIndex(ValueLayout.OfDouble layout, long index);
 
@@ -2321,7 +2321,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @throws IllegalArgumentException if {@code layout.byteAlignment() > layout.byteSize()}
      * @throws IndexOutOfBoundsException if {@code index * layout.byteSize()} overflows
      * @throws IndexOutOfBoundsException if {@code index * layout.byteSize() > byteSize() - layout.byteSize()}
-     *         or {@code offset < 0}
+     *         or {@code index < 0}
      * @throws IllegalArgumentException if this segment is {@linkplain #isReadOnly() read-only}
      */
     void setAtIndex(ValueLayout.OfDouble layout, long index, double value);
@@ -2354,7 +2354,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      *         in {@code T}
      * @throws IndexOutOfBoundsException if {@code index * layout.byteSize()} overflows
      * @throws IndexOutOfBoundsException if {@code index * layout.byteSize() > byteSize() - layout.byteSize()}
-     *         or {@code offset < 0}
+     *         or {@code index < 0}
      */
     MemorySegment getAtIndex(AddressLayout layout, long index);
 
@@ -2377,7 +2377,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @throws IllegalArgumentException if {@code layout.byteAlignment() > layout.byteSize()}
      * @throws IndexOutOfBoundsException if {@code index * layout.byteSize()} overflows
      * @throws IndexOutOfBoundsException if {@code index * layout.byteSize() > byteSize() - layout.byteSize()}
-     *         or {@code offset < 0}
+     *         or {@code index < 0}
      * @throws UnsupportedOperationException if this segment is {@linkplain #isReadOnly() read-only}
      * @throws IllegalArgumentException if {@code value} is not a {@linkplain #isNative() native} segment
      * @throws IllegalArgumentException if this segment is

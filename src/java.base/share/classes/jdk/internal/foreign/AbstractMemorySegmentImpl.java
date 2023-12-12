@@ -592,8 +592,6 @@ public abstract sealed class AbstractMemorySegmentImpl
                             MemorySegment dstSegment, ValueLayout dstElementLayout, long dstOffset,
                             long elementCount) {
 
-        Utils.checkNonNegativeIndex(srcOffset, "srcOffset");
-        Utils.checkNonNegativeIndex(dstOffset, "dstOffset");
         Utils.checkNonNegativeIndex(elementCount, "elementCount");
         AbstractMemorySegmentImpl srcImpl = (AbstractMemorySegmentImpl)srcSegment;
         AbstractMemorySegmentImpl dstImpl = (AbstractMemorySegmentImpl)dstSegment;
@@ -626,9 +624,6 @@ public abstract sealed class AbstractMemorySegmentImpl
     public static void copy(MemorySegment srcSegment, ValueLayout srcLayout, long srcOffset,
                             Object dstArray, int dstIndex,
                             int elementCount) {
-
-        Utils.checkNonNegativeIndex(srcOffset, "srcOffset");
-        Utils.checkNonNegativeIndex(dstIndex, "dstIndex");
         Utils.checkNonNegativeIndex(elementCount, "elementCount");
         var dstInfo = Utils.BaseAndScale.of(dstArray);
         if (dstArray.getClass().componentType() != srcLayout.carrier()) {
@@ -656,9 +651,6 @@ public abstract sealed class AbstractMemorySegmentImpl
     public static void copy(Object srcArray, int srcIndex,
                             MemorySegment dstSegment, ValueLayout dstLayout, long dstOffset,
                             int elementCount) {
-        Utils.checkNonNegativeIndex(srcIndex, "srcIndex");
-        Utils.checkNonNegativeIndex(dstOffset, "dstOffset");
-        Utils.checkNonNegativeIndex(elementCount, "elementCount");
         var srcInfo = Utils.BaseAndScale.of(srcArray);
         if (srcArray.getClass().componentType() != dstLayout.carrier()) {
             throw new IllegalArgumentException("Incompatible value layout: " + dstLayout);

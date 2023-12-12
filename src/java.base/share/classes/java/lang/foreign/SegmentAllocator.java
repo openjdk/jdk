@@ -404,7 +404,6 @@ public interface SegmentAllocator {
         Objects.requireNonNull(source);
         Objects.requireNonNull(sourceElementLayout);
         Objects.requireNonNull(elementLayout);
-        Utils.checkNonNegativeIndex(elementCount, "elementCount");
         MemorySegment dest = allocateNoInit(elementLayout, elementCount);
         MemorySegment.copy(source, sourceElementLayout, sourceOffset, dest, elementLayout, 0, elementCount);
         return dest;
