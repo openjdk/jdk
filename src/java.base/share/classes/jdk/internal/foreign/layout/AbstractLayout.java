@@ -151,15 +151,8 @@ public abstract sealed class AbstractLayout<L extends AbstractLayout<L> & Memory
     }
 
     public long scale(long offset, long index) {
-        Utils.checkNonNegative(offset, "offset");
-        Utils.checkNonNegative(index, "index");
-        if (offset < 0) {
-            throw new IllegalArgumentException("Negative offset: " + offset);
-        }
-        if (index < 0) {
-            throw new IllegalArgumentException("Negative index: " + index);
-        }
-
+        Utils.checkNonNegativeArgument(offset, "offset");
+        Utils.checkNonNegativeArgument(index, "index");
         return Math.addExact(offset, Math.multiplyExact(byteSize(), index));
     }
 

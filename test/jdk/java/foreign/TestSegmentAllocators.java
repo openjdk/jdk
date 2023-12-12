@@ -245,8 +245,8 @@ public class TestSegmentAllocators {
                 fail("Unable to create arena", e);
             }
 
-            // IndexOutOfBoundsException if {@code elementCount * sourceElementLayout.byteSize()} overflows
-            assertThrows(IndexOutOfBoundsException.class, () ->
+            // ArithmeticException if {@code elementCount * sourceElementLayout.byteSize()} overflows
+            assertThrows(ArithmeticException.class, () ->
                     arena.allocateFrom(elementLayout, source, sourceElementLayout, 0, Long.MAX_VALUE)
             );
 
@@ -255,11 +255,11 @@ public class TestSegmentAllocators {
                     arena.allocateFrom(elementLayout, source, sourceElementLayout, source.byteSize() - (1 * sourceElementLayout.byteAlignment()) + elementLayout.byteSize(), 1)
             );
 
-            // IllegalArgumentException if either {@code sourceOffset} or {@code elementCount} are {@code < 0}
-            assertThrows(IllegalArgumentException.class, () ->
+            // IndexOutOfBoundsException if either {@code sourceOffset} or {@code elementCount} are {@code < 0}
+            assertThrows(IndexOutOfBoundsException.class, () ->
                     arena.allocateFrom(elementLayout, source, sourceElementLayout, -1, 1)
             );
-            assertThrows(IllegalArgumentException.class, () ->
+            assertThrows(IndexOutOfBoundsException.class, () ->
                     arena.allocateFrom(elementLayout, source, sourceElementLayout, 0, -1)
             );
 

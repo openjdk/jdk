@@ -149,13 +149,13 @@ public class TestSegmentCopy {
     public void testCopy5ArgWithNegativeValues() {
         MemorySegment src = MemorySegment.ofArray(new byte[] {1, 2, 3, 4});
         MemorySegment dst = MemorySegment.ofArray(new byte[] {1, 2, 3, 4});
-        assertThrows(IllegalArgumentException.class, () ->
+        assertThrows(IndexOutOfBoundsException.class, () ->
                 MemorySegment.copy(src, -1, dst, 0, 4)
         );
-        assertThrows(IllegalArgumentException.class, () ->
+        assertThrows(IndexOutOfBoundsException.class, () ->
                 MemorySegment.copy(src, 0, dst, -1, 4)
         );
-        assertThrows(IllegalArgumentException.class, () ->
+        assertThrows(IndexOutOfBoundsException.class, () ->
                 MemorySegment.copy(src, 0, dst, 0, -1)
         );
     }
@@ -164,13 +164,13 @@ public class TestSegmentCopy {
     public void testCopy7ArgWithNegativeValues() {
         MemorySegment src = MemorySegment.ofArray(new byte[] {1, 2, 3, 4});
         MemorySegment dst = MemorySegment.ofArray(new byte[] {1, 2, 3, 4});
-        assertThrows(IllegalArgumentException.class, () ->
+        assertThrows(IndexOutOfBoundsException.class, () ->
                 MemorySegment.copy(src, JAVA_BYTE, -1, dst, JAVA_BYTE, 0, 4)
         );
-        assertThrows(IllegalArgumentException.class, () ->
+        assertThrows(IndexOutOfBoundsException.class, () ->
                 MemorySegment.copy(src, JAVA_BYTE, 0, dst, JAVA_BYTE, -1, 4)
         );
-        assertThrows(IllegalArgumentException.class, () ->
+        assertThrows(IndexOutOfBoundsException.class, () ->
                 MemorySegment.copy(src, JAVA_BYTE, 0, dst, JAVA_BYTE, 0, -1)
         );
     }
@@ -179,13 +179,13 @@ public class TestSegmentCopy {
     public void testCopyFromArrayWithNegativeValues() {
         MemorySegment src = MemorySegment.ofArray(new byte[] {1, 2, 3, 4});
         byte[] dst = new byte[] {1, 2, 3, 4};
-        assertThrows(IllegalArgumentException.class, () ->
+        assertThrows(IndexOutOfBoundsException.class, () ->
                 MemorySegment.copy(src, JAVA_BYTE, -1, dst,0, 4)
         );
-        assertThrows(IllegalArgumentException.class, () ->
+        assertThrows(IndexOutOfBoundsException.class, () ->
                 MemorySegment.copy(src, JAVA_BYTE, 0, dst,-1, 4)
         );
-        assertThrows(IllegalArgumentException.class, () ->
+        assertThrows(IndexOutOfBoundsException.class, () ->
                 MemorySegment.copy(src, JAVA_BYTE, 0, dst,0, -1)
         );
     }
@@ -194,13 +194,13 @@ public class TestSegmentCopy {
     public void testCopyToArrayWithNegativeValues() {
         byte[] src = new byte[] {1, 2, 3, 4};
         MemorySegment dst = MemorySegment.ofArray(new byte[] {1, 2, 3, 4});
-        assertThrows(IllegalArgumentException.class, () ->
+        assertThrows(IndexOutOfBoundsException.class, () ->
                 MemorySegment.copy(src, -1, dst, JAVA_BYTE, 0, 4)
         );
-        assertThrows(IllegalArgumentException.class, () ->
+        assertThrows(IndexOutOfBoundsException.class, () ->
                 MemorySegment.copy(src, 0, dst, JAVA_BYTE, -1, 4)
         );
-        assertThrows(IllegalArgumentException.class, () ->
+        assertThrows(IndexOutOfBoundsException.class, () ->
                 MemorySegment.copy(src, 0, dst, JAVA_BYTE, 0, -1)
         );
     }

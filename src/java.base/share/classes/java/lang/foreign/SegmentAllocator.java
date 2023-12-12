@@ -33,6 +33,7 @@ import jdk.internal.foreign.AbstractMemorySegmentImpl;
 import jdk.internal.foreign.ArenaImpl;
 import jdk.internal.foreign.SlicingAllocator;
 import jdk.internal.foreign.StringSupport;
+import jdk.internal.foreign.Utils;
 import jdk.internal.vm.annotation.ForceInline;
 
 /**
@@ -390,9 +391,9 @@ public interface SegmentAllocator {
      *         with {@code source} is not {@linkplain MemorySegment.Scope#isAlive() alive}
      * @throws WrongThreadException if this method is called from a thread {@code T},
      *         such that {@code source.isAccessibleBy(T) == false}
-     * @throws IndexOutOfBoundsException if {@code elementCount * sourceElementLayout.byteSize()} overflows
+     * @throws ArithmeticException if {@code elementCount * sourceElementLayout.byteSize()} overflows
      * @throws IndexOutOfBoundsException if {@code sourceOffset > source.byteSize() - (elementCount * sourceElementLayout.byteSize())}
-     * @throws IllegalArgumentException if either {@code sourceOffset} or {@code elementCount} are {@code < 0}
+     * @throws IndexOutOfBoundsException if either {@code sourceOffset} or {@code elementCount} are {@code < 0}
      */
     @ForceInline
     default MemorySegment allocateFrom(ValueLayout elementLayout,
@@ -403,6 +404,7 @@ public interface SegmentAllocator {
         Objects.requireNonNull(source);
         Objects.requireNonNull(sourceElementLayout);
         Objects.requireNonNull(elementLayout);
+        Utils.checkNonNegativeIndex(elementCount, "elementCount");
         MemorySegment dest = allocateNoInit(elementLayout, elementCount);
         MemorySegment.copy(source, sourceElementLayout, sourceOffset, dest, elementLayout, 0, elementCount);
         return dest;
@@ -733,12 +735,7 @@ public interface SegmentAllocator {
 
     @ForceInline
     private MemorySegment allocateNoInit(MemoryLayout layout, long size) {
-        long byteSize;
-        try {
-            byteSize = Math.multiplyExact(layout.byteSize(), size);
-        } catch (ArithmeticException _) {
-            throw new IndexOutOfBoundsException("Overflow for size=" + size + " and layout=" + layout);
-        }
+        long byteSize = Math.multiplyExact(layout.byteSize(), size);
         return this instanceof ArenaImpl arenaImpl ?
                 arenaImpl.allocateNoInit(byteSize, layout.byteAlignment()) :
                 allocate(layout, size);

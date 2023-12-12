@@ -201,7 +201,7 @@ public final class Utils {
 
     public static void checkAllocationSizeAndAlign(long byteSize, long byteAlignment) {
         // byteSize should be >= 0
-        Utils.checkNonNegative(byteSize, "allocation size");
+        Utils.checkNonNegativeArgument(byteSize, "allocation size");
         checkAlign(byteAlignment);
     }
 
@@ -213,9 +213,15 @@ public final class Utils {
         }
     }
 
-    public static void checkNonNegative(long value, String name) {
+    public static void checkNonNegativeArgument(long value, String name) {
         if (value < 0) {
             throw new IllegalArgumentException("The provided " + name + " is negative: " + value);
+        }
+    }
+
+    public static void checkNonNegativeIndex(long value, String name) {
+        if (value < 0) {
+            throw new IndexOutOfBoundsException("The provided " + name + " is negative: " + value);
         }
     }
 

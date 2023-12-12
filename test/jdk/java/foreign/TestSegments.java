@@ -43,6 +43,7 @@ import java.util.function.IntFunction;
 import java.util.function.Supplier;
 
 import static java.lang.foreign.ValueLayout.JAVA_INT;
+import static java.lang.foreign.ValueLayout.JAVA_LONG;
 import static org.testng.Assert.*;
 
 public class TestSegments {
@@ -55,14 +56,13 @@ public class TestSegments {
     @Test
     public void testZeroLengthNativeSegment() {
         try (Arena arena = Arena.ofConfined()) {
-            Arena session = arena;
-            var segment = session.allocate(0, 1);
+            var segment = arena.allocate(0, 1);
             assertEquals(segment.byteSize(), 0);
             MemoryLayout seq = MemoryLayout.sequenceLayout(0, JAVA_INT);
-            segment = session.allocate(seq);
+            segment = arena.allocate(seq);
             assertEquals(segment.byteSize(), 0);
             assertEquals(segment.address() % seq.byteAlignment(), 0);
-            segment = session.allocate(0, 4);
+            segment = arena.allocate(0, 4);
             assertEquals(segment.byteSize(), 0);
             assertEquals(segment.address() % 4, 0);
             MemorySegment rawAddress = MemorySegment.ofAddress(segment.address());
@@ -133,8 +133,7 @@ public class TestSegments {
     @Test
     public void testEqualsOffHeap() {
         try (Arena arena = Arena.ofConfined()) {
-            Arena scope1 = arena;
-            MemorySegment segment = scope1.allocate(100, 1);
+            MemorySegment segment = arena.allocate(100, 1);
             assertEquals(segment, segment.asReadOnly());
             assertEquals(segment, segment.asSlice(0, 100));
             assertNotEquals(segment, segment.asSlice(10, 90));
@@ -189,6 +188,38 @@ public class TestSegments {
         Arena scope = Arena.ofAuto();
         MemorySegment memorySegment = scope.allocate(10L, 1);
         memorySegment.get(JAVA_INT, offset);
+    }
+
+    @Test(expectedExceptions = IndexOutOfBoundsException.class)
+    public void testNegativeGetOffset() {
+        try (var arena = Arena.ofConfined()){
+            var segment = arena.allocate(JAVA_INT);
+            segment.get(JAVA_INT, -1);
+        }
+    }
+
+    @Test(expectedExceptions = IndexOutOfBoundsException.class)
+    public void testNegativeSetOffset() {
+        try (var arena = Arena.ofConfined()){
+            var segment = arena.allocate(JAVA_INT);
+            segment.set(JAVA_INT, -1, 1);
+        }
+    }
+
+    @Test(expectedExceptions = IndexOutOfBoundsException.class)
+    public void testNegativeGetAtOffset() {
+        try (var arena = Arena.ofConfined()){
+            var segment = arena.allocate(JAVA_INT);
+            segment.getAtIndex(JAVA_INT, -1);
+        }
+    }
+
+    @Test(expectedExceptions = IndexOutOfBoundsException.class)
+    public void testNegativeSetAtOffset() {
+        try (var arena = Arena.ofConfined()){
+            var segment = arena.allocate(JAVA_INT);
+            segment.setAtIndex(JAVA_INT, -1, 1);
+        }
     }
 
     @Test
