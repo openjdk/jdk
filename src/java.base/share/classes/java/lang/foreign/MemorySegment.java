@@ -44,6 +44,7 @@ import java.util.stream.Stream;
 import jdk.internal.foreign.AbstractMemorySegmentImpl;
 import jdk.internal.foreign.MemorySessionImpl;
 import jdk.internal.foreign.SegmentFactories;
+import jdk.internal.foreign.Utils;
 import jdk.internal.javac.Restricted;
 import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.vm.annotation.ForceInline;
@@ -1495,7 +1496,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      *         such that {@code dstSegment.isAccessibleBy(T) == false}
      * @throws IndexOutOfBoundsException if {@code srcOffset > srcSegment.byteSize() - bytes}
      * @throws IndexOutOfBoundsException if {@code dstOffset > dstSegment.byteSize() - bytes}
-     * @throws IndexOutOfBoundsException if either {@code srcOffset},
+     * @throws IllegalArgumentException if either {@code srcOffset},
      *         {@code dstOffset} or {@code bytes} are {@code < 0}
      * @throws IllegalArgumentException if {@code dstSegment} is
      *         {@linkplain #isReadOnly() read-only}
@@ -1561,7 +1562,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @throws IndexOutOfBoundsException if {@code elementCount * dtsLayout.byteSize()} overflows
      * @throws IndexOutOfBoundsException if {@code srcOffset > srcSegment.byteSize() - (elementCount * srcLayout.byteSize())}
      * @throws IndexOutOfBoundsException if {@code dstOffset > dstSegment.byteSize() - (elementCount * dstLayout.byteSize())}
-     * @throws IndexOutOfBoundsException if either {@code srcOffset}, {@code dstOffset} or {@code elementCount} are {@code < 0}
+     * @throws IllegalArgumentException if either {@code srcOffset}, {@code dstOffset} or {@code elementCount} are {@code < 0}
      */
     @ForceInline
     static void copy(MemorySegment srcSegment, ValueLayout srcElementLayout, long srcOffset,
@@ -2421,7 +2422,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @throws IndexOutOfBoundsException if {@code elementCount * srcLayout.byteSize()} overflows
      * @throws IndexOutOfBoundsException if {@code srcOffset > srcSegment.byteSize() - (elementCount * srcLayout.byteSize())}
      * @throws IndexOutOfBoundsException if {@code dstIndex > dstArray.length - elementCount}
-     * @throws IndexOutOfBoundsException if either {@code srcOffset}, {@code dstIndex} or {@code elementCount} are {@code < 0}
+     * @throws IllegalArgumentException if either {@code srcOffset}, {@code dstIndex} or {@code elementCount} are {@code < 0}
      */
     @ForceInline
     static void copy(MemorySegment srcSegment, ValueLayout srcLayout, long srcOffset,
@@ -2472,7 +2473,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @throws IndexOutOfBoundsException if {@code elementCount * dstLayout.byteSize()} overflows
      * @throws IndexOutOfBoundsException if {@code dstOffset > dstSegment.byteSize() - (elementCount * dstLayout.byteSize())}
      * @throws IndexOutOfBoundsException if {@code srcIndex > srcArray.length - elementCount}
-     * @throws IndexOutOfBoundsException if either {@code srcIndex}, {@code dstOffset} or {@code elementCount} are {@code < 0}
+     * @throws IllegalArgumentException if either {@code srcIndex}, {@code dstOffset} or {@code elementCount} are {@code < 0}
      */
     @ForceInline
     static void copy(Object srcArray, int srcIndex,

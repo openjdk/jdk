@@ -392,7 +392,7 @@ public interface SegmentAllocator {
      *         such that {@code source.isAccessibleBy(T) == false}
      * @throws IndexOutOfBoundsException if {@code elementCount * sourceElementLayout.byteSize()} overflows
      * @throws IndexOutOfBoundsException if {@code sourceOffset > source.byteSize() - (elementCount * sourceElementLayout.byteSize())}
-     * @throws IndexOutOfBoundsException if either {@code sourceOffset} or {@code elementCount} are {@code < 0}
+     * @throws IllegalArgumentException if either {@code sourceOffset} or {@code elementCount} are {@code < 0}
      */
     @ForceInline
     default MemorySegment allocateFrom(ValueLayout elementLayout,
@@ -733,8 +733,14 @@ public interface SegmentAllocator {
 
     @ForceInline
     private MemorySegment allocateNoInit(MemoryLayout layout, long size) {
+        long byteSize;
+        try {
+            byteSize = Math.multiplyExact(layout.byteSize(), size);
+        } catch (ArithmeticException _) {
+            throw new IndexOutOfBoundsException("Overflow for size=" + size + " and layout=" + layout);
+        }
         return this instanceof ArenaImpl arenaImpl ?
-                arenaImpl.allocateNoInit(layout.byteSize() * size, layout.byteAlignment()) :
+                arenaImpl.allocateNoInit(byteSize, layout.byteAlignment()) :
                 allocate(layout, size);
     }
 }
