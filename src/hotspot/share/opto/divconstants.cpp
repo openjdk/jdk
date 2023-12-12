@@ -29,98 +29,98 @@
 
 // Compute magic multiplier and shift constant for converting a 32/64 bit
 // division by constant into a multiply/shift series.
-
+//
 // (1) Theory:
 // Motivated by Henry S. Warren. 2012. Hacker's Delight (2nd. ed.). Addison-Wesley Professional.
-
+//
 // Given positive integers d <= N, call v the largest integer not larger than
 // N such that v + 1 is divisible by d.
-
+//
 // (a) For positive values c, m such that:
-
+//
 // m <= c * d < m + m / v
-
+//
 // We have:
-
+//
 // floor(x / d) = floor(x * c / m) for every integer x in [0, N]
-
+//
 // (b) For positive values c, m such that:
-
+//
 // m < c * d <= m + m / v
-
+//
 // We have:
-
+//
 // ceil(x / d) = floor(x * c / m) + 1 for every integer x in [-N, 0)
-
+//
 // (2) Proof:
-
+//
 // (a) The conclusion is trivial for x = 0
-
+//
 // For 0 < x <= v
-
+//
 // Since 1 / d <= c / m < (1 / d) * ((v + 1) / v)
-
+//
 // We have x / d <= x * c / m < (x * ((v + 1) / v)) / d
-
+//
 // As a result, since x * ((v + 1) / v) <= x * ((x + 1) / x) = x + 1
-
+//
 // x / d <= x * c / m < (x + 1) / d, which implies floor(x / d) = floor(x * c / m) since
 // there can be no integer in (x / d, (x + 1) / d)
-
+//
 // For v + 1 <= x <= v + d - 1, since v >= d - 1, we have x <= 2v
 // As a result, x * ((v + 1) / v) <= x * ((x + 2) / x)
-
+//
 // floor(x / d) = (v + 1) / d
 // x * c / m < x * ((v + 1) / v) / d) <= x * ((x + 2) / x) / d = (x + 2) / d
 //           <= (v + d - 1 + 2) / d = (v + 1) / d + 1
 // Which means (v + 1) / d <= floor(x * c / m) < (v + 1) / d + 1 with (v + 1) / d being an integer
 // This implies floor(x / d) = floor(x * c / m) for v + 1 <= x <= v + d - 1
-
+//
 // Combining all the cases gives us the conclusion.
-
+//
 // (b) Since ceil(a / b) = floor((a - 1) / b) + 1, we need to prove:
-
+//
 // floor((x - 1) / d) = floor(x * c / m)
-
+//
 // For 0 > x >= -v
-
+//
 // Since 1 / d < c / m <= (1 / d) * ((v + 1) / v)
-
+//
 // We have x / d > x * c / m >= (x / d) * ((v + 1) / v)
-
+//
 // since x * ((v + 1) / v) >= x * ((x - 1) / x) = x - 1
 // x / d > x * c / m >= (x - 1) / d, which implies floor((x - 1) / d) = floor(x * c / m) since
 // there can be no integer in ((x - 1) / d, x / d)
-
+//
 // For -v - d + 1 <= x <= -v - 1, since v >= d - 1, we have x >= -2v
 // As a result, x * ((v + 1) / v) >= x * ((x - 2) / x) = x - 2
-
+//
 // x / d <= (-v - 1) / d
 // floor((x - 1) / d) = (-v - 1) / d - 1
 // x * c / m >= x * ((v + 1) / v) / d) >= (x - 2) / d
 //           >= (-v - d + 1 - 2) / d = (-v - 1) / d - 1
 // which means (-v - 1) / d >= x / d > x * c / m >= (-v - 1) / d - 1
 // This implies floor((x - 1) / d) = floor(x * c / m) for -v - 1 >= x >= -v - d + 1
-
+//
 // Combining all the cases gives us the conclusion.
-
+//
 // (3) Discussion:
-
+//
 // Let x be v, v - d + 1, -v, -v + d - 1, it can be seen that these bounds are indeed optimal
-
+//
 // (4) Implementation:
-
+//
 // For computation efficiency, we only consider the values m = 2**s.
 // This function does not handle the cases d being a power of 2, which means
 // that c * d is never equal to m.
-
+//
 // We find the value of c, m such that it satisfies the bounds for both the nonnegative
 // and negative ranges of x. This can be done by finding v_neg and v_pos and the bounds of
 // c * d - m is the intersection of (0, m / v_neg] and (0, m / v_pos). Which is (0, m / v_pos)
 // if v_pos >= v_neg and (0, m / v_neg] otherwise.
-
+//
 // Given v = max(v_neg, v_pos). The function inductively calculates c, rc, qv, rv such that:
-
+//
 // c * d - rc = 2**s with 0 < rc <= d
 // qv * v + rv = 2**s with 0 <= rv < v
 template <class T>

@@ -82,8 +82,8 @@ static bool uint128_t_mul_no_ovf(julong hi, julong c_wrapped) {
   return mul_hi_wrapped >= mul_hi_c_wrapped;
 }
 
-// magic_divide_constants in utilities/javaArithmetic.hpp calculates the constant c, s
-// such that division(x / d) = floor(x * c / m) + (x < 0 ? 1 : 0) for every integer x in
+// magic_divide_constants in divconstants.cpp calculates the constant c, s
+// such that division(x / d) = floor(x * c / 2**s) + (x < 0 ? 1 : 0) for every integer x in
 // the input range. The functions in this file try to derive from the formula in real
 // arithmetic to arrive at a formula in int/long arithmetic. More details can be found in
 // each individual function.

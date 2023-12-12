@@ -23,15 +23,43 @@
  */
 
 #include "precompiled.hpp"
-
-#include <random>
-#include <type_traits>
-#include <vector>
-
-#undef assert
-
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/growableArray.hpp"
+#include <type_traits>
 #include "unittest.hpp"
+
+template <class T, class UT>
+static UT random();
+
+template <>
+juint random<jint, juint>() {
+  juint bits = juint(os::random()) % 31 + 1;
+  juint mask = (juint(1) << bits) - 1;
+  return os::random() & mask;
+}
+
+template <>
+juint random<juint, juint>() {
+  juint bits = juint(os::random()) % 32 + 1;
+  juint mask = bits == 32 ? std::numeric_limits<juint>::max() : (juint(1) << bits) - 1;
+  return os::random() & mask;
+}
+
+template <>
+julong random<jlong, julong>() {
+  juint bits = juint(os::random()) & 63 + 1;
+  julong mask = (julong(1) << bits) - 1;
+  julong full = (julong(os::random()) << 32) | os::random();
+  return full & mask;
+}
+
+template <>
+julong random<julong, julong>() {
+  juint bits = juint(os::random()) & 64 + 1;
+  julong mask = bits == 64 ? std::numeric_limits<julong>::max() : (julong(1) << bits) - 1;
+  julong full = (julong(os::random()) << 32) | os::random();
+  return full & mask;
+}
 
 template <class T>
 void magic_divide_constants(T d, T N_neg, T N_pos, juint min_s, T& c, bool& c_ovf, juint& s);
@@ -91,22 +119,17 @@ template <class T, class U>
 static void test_division_random() {
   constexpr int ITER = 10000;
   using UT = std::conditional_t<std::is_same<T, jlong>::value, julong, std::make_unsigned_t<T>>;
-  std::random_device rd;
-  std::minstd_rand rng(rd());
-  std::uniform_int_distribution<UT> N_dist(0, std::numeric_limits<T>::max());
-  std::uniform_int_distribution<UT> d_dist(0, std::numeric_limits<T>::max());
-  std::uniform_int_distribution<juint> min_s_dist(0, sizeof(T) * 8);
   for (int i = 0; i < ITER; i++) {
-    UT d = d_dist(rng);
-    UT N_neg = std::is_signed<T>::value ? N_dist(rng) + 1 : 0;
-    UT N_pos = N_dist(rng);
-    juint min_s = min_s_dist(rng);
+    UT d = random<T, UT>();
+    UT N_neg = std::is_signed<T>::value ? random<T, UT>() + 1 : 0;
+    UT N_pos = random<T, UT>();
+    juint min_s = juint(os::random()) % (sizeof(T) * 8 + 1);
     test_division<UT, U>(d, N_neg, N_pos, min_s);
   }
 }
 
 template <class T, class U>
-static void test_division_fixed(const std::vector<julong>& values) {
+static void test_division_fixed(const GrowableArrayView<const julong>& values) {
   using UT = std::conditional_t<std::is_same<T, jlong>::value, julong, std::make_unsigned_t<T>>;
   for (julong N_neg : values) {
     if (N_neg > UT(std::numeric_limits<T>::min())) {
@@ -126,11 +149,13 @@ static void test_division_fixed(const std::vector<julong>& values) {
 }
 
 TEST(opto, divide_by_constants) {
-  std::vector<julong> values{0, 1, 2, 3, 5, 6, 7, 8, 11, 14, 15, 19, 29, 60, 101, 1000, 9999, 1000000,
+  static const julong raw_values[] = {0, 1, 2, 3, 5, 6, 7, 8, 11, 14, 15, 19, 29, 60, 101, 1000, 9999, 1000000,
     max_jint - 10, max_jint - 1, max_jint, julong(max_jint) + 1, julong(max_jint) + 2, julong(max_jint) + 11,
     max_juint - 10, max_juint - 1, max_juint, julong(max_juint) + 1, julong(max_juint) + 2, julong(max_juint) + 11,
     max_jlong - 10, max_jlong - 1, max_jlong, julong(max_jlong) + 1, julong(max_jlong) + 2, julong(max_jlong) + 11,
     max_julong - 10, max_julong - 1, max_julong};
+
+  GrowableArrayFromArray<const julong> values(raw_values, sizeof(raw_values) / sizeof(julong));
 
 #ifdef __SIZEOF_INT128__
   test_division_fixed<jint, __int128>(values);
