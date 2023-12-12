@@ -89,7 +89,7 @@ jint G1ConcurrentRefineThreadControl::initialize(G1ConcurrentRefine* cr, uint ma
   _max_num_threads = max_num_threads;
 
   if (max_num_threads > 0) {
-    _threads = new GrowableArray<G1ConcurrentRefineThread*>(_max_num_threads, mtGC);
+    _threads = new(mtGC) GrowableArray<G1ConcurrentRefineThread*>(_max_num_threads, mtGC);
 
     _threads->at(0) = create_refinement_thread(0, true);
     if (_threads->at(0) == nullptr) {
