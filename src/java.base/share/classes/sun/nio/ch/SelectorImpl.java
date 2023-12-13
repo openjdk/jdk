@@ -140,13 +140,15 @@ public abstract class SelectorImpl
     private int lockAndDoSelect(Consumer<SelectionKey> action, long timeout)
         throws IOException
     {
-        if (!SelectorSelectEvent.enabled()) {
+        // filter selectNow ops from consideration (timeout == 0)
+        if ((timeout == 0) || (!SelectorSelectEvent.enabled())) {
             return implLockAndDoSelect(action, timeout);
         }
         long start = SelectorSelectEvent.timestamp();
         int n = implLockAndDoSelect(action, timeout);
         long duration = SelectorSelectEvent.timestamp() - start;
-        if (SelectorSelectEvent.shouldCommit(duration)) {
+        // always send event if timed out (n == 0)
+        if ((n == 0) || (SelectorSelectEvent.shouldCommit(duration))) {
             SelectorSelectEvent.commit(start, duration, n);
         }
         return n;

@@ -36,6 +36,7 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
+import java.time.Duration;
 import java.util.List;
 
 /**
@@ -52,10 +53,12 @@ public class TestSelectorSelectEvent {
     private static String COUNT_FIELD = "selectionKeyCount";
 
     public static void main(String[] args) throws Throwable {
-        new TestSelectorSelectEvent().test();
+        var tests = new TestSelectorSelectEvent();
+        tests.test1();
+        tests.test2();
     }
 
-    public void test() throws Throwable {
+    public void test1() throws Throwable {
         try (Recording recording = new Recording()) {
             try (ServerSocketChannel ssc = ServerSocketChannel.open()) {
                 recording.enable(EventNames.SelectorSelect).withoutThreshold();
@@ -69,6 +72,7 @@ public class TestSelectorSelectEvent {
                     Selector sel = Selector.open()) {
 
                     // register for read events, channel should not be selected
+                    // no event should be generated for selectNow().
                     sc1.configureBlocking(false);
                     SelectionKey key = sc1.register(sel, SelectionKey.OP_READ);
                     int n = sel.selectNow();
@@ -86,11 +90,47 @@ public class TestSelectorSelectEvent {
                 recording.stop();
 
                 List<RecordedEvent> events = Events.fromRecording(recording);
-                Asserts.assertEquals(events.size(), 2);
-                Asserts.assertTrue(events.get(0).getInt(COUNT_FIELD) == 0);
-                Asserts.assertTrue(events.get(1).getInt(COUNT_FIELD) == 1);
+                Asserts.assertEquals(events.size(), 1);
+                Asserts.assertTrue(events.get(0).getInt(COUNT_FIELD) == 1);
             }
         }
     }
+    public void test2() throws Throwable {
+        try (Recording recording = new Recording()) {
+            try (ServerSocketChannel ssc = ServerSocketChannel.open()) {
+                recording.enable(EventNames.SelectorSelect).withThreshold(Duration.ofMillis(100));
+                recording.start();
 
+                InetAddress lb = InetAddress.getLoopbackAddress();
+                ssc.bind(new InetSocketAddress(lb, 0));
+
+                try (SocketChannel sc1 = SocketChannel.open(ssc.getLocalAddress());
+                     SocketChannel sc2 = ssc.accept();
+                     Selector sel = Selector.open()) {
+
+                    // Register for read events, channel should not be selected
+                    // and should time out.  An event should be generated.
+                    sc1.configureBlocking(false);
+                    SelectionKey key = sc1.register(sel, SelectionKey.OP_READ);
+                    int n = sel.select(1);
+                    Asserts.assertTrue(n == 0);
+
+                    // write bytes to other end of connection
+                    ByteBuffer msg = ByteBuffer.wrap("hello".getBytes("UTF-8"));
+                    int nwrote = sc2.write(msg);
+                    Asserts.assertTrue(nwrote >= 0);
+
+                    // channel should be selected, but no events should be generated
+                    // due to high threshold
+                    n = sel.select();
+                    Asserts.assertTrue(n == 1);
+                }
+                recording.stop();
+
+                List<RecordedEvent> events = Events.fromRecording(recording);
+                Asserts.assertEquals(events.size(), 1);
+                Asserts.assertTrue(events.get(0).getInt(COUNT_FIELD) == 0);
+            }
+        }
+    }
 }
