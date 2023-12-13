@@ -124,7 +124,6 @@ class ShenandoahHeap : public CollectedHeap, public ShenandoahSpaceInfo {
   friend class ShenandoahGCStateResetter;
   friend class ShenandoahParallelObjectIterator;
   friend class ShenandoahSafepoint;
-  friend class VM_ShenandoahOperation;
 
   // Supported GC
   friend class ShenandoahConcurrentGC;
@@ -285,6 +284,7 @@ public:
   };
 
 private:
+  bool _gc_state_changed;
   ShenandoahSharedBitmap _gc_state;
   ShenandoahSharedFlag   _degenerated_gc_in_progress;
   ShenandoahSharedFlag   _full_gc_in_progress;
@@ -293,11 +293,11 @@ private:
 
   size_t _gc_no_progress_count;
 
-  void set_gc_state_all_threads();
   void set_gc_state_mask(uint mask, bool value);
 
 public:
   char gc_state() const;
+  void set_gc_state_all_threads();
 
   void set_concurrent_mark_in_progress(bool in_progress);
   void set_evacuation_in_progress(bool in_progress);
