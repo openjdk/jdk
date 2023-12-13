@@ -294,9 +294,9 @@ class AlignmentSolutionConstrained;
 
 class AlignmentSolution : public ResourceObj {
 public:
-  virtual bool is_empty() const       { return false; }
-  virtual bool is_trivial() const     { return false; }
-  virtual bool is_constrained() const { return false; }
+  virtual bool is_empty() const = 0;
+  virtual bool is_trivial() const = 0;
+  virtual bool is_constrained() const = 0;
 
   virtual const AlignmentSolutionConstrained* as_constrained() const {
     assert(is_constrained(), "must be constrained");
@@ -322,26 +322,30 @@ private:
   const char* _reason = nullptr;
 public:
   AlignmentSolutionEmpty(const char* reason) :  _reason(reason) {}
-  virtual bool is_empty() const override final { return true; }
+  virtual bool is_empty() const override final       { return true; }
+  virtual bool is_trivial() const override final     { return false; }
+  virtual bool is_constrained() const override final { return false; }
   const char* reason() const { return _reason; }
 
-  virtual const AlignmentSolution* filter(const AlignmentSolution* other) const {
-    return new AlignmentSolutionEmpty("invalid solution input to filter");
+  virtual const AlignmentSolution* filter(const AlignmentSolution* other) const override final {
+    return new AlignmentSolutionEmpty("empty solution input to filter");
   }
 
   virtual void print() const override final {
-    tty->print_cr("no solution: %s", reason());
+    tty->print_cr("empty solution: %s", reason());
   };
 };
 
 class AlignmentSolutionTrivial : public AlignmentSolution {
 public:
   AlignmentSolutionTrivial() {}
-  virtual bool is_trivial() const override final { return true; }
+  virtual bool is_empty() const override final       { return false; }
+  virtual bool is_trivial() const override final     { return true; }
+  virtual bool is_constrained() const override final { return false; }
 
-  virtual const AlignmentSolution* filter(const AlignmentSolution* other) const {
+  virtual const AlignmentSolution* filter(const AlignmentSolution* other) const override final {
     if (other->is_empty()) {
-      return new AlignmentSolutionEmpty("invalid solution input to filter");
+      return new AlignmentSolutionEmpty("empty solution input to filter");
     }
     return other;
   }
@@ -356,7 +360,7 @@ private:
   int _r = 0;
   int _q = 1;
   const MemNode* _mem_ref = nullptr;
-  int _alignment_width = 0; // TODO necessary???
+  int _alignment_width = 0;
   Node const* _invar_dependency = nullptr;
   int _scale_dependency = 0;
 public:
@@ -382,6 +386,10 @@ public:
            "alignment_width must be power of 2");
   }
 
+  virtual bool is_empty() const override final       { return false; }
+  virtual bool is_trivial() const override final     { return false; }
+  virtual bool is_constrained() const override final { return true; }
+
   int r() const                         { return _r; }
   int q() const                         { return _q; }
   const MemNode* mem_ref() const        { return _mem_ref; }
@@ -389,12 +397,11 @@ public:
   const Node* invar_dependency() const  { return _invar_dependency; }
   int scale_dependency() const          { return _scale_dependency; }
 
-  virtual bool is_constrained() const override final { return true; }
   virtual const AlignmentSolutionConstrained* as_constrained() const override final { return this; }
 
-  virtual const AlignmentSolution* filter(const AlignmentSolution* other) const {
+  virtual const AlignmentSolution* filter(const AlignmentSolution* other) const override final {
     if (other->is_empty()) {
-      return new AlignmentSolutionEmpty("invalid solution input to filter");
+      return new AlignmentSolutionEmpty("empty solution input to filter");
     }
     if (other->is_trivial()) {
       return this;
