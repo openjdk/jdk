@@ -1292,10 +1292,11 @@ class MethodType
     @Override
     public Optional<MethodTypeDesc> describeConstable() {
         try {
-            return Optional.of(MethodTypeDesc.of(returnType().describeConstable().orElseThrow(),
-                                                 Stream.of(parameterArray())
-                                                      .map(p -> p.describeConstable().orElseThrow())
-                                                      .toArray(ClassDesc[]::new)));
+            var params = new ClassDesc[parameterCount()];
+            for (int i = 0; i < params.length; i++) {
+                params[i] = parameterType(i).describeConstable().orElseThrow();
+            }
+            return Optional.of(MethodTypeDesc.of(returnType().describeConstable().orElseThrow(), params));
         }
         catch (NoSuchElementException e) {
             return Optional.empty();

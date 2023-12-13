@@ -25,8 +25,9 @@
 
 package java.lang.invoke;
 
-import jdk.internal.org.objectweb.asm.ClassWriter;
-import jdk.internal.org.objectweb.asm.Opcodes;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.attribute.SourceFileAttribute;
+import java.lang.constant.ClassDesc;
 import sun.invoke.util.Wrapper;
 
 import java.util.ArrayList;
@@ -38,6 +39,7 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.stream.Stream;
 
+import static java.lang.classfile.ClassFile.*;
 import static java.lang.invoke.LambdaForm.BasicType.*;
 import static java.lang.invoke.MethodHandleStatics.CLASSFILE_VERSION;
 import static java.lang.invoke.MethodTypeForm.*;
@@ -66,6 +68,7 @@ class GenerateJLIClassesHelper {
     static final String INVOKERS_HOLDER = "java/lang/invoke/Invokers$Holder";
     static final String INVOKERS_HOLDER_CLASS_NAME = INVOKERS_HOLDER.replace('/', '.');
     static final String BMH_SPECIES_PREFIX = "java.lang.invoke.BoundMethodHandle$Species_";
+    private static final ClassFile CC = ClassFile.of();
 
     static class HolderClassBuilder {
 
@@ -504,19 +507,14 @@ class GenerateJLIClassesHelper {
      * a class with a specified name.
      */
     private static byte[] generateCodeBytesForLFs(String className, String[] names, LambdaForm[] forms) {
-        ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS + ClassWriter.COMPUTE_FRAMES);
-        cw.visit(CLASSFILE_VERSION, Opcodes.ACC_PRIVATE + Opcodes.ACC_FINAL + Opcodes.ACC_SUPER,
-                className, null, InvokerBytecodeGenerator.INVOKER_SUPER_NAME, null);
-        cw.visitSource(className.substring(className.lastIndexOf('/') + 1), null);
-
-        for (int i = 0; i < forms.length; i++) {
-            InvokerBytecodeGenerator g
-                = new InvokerBytecodeGenerator(className, names[i], forms[i], forms[i].methodType());
-            g.setClassWriter(cw);
-            g.addMethod();
-        }
-
-        return cw.toByteArray();
+        return CC.build(ClassDesc.ofInternalName(className), clb -> {
+            clb.withFlags(ACC_PRIVATE | ACC_FINAL | ACC_SUPER)
+               .withSuperclass(InvokerBytecodeGenerator.INVOKER_SUPER_DESC)
+               .with(SourceFileAttribute.of(clb.constantPool().utf8Entry(className.substring(className.lastIndexOf('/') + 1))));
+            for (int i = 0; i < forms.length; i++) {
+                new InvokerBytecodeGenerator(className, names[i], forms[i], forms[i].methodType()).addMethod(clb);
+            }
+        });
     }
 
     private static LambdaForm makeReinvokerFor(MethodType type) {

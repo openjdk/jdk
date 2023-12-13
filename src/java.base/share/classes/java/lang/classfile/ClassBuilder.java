@@ -170,7 +170,12 @@ public sealed interface ClassBuilder
     default ClassBuilder withField(Utf8Entry name,
                                    Utf8Entry descriptor,
                                    int flags) {
-        return withField(name, descriptor, fb -> fb.withFlags(flags));
+        return withField(name, descriptor, new Consumer<FieldBuilder>() {
+            @Override
+            public void accept(FieldBuilder fb) {
+                fb.withFlags(flags);
+            }
+        });
     }
 
     /**
@@ -199,7 +204,13 @@ public sealed interface ClassBuilder
     default ClassBuilder withField(String name,
                                    ClassDesc descriptor,
                                    int flags) {
-        return withField(name, descriptor, fb -> fb.withFlags(flags));
+        return withField(name, descriptor, new Consumer<FieldBuilder>() {
+            //cannot use lambda here
+            @Override
+            public void accept(FieldBuilder fb) {
+                fb.withFlags(flags);
+            }
+        });
     }
 
     /**
@@ -246,7 +257,13 @@ public sealed interface ClassBuilder
                                         Utf8Entry descriptor,
                                         int methodFlags,
                                         Consumer<? super CodeBuilder> handler) {
-        return withMethod(name, descriptor, methodFlags, mb -> mb.withCode(handler));
+        return withMethod(name, descriptor, methodFlags, new Consumer<MethodBuilder>() {
+            //cannot use lambda here
+            @Override
+            public void accept(MethodBuilder mb) {
+                mb.withCode(handler);
+            }
+        });
     }
 
     /**
