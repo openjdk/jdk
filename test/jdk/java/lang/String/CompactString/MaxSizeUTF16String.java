@@ -43,6 +43,7 @@ public class MaxSizeUTF16String {
 
     private final static String EXPECTED_OOME_MESSAGE = "UTF16 String size is";
     private final static String EXPECTED_VM_LIMIT_MESSAGE = "Requested array size exceeds VM limit";
+    private final static String UNEXPECTED_JAVA_HEAP_SPACE = "Java heap space";
 
     // Create a large UTF-8 byte array with a single non-latin1 character
     private static byte[] generateUTF8Data(int byteSize) {
@@ -77,6 +78,10 @@ public class MaxSizeUTF16String {
                     fail("Expected OutOfMemoryError with message prefix: " + EXPECTED_OOME_MESSAGE);
                 }
             } catch (OutOfMemoryError ex) {
+                if (ex.getMessage().equals(UNEXPECTED_JAVA_HEAP_SPACE)) {
+                    // Insufficient heap size
+                    throw ex;
+                }
                 if (!ex.getMessage().startsWith(EXPECTED_OOME_MESSAGE) &&
                         !ex.getMessage().startsWith(EXPECTED_VM_LIMIT_MESSAGE)) {
                     fail("Failed: Not the OutOfMemoryError expected", ex);
@@ -102,6 +107,10 @@ public class MaxSizeUTF16String {
                     fail("Expected OutOfMemoryError with message prefix: " + EXPECTED_OOME_MESSAGE);
                 }
             } catch (OutOfMemoryError ex) {
+                if (ex.getMessage().equals(UNEXPECTED_JAVA_HEAP_SPACE)) {
+                    // Insufficient heap size
+                    throw ex;
+                }
                 if (!ex.getMessage().startsWith(EXPECTED_OOME_MESSAGE) &&
                         !ex.getMessage().startsWith(EXPECTED_VM_LIMIT_MESSAGE)) {
                     throw new RuntimeException("Wrong exception message: " + ex.getMessage(), ex);
