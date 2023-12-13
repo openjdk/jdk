@@ -245,8 +245,9 @@ void ScavengableNMethods::mark_on_list_nmethods() {
     nmethod* nm = iter.method();
     ScavengableNMethodsData data = gc_data(nm);
     assert(data.not_marked(), "clean state");
-    if (data.on_list())
+    if (data.on_list()) {
       data.set_marked();
+    }
   }
 }
 
@@ -257,7 +258,10 @@ void ScavengableNMethods::verify_unlisted_nmethods(CodeBlobClosure* cl) {
   while(iter.next()) {
     nmethod* nm = iter.method();
 
-    verify_nmethod(nm);
+    // Can not verify already unlinked nmethods as they are partially invalid already.
+    if (!nm->is_unlinked()) {
+      verify_nmethod(nm);
+    }
 
     if (cl != nullptr && !gc_data(nm).on_list()) {
       cl->do_code_blob(nm);

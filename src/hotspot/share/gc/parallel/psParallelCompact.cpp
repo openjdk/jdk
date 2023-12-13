@@ -2080,12 +2080,12 @@ void PSParallelCompact::marking_phase(ParallelOldTracer *gc_tracer) {
       ctx->purge_nmethods();
     }
     {
-      GCTraceTime(Debug, gc, phases) t("Free Code Blobs", gc_timer());
-      ctx->free_code_blobs();
-    }
-    {
       GCTraceTime(Debug, gc, phases) ur("Unregister NMethods", &_gc_timer);
       ParallelScavengeHeap::heap()->prune_unlinked_nmethods();
+    }
+    {
+      GCTraceTime(Debug, gc, phases) t("Free Code Blobs", gc_timer());
+      ctx->free_code_blobs();
     }
 
     // Prune dead klasses from subklass/sibling/implementor lists.

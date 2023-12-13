@@ -1465,6 +1465,7 @@ void nmethod::purge(bool free_code_cache_data, bool unregister_nmethod) {
   }
 
   if (unregister_nmethod) {
+    assert(!free_code_cache_data, "must not free when postponing unregistering");
     Universe::heap()->unregister_nmethod(this);
   }
 
