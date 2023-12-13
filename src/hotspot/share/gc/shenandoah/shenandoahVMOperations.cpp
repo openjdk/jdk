@@ -35,12 +35,17 @@
 #include "interpreter/oopMapCache.hpp"
 #include "memory/universe.hpp"
 
+void VM_ShenandoahOperation::doit_epilogue() {
+  ShenandoahHeap::heap()->set_gc_state_all_threads();
+}
+
 bool VM_ShenandoahReferenceOperation::doit_prologue() {
   Heap_lock->lock();
   return true;
 }
 
 void VM_ShenandoahReferenceOperation::doit_epilogue() {
+  VM_ShenandoahOperation::doit_epilogue();
   OopMapCache::cleanup_old_entries();
   if (Universe::has_reference_pending_list()) {
     Heap_lock->notify_all();

@@ -1741,7 +1741,8 @@ void ShenandoahHeap::prepare_update_heap_references(bool concurrent) {
   _update_refs_iterator.reset();
 }
 
-void ShenandoahHeap::set_gc_state_all_threads(char state) {
+void ShenandoahHeap::set_gc_state_all_threads() {
+  char state = gc_state();
   for (JavaThreadIteratorWithHandle jtiwh; JavaThread *t = jtiwh.next(); ) {
     ShenandoahThreadLocalData::set_gc_state(t, state);
   }
@@ -1750,7 +1751,6 @@ void ShenandoahHeap::set_gc_state_all_threads(char state) {
 void ShenandoahHeap::set_gc_state_mask(uint mask, bool value) {
   assert(ShenandoahSafepoint::is_at_shenandoah_safepoint(), "Should really be Shenandoah safepoint");
   _gc_state.set_cond(mask, value);
-  set_gc_state_all_threads(_gc_state.raw_value());
 }
 
 void ShenandoahHeap::set_concurrent_mark_in_progress(bool in_progress) {
