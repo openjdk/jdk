@@ -8364,7 +8364,7 @@ instruct round_double_reg(iRegLNoSp dst, fRegD src, fRegD ftmp) %{
     __ java_round_double($dst$$Register, as_FloatRegister($src$$reg), as_FloatRegister($ftmp$$reg));
   %}
 
-  ins_pipe(pipe_class_default);
+  ins_pipe(pipe_slow);
 %}
 
 instruct round_float_reg(iRegINoSp dst, fRegF src, fRegF ftmp) %{
@@ -8378,7 +8378,7 @@ instruct round_float_reg(iRegINoSp dst, fRegF src, fRegF ftmp) %{
     __ java_round_float($dst$$Register, as_FloatRegister($src$$reg), as_FloatRegister($ftmp$$reg));
   %}
 
-  ins_pipe(pipe_class_default);
+  ins_pipe(pipe_slow);
 %}
 
 // Convert oop pointer into compressed form

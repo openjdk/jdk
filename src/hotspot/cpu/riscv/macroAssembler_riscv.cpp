@@ -4261,12 +4261,12 @@ FCVT_SAFE(fcvt_l_d, d);
 
 void MacroAssembler::java_round_float(Register dst, FloatRegister src, FloatRegister ftmp) {
   Label done;
-  mv(dst, zr);
-  li(t0, 0x3f000000);
+  li(t0, jint_cast(0.5f));
   fmv_w_x(ftmp, t0);
 
   // dst = 0 if NaN
   feq_s(t0, src, src);
+  mv(dst, zr);
   beqz(t0, done);
 
   // dst = (src + 0.5f) rounded down towards negative infinity
@@ -4278,12 +4278,12 @@ void MacroAssembler::java_round_float(Register dst, FloatRegister src, FloatRegi
 
 void MacroAssembler::java_round_double(Register dst, FloatRegister src, FloatRegister ftmp) {
   Label done;
-  mv(dst, zr);
-  li(t0, 0x3fe0000000000000);
+  li(t0, julong_cast(0.5));
   fmv_d_x(ftmp, t0);
 
   // dst = 0 if NaN
   feq_d(t0, src, src);
+  mv(dst, zr);
   beqz(t0, done);
 
   // dst = (src + 0.5) rounded down towards negative infinity
