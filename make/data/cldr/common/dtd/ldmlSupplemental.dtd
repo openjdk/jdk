@@ -12,7 +12,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 <!ATTLIST version number CDATA #REQUIRED >
     <!--@MATCH:any-->
     <!--@METADATA-->
-<!ATTLIST version cldrVersion CDATA #FIXED "43" >
+<!ATTLIST version cldrVersion CDATA #FIXED "44" >
     <!--@MATCH:version-->
     <!--@VALUE-->
 <!ATTLIST version unicodeVersion CDATA #FIXED "15.0.0" >
@@ -415,6 +415,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
     <!--@MATCH:regex/simple-->
     <!--@VALUE-->
 <!ATTLIST unitQuantity description CDATA #IMPLIED >
+    <!--@MATCH:any-->
     <!--@METADATA-->
 
 <!ELEMENT convertUnits ( convertUnit* ) >
@@ -432,9 +433,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
     <!--@MATCH:regex/[-+*/\._ 0-9a-zA-Z]+-->
     <!--@VALUE-->
 <!ATTLIST convertUnit systems NMTOKENS #IMPLIED >
-    <!--@MATCH:set/literal/ussystem, uksystem, metric, si, other-->
+    <!--@MATCH:set/literal/si, si_acceptable, metric, metric_adjacent, ussystem, uksystem, jpsystem, astronomical, person_age, other, prefixable-->
     <!--@VALUE-->
 <!ATTLIST convertUnit description CDATA #IMPLIED >
+    <!--@MATCH:any-->
     <!--@METADATA-->
 
 <!ELEMENT unitPreferenceData ( unitPreferences* ) >
@@ -1251,7 +1253,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 <!ATTLIST coverageLevel inTerritory CDATA #IMPLIED >
     <!--@MATCH:any-->
 <!ATTLIST coverageLevel value CDATA #REQUIRED >
-    <!--@MATCH:literal/basic, core, minimal, moderate, modern, posix-->
+    <!--@MATCH:literal/basic, comprehensive, core, minimal, moderate, modern, posix-->
     <!--@VALUE-->
 <!ATTLIST coverageLevel match CDATA #REQUIRED >
     <!--@MATCH:any-->

@@ -63,6 +63,19 @@ AC_DEFUN([LIB_SETUP_HSDIS_CAPSTONE],
       AC_MSG_ERROR([Cannot continue])
     fi
   fi
+
+  capstone_header="\"$CAPSTONE/include/capstone/capstone.h\""
+  AC_MSG_CHECKING([capstone aarch64 arch name])
+  AC_COMPILE_IFELSE([AC_LANG_PROGRAM([#include $capstone_header],[[cs_arch test = CS_ARCH_AARCH64]])],
+    [
+      AC_MSG_RESULT([AARCH64])
+      CAPSTONE_ARCH_AARCH64_NAME="AARCH64"
+    ],
+    [
+      AC_MSG_RESULT([ARM64])
+      CAPSTONE_ARCH_AARCH64_NAME="ARM64"
+    ]
+  )
 ])
 
 ################################################################################
@@ -255,21 +268,30 @@ AC_DEFUN([LIB_SETUP_HSDIS_BINUTILS],
     disasm_header="\"$BINUTILS_INSTALL_DIR/include/dis-asm.h\""
     if test -e $BINUTILS_INSTALL_DIR/lib/libbfd.a && \
        test -e $BINUTILS_INSTALL_DIR/lib/libopcodes.a && \
-       test -e $BINUTILS_INSTALL_DIR/lib/libiberty.a; then
+       (test -e $BINUTILS_INSTALL_DIR/lib/libiberty.a || test -e $BINUTILS_INSTALL_DIR/lib64/libiberty.a); then
       HSDIS_CFLAGS="-DLIBARCH_$OPENJDK_TARGET_CPU_LEGACY_LIB -I$BINUTILS_INSTALL_DIR/include"
-      HSDIS_LIBS="$BINUTILS_INSTALL_DIR/lib/libbfd.a $BINUTILS_INSTALL_DIR/lib/libopcodes.a $BINUTILS_INSTALL_DIR/lib/libiberty.a"
+
+      # libiberty ignores --libdir and may be installed in $BINUTILS_INSTALL_DIR/lib or $BINUTILS_INSTALL_DIR/lib64
+      # depending on system setup
+      LIBIBERTY_LIB=""
+      if test -e $BINUTILS_INSTALL_DIR/lib/libiberty.a; then
+        LIBIBERTY_LIB="$BINUTILS_INSTALL_DIR/lib/libiberty.a"
+      else
+        LIBIBERTY_LIB="$BINUTILS_INSTALL_DIR/lib64/libiberty.a"
+      fi
+      HSDIS_LIBS="$BINUTILS_INSTALL_DIR/lib/libbfd.a $BINUTILS_INSTALL_DIR/lib/libopcodes.a $LIBIBERTY_LIB"
       # If we have libsframe add it.
       if test -e $BINUTILS_INSTALL_DIR/lib/libsframe.a; then
         HSDIS_LIBS="$HSDIS_LIBS $BINUTILS_INSTALL_DIR/lib/libsframe.a"
       fi
       AC_CHECK_LIB(z, deflate, [ HSDIS_LIBS="$HSDIS_LIBS -lz" ], AC_MSG_ERROR([libz not found]))
     else
-      AC_MSG_ERROR(["$BINUTILS_INSTALL_DIR/libs/ must contain libbfd.a, libopcodes.a, libiberty.a"])
+      AC_MSG_ERROR(["$BINUTILS_INSTALL_DIR/lib[64] must contain libbfd.a, libopcodes.a and libiberty.a"])
     fi
   fi
 
   AC_MSG_CHECKING([Checking binutils API])
-  AC_COMPILE_IFELSE([AC_LANG_PROGRAM([#include $disasm_header],[[void foo() {init_disassemble_info(0, 0, 0, 0);}]])],
+  AC_COMPILE_IFELSE([AC_LANG_PROGRAM([#include $disasm_header],[[init_disassemble_info(0, 0, 0, 0);]])],
     [
       AC_MSG_RESULT([New API])
       HSDIS_CFLAGS="$HSDIS_CFLAGS -DBINUTILS_NEW_API"
@@ -356,6 +378,7 @@ AC_DEFUN_ONCE([LIB_SETUP_HSDIS],
   AC_SUBST(HSDIS_CFLAGS)
   AC_SUBST(HSDIS_LDFLAGS)
   AC_SUBST(HSDIS_LIBS)
+  AC_SUBST(CAPSTONE_ARCH_AARCH64_NAME)
 
   AC_MSG_CHECKING([if hsdis should be bundled])
   if test "x$ENABLE_HSDIS_BUNDLING" = "xtrue"; then
