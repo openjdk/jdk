@@ -140,7 +140,7 @@ instruct zCompareAndSwapP(iRegINoSp res, indirect mem, iRegP oldval, iRegP newva
   ins_encode %{
     guarantee($mem$$disp == 0, "impossible encoding");
     Address ref_addr($mem$$Register);
-    z_color(_masm, this, $oldval_tmp$$Register, $oldval$$Register, t1);
+    z_color(_masm, this, $oldval_tmp$$Register, $oldval$$Register, $newval_tmp$$Register);
     z_store_barrier(_masm, this, ref_addr, $newval$$Register, $newval_tmp$$Register, t1, true /* is_atomic */);
     __ cmpxchg($mem$$Register, $oldval_tmp$$Register, $newval_tmp$$Register, Assembler::int64, Assembler::relaxed /* acquire */, Assembler::rl /* release */, $res$$Register, true /* result_as_bool */);
   %}
@@ -162,7 +162,7 @@ instruct zCompareAndSwapPAcq(iRegINoSp res, indirect mem, iRegP oldval, iRegP ne
   ins_encode %{
     guarantee($mem$$disp == 0, "impossible encoding");
     Address ref_addr($mem$$Register);
-    z_color(_masm, this, $oldval_tmp$$Register, $oldval$$Register, t1);
+    z_color(_masm, this, $oldval_tmp$$Register, $oldval$$Register, $newval_tmp$$Register);
     z_store_barrier(_masm, this, ref_addr, $newval$$Register, $newval_tmp$$Register, t1, true /* is_atomic */);
     __ cmpxchg($mem$$Register, $oldval_tmp$$Register, $newval_tmp$$Register, Assembler::int64, Assembler::aq /* acquire */, Assembler::rl /* release */, $res$$Register, true /* result_as_bool */);
   %}
@@ -182,7 +182,7 @@ instruct zCompareAndExchangeP(iRegPNoSp res, indirect mem, iRegP oldval, iRegP n
   ins_encode %{
     guarantee($mem$$disp == 0, "impossible encoding");
     Address ref_addr($mem$$Register);
-    z_color(_masm, this, $oldval_tmp$$Register, $oldval$$Register, t1);
+    z_color(_masm, this, $oldval_tmp$$Register, $oldval$$Register, $newval_tmp$$Register);
     z_store_barrier(_masm, this, ref_addr, $newval$$Register, $newval_tmp$$Register, t1, true /* is_atomic */);
     __ cmpxchg($mem$$Register, $oldval_tmp$$Register, $newval_tmp$$Register, Assembler::int64, Assembler::relaxed /* acquire */, Assembler::rl /* release */, $res$$Register);
     z_uncolor(_masm, this, $res$$Register);
@@ -203,7 +203,7 @@ instruct zCompareAndExchangePAcq(iRegPNoSp res, indirect mem, iRegP oldval, iReg
   ins_encode %{
     guarantee($mem$$disp == 0, "impossible encoding");
     Address ref_addr($mem$$Register);
-    z_color(_masm, this, $oldval_tmp$$Register, $oldval$$Register, t1);
+    z_color(_masm, this, $oldval_tmp$$Register, $oldval$$Register, $newval_tmp$$Register);
     z_store_barrier(_masm, this, ref_addr, $newval$$Register, $newval_tmp$$Register, t1, true /* is_atomic */);
     __ cmpxchg($mem$$Register, $oldval_tmp$$Register, $newval_tmp$$Register, Assembler::int64, Assembler::aq /* acquire */, Assembler::rl /* release */, $res$$Register);
     z_uncolor(_masm, this, $res$$Register);
