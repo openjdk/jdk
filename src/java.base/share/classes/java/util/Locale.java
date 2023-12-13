@@ -307,7 +307,6 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  * <li>The default {@code Locale} instance is constructed from the values of these
  * system properties.
  * </li>
- * </li>
  * </ol>
  * <p>Altering the system property values with {@link System#setProperties(Properties)}/
  * {@link System#setProperty(String, String)} has no effect on the default Locale.
@@ -315,13 +314,13 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  * Locale with {@link #getDefault()} and change it with {@link #setDefault(Locale)}.
  * If the default Locale is changed with {@link #setDefault(Locale)}, the corresponding
  * system properties are not altered. It is not recommended that applications read
- * these system properties and parse/interpret them as their values may be out of sync.
+ * these system properties and parse/interpret them as their values may be out of date.
  *
  * <p>There are finer-grained default Locales specific for each {@link Locale.Category}.
  * These category specific default Locales can be queried by {@link #getDefault(Category)},
  * and set by {@link #setDefault(Category, Locale)}. Construction of these category
  * specific default Locales are determined by the corresponding system properties,
- * which consist of the base system properties as listed above, appended by either
+ * which consist of the base system properties as listed above, suffixed by either
  * {@code ".display"} or {@code ".format"} depending on the category. For example,
  * the value of the {@code user.language.display} system property will be used in the
  * {@code language} part of the default Locale for {@link Locale.Category#DISPLAY}
