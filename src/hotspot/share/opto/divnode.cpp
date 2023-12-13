@@ -98,7 +98,7 @@ static Node* transform_int_divide(PhaseGVN* phase, Node* dividend, jint divisor)
   }
 
   bool d_pos = divisor >= 0;
-  juint d = ABS<jint>(divisor);
+  juint d = uabs(divisor);
   constexpr int N = 32;
   const TypeInt* dti = phase->type(dividend)->is_int();
   juint min_neg = dti->_lo < 0 ? -juint(dti->_lo) : 0;
@@ -336,7 +336,7 @@ static Node* transform_long_divide(PhaseGVN* phase, Node* dividend, jlong diviso
   }
 
   bool d_pos = divisor >= 0;
-  julong d = ABS<jlong>(divisor);
+  julong d = uabs(divisor);
   constexpr int N = 64;
   const TypeLong* dtl = phase->type(dividend)->is_long();
   julong min_neg = dtl->_lo < 0 ? -julong(dtl->_lo) : 0;
