@@ -4419,6 +4419,309 @@ class StubGenerator: public StubCodeGenerator {
     return (address) start;
   }
 
+
+  // ------------------------ SHA-1 intrinsic ------------------------
+
+  // K't =
+  //    5a827999, 0  <= t <= 19
+  //    6ed9eba1, 20 <= t <= 39
+  //    8f1bbcdc, 40 <= t <= 59
+  //    ca62c1d6, 60 <= t <= 79
+  void sha1_prepare_k(int round, Register cur_k) {
+    assert(round >= 0 && round < 80, "must be");
+
+    static const int64_t ks[] = {0x5a827999, 0x6ed9eba1, 0x8f1bbcdc, 0xca62c1d6};
+    if ((round % 20) == 0) {
+      __ mv(cur_k, ks[round/20]);
+    }
+  }
+
+  // W't =
+  //    M't,                                      0 <=  t <= 15
+  //    ROTL'1(W't-3 ^ W't-8 ^ W't-14 ^ W't-16),  16 <= t <= 79
+  void sha1_prepare_w(int round, Register cur_w, Register ws[], Register buf, Register tmp) {
+    assert(round >= 0 && round < 80, "must be");
+
+    if (round < 16) {
+
+      if (round%2 == 0) {
+        __ ld(ws[round/2], Address(buf, 0));
+        __ addi(buf, buf, 8);
+        // reverse bytes, as SHA-1 is defined in big-endian.
+        __ revb(ws[round/2], ws[round/2]);
+        __ srli(cur_w, ws[round/2], 32);
+      } else {
+        __ mv(cur_w, ws[round/2]);
+      }
+
+      return;
+    }
+
+    if (round%2 == 0) {
+      int idx = 16;
+      // W't = ROTL'1(W't-3 ^ W't-8 ^ W't-14 ^ W't-16),  16 <= t <= 79
+      __ mv(cur_w, ws[(idx-3)/2]);
+      __ srli(tmp, ws[(idx-8)/2], 32);
+      __ xorr(cur_w, cur_w, tmp);
+      __ srli(tmp, ws[(idx-14)/2], 32);
+      __ xorr(cur_w, cur_w, tmp);
+      __ srli(tmp, ws[(idx-16)/2], 32);
+      __ xorr(cur_w, cur_w, tmp);
+      __ rolw_imm(cur_w, cur_w, 1, tmp);
+
+      // copy the cur_w value to ws[8].
+      // now, valid w't values are at:
+      //  w0:       ws[0]'s lower 32 bits
+      //  w1 ~ w14: ws[1] ~ ws[7]
+      //  w15:      ws[8]'s higher 32 bits
+      __ slli(ws[idx/2], cur_w, 32);
+
+      return;
+    }
+
+    int idx = 17;
+    // W't = ROTL'1(W't-3 ^ W't-8 ^ W't-14 ^ W't-16),  16 <= t <= 79
+    __ srli(cur_w, ws[(idx-3)/2], 32);
+    __ mv(tmp, ws[(idx-8)/2]);
+    __ xorr(cur_w, cur_w, tmp);
+    __ mv(tmp, ws[(idx-14)/2]);
+    __ xorr(cur_w, cur_w, tmp);
+    __ mv(tmp, ws[(idx-16)/2]);
+    __ xorr(cur_w, cur_w, tmp);
+    __ rolw_imm(cur_w, cur_w, 1, tmp);
+
+    // copy the cur_w value to ws[8]
+    __ slli(cur_w, cur_w, 32);
+    __ srli(cur_w, cur_w, 32);
+    __ orr(ws[idx/2], ws[idx/2], cur_w);
+
+    // shift the w't registers, so they start from ws[0] again.
+    // now, valid w't values are at:
+    //  w0 ~ w15: ws[0] ~ ws[7]
+    Register ws_0 = ws[0];
+    for (int i = 0; i < 16/2; i++) {
+      ws[i] = ws[i+1];
+    }
+    ws[8] = ws_0;
+  }
+
+  // f't(x, y, z) =
+  //    Ch(x, y, z)     = (x & y) ^ (~x & z)            , 0  <= t <= 19
+  //    Parity(x, y, z) = x ^ y ^ z                     , 20 <= t <= 39
+  //    Maj(x, y, z)    = (x & y) ^ (x & z) ^ (y & z)   , 40 <= t <= 59
+  //    Parity(x, y, z) = x ^ y ^ z                     , 60 <= t <= 79
+  void sha1_f(int round, Register dst, Register x, Register y, Register z, Register tmp) {
+    assert(round >= 0 && round < 80, "must be");
+    assert_different_registers(dst, x, y, z, tmp);
+
+    if (round < 20) {
+      // (x & y) ^ (~x & z)
+      __ andr(dst, x, y);
+      __ andn(tmp, z, x);
+      __ xorr(dst, dst, tmp);
+    } else if (round >= 40 && round < 60) {
+      // (x & y) ^ (x & z) ^ (y & z)
+      __ andr(tmp, x, y);
+      __ andr(dst, x, z);
+      __ xorr(dst, dst, tmp);
+      __ andr(tmp, y, z);
+      __ xorr(dst, dst, tmp);
+    } else {
+      // x ^ y ^ z
+      __ xorr(dst, x, y);
+      __ xorr(dst, dst, z);
+    }
+  }
+
+  // T = ROTL'5(a) + f't(b, c, d) + e + K't + W't
+  // e = d
+  // d = c
+  // c = ROTL'30(b)
+  // b = a
+  // a = T
+  void sha1_process_round(int round, Register a, Register b, Register c, Register d, Register e,
+                          Register cur_k, Register cur_w, Register tmp1, Register tmp2) {
+    assert(round >= 0 && round < 80, "must be");
+    assert_different_registers(a, b, c, d, e, cur_w, cur_k, tmp1, tmp2);
+
+    // T = ROTL'5(a) + f't(b, c, d) + e + K't + W't
+    {
+      Register t = e;
+      __ add(t, t, cur_w);
+      __ add(t, t, cur_k);
+      __ rolw_imm(tmp1, a, 5, tmp2);
+      __ add(t, t, tmp1);
+      sha1_f(round, tmp1, b, c, d, tmp2);
+      __ add(tmp1, t, tmp1);
+    }
+
+    // e = d
+    // d = c
+    // c = ROTL'30(b)
+    // b = a
+    // a = T
+    __ mv(e, d);
+    __ mv(d, c);
+    __ rolw_imm(c, b, 30, tmp2);
+    __ mv(b, a);
+    __ mv(a, tmp1);
+  }
+
+  void sha1_calculate_im_hash(Register a, Register b, Register c, Register d, Register e,
+                              Register prev_ab, Register prev_cd, Register prev_e) {
+    assert_different_registers(a, b, c, d, e, prev_ab, prev_cd, prev_e);
+
+    __ add(a, a, prev_ab);
+    __ srli(prev_ab, prev_ab, 32);
+    __ add(b, b, prev_ab);
+
+    __ add(c, c, prev_cd);
+    __ srli(prev_cd, prev_cd, 32);
+    __ add(d, d, prev_cd);
+
+    __ add(e, e, prev_e);
+  }
+
+  void sha1_reserve_prev_abcde(Register a, Register b, Register c, Register d, Register e,
+                               Register prev_ab, Register prev_cd, Register prev_e,
+                               Register tmp1, Register tmp2) {
+    assert_different_registers(a, b, c, d, e, prev_ab, prev_cd, prev_e, tmp1, tmp2);
+    int64_t mask32 = 0xffffffff;
+
+    __ slli(tmp1, b, 32);
+    __ andi(prev_ab, a, mask32, tmp2);
+    __ orr(prev_ab, prev_ab, tmp1);
+
+    __ slli(tmp1, d, 32);
+    __ andi(prev_cd, c, mask32, tmp2);
+    __ orr(prev_cd, prev_cd, tmp1);
+
+    __ mv(prev_e, e);
+  }
+
+  // Intrinsic for:
+  //   void sun.security.provider.SHA.implCompress0(byte[] buf, int ofs)
+  //   void sun.security.provider.DigestBase.implCompressMultiBlock0(byte[] b, int ofs, int limit)
+  //
+  // Arguments:
+  //
+  // Inputs:
+  //   c_rarg0: byte[]  src array + offset
+  //   c_rarg1: int[]   SHA.state
+  //   - - - - - - below are for implCompressMultiBlock0 - - - - - -
+  //   c_rarg2: int     offset
+  //   c_rarg3: int     limit
+  //
+  // Outpus:
+  //   - - - - - - below are for implCompressMultiBlock0 - - - - - -
+  //   c_rarg0: int offset, when (multi_block == true)
+  //
+  address generate_sha1_implCompress(bool multi_block, const char *name) {
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", name);
+
+    address start = __ pc();
+    __ enter();
+
+    // c_rarg0 - c_rarg3: x10 - x13
+    Register buf    = c_rarg0;
+    Register state  = c_rarg1;
+    Register offset = c_rarg2;
+    Register limit  = c_rarg3;
+
+    // [args-reg]:  x14 - x17
+    // [temp-reg]:  x28 - x31
+    // [saved-reg]: x18 - x27
+
+    // h0/1/2/3/4
+    const Register a = x14, b = x15, c = x16, d = x17, e = x28;
+    // w0, w1, ... w15
+    // put two adjecent w's in one register:
+    //    one at high word part, another at low word part
+    // at different round (even or odd), w't value resdie in different items in ws[].
+    // w0 ~ w15, either reside in
+    //    ws[0] ~ ws[7], where
+    //      w0 at higher 32 bits of ws[0],
+    //      w1 at lower 32 bits of ws[0],
+    //      ...
+    //      w14 at higher 32 bits of ws[7],
+    //      w15 at lower 32 bits of ws[7].
+    // or, reside in
+    //    w0:       ws[0]'s lower 32 bits
+    //    w1 ~ w14: ws[1] ~ ws[7]
+    //    w15:      ws[8]'s higher 32 bits
+    Register ws[9] = {x29, x30, x31, x18,
+                      x19, x20, x21, x22,
+                      x23}; // auxiliary register for calculating w's value
+    // current k't's value
+    const Register cur_k = x24;
+    // current w't's value
+    const Register cur_w = x25;
+    // values of a, b, c, d, e in the previous round
+    const Register prev_ab = x26, prev_cd = x27, prev_e = t2;
+
+    RegSet saved_regs = RegSet::range(x18, x27);
+    saved_regs += RegSet::of(t2);
+    __ push_reg(saved_regs, sp);
+
+    // load 5 words state into a, b, c, d, e
+    __ ld(a, Address(state, 0));
+    __ srli(b, a, 32);
+    __ ld(c, Address(state, 8));
+    __ srli(d, c, 32);
+    __ lw(e, Address(state, 16));
+
+
+    Label L_sha1_loop;
+    if (multi_block) {
+      __ BIND(L_sha1_loop);
+    }
+
+    sha1_reserve_prev_abcde(a, b, c, d, e, prev_ab, prev_cd, prev_e, t0, t1);
+
+    for (int round = 0; round < 80; round++) {
+      // prepare K't value
+      sha1_prepare_k(round, cur_k);
+
+      // prepare W't value
+      sha1_prepare_w(round, cur_w, ws, buf, t0);
+
+      // one round process
+      sha1_process_round(round, a, b, c, d, e, cur_k, cur_w, t0, t1);
+    }
+
+    // compute the intermediate hash value
+    sha1_calculate_im_hash(a, b, c, d, e, prev_ab, prev_cd, prev_e);
+
+    if (multi_block) {
+      __ addi(offset, offset, 64);
+      __ ble(offset, limit, L_sha1_loop, true);
+      // return offset
+      __ mv(c_rarg0, offset);
+    }
+
+    int64_t mask32 = 0xffffffff;
+    __ andi(a, a, mask32, t0);
+    __ slli(b, b, 32);
+    __ orr(a, a, b);
+    __ sd(a, Address(state, 0));
+    __ andi(c, c, mask32, t0);
+    __ slli(d, d, 32);
+    __ orr(c, c, d);
+    __ sd(c, Address(state, 8));
+    __ sw(e, Address(state, 16));
+
+
+    __ pop_reg(saved_regs, sp);
+
+    __ leave();
+    __ ret();
+
+    return (address) start;
+  }
+
+
+
 #ifdef COMPILER2
 
 static const int64_t right_2_bits = right_n_bits(2);
@@ -4869,6 +5172,11 @@ static const int64_t right_3_bits = right_n_bits(3);
 
     if (UseChaCha20Intrinsics) {
       StubRoutines::_chacha20Block = generate_chacha20Block();
+    }
+
+    if (UseSHA1Intrinsics) {
+      StubRoutines::_sha1_implCompress     = generate_sha1_implCompress(false, "sha1_implCompress");
+      StubRoutines::_sha1_implCompressMB   = generate_sha1_implCompress(true, "sha1_implCompressMB");
     }
 
 #endif // COMPILER2_OR_JVMCI

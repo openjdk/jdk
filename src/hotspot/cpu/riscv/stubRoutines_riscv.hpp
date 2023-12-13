@@ -39,7 +39,7 @@ enum platform_dependent_constants {
   // simply increase sizes if too small (assembler will crash if too small)
   _initial_stubs_code_size      = 10000,
   _continuation_stubs_code_size =  2000,
-  _compiler_stubs_code_size     = 15000 ZGC_ONLY(+5000),
+  _compiler_stubs_code_size     = 25000 ZGC_ONLY(+5000),
   _final_stubs_code_size        = 20000 ZGC_ONLY(+10000)
 };
 
