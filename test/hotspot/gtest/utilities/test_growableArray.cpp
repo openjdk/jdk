@@ -36,8 +36,6 @@
 //
 // TODO
 // print ?
-//
-// swap -> refactor!
 
 // TODO assignment operator and copy constructor
 //      assign with different arena / resource area???
@@ -2253,3 +2251,84 @@ TEST_VM_ASSERT_MSG(GrowableArrayAssertingTest, unallowed_alloc_arena_arena,
 }
 #endif
 
+#define TEST_SWAP(a1, a2) {                           \
+  int* a1_adr = a1.adr_at(0);                         \
+  int* a2_adr = a2.adr_at(0);                         \
+  a1.swap(&a2);                                       \
+  ASSERT_EQ(a1.adr_at(0), a2_adr);                    \
+  ASSERT_EQ(a2.adr_at(0), a1_adr);                    \
+  ASSERT_EQ(a1.capacity(), 300);                      \
+  ASSERT_EQ(a1.length(),   150);                      \
+  ASSERT_EQ(a2.capacity(), 200);                      \
+  ASSERT_EQ(a2.length(),   100);                      \
+}
+
+TEST_VM_F(GrowableArrayTest, swap_s_ra_s_ra) {
+  ResourceMark rm;
+  GrowableArray<int> a1(200, 100, 1);
+  GrowableArray<int> a2(300, 150, 2);
+  TEST_SWAP(a1, a2)
+}
+
+TEST_VM_F(GrowableArrayTest, swap_ra_ra_s_ra) {
+  ResourceMark rm;
+  GrowableArray<int>* a1 = new GrowableArray<int>(200, 100, 1);
+  GrowableArray<int> a2(300, 150, 2);
+  TEST_SWAP((*a1), a2)
+}
+
+TEST_VM_F(GrowableArrayTest, swap_s_a_s_a) {
+  Arena arena(mtTest);
+  GrowableArray<int> a1(&arena, 200, 100, 1);
+  GrowableArray<int> a2(&arena, 300, 150, 2);
+  TEST_SWAP(a1, a2)
+}
+
+TEST_VM_F(GrowableArrayTest, swap_a_a_s_a) {
+  Arena arena(mtTest);
+  GrowableArray<int> *a1 = new (&arena) GrowableArray<int>(&arena, 200, 100, 1);
+  GrowableArray<int> a2(&arena, 300, 150, 2);
+  TEST_SWAP((*a1), a2)
+}
+
+TEST_VM_F(GrowableArrayTest, swap_s_c_s_c) {
+  ResourceMark rm;
+  GrowableArrayCHeap<int,mtTest> a1(200, 100, 1);
+  GrowableArrayCHeap<int,mtTest> a2(300, 150, 2);
+  TEST_SWAP(a1, a2)
+}
+
+TEST_VM_F(GrowableArrayTest, swap_c_c_s_c) {
+  ResourceMark rm;
+  GrowableArrayCHeap<int,mtTest>* a1 = new GrowableArrayCHeap<int,mtTest>(200, 100, 1);
+  GrowableArrayCHeap<int,mtTest> a2(300, 150, 2);
+  TEST_SWAP((*a1), a2)
+}
+
+#ifdef ASSERT
+TEST_VM_ASSERT_MSG(GrowableArrayAssertingTest, swap_s_ra_s_a,
+    ".*must have same arena") {
+  Arena arena(mtTest);
+  GrowableArray<int> a1(100, 100, 1);
+  GrowableArray<int> a2(&arena, 100, 100, 1);
+  a1.swap(&a2);
+}
+
+TEST_VM_ASSERT_MSG(GrowableArrayAssertingTest, swap_s_a1_s_a2,
+    ".*must have same arena") {
+  Arena arena1(mtTest);
+  Arena arena2(mtTest);
+  GrowableArray<int> a1(&arena1, 100, 100, 1);
+  GrowableArray<int> a2(&arena2, 100, 100, 1);
+  a1.swap(&a2);
+}
+
+TEST_VM_ASSERT_MSG(GrowableArrayAssertingTest, swap_s_ra_s_ra,
+    ".*same nesting if using resource area") {
+  ResourceMark rm1;
+  GrowableArray<int> a1(100, 100, 1);
+  ResourceMark rm2;
+  GrowableArray<int> a2(100, 100, 1);
+  a1.swap(&a2);
+}
+#endif

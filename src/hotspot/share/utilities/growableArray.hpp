@@ -523,13 +523,6 @@ public:
     return this->at(location);
   }
 
-  // TODO verify compatibility! -> put it to subclass!
-  void swap(GrowableArrayWithAllocator<E, Derived>* other) {
-    ::swap(this->_data, other->_data);
-    ::swap(this->_len, other->_len);
-    ::swap(this->_capacity, other->_capacity);
-  }
-
   // Ensure capacity is at least new_capacity.
   void reserve(int new_capacity);
 };
@@ -605,6 +598,7 @@ class GrowableArrayNestingCheck {
 public:
   GrowableArrayNestingCheck(bool on_resource_area);
 
+  int nesting() const { return _nesting; }
   void on_allocate() const;
 };
 #endif // ASSERT
@@ -692,6 +686,15 @@ public:
     return _arena == (Arena*)Thread::current()->resource_area();
   };
 #endif
+
+  void swap(GrowableArray<E>* other) {
+    assert(_arena == other->_arena, "must have same arena");
+    assert(_nesting_check.nesting() == other->_nesting_check.nesting(),
+           "same nesting if using resource area");
+    ::swap(this->_data, other->_data);
+    ::swap(this->_len, other->_len);
+    ::swap(this->_capacity, other->_capacity);
+  }
 
   // TODO should these not be protected?
   E* allocate() {
@@ -796,6 +799,14 @@ public:
   void clear_and_deallocate() {
     this->clear();
     this->shrink_to_fit();
+  }
+
+  // The template argument F ensures the MEMFLAGS are the
+  // same for both arrays.
+  void swap(GrowableArrayCHeap<E, F>* other) {
+    ::swap(this->_data, other->_data);
+    ::swap(this->_len, other->_len);
+    ::swap(this->_capacity, other->_capacity);
   }
 };
 
