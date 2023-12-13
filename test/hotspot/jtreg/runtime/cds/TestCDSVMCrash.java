@@ -51,7 +51,6 @@
          // else this is the main test
          ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:+CrashOnOutOfMemoryError",
                   "-XX:-CreateCoredumpOnCrash", "-Xmx128m", "-Xshare:on", TestCDSVMCrash.class.getName(),"throwOOME");
-         OutputAnalyzer output = new OutputAnalyzer(pb.start());
          // executeAndLog should throw an exception in the VM crashed
          try {
             CDSTestUtils.executeAndLog(pb, "cds_vm_crash");
@@ -61,12 +60,6 @@
               throw new Error("Expected message: Hotspot crashed");
             }
          }
-         int exitValue = output.getExitValue();
-         if (0 == exitValue) {
-             //expecting a non zero value
-             throw new Error("Expected to get non zero exit value");
-         }
-        output.shouldContain("A fatal error has been detected by the Java Runtime Environment");
         System.out.println("PASSED");
      }
  }
