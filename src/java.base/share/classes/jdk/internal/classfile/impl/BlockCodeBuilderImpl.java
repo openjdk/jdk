@@ -24,14 +24,14 @@
  */
 package jdk.internal.classfile.impl;
 
-import jdk.internal.classfile.CodeBuilder;
-import jdk.internal.classfile.CodeElement;
-import jdk.internal.classfile.Label;
-import jdk.internal.classfile.TypeKind;
-import jdk.internal.classfile.instruction.LabelTarget;
+import java.lang.classfile.CodeBuilder;
+import java.lang.classfile.CodeElement;
+import java.lang.classfile.Label;
+import java.lang.classfile.TypeKind;
+import java.lang.classfile.instruction.LabelTarget;
 
 import java.util.Objects;
-import jdk.internal.classfile.Instruction;
+import java.lang.classfile.Instruction;
 
 public final class BlockCodeBuilderImpl
         extends NonterminalCodeBuilder

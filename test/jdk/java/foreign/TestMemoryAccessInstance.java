@@ -27,7 +27,6 @@
  * @run testng/othervm -Djava.lang.invoke.VarHandle.VAR_HANDLE_SEGMENT_FORCE_EXACT=true --enable-native-access=ALL-UNNAMED TestMemoryAccessInstance
  */
 
-import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.Arena;
 import java.lang.foreign.ValueLayout;

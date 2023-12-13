@@ -1181,6 +1181,7 @@ bool PhaseIdealLoop::loop_predication_impl_helper(IdealLoopTree* loop, IfProjNod
   BoolNode* bol = test->as_Bool();
   bool range_check_predicate = false;
   if (invar.is_invariant(bol)) {
+    C->print_method(PHASE_BEFORE_LOOP_PREDICATION_IC, 4, iff);
     // Invariant test
     new_predicate_proj = create_new_if_for_predicate(parse_predicate_proj, nullptr,
                                                      reason,
@@ -1198,6 +1199,9 @@ bool PhaseIdealLoop::loop_predication_impl_helper(IdealLoopTree* loop, IfProjNod
     IfNode* new_predicate_iff = new_predicate_proj->in(0)->as_If();
     _igvn.hash_delete(new_predicate_iff);
     new_predicate_iff->set_req(1, new_predicate_bol);
+
+    C->print_method(PHASE_AFTER_LOOP_PREDICATION_IC, 4, new_predicate_proj->in(0));
+
 #ifndef PRODUCT
     if (TraceLoopPredicate) {
       tty->print("Predicate invariant if%s: %d ", negated ? " negated" : "", new_predicate_iff->_idx);
@@ -1209,6 +1213,7 @@ bool PhaseIdealLoop::loop_predication_impl_helper(IdealLoopTree* loop, IfProjNod
 #endif
   } else if (cl != nullptr && loop->is_range_check_if(if_success_proj, this, invar DEBUG_ONLY(COMMA parse_predicate_proj))) {
     range_check_predicate = true;
+    C->print_method(PHASE_BEFORE_LOOP_PREDICATION_RC, 4, iff);
     // Range check for counted loops
     assert(if_success_proj->is_IfTrue(), "trap must be on false projection for a range check");
     const Node*    cmp    = bol->in(1)->as_Cmp();
@@ -1271,6 +1276,8 @@ bool PhaseIdealLoop::loop_predication_impl_helper(IdealLoopTree* loop, IfProjNod
     // splitting the predicated loop into (unreachable) sub-loops (i.e. done by unrolling, peeling, pre/main/post etc.).
     new_predicate_proj = add_template_assertion_predicate(iff, loop, if_success_proj, parse_predicate_proj, upper_bound_proj, scale,
                                                           offset, init, limit, stride, rng, overflow, reason);
+
+    C->print_method(PHASE_AFTER_LOOP_PREDICATION_RC, 4, new_predicate_proj->in(0));
 
 #ifndef PRODUCT
     if (TraceLoopOpts && !TraceLoopPredicate) {

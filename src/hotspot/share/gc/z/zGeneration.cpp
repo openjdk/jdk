@@ -24,6 +24,7 @@
 #include "precompiled.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "code/nmethod.hpp"
+#include "gc/shared/classUnloadingContext.hpp"
 #include "gc/shared/gcLocker.hpp"
 #include "gc/shared/gcVMOperations.hpp"
 #include "gc/shared/isGCActiveMark.hpp"
@@ -1315,6 +1316,9 @@ void ZGenerationOld::process_non_strong_references() {
 
   // Process weak roots
   _weak_roots_processor.process_weak_roots();
+
+  ClassUnloadingContext ctx(_workers.active_workers(),
+                            true /* lock_codeblob_free_separately */);
 
   // Unlink stale metadata and nmethods
   _unload.unlink();

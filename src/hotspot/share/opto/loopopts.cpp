@@ -1442,7 +1442,12 @@ void PhaseIdealLoop::split_if_with_blocks_post(Node *n) {
     }
 
     // Now split the IF
+    C->print_method(PHASE_BEFORE_SPLIT_IF, 4, iff);
+    if ((PrintOpto && VerifyLoopOptimizations) || TraceLoopOpts) {
+      tty->print_cr("Split-If");
+    }
     do_split_if(iff);
+    C->print_method(PHASE_AFTER_SPLIT_IF, 4, iff);
     return;
   }
 
@@ -3621,6 +3626,9 @@ bool PhaseIdealLoop::partial_peel( IdealLoopTree *loop, Node_List &old_new ) {
     }
   }
 #endif
+
+  C->print_method(PHASE_BEFORE_PARTIAL_PEELING, 4, head);
+
   VectorSet peel;
   VectorSet not_peel;
   Node_List peel_list;
@@ -3915,6 +3923,9 @@ bool PhaseIdealLoop::partial_peel( IdealLoopTree *loop, Node_List &old_new ) {
     }
   }
 #endif
+
+  C->print_method(PHASE_AFTER_PARTIAL_PEELING, 4, new_head_clone);
+
   return true;
 }
 

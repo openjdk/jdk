@@ -81,9 +81,6 @@ public:
   // Pushes an oop on this lock-stack.
   inline void push(oop o);
 
-  // Pops an oop from this lock-stack.
-  inline oop pop();
-
   // Removes an oop from an arbitrary location of this lock-stack.
   inline void remove(oop o);
 

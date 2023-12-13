@@ -29,9 +29,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import jdk.internal.classfile.Instruction;
-import jdk.internal.classfile.instruction.ExceptionCatch;
-import jdk.internal.classfile.attribute.CodeAttribute;
+import java.lang.classfile.Instruction;
+import java.lang.classfile.instruction.ExceptionCatch;
+import java.lang.classfile.attribute.CodeAttribute;
 
 /**
  * Annotate instructions with details about try blocks.

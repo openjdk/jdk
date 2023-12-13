@@ -340,7 +340,7 @@ void MacroAssembler::call_VM_base(Register oop_result,
     RuntimeAddress target(StubRoutines::forward_exception_entry());
     relocate(target.rspec(), [&] {
       int32_t offset;
-      la_patchable(t0, target, offset);
+      la(t0, target.target(), offset);
       jalr(x0, t0, offset);
     });
     bind(ok);
@@ -421,7 +421,7 @@ void MacroAssembler::_verify_oop(Register reg, const char* s, const char* file, 
   ExternalAddress target(StubRoutines::verify_oop_subroutine_entry_address());
   relocate(target.rspec(), [&] {
     int32_t offset;
-    la_patchable(t1, target, offset);
+    la(t1, target.target(), offset);
     ld(t1, Address(t1, offset));
   });
   jalr(t1);
@@ -466,7 +466,7 @@ void MacroAssembler::_verify_oop_addr(Address addr, const char* s, const char* f
   ExternalAddress target(StubRoutines::verify_oop_subroutine_entry_address());
   relocate(target.rspec(), [&] {
     int32_t offset;
-    la_patchable(t1, target, offset);
+    la(t1, target.target(), offset);
     ld(t1, Address(t1, offset));
   });
   jalr(t1);
@@ -717,13 +717,35 @@ void MacroAssembler::super_call_VM_leaf(address entry_point, Register arg_0, Reg
   MacroAssembler::call_VM_leaf_base(entry_point, 4);
 }
 
-void MacroAssembler::la(Register Rd, const address dest) {
-  int64_t offset = dest - pc();
+void MacroAssembler::la(Register Rd, const address addr) {
+  int64_t offset = addr - pc();
   if (is_simm32(offset)) {
     auipc(Rd, (int32_t)offset + 0x800);  //0x800, Note:the 11th sign bit
     addi(Rd, Rd, ((int64_t)offset << 52) >> 52);
   } else {
-    movptr(Rd, dest);
+    movptr(Rd, addr);
+  }
+}
+
+void MacroAssembler::la(Register Rd, const address addr, int32_t &offset) {
+  assert((uintptr_t)addr < (1ull << 48), "bad address");
+
+  unsigned long target_address = (uintptr_t)addr;
+  unsigned long low_address = (uintptr_t)CodeCache::low_bound();
+  unsigned long high_address = (uintptr_t)CodeCache::high_bound();
+  long offset_low = target_address - low_address;
+  long offset_high = target_address - high_address;
+
+  // RISC-V doesn't compute a page-aligned address, in order to partially
+  // compensate for the use of *signed* offsets in its base+disp12
+  // addressing mode (RISC-V's PC-relative reach remains asymmetric
+  // [-(2G + 2K), 2G - 2K).
+  if (offset_high >= -((1L << 31) + (1L << 11)) && offset_low < (1L << 31) - (1L << 11)) {
+    int64_t distance = addr - pc();
+    auipc(Rd, (int32_t)distance + 0x800);
+    offset = ((int32_t)distance << 20) >> 20;
+  } else {
+    movptr(Rd, addr, offset);
   }
 }
 
@@ -1564,7 +1586,7 @@ void MacroAssembler::reinit_heapbase() {
       ExternalAddress target(CompressedOops::ptrs_base_addr());
       relocate(target.rspec(), [&] {
         int32_t offset;
-        la_patchable(xheapbase, target, offset);
+        la(xheapbase, target.target(), offset);
         ld(xheapbase, Address(xheapbase, offset));
       });
     }
@@ -2119,7 +2141,7 @@ SkipIfEqual::SkipIfEqual(MacroAssembler* masm, const bool* flag_addr, bool value
   ExternalAddress target((address)flag_addr);
   _masm->relocate(target.rspec(), [&] {
     int32_t offset;
-    _masm->la_patchable(t0, target, offset);
+    _masm->la(t0, target.target(), offset);
     _masm->lbu(t0, Address(t0, offset));
   });
   if (value) {
@@ -2996,46 +3018,36 @@ ATOMIC_XCHGU(xchgalwu, xchgalw)
 
 #undef ATOMIC_XCHGU
 
-void MacroAssembler::far_jump(Address entry, Register tmp) {
+void MacroAssembler::far_jump(const Address &entry, Register tmp) {
   assert(ReservedCodeCacheSize < 4*G, "branch out of range");
   assert(CodeCache::find_blob(entry.target()) != nullptr,
          "destination of far call not found in code cache");
   assert(entry.rspec().type() == relocInfo::external_word_type
         || entry.rspec().type() == relocInfo::runtime_call_type
         || entry.rspec().type() == relocInfo::none, "wrong entry relocInfo type");
-  IncompressibleRegion ir(this);  // Fixed length: see MacroAssembler::far_branch_size()
-  if (far_branches()) {
-    // We can use auipc + jalr here because we know that the total size of
-    // the code cache cannot exceed 2Gb.
-    relocate(entry.rspec(), [&] {
-      int32_t offset;
-      la_patchable(tmp, entry, offset);
-      jalr(x0, tmp, offset);
-    });
-  } else {
-    j(entry);
-  }
+  // Fixed length: see MacroAssembler::far_branch_size()
+  relocate(entry.rspec(), [&] {
+    int32_t offset;
+    la(tmp, entry.target(), offset);
+    jalr(x0, tmp, offset);
+  });
 }
 
-void MacroAssembler::far_call(Address entry, Register tmp) {
+void MacroAssembler::far_call(const Address &entry, Register tmp) {
   assert(ReservedCodeCacheSize < 4*G, "branch out of range");
   assert(CodeCache::find_blob(entry.target()) != nullptr,
          "destination of far call not found in code cache");
   assert(entry.rspec().type() == relocInfo::external_word_type
         || entry.rspec().type() == relocInfo::runtime_call_type
         || entry.rspec().type() == relocInfo::none, "wrong entry relocInfo type");
-  IncompressibleRegion ir(this);  // Fixed length: see MacroAssembler::far_branch_size()
-  if (far_branches()) {
-    // We can use auipc + jalr here because we know that the total size of
-    // the code cache cannot exceed 2Gb.
-    relocate(entry.rspec(), [&] {
-      int32_t offset;
-      la_patchable(tmp, entry, offset);
-      jalr(x1, tmp, offset); // link
-    });
-  } else {
-    jal(entry); // link
-  }
+  // Fixed length: see MacroAssembler::far_branch_size()
+  // We can use auipc + jalr here because we know that the total size of
+  // the code cache cannot exceed 2Gb.
+  relocate(entry.rspec(), [&] {
+    int32_t offset;
+    la(tmp, entry.target(), offset);
+    jalr(x1, tmp, offset); // link
+  });
 }
 
 void MacroAssembler::check_klass_subtype_fast_path(Register sub_klass,
@@ -3258,29 +3270,6 @@ void MacroAssembler::load_byte_map_base(Register reg) {
   mv(reg, (uint64_t)byte_map_base);
 }
 
-void MacroAssembler::la_patchable(Register reg1, const Address &dest, int32_t &offset) {
-  unsigned long low_address = (uintptr_t)CodeCache::low_bound();
-  unsigned long high_address = (uintptr_t)CodeCache::high_bound();
-  unsigned long dest_address = (uintptr_t)dest.target();
-  long offset_low = dest_address - low_address;
-  long offset_high = dest_address - high_address;
-
-  assert(dest.getMode() == Address::literal, "la_patchable must be applied to a literal address");
-  assert((uintptr_t)dest.target() < (1ull << 48), "bad address");
-
-  // RISC-V doesn't compute a page-aligned address, in order to partially
-  // compensate for the use of *signed* offsets in its base+disp12
-  // addressing mode (RISC-V's PC-relative reach remains asymmetric
-  // [-(2G + 2K), 2G - 2K).
-  if (offset_high >= -((1L << 31) + (1L << 11)) && offset_low < (1L << 31) - (1L << 11)) {
-    int64_t distance = dest.target() - pc();
-    auipc(reg1, (int32_t)distance + 0x800);
-    offset = ((int32_t)distance << 20) >> 20;
-  } else {
-    movptr(reg1, dest.target(), offset);
-  }
-}
-
 void MacroAssembler::build_frame(int framesize) {
   assert(framesize >= 2, "framesize must include space for FP/RA");
   assert(framesize % (2*wordSize) == 0, "must preserve 2*wordSize alignment");
@@ -3307,21 +3296,16 @@ void MacroAssembler::reserved_stack_check() {
 
     enter();   // RA and FP are live.
     mv(c_rarg0, xthread);
-    RuntimeAddress target(CAST_FROM_FN_PTR(address, SharedRuntime::enable_stack_reserved_zone));
-    relocate(target.rspec(), [&] {
-      int32_t offset;
-      la_patchable(t0, target, offset);
-      jalr(x1, t0, offset);
-    });
+    rt_call(CAST_FROM_FN_PTR(address, SharedRuntime::enable_stack_reserved_zone));
     leave();
 
     // We have already removed our own frame.
     // throw_delayed_StackOverflowError will think that it's been
     // called by our caller.
-    target = RuntimeAddress(StubRoutines::throw_delayed_StackOverflowError_entry());
+    RuntimeAddress target(StubRoutines::throw_delayed_StackOverflowError_entry());
     relocate(target.rspec(), [&] {
       int32_t offset;
-      la_patchable(t0, target, offset);
+      movptr(t0, target.target(), offset);
       jalr(x0, t0, offset);
     });
     should_not_reach_here();
@@ -3383,21 +3367,19 @@ address MacroAssembler::trampoline_call(Address entry) {
   address target = entry.target();
 
   // We need a trampoline if branches are far.
-  if (far_branches()) {
-    if (!in_scratch_emit_size()) {
-      if (entry.rspec().type() == relocInfo::runtime_call_type) {
-        assert(CodeBuffer::supports_shared_stubs(), "must support shared stubs");
-        code()->share_trampoline_for(entry.target(), offset());
-      } else {
-        address stub = emit_trampoline_stub(offset(), target);
-        if (stub == nullptr) {
-          postcond(pc() == badAddress);
-          return nullptr; // CodeCache is full
-        }
+  if (!in_scratch_emit_size()) {
+    if (entry.rspec().type() == relocInfo::runtime_call_type) {
+      assert(CodeBuffer::supports_shared_stubs(), "must support shared stubs");
+      code()->share_trampoline_for(entry.target(), offset());
+    } else {
+      address stub = emit_trampoline_stub(offset(), target);
+      if (stub == nullptr) {
+        postcond(pc() == badAddress);
+        return nullptr; // CodeCache is full
       }
     }
-    target = pc();
   }
+  target = pc();
 
   address call_pc = pc();
 #ifdef ASSERT
@@ -3545,7 +3527,7 @@ void MacroAssembler::cmpptr(Register src1, Address src2, Label& equal) {
   assert_different_registers(src1, t0);
   relocate(src2.rspec(), [&] {
     int32_t offset;
-    la_patchable(t0, src2, offset);
+    la(t0, src2.target(), offset);
     ld(t0, Address(t0, offset));
   });
   beq(src1, t0, equal);
@@ -4193,7 +4175,7 @@ address MacroAssembler::zero_words(Register ptr, Register cnt) {
   Label around, done, done16;
   bltu(cnt, t0, around);
   {
-    RuntimeAddress zero_blocks = RuntimeAddress(StubRoutines::riscv::zero_blocks());
+    RuntimeAddress zero_blocks(StubRoutines::riscv::zero_blocks());
     assert(zero_blocks.target() != nullptr, "zero_blocks stub has not been generated");
     if (StubRoutines::riscv::complete()) {
       address tpc = trampoline_call(zero_blocks);
@@ -4788,11 +4770,11 @@ void MacroAssembler::rt_call(address dest, Register tmp) {
   CodeBlob *cb = CodeCache::find_blob(dest);
   RuntimeAddress target(dest);
   if (cb) {
-    far_call(target);
+    far_call(target, tmp);
   } else {
     relocate(target.rspec(), [&] {
       int32_t offset;
-      la_patchable(tmp, target, offset);
+      movptr(tmp, target.target(), offset);
       jalr(x1, tmp, offset);
     });
   }
