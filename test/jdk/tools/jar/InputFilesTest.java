@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8165944
+ * @bug 8165944 8318971
  * @summary test several jar tool input file scenarios with variations on -C
  *          options with/without a --release option.  Some input files are
  *          duplicates that sometimes cause exceptions and other times do not,
@@ -137,6 +137,23 @@ public class InputFilesTest {
         Assert.assertEquals(baos.toByteArray(), output.getBytes());
     }
 
+    @Test
+    public void testMultipleFilesInClassesList() throws IOException {
+        touch("test");
+        touch("classes.list");
+        Files.writeString(Path.of("classes.list"), """
+                test
+                 """);
+        jar("cf test.jar @classes.list");
+        jar("tf test.jar");
+        println();
+        String output = "META-INF/" + nl +
+                "META-INF/MANIFEST.MF" + nl +
+                "test" + nl;
+        rm("test.jar test classes.list");
+        Assert.assertEquals(baos.toByteArray(), output.getBytes());
+    }
+
     @Test(expectedExceptions = {ZipException.class})
     public void test5() throws IOException {
         mkdir("a");
@@ -151,6 +168,37 @@ public class InputFilesTest {
         touch("test1/a test2/a");
         onCompletion = () -> rm("test1 test2");
         jar("cf test.jar --release 9 -C test1 a -C test2 a");
+    }
+
+    @Test(expectedExceptions = {IOException.class})
+    public void testNonExistentFileInput() throws IOException {
+        touch("existingTestFile.txt");
+        onCompletion = () -> rm("existingTestFile.txt");
+        try {
+            jar("cf test.jar existingTestFile.txt nonExistentTestFile.txt");
+        } catch (IOException e) {
+            Assert.assertEquals(e.getMessage().trim(), "nonExistentTestFile.txt : no such file or directory");
+            Assert.assertTrue(Files.notExists(Path.of("test.jar")), "Jar file should not be created.");
+            throw e;
+        }
+    }
+
+    @Test(expectedExceptions = {IOException.class})
+    public void testNonExistentFileInputClassList() throws IOException {
+        touch("existingTestFile.txt");
+        touch("classes.list");
+        Files.writeString(Path.of("classes.list"), """
+                existingTestFile.txt
+                nonExistentTestFile.txt
+                 """);
+        onCompletion = () -> rm("existingTestFile.txt classes.list");
+        try {
+            jar("cf test.jar @classes.list");
+        } catch (IOException e) {
+            Assert.assertEquals(e.getMessage().trim(), "nonExistentTestFile.txt : no such file or directory");
+            Assert.assertTrue(Files.notExists(Path.of("test.jar")), "Jar file should not be created.");
+            throw e;
+        }
     }
 
     private Stream<Path> mkpath(String... args) {
