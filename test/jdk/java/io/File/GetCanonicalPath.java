@@ -23,7 +23,6 @@
 
 /* @test
  * @bug 4899022
- * @requires (os.family == "windows")
  * @summary Look for erroneous representation of drive letter
  * @run junit GetCanonicalPath
  */
@@ -35,6 +34,8 @@ import java.util.List;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledOnOs;
+import org.junit.jupiter.api.condition.OS;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -43,7 +44,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class GetCanonicalPath {
-    private static Stream<Arguments> pathProvider() {
+    private static Stream<Arguments> pathProviderWindows() {
         List<Arguments> list = new ArrayList<Arguments>();
 
         File dir = new File(System.getProperty("user.dir", "."));
@@ -80,21 +81,50 @@ public class GetCanonicalPath {
         return list.stream();
     }
 
+    private static Stream<Arguments> pathProviderUnix() {
+        List<Arguments> list = new ArrayList<Arguments>();
+
+        list.add(Arguments.of("/../../../../../a/b/c",
+                              "/a/b/c"));
+        list.add(Arguments.of("/../../../../../a/../b/c",
+                              "/b/c"));
+        list.add(Arguments.of("/../../../../../a/../../b/c",
+                              "/b/c"));
+        list.add(Arguments.of("/../../../../../a/../../../b/c",
+                              "/b/c"));
+        list.add(Arguments.of("/../../../../../a/../../../../b/c",
+                              "/b/c"));
+
+        return list.stream();
+    }
+
     @ParameterizedTest
+    @EnabledOnOs({OS.AIX, OS.LINUX, OS.MAC})
+    @MethodSource("pathProviderUnix")
+    void goodPathsUnix(String pathname, String expected) throws IOException {
+        File file = new File(pathname);
+        String canonicalPath = file.getCanonicalPath();
+        assertEquals(expected, canonicalPath);
+    }
+
+    @ParameterizedTest
+    @EnabledOnOs(OS.WINDOWS)
     @ValueSource(strings = {"\\\\?", "\\\\?\\UNC", "\\\\?\\UNC\\"})
-    void badPaths(String pathname) {
+    void badPathsWindows(String pathname) {
         assertThrows(IOException.class, () -> new File(pathname).getCanonicalPath());
     }
 
     @ParameterizedTest
-    @MethodSource("pathProvider")
-    void goodPaths(String pathname, String expected) throws IOException {
+    @EnabledOnOs(OS.WINDOWS)
+    @MethodSource("pathProviderWindows")
+    void goodPathsWindows(String pathname, String expected) throws IOException {
         File file = new File(pathname);
         String canonicalPath = file.getCanonicalPath();
         assertEquals(expected, canonicalPath);
     }
 
     @Test
+    @EnabledOnOs(OS.WINDOWS)
     void driveLetter() throws IOException {
         String path = new File("c:/").getCanonicalPath();
         assertFalse(path.length() > 3, "Drive letter incorrectly represented");
