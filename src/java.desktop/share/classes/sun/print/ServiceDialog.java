@@ -69,6 +69,7 @@ import java.awt.event.KeyEvent;
 import java.net.URISyntaxException;
 import java.lang.reflect.Field;
 import java.net.MalformedURLException;
+import sun.awt.OSInfo;
 
 /**
  * A class which implements a cross-platform print dialog.
@@ -1329,6 +1330,7 @@ public class ServiceDialog extends JDialog implements ActionListener {
     private class PageSetupPanel extends JPanel {
 
         private MediaPanel pnlMedia;
+        private OutputPanel pnlOutput;
         private OrientationPanel pnlOrientation;
         private MarginsPanel pnlMargins;
 
@@ -1349,6 +1351,12 @@ public class ServiceDialog extends JDialog implements ActionListener {
             pnlMedia = new MediaPanel();
             addToGB(pnlMedia, this, gridbag, c);
 
+            if (OSInfo.getOSType() != OSInfo.OSType.WINDOWS) {
+                c.gridwidth = GridBagConstraints.REMAINDER;
+                pnlOutput = new OutputPanel();
+                addToGB(pnlOutput, this, gridbag, c);
+            }
+
             pnlOrientation = new OrientationPanel();
             c.gridwidth = GridBagConstraints.RELATIVE;
             addToGB(pnlOrientation, this, gridbag, c);
@@ -1362,6 +1370,9 @@ public class ServiceDialog extends JDialog implements ActionListener {
 
         public void updateInfo() {
             pnlMedia.updateInfo();
+            if (pnlOutput != null) {
+                pnlOutput.updateInfo();
+            }
             pnlOrientation.updateInfo();
             pnlMargins.updateInfo();
         }
@@ -2131,6 +2142,100 @@ public class ServiceDialog extends JDialog implements ActionListener {
             }
             cbSize.addItemListener(this);
             cbSource.addItemListener(this);
+        }
+    }
+
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
+    private class OutputPanel extends JPanel implements ItemListener {
+
+        private final String strTitle = getMsg("border.output");
+        private JLabel lblOutput;
+        private JComboBox<Object> cbOutput;
+        private Vector<OutputBin> outputs = new Vector<>();
+
+        public OutputPanel() {
+            super();
+
+            GridBagLayout gridbag = new GridBagLayout();
+            GridBagConstraints c = new GridBagConstraints();
+
+            setLayout(gridbag);
+            setBorder(BorderFactory.createTitledBorder(strTitle));
+
+            cbOutput = new JComboBox<>();
+
+            c.fill = GridBagConstraints.BOTH;
+            c.insets = compInsets;
+            c.weighty = 1.0;
+
+            c.weightx = 0.0;
+            lblOutput = new JLabel(getMsg("label.outputbins"), JLabel.TRAILING);
+            lblOutput.setDisplayedMnemonic(getMnemonic("label.outputbins"));
+            lblOutput.setLabelFor(cbOutput);
+            addToGB(lblOutput, this, gridbag, c);
+            c.weightx = 1.0;
+            c.gridwidth = GridBagConstraints.REMAINDER;
+            addToGB(cbOutput, this, gridbag, c);
+        }
+
+        public void itemStateChanged(ItemEvent e) {
+
+            Object source = e.getSource();
+            if (e.getStateChange() == ItemEvent.SELECTED) {
+                if (source == cbOutput) {
+                    int index = cbOutput.getSelectedIndex();
+                    if ((index >= 0) && (index < outputs.size())) {
+                        asCurrent.add(outputs.get(index));
+                    }
+                }
+            }
+        }
+
+        public void updateInfo() {
+
+            Class<OutputBin> obCategory = OutputBin.class;
+
+            cbOutput.removeItemListener(this);
+            cbOutput.removeAllItems();
+
+            outputs.clear();
+
+            if (psCurrent.isAttributeCategorySupported(obCategory)) {
+
+                Object values =
+                    psCurrent.getSupportedAttributeValues(obCategory,
+                                                          docFlavor,
+                                                          asCurrent);
+
+                if (values instanceof OutputBin[]) {
+                    OutputBin[] outputBins = (OutputBin[])values;
+
+                    for (int i = 0; i < outputBins.length; i++) {
+                        OutputBin outputBin = outputBins[i];
+                        outputs.add(outputBin);
+                        cbOutput.addItem(outputBin.toString());
+                    }
+
+                    OutputBin current = (OutputBin) asCurrent.get(obCategory);
+                    if (current != null) {
+                        for (int i = 0; i < outputs.size(); i++) {
+                            if (i != 0 && current.equals(outputs.get(i))) {
+                                cbOutput.setSelectedIndex(i);
+                                break;
+                            }
+                        }
+                    }
+
+                    boolean outputEnabled = cbOutput.getItemCount() != 0;
+                    cbOutput.setEnabled(outputEnabled);
+                    lblOutput.setEnabled(outputEnabled);
+                }
+            } else {
+                cbOutput.setEnabled(false);
+                lblOutput.setEnabled(false);
+            }
+
+            cbOutput.addItemListener(this);
         }
     }
 

@@ -383,6 +383,7 @@ static void nsPrintInfoToJavaPrinterJob(JNIEnv* env, NSPrintInfo* src, jobject d
     DECLARE_METHOD(jm_setPrintToFile, sjc_CPrinterJob, "setPrintToFile", "(Z)V");
     DECLARE_METHOD(jm_setDestinationFile, sjc_CPrinterJob, "setDestinationFile", "(Ljava/lang/String;)V");
     DECLARE_METHOD(jm_setSides, sjc_CPrinterJob, "setSides", "(I)V");
+    DECLARE_METHOD(jm_setOutputBin, sjc_CPrinterJob, "setOutputBin", "(Ljava/lang/String;)V");
 
     // get the selected printer's name, and set the appropriate PrintService on the Java side
     NSString *name = [[src printer] name];
@@ -447,6 +448,13 @@ static void nsPrintInfoToJavaPrinterJob(JNIEnv* env, NSPrintInfo* src, jobject d
         if (PMGetDuplex(src.PMPrintSettings, &duplexSetting) == noErr) {
             jint sides = duplexModeToSides(duplexSetting);
             (*env)->CallVoidMethod(env, dstPrinterJob, jm_setSides, sides); // AWT_THREADING Safe (known object)
+            CHECK_EXCEPTION();
+        }
+
+        NSString* outputBin = [[src printSettings] objectForKey:@"OutputBin"];
+        if (outputBin != nil) {
+            jstring outputBinName = NSStringToJavaString(env, outputBin);
+            (*env)->CallVoidMethod(env, dstPrinterJob, jm_setOutputBin, outputBinName);
             CHECK_EXCEPTION();
         }
     }

@@ -28,13 +28,15 @@
  * @key printer
  * @requires (os.family == "mac")
  * @summary javax.print: Support IPP output-bin attribute extension
- * @run main/manual OutputBinAttributeTest
+ * @run main/manual OutputBinAttributePrintDialogTest COMMON
+ * @run main/manual OutputBinAttributePrintDialogTest NATIVE
  */
 
 import javax.print.PrintService;
 import javax.print.attribute.Attribute;
 import javax.print.attribute.HashPrintRequestAttributeSet;
 import javax.print.attribute.PrintRequestAttributeSet;
+import javax.print.attribute.standard.DialogTypeSelection;
 import javax.print.attribute.standard.MediaSizeName;
 import javax.print.attribute.standard.OutputBin;
 import javax.swing.*;
@@ -50,7 +52,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
-public class OutputBinAttributeTest {
+public class OutputBinAttributePrintDialogTest {
 
     private static final long TIMEOUT = 10 * 60_000;
     private static volatile boolean testPassed = true;
@@ -62,13 +64,27 @@ public class OutputBinAttributeTest {
 
     public static void main(String[] args) throws Exception {
 
+        if (args.length < 1) {
+            throw new RuntimeException("COMMON or NATIVE print dialog type argument is not provided!");
+        }
+
+        final DialogTypeSelection dialogTypeSelection = getDialogTypeSelection(args[0]);
+
+        OutputBin[] supportedOutputBins = getSupportedOutputBinttributes();
+        if (supportedOutputBins.length < 1) {
+            return;
+        }
+
+        // Test only the first and the last output bins to reduce number of tests
+        final Set<OutputBin> outputBins = new HashSet<>();
+        outputBins.add(supportedOutputBins[0]);
+        outputBins.add(supportedOutputBins[supportedOutputBins.length - 1]);
+
+
         SwingUtilities.invokeLater(() -> {
-            Set<OutputBin> supportedOutputBins = getSupportedOutputBinttributes();
-            if (supportedOutputBins.size() > 1) {
-                testTotalCount = supportedOutputBins.size();
-                for(OutputBin outputBin: supportedOutputBins) {
-                    testPrint(outputBin, supportedOutputBins);
-                }
+            testTotalCount = outputBins.size();
+            for (OutputBin outputBin : outputBins) {
+                testPrint(dialogTypeSelection, outputBin, outputBins);
             }
             testFinished = true;
         });
@@ -96,20 +112,24 @@ public class OutputBinAttributeTest {
         }
     }
 
-    private static void print(OutputBin outputBin) throws PrinterException {
+    private static void print(DialogTypeSelection dialogTypeSelection, OutputBin outputBin) throws PrinterException {
         PrintRequestAttributeSet attr = new HashPrintRequestAttributeSet();
         attr.add(MediaSizeName.ISO_A4);
-        attr.add(outputBin);
+        attr.add(dialogTypeSelection);
 
         for (Attribute attribute : attr.toArray()) {
             System.out.printf("Used print request attribute: %s%n", attribute);
         }
 
         PrinterJob job = PrinterJob.getPrinterJob();
-        job.setJobName("Print to " + outputBin + " output bin");
+        job.setJobName("Print to " + outputBin + " output bin through " + dialogTypeSelection + " print dialog");
         job.setPrintable(new OutputBinAttributePrintable(outputBin));
 
-        job.print(attr);
+        if (job.printDialog(attr)) {
+            job.print();
+        } else {
+            throw new RuntimeException(dialogTypeSelection + " print dialog for " + outputBin + " is canceled!");
+        }
     }
 
     private static class OutputBinAttributePrintable implements Printable {
@@ -141,23 +161,21 @@ public class OutputBinAttributeTest {
         return String.format("Output bin: %s", outputBin);
     }
 
-    private static Set<OutputBin> getSupportedOutputBinttributes() {
-        Set<OutputBin> supportedOutputBins = new HashSet<>();
+    private static OutputBin[] getSupportedOutputBinttributes() {
 
         PrinterJob printerJob = PrinterJob.getPrinterJob();
         PrintService service = printerJob.getPrintService();
         if (service == null) {
-            return supportedOutputBins;
+            return new OutputBin[0];
         }
 
         Object obj = service.getSupportedAttributeValues(OutputBin.class, null, null);
 
         if (obj instanceof Attribute[]) {
-            OutputBin[] attrs = (OutputBin[]) obj;
-            Collections.addAll(supportedOutputBins, attrs);
+            return (OutputBin[]) obj;
         }
 
-        return supportedOutputBins;
+        return new OutputBin[0];
     }
 
     private static void pass() {
@@ -169,16 +187,18 @@ public class OutputBinAttributeTest {
         testPassed = false;
     }
 
-    private static void runPrint(OutputBin outputBin) {
+    private static void runPrint(DialogTypeSelection dialogTypeSelection, OutputBin outputBin) {
         try {
-            print(outputBin);
+            print(dialogTypeSelection, outputBin);
         } catch (PrinterException e) {
             e.printStackTrace();
             fail(outputBin);
         }
     }
 
-    private static void testPrint(OutputBin outputBin, Set<OutputBin> supportedOutputBins) {
+    private static void testPrint(DialogTypeSelection dialogTypeSelection, OutputBin outputBin, Set<OutputBin> supportedOutputBins) {
+
+        System.out.printf("Test dialog: %s%n", dialogTypeSelection);
 
         String[] instructions = {
                 "Up to " + testTotalCount + " tests will run and it will test all output bins:",
@@ -190,8 +210,13 @@ public class OutputBinAttributeTest {
                 "On-screen inspection is not possible for this printing-specific",
                 "test therefore its only output is a page printed to the printer",
                 outputBin + " output bin.",
+                "",
                 "To be able to run this test it is required to have a default",
                 "printer configured in your user environment.",
+                "",
+                " - Press 'Start Test' button.",
+                "   The " + dialogTypeSelection + " print dialog should appear.",
+                String.join("\n", getPrintDialogInstructions(dialogTypeSelection, outputBin)),
                 "",
                 "Visual inspection of the printed pages is needed.",
                 "",
@@ -201,8 +226,8 @@ public class OutputBinAttributeTest {
                 "The test fails if the page is not printed in to the corresponding output bin.",
         };
 
-        String title = String.format("Print %s output bin test: %d from %d",
-                outputBin, testCount + 1, testTotalCount);
+        String title = String.format("Print %s dialog with %s output bin test: %d from %d",
+                dialogTypeSelection, outputBin, testCount + 1, testTotalCount);
         final JDialog dialog = new JDialog((Frame) null, title, Dialog.ModalityType.DOCUMENT_MODAL);
         JTextArea textArea = new JTextArea(String.join("\n", instructions));
         textArea.setEditable(false);
@@ -221,7 +246,7 @@ public class OutputBinAttributeTest {
         });
         testButton.addActionListener((e) -> {
             testButton.setEnabled(false);
-            runPrint(outputBin);
+            runPrint(dialogTypeSelection, outputBin);
             passButton.setEnabled(true);
             failButton.setEnabled(true);
         });
@@ -249,5 +274,34 @@ public class OutputBinAttributeTest {
         for (Window w : Dialog.getWindows()) {
             w.dispose();
         }
+    }
+
+    private static DialogTypeSelection getDialogTypeSelection(String dialogTypeSelection) {
+        switch (dialogTypeSelection) {
+            case "COMMON":
+                return DialogTypeSelection.COMMON;
+            case "NATIVE":
+                return DialogTypeSelection.NATIVE;
+            default:
+                throw new RuntimeException("Unknown dialog type selection: " + dialogTypeSelection);
+        }
+    }
+
+    private static String[] getPrintDialogInstructions(DialogTypeSelection dialogTypeSelection, OutputBin outputBin) {
+        if (dialogTypeSelection == DialogTypeSelection.COMMON) {
+            return new String[]{
+                    " - Select 'Page Setup' tab.",
+                    " - Select '" + outputBin + "' output tray from 'Output trays' combo box.",
+                    " - Pres 'Print' button."
+            };
+        } else if (dialogTypeSelection == DialogTypeSelection.NATIVE) {
+            return new String[]{
+                    " - Press 'Show Details' buttons if the details are hidded.",
+                    " - Select 'Finishing Options' from the drop-down list.",
+                    " - Select '" + outputBin + "' Output Bin.",
+                    " - Press 'Print' button."
+            };
+        }
+        throw new RuntimeException("Unknown dialog type selection: " + dialogTypeSelection);
     }
 }

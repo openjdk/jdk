@@ -688,6 +688,37 @@ public final class CPrinterJob extends RasterPrinterJob {
         return outputBin;
     }
 
+    private void setOutputBin(String outputBinName) {
+
+        OutputBin outputBin = toOutputBin(outputBinName);
+        if (outputBin != null) {
+            attributes.add(outputBin);
+        }
+    }
+
+    private OutputBin toOutputBin(String outputBinName) {
+
+        PrintService ps = getPrintService();
+        if (ps == null) {
+            return null;
+        }
+
+        OutputBin[] supportedBins = (OutputBin[]) ps.getSupportedAttributeValues(OutputBin.class, null, null);
+        if (supportedBins == null || supportedBins.length == 0) {
+            return null;
+        }
+
+        for (OutputBin bin : supportedBins) {
+            if (bin instanceof CustomOutputBin customBin){
+                if (customBin.getChoiceName().equals(outputBinName)) {
+                    return customBin;
+                }
+            }
+        }
+
+        return null;
+    }
+
     private void setPrinterServiceFromNative(String printerName) {
         // This is called from the native side.
         PrintService[] services = PrintServiceLookup.lookupPrintServices(DocFlavor.SERVICE_FORMATTED.PAGEABLE, null);
