@@ -955,7 +955,7 @@ AlignmentSolution* AlignmentSolver::solve() const {
 
       const Node* invar_dependency = _invar;
       const int scale_dependency  = (_invar != nullptr || !_init_node->is_ConI()) ? _scale : 0;
-      return new AlignmentSolutionConstrained(pre_r, pre_q, _mem_ref, _aw,
+      return new AlignmentSolutionConstrained(pre_r, pre_q, _mem_ref,
                                               invar_dependency, scale_dependency);
     }
   }

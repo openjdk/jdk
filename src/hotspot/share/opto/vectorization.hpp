@@ -273,7 +273,7 @@ class VectorElementSizeStats {
 // The AlignmentSolver generates solutions of the following forms:
 //   1. Empty with a failure reason.
 //   2. Trivial (any pre-loop limit guarantees alignment).
-//   3. Constrained (r, q, mem_ref, alignment_width, scale, invar)
+//   3. Constrained (r, q, mem_ref, scale, invar)
 //        Where scale is 0 if no scale dependency,
 //        and invar is nullptr if no invar dependency.
 //
@@ -357,45 +357,32 @@ public:
 
 class AlignmentSolutionConstrained : public AlignmentSolution {
 private:
-  int _r = 0;
-  int _q = 1;
+  const int _r = 0;
+  const int _q = 1;
   const MemNode* _mem_ref = nullptr;
-  int _alignment_width = 0;
-  Node const* _invar_dependency = nullptr;
-  int _scale_dependency = 0;
+  const Node* _invar_dependency = nullptr;
+  const int _scale_dependency = 0;
 public:
   AlignmentSolutionConstrained(const int r,
                                const int q,
                                const MemNode* mem_ref,
-                               int alignment_width,
                                const Node* invar_dependency,
                                int scale_dependency) :
       _r(r),
       _q(q),
       _mem_ref(mem_ref),
-      _alignment_width(alignment_width),
       _invar_dependency(invar_dependency),
       _scale_dependency(scale_dependency) {
     assert(q > 1 && is_power_of_2(q), "q must be power of 2");
     assert(0 <= r && r < q, "r must be in modulo space of q");
-    assert(_mem_ref != nullptr &&
-           _mem_ref->memory_size() <= _alignment_width,
-           "must have mem_ref and alignment_width");
-    assert(alignment_width > 0 &&
-           is_power_of_2(alignment_width),
-           "alignment_width must be power of 2");
+    assert(_mem_ref != nullptr, "must have mem_ref");
   }
 
   virtual bool is_empty() const override final       { return false; }
   virtual bool is_trivial() const override final     { return false; }
   virtual bool is_constrained() const override final { return true; }
 
-  int r() const                         { return _r; }
-  int q() const                         { return _q; }
   const MemNode* mem_ref() const        { return _mem_ref; }
-  int alignment_width() const           { return _alignment_width; }
-  const Node* invar_dependency() const  { return _invar_dependency; }
-  int scale_dependency() const          { return _scale_dependency; }
 
   virtual const AlignmentSolutionConstrained* as_constrained() const override final { return this; }
 
@@ -411,21 +398,21 @@ public:
     AlignmentSolutionConstrained const* s1 = this;
     AlignmentSolutionConstrained const* s2 = other->as_constrained();
 
-    if (s1->invar_dependency() != s2->invar_dependency()) {
+    if (s1->_invar_dependency != s2->_invar_dependency) {
       return new AlignmentSolutionEmpty("invar not identical");
     }
-    if (s1->scale_dependency() != s2->scale_dependency()) {
+    if (s1->_scale_dependency != s2->_scale_dependency) {
       return new AlignmentSolutionEmpty("different scale dependency (init / invar)");
     }
 
     // Make s2 the bigger modulo space
-    if (s1->q() > s2->q()) {
+    if (s1->_q > s2->_q) {
       swap(s1, s2);
     }
-    assert(s1->q() <= s2->q(), "s1 is a smaller modulo space than s2");
+    assert(s1->_q <= s2->_q, "s1 is a smaller modulo space than s2");
 
     // Subset check:
-    if (mod(s2->r(), s1->q()) != s1->r()) {
+    if (mod(s2->_r, s1->_q) != s1->_r) {
       // neither is subset of the other -> no intersection
       return new AlignmentSolutionEmpty("empty intersection (r and q)");
     }
@@ -435,13 +422,13 @@ public:
   }
 
   virtual void print() const override final {
-    tty->print("pre_r(%d) + m * pre_q(%d), mem_ref[%d] %% alignment_width(%d),",
-                r(), q(), mem_ref()->_idx, alignment_width());
-    tty->print(" scale = %d, ", scale_dependency());
-    if (invar_dependency() == nullptr) {
+    tty->print("pre_r(%d) + m * pre_q(%d), mem_ref[%d],",
+                _r, _q, mem_ref()->_idx);
+    tty->print(" scale = %d, ", _scale_dependency);
+    if (_invar_dependency == nullptr) {
       tty->print_cr("no invar");
     } else {
-      tty->print_cr("invar[%d]", invar_dependency()->_idx);
+      tty->print_cr("invar[%d]", _invar_dependency->_idx);
     }
   };
 };
