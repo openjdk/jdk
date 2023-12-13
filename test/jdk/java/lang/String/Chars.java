@@ -75,6 +75,7 @@ public class Chars {
             cpExp = Arrays.copyOf(cpExp, k);
             testChars(cc, ccExp);
             testCharsSubrange(cc, ccExp);
+            testIntsSubrange(ccExp);
             testCPs(cc, cpExp);
         }
     }
@@ -123,7 +124,7 @@ public class Chars {
                         errOffset, actual[errOffset]);
                 System.err.println("expected: " + Arrays.toString(expected));
                 System.err.println("actual: " + Arrays.toString(actual));
-                throw new RuntimeException("testCharsSubrange failed!");
+                throw new RuntimeException("testIntsSubrange failed!");
             }
         }
     }
