@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023 Intel Corporation. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,24 +22,18 @@
  *
  */
 
-#ifndef SHARE_RUNTIME_PREFETCH_HPP
-#define SHARE_RUNTIME_PREFETCH_HPP
+#ifndef SIMDSORT_SUPPORT_HPP
+#define SIMDSORT_SUPPORT_HPP
+#include <stdio.h>
+#include <stdlib.h>
 
-#include "memory/allStatic.hpp"
+#undef assert
+#define assert(cond, msg) { if (!(cond)) { fprintf(stderr, "assert fails %s %d: %s\n", __FILE__, __LINE__, msg); abort(); }}
 
-// If calls to prefetch methods are in a loop, the loop should be cloned
-// such that if Prefetch{Scan,Copy}Interval and/or PrefetchFieldInterval
-// say not to do prefetching, these methods aren't called.  At the very
-// least, they take up a memory issue slot.  They should be implemented
-// as inline assembly code: doing an actual call isn't worth the cost.
 
-class Prefetch : AllStatic {
- public:
-  // Prefetch anticipating read; must not fault, semantically a no-op
-  static void read(const void* loc, intx interval);
+// GCC >= 7.5 is needed to build AVX2 portions of libsimdsort using C++17 features
+#if defined(_LP64) && (defined(__GNUC__) && ((__GNUC__ > 7) || ((__GNUC__ == 7) && (__GNUC_MINOR__ >= 5))))
+#define __SIMDSORT_SUPPORTED_LINUX
+#endif
 
-  // Prefetch anticipating write; must not fault, semantically a no-op
-  static void write(void* loc, intx interval);
-};
-
-#endif // SHARE_RUNTIME_PREFETCH_HPP
+#endif //SIMDSORT_SUPPORT_HPP

@@ -5387,6 +5387,10 @@ bool LibraryCallKit::inline_array_partition() {
     const TypeInstPtr* elem_klass = gvn().type(elementType)->isa_instptr();
     ciType* elem_type = elem_klass->const_oop()->as_instance()->java_mirror_type();
     BasicType bt = elem_type->basic_type();
+    // Disable the intrinsic if the CPU does not support SIMD sort
+    if (!Matcher::supports_simd_sort(bt)) {
+      return false;
+    }
     address stubAddr = nullptr;
     stubAddr = StubRoutines::select_array_partition_function();
     // stub not loaded
@@ -5440,6 +5444,10 @@ bool LibraryCallKit::inline_array_sort() {
   const TypeInstPtr* elem_klass = gvn().type(elementType)->isa_instptr();
   ciType* elem_type = elem_klass->const_oop()->as_instance()->java_mirror_type();
   BasicType bt = elem_type->basic_type();
+  // Disable the intrinsic if the CPU does not support SIMD sort
+  if (!Matcher::supports_simd_sort(bt)) {
+    return false;
+  }
   address stubAddr = nullptr;
   stubAddr = StubRoutines::select_arraysort_function();
   //stub not loaded
