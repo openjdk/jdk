@@ -345,10 +345,6 @@
           " 3 = previous level, plus all reachable objects; "               \
           " 4 = previous level, plus all marked objects")                   \
                                                                             \
-  product(bool, ShenandoahElasticTLAB, true, DIAGNOSTIC,                    \
-          "Use Elastic TLABs with Shenandoah. This allows Shenandoah to "   \
-          "decrease the size of a TLAB to fit in a region's remaining space") \
-                                                                            \
   product(uintx, ShenandoahEvacReserve, 5, EXPERIMENTAL,                    \
           "How much of (young-generation) heap to reserve for "             \
           "(young-generation) evacuations.  Larger values allow GC to "     \
@@ -554,9 +550,6 @@
           "How many times to maximum attempt to flush SATB buffers at the " \
           "end of concurrent marking.")                                     \
                                                                             \
-  product(bool, ShenandoahSuspendibleWorkers, true, EXPERIMENTAL,           \
-          "Suspend concurrent GC worker threads at safepoints")             \
-                                                                            \
   product(bool, ShenandoahSATBBarrier, true, DIAGNOSTIC,                    \
           "Turn on/off SATB barriers in Shenandoah")                        \
                                                                             \
@@ -579,11 +572,8 @@
   product(bool, ShenandoahStackWatermarkBarrier, true, DIAGNOSTIC,          \
           "Turn on/off stack watermark barriers in Shenandoah")             \
                                                                             \
-  develop(bool, ShenandoahVerifyOptoBarriers, false,                        \
+  develop(bool, ShenandoahVerifyOptoBarriers, trueInDebug,                  \
           "Verify no missing barriers in C2.")                              \
-                                                                            \
-  product(bool, ShenandoahLoopOptsAfterExpansion, true, DIAGNOSTIC,         \
-          "Attempt more loop opts after barrier expansion.")                \
                                                                             \
   product(uintx, ShenandoahOldCompactionReserve, 8, EXPERIMENTAL,           \
           "During generational GC, prevent promotions from filling "        \

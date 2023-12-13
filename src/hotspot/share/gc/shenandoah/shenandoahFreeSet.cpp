@@ -754,7 +754,7 @@ HeapWord* ShenandoahFreeSet::try_allocate_in(ShenandoahHeapRegion* r, Shenandoah
   }
 
   // req.size() is in words, r->free() is in bytes.
-  if (ShenandoahElasticTLAB && req.is_lab_alloc()) {
+  if (req.is_lab_alloc()) {
     if (req.type() == ShenandoahAllocRequest::_alloc_plab) {
       assert(_heap->mode()->is_generational(), "PLABs are only for generational mode");
       assert(_free_sets.in_free_set(r->index(), OldCollector), "PLABS must be allocated in old_collector_free regions");

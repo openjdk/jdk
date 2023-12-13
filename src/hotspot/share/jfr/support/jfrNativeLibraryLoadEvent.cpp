@@ -32,7 +32,9 @@
 JfrNativeLibraryEventBase::JfrNativeLibraryEventBase(const char* name) : _name(name), _error_msg(nullptr), _start_time(nullptr) {}
 
 JfrNativeLibraryEventBase::~JfrNativeLibraryEventBase() {
-  delete _start_time;
+  if (_start_time != nullptr) {
+    delete _start_time;
+  }
 }
 
 const char* JfrNativeLibraryEventBase::name() const {

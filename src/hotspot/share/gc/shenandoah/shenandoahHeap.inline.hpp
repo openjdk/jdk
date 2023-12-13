@@ -261,7 +261,7 @@ inline bool ShenandoahHeap::cancelled_gc() const {
 }
 
 inline bool ShenandoahHeap::check_cancelled_gc_and_yield(bool sts_active) {
-  if (sts_active && ShenandoahSuspendibleWorkers && !cancelled_gc()) {
+  if (sts_active && !cancelled_gc()) {
     if (SuspendibleThreadSet::should_yield()) {
       SuspendibleThreadSet::yield();
     }

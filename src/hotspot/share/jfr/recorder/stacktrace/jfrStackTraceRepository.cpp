@@ -243,3 +243,8 @@ size_t JfrStackTraceRepository::clear() {
   clear_leak_profiler();
   return clear(instance());
 }
+
+traceid JfrStackTraceRepository::next_id() {
+  MutexLocker lock(JfrStacktrace_lock, Mutex::_no_safepoint_check_flag);
+  return ++_next_id;
+}

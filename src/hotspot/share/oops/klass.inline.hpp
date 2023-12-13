@@ -56,6 +56,10 @@ inline oop Klass::java_mirror() const {
   return _java_mirror.resolve();
 }
 
+inline oop Klass::java_mirror_no_keepalive() const {
+  return _java_mirror.peek();
+}
+
 inline klassVtable Klass::vtable() const {
   return klassVtable(const_cast<Klass*>(this), start_of_vtable(), vtable_length() / vtableEntry::size());
 }

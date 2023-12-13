@@ -458,6 +458,7 @@ java/awt/Graphics2D/DrawString/RotTransText.java 8316878 linux-all
 java/awt/KeyboardFocusmanager/TypeAhead/ButtonActionKeyTest/ButtonActionKeyTest.java 8257529 windows-x64
 java/awt/KeyboardFocusmanager/ConsumeNextMnemonicKeyTypedTest/ConsumeForModalDialogTest/ConsumeForModalDialogTest.java 8302787 windows-all
 java/awt/KeyboardFocusmanager/TypeAhead/MenuItemActivatedTest/MenuItemActivatedTest.java 8302787 windows-all
+java/awt/KeyboardFocusmanager/ConsumeNextMnemonicKeyTypedTest/ConsumeNextMnemonicKeyTypedTest.java 8321303 linux-all
 
 java/awt/Window/GetScreenLocation/GetScreenLocationTest.java 8225787 linux-x64
 java/awt/Dialog/MakeWindowAlwaysOnTop/MakeWindowAlwaysOnTop.java 8266243 macosx-aarch64
@@ -570,7 +571,6 @@ java/nio/channels/DatagramChannel/ManySourcesAndTargets.java    8264385 macosx-a
 java/nio/channels/DatagramChannel/Unref.java                    8233437 generic-all
 
 java/nio/file/Path/ToRealPath.java                              8315273 windows-all
-java/nio/file/Files/probeContentType/Basic.java                 8320943 windows-all
 
 jdk/nio/zipfs/TestLocOffsetFromZip64EF.java                     8301183 linux-all
 
@@ -651,6 +651,7 @@ javax/sound/sampled/Clip/ClipIsRunningAfterStop.java 8307574 linux-x64
 
 javax/swing/plaf/basic/BasicTextUI/8001470/bug8001470.java 8233177 linux-all,windows-all
 
+javax/swing/JFrame/MaximizeWindowTest.java 8321289 linux-all
 javax/swing/JWindow/ShapedAndTranslucentWindows/ShapedTranslucentPerPixelTranslucentGradient.java 8233582 linux-all
 javax/swing/JWindow/ShapedAndTranslucentWindows/ShapedPerPixelTranslucentGradient.java 8233582 linux-all
 javax/swing/JWindow/ShapedAndTranslucentWindows/PerPixelTranslucentSwing.java 8194128 macosx-all
@@ -683,9 +684,6 @@ sanity/client/SwingSet/src/EditorPaneDemoTest.java 8212240 linux-x64
 
 # jdk_swing Ubuntu 23.04 specific
 
-javax/swing/JTree/8003400/Test8003400.java 8309734 linux-all
-javax/swing/JTable/7124218/SelectEditTableCell.java 8309734 linux-all
-javax/swing/JFileChooser/JFileChooserSetLocationTest.java 8309734 linux-all
 javax/swing/JComboBox/TestComboBoxComponentRendering.java 8309734 linux-all
 
 ############################################################################

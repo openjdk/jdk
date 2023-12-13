@@ -27,12 +27,8 @@
  * @summary Lambda back-end should generate invokevirtual for method handles referring to
  *          private instance methods as lambda proxy is a nestmate of the target clsas
  * @library /tools/javac/lib
- * @modules java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.constantpool
- *          java.base/jdk.internal.classfile.instruction
- *          java.base/jdk.internal.classfile.components
- *          java.base/jdk.internal.classfile.impl
+ * @enablePreview
+ * @modules java.base/jdk.internal.classfile.impl
  *          jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.file
  *          jdk.compiler/com.sun.tools.javac.util
@@ -40,10 +36,10 @@
  * @run main TestLambdaBytecode
  */
 
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.attribute.*;
-import jdk.internal.classfile.constantpool.*;
-import jdk.internal.classfile.instruction.InvokeDynamicInstruction;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.*;
+import java.lang.classfile.constantpool.*;
+import java.lang.classfile.instruction.InvokeDynamicInstruction;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -210,7 +206,7 @@ public class TestLambdaBytecode extends ComboInstance<TestLambdaBytecode> {
             return;
         }
         try (InputStream is = res.get().iterator().next().openInputStream()) {
-            ClassModel cf = Classfile.of().parse(is.readAllBytes());
+            ClassModel cf = ClassFile.of().parse(is.readAllBytes());
             MethodModel testMethod = null;
             for (MethodModel m : cf.methods()) {
                 if (m.methodName().equalsString("test")) {

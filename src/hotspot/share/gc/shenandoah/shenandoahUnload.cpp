@@ -30,6 +30,7 @@
 #include "code/codeCache.hpp"
 #include "code/dependencyContext.hpp"
 #include "gc/shared/gcBehaviours.hpp"
+#include "gc/shared/classUnloadingContext.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
 #include "gc/shenandoah/shenandoahNMethod.inline.hpp"
 #include "gc/shenandoah/shenandoahLock.hpp"
@@ -139,6 +140,9 @@ void ShenandoahUnload::unload() {
   assert(ClassUnloading, "Filtered by caller");
   assert(heap->is_concurrent_weak_root_in_progress(), "Filtered by caller");
 
+  ClassUnloadingContext ctx(heap->workers()->active_workers(),
+                            true /* lock_codeblob_free_separately */);
+
   // Unlink stale metadata and nmethods
   {
     ShenandoahTimingsTracker t(ShenandoahPhaseTimings::conc_class_unload_unlink);
@@ -182,7 +186,7 @@ void ShenandoahUnload::unload() {
 
     {
       ShenandoahTimingsTracker t(ShenandoahPhaseTimings::conc_class_unload_purge_cldg);
-      ClassLoaderDataGraph::purge(/*at_safepoint*/false);
+      ClassLoaderDataGraph::purge(false /* at_safepoint */);
     }
 
     {

@@ -164,7 +164,7 @@ RuntimeBlob::RuntimeBlob(
 void RuntimeBlob::free(RuntimeBlob* blob) {
   assert(blob != nullptr, "caller must check for nullptr");
   ThreadInVMfromUnknown __tiv;  // get to VM state in case we block on CodeCache_lock
-  blob->flush();
+  blob->purge();
   {
     MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
     CodeCache::free(blob);
@@ -173,7 +173,7 @@ void RuntimeBlob::free(RuntimeBlob* blob) {
   MemoryService::track_code_cache_memory_usage();
 }
 
-void CodeBlob::flush() {
+void CodeBlob::purge(bool free_code_cache_data) {
   if (_oop_maps != nullptr) {
     delete _oop_maps;
     _oop_maps = nullptr;
@@ -759,6 +759,10 @@ UpcallStub* UpcallStub::create(const char* name, CodeBuffer* cb, jobject receive
     MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
     blob = new (size) UpcallStub(name, cb, size, receiver, frame_data_offset);
   }
+  if (blob == nullptr) {
+    return nullptr; // caller must handle this
+  }
+
   // Track memory usage statistic after releasing CodeCache_lock
   MemoryService::track_code_cache_memory_usage();
 

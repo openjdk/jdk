@@ -45,7 +45,6 @@ void ShenandoahGenerationalMode::initialize_flags() const {
   FLAG_SET_DEFAULT(ShenandoahCardBarrier, true);
 
   if (ClassUnloading) {
-    FLAG_SET_DEFAULT(ShenandoahSuspendibleWorkers, true);
     FLAG_SET_DEFAULT(VerifyBeforeExit, false);
   }
 
