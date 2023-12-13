@@ -29,15 +29,16 @@
  *           Make sure the navagation is 2 columns, not 3.
  * @library  /tools/lib ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
- * @build    toolbox.ToolBox javadoc.tester.*
+ * @build    toolbox.ToolBox javadoc.tester.* builder.ClassBuilder
  * @run main TestNavigation
  */
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 
 import javadoc.tester.JavadocTester;
+import builder.ClassBuilder;
 import toolbox.ToolBox;
 
 public class TestNavigation extends JavadocTester {
@@ -53,28 +54,67 @@ public class TestNavigation extends JavadocTester {
     }
 
     @Test
-    public void test(Path ignore) {
-        javadoc("-d", "out",
+    public void testOverview(Path ignore) {
+        javadoc("-d", "out-overview",
                 "-overview", testSrc("overview.html"),
                 "-sourcepath", testSrc,
                 "pkg");
         checkExit(Exit.OK);
         checkSubNav();
 
+        checkOutput("index.html", true,
+                """
+                    <ul id="navbar-top-firstrow" class="nav-list" title="Navigation">
+                    <li class="nav-bar-cell1-rev">Overview</li>
+                    <li><a href="pkg/package-tree.html">Tree</a></li>
+                    <li><a href="index-all.html">Index</a></li>
+                    <li><a href="search.html">Search</a></li>
+                    <li><a href="help-doc.html#overview">Help</a></li>
+                    </ul>""");
+
+        checkOutput("pkg/package-summary.html", true,
+                """
+                    <ul id="navbar-top-firstrow" class="nav-list" title="Navigation">
+                    <li><a href="../index.html">Overview</a></li>
+                    <li class="nav-bar-cell1-rev">Package</li>
+                    <li><a href="package-tree.html">Tree</a></li>
+                    <li><a href="../index-all.html">Index</a></li>
+                    <li><a href="../search.html">Search</a></li>
+                    <li><a href="../help-doc.html#package">Help</a></li>
+                    </ul>""");
+
         checkOutput("pkg/A.html", true,
                 """
                     <ul id="navbar-top-firstrow" class="nav-list" title="Navigation">
-                    <li><a href="../index.html">Overview</a></li>""");
+                    <li><a href="../index.html">Overview</a></li>
+                    <li class="nav-bar-cell1-rev">Class</li>
+                    <li><a href="package-tree.html">Tree</a></li>
+                    <li><a href="../index-all.html">Index</a></li>
+                    <li><a href="../search.html">Search</a></li>
+                    <li><a href="../help-doc.html#class">Help</a></li>
+                    </ul>""");
 
         checkOutput("pkg/C.html", true,
                 """
                     <ul id="navbar-top-firstrow" class="nav-list" title="Navigation">
-                    <li><a href="../index.html">Overview</a></li>""");
+                    <li><a href="../index.html">Overview</a></li>
+                    <li class="nav-bar-cell1-rev">Class</li>
+                    <li><a href="package-tree.html">Tree</a></li>
+                    <li><a href="../index-all.html">Index</a></li>
+                    <li><a href="../search.html">Search</a></li>
+                    <li><a href="../help-doc.html#class">Help</a></li>
+                    </ul>""");
 
         checkOutput("pkg/E.html", true,
                 """
                     <ul id="navbar-top-firstrow" class="nav-list" title="Navigation">
-                    <li><a href="../index.html">Overview</a></li>""");
+                    <li><a href="../index.html">Overview</a></li>
+                    <li class="nav-bar-cell1-rev">Class</li>
+                    <li><a href="package-tree.html">Tree</a></li>
+                    <li><a href="../index-all.html">Index</a></li>
+                    <li><a href="../search.html">Search</a></li>
+                    <li><a href="../help-doc.html#class">Help</a></li>
+                    </ul>""");
 
         checkOutput("pkg/I.html", true,
                 // Test for 4664607
@@ -257,4 +297,123 @@ public class TestNavigation extends JavadocTester {
                     <script type="text/javascript"><!--
                       allClassesLink = document.getElementById("allclasses_navbar_bottom");""");
     }
+
+    @Test
+    public void testSinglePackage(Path ignore) {
+        javadoc("-d", "out-single-package",
+                "-sourcepath", testSrc,
+                "pkg");
+        checkExit(Exit.OK);
+        checkSubNav();
+
+        checkOutput("index.html", true,
+                """
+                    <meta http-equiv="Refresh" content="0;pkg/package-summary.html">""",
+                """
+                 <p><a href="pkg/package-summary.html">pkg/package-summary.html</a></p>""");
+
+        checkOutput("pkg/package-summary.html", true,
+                """
+                    <ul id="navbar-top-firstrow" class="nav-list" title="Navigation">
+                    <li class="nav-bar-cell1-rev">Package</li>
+                    <li><a href="package-tree.html">Tree</a></li>
+                    <li><a href="../index-all.html">Index</a></li>
+                    <li><a href="../search.html">Search</a></li>
+                    <li><a href="../help-doc.html#package">Help</a></li>
+                    </ul>""");
+
+        checkOutput("pkg/A.html", true,
+                """
+                    <ul id="navbar-top-firstrow" class="nav-list" title="Navigation">
+                    <li><a href="package-summary.html">Package</a></li>
+                    <li class="nav-bar-cell1-rev">Class</li>
+                    <li><a href="package-tree.html">Tree</a></li>
+                    <li><a href="../index-all.html">Index</a></li>
+                    <li><a href="../search.html">Search</a></li>
+                    <li><a href="../help-doc.html#class">Help</a></li>
+                    </ul>""");
+
+        checkOutput("pkg/C.html", true,
+                """
+                    <ul id="navbar-top-firstrow" class="nav-list" title="Navigation">
+                    <li><a href="package-summary.html">Package</a></li>
+                    <li class="nav-bar-cell1-rev">Class</li>
+                    <li><a href="package-tree.html">Tree</a></li>
+                    <li><a href="../index-all.html">Index</a></li>
+                    <li><a href="../search.html">Search</a></li>
+                    <li><a href="../help-doc.html#class">Help</a></li>
+                    </ul>""");
+
+        checkOutput("pkg/E.html", true,
+                """
+                    <ul id="navbar-top-firstrow" class="nav-list" title="Navigation">
+                    <li><a href="package-summary.html">Package</a></li>
+                    <li class="nav-bar-cell1-rev">Class</li>
+                    <li><a href="package-tree.html">Tree</a></li>
+                    <li><a href="../index-all.html">Index</a></li>
+                    <li><a href="../search.html">Search</a></li>
+                    <li><a href="../help-doc.html#class">Help</a></li>
+                    </ul>""");
+
+        checkOutput("pkg/I.html", true,
+                // Test for 4664607
+                """
+                    <div class="skip-nav"><a href="#skip-navbar-top" title="Skip navigation links">Skip navigation links</a></div>
+                    <ul id="navbar-top-firstrow" class="nav-list" title="Navigation">
+                    """,
+                """
+                    <li><a href="package-summary.html">Package</a></li>
+                    <li class="nav-bar-cell1-rev">Class</li>""");
+    }
+
+    @Test
+    public void testUnnamedPackage(Path base) throws Exception {
+        Path src = Files.createDirectories(base.resolve("src"));
+        new ClassBuilder(tb, "C")
+                .setModifiers("public", "class")
+                .write(src);
+
+        javadoc("-d", "out-unnamed-package",
+                src.resolve("C.java").toString());
+        checkExit(Exit.OK);
+
+        checkOutput("index.html", true,
+                """
+                    <script type="text/javascript">window.location.replace('package-summary.html')</script>
+                    <noscript>
+                    <meta http-equiv="Refresh" content="0;package-summary.html">
+                    </noscript>""");
+
+        checkOutput("package-summary.html", true,
+                """
+                    <ul id="navbar-top-firstrow" class="nav-list" title="Navigation">
+                    <li class="nav-bar-cell1-rev">Package</li>
+                    <li><a href="package-tree.html">Tree</a></li>
+                    <li><a href="index-all.html">Index</a></li>
+                    <li><a href="search.html">Search</a></li>
+                    <li><a href="help-doc.html#package">Help</a></li>
+                    </ul>""",
+                """
+                    <ol class="sub-nav-list">
+                    <li><a href="package-summary.html" class="current-selection">Unnamed Package</a></li>
+                    </ol>""");
+
+        checkOutput("C.html", true,
+                """
+                    <ul id="navbar-top-firstrow" class="nav-list" title="Navigation">
+                    <li><a href="package-summary.html">Package</a></li>
+                    <li class="nav-bar-cell1-rev">Class</li>
+                    <li><a href="package-tree.html">Tree</a></li>
+                    <li><a href="index-all.html">Index</a></li>
+                    <li><a href="search.html">Search</a></li>
+                    <li><a href="help-doc.html#class">Help</a></li>
+                    </ul>""",
+                """
+                    <ol class="sub-nav-list">
+                    <li><a href="package-summary.html">Unnamed Package</a></li>
+                    &nbsp;&gt;&nbsp;
+                    <li><a href="C.html" class="current-selection" title="class in Unnamed Package">C</a></li>
+                    </ol>""");
+    }
+
 }

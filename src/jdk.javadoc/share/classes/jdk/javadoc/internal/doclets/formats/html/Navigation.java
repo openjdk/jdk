@@ -376,11 +376,17 @@ public class Navigation {
         }
     }
 
+    /**
+     * Adds a link to the overview page if indicated by the configuration.
+     * Otherwise a link to the first module or package is added.
+     *
+     * @param target content to add the link to
+     */
     private void addOverviewLink(Content target) {
         if (options.createOverview()) {
             target.add(HtmlTree.LI(links.createLink(pathToRoot.resolve(DocPaths.INDEX),
                     contents.overviewLabel, "")));
-        } else if (configuration.showModules && configuration.modules.size() == 1) {
+        } else if (configuration.showModules && configuration.modules.size() > 0) {
             ModuleElement mdle = configuration.modules.first();
             if (!mdle.equals(element)) {
                 boolean included = configuration.utils.isIncluded(mdle);
@@ -388,7 +394,7 @@ public class Navigation {
                         ? links.createLink(pathToRoot.resolve(configuration.docPaths.moduleSummary(mdle)), contents.moduleLabel, "")
                         : contents.moduleLabel));
             }
-        } else if (configuration.packages.size() == 1 && !(element instanceof PackageElement)) {
+        } else if (configuration.packages.size() > 0 && !(element instanceof PackageElement)) {
             PackageElement packageElement = configuration.packages.first();
             boolean included = packageElement != null && configuration.utils.isIncluded(packageElement);
             if (!included) {
