@@ -10371,6 +10371,26 @@ instruct array_equalsC(iRegP_R11 ary1, iRegP_R12 ary2, iRegI_R10 result,
   ins_pipe(pipe_class_memory);
 %}
 
+// fast ArraysSupport.vectorizedHashCode
+instruct arrays_hashcode(iRegP_R11 ary, iRegI_R12 cnt, iRegI_R10 result, immI basic_type,
+                         iRegLNoSp tmp1, iRegLNoSp tmp2,
+                         iRegLNoSp tmp3, iRegLNoSp tmp4,
+                         iRegLNoSp tmp5, iRegLNoSp tmp6, rFlagsReg cr)
+%{
+  match(Set result (VectorizedHashCode (Binary ary cnt) (Binary result basic_type)));
+  effect(TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4, TEMP tmp5, TEMP tmp6,
+         USE_KILL ary, USE_KILL cnt, USE basic_type, KILL cr);
+
+  format %{ "Array HashCode array[] $ary,$cnt,$result,$basic_type -> $result   // KILL all" %}
+  ins_encode %{
+    __ arrays_hashcode($ary$$Register, $cnt$$Register, $result$$Register,
+                       $tmp1$$Register, $tmp2$$Register, $tmp3$$Register,
+                       $tmp4$$Register, $tmp5$$Register, $tmp6$$Register,
+                       (BasicType)$basic_type$$constant);
+  %}
+  ins_pipe(pipe_class_memory);
+%}
+
 // ============================================================================
 // Safepoint Instructions
 
