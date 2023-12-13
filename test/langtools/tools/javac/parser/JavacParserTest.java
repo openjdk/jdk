@@ -859,11 +859,7 @@ public class JavacParserTest extends TestCase {
                 + expectedValues, values, expectedValues);
     }
 
-    /*
-     * The following tests do not work just yet with nb-javac nor javac,
-     * they need further investigation, see CR: 7167356
-     */
-
+    @Test
     void testPositionBrokenSource126732a() throws IOException {
         String[] commands = new String[]{
             "return Runnable()",
@@ -903,6 +899,7 @@ public class JavacParserTest extends TestCase {
         }
     }
 
+    @Test
     void testPositionBrokenSource126732b() throws IOException {
         String[] commands = new String[]{
             "break",
@@ -944,6 +941,7 @@ public class JavacParserTest extends TestCase {
         }
     }
 
+    @Test
     void testStartPositionEnumConstantInit() throws IOException {
 
         String code = "package t; enum Test { AAA; }";
@@ -957,7 +955,7 @@ public class JavacParserTest extends TestCase {
         int start = (int) t.getSourcePositions().getStartPosition(cut,
                 enumAAA.getInitializer());
 
-        assertEquals("testStartPositionEnumConstantInit", -1, start);
+        assertEquals("testStartPositionEnumConstantInit", 23, start);
     }
 
     @Test
