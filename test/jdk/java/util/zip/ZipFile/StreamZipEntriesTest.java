@@ -72,9 +72,15 @@ public class StreamZipEntriesTest {
             zo.write("hello".getBytes(StandardCharsets.UTF_8));
         }
 
-        // This will also produce META-INF/MANIFEST.MF
         try (OutputStream out = Files.newOutputStream(jar);
-             JarOutputStream zo = new JarOutputStream(out, new Manifest())) {
+             ZipOutputStream zo = new ZipOutputStream(out)) {
+            // A JAR file may start with a META-INF/ directory before the manifest
+            zo.putNextEntry(new ZipEntry("META-INF/"));
+            // Write the manifest
+            zo.putNextEntry(new ZipEntry("META-INF/MANIFEST.MF"));
+            new Manifest().write(zo);
+
+            // Write two regular entries
             zo.putNextEntry(new ZipEntry("entry1.txt"));
             zo.write("hello".getBytes(StandardCharsets.UTF_8));
             zo.putNextEntry(new ZipEntry("entry2.txt"));
@@ -128,6 +134,7 @@ public class StreamZipEntriesTest {
     public void testStreamJar() throws IOException {
         try (JarFile jf = new JarFile(jar.toFile())) {
             Set<String> names = new HashSet<>(Set.of(
+                    "META-INF/",
                     "META-INF/MANIFEST.MF",
                     "entry1.txt",
                     "entry2.txt"
@@ -148,10 +155,11 @@ public class StreamZipEntriesTest {
 
             // Check that Stream.toArray produces the expected result
             Object elements[] = jf.stream().toArray();
-            assertEquals(3, elements.length);
-            assertEquals(elements[0].toString(), "META-INF/MANIFEST.MF");
-            assertEquals(elements[1].toString(), "entry1.txt");
-            assertEquals(elements[2].toString(), "entry2.txt");
+            assertEquals(4, elements.length);
+            assertEquals(elements[0].toString(), "META-INF/");
+            assertEquals(elements[1].toString(), "META-INF/MANIFEST.MF");
+            assertEquals(elements[2].toString(), "entry1.txt");
+            assertEquals(elements[3].toString(), "entry2.txt");
         }
     }
 
