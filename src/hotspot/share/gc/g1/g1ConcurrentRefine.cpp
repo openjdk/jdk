@@ -175,7 +175,7 @@ G1ConcurrentRefine::G1ConcurrentRefine(G1Policy* policy) :
 {}
 
 jint G1ConcurrentRefine::initialize() {
-  return _thread_control.initialize(this, max_num_threads());
+  return _thread_control.initialize(this, G1ConcRefinementThreads);
 }
 
 G1ConcurrentRefine* G1ConcurrentRefine::create(G1Policy* policy, jint* ecode) {
@@ -197,10 +197,6 @@ G1ConcurrentRefine::~G1ConcurrentRefine() {
 
 void G1ConcurrentRefine::threads_do(ThreadClosure *tc) {
   _thread_control.worker_threads_do(tc);
-}
-
-uint G1ConcurrentRefine::max_num_threads() {
-  return G1ConcRefinementThreads;
 }
 
 void G1ConcurrentRefine::update_pending_cards_target(double logged_cards_time_ms,
