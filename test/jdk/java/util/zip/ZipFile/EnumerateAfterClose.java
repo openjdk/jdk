@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,10 +22,10 @@
  */
 
 /* @test
-   @bug 4206838
-   @summary getEntry() will search for a directory
-            even without an ending '/'.
-   @run junit GetDirEntry
+   @bug 4290060
+   @summary Check if the zip file is closed before access any
+            elements in the Enumeration.
+   @run junit EnumerateAfterClose
  */
 
 import org.junit.jupiter.api.AfterEach;
@@ -33,32 +33,32 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
+import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Enumeration;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipOutputStream;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
-public class GetDirEntry {
+public class EnumerateAfterClose {
 
-    // ZIP file produced in this test
-    private Path zip = Path.of("directory-entry.zip");
+    // ZIP file used in this test
+    private Path zip = Path.of("enum-after-close.zip");
 
     /**
-     * Create a sample ZIP file containing a directory entry
+     * Create a sample ZIP file for use by this test
      * @throws IOException if an unexpected IOException occurs
      */
     @BeforeEach
     public void setUp() throws IOException {
-        try (ZipOutputStream zo = new ZipOutputStream(Files.newOutputStream(zip))) {
-            ZipEntry e = new ZipEntry("META-INF/");
-            e.setMethod(ZipEntry.STORED);
-            e.setSize(0);
-            e.setCrc(0);
-            zo.putNextEntry(e);
+        try (OutputStream out = Files.newOutputStream(zip);
+             ZipOutputStream zo = new ZipOutputStream(out)) {
+            zo.putNextEntry(new ZipEntry("file.txt"));
+            zo.write("hello".getBytes(StandardCharsets.UTF_8));
         }
     }
 
@@ -72,21 +72,23 @@ public class GetDirEntry {
     }
 
     /**
-     * Verify that the a directory entry like 'META-INF/' can also be looked
-     * up using just 'META-INF', that is without the trailing '/'
+     * Attempting to using a ZipEntry Enumeration after its backing
+     * ZipFile is closed should throw IllegalStateException.
+     *
      * @throws IOException if an unexpected IOException occurs
      */
     @Test
-    public void lookupDirectoryEntryWithoutTrailingSlash() throws IOException {
+    public void enumeratingAfterCloseShouldThrowISE() throws IOException {
+        // Retain a reference to an enumeration backed by a closed ZipFile
+        Enumeration e;
         try (ZipFile zf = new ZipFile(zip.toFile())) {
-            // Look up 'META-INF/' using just 'META-INF'
-            ZipEntry ze = zf.getEntry("META-INF");
-            assertNotNull(ze, "failed to find a directory entry");
-            assertEquals("META-INF/", ze.getName());
-            // Sanity check that 'META-INF/' can be found
-            ze = zf.getEntry("META-INF/");
-            assertNotNull(ze, "failed to find a directory entry");
-            assertEquals("META-INF/", ze.getName());
+            e = zf.entries();
         }
+        // Using the enumeration after the ZipFile is closed should throw ISE
+        assertThrows(IllegalStateException.class, () -> {
+            if (e.hasMoreElements()) {
+                ZipEntry ze = (ZipEntry)e.nextElement();
+            }
+        });
     }
 }

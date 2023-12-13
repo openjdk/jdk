@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,25 +24,80 @@
 /* @test 1.1 99/06/01
    @bug 4239446
    @summary Make sure the ZipEntry fields are correct.
+   @run junit CopyJar
  */
 
-import java.io.*;
-import java.util.zip.*;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.jar.JarOutputStream;
+import java.util.jar.Manifest;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
+import java.util.zip.ZipOutputStream;
 
 public class CopyJar {
-    public static void main(String args[]) throws Exception {
-        try (ZipFile zf = new ZipFile(new File(System.getProperty("test.src", "."),
-                                               "input.jar"))) {
-            ZipEntry ze = zf.getEntry("ReleaseInflater.java");
-            ZipOutputStream zos = new ZipOutputStream(new ByteArrayOutputStream());
-            InputStream in = zf.getInputStream(ze);
-            byte[] b = new byte[128];
-            int n;
-            zos.putNextEntry(ze);
-            while((n = in.read(b)) != -1) {
-                zos.write(b, 0, n);
+
+    // ZIP file produced by this test
+    private Path jar = Path.of("copy-jar.jar");
+
+    /**
+     * Create a sample ZIP file used by this test
+     *
+     * @throws IOException if an unexpected IOException occurs
+     */
+    @BeforeEach
+    public void setUp() throws IOException {
+        try (JarOutputStream jo = new JarOutputStream(Files.newOutputStream(jar), new Manifest())) {
+            jo.putNextEntry(new ZipEntry("file.txt"));
+            jo.write("helloworld".getBytes(StandardCharsets.UTF_8));
+        }
+    }
+
+    /**
+     * Clean up the ZIP file produced by this test
+     *
+     * @throws IOException if an unexpected IOException occurs
+     */
+    @AfterEach
+    public void cleanup() throws IOException {
+        Files.deleteIfExists(jar);
+    }
+
+    /**
+     * Check that a ZipEntry read by ZipFile.getEntry does not produce
+     * a CRC value inconsistent with the CRC computed when the entry
+     * and its content is copied over to a ZipOutputStream
+     *
+     * @throws IOException if an unexpected IOException occurs
+     */
+    @Test
+    public void copyingZipEntryShouldFailCRCValidation() throws IOException {
+        try (ZipFile zf = new ZipFile(jar.toFile())) {
+            ZipEntry ze = zf.getEntry("file.txt");
+
+            try (ZipOutputStream zos = new ZipOutputStream(OutputStream.nullOutputStream());
+                 InputStream in = zf.getInputStream(ze)) {
+                /* The original bug mentions that ZipEntry
+                 * 'loses the correct CRC value read from the CEN directory'.
+                 * Enable the code below to trigger a ZipException similar to the bug description
+                 */
+                if (false) {
+                    // Reset the CRC, as if a zero value was read from a streaming mode LOC header
+                    ze.setCrc(0);
+                    // Required to set ZipEntry.csizeSet = true
+                    ze.setCompressedSize(ze.getCompressedSize());
+                }
+                zos.putNextEntry(ze);
+                in.transferTo(zos);
             }
-            zos.close();
         }
     }
 }
