@@ -25,10 +25,7 @@
 
 package jdk.jfr.events;
 
-import jdk.jfr.Category;
-import jdk.jfr.Description;
-import jdk.jfr.Label;
-import jdk.jfr.Name;
+import jdk.jfr.*;
 import jdk.jfr.internal.MirrorEvent;
 import jdk.jfr.internal.Type;
 
@@ -42,4 +39,10 @@ public class SelectorSelectEvent extends AbstractJDKEvent {
     @Label("SelectionKey Count")
     @Description("Number of channels ready for I/O or added to ready set")
     public int selectionKeyCount;
+
+    @Label("Timeout Value")
+    @Description("Milliseconds to block, or zero to block indefinitely")
+    @Timespan(Timespan.MILLISECONDS)
+    public long timeout;
+
 }

@@ -51,6 +51,7 @@ import java.util.List;
 public class TestSelectorSelectEvent {
 
     private static String COUNT_FIELD = "selectionKeyCount";
+    private static String TIMEOUT_FIELD = "timeout";
 
     public static void main(String[] args) throws Throwable {
         var tests = new TestSelectorSelectEvent();
@@ -92,6 +93,7 @@ public class TestSelectorSelectEvent {
                 List<RecordedEvent> events = Events.fromRecording(recording);
                 Asserts.assertEquals(events.size(), 1);
                 Asserts.assertTrue(events.get(0).getInt(COUNT_FIELD) == 1);
+                Asserts.assertTrue(events.get(0).getLong(TIMEOUT_FIELD) == 0);
             }
         }
     }
@@ -112,7 +114,7 @@ public class TestSelectorSelectEvent {
                     // and should time out.  An event should be generated.
                     sc1.configureBlocking(false);
                     SelectionKey key = sc1.register(sel, SelectionKey.OP_READ);
-                    int n = sel.select(1);
+                    int n = sel.select(2);
                     Asserts.assertTrue(n == 0);
 
                     // write bytes to other end of connection
@@ -130,6 +132,7 @@ public class TestSelectorSelectEvent {
                 List<RecordedEvent> events = Events.fromRecording(recording);
                 Asserts.assertEquals(events.size(), 1);
                 Asserts.assertTrue(events.get(0).getInt(COUNT_FIELD) == 0);
+                Asserts.assertTrue(events.get(0).getLong(TIMEOUT_FIELD) == 2);
             }
         }
     }

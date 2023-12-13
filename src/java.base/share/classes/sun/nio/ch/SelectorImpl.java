@@ -149,7 +149,8 @@ public abstract class SelectorImpl
         long duration = SelectorSelectEvent.timestamp() - start;
         // always send event if timed out (n == 0)
         if ((n == 0) || (SelectorSelectEvent.shouldCommit(duration))) {
-            SelectorSelectEvent.commit(start, duration, n);
+            timeout = (timeout < 0) ? 0 : timeout;
+            SelectorSelectEvent.commit(start, duration, n, timeout);
         }
         return n;
     }
