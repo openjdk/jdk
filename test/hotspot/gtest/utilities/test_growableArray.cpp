@@ -35,12 +35,7 @@
 // -> add to modify and test
 //
 // TODO
-// sort 2 versions
-// find_sorted 2 versions
 // print ?
-//
-// allocator only:
-// insert_sorted 2 versions
 //
 // swap -> refactor!
 
@@ -78,8 +73,13 @@ E value_factory(int i) {
 }
 
 template<typename E>
-int value_compare(E* e1, E* e2) {
+int value_compare_ptr(E* e1, E* e2) {
   return (*e1) - (*e2);
+}
+
+template<typename E>
+int value_compare_ref(const E& e1, const E& e2) {
+  return e1 - e2;
 }
 
 class Point {
@@ -345,6 +345,7 @@ public:
   virtual void insert_before(int idx, const E& e) = 0;
   virtual void insert_before(int idx, const GrowableArrayView<E>* array) = 0;
   virtual void appendAll(const GrowableArrayView<E>* array) = 0;
+  virtual E insert_sorted(const E& e) = 0;
 
   // Only defined for CHeap:
   virtual void clear_and_deallocate() {
@@ -443,6 +444,11 @@ public:
 
   virtual void appendAll(const GrowableArrayView<E>* array) override final {
     _array->appendAll(array);
+  }
+
+  virtual E insert_sorted(const E& e) override final {
+    // virtual function cannot have template, so we just fill in the template here
+    return _array->template insert_sorted<value_compare_ref<E>>(e);
   }
 };
 
@@ -716,6 +722,11 @@ public:
 
   virtual void appendAll(const GrowableArrayView<E>* array) override final {
     _array->appendAll(array);
+  }
+
+  virtual E insert_sorted(const E& e) override final {
+    // virtual function cannot have template, so we just fill in the template here
+    return _array->template insert_sorted<value_compare_ref<E>>(e);
   }
 };
 
@@ -1713,7 +1724,7 @@ class TestClosureSort : public TestClosure<E> {
     check_alive_elements_for_type<E>(997);
     ASSERT_EQ(a->length(), 997);
 
-    a->view().sort(value_compare<E>);
+    a->view().sort(value_compare_ptr<E>);
 
     check_alive_elements_for_type<E>(997);
     ASSERT_EQ(a->length(), 997);
@@ -1734,7 +1745,7 @@ class TestClosureSort : public TestClosure<E> {
     check_alive_elements_for_type<E>(3000);
     ASSERT_EQ(a->length(), 3000);
 
-    a->view().sort(value_compare<E>, 3);
+    a->view().sort(value_compare_ptr<E>, 3);
 
     check_alive_elements_for_type<E>(3000);
     ASSERT_EQ(a->length(), 3000);
@@ -1744,7 +1755,40 @@ class TestClosureSort : public TestClosure<E> {
       ASSERT_EQ(a->at(3 * i + 2), value_factory<E>(-999 + i));
     }
 
-    // TODO continue
+    a->clear();
+    check_alive_elements_for_type<E>(0);
+    ASSERT_EQ(a->length(), 0);
+
+    // Test find_sorted
+    for (int i = 0; i < 1000; i++) {
+      a->append(value_factory<E>(7 * i));
+    }
+
+    for (int i = 0; i < 1000; i++) {
+      bool found = (i % 2 == 0); // init random
+      int j = a->view().template find_sorted<E,value_compare_ref<E>>(value_factory<E>(i), found);
+      if (i % 7 == 0) {
+        ASSERT_TRUE(found);
+        ASSERT_EQ(j, i / 7);
+      } else {
+        ASSERT_FALSE(found);
+      }
+    }
+
+    a->clear();
+    check_alive_elements_for_type<E>(0);
+    ASSERT_EQ(a->length(), 0);
+
+    // Test insert_sorted
+    for (int i = 0; i < 997; i++) {
+      a->insert_sorted(value_factory<E>((i * 31) % 997));
+    }
+
+    check_alive_elements_for_type<E>(997);
+    ASSERT_EQ(a->length(), 997);
+    for (int i = 0; i < 977; i++) {
+      ASSERT_EQ(a->at(i), value_factory<E>(i));
+    }
   };
 };
 

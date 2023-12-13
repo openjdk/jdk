@@ -349,28 +349,6 @@ public:
     return min;
   }
 
-  template <typename K>
-  int find_sorted(CompareClosure<E>* cc, const K& key, bool& found) {
-    found = false;
-    int min = 0;
-    int max = length() - 1;
-
-    while (max >= min) {
-      int mid = (int)(((uint)max + min) / 2);
-      E value = at(mid);
-      int diff = cc->do_compare(key, value);
-      if (diff > 0) {
-        min = mid + 1;
-      } else if (diff < 0) {
-        max = mid - 1;
-      } else {
-        found = true;
-        return mid;
-      }
-    }
-    return min;
-  }
-
   void print() const {
     tty->print("Growable Array " PTR_FORMAT, p2i(this));
     tty->print(": length %d (capacity %d) { ", _len, _capacity);
@@ -539,15 +517,6 @@ public:
   E insert_sorted(const E& key) {
     bool found;
     int location = GrowableArrayView<E>::template find_sorted<E, compare>(key, found);
-    if (!found) {
-      insert_before(location, key);
-    }
-    return this->at(location);
-  }
-
-  E insert_sorted(CompareClosure<E>* cc, const E& key) {
-    bool found;
-    int location = find_sorted(cc, key, found);
     if (!found) {
       insert_before(location, key);
     }
