@@ -32,17 +32,17 @@ import java.io.PipedOutputStream;
 import java.util.zip.CheckedOutputStream;
 
 /**
- * Package-private utility class
+ * Utility class for IO streams
  */
 public final class IOStreams {
 
     /**
      * Returns true if this class satisfies two conditions:
-     * <pre>
-     * - the reference to {@code byte[]} is not kept within the class
-     * - the argument of {@link OutputStream#write(byte[])}} and {@link OutputStream#write(byte[], int, int)}} is not modified within the methods
-     * - the {@code byte[]} is not read outside of the given bounds
-     * </pre>
+     * <ul>
+     * <li>the reference to {@code byte[]} is not kept within the class</li>
+     * <li>the argument of {@link OutputStream#write(byte[])}} and {@link OutputStream#write(byte[], int, int)}} is not modified within the methods</li>
+     * <li>the {@code byte[]} is not read outside of the given bounds</li>
+     * </ul>
      *
      * @return true if this class is trusted
      * @see java.io.ByteArrayInputStream#transferTo(OutputStream)
