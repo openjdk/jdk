@@ -325,10 +325,16 @@ public class TestSegments {
         assertEquals(segment.scope(), arena.scope());
     }
 
-    @Test(dataProvider = "segmentFactories", expectedExceptions = UnsupportedOperationException.class)
+    @Test(dataProvider = "segmentFactories", expectedExceptions = IllegalArgumentException.class)
     public void testFillIllegalAccessMode(Supplier<MemorySegment> segmentSupplier) {
         MemorySegment segment = segmentSupplier.get();
         segment.asReadOnly().fill((byte) 0xFF);
+    }
+
+    @Test(dataProvider = "segmentFactories", expectedExceptions = IllegalArgumentException.class)
+    public void testFromStringIllegalAccessMode(Supplier<MemorySegment> segmentSupplier) {
+        MemorySegment segment = segmentSupplier.get();
+        segment.asReadOnly().setString(0, "a");
     }
 
     @Test(dataProvider = "segmentFactories")

@@ -116,7 +116,6 @@ class PSAdaptiveSizePolicy : public AdaptiveSizePolicy {
  private:
 
   // Accessors
-  AdaptivePaddedAverage* avg_major_pause() const { return _avg_major_pause; }
   double gc_minor_pause_goal_sec() const { return _gc_minor_pause_goal_sec; }
 
   void adjust_eden_for_minor_pause_time(bool is_full_gc,
@@ -160,7 +159,6 @@ class PSAdaptiveSizePolicy : public AdaptiveSizePolicy {
   size_t scale_down(size_t change, double part, double total);
 
  protected:
-  // Time accessors
 
   // Footprint accessors
   size_t live_space() const {
@@ -226,10 +224,6 @@ class PSAdaptiveSizePolicy : public AdaptiveSizePolicy {
 
   size_t calculated_old_free_size_in_bytes() const;
 
-  size_t average_old_live_in_bytes() const {
-    return (size_t) avg_old_live()->average();
-  }
-
   size_t average_promoted_in_bytes() const {
     return (size_t)avg_promoted()->average();
   }
@@ -252,40 +246,6 @@ class PSAdaptiveSizePolicy : public AdaptiveSizePolicy {
     _change_old_gen_for_min_pauses = v;
   }
 
-  // Return true if the old generation size was changed
-  // to try to reach a pause time goal.
-  bool old_gen_changed_for_pauses() {
-    bool result = _change_old_gen_for_maj_pauses != 0 ||
-                  _change_old_gen_for_min_pauses != 0;
-    return result;
-  }
-
-  // Return true if the young generation size was changed
-  // to try to reach a pause time goal.
-  bool young_gen_changed_for_pauses() {
-    bool result = _change_young_gen_for_min_pauses != 0 ||
-                  _change_young_gen_for_maj_pauses != 0;
-    return result;
-  }
-  // end flags for pause goal
-
-  // Return true if the old generation size was changed
-  // to try to reach a throughput goal.
-  bool old_gen_changed_for_throughput() {
-    bool result = _change_old_gen_for_throughput != 0;
-    return result;
-  }
-
-  // Return true if the young generation size was changed
-  // to try to reach a throughput goal.
-  bool young_gen_changed_for_throughput() {
-    bool result = _change_young_gen_for_throughput != 0;
-    return result;
-  }
-
-  int decrease_for_footprint() { return _decrease_for_footprint; }
-
-
   // Accessors for estimators.  The slope of the linear fit is
   // currently all that is used for making decisions.
 
@@ -293,18 +253,12 @@ class PSAdaptiveSizePolicy : public AdaptiveSizePolicy {
     return _major_pause_old_estimator;
   }
 
-  LinearLeastSquareFit* major_pause_young_estimator() {
-    return _major_pause_young_estimator;
-  }
-
-
   virtual void clear_generation_free_space_flags();
 
   double major_pause_old_slope() { return _major_pause_old_estimator->slope(); }
   double major_pause_young_slope() {
     return _major_pause_young_estimator->slope();
   }
-  double major_collection_slope() { return _major_collection_estimator->slope();}
 
   // Calculates optimal (free) space sizes for both the young and old
   // generations.  Stores results in _eden_size and _promo_size.

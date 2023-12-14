@@ -7794,8 +7794,8 @@ instruct blendvp(vec dst, vec src, vec mask, rxmm0 tmp) %{
 %}
 
 instruct vblendvpI(legVec dst, legVec src1, legVec src2, legVec mask) %{
-  predicate(UseAVX > 0 &&
-            n->in(2)->bottom_type()->isa_vectmask() == nullptr &&
+  predicate(UseAVX > 0 && !EnableX86ECoreOpts &&
+            n->in(2)->bottom_type()->isa_vectmask() == NULL &&
             Matcher::vector_length_in_bytes(n) <= 32 &&
             is_integral_type(Matcher::vector_element_basic_type(n)));
   match(Set dst (VectorBlend (Binary src1 src2) mask));
@@ -7808,8 +7808,8 @@ instruct vblendvpI(legVec dst, legVec src1, legVec src2, legVec mask) %{
 %}
 
 instruct vblendvpFD(legVec dst, legVec src1, legVec src2, legVec mask) %{
-  predicate(UseAVX > 0 &&
-            n->in(2)->bottom_type()->isa_vectmask() == nullptr &&
+  predicate(UseAVX > 0 && !EnableX86ECoreOpts &&
+            n->in(2)->bottom_type()->isa_vectmask() == NULL &&
             Matcher::vector_length_in_bytes(n) <= 32 &&
             !is_integral_type(Matcher::vector_element_basic_type(n)));
   match(Set dst (VectorBlend (Binary src1 src2) mask));
@@ -7817,6 +7817,22 @@ instruct vblendvpFD(legVec dst, legVec src1, legVec src2, legVec mask) %{
   ins_encode %{
     int vlen_enc = vector_length_encoding(this);
     __ vblendvps($dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, $mask$$XMMRegister, vlen_enc);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vblendvp(legVec dst, legVec src1, legVec src2, legVec mask, legVec vtmp) %{
+  predicate(UseAVX > 0 && EnableX86ECoreOpts &&
+            n->in(2)->bottom_type()->isa_vectmask() == NULL &&
+            Matcher::vector_length_in_bytes(n) <= 32);
+  match(Set dst (VectorBlend (Binary src1 src2) mask));
+  format %{ "vector_blend  $dst,$src1,$src2,$mask\t! using $vtmp as TEMP" %}
+  effect(TEMP vtmp, TEMP dst);
+  ins_encode %{
+    int vlen_enc = vector_length_encoding(this);
+    __ vpandn($vtmp$$XMMRegister, $mask$$XMMRegister, $src1$$XMMRegister, vlen_enc);
+    __ vpand ($dst$$XMMRegister,  $mask$$XMMRegister, $src2$$XMMRegister, vlen_enc);
+    __ vpor  ($dst$$XMMRegister,  $dst$$XMMRegister,  $vtmp$$XMMRegister, vlen_enc);
   %}
   ins_pipe( pipe_slow );
 %}

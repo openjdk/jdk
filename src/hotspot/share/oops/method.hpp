@@ -249,6 +249,12 @@ class Method : public Metadata {
   u2  max_locals() const                       { return constMethod()->max_locals(); }
   void set_max_locals(int size)                { constMethod()->set_max_locals(size); }
 
+  void set_deprecated() { constMethod()->set_deprecated(); }
+  bool deprecated() const { return constMethod()->deprecated(); }
+
+  void set_deprecated_for_removal() { constMethod()->set_deprecated_for_removal(); }
+  bool deprecated_for_removal() const { return constMethod()->deprecated_for_removal(); }
+
   int highest_comp_level() const;
   void set_highest_comp_level(int level);
   int highest_osr_comp_level() const;

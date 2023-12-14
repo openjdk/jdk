@@ -25,12 +25,8 @@
  * @test
  * @summary check subtypes of sealed classes
  * @library /tools/lib /tools/javac/lib /tools/javac/classfiles/attributes/lib
- * @modules java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.constantpool
- *          java.base/jdk.internal.classfile.instruction
- *          java.base/jdk.internal.classfile.components
- *          java.base/jdk.internal.classfile.impl
+ * @enablePreview
+ * @modules java.base/jdk.internal.classfile.impl
  *          jdk.compiler/com.sun.tools.javac.code
  *          jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
@@ -42,8 +38,8 @@
 import java.util.List;
 import com.sun.tools.javac.code.Flags;
 import com.sun.tools.javac.util.Assert;
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.attribute.PermittedSubclassesAttribute;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.PermittedSubclassesAttribute;
 
 public class CheckSubtypesOfSealedTest extends TestBase {
 
