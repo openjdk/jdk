@@ -124,7 +124,7 @@ class CastIINode: public ConstraintCastNode {
 #endif
   }
 
-  CastIINode* pin_for_array_access() const;
+  CastIINode* pin_for_array_access() const override;
 
 #ifndef PRODUCT
   virtual void dump_spec(outputStream* st) const;
