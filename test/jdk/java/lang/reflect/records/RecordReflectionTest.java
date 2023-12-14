@@ -25,6 +25,7 @@
  * @test
  * @bug 8235369 8235550 8247444 8320575
  * @summary reflection test for records
+ * @build R10
  * @compile RecordReflectionTest.java
  * @run testng/othervm RecordReflectionTest
  * @run testng/othervm/java.security.policy=allPermissions.policy RecordReflectionTest
@@ -71,7 +72,8 @@ public class RecordReflectionTest {
                        R6.class,
                        R7.class,
                        R8.class,
-                       R9.class)
+                       R9.class,
+                       R10.class)
                    .stream().map(c -> new Object[] {c}).toArray(Object[][]::new);
     }
 
@@ -130,6 +132,11 @@ public class RecordReflectionTest {
                            new String[]{ "r1", "r2", "r3" },
                            new String[]{ R1.class.toString(), R2.class.toString(), R3.class.toString()} },
             new Object[] { new R9(List.of("1")),
+                        1,
+                        new Object[]{ List.of("1") },
+                        new String[]{ "ls" },
+                        new String[]{ "java.util.List<java.lang.String>"} },
+            new Object[] { new R10(List.of("1")),
                         1,
                         new Object[]{ List.of("1") },
                         new String[]{ "ls" },
