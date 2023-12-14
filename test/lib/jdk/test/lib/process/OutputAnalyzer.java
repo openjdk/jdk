@@ -42,6 +42,8 @@ public final class OutputAnalyzer {
 
     private static final String deprecatedmsg = ".* VM warning:.* deprecated.*";
 
+    private static final String FATAL_ERROR_PAT = "# A fatal error has been detected.*";
+
     private final OutputBuffer buffer;
     /**
      * Create an OutputAnalyzer, a utility class for verifying output and exit
@@ -860,6 +862,13 @@ public final class OutputAnalyzer {
 
     public void shouldContainMultiLinePattern(String... needles) {
         shouldContainMultiLinePattern(needles, true);
+    }
+
+    /**
+     * Assert that we did not crash with a hard VM error (generating an hs_err_pidXXX.log)
+     */
+    public void shouldNotHaveFatalError() {
+        shouldNotMatch(FATAL_ERROR_PAT);
     }
 
 }

@@ -42,15 +42,10 @@ import static java.lang.String.LATIN1;
 
 final class StringUTF16 {
 
+    // Return a new byte array for a UTF16-coded string for len chars
+    // Throw an exception if out of range
     public static byte[] newBytesFor(int len) {
-        if (len < 0) {
-            throw new NegativeArraySizeException();
-        }
-        if (len > MAX_LENGTH) {
-            throw new OutOfMemoryError("UTF16 String size is " + len +
-                                       ", should be less than " + MAX_LENGTH);
-        }
-        return new byte[len << 1];
+        return new byte[newBytesLength(len)];
     }
 
     // Check the size of a UTF16-coded string
@@ -59,7 +54,7 @@ final class StringUTF16 {
         if (len < 0) {
             throw new NegativeArraySizeException();
         }
-        if (len > MAX_LENGTH) {
+        if (len >= MAX_LENGTH) {
             throw new OutOfMemoryError("UTF16 String size is " + len +
                                        ", should be less than " + MAX_LENGTH);
         }
