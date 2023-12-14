@@ -22,7 +22,7 @@
  */
 
 /* @test
-   @bug 4241361 4842702 4985614 6646605 5032358 6923692 6233323 8144977 8186464
+   @bug 4241361 4842702 4985614 6646605 5032358 6923692 6233323 8144977 8186464 4401122
    @summary Make sure we can read a zip file.
    @modules jdk.zipfs
    @run junit ReadZip
@@ -253,4 +253,44 @@ public class ReadZip {
         }
     }
 
+    /**
+     * Check that the available() method overriden by the input stream returned by
+     * ZipFile.getInputStream correctly returns the number of remaining uncompressed bytes
+     *
+     * @throws IOException if an unexpected IOException occurs
+     */
+    @Test
+    public void availableShouldReturnRemainingUncompressedBytes() throws IOException {
+        // The number of uncompressed bytes to write to the sample ZIP entry
+        final int expectedBytes = 512;
+
+        // Create a sample ZIP with deflated entry of a known uncompressed size
+        try (ZipOutputStream zo = new ZipOutputStream(Files.newOutputStream(zip))) {
+            zo.putNextEntry(new ZipEntry("file.txt"));
+            zo.write(new byte[expectedBytes]);
+        }
+
+        // Verify the behavior of ZipFileInflaterInputStream.available()
+        try (ZipFile zf = new ZipFile(zip.toFile())) {
+            ZipEntry e = zf.getEntry("file.txt");
+            try (InputStream in = zf.getInputStream(e)) {
+                // Initially, available() should return the full uncompressed size of the entry
+                assertEquals(expectedBytes, in.available(),
+                        "wrong initial return value of available");
+
+                // Reading a few bytes should reduce the number of available bytes accordingly
+                int bytesToRead = 10;
+                in.read(new byte[bytesToRead]);
+                assertEquals(expectedBytes - bytesToRead, in.available());
+
+                // Reading all remaining bytes should reduce the number of available bytes to zero
+                in.transferTo(OutputStream.nullOutputStream());
+                assertEquals(0, in.available());
+
+                // available on a closed input stream should return zero
+                in.close();
+                assertEquals(0, in.available());
+            }
+        }
+    }
 }
