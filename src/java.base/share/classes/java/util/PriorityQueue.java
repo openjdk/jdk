@@ -211,8 +211,8 @@ public class PriorityQueue<E> extends AbstractQueue<E>
 
     /**
      * Creates a {@code PriorityQueue} containing the elements in the
-     * specified collection that orders its elements according to the
-     * specified comparator.
+     * specified collection. The {@code PriorityQueue} will order its
+     * elements according to the specified comparator.
      *
      * @param  c the collection whose elements are to be placed
      *         into this priority queue
