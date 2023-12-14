@@ -357,7 +357,7 @@ public:
   PretouchMemoryRunnable(char* addr, size_t byte): addr(addr), byte(byte) {}
 
   void runUnitTest() const {
-    os::pretouch_memory(addr, addr + byte; os::vm_page_size());
+    os::pretouch_memory(addr, addr + byte, os::vm_page_size());
   }
 };
 
