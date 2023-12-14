@@ -103,6 +103,7 @@ public class KeyBoardNavigation extends JApplet
         // Turn off auto-resizing so that we can set column sizes programmatically.
         // In this mode, all columns will get their preferred widths, as set blow.
         tableView.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+        tableView.setColumnSelectionAllowed(true);
 
         // Create a combo box to show that you can use one in a table.
         JComboBox comboBox = new JComboBox();
