@@ -192,7 +192,8 @@ private:
   int _i;
 public:
   // Since this class has a non-trivial destructor, we can only use it with
-  // arena / resource area allocated arrays in ASSERT mode.
+  // arena / resource area allocated arrays in ASSERT mode. In PRODUCT mode
+  // non-trivial destructors are forbidden for GrowableArray.
 #ifdef ASSERT
   static const bool is_enabled_for_arena = true;
 #endif // ASSERT
