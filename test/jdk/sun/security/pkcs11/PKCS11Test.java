@@ -764,48 +764,17 @@ public abstract class PKCS11Test {
     }
 
     private static boolean isOracleLinux7() {
-        Path oracleReleaseFile = Path.of("/etc/oracle-release");
-        Path osReleaseFile = Path.of("/etc/os-release");
-        String versionString;
-        try {
-            if (Files.exists(oracleReleaseFile)) {
-                System.err.printf("%s exists.%n", oracleReleaseFile);
-                String contents = Files.readString(oracleReleaseFile).strip();
-                System.err.printf("checking: \"%s\"%n", contents);
-                Matcher m = Pattern.compile("Oracle Linux.*(\\d+\\.\\d+)").matcher(contents);
-                if (!m.matches()) {
-                    return false;
-                } else {
-                    versionString = m.group(1);
-                }
-
-            } else if (Files.exists(osReleaseFile)) {
-                    System.err.printf("%s exists.%n", osReleaseFile);
-                    Map<String, String> components = Files.readAllLines(osReleaseFile)
-                            .stream().filter(s -> !s.isBlank())
-                            .peek(System.err::println)
-                            .collect(Collectors.toMap(
-                                    s -> s.split("=")[0],
-                                    s -> s.split("=")[1].strip()
-                            ));
-
-                    String osName = components.getOrDefault("NAME", "");
-                    String version = components.getOrDefault("VERSION", "");
-                    System.err.printf("NAME = %s VERSION = %s%n", osName, version);
-                    if (osName.toLowerCase().contains("oracle")) {
-                        versionString = version.replaceAll("\"", "");
-                    } else {
-                        return false;
-                    }
-
-            } else {
-                return false;
+        if (System.getProperty("os.name").toLowerCase().contains("linux") &&
+                System.getProperty("os.version").toLowerCase().contains("el")) {
+            Pattern p = Pattern.compile("el(\\d+)");
+            Matcher m = p.matcher(System.getProperty("os.version"));
+            if (m.find()) {
+                try {
+                    return Integer.parseInt(m.group(1)) <= 7;
+                } catch (NumberFormatException nfe) {}
             }
-
-            return Double.parseDouble(versionString) < 8.0;
-        } catch (IOException exc) {
-            return false;
         }
+        return false;
     }
 
     private static String fetchNssLib(Class<?> clazz) {
