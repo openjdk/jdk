@@ -157,35 +157,54 @@ public class ReadZip {
      * @throws IOException if an unexpected IOException occurs
      */
     @Test
-    public void readDirectoryEntry() throws IOException {
+    public void readDirectoryEntries() throws IOException {
 
-        // Create a ZIP containing a directory entry
+        // Create a ZIP containing some directory entries
         try (OutputStream fos = Files.newOutputStream(zip);
              ZipOutputStream zos = new ZipOutputStream(fos)) {
-            ZipEntry ze = new ZipEntry("directory/");
-            zos.putNextEntry(ze);
+            // Add a META-INF directory with STORED compression type
+            ZipEntry metaInf = new ZipEntry("META-INF/");
+            metaInf.setMethod(ZipEntry.STORED);
+            metaInf.setSize(0);
+            metaInf.setCrc(0);
+            zos.putNextEntry(metaInf);
+
+            // Add a regular directory
+            ZipEntry dir = new ZipEntry("directory/");
+            zos.putNextEntry(dir);
             zos.closeEntry();
         }
 
+        // Verify directory lookups
         try (ZipFile zf = new ZipFile(zip.toFile())) {
+            // Look up 'directory/' using the full name
             ZipEntry ze = zf.getEntry("directory/");
             assertNotNull(ze, "read entry \"directory/\" failed");
             assertTrue(ze.isDirectory(), "read entry \"directory/\" failed");
-
+            assertEquals("directory/", ze.getName());
+            
             try (InputStream is = zf.getInputStream(ze)) {
                 is.available();
             } catch (Exception x) {
                 x.printStackTrace();
             }
 
+            // Look up 'directory/' without the trailing slash
             ze = zf.getEntry("directory");
             assertNotNull(ze, "read entry \"directory\" failed");
             assertTrue(ze.isDirectory(), "read entry \"directory\" failed");
+            assertEquals("directory/", ze.getName());
+
             try (InputStream is = zf.getInputStream(ze)) {
                 is.available();
             } catch (Exception x) {
                 x.printStackTrace();
             }
+            // Sanity check that also META-INF/ can be looked up with or without the trailing slash
+            assertNotNull(zf.getEntry("META-INF"));
+            assertNotNull(zf.getEntry("META-INF/"));
+            assertEquals(zf.getEntry("META-INF").getName(),
+                    zf.getEntry("META-INF/").getName());
         }
     }
 
