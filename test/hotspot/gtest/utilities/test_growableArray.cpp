@@ -31,6 +31,10 @@
 
 // TODO assignment operator and copy constructor
 //      assign with different arena / resource area???
+//      ok, I don't want to change the assign / copy logic
+//      difficult to even do verification, since there is
+//      a nasty assign in c1_GraphBuilder.cpp with
+//      _loop_map
 
 // We have a list of each:
 //  - ModifyClosure
@@ -1782,21 +1786,6 @@ class TestClosureSort : public TestClosure<E> {
   };
 };
 
-// TODO
-// template<typename E>
-// class TestClosureCopy : public TestClosure<E> {
-//   virtual void do_test(AllocatorClosure<E>* a) override final {
-// 
-//   };
-// };
-// 
-// template<typename E>
-// class TestClosure : public TestClosure<E> {
-//   virtual void do_test(AllocatorClosure<E>* a) override final {
-// 
-//   };
-// };
-
 // Test fixture to work with TEST_VM_F
 class GrowableArrayTest : public ::testing::Test {
 protected:
@@ -2284,14 +2273,12 @@ TEST_VM_F(GrowableArrayTest, swap_a_a_s_a) {
 }
 
 TEST_VM_F(GrowableArrayTest, swap_s_c_s_c) {
-  ResourceMark rm;
   GrowableArrayCHeap<int,mtTest> a1(200, 100, 1);
   GrowableArrayCHeap<int,mtTest> a2(300, 150, 2);
   TEST_SWAP(a1, a2)
 }
 
 TEST_VM_F(GrowableArrayTest, swap_c_c_s_c) {
-  ResourceMark rm;
   GrowableArrayCHeap<int,mtTest>* a1 = new GrowableArrayCHeap<int,mtTest>(200, 100, 1);
   GrowableArrayCHeap<int,mtTest> a2(300, 150, 2);
   TEST_SWAP((*a1), a2)
@@ -2341,3 +2328,52 @@ TEST_VM_ASSERT_MSG(GrowableArrayAssertingTest, insert_before_with_itself,
   a.insert_before(5, &a);
 }
 #endif
+
+#define TEST_SHALLOW_ASSIGN(a1, a2) {                 \
+  int* a1_adr = a1.adr_at(0);                         \
+  int* a2_adr = a2.adr_at(0);                         \
+  a2 = a1;                                            \
+  ASSERT_EQ(a1.adr_at(0), a1_adr);                    \
+  ASSERT_EQ(a2.adr_at(0), a1_adr);                    \
+  ASSERT_EQ(a1.capacity(), 200);                      \
+  ASSERT_EQ(a1.length(),   100);                      \
+  ASSERT_EQ(a2.capacity(), 200);                      \
+  ASSERT_EQ(a2.length(),   100);                      \
+}
+
+#define TEST_SHALLOW_COPY(a1) {                       \
+  int* a1_adr = a1.adr_at(0);                         \
+  GrowableArray<int> a2(a1);                          \
+  ASSERT_EQ(a1.adr_at(0), a1_adr);                    \
+  ASSERT_EQ(a2.adr_at(0), a1_adr);                    \
+  ASSERT_EQ(a1.capacity(), 200);                      \
+  ASSERT_EQ(a1.length(),   100);                      \
+  ASSERT_EQ(a2.capacity(), 200);                      \
+  ASSERT_EQ(a2.length(),   100);                      \
+}
+
+TEST_VM_F(GrowableArrayTest, shallow_assign_s_ra_s_ra) {
+  ResourceMark rm;
+  GrowableArray<int> a1(200, 100, 1);
+  GrowableArray<int> a2(300, 150, 2);
+  TEST_SHALLOW_ASSIGN(a1, a2);
+}
+
+TEST_VM_F(GrowableArrayTest, shallow_assign_s_a_s_a) {
+  Arena arena(mtTest);
+  GrowableArray<int> a1(&arena, 200, 100, 1);
+  GrowableArray<int> a2(&arena, 300, 150, 2);
+  TEST_SHALLOW_ASSIGN(a1, a2);
+}
+
+TEST_VM_F(GrowableArrayTest, shallow_copy_s_ra_s_ra) {
+  ResourceMark rm;
+  GrowableArray<int> a1(200, 100, 1);
+  TEST_SHALLOW_COPY(a1);
+}
+
+TEST_VM_F(GrowableArrayTest, shallow_copy_s_a_s_a) {
+  Arena arena(mtTest);
+  GrowableArray<int> a1(&arena, 200, 100, 1);
+  TEST_SHALLOW_COPY(a1);
+}
