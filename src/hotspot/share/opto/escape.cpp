@@ -371,6 +371,18 @@ bool ConnectionGraph::compute_escape() {
       assert(ptn->escape_state() == PointsToNode::NoEscape && ptn->scalar_replaceable(), "sanity");
     }
   }
+
+  if (VerifyReduceAllocationMerges) {
+    for (uint i = 0; i < reducible_merges.size(); i++ ) {
+      Node* n = reducible_merges.at(i);
+      if (!can_reduce_phi(n->as_Phi())) {
+        TraceReduceAllocationMerges = true;
+        n->dump(2);
+        n->dump(-2);
+        assert(can_reduce_phi(n->as_Phi()), "Sanity: previous reducible Phi is no longer reducible before SUT.");
+      }
+    }
+  }
 #endif
 
   // 5. Separate memory graph for scalar replaceable allcations.
@@ -877,6 +889,15 @@ void ConnectionGraph::reduce_phi_on_castpp_field_load(Node* curr_castpp, Growabl
     --i;
     i = MIN2(i, (int)curr_castpp->outcnt()-1);
   }
+
+#ifdef ASSERT
+  if (VerifyReduceAllocationMerges && !can_reduce_phi(ophi->as_Phi())) {
+    TraceReduceAllocationMerges = true;
+    ophi->dump(2);
+    ophi->dump(-2);
+    assert(can_reduce_phi(ophi->as_Phi()), "Sanity: previous reducible Phi is no longer reducible after reduce_phi_on_castpp_field_load.");
+  }
+#endif
 }
 
 // This method split a given CmpP/N through the Phi used in one of its inputs.
@@ -960,6 +981,15 @@ void ConnectionGraph::reduce_phi_on_cmp(Node* cmp) {
 
   Node* new_cmp = _igvn->transform(new CmpINode(res_phi, zero));
   _igvn->replace_node(cmp, new_cmp);
+
+#ifdef ASSERT
+  if (VerifyReduceAllocationMerges && !can_reduce_phi(ophi->as_Phi())) {
+    TraceReduceAllocationMerges = true;
+    ophi->dump(2);
+    ophi->dump(-2);
+    assert(can_reduce_phi(ophi->as_Phi()), "Sanity: previous reducible Phi is no longer reducible after reduce_phi_on_cmp.");
+  }
+#endif
 }
 
 // Push the newly created AddP on alloc_worklist and patch
@@ -1027,6 +1057,10 @@ void ConnectionGraph::reduce_phi_on_field_access(Node* previous_addp, GrowableAr
   // All AddPs are present in the connection graph
   FieldNode* fn = ptnode_adr(previous_addp->_idx)->as_Field();
 
+#ifdef ASSERT
+  PhiNode* ophi = previous_addp->in(1)->as_Phi();
+#endif
+
   // Iterate over AddP looking for a Load
   for (int k = previous_addp->outcnt()-1; k >= 0;) {
     Node* previous_load = previous_addp->raw_out(k);
@@ -1046,6 +1080,15 @@ void ConnectionGraph::reduce_phi_on_field_access(Node* previous_addp, GrowableAr
   // Remove the old AddP from the processing list because it's dead now
   assert(previous_addp->outcnt() == 0, "AddP should be dead now.");
   alloc_worklist.remove_if_existing(previous_addp);
+
+#ifdef ASSERT
+  if (VerifyReduceAllocationMerges && ophi != nullptr && !can_reduce_phi(ophi)) {
+    TraceReduceAllocationMerges = true;
+    ophi->dump(2);
+    ophi->dump(-2);
+    assert(can_reduce_phi(ophi), "Sanity: previous reducible Phi is no longer reducible after reduce_phi_on_field_access.");
+  }
+#endif
 }
 
 // Create a 'selector' Phi based on the inputs of 'ophi'. If index 'i' of the
@@ -2157,6 +2200,8 @@ void ConnectionGraph::process_call_arguments(CallNode *call) {
                   strcmp(call->as_CallLeaf()->_name, "bigIntegerRightShiftWorker") == 0 ||
                   strcmp(call->as_CallLeaf()->_name, "bigIntegerLeftShiftWorker") == 0 ||
                   strcmp(call->as_CallLeaf()->_name, "vectorizedMismatch") == 0 ||
+                  strcmp(call->as_CallLeaf()->_name, "arraysort_stub") == 0 ||
+                  strcmp(call->as_CallLeaf()->_name, "array_partition_stub") == 0 ||
                   strcmp(call->as_CallLeaf()->_name, "get_class_id_intrinsic") == 0)
                  ))) {
             call->dump();
@@ -4211,6 +4256,7 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
                                          GrowableArray<ArrayCopyNode*> &arraycopy_worklist,
                                          GrowableArray<MergeMemNode*> &mergemem_worklist,
                                          Unique_Node_List &reducible_merges) {
+  DEBUG_ONLY(Unique_Node_List reduced_merges;)
   GrowableArray<Node *>  memnode_worklist;
   GrowableArray<PhiNode *>  orig_phis;
   PhaseIterGVN  *igvn = _igvn;
@@ -4388,6 +4434,11 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
       Node* parent = n->in(1);
       if (reducible_merges.member(n)) {
         reduce_phi(n->as_Phi(), alloc_worklist, memnode_worklist);
+#ifdef ASSERT
+        if (VerifyReduceAllocationMerges) {
+          reduced_merges.push(n);
+        }
+#endif
         continue;
       } else if (reducible_merges.member(parent)) {
         // 'n' is an user of a reducible merge (a Phi). It will be simplified as
@@ -4504,14 +4555,24 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
   }
 
 #ifdef ASSERT
-  // At this point reducible Phis shouldn't have AddP users anymore; only SafePoints.
-  for (uint i = 0; i < reducible_merges.size(); i++) {
-    Node* phi = reducible_merges.at(i);
-    for (DUIterator_Fast jmax, j = phi->fast_outs(jmax); j < jmax; j++) {
-      Node* use = phi->fast_out(j);
-      if (!use->is_SafePoint() && !use->is_CastPP()) {
-        phi->dump(-3);
-        assert(false, "Unexpected user of reducible Phi -> %s : %d", use->Name(), use->outcnt());
+  if (VerifyReduceAllocationMerges) {
+    for (uint i = 0; i < reducible_merges.size(); i++) {
+      Node* phi = reducible_merges.at(i);
+
+      if (!reduced_merges.member(phi)) {
+        phi->dump(2);
+        phi->dump(-2);
+        assert(false, "This reducible merge wasn't reduced.");
+      }
+
+      // At this point reducible Phis shouldn't have AddP users anymore; only SafePoints or Casts.
+      for (DUIterator_Fast jmax, j = phi->fast_outs(jmax); j < jmax; j++) {
+        Node* use = phi->fast_out(j);
+        if (!use->is_SafePoint() && !use->is_CastPP()) {
+          phi->dump(2);
+          phi->dump(-2);
+          assert(false, "Unexpected user of reducible Phi -> %d:%s:%d", use->_idx, use->Name(), use->outcnt());
+        }
       }
     }
   }

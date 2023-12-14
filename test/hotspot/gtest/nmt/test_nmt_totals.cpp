@@ -24,9 +24,9 @@
 
 #include "precompiled.hpp"
 #include "memory/allocation.hpp"
+#include "nmt/mallocTracker.hpp"
+#include "nmt/memTracker.hpp"
 #include "runtime/os.hpp"
-#include "services/mallocTracker.hpp"
-#include "services/memTracker.hpp"
 #include "unittest.hpp"
 
 // convenience log. switch on if debugging tests. Don't use tty, plain stdio only.

@@ -192,7 +192,7 @@ public class CallingSequence {
     }
 
     public boolean needsTransition() {
-        return !linkerOptions.isTrivial();
+        return !linkerOptions.isCritical();
     }
 
     public int numLeadingParams() {

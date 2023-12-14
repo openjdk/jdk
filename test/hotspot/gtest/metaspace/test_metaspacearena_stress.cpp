@@ -59,8 +59,6 @@ class MetaspaceArenaTestBed : public CHeapObj<mtInternal> {
 
   MetaspaceArena* _arena;
 
-  Mutex* _lock;
-
   const SizeRange _allocation_range;
   size_t _size_of_last_failed_allocation;
 
@@ -131,18 +129,13 @@ public:
   MetaspaceArenaTestBed(ChunkManager* cm, const ArenaGrowthPolicy* alloc_sequence,
                         SizeAtomicCounter* used_words_counter, SizeRange allocation_range) :
     _arena(NULL),
-    _lock(NULL),
     _allocation_range(allocation_range),
     _size_of_last_failed_allocation(0),
     _allocations(NULL),
     _alloc_count(),
     _dealloc_count()
   {
-    _lock = new Mutex(Monitor::nosafepoint, "gtest-MetaspaceArenaTestBed_lock");
-    // Lock during space creation, since this is what happens in the VM too
-    //  (see ClassLoaderData::metaspace_non_null(), which we mimick here).
-    MutexLocker ml(_lock,  Mutex::_no_safepoint_check_flag);
-    _arena = new MetaspaceArena(cm, alloc_sequence, _lock, used_words_counter, "gtest-MetaspaceArenaTestBed-sm");
+    _arena = new MetaspaceArena(cm, alloc_sequence, used_words_counter, "gtest-MetaspaceArenaTestBed-sm");
   }
 
   ~MetaspaceArenaTestBed() {
@@ -161,7 +154,6 @@ public:
 
     // Delete MetaspaceArena. That should clean up all metaspace.
     delete _arena;
-    delete _lock;
 
   }
 

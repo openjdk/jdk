@@ -26,12 +26,8 @@
  * @bug 8222949
  * @summary add condy support to javac's pool API
  * @library /tools/javac/lib
- * @modules java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.constantpool
- *          java.base/jdk.internal.classfile.instruction
- *          java.base/jdk.internal.classfile.components
- *          java.base/jdk.internal.classfile.impl
+ * @enablePreview
+ * @modules java.base/jdk.internal.classfile.impl
  *          jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.code
  *          jdk.compiler/com.sun.tools.javac.file
@@ -53,10 +49,10 @@ import com.sun.source.util.TaskEvent;
 import com.sun.source.util.TaskListener;
 import com.sun.source.util.TreeScanner;
 
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.attribute.*;
-import jdk.internal.classfile.constantpool.*;
-import jdk.internal.classfile.instruction.ConstantInstruction;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.*;
+import java.lang.classfile.constantpool.*;
+import java.lang.classfile.instruction.ConstantInstruction;
 
 import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Symbol.*;
@@ -81,21 +77,23 @@ import static java.lang.invoke.MethodHandleInfo.REF_invokeStatic;
 public class TestConstantDynamic extends ComboInstance<TestConstantDynamic> {
 
     enum ConstantType implements ComboParameter {
-        STRING("String", "Ljava/lang/String;"),
-        CLASS("Class<?>", "Ljava/lang/Class;"),
-        INTEGER("int", "I"),
-        LONG("long", "J"),
-        FLOAT("float", "F"),
-        DOUBLE("double", "D"),
-        METHOD_HANDLE("MethodHandle", "Ljava/lang/invoke/MethodHandle;"),
-        METHOD_TYPE("MethodType", "Ljava/lang/invoke/MethodType;");
+        STRING("String", "Ljava/lang/String;", Opcode.LDC),
+        CLASS("Class<?>", "Ljava/lang/Class;", Opcode.LDC),
+        INTEGER("int", "I", Opcode.LDC),
+        LONG("long", "J", Opcode.LDC2_W),
+        FLOAT("float", "F", Opcode.LDC),
+        DOUBLE("double", "D", Opcode.LDC2_W),
+        METHOD_HANDLE("MethodHandle", "Ljava/lang/invoke/MethodHandle;", Opcode.LDC),
+        METHOD_TYPE("MethodType", "Ljava/lang/invoke/MethodType;", Opcode.LDC);
 
         String sourceTypeStr;
         String bytecodeTypeStr;
+        Opcode opcode;
 
-        ConstantType(String sourceTypeStr, String bytecodeTypeStr) {
+        ConstantType(String sourceTypeStr, String bytecodeTypeStr, Opcode opcode) {
             this.sourceTypeStr = sourceTypeStr;
             this.bytecodeTypeStr = bytecodeTypeStr;
+            this.opcode = opcode;
         }
 
         @Override
@@ -176,7 +174,7 @@ public class TestConstantDynamic extends ComboInstance<TestConstantDynamic> {
             return;
         }
         try (InputStream is = res.get().iterator().next().openInputStream()){
-            ClassModel cf = Classfile.of().parse(is.readAllBytes());
+            ClassModel cf = ClassFile.of().parse(is.readAllBytes());
             MethodModel testMethod = null;
             for (MethodModel m : cf.methods()) {
                 if (m.methodName().equalsString("test")) {
@@ -203,6 +201,10 @@ public class TestConstantDynamic extends ComboInstance<TestConstantDynamic> {
                     System.out.println("condyInfo.getNameAndTypeInfo().getType() " + condyInfo.type().stringValue());
                     if (!condyInfo.type().equalsString(type.bytecodeTypeStr)) {
                         fail("type mismatch for ConstantDynamicEntry");
+                        return;
+                    }
+                    if (lci.opcode() != type.opcode) {
+                        fail("unexpected opcode for constant value: " + lci.opcode());
                         return;
                     }
                 }

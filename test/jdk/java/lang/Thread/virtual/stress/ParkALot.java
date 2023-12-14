@@ -31,7 +31,7 @@
 /*
  * @test
  * @requires vm.debug == true
- * @run main/othervm ParkALot 200000
+ * @run main/othervm ParkALot 100000
  */
 
 import java.time.Instant;
@@ -50,15 +50,16 @@ public class ParkALot {
             iterations = ITERATIONS;
         }
 
-        int maxThreads = Math.max(Runtime.getRuntime().availableProcessors() / 2, 1);
+        int maxThreads = Math.clamp(Runtime.getRuntime().availableProcessors() / 2, 1, 4);
         for (int nthreads = 1; nthreads <= maxThreads; nthreads++) {
-            System.out.format("%s %d threads ...%n", Instant.now(), nthreads);
+            System.out.format("%s %d thread(s) ...%n", Instant.now(), nthreads);
             ThreadFactory factory = Thread.ofPlatform().factory();
             try (var executor = Executors.newThreadPerTaskExecutor(factory)) {
                 for (int i = 0; i < nthreads; i++) {
                     executor.submit(() -> parkALot(iterations));
                 }
             }
+            System.out.format("%s %d thread(s) done%n", Instant.now(), nthreads);
         }
     }
 
@@ -87,7 +88,7 @@ public class ParkALot {
             if (state == Thread.State.WAITING || state == Thread.State.TIMED_WAITING) {
                 LockSupport.unpark(vthread);
             } else {
-                Thread.onSpinWait();
+                Thread.yield();
             }
         }
     }

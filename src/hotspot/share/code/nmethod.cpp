@@ -42,6 +42,7 @@
 #include "compiler/oopMap.inline.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/barrierSetNMethod.hpp"
+#include "gc/shared/classUnloadingContext.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "interpreter/bytecode.hpp"
 #include "jvm.h"
@@ -394,6 +395,7 @@ PcDesc* PcDescCache::find_pc_desc(int pc_offset, bool approximate) {
 }
 
 void PcDescCache::add_pc_desc(PcDesc* pc_desc) {
+  MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXWrite, Thread::current());)
   NOT_PRODUCT(++pc_nmethod_stats.pc_desc_adds);
   // Update the LRU cache by shifting pc_desc forward.
   for (int i = 0; i < cache_size; i++)  {
@@ -638,7 +640,7 @@ nmethod::nmethod(
   ByteSize basic_lock_sp_offset,
   OopMapSet* oop_maps )
   : CompiledMethod(method, "native nmethod", type, nmethod_size, sizeof(nmethod), code_buffer, offsets->value(CodeOffsets::Frame_Complete), frame_size, oop_maps, false, true),
-  _unlinked_next(nullptr),
+  _is_unlinked(false),
   _native_receiver_sp_offset(basic_lock_owner_sp_offset),
   _native_basic_lock_sp_offset(basic_lock_sp_offset),
   _is_unloading_state(0)
@@ -782,7 +784,7 @@ nmethod::nmethod(
 #endif
   )
   : CompiledMethod(method, "nmethod", type, nmethod_size, sizeof(nmethod), code_buffer, offsets->value(CodeOffsets::Frame_Complete), frame_size, oop_maps, false, true),
-  _unlinked_next(nullptr),
+  _is_unlinked(false),
   _native_receiver_sp_offset(in_ByteSize(-1)),
   _native_basic_lock_sp_offset(in_ByteSize(-1)),
   _is_unloading_state(0)
@@ -1405,7 +1407,7 @@ bool nmethod::make_not_entrant() {
 
 // For concurrent GCs, there must be a handshake between unlink and flush
 void nmethod::unlink() {
-  if (_unlinked_next != nullptr) {
+  if (_is_unlinked) {
     // Already unlinked. It can be invoked twice because concurrent code cache
     // unloading might need to restart when inline cache cleaning fails due to
     // running out of ICStubs, which can only be refilled at safepoints
@@ -1439,10 +1441,10 @@ void nmethod::unlink() {
   // Register for flushing when it is safe. For concurrent class unloading,
   // that would be after the unloading handshake, and for STW class unloading
   // that would be when getting back to the VM thread.
-  CodeCache::register_unlinked(this);
+  ClassUnloadingContext::context()->register_unlinked_nmethod(this);
 }
 
-void nmethod::flush() {
+void nmethod::purge(bool free_code_cache_data) {
   MutexLocker ml(CodeCache_lock, Mutex::_no_safepoint_check_flag);
 
   // completely deallocate this method
@@ -1465,8 +1467,10 @@ void nmethod::flush() {
   Universe::heap()->unregister_nmethod(this);
   CodeCache::unregister_old_nmethod(this);
 
-  CodeBlob::flush();
-  CodeCache::free(this);
+  CodeBlob::purge();
+  if (free_code_cache_data) {
+    CodeCache::free(this);
+  }
 }
 
 oop nmethod::oop_at(int index) const {
@@ -1699,7 +1703,7 @@ public:
 };
 
 bool nmethod::is_unloading() {
-  uint8_t state = RawAccess<MO_RELAXED>::load(&_is_unloading_state);
+  uint8_t state = Atomic::load(&_is_unloading_state);
   bool state_is_unloading = IsUnloadingState::is_unloading(state);
   if (state_is_unloading) {
     return true;
@@ -1735,7 +1739,7 @@ bool nmethod::is_unloading() {
 
 void nmethod::clear_unloading_state() {
   uint8_t state = IsUnloadingState::create(false, CodeCache::unloading_cycle());
-  RawAccess<MO_RELAXED>::store(&_is_unloading_state, state);
+  Atomic::store(&_is_unloading_state, state);
 }
 
 
@@ -2145,51 +2149,6 @@ PcDesc* PcDescContainer::find_pc_desc_internal(address pc, bool approximate, con
   } else {
     assert(nullptr == linear_search(search, pc_offset, approximate), "search ok");
     return nullptr;
-  }
-}
-
-
-void nmethod::check_all_dependencies(DepChange& changes) {
-  // Checked dependencies are allocated into this ResourceMark
-  ResourceMark rm;
-
-  // Turn off dependency tracing while actually testing dependencies.
-  NOT_PRODUCT( FlagSetting fs(Dependencies::_verify_in_progress, true));
-
-  typedef ResourceHashtable<DependencySignature, int, 11027,
-                            AnyObj::RESOURCE_AREA, mtInternal,
-                            &DependencySignature::hash,
-                            &DependencySignature::equals> DepTable;
-
-  DepTable* table = new DepTable();
-
-  // Iterate over live nmethods and check dependencies of all nmethods that are not
-  // marked for deoptimization. A particular dependency is only checked once.
-  NMethodIterator iter(NMethodIterator::only_not_unloading);
-  while(iter.next()) {
-    nmethod* nm = iter.method();
-    // Only notify for live nmethods
-    if (!nm->is_marked_for_deoptimization()) {
-      for (Dependencies::DepStream deps(nm); deps.next(); ) {
-        // Construct abstraction of a dependency.
-        DependencySignature* current_sig = new DependencySignature(deps);
-
-        // Determine if dependency is already checked. table->put(...) returns
-        // 'true' if the dependency is added (i.e., was not in the hashtable).
-        if (table->put(*current_sig, 1)) {
-          if (deps.check_dependency() != nullptr) {
-            // Dependency checking failed. Print out information about the failed
-            // dependency and finally fail with an assert. We can fail here, since
-            // dependency checking is never done in a product build.
-            tty->print_cr("Failed dependency:");
-            changes.print();
-            nm->print();
-            nm->print_dependencies_on(tty);
-            assert(false, "Should have been marked for deoptimization");
-          }
-        }
-      }
-    }
   }
 }
 
@@ -2750,9 +2709,6 @@ void nmethod::decode2(outputStream* ost) const {
   const bool compressed_with_comments = use_compressed_format && (AbstractDisassembler::show_comment() ||
                                                                   AbstractDisassembler::show_block_comment());
 #endif
-
-  // Decoding an nmethod can write to a PcDescCache (see PcDescCache::add_pc_desc)
-  MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXWrite, Thread::current());)
 
   st->cr();
   this->print(st);

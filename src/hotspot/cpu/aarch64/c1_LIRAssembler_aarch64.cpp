@@ -434,7 +434,7 @@ int LIR_Assembler::emit_unwind_handler() {
     if (LockingMode == LM_MONITOR) {
       __ b(*stub->entry());
     } else {
-      __ unlock_object(r5, r4, r0, *stub->entry());
+      __ unlock_object(r5, r4, r0, r6, *stub->entry());
     }
     __ bind(*stub->continuation());
   }
@@ -1511,7 +1511,6 @@ void LIR_Assembler::casl(Register addr, Register newval, Register cmpval) {
 
 
 void LIR_Assembler::emit_compare_and_swap(LIR_OpCompareAndSwap* op) {
-  assert(VM_Version::supports_cx8(), "wrong machine");
   Register addr;
   if (op->addr()->is_register()) {
     addr = as_reg(op->addr());
@@ -2535,6 +2534,7 @@ void LIR_Assembler::emit_lock(LIR_OpLock* op) {
   Register obj = op->obj_opr()->as_register();  // may not be an oop
   Register hdr = op->hdr_opr()->as_register();
   Register lock = op->lock_opr()->as_register();
+  Register temp = op->scratch_opr()->as_register();
   if (LockingMode == LM_MONITOR) {
     if (op->info() != nullptr) {
       add_debug_info_for_null_check_here(op->info());
@@ -2544,14 +2544,14 @@ void LIR_Assembler::emit_lock(LIR_OpLock* op) {
   } else if (op->code() == lir_lock) {
     assert(BasicLock::displaced_header_offset_in_bytes() == 0, "lock_reg must point to the displaced header");
     // add debug info for NullPointerException only if one is possible
-    int null_check_offset = __ lock_object(hdr, obj, lock, *op->stub()->entry());
+    int null_check_offset = __ lock_object(hdr, obj, lock, temp, *op->stub()->entry());
     if (op->info() != nullptr) {
       add_debug_info_for_null_check(null_check_offset, op->info());
     }
     // done
   } else if (op->code() == lir_unlock) {
     assert(BasicLock::displaced_header_offset_in_bytes() == 0, "lock_reg must point to the displaced header");
-    __ unlock_object(hdr, obj, lock, *op->stub()->entry());
+    __ unlock_object(hdr, obj, lock, temp, *op->stub()->entry());
   } else {
     Unimplemented();
   }
@@ -2699,7 +2699,10 @@ void LIR_Assembler::emit_profile_type(LIR_OpProfileType* op) {
   __ verify_oop(obj);
 
   if (tmp != obj) {
+    assert_different_registers(obj, tmp, rscratch1, rscratch2, mdo_addr.base(), mdo_addr.index());
     __ mov(tmp, obj);
+  } else {
+    assert_different_registers(obj, rscratch1, rscratch2, mdo_addr.base(), mdo_addr.index());
   }
   if (do_null) {
     __ cbnz(tmp, update);
@@ -2756,10 +2759,11 @@ void LIR_Assembler::emit_profile_type(LIR_OpProfileType* op) {
           __ cbz(rscratch2, none);
           __ cmp(rscratch2, (u1)TypeEntries::null_seen);
           __ br(Assembler::EQ, none);
-          // There is a chance that the checks above (re-reading profiling
-          // data from memory) fail if another thread has just set the
+          // There is a chance that the checks above
+          // fail if another thread has just set the
           // profiling to this obj's klass
           __ dmb(Assembler::ISHLD);
+          __ eor(tmp, tmp, rscratch2); // get back original value before XOR
           __ ldr(rscratch2, mdo_addr);
           __ eor(tmp, tmp, rscratch2);
           __ andr(rscratch1, tmp, TypeEntries::type_klass_mask);
@@ -2784,6 +2788,10 @@ void LIR_Assembler::emit_profile_type(LIR_OpProfileType* op) {
         __ bind(none);
         // first time here. Set profile type.
         __ str(tmp, mdo_addr);
+#ifdef ASSERT
+        __ andr(tmp, tmp, TypeEntries::type_mask);
+        __ verify_klass_ptr(tmp);
+#endif
       }
     } else {
       // There's a single possible klass at this profile point
@@ -2815,6 +2823,10 @@ void LIR_Assembler::emit_profile_type(LIR_OpProfileType* op) {
 #endif
         // first time here. Set profile type.
         __ str(tmp, mdo_addr);
+#ifdef ASSERT
+        __ andr(tmp, tmp, TypeEntries::type_mask);
+        __ verify_klass_ptr(tmp);
+#endif
       } else {
         assert(ciTypeEntries::valid_ciklass(current_klass) != nullptr &&
                ciTypeEntries::valid_ciklass(current_klass) != exact_klass, "inconsistent");

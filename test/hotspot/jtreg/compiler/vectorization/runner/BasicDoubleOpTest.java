@@ -42,6 +42,7 @@
 package compiler.vectorization.runner;
 
 import compiler.lib.ir_framework.*;
+import java.util.Random;
 
 public class BasicDoubleOpTest extends VectorizationTestRunner {
 
@@ -50,11 +51,63 @@ public class BasicDoubleOpTest extends VectorizationTestRunner {
     private double[] a;
     private double[] b;
     private double[] c;
+    private double[] d;
+    private double[] e;
 
     public BasicDoubleOpTest() {
+        // Positive test values                       sign |   exponent | mantisa
+        double smallPositive   = Double.longBitsToDouble(0<<63 | 0x03f << 52 | 0x30000f);
+        double positive        = Double.longBitsToDouble(0<<63 | 0x07f << 52 | 0x30000f);
+        double bigPositive     = Double.longBitsToDouble(0<<63 | 0x07f << 52 | 0x30100f);
+        double biggerPositive  = Double.longBitsToDouble(0<<63 | 0x7fe << 52 | 0x30000f);
+        double maxPositive     = Double.MAX_VALUE;
+
+        // Special positive
+        double nan1  = Double.longBitsToDouble(0<<63 | 0x7ff << 52 | 0x7fffff);
+        double nan2  = Double.longBitsToDouble(0<<63 | 0x7ff << 52 | 0x30000f);
+        double inf   = Double.longBitsToDouble(0<<63 | 0x7ff << 52);
+        double zero  = 0.0;
+
+        // Negative test values                       sign |   exponent | mantisa
+        double smallNegative   = Double.longBitsToDouble(1<<63 | 0x003 << 52 | 0x30000f);
+        double negative        = Double.longBitsToDouble(1<<63 | 0x783 << 52 | 0x30100f);
+        double bigNegative     = Double.longBitsToDouble(1<<63 | 0x783 << 52 | 0x30000f);
+        double biggerNegative  = Double.longBitsToDouble(1<<63 | 0x786 << 52 | 0x30000f);
+        double maxNegative     = Double.longBitsToDouble(1<<63 | 0x7fe << 52 | 0x7fffff);
+
+        // Special negative
+        double nNan1  = Double.longBitsToDouble(1<<63 | 0x7ff << 52 | 0x7fffff);
+        double nNan2  = Double.longBitsToDouble(1<<63 | 0x7ff << 52 | 0x30000f);
+        double nInf   = Double.longBitsToDouble(1<<63 | 0x7ff << 52);
+        double nZero  = -0.0;
+
+        double[] numberList = new double[] {
+            nInf, maxNegative, biggerNegative, bigNegative, negative, smallNegative, nZero,
+            zero, smallPositive, positive, bigPositive, biggerPositive, maxPositive, inf,
+            nan1, nan2, nNan1, nNan2
+        };
+
+        Random rnd = new Random(10);
         a = new double[SIZE];
         b = new double[SIZE];
         c = new double[SIZE];
+        d = new double[SIZE];
+        e = new double[SIZE];
+
+        for (int i = 0; i < SIZE;) {
+            for (int j = 0; j < numberList.length && i < SIZE; j++, i++) {
+                for (int k = j; k < numberList.length && i < SIZE; k++, i++) {
+                    if (rnd.nextBoolean()) {
+                        d[i] = numberList[j];
+                        e[i] = numberList[k];
+                    } else {
+                        d[i] = numberList[k];
+                        e[i] = numberList[j];
+                    }
+                }
+            }
+        }
+
         for (int i = 0; i < SIZE; i++) {
             a[i] = 850.0 * i + 22222.22;
             b[i] = -12345.678;
@@ -179,7 +232,7 @@ public class BasicDoubleOpTest extends VectorizationTestRunner {
     public double[] vectorMax() {
         double[] res = new double[SIZE];
         for (int i = 0; i < SIZE; i++) {
-            res[i] = Math.max(a[i], b[i]);
+            res[i] = Math.max(d[i], e[i]);
         }
         return res;
     }
@@ -190,7 +243,7 @@ public class BasicDoubleOpTest extends VectorizationTestRunner {
     public double[] vectorMin() {
         double[] res = new double[SIZE];
         for (int i = 0; i < SIZE; i++) {
-            res[i] = Math.min(a[i], b[i]);
+            res[i] = Math.min(d[i], e[i]);
         }
         return res;
     }

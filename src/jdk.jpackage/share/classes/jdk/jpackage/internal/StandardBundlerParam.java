@@ -30,6 +30,7 @@ import jdk.internal.util.OperatingSystem;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.text.MessageFormat;
 import java.util.ArrayList;
@@ -596,8 +597,8 @@ class StandardBundlerParam<T> extends BundlerParamInfo<T> {
 
         // copy whole runtime, need to skip jmods and src.zip
         final List<String> excludes = Arrays.asList("jmods", "src.zip");
-        IOUtils.copyRecursive(topImage,
-                appLayout.runtimeHomeDirectory(), excludes);
+        IOUtils.copyRecursive(topImage, appLayout.runtimeHomeDirectory(),
+                        excludes, LinkOption.NOFOLLOW_LINKS);
 
         // if module-path given - copy modules to appDir/mods
         List<Path> modulePath = MODULE_PATH.fetchFrom(params);

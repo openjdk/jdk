@@ -26,10 +26,10 @@
 #include "precompiled.hpp"
 
 #include "memory/allocation.hpp"
+#include "nmt/nmtCommon.hpp"
 #include "runtime/java.hpp"
 #include "runtime/globals.hpp"
 #include "services/mallocLimit.hpp"
-#include "services/nmtCommon.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/parseInteger.hpp"
 #include "utilities/ostream.hpp"

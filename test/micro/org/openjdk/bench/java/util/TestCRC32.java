@@ -29,7 +29,7 @@ import org.openjdk.jmh.annotations.*;
 
 @BenchmarkMode(Mode.Throughput)
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
-@State(Scope.Benchmark)
+@State(Scope.Thread)
 @Warmup(iterations = 4, time = 2)
 @Measurement(iterations = 4, time = 2)
 @Fork(value = 3)

@@ -287,11 +287,6 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UsePopCountInstruction, true);
   }
 
-  // z/Architecture supports 8-byte compare-exchange operations
-  // (see Atomic::cmpxchg)
-  // and 'atomic long memory ops' (see Unsafe_GetLongVolatile).
-  _supports_cx8 = true;
-
   _supports_atomic_getadd4 = VM_Version::has_LoadAndALUAtomicV1();
   _supports_atomic_getadd8 = VM_Version::has_LoadAndALUAtomicV1();
 
