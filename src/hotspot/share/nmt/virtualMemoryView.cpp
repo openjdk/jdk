@@ -653,6 +653,10 @@ VirtualMemoryView::Range VirtualMemoryView::union_of(Range a, Range b) {
   return Range(start , pointer_delta(end, start, 1));
 }
 
+bool VirtualMemoryView::is_same(Range a, Range b) {
+  return a.start == b.start && a.size == b.size;
+}
+
 VirtualMemoryView::Range VirtualMemoryView::overlap_of(Range a, Range b) {
   if (!overlaps(a, b)) {
     return {};

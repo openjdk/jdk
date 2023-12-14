@@ -162,6 +162,7 @@ private:
   static bool after(Range a, Range b); // a < b
   static bool disjoint(Range a, Range b);
   static bool overlaps(Range a, Range b);
+  static bool is_same(Range a, Range b);
   static Range union_of(Range a, Range b);
   static Range overlap_of(Range a, Range b);
 
