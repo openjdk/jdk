@@ -201,6 +201,8 @@ class TypeConvertingMethodAdapter {
     }
 
     static ClassDesc classDesc(Class<?> cls) {
-        return ClassDesc.ofDescriptor(cls.descriptorString());
+        return cls == Object.class ? CD_Object
+             : cls == String.class ? CD_String
+             : ClassDesc.ofDescriptor(cls.descriptorString());
     }
 }

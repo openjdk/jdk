@@ -68,6 +68,7 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
  */
 class InvokerBytecodeGenerator {
     /** Define class names for convenience. */
+    private static final ClassDesc CD_DMH     = ClassDesc.ofInternalName("java/lang/invoke/DirectMethodHandle");
     private static final ClassDesc CD_MHI     = ClassDesc.ofInternalName("java/lang/invoke/MethodHandleImpl");
     private static final ClassDesc CD_LF      = ClassDesc.ofInternalName("java/lang/invoke/LambdaForm");
     private static final ClassDesc CD_LFN     = ClassDesc.ofInternalName("java/lang/invoke/LambdaForm$Name");
@@ -111,10 +112,6 @@ class InvokerBytecodeGenerator {
     private Class<?>[]  localClasses; // type
 
     private final List<ClassData> classData = new ArrayList<>();
-
-    /** Single element class descriptor lookup cache. */
-    private Class<?> lastClass;
-    private ClassDesc lastClassDesc;
 
     private static final MemberName.Factory MEMBERNAME_FACTORY = MemberName.getFactory();
     private static final Class<?> HOST_CLASS = LambdaForm.class;
@@ -437,7 +434,7 @@ class InvokerBytecodeGenerator {
             }
         }
         if (isStaticallyNameable(cls)) {
-            ClassDesc sig = classDescCached(cls);
+            ClassDesc sig = classDesc(cls);
             cob.checkcast(sig);
         } else {
             cob.getstatic(classDesc, classData(cls), CD_Class)
@@ -452,20 +449,6 @@ class InvokerBytecodeGenerator {
             cob.dup()
                .astore(localsMap[writeBack.index()]);
         }
-    }
-
-    private ClassDesc classDescCached(Class<?> c) {
-        if (c == Object.class)             return CD_Object;
-        else if (c == Object[].class)      return CD_OBJARY;
-        else if (c == Class.class)         return CD_Class;
-        else if (c == MethodHandle.class)  return CD_MethodHandle;
-        assert(VerifyAccess.isTypeVisible(c, Object.class)) : c.getName();
-
-        if (c == lastClass) {
-            return lastClassDesc;
-        }
-        lastClass = c;
-        return lastClassDesc = classDesc(c);
     }
 
     private static MemberName resolveFrom(String name, MethodType type, Class<?> holder) {
@@ -850,7 +833,7 @@ class InvokerBytecodeGenerator {
     void emitStaticInvoke(CodeBuilder cob, MemberName member, Name name) {
         assert(member.equals(name.function.member()));
         Class<?> defc = member.getDeclaringClass();
-        ClassDesc cdesc = classDescCached(defc);
+        ClassDesc cdesc = classDesc(defc);
         String mname = member.getName();
         byte refKind = member.getReferenceKind();
         if (refKind == REF_invokeSpecial) {
@@ -1703,8 +1686,13 @@ class InvokerBytecodeGenerator {
     }
 
     static ClassDesc classDesc(Class<?> cls) {
-        return ClassDesc.ofDescriptor(cls.descriptorString());
+//        assert(VerifyAccess.isTypeVisible(cls, Object.class)) : cls.getName();
+        return cls == MethodHandle.class ? CD_MethodHandle
+             : cls == DirectMethodHandle.class ? CD_DMH
+             : cls == Object.class ? CD_Object
+             : ClassDesc.ofDescriptor(cls.descriptorString());
     }
+
     static MethodTypeDesc methodDesc(MethodType mt) {
         return MethodTypeDesc.ofDescriptor(mt.descriptorString());
     }

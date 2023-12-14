@@ -60,6 +60,10 @@ import static java.lang.classfile.ClassFile.*;
  */
 /*non-public*/
 abstract class ClassSpecializer<T,K,S extends ClassSpecializer<T,K,S>.SpeciesData> {
+
+    private static final ClassDesc CD_LambdaForm = ClassDesc.ofDescriptor("Ljava/lang/invoke/LambdaForm;");
+    private static final ClassDesc CD_BoundMethodHandle = ClassDesc.ofDescriptor("Ljava/lang/invoke/BoundMethodHandle;");
+
     private final Class<T> topClass;
     private final Class<K> keyType;
     private final Class<S> metaType;
@@ -936,19 +940,20 @@ abstract class ClassSpecializer<T,K,S extends ClassSpecializer<T,K,S>.SpeciesDat
 
 
     // Other misc helpers:
-
-    static ClassDesc classDesc(Class<?> cls) {
-        return ClassDesc.ofDescriptor(cls.descriptorString());
-    }
-    static MethodTypeDesc methodDesc(MethodType mt) {
-        return MethodTypeDesc.ofDescriptor(mt.descriptorString());
-    }
     static String classBCName(String str) {
         assert(str.indexOf('/') < 0) : str;
         return str.replace('.', '/');
     }
-    static String className(Class<?> cls) {
-        assert(!cls.isArray() && !cls.isPrimitive());
-        return cls.getName();
+
+    static ClassDesc classDesc(Class<?> cls) {
+        return cls == Object.class ? CD_Object
+             : cls == MethodType.class ? CD_MethodType
+             : cls == LambdaForm.class ? CD_LambdaForm
+             : cls == BoundMethodHandle.class ? CD_BoundMethodHandle
+             : ClassDesc.ofDescriptor(cls.descriptorString());
+    }
+
+    static MethodTypeDesc methodDesc(MethodType mt) {
+        return MethodTypeDesc.ofDescriptor(mt.descriptorString());
     }
 }

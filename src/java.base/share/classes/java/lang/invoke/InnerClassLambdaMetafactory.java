@@ -546,6 +546,7 @@ import static java.lang.invoke.MethodType.methodType;
     static ClassDesc classDesc(Class<?> cls) {
         return ClassDesc.ofDescriptor(cls.descriptorString());
     }
+
     static MethodTypeDesc methodDesc(MethodType mt) {
         return MethodTypeDesc.ofDescriptor(mt.descriptorString());
     }
