@@ -72,11 +72,11 @@ int NativeCallStack::frames() const {
 }
 
 void NativeCallStack::print_on(outputStream* out) const {
-  print_on(out, 0);
+  print_on(out, "", 0);
 }
 
 // Decode and print this call path
-void NativeCallStack::print_on(outputStream* out, int indent) const {
+void NativeCallStack::print_on(outputStream* out, const char* prefix, int indent) const {
   DEBUG_ONLY(assert_not_fake();)
   address pc;
   char    buf[1024];
