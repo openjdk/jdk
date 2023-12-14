@@ -28,22 +28,18 @@
  * @summary Unambiguous varargs method calls flagged as ambiguous
  * @author mcimadamore
  *
- * @modules java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.constantpool
- *          java.base/jdk.internal.classfile.instruction
- *          java.base/jdk.internal.classfile.components
- *          java.base/jdk.internal.classfile.impl
+ * @enablePreview
+ * @modules java.base/jdk.internal.classfile.impl
  *          jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.file
  *          jdk.compiler/com.sun.tools.javac.util
  */
 
 import com.sun.source.util.JavacTask;
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.attribute.CodeAttribute;
-import jdk.internal.classfile.constantpool.MemberRefEntry;
-import jdk.internal.classfile.instruction.InvokeInstruction;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.CodeAttribute;
+import java.lang.classfile.constantpool.MemberRefEntry;
+import java.lang.classfile.instruction.InvokeInstruction;
 import com.sun.tools.javac.api.JavacTool;
 import com.sun.tools.javac.util.List;
 
@@ -219,7 +215,7 @@ public class T6199075 {
         bytecodeCheckCount++;
         File compiledTest = new File("Test.class");
         try {
-            ClassModel cf = Classfile.of().parse(compiledTest.toPath());
+            ClassModel cf = ClassFile.of().parse(compiledTest.toPath());
             MethodModel testMethod = null;
             for (MethodModel m : cf.methods()) {
                 if (m.methodName().equalsString("test")) {

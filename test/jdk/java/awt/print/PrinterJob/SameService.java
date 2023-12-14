@@ -24,6 +24,7 @@
 /**
  * @test
  * @bug 6446094
+ * @key printer
  * @summary Don't re-create print services.
  * @run main SameService
  */

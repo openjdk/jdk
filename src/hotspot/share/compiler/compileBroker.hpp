@@ -241,7 +241,6 @@ class CompileBroker: AllStatic {
     deoptimizer_t
   };
 
-  static Handle create_thread_oop(const char* name, TRAPS);
   static JavaThread* make_thread(ThreadType type, jobject thread_oop, CompileQueue* queue, AbstractCompiler* comp, JavaThread* THREAD);
   static void init_compiler_threads();
   static void possibly_add_compiler_threads(JavaThread* THREAD);

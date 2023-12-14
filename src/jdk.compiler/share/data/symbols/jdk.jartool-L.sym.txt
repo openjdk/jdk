@@ -33,6 +33,3 @@ header exports jdk/security/jarsigner requires name\u0020;java.base\u0020;flags\
 
 -class name com/sun/jarsigner/ContentSignerParameters
 
-class name jdk/security/jarsigner/JarSignerException
-header extends java/lang/RuntimeException flags 21
-

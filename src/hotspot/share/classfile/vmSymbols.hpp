@@ -162,7 +162,9 @@ class SerializeClosure;
   template(jdk_internal_loader_BuiltinClassLoader,    "jdk/internal/loader/BuiltinClassLoader")   \
   template(jdk_internal_loader_ClassLoaders_AppClassLoader,      "jdk/internal/loader/ClassLoaders$AppClassLoader")      \
   template(jdk_internal_loader_ClassLoaders_PlatformClassLoader, "jdk/internal/loader/ClassLoaders$PlatformClassLoader") \
-                                                                                                  \
+  template(java_lang_Deprecated,                      "Ljava/lang/Deprecated;")                   \
+  template(since,                                     "since")                                    \
+  template(for_removal,                               "forRemoval")                               \
   /* Java runtime version access */                                                               \
   template(java_lang_VersionProps,                    "java/lang/VersionProps")                   \
   template(java_version_name,                         "java_version")                             \
