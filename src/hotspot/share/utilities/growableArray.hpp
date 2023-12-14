@@ -696,7 +696,6 @@ public:
     ::swap(this->_capacity, other->_capacity);
   }
 
-  // TODO should these not be protected?
   E* allocate() {
     DEBUG_ONLY(_nesting_check.on_allocate(); )
     return allocate(_arena, this->_capacity);

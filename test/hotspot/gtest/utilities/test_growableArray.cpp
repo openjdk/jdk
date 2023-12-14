@@ -26,25 +26,17 @@
 #include "utilities/growableArray.hpp"
 #include "unittest.hpp"
 
-// TODO:
-//       Talk about value factory
-
-// TODO assignment operator and copy constructor
-//      assign with different arena / resource area???
-//      ok, I don't want to change the assign / copy logic
-//      difficult to even do verification, since there is
-//      a nasty assign in c1_GraphBuilder.cpp with
-//      _loop_map
-
 // We have a list of each:
 //  - ModifyClosure
 //  - TestClosure
 //  - AllocatorClosure
+//  - AllocatorArgs
 //
-// For each AllocationClosure, we call dispatch with each
-// of the ModifyClosuresi and each TestClosures. The allocation
-// cosure allocates its array, and then passes itself into the
-// ModifyClosure which does some first modificaions and
+// For each AllocationClosure and AllocatorArgs, we call dispatch
+// with each of the ModifyClosuresi and each TestClosures. The
+// allocation cosure allocates its array (with initial size and
+// capacity specified by the AllocatorArgs), and then passes itself
+// into the ModifyClosure which does some first modificaions and
 // subsequently into the TestClosure, which runs the test.
 //
 // For one test and allocator we do:
@@ -57,20 +49,31 @@
 //         that to the allocated GrowableArray
 //      de-allocate GrowableAray
 //   test.finish()
-
-
+//
+// We test the arrays with different element types. Hence, the test
+// is heavily templated. The idea is to ensure GrowableArray works
+// for basic types, pointers, but also classes: for example with or
+// without a default-constructor, or copy-assign operator. Of course
+// if the copy-assign operator is deleted, then we cannot use certain
+// write operations (such as at_put). With a special CtorDtor type we
+// verify that constructor and destructor counts are as expected,
+// for example we can verify the expected number of "live" elements.
+//
 // ------------  Array Elements  -------------
 
+// Used to get an ith element of any type E.
 template<typename E>
 E value_factory(int i) {
   return E(i);
 }
 
+// Used for sorting of any type E
 template<typename E>
 int value_compare_ptr(E* e1, E* e2) {
   return (*e1) - (*e2);
 }
 
+// Used for sorting of any type E
 template<typename E>
 int value_compare_ref(const E& e1, const E& e2) {
   return e1 - e2;
