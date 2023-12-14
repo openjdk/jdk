@@ -217,7 +217,9 @@ public class CopyZipFile {
             while (entries.hasMoreElements()) {
                 ZipEntry entry = entries.nextElement();
 
-                // Explicitly set compressed size to enforce data descriptor and revalidation
+                // Explicitly setting the compressed size will disable data descriptors
+                // and enable validation that the compressed size in the ZipEntry matches the
+                // actual compressed size written by ZipOutputStream
                 entry.setCompressedSize(entry.getCompressedSize());
 
                 try (InputStream is = zf.getInputStream(entry)) {
