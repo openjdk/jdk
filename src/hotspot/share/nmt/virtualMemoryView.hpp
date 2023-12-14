@@ -28,6 +28,7 @@
 #include "memory/allocation.hpp"
 #include "nmt/nmtNativeCallStackStorage.hpp"
 #include "nmt/nmtCommon.hpp"
+#include "nmt/virtualMemoryTracker.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/nativeCallStack.hpp"
 #include "utilities/ostream.hpp"
@@ -162,6 +163,7 @@ private:
   static bool disjoint(Range a, Range b);
   static bool overlaps(Range a, Range b);
   static Range union_of(Range a, Range b);
+  static Range overlap_of(Range a, Range b);
 
   // Pre-condition: ranges is sorted in a left-aligned fashion
   // That is: (a,b) comes before (c,d) if a <= c
@@ -231,6 +233,11 @@ public:
   static void report_new(VirtualMemory& mem, outputStream* output, size_t scale = K);
   static const VirtualMemory& virtual_memory() {
     return *_virt_mem;
+  }
+
+  static VirtualMemorySnapshot summary_snapshot() {
+    VirtualMemorySnapshot snap;
+    return snap;
   }
 };
 

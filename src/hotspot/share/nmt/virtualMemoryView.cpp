@@ -653,6 +653,15 @@ VirtualMemoryView::Range VirtualMemoryView::union_of(Range a, Range b) {
   return Range(start , pointer_delta(end, start, 1));
 }
 
+VirtualMemoryView::Range VirtualMemoryView::overlap_of(Range a, Range b) {
+  if (!overlaps(a, b)) {
+    return {};
+  }
+  const address start = MAX2(b.start, a.start);
+  const address end = MIN2(b.end(), a.end());
+  return Range(start, pointer_delta(end, start, 1));
+}
+
 
 
 VirtualMemoryView::OverlappingResult
