@@ -28,14 +28,6 @@
 
 // TODO:
 //       Talk about value factory
-//       Trigger allocation asserts with resource area
-//       Trigger assert for insert_before with itself
-
-// TODO go through GA and GACH and see what ops are not tested yet
-// -> add to modify and test
-//
-// TODO
-// print ?
 
 // TODO assignment operator and copy constructor
 //      assign with different arena / resource area???
@@ -2330,5 +2322,22 @@ TEST_VM_ASSERT_MSG(GrowableArrayAssertingTest, swap_s_ra_s_ra,
   ResourceMark rm2;
   GrowableArray<int> a2(100, 100, 1);
   a1.swap(&a2);
+}
+
+TEST_VM_ASSERT_MSG(GrowableArrayAssertingTest, resource_area_realloc_scopes,
+    ".*allocation bug: GrowableArray could grow within nested ResourceMark") {
+  ResourceMark rm1;
+  GrowableArray<int> a(10, 10, 1);
+  ResourceMark rm2;
+  for (int i = 0; i < 1000; i++) {
+    a.append(i);
+  }
+}
+
+TEST_VM_ASSERT_MSG(GrowableArrayAssertingTest, insert_before_with_itself,
+    ".*cannot insert itself to itself") {
+  ResourceMark rm1;
+  GrowableArray<int> a(10, 10, 1);
+  a.insert_before(5, &a);
 }
 #endif
