@@ -324,6 +324,7 @@ void CastIINode::dump_spec(outputStream* st) const {
 #endif
 
 CastIINode* CastIINode::pin_for_array_access() const {
+  assert(_dependency == RegularDependency, "already pinned");
   if (has_range_check()) {
     return new CastIINode(in(0), in(1), bottom_type(), StrongDependency, has_range_check());
   }
