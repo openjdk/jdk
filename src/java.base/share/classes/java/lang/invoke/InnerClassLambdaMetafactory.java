@@ -170,11 +170,11 @@ import static java.lang.invoke.MethodType.methodType;
         super(caller, factoryType, interfaceMethodName, interfaceMethodType,
               implementation, dynamicMethodType,
               isSerializable, altInterfaces, altMethods);
-        implMethodClassDesc = implClass.describeConstable().orElseThrow();
+        implMethodClassDesc = classDesc(implClass);
         implMethodName = implInfo.getName();
-        implMethodDesc = implInfo.getMethodType().describeConstable().orElseThrow();
+        implMethodDesc = methodDesc(implInfo.getMethodType());
         constructorType = factoryType.changeReturnType(Void.TYPE);
-        constructorTypeDesc = constructorType.describeConstable().orElseThrow();
+        constructorTypeDesc = methodDesc(constructorType);
         lambdaClassName = lambdaClassName(targetClass);
         lambdaClassDesc = ClassDesc.ofInternalName(lambdaClassName);
         // If the target class invokes a protected method inherited from a
@@ -192,7 +192,7 @@ import static java.lang.invoke.MethodType.methodType;
             argDescs = new ClassDesc[parameterCount];
             for (int i = 0; i < parameterCount; i++) {
                 argNames[i] = "arg$" + (i + 1);
-                argDescs[i] = factoryType.parameterType(i).describeConstable().orElseThrow();
+                argDescs[i] = classDesc(factoryType.parameterType(i));
             }
         } else {
             argNames = EMPTY_STRING_ARRAY;
@@ -303,7 +303,7 @@ import static java.lang.invoke.MethodType.methodType;
      */
     private Class<?> generateInnerClass() throws LambdaConversionException {
         List<ClassDesc> interfaces;
-        ClassDesc interfaceDesc = interfaceClass.describeConstable().orElseThrow();
+        ClassDesc interfaceDesc = classDesc(interfaceClass);
         boolean accidentallySerializable = !isSerializable && Serializable.class.isAssignableFrom(interfaceClass);
         if (altInterfaces.length == 0) {
             interfaces = List.of(interfaceDesc);
@@ -312,7 +312,7 @@ import static java.lang.invoke.MethodType.methodType;
             Set<ClassDesc> itfs = LinkedHashSet.newLinkedHashSet(altInterfaces.length + 1);
             itfs.add(interfaceDesc);
             for (Class<?> i : altInterfaces) {
-                itfs.add(i.describeConstable().orElseThrow());
+                itfs.add(classDesc(i));
                 accidentallySerializable |= !isSerializable && Serializable.class.isAssignableFrom(i);
             }
             interfaces = new ArrayList<>(itfs);
@@ -336,7 +336,7 @@ import static java.lang.invoke.MethodType.methodType;
 
                 // Forward the SAM method
                 clb.withMethodBody(interfaceMethodName,
-                        interfaceMethodType.describeConstable().orElseThrow(),
+                        methodDesc(interfaceMethodType),
                         ACC_PUBLIC,
                         forwardingMethod(interfaceMethodType));
 
@@ -344,7 +344,7 @@ import static java.lang.invoke.MethodType.methodType;
                 if (altMethods != null) {
                     for (MethodType mt : altMethods) {
                         clb.withMethodBody(interfaceMethodName,
-                                mt.describeConstable().orElseThrow(),
+                                methodDesc(mt),
                                 ACC_PUBLIC | ACC_BRIDGE,
                                 forwardingMethod(mt));
                     }
@@ -374,7 +374,7 @@ import static java.lang.invoke.MethodType.methodType;
      * Generate a static field and a static initializer that sets this field to an instance of the lambda
      */
     private void generateClassInitializer(ClassBuilder clb) {
-        ClassDesc lambdaTypeDescriptor = factoryType.returnType().describeConstable().orElseThrow();
+        ClassDesc lambdaTypeDescriptor = classDesc(factoryType.returnType());
 
         // Generate the static final field that holds the lambda singleton
         clb.withField(LAMBDA_INSTANCE_FIELD, lambdaTypeDescriptor, ACC_PRIVATE | ACC_STATIC | ACC_FINAL);
@@ -426,7 +426,7 @@ import static java.lang.invoke.MethodType.methodType;
                     public void accept(CodeBuilder cob) {
                         cob.new_(CD_SERIALIZED_LAMBDA)
                            .dup()
-                           .ldc(targetClass.describeConstable().get())
+                           .ldc(classDesc(targetClass))
                            .ldc(factoryType.returnType().getName().replace('.', '/'))
                            .ldc(interfaceMethodName)
                            .ldc(interfaceMethodType.toMethodDescriptorString())
@@ -506,7 +506,7 @@ import static java.lang.invoke.MethodType.methodType;
                     if (implKind != MethodHandleInfo.REF_invokeStatic) {
                         mtype = mtype.insertParameterTypes(0, implClass);
                     }
-                    cob.invokevirtual(CD_MethodHandle, "invokeExact", mtype.describeConstable().orElseThrow());
+                    cob.invokevirtual(CD_MethodHandle, "invokeExact", methodDesc(mtype));
                 } else {
                     // Invoke the method we want to forward to
                     cob.invokeInstruction(invocationOpcode(), implMethodClassDesc, implMethodName, implMethodDesc, implClass.isInterface());
@@ -541,5 +541,12 @@ import static java.lang.invoke.MethodType.methodType;
             case MethodHandleInfo.REF_invokeSpecial    -> Opcode.INVOKESPECIAL;
             default -> throw new InternalError("Unexpected invocation kind: " + implKind);
         };
+    }
+
+    static ClassDesc classDesc(Class<?> cls) {
+        return ClassDesc.ofDescriptor(cls.descriptorString());
+    }
+    static MethodTypeDesc methodDesc(MethodType mt) {
+        return MethodTypeDesc.ofDescriptor(mt.descriptorString());
     }
 }

@@ -289,7 +289,7 @@ class InvokerBytecodeGenerator {
     }
 
     private void methodSetup(ClassBuilder clb, Consumer<? super MethodBuilder> config) {
-        var invokerDesc = invokerType.describeConstable().orElseThrow();
+        var invokerDesc = methodDesc(invokerType);
         clb.withMethod(invokerName, invokerDesc, ACC_STATIC, config);
     }
 
@@ -465,7 +465,7 @@ class InvokerBytecodeGenerator {
             return lastClassDesc;
         }
         lastClass = c;
-        return lastClassDesc = c.describeConstable().orElseThrow();
+        return lastClassDesc = classDesc(c);
     }
 
     private static MemberName resolveFrom(String name, MethodType type, Class<?> holder) {
@@ -549,7 +549,7 @@ class InvokerBytecodeGenerator {
     }
 
     private static Annotation annotation(Class<?> cls) {
-        return Annotation.of(cls.describeConstable().orElseThrow());
+        return Annotation.of(classDesc(cls));
     }
 
     static final Annotation DONTINLINE      = annotation(DontInline.class);
@@ -753,7 +753,7 @@ class InvokerBytecodeGenerator {
 
         // invocation
         MethodType type = name.function.methodType();
-        cob.invokevirtual(CD_MethodHandle, "invokeBasic", type.basicType().describeConstable().orElseThrow());
+        cob.invokevirtual(CD_MethodHandle, "invokeBasic", methodDesc(type.basicType()));
     }
 
     private static final Class<?>[] STATICALLY_INVOCABLE_PACKAGES = {
@@ -866,11 +866,11 @@ class InvokerBytecodeGenerator {
 
         // invocation
         if (member.isMethod()) {
-            var methodTypeDesc = member.getMethodType().describeConstable().orElseThrow();
+            var methodTypeDesc = methodDesc(member.getMethodType());
             cob.invokeInstruction(refKindOpcode(refKind), cdesc, mname, methodTypeDesc,
                                   member.getDeclaringClass().isInterface());
         } else {
-            var fieldTypeDesc = member.getFieldType().describeConstable().orElseThrow();
+            var fieldTypeDesc = classDesc(member.getFieldType());
             cob.fieldInstruction(refKindOpcode(refKind), cdesc, mname, fieldTypeDesc);
         }
         // Issue a type assertion for the result, so we can avoid casts later.
@@ -990,7 +990,7 @@ class InvokerBytecodeGenerator {
         // load target
         emitPushArgument(cob, invoker, 0);
         emitPushArguments(cob, args, 1); // skip 1st argument: method handle
-        cob.invokevirtual(CD_MethodHandle, "invokeBasic", type.basicType().describeConstable().orElseThrow());
+        cob.invokevirtual(CD_MethodHandle, "invokeBasic", methodDesc(type.basicType()));
         cob.labelBinding(L_endBlock);
         cob.goto_w(L_done);
 
@@ -1012,7 +1012,7 @@ class InvokerBytecodeGenerator {
         cob.swap();
         emitPushArguments(cob, args, 1); // skip 1st argument: method handle
         MethodType catcherType = type.insertParameterTypes(0, Throwable.class);
-        cob.invokevirtual(CD_MethodHandle, "invokeBasic", catcherType.basicType().describeConstable().orElseThrow());
+        cob.invokevirtual(CD_MethodHandle, "invokeBasic", methodDesc(catcherType.basicType()));
         cob.goto_w(L_done);
 
         cob.labelBinding(L_rethrow);
@@ -1104,7 +1104,7 @@ class InvokerBytecodeGenerator {
         if (isNonVoid) {
             cleanupType = cleanupType.insertParameterTypes(1, returnType);
         }
-        MethodTypeDesc cleanupDesc = cleanupType.basicType().describeConstable().orElseThrow();
+        MethodTypeDesc cleanupDesc = methodDesc(cleanupType.basicType());
 
         // exception handler table
         cob.exceptionCatch(lFrom, lTo, lCatch, CD_Throwable);
@@ -1113,7 +1113,7 @@ class InvokerBytecodeGenerator {
         cob.labelBinding(lFrom);
         emitPushArgument(cob, invoker, 0); // load target
         emitPushArguments(cob, args, 1); // load args (skip 0: method handle)
-        cob.invokevirtual(CD_MethodHandle, "invokeBasic", type.basicType().describeConstable().orElseThrow());
+        cob.invokevirtual(CD_MethodHandle, "invokeBasic", methodDesc(type.basicType()));
         cob.labelBinding(lTo);
 
         // FINALLY_NORMAL:
@@ -1180,7 +1180,7 @@ class InvokerBytecodeGenerator {
         MethodType caseType = args.function.resolvedHandle().type()
             .dropParameterTypes(0, 1) // drop collector
             .changeReturnType(returnType);
-        MethodTypeDesc caseDescriptor = caseType.basicType().describeConstable().orElseThrow();
+        MethodTypeDesc caseDescriptor = methodDesc(caseType.basicType());
 
         emitPushArgument(cob, invoker, 2); // push cases
         cob.getfield(ClassDesc.ofInternalName("java/lang/invoke/MethodHandleImpl$CasesHolder"), "cases",
@@ -1429,7 +1429,7 @@ class InvokerBytecodeGenerator {
         }
         // load loop args (skip 0: method handle)
         emitPushArguments(cob, args, 1);
-        cob.invokevirtual(CD_MethodHandle, "invokeBasic", type.describeConstable().orElseThrow());
+        cob.invokevirtual(CD_MethodHandle, "invokeBasic", methodDesc(type));
     }
 
     private void emitPushClauseArray(CodeBuilder cob, int clauseDataSlot, int which) {
@@ -1656,7 +1656,7 @@ class InvokerBytecodeGenerator {
                                 }
 
                                 // Invoke
-                                MethodTypeDesc targetDesc = dstType.basicType().describeConstable().orElseThrow();
+                                MethodTypeDesc targetDesc = methodDesc(dstType.basicType());
                                 cob.invokevirtual(CD_MethodHandle, "invokeBasic", targetDesc);
 
                                 // Box primitive types
@@ -1700,5 +1700,12 @@ class InvokerBytecodeGenerator {
                 }
             });
         }
+    }
+
+    static ClassDesc classDesc(Class<?> cls) {
+        return ClassDesc.ofDescriptor(cls.descriptorString());
+    }
+    static MethodTypeDesc methodDesc(MethodType mt) {
+        return MethodTypeDesc.ofDescriptor(mt.descriptorString());
     }
 }

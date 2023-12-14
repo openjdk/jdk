@@ -576,7 +576,7 @@ abstract class ClassSpecializer<T,K,S extends ClassSpecializer<T,K,S>.SpeciesDat
 
         // These are named like constants because there is only one per specialization scheme:
 
-        private final ClassDesc CD_SPECIES_DATA = metaType.describeConstable().get();
+        private final ClassDesc CD_SPECIES_DATA = classDesc(metaType);
         private final MethodTypeDesc MTD_SPECIES_DATA = MethodTypeDesc.of(CD_SPECIES_DATA);
         private final String SPECIES_DATA_NAME = sdAccessor.getName();
         private final int SPECIES_DATA_MODS = sdAccessor.getModifiers();
@@ -606,7 +606,7 @@ abstract class ClassSpecializer<T,K,S extends ClassSpecializer<T,K,S>.SpeciesDat
         /*non-public*/
         byte[] generateConcreteSpeciesCodeFile(String className0, ClassSpecializer<T,K,S>.SpeciesData speciesData) {
             final ClassDesc classDesc = ClassDesc.of(className0);
-            final ClassDesc superClassDesc = speciesData.deriveSuperClass().describeConstable().get();
+            final ClassDesc superClassDesc = classDesc(speciesData.deriveSuperClass());
             return CC.build(classDesc, clb -> {
                 clb.withFlags(ACC_FINAL | ACC_SUPER)
                    .withSuperclass(superClassDesc)
@@ -639,7 +639,7 @@ abstract class ClassSpecializer<T,K,S extends ClassSpecializer<T,K,S>.SpeciesDat
                         this.index = index;
                         this.name = name;
                         this.type = type;
-                        this.desc = type.describeConstable().orElseThrow();
+                        this.desc = classDesc(type);
                         this.basicType = BasicType.basicType(type);
                         this.slotIndex = slotIndex;
                     }
@@ -710,7 +710,7 @@ abstract class ClassSpecializer<T,K,S extends ClassSpecializer<T,K,S>.SpeciesDat
                 MethodType thisCtorType = superCtorType.appendParameterTypes(fieldTypes);
 
                 // emit constructor
-                clb.withMethodBody(INIT_NAME, methodSig(thisCtorType), ACC_PRIVATE, cob -> {
+                clb.withMethodBody(INIT_NAME, methodDesc(thisCtorType), ACC_PRIVATE, cob -> {
                     cob.aload(0); // this
 
                     final List<Var> ctorArgs = AFTER_THIS.fromTypes(superCtorType.parameterList());
@@ -719,7 +719,7 @@ abstract class ClassSpecializer<T,K,S extends ClassSpecializer<T,K,S>.SpeciesDat
                     }
 
                     // super(ca...)
-                    cob.invokespecial(superClassDesc, INIT_NAME, methodSig(superCtorType));
+                    cob.invokespecial(superClassDesc, INIT_NAME, methodDesc(superCtorType));
 
                     // store down fields
                     Var lastFV = AFTER_THIS.lastOf(ctorArgs);
@@ -736,7 +736,7 @@ abstract class ClassSpecializer<T,K,S extends ClassSpecializer<T,K,S>.SpeciesDat
 
                 // emit make()  ...factory method wrapping constructor
                 MethodType ftryType = thisCtorType.changeReturnType(topClass());
-                clb.withMethodBody("make", methodSig(ftryType), ACC_STATIC, cob -> {
+                clb.withMethodBody("make", methodDesc(ftryType), ACC_STATIC, cob -> {
                     // make instance
                     cob.new_(classDesc)
                        .dup();
@@ -746,7 +746,7 @@ abstract class ClassSpecializer<T,K,S extends ClassSpecializer<T,K,S>.SpeciesDat
                     }
 
                     // finally, invoke the constructor and return
-                    cob.invokespecial(classDesc, INIT_NAME, methodSig(thisCtorType))
+                    cob.invokespecial(classDesc, INIT_NAME, methodDesc(thisCtorType))
                        .areturn();
                 });
 
@@ -761,7 +761,7 @@ abstract class ClassSpecializer<T,K,S extends ClassSpecializer<T,K,S>.SpeciesDat
                     final String     TNAME = TRANSFORM_NAMES.get(whichtm);
                     final MethodType TTYPE = TRANSFORM_TYPES.get(whichtm);
                     final int        TMODS = TRANSFORM_MODS.get(whichtm);
-                    clb.withMethod(TNAME, methodSig(TTYPE), (TMODS & ACC_PPP) | ACC_FINAL, mb -> {
+                    clb.withMethod(TNAME, methodDesc(TTYPE), (TMODS & ACC_PPP) | ACC_FINAL, mb -> {
                         mb.withFlags((TMODS & ACC_PPP) | ACC_FINAL)
                           .with(ExceptionsAttribute.ofSymbols(CD_Throwable))
                           .withCode(cob -> {
@@ -792,9 +792,9 @@ abstract class ClassSpecializer<T,K,S extends ClassSpecializer<T,K,S>.SpeciesDat
                             final Class<?> rtype = TTYPE.returnType();
                             final BasicType rbt = BasicType.basicType(rtype);
                             MethodType invokeBasicType = MethodType.methodType(rbt.basicTypeClass(), helperTypes);
-                            cob.invokevirtual(CD_MethodHandle, "invokeBasic", methodSig(invokeBasicType));
+                            cob.invokevirtual(CD_MethodHandle, "invokeBasic", methodDesc(invokeBasicType));
                             if (rbt == BasicType.L_TYPE) {
-                                cob.checkcast(rtype.describeConstable().get())
+                                cob.checkcast(classDesc(rtype))
                                    .areturn();
                             } else {
                                 throw newInternalError("NYI: transform of type "+rtype);
@@ -937,8 +937,11 @@ abstract class ClassSpecializer<T,K,S extends ClassSpecializer<T,K,S>.SpeciesDat
 
     // Other misc helpers:
 
-    static MethodTypeDesc methodSig(MethodType mt) {
-        return mt.describeConstable().orElseThrow();
+    static ClassDesc classDesc(Class<?> cls) {
+        return ClassDesc.ofDescriptor(cls.descriptorString());
+    }
+    static MethodTypeDesc methodDesc(MethodType mt) {
+        return MethodTypeDesc.ofDescriptor(mt.descriptorString());
     }
     static String classBCName(String str) {
         assert(str.indexOf('/') < 0) : str;

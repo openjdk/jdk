@@ -64,15 +64,22 @@ class TypeConvertingMethodAdapter {
                                         UNBOX_DOUBLE  = unbox(CD_Number, "doubleValue", CD_double);
 
     static private TypeKind primitiveTypeKindFromClass(Class<?> type) {
-        return type == Integer.class   ? TypeKind.IntType
-             : type == Long.class      ? TypeKind.LongType
-             : type == Short.class     ? TypeKind.ShortType
-             : type == Character.class ? TypeKind.CharType
-             : type == Byte.class      ? TypeKind.ByteType
-             : type == Float.class     ? TypeKind.FloatType
-             : type == Double.class    ? TypeKind.DoubleType
-             : type == Boolean.class   ? TypeKind.BooleanType
-             : null;
+        return switch (type.getName().length()) {
+            case 14 -> type == Long.class ? TypeKind.LongType
+                     : type == Byte.class ? TypeKind.ByteType
+                     : null;
+            case 15 -> type == Short.class ? TypeKind.ShortType
+                     : type == Float.class ? TypeKind.FloatType
+                     : null;
+            case 16 -> type == Double.class ? TypeKind.DoubleType
+                     : null;
+            case 17 -> type == Integer.class ? TypeKind.IntType
+                     : type == Boolean.class ? TypeKind.BooleanType
+                     : null;
+            case 19 -> type == Character.class ? TypeKind.CharType
+                     : null;
+            default -> null;
+        };
     }
 
     static void boxIfTypePrimitive(CodeBuilder cob, TypeKind tk) {
@@ -147,7 +154,7 @@ class TypeConvertingMethodAdapter {
                 } else {
                     // Otherwise, box and cast
                     box(cob, TypeKind.from(arg));
-                    cast(cob, target.describeConstable().orElseThrow());
+                    cast(cob, classDesc(target));
                 }
             }
         } else {
@@ -157,7 +164,7 @@ class TypeConvertingMethodAdapter {
             } else {
                 // Cast to convert to possibly more specific type, and generate CCE for invalid arg
                 src = functional;
-                cast(cob, functional.describeConstable().orElseThrow());
+                cast(cob, classDesc(functional));
             }
             if (target.isPrimitive()) {
                 // Reference argument to primitive target
@@ -187,9 +194,13 @@ class TypeConvertingMethodAdapter {
             } else {
                 // Both reference types: just case to target type
                 if (src != target) {
-                    cast(cob, target.describeConstable().orElseThrow());
+                    cast(cob, classDesc(target));
                 }
             }
         }
+    }
+
+    static ClassDesc classDesc(Class<?> cls) {
+        return ClassDesc.ofDescriptor(cls.descriptorString());
     }
 }
