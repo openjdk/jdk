@@ -40,31 +40,6 @@
 #include "runtime/stubRoutines.hpp"
 #include "utilities/macros.hpp"
 
-void C1_MacroAssembler::inline_cache_check(Register receiver, Register iCache) {
-  Label ic_miss, ic_hit;
-  verify_oop(receiver, FILE_AND_LINE);
-  int klass_offset = oopDesc::klass_offset_in_bytes();
-
-  if (!ImplicitNullChecks || MacroAssembler::needs_explicit_null_check(klass_offset)) {
-    if (VM_Version::has_CompareBranch()) {
-      z_cgij(receiver, 0, Assembler::bcondEqual, ic_miss);
-    } else {
-      z_ltgr(receiver, receiver);
-      z_bre(ic_miss);
-    }
-  }
-
-  compare_klass_ptr(iCache, klass_offset, receiver, false);
-  z_bre(ic_hit);
-
-  // If icache check fails, then jump to runtime routine.
-  // Note: RECEIVER must still contain the receiver!
-  load_const_optimized(Z_R1_scratch, AddressLiteral(SharedRuntime::get_ic_miss_stub()));
-  z_br(Z_R1_scratch);
-  align(CodeEntryAlignment);
-  bind(ic_hit);
-}
-
 void C1_MacroAssembler::explicit_null_check(Register base) {
   ShouldNotCallThis(); // unused
 }

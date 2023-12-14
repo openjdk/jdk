@@ -257,6 +257,7 @@ class MacroAssembler: public Assembler {
 
   // nop padding
   void align(int modulus);
+  void align(int modulus, int target);
   void align_address(int modulus);
 
   //
@@ -565,6 +566,9 @@ class MacroAssembler: public Assembler {
 
   // Get the pc where the last call will return to. Returns _last_calls_return_pc.
   inline address last_calls_return_pc();
+
+  static int ic_check_size();
+  int ic_check(int end_alignment);
 
  private:
   static bool is_call_far_patchable_variant0_at(address instruction_addr); // Dynamic TOC: load target addr from CP and call.

@@ -76,10 +76,7 @@ int LIR_Assembler::initial_frame_size_in_bytes() const {
 // We fetch the class of the receiver and compare it with the cached class.
 // If they do not match we jump to the slow case.
 int LIR_Assembler::check_icache() {
-  Register receiver = receiverOpr()->as_register();
-  int offset = __ offset();
-  __ inline_cache_check(receiver, Z_inline_cache);
-  return offset;
+  return __ ic_check(CodeEntryAlignment);
 }
 
 void LIR_Assembler::clinit_barrier(ciMethod* method) {
