@@ -25,17 +25,13 @@
  * @test
  * @bug 8042451
  * @summary Test population of reference info for constructor invocation type argument
- * @modules java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.constantpool
- *          java.base/jdk.internal.classfile.instruction
- *          java.base/jdk.internal.classfile.components
- *          java.base/jdk.internal.classfile.impl
+ * @enablePreview
+ * @modules java.base/jdk.internal.classfile.impl
  * @compile -g Driver.java ReferenceInfoUtil.java ConstructorInvocationTypeArgument.java
  * @run main Driver ConstructorInvocationTypeArgument
  */
 
-import static jdk.internal.classfile.TypeAnnotation.TargetType.CONSTRUCTOR_INVOCATION_TYPE_ARGUMENT;
+import static java.lang.classfile.TypeAnnotation.TargetType.CONSTRUCTOR_INVOCATION_TYPE_ARGUMENT;
 
 public class ConstructorInvocationTypeArgument {
 

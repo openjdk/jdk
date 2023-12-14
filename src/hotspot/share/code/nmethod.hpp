@@ -196,7 +196,7 @@ class nmethod : public CompiledMethod {
   address _verified_entry_point;             // entry point without class check
   address _osr_entry_point;                  // entry point for on stack replacement
 
-  nmethod* _unlinked_next;
+  bool _is_unlinked;
 
   // Shared fields for all nmethod's
   int _entry_bci;      // != InvocationEntryBci if this nmethod is an on-stack replacement method
@@ -441,8 +441,8 @@ class nmethod : public CompiledMethod {
   virtual bool is_unloading();
   virtual void do_unloading(bool unloading_occurred);
 
-  nmethod* unlinked_next() const                  { return _unlinked_next; }
-  void set_unlinked_next(nmethod* next)           { _unlinked_next = next; }
+  bool is_unlinked() const                        { return _is_unlinked; }
+  void set_is_unlinked()                          { assert(!_is_unlinked, "already unlinked"); _is_unlinked = true; }
 
 #if INCLUDE_RTM_OPT
   // rtm state accessing and manipulating
@@ -522,7 +522,7 @@ public:
   void unlink();
 
   // Deallocate this nmethod - called by the GC
-  void flush();
+  void purge(bool free_code_cache_data = true);
 
   // See comment at definition of _last_seen_on_stack
   void mark_as_maybe_on_stack();

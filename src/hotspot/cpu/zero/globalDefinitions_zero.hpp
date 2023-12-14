@@ -30,6 +30,8 @@
 #define SUPPORTS_NATIVE_CX8
 #endif
 
+#define DEFAULT_CACHE_LINE_SIZE 64
+
 #define SUPPORT_MONITOR_COUNT
 
 #include <ffi.h>
