@@ -563,7 +563,7 @@ static void adjust_check(IfProjNode* proj, Node* range, Node* index,
   // See if no need to adjust the existing check
   if (new_cmp == cmp) return;
   // Else, adjust existing check
-  Node *new_bol = gvn->transform( new BoolNode(new_cmp, bol->as_Bool()->_test._test));
+  Node* new_bol = gvn->transform(new BoolNode(new_cmp, bol->as_Bool()->_test._test));
   igvn->rehash_node_delayed(iff);
   iff->set_req_X(1, new_bol, igvn);
   // Loads and range check Cast nodes that are control dependent on this range check now also depend on a dominating
