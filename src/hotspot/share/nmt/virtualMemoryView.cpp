@@ -739,9 +739,9 @@ VirtualMemoryView::overlap_of(TrackedOffsetRange to_split, Range to_remove,
 
 
 void VirtualMemoryView::merge_thread_stacks(GrowableArrayCHeap<VirtualMemoryView::Range, mtNMT>& ranges) {
-  GrowableArrayCHeap<Range, mtNMT> merged_ranges{32};
+  GrowableArrayCHeap<VirtualMemoryView::Range, mtNMT> merged_ranges{32};
   auto rlen = ranges.length();
-  if (rlen == 0) return merged_ranges;
+  if (rlen == 0) return;
   int j = 0;
   merged_ranges.push(ranges.at(j));
   for (int i = 1; i < rlen; i++) {
@@ -755,7 +755,7 @@ void VirtualMemoryView::merge_thread_stacks(GrowableArrayCHeap<VirtualMemoryView
       merged_ranges.push(potential_range);
     }
   }
-  ranges.swap(merged_ranges);
+  ranges.swap(&merged_ranges);
 }
 address VirtualMemoryView::thread_stack_uncommitted_bottom(TrackedRange& rng, RegionStorage& committed_ranges) {
   address bottom = rng.start;
