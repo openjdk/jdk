@@ -4008,16 +4008,16 @@ JVM_ENTRY(void, JVM_VirtualThreadHideFrames(JNIEnv* env, jobject vthread, jboole
 #endif
 JVM_END
 
-// Notification from VirtualThread about entering/exiting sync critical section.
+// Notification from VirtualThread about disabling JVMTI Suspend in a sync critical section.
 // Needed to avoid deadlocks with JVMTI suspend mechanism.
-JVM_ENTRY(void, JVM_VirtualThreadCriticalLock(JNIEnv* env, jobject vthread, jboolean enter))
+JVM_ENTRY(void, JVM_VirtualThreadDisableSuspend(JNIEnv* env, jobject vthread, jboolean enter))
 #if INCLUDE_JVMTI
   if (!DoJVMTIVirtualThreadTransitions) {
     assert(!JvmtiExport::can_support_virtual_threads(), "sanity check");
     return;
   }
-  assert(thread->is_in_critical_section() != (bool)enter, "sanity check");
-  thread->toggle_is_in_critical_section();
+  assert(thread->is_disable_suspend() != (bool)enter, "recursive disable suspend is not allowed");
+  thread->toggle_is_disable_suspend();
 #else
   fatal("Should only be called with JVMTI enabled");
 #endif

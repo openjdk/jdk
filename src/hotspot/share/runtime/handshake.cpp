@@ -487,8 +487,8 @@ HandshakeOperation* HandshakeState::get_op_for_self(bool allow_suspend, bool che
   assert(_handshakee == Thread::current(), "Must be called by self");
   assert(_lock.owned_by_self(), "Lock must be held");
   assert(allow_suspend || !check_async_exception, "invalid case");
-  if (allow_suspend && _handshakee->is_in_critical_section()) {
-    // avoid dealocks between VT critical sections and JVMTI suspend mechanism
+  if (allow_suspend && _handshakee->is_disable_suspend()) {
+    // filter out suspend operations while JavaThread is in disable_suspend mode
     allow_suspend = false;
   }
   if (!allow_suspend) {

@@ -22,7 +22,16 @@
  */
 
 /**
- * @test
+ * @test id=default
+ * @summary Do not suspend virtual threads in a critical section.
+ * @bug 8311218
+ * @requires vm.continuations
+ * @library /testlibrary
+ * @run main/othervm SuspendWithInterruptLock
+ */
+
+/**
+ * @test id=xint
  * @summary Do not suspend virtual threads in a critical section.
  * @bug 8311218
  * @requires vm.continuations
@@ -33,7 +42,7 @@
 import jvmti.JVMTIUtils;
 
 public class SuspendWithInterruptLock {
-    static boolean done;
+    static volatile boolean done;
 
     public static void main(String[] args) throws Exception {
         Thread yielder = Thread.ofVirtual().name("yielder").start(() -> yielder());
