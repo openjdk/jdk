@@ -1,7 +1,6 @@
 /*
  * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, 2023 SAP SE. All rights reserved.
- * Copyright (c) 2023 Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,11 +28,9 @@
 #include "memory/metaspace/commitLimiter.hpp"
 #include "memory/metaspace/counters.hpp"
 #include "memory/metaspace/internalStats.hpp"
-#include "memory/metaspace/freeBlocks.hpp"
 #include "memory/metaspace/metablock.hpp"
 #include "memory/metaspace/metaspaceArena.hpp"
 #include "memory/metaspace/metaspaceArenaGrowthPolicy.hpp"
-#include "memory/metaspace/metachunkList.hpp"
 #include "memory/metaspace/metaspaceCommon.hpp"
 #include "memory/metaspace/metaspaceSettings.hpp"
 #include "memory/metaspace/metaspaceStatistics.hpp"
@@ -46,52 +43,77 @@
 #include "metaspaceGtestContexts.hpp"
 #include "metaspaceGtestRangeHelpers.hpp"
 
+using metaspace::AllocationAlignmentByteSize;
+using metaspace::AllocationAlignmentWordSize;
+using metaspace::ArenaGrowthPolicy;
+using metaspace::CommitLimiter;
+using metaspace::InternalStats;
+using metaspace::MemRangeCounter;
+using metaspace::MetaBlock;
+using metaspace::MetaspaceArena;
+using metaspace::SizeAtomicCounter;
+using metaspace::Settings;
+using metaspace::ArenaStats;
+
 #define HANDLE_FAILURE \
   if (testing::Test::HasFailure()) { \
     return; \
   }
 
-namespace metaspace {
-
-class MetaspaceArenaTestFriend {
-  const MetaspaceArena* const _arena;
+class MetaspaceArenaTestFixture : public testing::Test {
+  MetaspaceGtestContext _context;
+  int _num_arenas_created;
 public:
-  MetaspaceArenaTestFriend(const MetaspaceArena* arena) : _arena(arena) {}
-  const MetachunkList& chunks() const { return _arena->_chunks; }
-  const FreeBlocks* fbl() const { return _arena->_fbl; }
+  MetaspaceArenaTestFixture(size_t commit_limit) : _context(commit_limit), _num_arenas_created(0) {}
+  MetaspaceGtestContext& context() { return _context; }
+  int num_arenas_created() const { return _num_arenas_created; }
+  MetaspaceArena* create_arena(size_t allocation_alignment_words, const ArenaGrowthPolicy* growth_policy) {
+    _num_arenas_created ++;
+    MetaspaceArena* a = new MetaspaceArena(_context.context(), growth_policy, allocation_alignment_words, "Gtest arena");
+    DEBUG_ONLY(a->verify());
+    return a;
+  }
 };
+
+template <size_t commit_limit>
+struct MetaspaceArenaTestFixtureX : public MetaspaceArenaTestFixture {
+  MetaspaceArenaTestFixtureX() : MetaspaceArenaTestFixture(commit_limit) {}
+};
+
+typedef MetaspaceArenaTestFixtureX<0> MetaspaceArenaTestFixtureNoLimit;
+typedef MetaspaceArenaTestFixtureX<256 * K> MetaspaceArenaTestFixture256K;
 
 class MetaspaceArenaTestHelper {
 
-  MetaspaceGtestContext& _context;
-  const ArenaGrowthPolicy* const _growth_policy;
+  MetaspaceArenaTestFixture& _theTest;
 
+  const ArenaGrowthPolicy* _growth_policy;
   MetaspaceArena* _arena;
 
 public:
 
   // Create a helper; growth policy is directly specified
-  MetaspaceArenaTestHelper(MetaspaceGtestContext& helper, const ArenaGrowthPolicy* growth_policy,
+  MetaspaceArenaTestHelper(MetaspaceArenaTestFixture& theTest,
+                           const ArenaGrowthPolicy* growth_policy,
                            size_t allocation_alignment_words = Metaspace::min_allocation_alignment) :
-    _context(helper), _growth_policy(growth_policy), _arena(nullptr)
-  {
-    _arena = new MetaspaceArena(_context.context(), _growth_policy, allocation_alignment_words, "gtest-MetaspaceArena");
-    DEBUG_ONLY(_arena->verify());
-    _context.inc_num_arenas_created();
-  }
-
+    _theTest(theTest), _growth_policy(growth_policy), _arena(theTest.create_arena(allocation_alignment_words, growth_policy))
+  {}
 
   // Create a helper; growth policy for arena is determined by the given spacetype|class tupel
-  MetaspaceArenaTestHelper(MetaspaceGtestContext& helper,
+  MetaspaceArenaTestHelper(MetaspaceArenaTestFixture& theTest,
                            Metaspace::MetaspaceType space_type, bool is_class,
                            size_t allocation_alignment_words = Metaspace::min_allocation_alignment) :
-    MetaspaceArenaTestHelper(helper, ArenaGrowthPolicy::policy_for_space_type(space_type, is_class), allocation_alignment_words)
+    MetaspaceArenaTestHelper(theTest, ArenaGrowthPolicy::policy_for_space_type(space_type, is_class), allocation_alignment_words)
   {}
 
   ~MetaspaceArenaTestHelper() {
     delete_arena_with_tests();
   }
 
+  MetaspaceGtestContext& context()             { return _theTest.context(); }
+  const MetaspaceGtestContext& context() const { return _theTest.context(); }
+
+  const CommitLimiter& limiter() const { return context().commit_limiter(); }
   MetaspaceArena* arena() const { return _arena; }
 
   // Note: all test functions return void due to gtests limitation that we cannot use ASSERT
@@ -99,19 +121,14 @@ public:
 
   void delete_arena_with_tests() {
     if (_arena != NULL) {
-      size_t used_words_before = _context.used_words();
-      size_t committed_words_before = _context.committed_words();
+      size_t used_words_before = context().used_words();
+      size_t committed_words_before = limiter().committed_words();
       DEBUG_ONLY(_arena->verify());
       delete _arena;
       _arena = NULL;
-      size_t used_words_after = _context.used_words();
-      size_t committed_words_after = _context.committed_words();
-      assert(_context.num_arenas_created() >= 1, "Sanity");
-      if (_context.num_arenas_created() == 1) {
-        ASSERT_0(used_words_after);
-      } else {
-        ASSERT_LE(used_words_after, used_words_before);
-      }
+      size_t used_words_after = context().used_words();
+      size_t committed_words_after = limiter().committed_words();
+      ASSERT_0(used_words_after);
       ASSERT_LE(committed_words_after, committed_words_before);
     }
   }
@@ -122,23 +139,24 @@ public:
     EXPECT_GE(arena_committed, arena_used);
     EXPECT_GE(arena_reserved, arena_committed);
 
-    size_t context_used = _context.used_words();
-    size_t context_committed = _context.committed_words();
-    size_t context_reserved = _context.reserved_words();
+    size_t context_used = context().used_words();
+    size_t context_committed = context().committed_words();
+    size_t context_reserved = context().reserved_words();
     EXPECT_GE(context_committed, context_used);
     EXPECT_GE(context_reserved, context_committed);
 
-    // If only one arena uses the context, usage numbers must match.
-    if (_context.num_arenas_created() == 1) {
+    if (_theTest.num_arenas_created() == 1) {
+      // If only one arena is feeding from the context, numbers must match
       EXPECT_EQ(context_used, arena_used);
+      EXPECT_EQ(context_committed, arena_committed);
+      EXPECT_EQ(context_reserved, arena_reserved);
     } else {
-      assert(_context.num_arenas_created() > 1, "Sanity");
+      // Multiple arenas feed here; numbers may be larger
+      assert(_theTest.num_arenas_created() > 1, "Sanity");
       EXPECT_GE(context_used, arena_used);
+      EXPECT_GE(context_committed, arena_committed);
+      EXPECT_GE(context_reserved, arena_reserved);
     }
-
-    // commit, reserve numbers don't have to match since free chunks may exist
-    EXPECT_GE(context_committed, arena_committed);
-    EXPECT_GE(context_reserved, arena_reserved);
 
     if (p_used) {
       *p_used = arena_used;
@@ -187,7 +205,7 @@ public:
     size_t used = 0, committed = 0, capacity = 0;
     usage_numbers_with_test(&used, &committed, &capacity);
 
-    size_t possible_expansion = _context.commit_limiter().possible_expansion_words();
+    size_t possible_expansion = limiter().possible_expansion_words();
 
     result = _arena->allocate(word_size, wastage);
 
@@ -246,13 +264,9 @@ public:
     return stats;
   }
 
-  MetaspaceArenaTestFriend internal_access() const {
-    return MetaspaceArenaTestFriend (_arena);
-  }
-
   // Convenience method to return number of chunks in arena (including current chunk)
   int get_number_of_chunks() const {
-    return internal_access().chunks().count();
+    return get_arena_statistics().totals()._num;
   }
 
 };
@@ -562,9 +576,9 @@ static void test_controlled_growth(Metaspace::MetaspaceType type, bool is_class,
   // have different initial capacities.
 
   MetaspaceGtestContext context;
-  MetaspaceArenaTestHelper smhelper(context, type, is_class);
+  MetaspaceArenaTestHelper smhelper(context, type, is_class, "Grower");
 
-  MetaspaceArenaTestHelper smhelper_harrasser(context, Metaspace::ReflectionMetaspaceType, true);
+  MetaspaceArenaTestHelper smhelper_harrasser(context, Metaspace::ReflectionMetaspaceType, true, "Harasser");
 
   size_t used = 0, committed = 0, capacity = 0;
   const size_t alloc_words = 16;
@@ -675,10 +689,6 @@ static void test_controlled_growth(Metaspace::MetaspaceType type, bool is_class,
     capacity = capacity2;
 
   }
-
-  // No FBL should exist, we did not deallocate
-  ASSERT_EQ(smhelper.internal_access().fbl(), (FreeBlocks*)nullptr);
-  ASSERT_EQ(smhelper_harrasser.internal_access().fbl(), (FreeBlocks*)nullptr);
 
   // After all this work, we should see an increase in number of chunk-in-place-enlargements
   //  (this especially is vulnerable to regression: the decisions of when to do in-place-enlargements are somewhat
@@ -826,53 +836,53 @@ TEST_VM(metaspace, MetaspaceArena_test_repeatedly_allocate_and_deallocate_nontop
   test_repeatedly_allocate_and_deallocate(false);
 }
 
-static void test_random_aligned_allocation(size_t arena_alignment_words, SizeRange range) {
-  // We let the arena use 4K chunks, unless the alloc size is larger.
-  chunklevel_t level = CHUNK_LEVEL_4K;
+static void test_aligned_allocation(size_t arena_alignment_words, chunklevel_t lvl, size_t allocation_word_size) {
+  chunklevel_t level = lvl;
   const ArenaGrowthPolicy policy (&level, 1);
   const size_t chunk_word_size = word_size_for_level(level);
 
+  if (allocation_word_size > chunk_word_size) {
+    return;
+  }
+
   size_t expected_used = 0;
 
+  LOG("Chunk word size: %zu, alignment: %zu, alloc size: %zu", chunk_word_size, arena_alignment_words, allocation_word_size);
+
   MetaspaceGtestContext context;
-  MetaspaceArenaTestHelper helper(context, &policy, arena_alignment_words);
+  MetaspaceArenaTestHelper helper(context, arena_alignment_words, &policy);
 
-  size_t last_alloc_size = 0;
-  bool first_allocation = true;
+  // Allocate as much as needed to have 2 chunk turnovers
+  const size_t aligned_allocation_word_size = align_up(allocation_word_size, arena_alignment_words);
+  const int num_allocations_per_chunk = chunk_word_size / aligned_allocation_word_size;
+  assert(num_allocations_per_chunk > 0, "Sanity");
+  const int num_allocations_total = num_allocations_per_chunk * 2 + 1;
 
-  while (expected_used < (80 * M)) {
-
-    const int chunks_before = helper.get_number_of_chunks();
+  for (int i = 0; i < num_allocations_total; i++) {
 
     MetaBlock result, wastage;
-    size_t alloc_words = range.random_value();
-    NOT_LP64(alloc_words = align_up(alloc_words, Metaspace::min_allocation_alignment));
-    helper.allocate_from_arena_with_tests(alloc_words, result, wastage);
+    helper.allocate_from_arena_with_tests(allocation_word_size, result, wastage);
 
     ASSERT_TRUE(result.is_nonempty());
-    ASSERT_TRUE(result.is_aligned_base(arena_alignment_words));
-    ASSERT_EQ(result.word_size(), alloc_words);
+    ASSERT_TRUE(is_aligned(result.base(), arena_alignment_words * BytesPerWord));
+    ASSERT_EQ(result.word_size(), allocation_word_size);
 
-    expected_used += alloc_words + wastage.word_size();
-    const int chunks_now = helper.get_number_of_chunks();
-    ASSERT_GE(chunks_now, chunks_before);
-    ASSERT_LE(chunks_now, chunks_before + 1);
+    expected_used += allocation_word_size + wastage.word_size();
+    size_t used, committed, reserved;
+    helper.usage_numbers_with_test(&used, &committed, &reserved);
+    ASSERT_EQ(used, expected_used);
 
-    // Estimate wastage:
-    // Guessing at wastage is somewhat simple since we don't expect to ever use the fbl (we
-    // don't deallocate). Therefore, wastage can only be caused by alignment gap or by
-    // salvaging an old chunk before a new chunk is added.
-    const bool expect_alignment_gap = !is_aligned(last_alloc_size, arena_alignment_words);
-    const bool new_chunk_added = chunks_now > chunks_before;
+    const bool first_allocation = (i == 0);
+    const bool chunk_turnover = !first_allocation && ((i % num_allocations_per_chunk) == 0);
 
     if (first_allocation) {
       // expect no wastage if its the first allocation in the arena
       ASSERT_TRUE(wastage.is_empty());
-    } else {
-      if (expect_alignment_gap) {
-        // expect wastage if the alignment requires it
-        ASSERT_TRUE(wastage.is_nonempty());
-      }
+    }
+
+    if (!first_allocation && (aligned_allocation_word_size > allocation_word_size)) {
+      // expect wastage if the alignment requires it
+      ASSERT_FALSE(wastage.is_empty());
     }
 
     if (wastage.is_nonempty()) {
@@ -880,9 +890,9 @@ static void test_random_aligned_allocation(size_t arena_alignment_words, SizeRan
       // for wastage from the fbl, which could have any size; however, in this test we don't deallocate,
       // so we don't expect wastage from the fbl.
       if (wastage.is_aligned_base(arena_alignment_words)) {
-        ASSERT_LT(wastage.word_size(), alloc_words);
+        ASSERT_LT(wastage.word_size(), allocation_word_size);
       }
-      if (new_chunk_added) {
+      if (chunk_turnover) {
         // chunk turnover: no more wastage than size of a commit granule, since we salvage the
         // committed remainder of the old chunk.
         ASSERT_LT(wastage.word_size(), Settings::commit_granule_words());
@@ -891,54 +901,32 @@ static void test_random_aligned_allocation(size_t arena_alignment_words, SizeRan
         ASSERT_LT(wastage.word_size(), arena_alignment_words);
       }
     }
-
-    // Check stats too
-    size_t used, committed, reserved;
-    helper.usage_numbers_with_test(&used, &committed, &reserved);
-    ASSERT_EQ(used, expected_used);
-
-    // No FBL should exist, we did not deallocate
-    ASSERT_EQ(helper.internal_access().fbl(), (FreeBlocks*)nullptr);
-
     HANDLE_FAILURE
-
-    last_alloc_size = alloc_words;
-    first_allocation = false;
   }
 }
 
-#define TEST_ARENA_WITH_ALIGNMENT_SMALL_RANGE(al)                              \
-TEST_VM(metaspace, MetaspaceArena_test_random_small_aligned_allocation_##al) { \
-	static const SizeRange range(Metaspace::min_allocation_word_size, K);        \
-	test_random_aligned_allocation(al, range);                                   \
+static void test_for_size(size_t allocation_word_size) {
+  for (chunklevel_t lvl = LOWEST_CHUNK_LEVEL; lvl <= HIGHEST_CHUNK_LEVEL; lvl ++) {
+    const size_t chunk_word_size = word_size_for_level(lvl);
+    for (size_t align = AllocationAlignmentWordSize; align <= MIN_CHUNK_WORD_SIZE; align *= 2) {
+      test_aligned_allocation(align, lvl, allocation_word_size);
+      HANDLE_FAILURE
+    }
+  }
 }
 
-TEST_ARENA_WITH_ALIGNMENT_SMALL_RANGE(1);
-TEST_ARENA_WITH_ALIGNMENT_SMALL_RANGE(2);
-TEST_ARENA_WITH_ALIGNMENT_SMALL_RANGE(4);
-TEST_ARENA_WITH_ALIGNMENT_SMALL_RANGE(8);
-TEST_ARENA_WITH_ALIGNMENT_SMALL_RANGE(16);
-TEST_ARENA_WITH_ALIGNMENT_SMALL_RANGE(32);
-TEST_ARENA_WITH_ALIGNMENT_SMALL_RANGE(64);
-TEST_ARENA_WITH_ALIGNMENT_SMALL_RANGE(128);
-TEST_ARENA_WITH_ALIGNMENT_SMALL_RANGE(MIN_CHUNK_WORD_SIZE);
-
-#define TEST_ARENA_WITH_ALIGNMENT_LARGE_RANGE(al)                              \
-TEST_VM(metaspace, MetaspaceArena_test_random_large_aligned_allocation_##al) { \
-  static const SizeRange range(Metaspace::max_allocation_word_size() / 2,      \
-                                   Metaspace::max_allocation_word_size());     \
-  test_random_aligned_allocation(al, range);                                   \
+TEST_VM(metaspace, MetaspaceArena_test_aligned_max_allocation_word_size) {
+  test_for_size(Metaspace::max_allocation_word_size());
 }
 
-TEST_ARENA_WITH_ALIGNMENT_LARGE_RANGE(1);
-TEST_ARENA_WITH_ALIGNMENT_LARGE_RANGE(2);
-TEST_ARENA_WITH_ALIGNMENT_LARGE_RANGE(4);
-TEST_ARENA_WITH_ALIGNMENT_LARGE_RANGE(8);
-TEST_ARENA_WITH_ALIGNMENT_LARGE_RANGE(16);
-TEST_ARENA_WITH_ALIGNMENT_LARGE_RANGE(32);
-TEST_ARENA_WITH_ALIGNMENT_LARGE_RANGE(64);
-TEST_ARENA_WITH_ALIGNMENT_LARGE_RANGE(128);
-TEST_ARENA_WITH_ALIGNMENT_LARGE_RANGE(MIN_CHUNK_WORD_SIZE);
+TEST_VM(metaspace, MetaspaceArena_test_aligned_min_allocation_word_size) {
+  test_for_size(Metaspace::min_allocation_word_size);
+}
 
-
-} // namespace metaspace
+TEST_VM(metaspace, MetaspaceArena_test_aligned_pow2_sizes) {
+  for (size_t s = Metaspace::min_allocation_word_size * 2;
+       s < Metaspace::max_allocation_word_size(); s *= 2) {
+    test_for_size(s);
+    HANDLE_FAILURE
+  }
+}

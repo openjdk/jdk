@@ -77,6 +77,7 @@ class Metachunk;
 //
 
 class MetaspaceArena : public CHeapObj<mtClass> {
+  friend class MetaspaceArenaTestFriend;
 
   // Please note that access to a metaspace arena may be shared
   // between threads and needs to be synchronized in CLMS.

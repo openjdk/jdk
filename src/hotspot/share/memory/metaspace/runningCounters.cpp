@@ -25,14 +25,11 @@
 
 #include "precompiled.hpp"
 #include "memory/metaspace/chunkManager.hpp"
-#include "memory/metaspace/counters.hpp"
+#include "memory/metaspace/metaspaceContext.hpp"
 #include "memory/metaspace/runningCounters.hpp"
 #include "memory/metaspace/virtualSpaceList.hpp"
 
 namespace metaspace {
-
-SizeAtomicCounter RunningCounters::_used_class_counter;
-SizeAtomicCounter RunningCounters::_used_nonclass_counter;
 
 // Return reserved size, in words, for Metaspace
 size_t RunningCounters::reserved_words() {
@@ -70,11 +67,12 @@ size_t RunningCounters::used_words() {
 }
 
 size_t RunningCounters::used_words_class() {
-  return _used_class_counter.get();
+  const MetaspaceContext* context = MetaspaceContext::context_class();
+  return context != nullptr ? context->used_words() : 0;
 }
 
 size_t RunningCounters::used_words_nonclass() {
-  return _used_nonclass_counter.get();
+  return MetaspaceContext::context_nonclass()->used_words();
 }
 
 // ---- free chunks -----

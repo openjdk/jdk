@@ -106,6 +106,9 @@ public:
   // null otherwise.
   static MetaspaceContext* context_class()        { return _class_space_context; }
 
+  size_t used_words() const;
+  size_t committed_words() const;
+  size_t reserved_words() const;
 };
 
 } // end namespace

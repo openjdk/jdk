@@ -75,7 +75,6 @@ MetaspaceTestContext::MetaspaceTestContext(const char* name, size_t commit_limit
   _commit_limit(commit_limit),
   _context(nullptr),
   _commit_limiter(commit_limit == 0 ? max_uintx : commit_limit), // commit_limit == 0 -> no limit
-  _used_words_counter(),
   _rs()
 {
   assert(is_aligned(reserve_limit, Metaspace::reserve_alignment_words()), "reserve_limit (" SIZE_FORMAT ") "
@@ -127,6 +126,19 @@ void MetaspaceTestContext::verify() const {
 
 void MetaspaceTestContext::print_on(outputStream* st) const {
   _context->print_on(st);
+}
+
+size_t MetaspaceTestContext::used_words() const {
+  return _context->used_words_counter()->get();
+}
+
+size_t MetaspaceTestContext::committed_words() const {
+  assert(_commit_limiter.committed_words() == _context->committed_words(), "Sanity");
+  return _context->committed_words();
+}
+
+size_t MetaspaceTestContext::reserved_words() const {
+  return _context->reserved_words();
 }
 
 } // namespace metaspace
