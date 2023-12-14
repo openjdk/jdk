@@ -738,7 +738,7 @@ VirtualMemoryView::overlap_of(TrackedOffsetRange to_split, Range to_remove,
 }
 
 
-void NewVirtualMemoryTracker::merge_thread_stacks(GrowableArrayCHeap<NewVirtualMemoryTracker::Range, mtNMT>& ranges) {
+void VirtualMemoryView::merge_thread_stacks(GrowableArrayCHeap<NewVirtualMemoryTracker::Range, mtNMT>& ranges) {
   GrowableArrayCHeap<Range, mtNMT> merged_ranges{32};
   auto rlen = ranges.length();
   if (rlen == 0) return merged_ranges;
@@ -757,7 +757,7 @@ void NewVirtualMemoryTracker::merge_thread_stacks(GrowableArrayCHeap<NewVirtualM
   }
   ranges.swap(merged_ranges);
 }
-address NewVirtualMemoryTracker::thread_stack_uncommitted_bottom(TrackedRange& rng, RegionStorage& committed_ranges) {
+address VirtualMemoryView::thread_stack_uncommitted_bottom(TrackedRange& rng, RegionStorage& committed_ranges) {
   address bottom = rng.start;
   address top = bottom + rng.size;
   for (int i = 0; i < committed_ranges.length(); i++) {
@@ -769,7 +769,7 @@ address NewVirtualMemoryTracker::thread_stack_uncommitted_bottom(TrackedRange& r
   }
   return bottom;
 }
-void NewVirtualMemoryTracker::snapshot_thread_stacks() {
+void VirtualMemoryView::snapshot_thread_stacks() {
   thread_stacks->clear();
   OffsetRegionStorage& reserved_ranges = reserved_regions->at(virt_mem.id);
   RegionStorage& committed_ranges = committed_regions->at(virt_mem.id);
