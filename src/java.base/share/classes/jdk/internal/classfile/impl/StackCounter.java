@@ -32,11 +32,11 @@ import java.util.BitSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.stream.Collectors;
-import jdk.internal.classfile.TypeKind;
-import jdk.internal.classfile.constantpool.ConstantDynamicEntry;
-import jdk.internal.classfile.constantpool.DynamicConstantPoolEntry;
-import jdk.internal.classfile.constantpool.MemberRefEntry;
-import static jdk.internal.classfile.Classfile.*;
+import java.lang.classfile.TypeKind;
+import java.lang.classfile.constantpool.ConstantDynamicEntry;
+import java.lang.classfile.constantpool.DynamicConstantPoolEntry;
+import java.lang.classfile.constantpool.MemberRefEntry;
+import static java.lang.classfile.ClassFile.*;
 
 
 public final class StackCounter {

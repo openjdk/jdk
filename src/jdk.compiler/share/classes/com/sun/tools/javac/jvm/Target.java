@@ -101,6 +101,9 @@ public enum Target {
 
     /** JDK 22. */
     JDK1_22("22", 66, 0),
+
+    /** JDK 23. */
+    JDK1_23("23", 67, 0),
     ; // Reduce code churn when appending new constants
 
     private static final Context.Key<Target> targetKey = new Context.Key<>();
