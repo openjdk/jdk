@@ -36,7 +36,7 @@ NativeCallStackStorage* VirtualMemoryView::_stack_storage = nullptr;
 bool VirtualMemoryView::_is_detailed_mode = false;
 VirtualMemoryView::PhysicalMemorySpace VirtualMemoryView::heap{};
 VirtualMemoryView::VirtualMemory* VirtualMemoryView::_virt_mem = nullptr;
-GrowableArrayCHeap<VirtualMemoryView::Range, mtNMT>* VirtualMemoryView::_thread_stacks = nullptr;
+GrowableArrayCHeap<VirtualMemoryView::Range, mtNMT>* VirtualMemoryView::thread_stacks = nullptr;
 
 void VirtualMemoryView::report_new(VirtualMemory& mem, outputStream* output, size_t scale) {
   ResourceMark rm;

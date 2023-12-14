@@ -198,7 +198,7 @@ private:
                                       TrackedOffsetRange* out, int* len);
 
   static VirtualMemory* _virt_mem;
-  static GrowableArrayCHeap<Range, mtNMT>* _thread_stacks; // Committed thread stacks are handled specially
+  static GrowableArrayCHeap<Range, mtNMT>* thread_stacks; // Committed thread stacks are handled specially
   static GrowableArrayCHeap<const char*, mtNMT>* _names; // Map memory space to name
 
   static NativeCallStackStorage* _stack_storage;
