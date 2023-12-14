@@ -25,7 +25,6 @@
 
 package java.io;
 
-import com.sun.io.IOStreams;
 import java.util.Arrays;
 import java.util.Objects;
 
@@ -644,7 +643,7 @@ public class BufferedInputStream extends FilterInputStream {
         if (getClass() == BufferedInputStream.class && markpos == -1) {
             int avail = count - pos;
             if (avail > 0) {
-                if (IOStreams.isTrusted(out)) {
+                if (isTrusted(out)) {
                     out.write(getBufIfOpen(), pos, count);
                 } else {
                     // Prevent poisoning and leaking of buf
@@ -661,6 +660,25 @@ public class BufferedInputStream extends FilterInputStream {
         } else {
             return super.transferTo(out);
         }
+    }
+
+    /**
+     * Returns true if this class satisfies two conditions:
+     * <ul>
+     * <li>the reference to {@code byte[]} is not kept within the class</li>
+     * <li>the argument of {@link OutputStream#write(byte[])}} and {@link OutputStream#write(byte[], int, int)}} is not modified within the methods</li>
+     * <li>the {@code byte[]} is not read outside of the given bounds</li>
+     * </ul>
+     *
+     * @return true if this class is trusted
+     * @see java.io.ByteArrayInputStream#transferTo(OutputStream)
+     * @see java.io.BufferedInputStream#implTransferTo(OutputStream)
+     */
+    private static boolean isTrusted(OutputStream os) {
+        var clazz = os.getClass();
+        return clazz == ByteArrayOutputStream.class
+                || clazz == FileOutputStream.class
+                || clazz == PipedOutputStream.class;
     }
 
 }

@@ -25,7 +25,6 @@
 
 package java.io;
 
-import com.sun.io.IOStreams;
 import java.util.Arrays;
 import java.util.Objects;
 
@@ -210,7 +209,10 @@ public class ByteArrayInputStream extends InputStream {
         if (len > 0) {
             // 'tmpbuf' is null if and only if 'out' is trusted
             byte[] tmpbuf;
-            if (IOStreams.isTrusted(out))
+            Class<?> outClass = out.getClass();
+            if (outClass == ByteArrayOutputStream.class ||
+                outClass == FileOutputStream.class ||
+                outClass == PipedOutputStream.class)
                 tmpbuf = null;
             else
                 tmpbuf = new byte[Integer.min(len, MAX_TRANSFER_SIZE)];
