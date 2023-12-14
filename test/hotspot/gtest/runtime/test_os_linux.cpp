@@ -366,7 +366,7 @@ TEST_VM(os_linux, pretouch_thp_concurrent) {
   bool useThp = UseTransparentHugePages;
   UseTransparentHugePages = true;
   char* heap = os::reserve_memory(1 * G, false, mtInternal);
-  EXPECT_NE(heap, (address)NULL);
+  EXPECT_NE(heap, (char*)NULL);
   EXPECT_TRUE(os::commit_memory(heap, 1 * G, false));
   PretouchMemoryRunnable runnable(heap, 1 * G);
   ConcurrentTestRunner testRunner(&runnable, os::active_processor_count(), 1000);
