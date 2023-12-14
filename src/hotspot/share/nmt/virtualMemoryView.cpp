@@ -38,7 +38,7 @@ VirtualMemoryView::PhysicalMemorySpace VirtualMemoryView::heap{};
 VirtualMemoryView::VirtualMemory* VirtualMemoryView::_virt_mem = nullptr;
 GrowableArrayCHeap<VirtualMemoryView::Range, mtNMT>* VirtualMemoryView::_thread_stacks = nullptr;
 
-void VirtualMemoryView::report_new(outputStream* output, size_t scale) {
+void VirtualMemoryView::report_new(VirtualMemory& mem, outputStream* output, size_t scale) {
   ResourceMark rm;
 
   const auto print_reserved_memory = [&](TrackedRange& reserved_range) {
