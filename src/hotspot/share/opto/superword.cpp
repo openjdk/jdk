@@ -3486,28 +3486,41 @@ void SuperWord::adjust_pre_loop_limit_to_align_main_loop_vectors() {
   VPointer align_to_ref_p(align_to_ref, phase(), lpt(), nullptr, false);
   assert(align_to_ref_p.valid(), "sanity");
 
-  // We want to align the address of align_to_ref to some alignment width (aw, power of 2):
+  // For the main-loop, we want the address of align_to_ref to be memory aligned
+  // with some alignment width (aw, a power of 2). When we enter the main-loop,
+  // we know that iv is equals to the pre-loop limit. If we adjust the pre-loop
+  // limit by executing adjust_pre_iter many extra iterations, we can change the
+  // alignment of the address.
   //
-  //   adr = base + offset + invar + scale * iv
+  //   adr = base + offset + invar + scale * iv                               (1)
   //
-  // The limit of the pre-loop needs to be adjusted.
+  // The limit of the pre-loop needs to be adjusted:
   //
-  //   old_limit:   current pre-loop limit
-  //   new_limit:   new pre-loop limit
-  //   diff_limits: difference between new_limit and old_limit
+  //   old_limit:       current pre-loop limit
+  //   new_limit:       new pre-loop limit
+  //   adjust_pre_iter: additional pre-loop iterations for alignment adjustment
   //
-  // We want to find diff_limits, such that:
+  // We want to find adjust_pre_iter, such that the address is aligned when entering
+  // the main-loop:
   //
-  //   iv = new_limit = old_limit + diff_limits   (exit when iv reaches the new limit)
-  //   adr % aw = 0          (adr is aligned aligned after pre-loop)
+  //   iv = new_limit = old_limit + adjust_pre_iter                           (2a, stride > 0)
+  //   iv = new_limit = old_limit - adjust_pre_iter                           (2b, stride < 0)
+  //   adr % aw = 0                                                           (3)
   //
-  // We can write:
+  // We define boi as:
   //
-  //   E = base + offset + invar
-  //   adr = E + scale * new_limit
-  //       = E + scale * old_limit + scale * diff_limits
+  //   boi = base + offset + invar                                            (4)
   //
-  //   (E + scale * old_limit + scale * diff_limits) % aw = 0
+  // And now we can simplify the address, using (1), (2), and (4):
+  //
+  //   adr = boi + scale * new_limit
+  //   adr = boi + scale * old_limit + scale * adjust_pre_iter                (5a, stride > 0)
+  //   adr = boi + scale * old_limit - scale * adjust_pre_iter                (5b, stride < 0)
+  //
+  // And hence we can restate (3) with (5), and solve the equation for adjust_pre_iter:
+  //
+  //   (boi + scale * old_limit + scale * adjust_pre_iter) % aw = 0           (6a, stride > 0)
+  //   (boi + scale * old_limit - scale * adjust_pre_iter) % aw = 0           (6b, stride < 0)
   //
   // In most cases, scale is the element size (elt_size), for example:
   //
@@ -3518,46 +3531,72 @@ void SuperWord::adjust_pre_loop_limit_to_align_main_loop_vectors() {
   // otherwise the address does not depend on iv, and the alignment cannot be
   // affected by adjusting the pre-loop limit.
   //
-  // Further, if abs(scale) >= aw, then diff_limits has no effect on alignment, and
+  // Further, if abs(scale) >= aw, then adjust_pre_iter has no effect on alignment, and
   // we are not able to affect the alignment at all. Hence, we require abs(scale) < aw.
   //
-  // Moreover, for alignment to be acheivabe, E must be a multiple of scale. We cannot
-  // check this at compile time, and do not bother to do it at runtime either. If it
-  // does not hold, we set a new limit, but it just does not ensure alignment.
+  // Moreover, for alignment to be acheivabe, boi must be a multiple of scale. If strict
+  // alignment is required (i.e. -XX:+AlignVector), this is guaranteed by the filtering
+  // done with the AlignmentSolver / AlignmentSolution. If strict alignment is not
+  // required, then alignment is still preferrable for performance, but not necessary.
+  // In many cases boi will be a multiple of scale, but if it is not, then the adjustment
+  // does not guarantee alignment, but the code is still correct.
   //
-  // In the following, we use:
+  // Hence, in what follows we assume that boi is a multiple of scale, and in fact all
+  // terms in (6) are multiples of scale. Therefore we divide all terms by scale:
   //
-  //   V = aw / abs(scale)            (power of 2)
-  //   e = E / abs(scale)
+  //   AW = aw / abs(scale)            (power of 2)                           (7)
+  //   BOI = boi / abs(scale)                                                 (8)
   //
-  // Case 1: scale > 0 && stride > 0 (i.e. diff_limits >= 0)
-  //   (e + old_limit + diff_limits) % V = 0
-  //   diff_limits = (V - (e + old_limit)) % V
-  //   new_limit = old_limit + (-e - old_limit) % V
+  // and restate (6), using (7) and (8), i.e. we divide (6) by abs(scale):
   //
-  // Case 2: scale < 0 && stride > 0 (i.e. diff_limits >= 0)
-  //   (e - old_limit - diff_limits) % V = 0
-  //   diff_limits = (e - old_limit) % V
-  //   new_limit = old_limit + (+e - old_limit) % V
+  //   (BOI + sign(scale) * old_limit + sign(scale) * adjust_pre_iter) % AW = 0  (9a, stride > 0)
+  //   (BOI + sign(scale) * old_limit - sign(scale) * adjust_pre_iter) % AW = 0  (9b, stride < 0)
   //
-  // Case 3: scale > 0 && stride < 0 (i.e. diff_limits <= 0)
-  //   (e + old_limit - abs(diff_limits)) % V = 0
-  //   abs(diff_limits) = (e + old_limit) % V
-  //   new_limit = old_limit - (+e + old_limit) % V
+  //   where: sign(scale) = scale / abs(scale) = (scale > 0 ? 1 : -1)
   //
-  // Case 4: scale < 0 && stride < 0 (i.e. diff_limits <= 0)
-  //   (e - old_limit + abs(diff_limits)) % V = 0
-  //   abs(diff_limits) = (old_limit - e) % V
-  //   new_limit = old_limit - (-e + old_limit) % V
+  // Note, (9) allows for periodic solutons of adjust_pre_iter, with periodicity AW.
+  // But we would like to spend as few iterations in the pre-loop as possible,
+  // hence we want the smallest adjust_pre_iter, and so:
   //
-  // We generalize this with the following formula:
-  //   new_limit = old_limit +- (pm_e +- old_limit) % V
+  //   0 <= adjust_pre_iter < AW                                              (10)
   //
-  //   pm_e = -+ E / abs(scale)
-  //        = pm_E / abs(scale)
+  // We solve (9) for adjust_pre_iter, in the following 4 cases:
   //
-  //   pm_E = -+ (base + offset + invar)
-  //        = -+ offset -+ base -+ invar
+  // Case A: scale > 0 && stride > 0 (i.e. adjust_pre_iter >= 0)
+  //   (BOI + old_limit + adjust_pre_iter) % AW = 0
+  //   adjust_pre_iter = (-BOI - old_limit) % AW                              (11a)
+  //
+  // Case B: scale < 0 && stride > 0 (i.e. adjust_pre_iter >= 0)
+  //   (BOI - old_limit - adjust_pre_iter) % AW = 0
+  //   adjust_pre_iter = (BOI - old_limit) % AW                               (11b)
+  //
+  // Case C: scale > 0 && stride < 0 (i.e. adjust_pre_iter <= 0)
+  //   (BOI + old_limit - adjust_pre_iter) % AW = 0
+  //   adjust_pre_iter = (BOI + old_limit) % AW                               (11c)
+  //
+  // Case D: scale < 0 && stride < 0 (i.e. adjust_pre_iter <= 0)
+  //   (BOI - old_limit + adjust_pre_iter) % AW = 0
+  //   adjust_pre_iter = (-BOI + old_limit) % AW                              (11d)
+  //
+  // We now generalize (11), using:
+  //
+  //   OP:   (stride         > 0) ? SUB   : ADD
+  //   XBOI: (stride * scale > 0) ? -BOI  : BOI
+  //
+  //   adjust_pre_iter = (XBOI OP old_limit) % AW                             (12)
+  //
+  // And we construct XBOI, where:
+  //
+  //   xboi = -boi = (-base - offset - invar)                                 (13a, stride * scale > 0)
+  //   xboi = +boi = (+base + offset + invar)                                 (13a, stride * scale < 0)
+  //
+  //   XBOI = -BOI
+  //       = -boi / abs(scale)
+  //       = xboi / abs(scale)                                                (14a, stride * scale > 0)
+  //
+  //   XBOI = BOI
+  //       = boi / abs(scale)
+  //       = xboi / abs(scale)                                                (14b, stride * scale < 0)
 
   // We chose an aw that is the maximal possible vector width for the type of
   // align_to_ref.
@@ -3605,19 +3644,21 @@ void SuperWord::adjust_pre_loop_limit_to_align_main_loop_vectors() {
          scale  != 0 && is_power_of_2(abs(scale))  &&
          abs(scale) < aw, "otherwise we cannot affect alignment with pre-loop");
 
-  const int V = aw / abs(scale);
+  const int AW = aw / abs(scale);
 
 #ifndef PRODUCT
   if (is_trace_align_vector()) {
-    tty->print_cr(" V:        %d", V);
+    tty->print_cr(" AW:        %d", AW);
   }
 #endif
 
-  // 1: Compute pm_E
-  const bool is_minus = scale * stride > 0;
+  // 1: Compute:
+  //    xboi = (-base - offset - invar)         (stride * scale > 0)
+  //    xboi = (+base + offset + invar)         (stride * scale < 0)
+  const bool is_sub = scale * stride > 0;
 
   // 1.1: offset
-  Node* pm_E = _igvn.intcon(is_minus ? -offset : offset);
+  Node* xboi = _igvn.intcon(is_sub ? -offset : offset);
 
   // 1.2: invar (if it exists)
   if (invar != nullptr) {
@@ -3628,13 +3669,13 @@ void SuperWord::adjust_pre_loop_limit_to_align_main_loop_vectors() {
       invar = new ConvL2INode(invar);
       _igvn.register_new_node_with_optimizer(invar);
     }
-    if (is_minus) {
-      pm_E = new SubINode(pm_E, invar);
+    if (is_sub) {
+      xboi = new SubINode(xboi, invar);
     } else {
-      pm_E = new AddINode(pm_E, invar);
+      xboi = new AddINode(xboi, invar);
     }
-    _igvn.register_new_node_with_optimizer(pm_E);
-    _phase->set_ctrl(pm_E, pre_ctrl);
+    _igvn.register_new_node_with_optimizer(xboi);
+    _phase->set_ctrl(xboi, pre_ctrl);
   }
 
   // 1.3: base (unless base is guaranteed aw aligned)
@@ -3648,43 +3689,51 @@ void SuperWord::adjust_pre_loop_limit_to_align_main_loop_vectors() {
     xbase  = new ConvL2INode(xbase);
     _igvn.register_new_node_with_optimizer(xbase);
 #endif
-    if (is_minus) {
-      pm_E = new SubINode(pm_E, xbase);
+    if (is_sub) {
+      xboi = new SubINode(xboi, xbase);
     } else {
-      pm_E = new AddINode(pm_E, xbase);
+      xboi = new AddINode(xboi, xbase);
     }
-    _igvn.register_new_node_with_optimizer(pm_E);
-    _phase->set_ctrl(pm_E, pre_ctrl);
+    _igvn.register_new_node_with_optimizer(xboi);
+    _phase->set_ctrl(xboi, pre_ctrl);
   }
 
-  // 2: compute pm_e by divide (shift) by abs(scale)
+  // 2: Compute: XBOI = xboi / abs(scale)
+  //    The division is executed as shift
   Node* log2_abs_scale = _igvn.intcon(exact_log2(abs(scale)));
-  Node* pm_e = new URShiftINode(pm_E, log2_abs_scale);
-  _igvn.register_new_node_with_optimizer(pm_e);
-  _phase->set_ctrl(pm_e, pre_ctrl);
+  Node* XBOI = new URShiftINode(xboi, log2_abs_scale);
+  _igvn.register_new_node_with_optimizer(XBOI);
+  _phase->set_ctrl(XBOI, pre_ctrl);
 
-  // 3: add / subtract old_limit
-  Node* pm_e_pm_old_limit = nullptr;
+  // 3: Compute: XBOI_OP_old_limit = XBOI OP old_limit
+  Node* XBOI_OP_old_limit = nullptr;
   if (stride > 0) {
-    pm_e_pm_old_limit = new SubINode(pm_e, old_limit);
+    XBOI_OP_old_limit = new SubINode(XBOI, old_limit);
   } else {
-    pm_e_pm_old_limit = new AddINode(pm_e, old_limit);
+    XBOI_OP_old_limit = new AddINode(XBOI, old_limit);
   }
-  _igvn.register_new_node_with_optimizer(pm_e_pm_old_limit);
-  _phase->set_ctrl(pm_e_pm_old_limit, pre_ctrl);
+  _igvn.register_new_node_with_optimizer(XBOI_OP_old_limit);
+  _phase->set_ctrl(XBOI_OP_old_limit, pre_ctrl);
 
-  // 4: modulo with V (mask with (V-1))
-  Node* mask_V = _igvn.intcon(V-1);
-  Node* pm_e_pm_old_limit_mod_V = new AndINode(pm_e_pm_old_limit, mask_V);
-  _igvn.register_new_node_with_optimizer(pm_e_pm_old_limit_mod_V);
-  _phase->set_ctrl(pm_e_pm_old_limit_mod_V, pre_ctrl);
+  // 4: Compute:
+  //    adjust_pre_iter = (XBOI OP old_limit) % AW
+  //                    = XBOI_OP_old_limit % AW
+  //                    = XBOI_OP_old_limit AND (AW - 1)
+  //    Since AW is a power of 2, the modulo operation can be replaced with
+  //    a bit mask operation.
+  Node* mask_AW = _igvn.intcon(AW-1);
+  Node* adjust_pre_iter = new AndINode(XBOI_OP_old_limit, mask_AW);
+  _igvn.register_new_node_with_optimizer(adjust_pre_iter);
+  _phase->set_ctrl(adjust_pre_iter, pre_ctrl);
 
-  // 5: compute new limit
+  // 5: Compute:
+  //    new_limit = old_limit + adjust_pre_iter     (stride > 0)
+  //    new_limit = old_limit - adjust_pre_iter     (stride < 0)
   Node* new_limit = nullptr;
   if (stride < 0) {
-    new_limit = new SubINode(old_limit, pm_e_pm_old_limit_mod_V);
+    new_limit = new SubINode(old_limit, adjust_pre_iter);
   } else {
-    new_limit = new AddINode(old_limit, pm_e_pm_old_limit_mod_V);
+    new_limit = new AddINode(old_limit, adjust_pre_iter);
   }
   _igvn.register_new_node_with_optimizer(new_limit);
   _phase->set_ctrl(new_limit, pre_ctrl);
