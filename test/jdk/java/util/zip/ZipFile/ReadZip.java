@@ -182,7 +182,7 @@ public class ReadZip {
             assertNotNull(ze, "read entry \"directory/\" failed");
             assertTrue(ze.isDirectory(), "read entry \"directory/\" failed");
             assertEquals("directory/", ze.getName());
-            
+
             try (InputStream is = zf.getInputStream(ze)) {
                 is.available();
             } catch (Exception x) {
