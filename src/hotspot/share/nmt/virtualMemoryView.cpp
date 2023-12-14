@@ -738,7 +738,7 @@ VirtualMemoryView::overlap_of(TrackedOffsetRange to_split, Range to_remove,
 }
 
 
-void VirtualMemoryView::merge_thread_stacks(GrowableArrayCHeap<NewVirtualMemoryTracker::Range, mtNMT>& ranges) {
+void VirtualMemoryView::merge_thread_stacks(GrowableArrayCHeap<VirtualMemoryView::Range, mtNMT>& ranges) {
   GrowableArrayCHeap<Range, mtNMT> merged_ranges{32};
   auto rlen = ranges.length();
   if (rlen == 0) return merged_ranges;
