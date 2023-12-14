@@ -742,9 +742,9 @@ final class VirtualThread extends BaseVirtualThread {
                     submitRunContinuation();
                 }
             } else if ((s == PINNED) || (s == TIMED_PINNED)) {
+                // unpark carrier thread when pinned
                 notifyJvmtiDisableSuspend(true);
                 try {
-                    // unpark carrier thread when pinned
                     synchronized (carrierThreadAccessLock()) {
                         Thread carrier = carrierThread;
                         if (carrier != null && ((s = state()) == PINNED || s == TIMED_PINNED)) {
@@ -913,9 +913,9 @@ final class VirtualThread extends BaseVirtualThread {
                 // runnable, not mounted
                 return Thread.State.RUNNABLE;
             case RUNNING:
+                // if mounted then return state of carrier thread
                 notifyJvmtiDisableSuspend(true);
                 try {
-                    // if mounted then return state of carrier thread
                     synchronized (carrierThreadAccessLock()) {
                         Thread carrierThread = this.carrierThread;
                         if (carrierThread != null) {
@@ -1038,9 +1038,9 @@ final class VirtualThread extends BaseVirtualThread {
         sb.append("]/");
         Thread carrier = carrierThread;
         if (carrier != null) {
+            // include the carrier thread state and name when mounted
             notifyJvmtiDisableSuspend(true);
             try {
-                // include the carrier thread state and name when mounted
                 synchronized (carrierThreadAccessLock()) {
                     carrier = carrierThread;
                     if (carrier != null) {
