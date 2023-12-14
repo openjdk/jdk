@@ -40,6 +40,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java.util.Map;
 import java.util.zip.ZipEntry;
+import java.util.zip.ZipException;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipOutputStream;
 
@@ -311,5 +312,37 @@ public class ReadZip {
                 assertEquals(0, in.available());
             }
         }
+    }
+
+    /**
+     * Verify that reading an InputStream from a closed ZipFile
+     * throws IOException as expected and does not crash the VM.
+     * See bugs: 4528128 6846616
+     *
+     * @throws IOException if an unexpected IOException occurs
+     */
+    @Test
+    public void readAfterClose() throws IOException {
+        zip = createZip("read-after-close.zip");
+        InputStream in;
+        try (ZipFile zf = new ZipFile(zip.toFile())) {
+            ZipEntry zent = zf.getEntry("file.txt");
+            in = zf.getInputStream(zent);
+        }
+
+        // zf is closed at this point
+        assertThrows(IOException.class,  () -> {
+            in.read();
+        });
+        assertThrows(IOException.class,  () -> {
+            in.read(new byte[10]);
+        });
+        assertThrows(IOException.class,  () -> {
+            byte[] buf = new byte[10];
+            in.read(buf, 0, buf.length);
+        });
+        assertThrows(IOException.class,  () -> {
+            in.readAllBytes();
+        });
     }
 }
