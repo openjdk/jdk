@@ -40,6 +40,7 @@ final class Batch {
     private final List<PeriodicTask> tasks = new ArrayList<>();
     private final long period;
     private long delta;
+    private boolean orphaned;
 
     public Batch(long period) {
         this.period = period;
@@ -70,7 +71,15 @@ final class Batch {
         tasks.clear();
     }
 
-    public boolean isEmpty() {
-        return tasks.isEmpty();
+    public boolean mustRemove() {
+        boolean empty = tasks.isEmpty();
+        if (empty) {
+            orphaned = true;
+        }
+        return empty;
+    }
+
+    public boolean isOrphaned() {
+        return orphaned;
     }
 }

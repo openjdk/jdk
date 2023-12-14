@@ -65,14 +65,14 @@ final class BatchManager {
             if (task.isSchedulable()) {
                 Batch batch = task.getBatch();
                 // If new task, or period has changed, find new batch
-                if (batch == null) {
+                if (batch == null || batch.isOrphaned()) {
                     batch = findBatch(task.getPeriod());
                 }
                 batch.add(task);
             }
         }
         // Remove unused batches
-        batches.removeIf(Batch::isEmpty);
+        batches.removeIf(Batch::mustRemove);
     }
 
     private List<PeriodicTask> activeSortedTasks(List<PeriodicTask> unsorted) {
