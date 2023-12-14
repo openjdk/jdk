@@ -351,10 +351,10 @@ TEST_VM(os_linux, reserve_memory_special_concurrent) {
 }
 
 class PretouchMemoryRunnable : public TestRunnable {
-  address addr;
+  char* addr;
   size_t byte;
 public:
-  PretouchMemoryRunnable(address addr, size_t byte): addr(addr), byte(byte) {}
+  PretouchMemoryRunnable(char* addr, size_t byte): addr(addr), byte(byte) {}
 
   void runUnitTest() const {
     os::pretouch_memory(addr, addr + byte; os::vm_page_size());
@@ -365,7 +365,7 @@ TEST_VM(os_linux, pretouch_thp_concurrent) {
   // Explicitly enable thp to test cocurrent system calls.
   bool useThp = UseTransparentHugePages;
   UseTransparentHugePages = true;
-  address heap = os::reserve_memory(1 * G, false, mtInternal);
+  char* heap = os::reserve_memory(1 * G, false, mtInternal);
   EXPECT_NE(heap, (address)NULL);
   EXPECT_TRUE(os::commit_memory(heap, 1 * G, false));
   PretouchMemoryRunnable runnable(heap, 1 * G);
