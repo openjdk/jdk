@@ -365,7 +365,7 @@ TEST_VM(os_linux, pretouch_thp_concurrent) {
   // Explicitly enable thp to test cocurrent system calls.
   bool useThp = UseTransparentHugePages;
   UseTransparentHugePages = true;
-  address heap = os::reserve_memory(1 * G);
+  address heap = os::reserve_memory(1 * G, false, mtInternal);
   EXPECT_NE(heap, (address)NULL);
   EXPECT_TRUE(os::commit_memory(heap, 1 * G, false));
   PretouchMemoryRunnable runnable(heap, 1 * G);
