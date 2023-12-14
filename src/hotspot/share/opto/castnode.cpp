@@ -325,7 +325,7 @@ void CastIINode::dump_spec(outputStream* st) const {
 
 CastIINode* CastIINode::pin_for_array_access() const {
   if (has_range_check()) {
-    return new CastIINode(in(0), in(1), bottom_type(), ConstraintCastNode::StrongDependency, has_range_check());
+    return new CastIINode(in(0), in(1), bottom_type(), StrongDependency, has_range_check());
   }
   return nullptr;
 }
