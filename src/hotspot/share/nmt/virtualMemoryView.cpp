@@ -36,6 +36,7 @@ NativeCallStackStorage* VirtualMemoryView::_stack_storage = nullptr;
 bool VirtualMemoryView::_is_detailed_mode = false;
 VirtualMemoryView::PhysicalMemorySpace VirtualMemoryView::heap{};
 VirtualMemoryView::VirtualMemory* VirtualMemoryView::_virt_mem = nullptr;
+GrowableArrayCHeap<VirtualMemoryView::Range, mtNMT>* VirtualMemoryView::_thread_stacks = nullptr;
 
 void VirtualMemoryView::report_new(outputStream* output, size_t scale) {
   ResourceMark rm;
@@ -721,4 +722,67 @@ VirtualMemoryView::overlap_of(TrackedOffsetRange to_split, Range to_remove,
   // No overlap at all
   *len = 0;
   return OverlappingResult::NoOverlap;
+}
+
+
+void NewVirtualMemoryTracker::merge_thread_stacks(GrowableArrayCHeap<NewVirtualMemoryTracker::Range, mtNMT>& ranges) {
+  GrowableArrayCHeap<Range, mtNMT> merged_ranges{32};
+  auto rlen = ranges.length();
+  if (rlen == 0) return merged_ranges;
+  int j = 0;
+  merged_ranges.push(ranges.at(j));
+  for (int i = 1; i < rlen; i++) {
+    Range& merging_range = merged_ranges.at(j);
+    Range& potential_range = ranges.at(i);
+    if (merging_range.end() >= potential_range.start) { // There's overlap, known because of pre-condition
+      // Merge it
+      merging_range.size = potential_range.end() - merging_range.start;
+    } else {
+      j++;
+      merged_ranges.push(potential_range);
+    }
+  }
+  ranges.swap(merged_ranges);
+}
+address NewVirtualMemoryTracker::thread_stack_uncommitted_bottom(TrackedRange& rng, RegionStorage& committed_ranges) {
+  address bottom = rng.start;
+  address top = bottom + rng.size;
+  for (int i = 0; i < committed_ranges.length(); i++) {
+    TrackedRange& crng = committed_ranges.at(i);
+    address committed_top = crng.start + crng.size;
+    if (crng.start >= bottom && committed_top < top) {
+      bottom = committed_top;
+    }
+  }
+  return bottom;
+}
+void NewVirtualMemoryTracker::snapshot_thread_stacks() {
+  thread_stacks->clear();
+  OffsetRegionStorage& reserved_ranges = reserved_regions->at(virt_mem.id);
+  RegionStorage& committed_ranges = committed_regions->at(virt_mem.id);
+  for (int i = 0; i < reserved_ranges.length(); i++) {
+    TrackedOffsetRange& rng = reserved_ranges.at(i);
+    if (rng.flag == mtThreadStack) {
+      address stack_bottom = thread_stack_uncommitted_bottom(rng, committed_ranges);
+      address committed_start;
+      size_t committed_size;
+      size_t stack_size = rng.start + rng.size - stack_bottom;
+      // Align the size to work with full pages (Alpine and AIX stack top is not page aligned)
+      size_t aligned_stack_size = align_up(stack_size, os::vm_page_size());
+
+      NativeCallStack ncs; // empty stack
+      RegionIterator itr(stack_bottom, aligned_stack_size);
+      while (itr.next_committed(committed_start, committed_size)) {
+        assert(committed_start != nullptr, "Should not be null");
+        assert(committed_size > 0, "Should not be 0");
+        if (stack_bottom + stack_size < committed_start + committed_size) {
+          committed_size = stack_bottom + stack_size - committed_start;
+        }
+      }
+      thread_stacks->push(Range{committed_start, committed_size});
+    }
+  }
+
+  sort_regions(*thread_stacks);
+  merge_thread_stacks(*thread_stacks);
 }

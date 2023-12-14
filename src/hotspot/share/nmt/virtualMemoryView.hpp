@@ -151,6 +151,11 @@ public:
   };
 
 private:
+  // Thread stack tracking
+  address thread_stack_uncommitted_bottom(TrackedRange& rng, RegionStorage& committed_ranges);
+  void merge_thread_stacks(GrowableArrayCHeap<Range, mtNMT>& ranges);
+  void snapshot_thread_stacks();
+private:
   // Utilities
   static bool adjacent(Range a, Range b);
   static bool after(Range a, Range b); // a < b
@@ -190,6 +195,7 @@ private:
                                       TrackedOffsetRange* out, int* len);
 
   static VirtualMemory* _virt_mem;
+  static GrowableArrayCHeap<Range, mtNMT>* _thread_stacks; // Committed thread stacks are handled specially
   static GrowableArrayCHeap<const char*, mtNMT>* _names; // Map memory space to name
 
   static NativeCallStackStorage* _stack_storage;
