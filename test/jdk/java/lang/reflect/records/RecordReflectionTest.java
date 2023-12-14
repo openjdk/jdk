@@ -136,6 +136,9 @@ public class RecordReflectionTest {
                         new Object[]{ List.of("1") },
                         new String[]{ "ls" },
                         new String[]{ "java.util.List<java.lang.String>"} },
+            /* R10 has exactly the same definition as R9 but the parameter of the compact constructor doesn't have
+             * the mandated flag, nevertheless we should be able to load the same generic information
+             */
             new Object[] { new R10(List.of("1")),
                         1,
                         new Object[]{ List.of("1") },
