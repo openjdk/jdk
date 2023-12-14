@@ -771,8 +771,8 @@ address VirtualMemoryView::thread_stack_uncommitted_bottom(TrackedRange& rng, Re
 }
 void VirtualMemoryView::snapshot_thread_stacks() {
   thread_stacks->clear();
-  OffsetRegionStorage& reserved_ranges = reserved_regions->at(virt_mem.id);
-  RegionStorage& committed_ranges = committed_regions->at(virt_mem.id);
+  OffsetRegionStorage& reserved_ranges = _virt_mem->reserved_regions.at(virt_mem.id);
+  RegionStorage& committed_ranges = _virt_mem->committed_regions.at(virt_mem.id);
   for (int i = 0; i < reserved_ranges.length(); i++) {
     TrackedOffsetRange& rng = reserved_ranges.at(i);
     if (rng.flag == mtThreadStack) {
