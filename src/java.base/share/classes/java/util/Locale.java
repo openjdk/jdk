@@ -261,7 +261,7 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  *
  * <h3><a id="default_locale">Default Locale</a></h3>
  *
- * <p>The default Locale is mainly provided for any locale-sensitive methods if no
+ * <p>The default Locale is provided for any locale-sensitive methods if no
  * {@code Locale} is explicitly specified as an argument, such as
  * {@link DateFormat#getInstance()}. The default Locale is determined at startup
  * of the Java runtime and established in the following three phases:
