@@ -2940,6 +2940,17 @@ public:
     return uabs(target - branch) < branch_range;
   }
 
+  // Decode the given instruction, checking if it's a 16-bit compressed
+  // instruction and return the address of the next instruction.
+  static address locate_next_instruction(address inst) {
+    // Instruction wider than 16 bits has the two least-significant bits set.
+    if ((0x3 & *inst) == 0x3) {
+      return inst + instruction_size;
+    } else {
+      return inst + compressed_instruction_size;
+    }
+  }
+
   Assembler(CodeBuffer* code) : AbstractAssembler(code), _in_compressible_region(true) {}
 };
 
