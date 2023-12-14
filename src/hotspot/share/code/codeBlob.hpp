@@ -143,7 +143,7 @@ public:
   static unsigned int align_code_offset(int offset);
 
   // Deletion
-  virtual void flush();
+  virtual void purge(bool free_code_cache_data = true);
 
   // Typing
   virtual bool is_buffer_blob() const                 { return false; }
@@ -410,7 +410,7 @@ class BufferBlob: public RuntimeBlob {
 
  public:
   // Creation
-  static BufferBlob* create(const char* name, int buffer_size);
+  static BufferBlob* create(const char* name, uint buffer_size);
   static BufferBlob* create(const char* name, CodeBuffer* cb);
 
   static void free(BufferBlob* buf);

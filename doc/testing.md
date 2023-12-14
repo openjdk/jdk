@@ -18,8 +18,8 @@ execute:
 This will run a default set of tests against the JDK, and present you with the
 results. `make test` is part of a family of test-related make targets which
 simplify running tests, because they invoke the various test frameworks for
-you. The "make test framework" is simple to start with, but more complex
-ad-hoc combination of tests is also possible. You can always invoke the test
+you. The "make test framework" is simple to start with, but more complex ad-hoc
+combination of tests is also possible. You can always invoke the test
 frameworks directly if you want even more control.
 
 Some example command-lines:
@@ -33,18 +33,18 @@ Some example command-lines:
     $ make test TEST="micro:java.lang.reflect" MICRO="FORK=1;WARMUP_ITER=2"
     $ make exploded-test TEST=tier2
 
-"tier1" and "tier2" refer to tiered testing, see further down. "TEST" is a
- test selection argument which the make test framework will use to try to
- find the tests you want. It iterates over the available test frameworks, and
- if the test isn't present in one, it tries the next one. The main target
- `test` uses the jdk-image as the tested product. There is also an alternate
- target `exploded-test` that uses the exploded image instead. Not all tests
- will run successfully on the exploded image, but using this target can
- greatly improve rebuild times for certain workflows.
+"tier1" and "tier2" refer to tiered testing, see further down. "TEST" is a test
+ selection argument which the make test framework will use to try to find the
+ tests you want. It iterates over the available test frameworks, and if the
+ test isn't present in one, it tries the next one. The main target `test` uses
+ the jdk-image as the tested product. There is also an alternate target
+ `exploded-test` that uses the exploded image instead. Not all tests will run
+ successfully on the exploded image, but using this target can greatly improve
+ rebuild times for certain workflows.
 
-Previously, `make test` was used to invoke an old system for running tests,
-and `make run-test` was used for the new test framework. For backward
-compatibility with scripts and muscle memory, `run-test` and variants like
+Previously, `make test` was used to invoke an old system for running tests, and
+`make run-test` was used for the new test framework. For backward compatibility
+with scripts and muscle memory, `run-test` and variants like
 `exploded-run-test` or `run-test-tier1` are kept as aliases.
 
 ### Configuration
@@ -64,26 +64,27 @@ after which `--with-jmh=build/jmh/jars` should work.
 
 When tests fail or timeout, jtreg runs its failure handler to capture necessary
 data from the system where the test was run. This data can then be used to
-analyze the test failures. Collecting this data involves running various commands
-(which are listed in files residing in `test/failure_handler/src/share/conf`)
-and some of these commands use `sudo`. If the system's `sudoers` file isn't
-configured to allow running these commands, then it can result in password being
-prompted during the failure handler execution. Typically, when running locally,
-collecting this additional data isn't always necessary. To disable running the
-failure handler, use `--enable-jtreg-failure-handler=no` when running `configure`.
-If, however, you want to let the failure handler to run and don't want to be
-prompted for sudo password, then you can configure your `sudoers` file
-appropriately. Please read the necessary documentation of your operating system
-to see how to do that; here we only show one possible way of doing that - edit
-the `/etc/sudoers.d/sudoers` file to include the following line:
+analyze the test failures. Collecting this data involves running various
+commands (which are listed in files residing in
+`test/failure_handler/src/share/conf`) and some of these commands use `sudo`.
+If the system's `sudoers` file isn't configured to allow running these
+commands, then it can result in password being prompted during the failure
+handler execution. Typically, when running locally, collecting this additional
+data isn't always necessary. To disable running the failure handler, use
+`--enable-jtreg-failure-handler=no` when running `configure`. If, however, you
+want to let the failure handler to run and don't want to be prompted for sudo
+password, then you can configure your `sudoers` file appropriately. Please read
+the necessary documentation of your operating system to see how to do that;
+here we only show one possible way of doing that - edit the
+`/etc/sudoers.d/sudoers` file to include the following line:
 
 ```
 johndoe ALL=(ALL) NOPASSWD: /sbin/dmesg
 ```
 
 This line configures `sudo` to _not_ prompt for password for the `/sbin/dmesg`
-command (this is one of the commands that is listed in the files
-at `test/failure_handler/src/share/conf`), for the user `johndoe`. Here `johndoe`
+command (this is one of the commands that is listed in the files at
+`test/failure_handler/src/share/conf`), for the user `johndoe`. Here `johndoe`
 is the user account under which the jtreg tests are run. Replace the username
 with a relevant user account of your system.
 
@@ -114,42 +115,38 @@ Ideally, all tests are run for every change but this may not be practical due
 to the limited testing resources, the scope of the change, etc.
 
 The source tree currently defines a few common test groups in the relevant
-`TEST.groups` files. There are test groups that cover a specific component,
-for example `hotspot_gc`. It is a good idea to look into `TEST.groups` files
-to get a sense what tests are relevant to a particular JDK component.
+`TEST.groups` files. There are test groups that cover a specific component, for
+example `hotspot_gc`. It is a good idea to look into `TEST.groups` files to get
+a sense what tests are relevant to a particular JDK component.
 
 Component-specific tests may miss some unintended consequences of a change, so
 other tests should also be run. Again, it might be impractical to run all
-tests, and therefore
-_tiered_ test groups exist. Tiered test groups are not component-specific, but
- rather cover the significant parts of the entire JDK.
+tests, and therefore _tiered_ test groups exist. Tiered test groups are not
+component-specific, but rather cover the significant parts of the entire JDK.
 
 Multiple tiers allow balancing test coverage and testing costs. Lower test
 tiers are supposed to contain the simpler, quicker and more stable tests.
 Higher tiers are supposed to contain progressively more thorough, slower, and
-sometimes less stable tests, or the tests that require special
-configuration.
+sometimes less stable tests, or the tests that require special configuration.
 
 Contributors are expected to run the tests for the areas that are changed, and
 the first N tiers they can afford to run, but at least tier1.
 
 A brief description of the tiered test groups:
 
-- `tier1`: This is the most fundamental test tier.
-  Roughly speaking, a failure of a test in this tier has the potential
-  to indicate a problem that would affect many Java programs. Tests in
-  `tier1` include tests of HotSpot, core APIs in the `java.base`
-  module, and the `javac` compiler. Multiple developers run these
-  tests every day. Because of the widespread use, the tests in `tier1`
-  are carefully selected and optimized to run fast, and to run in the
-  most stable manner. As a guideline, nearly all individual tests in
-  `tier1` are expected to run to completion in ten seconds or less
-  when run on common configurations used for development. Long-running
-  tests, even of core functionality, should occur in higher tiers or
-  be covered in other kinds of testing. The test failures in `tier1`
-  are usually followed up on quickly, either with fixes, or adding
-  relevant tests to problem list. GitHub Actions workflows, if
-  enabled, run `tier1` tests.
+- `tier1`: This is the most fundamental test tier. Roughly speaking, a failure
+  of a test in this tier has the potential to indicate a problem that would
+  affect many Java programs. Tests in `tier1` include tests of HotSpot, core
+  APIs in the `java.base` module, and the `javac` compiler. Multiple developers
+  run these tests every day. Because of the widespread use, the tests in
+  `tier1` are carefully selected and optimized to run fast, and to run in the
+  most stable manner. As a guideline, nearly all individual tests in `tier1`
+  are expected to run to completion in ten seconds or less when run on common
+  configurations used for development. Long-running tests, even of core
+  functionality, should occur in higher tiers or be covered in other kinds of
+  testing. The test failures in `tier1` are usually followed up on quickly,
+  either with fixes, or adding relevant tests to problem list. GitHub Actions
+  workflows, if enabled, run `tier1` tests.
 
 - `tier2`: This test group covers even more ground. These contain, among other
   things, tests that either run for too long to be at `tier1`, or may require
@@ -158,9 +155,8 @@ A brief description of the tiered test groups:
 
 - `tier3`: This test group includes more stressful tests, the tests for corner
   cases not covered by previous tiers, plus the tests that require GUIs. As
-  such, this suite should either be run with low concurrency
-  (`TEST_JOBS=1`), or without headful tests(`JTREG_KEYWORDS=\!headful`), or
-  both.
+  such, this suite should either be run with low concurrency (`TEST_JOBS=1`),
+  or without headful tests(`JTREG_KEYWORDS=\!headful`), or both.
 
 - `tier4`: This test group includes every other test not covered by previous
   tiers. It includes, for example, `vmTestbase` suites for Hotspot, which run
@@ -169,18 +165,17 @@ A brief description of the tiered test groups:
 
 ### JTReg
 
-JTReg tests can be selected either by picking a JTReg test group, or a selection
-of files or directories containing JTReg tests. Documentation can be found at
-[https://openjdk.org/jtreg/](https://openjdk.org/jtreg/), note especially the
-extensive [FAQ](https://openjdk.org/jtreg/faq.html).
+JTReg tests can be selected either by picking a JTReg test group, or a
+selection of files or directories containing JTReg tests. Documentation can be
+found at [https://openjdk.org/jtreg/](https://openjdk.org/jtreg/), note
+especially the extensive [FAQ](https://openjdk.org/jtreg/faq.html).
 
 JTReg test groups can be specified either without a test root, e.g. `:tier1`
 (or `tier1`, the initial colon is optional), or with, e.g. `hotspot:tier1`,
 `test/jdk:jdk_util` or `$(TOPDIR)/test/hotspot/jtreg:hotspot_all`. The test
-root can be specified either as an absolute path, or a path relative to the
-JDK top directory, or the `test` directory. For simplicity, the hotspot
-JTReg test root, which really is `hotspot/jtreg` can be abbreviated as
-just `hotspot`.
+root can be specified either as an absolute path, or a path relative to the JDK
+top directory, or the `test` directory. For simplicity, the hotspot JTReg test
+root, which really is `hotspot/jtreg` can be abbreviated as just `hotspot`.
 
 When specified without a test root, all matching groups from all test roots
 will be added. Otherwise, only the group from the specified test root will be
@@ -201,8 +196,8 @@ use a fully qualified test descriptor, add `jtreg:`, e.g.
 
 ### Gtest
 
-**Note:** To be able to run the Gtest suite, you need to configure your build to
-be able to find a proper version of the gtest source. For details, see the
+**Note:** To be able to run the Gtest suite, you need to configure your build
+to be able to find a proper version of the gtest source. For details, see the
 section ["Running Tests" in the build
 documentation](building.html#running-tests).
 
@@ -222,10 +217,10 @@ present, then `gtest:all` will be equivalent to `gtest:all/server`.
 
 ### Microbenchmarks
 
-Which microbenchmarks to run is selected using a regular expression
-following the `micro:` test descriptor, e.g., `micro:java.lang.reflect`. This
-delegates the test selection to JMH, meaning package name, class name and even
-benchmark method names can be used to select tests.
+Which microbenchmarks to run is selected using a regular expression following
+the `micro:` test descriptor, e.g., `micro:java.lang.reflect`. This delegates
+the test selection to JMH, meaning package name, class name and even benchmark
+method names can be used to select tests.
 
 Using special characters like `|` in the regular expression is possible, but
 needs to be escaped multiple times: `micro:ArrayCopy\\\\\|reflect`.
@@ -302,11 +297,12 @@ normally eats `;`, the recommended usage is to write the assignment inside
 qoutes, e.g. `JTREG="...;..."`. This will also make sure spaces are preserved,
 as in `JTREG="JAVA_OPTIONS=-XshowSettings -Xlog:gc+ref=debug"`.
 
-(Other ways are possible, e.g. using backslash: `JTREG=JOBS=1\;TIMEOUT_FACTOR=8`.
-Also, as a special technique, the string `%20` will be replaced with space for
-certain options, e.g. `JTREG=JAVA_OPTIONS=-XshowSettings%20-Xlog:gc+ref=debug`.
-This can be useful if you have layers of scripts and have trouble getting
-proper quoting of command line arguments through.)
+(Other ways are possible, e.g. using backslash:
+`JTREG=JOBS=1\;TIMEOUT_FACTOR=8`. Also, as a special technique, the string
+`%20` will be replaced with space for certain options, e.g.
+`JTREG=JAVA_OPTIONS=-XshowSettings%20-Xlog:gc+ref=debug`. This can be useful if
+you have layers of scripts and have trouble getting proper quoting of command
+line arguments through.)
 
 As far as possible, the names of the keywords have been standardized between
 test suites.
@@ -319,7 +315,8 @@ control variable to use, then you can use the general TEST_OPTS control
 variable.
 
 There are also some keywords that applies globally to the test runner system,
-not to any specific test suites. These are also available as TEST_OPTS keywords.
+not to any specific test suites. These are also available as TEST_OPTS
+keywords.
 
 #### JOBS
 
@@ -373,8 +370,8 @@ The report is stored in
 The test concurrency (`-concurrency`).
 
 Defaults to TEST_JOBS (if set by `--with-test-jobs=`), otherwise it defaults to
-JOBS, except for Hotspot, where the default is *number of CPU cores/2*,
-but never more than *memory size in GB/2*.
+JOBS, except for Hotspot, where the default is *number of CPU cores/2*, but
+never more than *memory size in GB/2*.
 
 #### TIMEOUT_FACTOR
 
@@ -389,12 +386,12 @@ This is only valid if the failure handler is built.
 
 #### JTREG_TEST_THREAD_FACTORY
 
-Sets the `-testThreadFactory` for JTReg. It should be the fully qualified classname
-of a class which implements `java.util.concurrent.ThreadFactory`.
-One such implementation class, named Virtual, is currently part of the JDK build
-in the `test/jtreg_test_thread_factory/` directory. This class gets compiled during
-the test image build. The implementation of the Virtual class creates a new virtual
-thread for executing each test class.
+Sets the `-testThreadFactory` for JTReg. It should be the fully qualified
+classname of a class which implements `java.util.concurrent.ThreadFactory`. One
+such implementation class, named Virtual, is currently part of the JDK build in
+the `test/jtreg_test_thread_factory/` directory. This class gets compiled
+during the test image build. The implementation of the Virtual class creates a
+new virtual thread for executing each test class.
 
 #### TEST_MODE
 
@@ -456,9 +453,8 @@ the tests to be run.
 
 Use the problem lists to select tests instead of excluding them.
 
-Set to `true` or `false`.
-If `true`, JTReg will use `-match:` option, otherwise `-exclude:` will be used.
-Default is `false`.
+Set to `true` or `false`. If `true`, JTReg will use `-match:` option, otherwise
+`-exclude:` will be used. Default is `false`.
 
 #### OPTIONS
 
@@ -492,15 +488,13 @@ modules. If multiple modules are specified, they should be separated by space
 
 #### RETRY_COUNT
 
-Retry failed tests up to a set number of times, until they pass.
-This allows to pass the tests with intermittent failures.
-Defaults to 0.
+Retry failed tests up to a set number of times, until they pass. This allows to
+pass the tests with intermittent failures. Defaults to 0.
 
 #### REPEAT_COUNT
 
-Repeat the tests up to a set number of times, stopping at first failure.
-This helps to reproduce intermittent test failures.
-Defaults to 0.
+Repeat the tests up to a set number of times, stopping at first failure. This
+helps to reproduce intermittent test failures. Defaults to 0.
 
 #### REPORT
 
@@ -551,7 +545,8 @@ Same as specifying `-wi <num>`.
 
 #### WARMUP_TIME
 
-Amount of time to spend in each warmup iteration. Same as specifying `-w <num>`.
+Amount of time to spend in each warmup iteration. Same as specifying `-w
+<num>`.
 
 #### RESULTS_FORMAT
 
@@ -592,9 +587,9 @@ $ make test TEST="jtreg:test/hotspot/jtreg/containers/docker" \
 
 If your locale is non-US, some tests are likely to fail. To work around this
 you can set the locale to US. On Unix platforms simply setting `LANG="en_US"`
-in the environment before running tests should work. On Windows or MacOS, setting
-`JTREG="VM_OPTIONS=-Duser.language=en -Duser.country=US"` helps for most, but
-not all test cases.
+in the environment before running tests should work. On Windows or MacOS,
+setting `JTREG="VM_OPTIONS=-Duser.language=en -Duser.country=US"` helps for
+most, but not all test cases.
 
 For example:
 
@@ -609,14 +604,16 @@ It is highly recommended to use the latest NSS version when running PKCS11
 tests. Improper NSS version may lead to unexpected failures which are hard to
 diagnose. For example, sun/security/pkcs11/Secmod/AddTrustedCert.java may fail
 on Ubuntu 18.04 with the default NSS version in the system. To run these tests
-correctly, the system property `test.nss.lib.paths` is required on Ubuntu 18.04
-to specify the alternative NSS lib directories.
+correctly, the system property `jdk.test.lib.artifacts.<NAME>` is required on
+Ubuntu 18.04 to specify the alternative NSS lib directory. The `<NAME>`
+component should be replaced with the name element of the appropriate
+`@Artifact` class. (See `test/jdk/sun/security/pkcs11/PKCS11Test.java`)
 
 For example:
 
 ```
 $ make test TEST="jtreg:sun/security/pkcs11/Secmod/AddTrustedCert.java" \
-    JTREG="JAVA_OPTIONS=-Dtest.nss.lib.paths=/path/to/your/latest/NSS-libs"
+    JTREG="JAVA_OPTIONS=-Djdk.test.lib.artifacts.nsslib-linux_aarch64=/path/to/NSS-libs"
 ```
 
 For more notes about the PKCS11 tests, please refer to
@@ -660,29 +657,30 @@ Note: restart is required to make the settings take effect.
 
 #### Robot API
 
-Most automated Client UI tests use `Robot` API to control the UI. Usually,
-the default operating system settings need to be adjusted for Robot
-to work correctly. The detailed steps how to access and update these settings
-for different platforms are provided below.
+Most automated Client UI tests use `Robot` API to control the UI. Usually, the
+default operating system settings need to be adjusted for Robot to work
+correctly. The detailed steps how to access and update these settings for
+different platforms are provided below.
 
 ##### macOS
 
-`Robot` is not permitted to control your Mac by default since
-macOS 10.15. To allow it, choose Apple menu -> System Settings, click
-Privacy & Security; then click Accessibility and ensure the following apps are
-allowed to control your computer: *Java* and *Terminal*. If the tests are run
-from an IDE, the IDE should be granted this permission too.
+`Robot` is not permitted to control your Mac by default since macOS 10.15. To
+allow it, choose Apple menu -> System Settings, click Privacy & Security; then
+click Accessibility and ensure the following apps are allowed to control your
+computer: *Java* and *Terminal*. If the tests are run from an IDE, the IDE
+should be granted this permission too.
 
 ##### Windows
 
 On Windows if Cygwin terminal is used to run the tests, there is a delay in
 focus transfer. Usually it causes automated UI test failure. To disable the
 delay, type `regedit` in the Search and then select Registry Editor; navigate
-to the following key: `HKEY_CURRENT_USER\Control Panel\Desktop`; make sure
-the `ForegroundLockTimeout` value is set to 0.
+to the following key: `HKEY_CURRENT_USER\Control Panel\Desktop`; make sure the
+`ForegroundLockTimeout` value is set to 0.
 
-Additional information about Client UI tests configuration for various operating
-systems can be obtained at [Automated client GUI testing system set up
+Additional information about Client UI tests configuration for various
+operating systems can be obtained at [Automated client GUI testing system set
+up
 requirements](https://wiki.openjdk.org/display/ClientLibs/Automated+client+GUI+testing+system+set+up+requirements)
 
 ## Editing this document

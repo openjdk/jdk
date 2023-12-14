@@ -505,6 +505,12 @@ bool LogConfiguration::parse_log_arguments(const char* outputstr,
       errstream->print_cr("Invalid output index '%s'", outputstr);
       return false;
     }
+  } else if (strcmp(outputstr, StdoutLog->name()) == 0) { // stdout
+    idx = 0;
+    assert(find_output(outputstr) == idx, "sanity check");
+  } else if (strcmp(outputstr, StderrLog->name()) == 0) { // stderr
+    idx = 1;
+    assert(find_output(outputstr) == idx, "sanity check");
   } else { // Output specified using name
     // Normalize the name, stripping quotes and ensures it includes type prefix
     size_t len = strlen(outputstr) + strlen(implicit_output_prefix) + 1;

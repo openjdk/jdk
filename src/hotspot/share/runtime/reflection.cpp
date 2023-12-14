@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "cds/cdsConfig.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/moduleEntry.hpp"
 #include "classfile/packageEntry.hpp"
@@ -457,9 +458,9 @@ Reflection::VerifyClassAccessResults Reflection::verify_class_access(
 
   // module boundaries
   if (new_class->is_public()) {
-    // Ignore modules for DumpSharedSpaces because we do not have any package
+    // Ignore modules for -Xshare:dump because we do not have any package
     // or module information for modules other than java.base.
-    if (DumpSharedSpaces) {
+    if (CDSConfig::is_dumping_static_archive()) {
       return ACCESS_OK;
     }
 
