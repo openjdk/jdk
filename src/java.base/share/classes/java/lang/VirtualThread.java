@@ -742,8 +742,8 @@ final class VirtualThread extends BaseVirtualThread {
                     submitRunContinuation();
                 }
             } else if ((s == PINNED) || (s == TIMED_PINNED)) {
+                notifyJvmtiDisableSuspend(true);
                 try {
-                    notifyJvmtiDisableSuspend(true);
                     // unpark carrier thread when pinned
                     synchronized (carrierThreadAccessLock()) {
                         Thread carrier = carrierThread;
@@ -849,8 +849,8 @@ final class VirtualThread extends BaseVirtualThread {
     public void interrupt() {
         if (Thread.currentThread() != this) {
             checkAccess();
+            notifyJvmtiDisableSuspend(true);
             try {
-                notifyJvmtiDisableSuspend(true);
                 synchronized (interruptLock) {
                     interrupted = true;
                     Interruptible b = nioBlocker;
@@ -882,8 +882,8 @@ final class VirtualThread extends BaseVirtualThread {
         assert Thread.currentThread() == this;
         boolean oldValue = interrupted;
         if (oldValue) {
+            notifyJvmtiDisableSuspend(true);
             try {
-                notifyJvmtiDisableSuspend(true);
                 synchronized (interruptLock) {
                     interrupted = false;
                     carrierThread.clearInterrupt();
@@ -913,8 +913,8 @@ final class VirtualThread extends BaseVirtualThread {
                 // runnable, not mounted
                 return Thread.State.RUNNABLE;
             case RUNNING:
+                notifyJvmtiDisableSuspend(true);
                 try {
-                    notifyJvmtiDisableSuspend(true);
                     // if mounted then return state of carrier thread
                     synchronized (carrierThreadAccessLock()) {
                         Thread carrierThread = this.carrierThread;
@@ -1038,8 +1038,8 @@ final class VirtualThread extends BaseVirtualThread {
         sb.append("]/");
         Thread carrier = carrierThread;
         if (carrier != null) {
+            notifyJvmtiDisableSuspend(true);
             try {
-                notifyJvmtiDisableSuspend(true);
                 // include the carrier thread state and name when mounted
                 synchronized (carrierThreadAccessLock()) {
                     carrier = carrierThread;
