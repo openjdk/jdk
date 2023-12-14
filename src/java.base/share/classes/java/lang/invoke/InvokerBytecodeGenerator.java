@@ -364,11 +364,8 @@ class InvokerBytecodeGenerator {
      *
      * @param wrapper primitive type class to box.
      */
-    private void emitBoxing(CodeBuilder cob, Wrapper wrapper) {
-        ClassDesc owner = wrapper.wrapperType().describeConstable().orElseThrow();
-        String name  = "valueOf";
-        MethodTypeDesc desc  = MethodTypeDesc.of(owner, ClassDesc.ofDescriptor(wrapper.basicTypeString()));
-        cob.invokestatic(owner, name, desc);
+    private void emitBoxing(CodeBuilder cob, TypeKind tk) {
+        TypeConvertingMethodAdapter.box(cob, tk);
     }
 
     /**
@@ -376,12 +373,15 @@ class InvokerBytecodeGenerator {
      *
      * @param wrapper wrapper type class to unbox.
      */
-    private void emitUnboxing(CodeBuilder cob, Wrapper wrapper) {
-        ClassDesc owner = wrapper.wrapperType().describeConstable().orElseThrow();
-        String name  = wrapper.primitiveSimpleName() + "Value";
-        MethodTypeDesc desc  = MethodTypeDesc.of(ClassDesc.ofDescriptor(wrapper.basicTypeString()));
-        emitReferenceCast(cob, wrapper.wrapperType(), null);
-        cob.invokevirtual(owner, name, desc);
+    private void emitUnboxing(CodeBuilder cob, TypeKind target) {
+        switch (target) {
+            case BooleanType -> emitReferenceCast(cob, Boolean.class, null);
+            case CharType -> emitReferenceCast(cob, Character.class, null);
+            case ByteType, DoubleType, FloatType, IntType, LongType, ShortType ->
+                emitReferenceCast(cob, Number.class, null);
+            default -> {}
+        }
+        TypeConvertingMethodAdapter.unbox(cob, target);
     }
 
     /**
@@ -407,7 +407,7 @@ class InvokerBytecodeGenerator {
                 return;
             case I_TYPE:
                 if (!VerifyType.isNullConversion(int.class, pclass, false))
-                    emitPrimCast(cob, ptype.basicTypeWrapper(), Wrapper.forPrimitiveType(pclass));
+                    emitPrimCast(cob, ptype.basicTypeKind(), TypeKind.from(pclass));
                 return;
         }
         throw newInternalError("bad implicit conversion: tc="+ptype+": "+pclass);
@@ -449,8 +449,8 @@ class InvokerBytecodeGenerator {
                 cob.checkcast(CE_Object);
         }
         if (writeBack != null) {
-            cob.dup();
-            cob.astore(localsMap[writeBack.index()]);
+            cob.dup()
+               .astore(localsMap[writeBack.index()]);
         }
     }
 
@@ -705,8 +705,7 @@ class InvokerBytecodeGenerator {
         assert elementType != null;
         emitPushArguments(cob, name, 0);
         if (elementType.isPrimitive()) {
-            Wrapper w = Wrapper.forPrimitiveType(elementType);
-            cob.arrayLoadInstruction(TypeKind.fromDescriptor(w.basicTypeString()));
+            cob.arrayLoadInstruction(TypeKind.from(elementType));
         } else {
             cob.aaload();
         }
@@ -717,16 +716,14 @@ class InvokerBytecodeGenerator {
         assert elementType != null;
         emitPushArguments(cob, name, 0);
         if (elementType.isPrimitive()) {
-            Wrapper w = Wrapper.forPrimitiveType(elementType);
-            cob.arrayStoreInstruction(TypeKind.fromDescriptor(w.basicTypeString()));
+            cob.arrayStoreInstruction(TypeKind.from(elementType));
         } else {
             cob.aastore();
         }
     }
 
     void emitArrayLength(CodeBuilder cob, Name name) {
-        Class<?> elementType = name.function.methodType().parameterType(0).getComponentType();
-        assert elementType != null;
+        assert name.function.methodType().parameterType(0).isArray();
         emitPushArguments(cob, name, 0);
         cob.arraylength();
     }
@@ -1522,7 +1519,7 @@ class InvokerBytecodeGenerator {
     /**
      * Emit a type conversion bytecode casting from "from" to "to".
      */
-    private void emitPrimCast(CodeBuilder cob, Wrapper from, Wrapper to) {
+    private void emitPrimCast(CodeBuilder cob, TypeKind from, TypeKind to) {
         // Here's how.
         // -   indicates forbidden
         // <-> indicates implicit
@@ -1535,93 +1532,10 @@ class InvokerBytecodeGenerator {
         //      long        -     l2i,i2b   l2i,i2s  l2i,i2c    l2i      <->      l2f      l2d
         //      float       -     f2i,i2b   f2i,i2s  f2i,i2c    f2i      f2l      <->      f2d
         //      double      -     d2i,i2b   d2i,i2s  d2i,i2c    d2i      d2l      d2f      <->
-        if (from == to) {
-            // no cast required, should be dead code anyway
-            return;
-        }
-        if (from.isSubwordOrInt()) {
-            // cast from {byte,short,char,int} to anything
-            emitI2X(cob, to);
-        } else {
-            // cast from {long,float,double} to anything
-            if (to.isSubwordOrInt()) {
-                // cast to {byte,short,char,int}
-                emitX2I(cob, from);
-                if (to.bitWidth() < 32) {
-                    // targets other than int require another conversion
-                    emitI2X(cob, to);
-                }
-            } else {
-                // cast to {long,float,double} - this is verbose
-                boolean error = false;
-                switch (from) {
-                    case LONG -> {
-                        switch (to) {
-                            case FLOAT  -> cob.l2f();
-                            case DOUBLE -> cob.l2d();
-                            default     -> error = true;
-                        }
-                    }
-                    case FLOAT -> {
-                        switch (to) {
-                            case LONG   -> cob.f2l();
-                            case DOUBLE -> cob.f2d();
-                            default     -> error = true;
-                        }
-                    }
-                    case DOUBLE -> {
-                        switch (to) {
-                            case LONG   -> cob.d2l();
-                            case FLOAT  -> cob.d2f();
-                            default     -> error = true;
-                        }
-                    }
-                    default -> error = true;
-                }
-                if (error) {
-                    throw new IllegalStateException("unhandled prim cast: " + from + "2" + to);
-                }
-            }
-        }
-    }
-
-    private void emitI2X(CodeBuilder cob, Wrapper type) {
-        switch (type) {
-            case BYTE ->
-                cob.i2b();
-            case SHORT ->
-                cob.i2s();
-            case CHAR ->
-                cob.i2c();
-            case INT -> {
-            }
-            /* naught */
-            case LONG ->
-                cob.i2l();
-            case FLOAT ->
-                cob.i2f();
-            case DOUBLE ->
-                cob.i2d();
-            case BOOLEAN -> {
-                // For compatibility with ValueConversions and explicitCastArguments:
-                cob.constantInstruction(1);
-                cob.iand();
-            }
-            default ->
-                throw new InternalError("unknown type: " + type);
-        }
-    }
-
-    private void emitX2I(CodeBuilder cob, Wrapper type) {
-        switch (type) {
-            case LONG ->
-                cob.l2i();
-            case FLOAT ->
-                cob.f2i();
-            case DOUBLE ->
-                cob.d2i();
-            default ->
-                throw new InternalError("unknown type: " + type);
+        if (from != to && from != TypeKind.BooleanType && to != TypeKind.BooleanType) try {
+            cob.convertInstruction(from, to);
+        } catch (IllegalArgumentException e) {
+            throw new IllegalStateException("unhandled prim cast: " + from + "2" + to);
         }
     }
 
@@ -1665,7 +1579,7 @@ class InvokerBytecodeGenerator {
                                     cob.loadInstruction(basicType(ptype).basicTypeKind(), localsMap[i]);
                                     // box if primitive type
                                     if (ptype.isPrimitive()) {
-                                        emitBoxing(cob, Wrapper.forPrimitiveType(ptype));
+                                        emitBoxing(cob, TypeKind.from(ptype));
                                     }
                                     cob.aastore();
                                 }
@@ -1677,12 +1591,13 @@ class InvokerBytecodeGenerator {
 
                                 // maybe unbox
                                 Class<?> rtype = invokerType.returnType();
+                                TypeKind rtypeK = TypeKind.from(rtype);
                                 if (rtype.isPrimitive() && rtype != void.class) {
-                                    emitUnboxing(cob, Wrapper.forPrimitiveType(rtype));
+                                    emitUnboxing(cob, rtypeK);
                                 }
 
                                 // return statement
-                                cob.returnInstruction(TypeKind.from(rtype));
+                                cob.returnInstruction(rtypeK);
                             }
                         });
                     }
@@ -1733,10 +1648,10 @@ class InvokerBytecodeGenerator {
                                     // Maybe unbox
                                     Class<?> dptype = dstType.parameterType(i);
                                     if (dptype.isPrimitive()) {
-                                        Wrapper dstWrapper = Wrapper.forBasicType(dptype);
-                                        Wrapper srcWrapper = dstWrapper.isSubwordOrInt() ? Wrapper.INT : dstWrapper;  // narrow subword from int
-                                        emitUnboxing(cob, srcWrapper);
-                                        emitPrimCast(cob, srcWrapper, dstWrapper);
+                                        TypeKind dstTK = TypeKind.from(dptype);
+                                        TypeKind srcTK = dstTK.asLoadable();
+                                        emitUnboxing(cob, srcTK);
+                                        emitPrimCast(cob, srcTK, dstTK);
                                     }
                                 }
 
@@ -1747,11 +1662,11 @@ class InvokerBytecodeGenerator {
                                 // Box primitive types
                                 Class<?> rtype = dstType.returnType();
                                 if (rtype != void.class && rtype.isPrimitive()) {
-                                    Wrapper srcWrapper = Wrapper.forBasicType(rtype);
-                                    Wrapper dstWrapper = srcWrapper.isSubwordOrInt() ? Wrapper.INT : srcWrapper;  // widen subword to int
+                                    TypeKind srcTK = TypeKind.from(rtype);
+                                    TypeKind dstTK = srcTK.asLoadable();
                                     // boolean casts not allowed
-                                    emitPrimCast(cob, srcWrapper, dstWrapper);
-                                    emitBoxing(cob, dstWrapper);
+                                    emitPrimCast(cob, srcTK, dstTK);
+                                    emitBoxing(cob, dstTK);
                                 }
 
                                 // If the return type is void we return a null reference.
