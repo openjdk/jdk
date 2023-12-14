@@ -107,7 +107,7 @@ class R10 {
         ;
         Attr(#30) { // MethodParameters
           []b { // MethodParameters
-            #11  0x0000;
+            #11  0x0000; // the parameter is not mandated, flag should be 0x8000 for it to be mandated
           }
         } // end MethodParameters
         ;
