@@ -292,7 +292,7 @@ public:
   bool has_unknown_control_dependency() const  { return _control_dependency == UnknownControl; }
   bool has_pinned_control_dependency() const   { return _control_dependency == Pinned; }
 
-  LoadNode* pin_for_array_access() const;
+  LoadNode* pin_for_array_access() const override;
 
 #ifndef PRODUCT
   virtual void dump_spec(outputStream *st) const;
