@@ -769,15 +769,15 @@ AlignmentSolution* AlignmentSolver::solve() const {
   //   6) The "C_main * main_iter" term represents how much the iv is increased
   //      during "main_iter" main-loop iterations.
 
-  // Attribute init either to C_const or to C_init term.
+  // Attribute init (i.e. _init_node) either to C_const or to C_init term.
   const int C_const_init = _init_node->is_ConI() ? _init_node->as_ConI()->get_int() : 0;
-  const int C_init =       _init_node->is_ConI() ? 0                                : _scale;
+  const int C_const =      _offset + C_const_init * _scale;
 
   // Set C_invar depending on if invar is present
   const int C_invar = (_invar == nullptr) ? 0 : abs(_invar_factor);
 
-  const int C_const = _offset + C_const_init * _scale;
-  const int C_pre = _scale * _pre_stride;
+  const int C_init = _init_node->is_ConI() ? 0 : _scale;
+  const int C_pre =  _scale * _pre_stride;
   const int C_main = _scale * _main_stride;
 
   DEBUG_ONLY( trace_reshaped_form(C_const, C_const_init, C_invar, C_init, C_pre, C_main); )
