@@ -403,10 +403,6 @@ TEST_VM(os_linux, pretouch_thp_and_use_concurrent) {
       done.wait();
     }
 
-    for (size_t i = 0; i <= nThreads; i++) {
-      delete t[i];
-    }
-
     FREE_C_HEAP_ARRAY(UnitTestThread**, t);
   }
 
