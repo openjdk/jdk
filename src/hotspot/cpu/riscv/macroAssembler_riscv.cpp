@@ -3751,8 +3751,7 @@ void MacroAssembler::kernel_crc32(Register crc, Register buf, Register len,
   Label L_by16, L_by16_loop, L_by16_loop_entry, L_by4, L_by4_loop, L_by1, L_by1_loop, L_exit;
 
   mv(tmp5, bits32);
-  notr(crc, crc);
-  andr(crc, crc, tmp5);
+  andn(crc, tmp5, crc);
 
   const ExternalAddress table_addr = StubRoutines::crc_table_addr();
   la(table0, table_addr);
@@ -3803,8 +3802,7 @@ void MacroAssembler::kernel_crc32(Register crc, Register buf, Register len,
     bgt(len, zr, L_by1_loop);
 
   bind(L_exit);
-    notr(crc, crc);
-    andr(crc, crc, tmp5);
+    andn(crc, tmp5, crc);
 }
 
 // Multiply and multiply-accumulate unsigned 64-bit registers.
