@@ -4016,7 +4016,8 @@ JVM_ENTRY(void, JVM_VirtualThreadDisableSuspend(JNIEnv* env, jobject vthread, jb
     assert(!JvmtiExport::can_support_virtual_threads(), "sanity check");
     return;
   }
-  assert(thread->is_disable_suspend() != (bool)enter, "recursive disable suspend is not allowed");
+  assert(thread->is_disable_suspend() != (bool)enter,
+         "nested or unbalanced monitor enter/exit is not allowed");
   thread->toggle_is_disable_suspend();
 #else
   fatal("Should only be called with JVMTI enabled");
