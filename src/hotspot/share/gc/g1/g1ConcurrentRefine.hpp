@@ -215,9 +215,6 @@ public:
 
   // Iterate over all concurrent refinement threads applying the given closure.
   void threads_do(ThreadClosure *tc);
-
-  // Maximum number of refinement threads.
-  static uint max_num_threads();
 };
 
 #endif // SHARE_GC_G1_G1CONCURRENTREFINE_HPP

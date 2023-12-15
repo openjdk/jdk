@@ -920,6 +920,7 @@ address Assembler::locate_operand(address inst, WhichOperand which) {
     case 0x11: // movups
     case 0x12: // movlps
     case 0x28: // movaps
+    case 0x29: // movaps
     case 0x2E: // ucomiss
     case 0x2F: // comiss
     case 0x54: // andps
@@ -969,7 +970,7 @@ address Assembler::locate_operand(address inst, WhichOperand which) {
       assert(which == call32_operand, "jcc has no disp32 or imm");
       return ip;
     default:
-      ShouldNotReachHere();
+      fatal("not handled: 0x0F%2X", 0xFF & *(ip-1));
     }
     break;
 
