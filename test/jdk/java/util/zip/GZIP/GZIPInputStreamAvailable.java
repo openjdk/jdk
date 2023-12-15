@@ -28,54 +28,61 @@
  */
 
 import org.junit.Test;
-import org.junit.Assert;
 
 import java.io.*;
 import java.util.*;
 import java.util.zip.*;
 
+import static org.junit.Assert.assertArrayEquals;
+
 public class GZIPInputStreamAvailable {
+
+    public static final int NUM_COPIES = 100;
 
     @Test
     public void testZeroAvailable() throws IOException {
 
-        // Create some compressed data
+        // Create some uncompressed data and then repeat it NUM_COPIES times
+        byte[] uncompressed1 = "this is a test".getBytes("ASCII");
+        byte[] uncompressedN = repeat(uncompressed1, NUM_COPIES);
+
+        // Compress the original data and then repeat that NUM_COPIES times
+        byte[] compressed1 = gzip(uncompressed1);
+        byte[] compressedN = repeat(compressed1, NUM_COPIES);
+
+        // (a) Read back copied compressed data from a stream where available() is accurate and verify
+        byte[] readback1 = new GZIPInputStream(new ByteArrayInputStream(compressedN)).readAllBytes();
+        assertArrayEquals(uncompressedN, readback1);
+
+        // (b) Read back copied compressed data from a stream where available() always returns zero and verify
+        byte[] readback2 = new GZIPInputStream(new ZeroAvailableStream(new ByteArrayInputStream(compressedN))).readAllBytes();
+        assertArrayEquals(uncompressedN, readback2);
+    }
+
+    public static byte[] repeat(byte[] data, int count) {
+        byte[] repeat = new byte[data.length * count];
+        int off = 0;
+        for (int i = 0; i < count; i++) {
+            System.arraycopy(data, 0, repeat, off, data.length);
+            off += data.length;
+        }
+        return repeat;
+    }
+
+    public static byte[] gzip(byte[] data) throws IOException {
         ByteArrayOutputStream buf = new ByteArrayOutputStream();
         try (GZIPOutputStream out = new GZIPOutputStream(buf)) {
-            out.write("boo".getBytes("ASCII"));
+            out.write(data);
         }
-        byte[] gz = buf.toByteArray();
-
-        // Repeat to build a sequence of concatenated compressed streams
-        buf.reset();
-        for(int i = 0; i < 100; i++)
-            buf.write(gz);
-        final byte[] gz32 = buf.toByteArray();
-
-        // (a) Read it back from a stream where available() is accurate
-        long count1 = countBytes(new GZIPInputStream(new ByteArrayInputStream(gz32)));
-
-        // (b) Read it back from a stream where available() always returns zero
-        long count2 = countBytes(new GZIPInputStream(new ZeroAvailableInputStream(new ByteArrayInputStream(gz32))));
-
-        // They should be the same
-        Assert.assertEquals(count2, count1);
+        return buf.toByteArray();
     }
 
-    public long countBytes(InputStream in) throws IOException {
-        long count = 0;
-        while (in.read() != -1)
-            count++;
-        in.close();
-        return count;
-    }
-
-    public static class ZeroAvailableInputStream extends FilterInputStream {
-        public ZeroAvailableInputStream(InputStream in) {
+    public static class ZeroAvailableStream extends FilterInputStream {
+        public ZeroAvailableStream(InputStream in) {
             super(in);
         }
         @Override
-        public int available() throws IOException {
+        public int available() {
             return 0;
         }
     }
