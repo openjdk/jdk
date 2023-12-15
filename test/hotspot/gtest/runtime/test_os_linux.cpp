@@ -369,7 +369,7 @@ public:
 
   void runUnitTest() const {
     int* iptr = reinterpret_cast<int*>(addr);
-    for (int i = 0; i < 1000 && i < (byte / (sizeof(int))); i++)
+    for (int i = 0; i < 1000 && (size_t)i < (byte / (sizeof(int))); i++)
       *iptr++ = i;
   }
 };
@@ -389,10 +389,10 @@ TEST_VM(os_linux, pretouch_thp_and_use_concurrent) {
     const size_t nThreads = os::active_processor_count();
     Semaphore done(0);
     UnitTestThread** t = NEW_C_HEAP_ARRAY(UnitTestThread*, nThreads + 1, mtInternal);
-    t[0] = new UnitTestThread(urunnable, &done, testDurationMillis);
+    t[0] = new UnitTestThread(&urunnable, &done, testDurationMillis);
 
     for (size_t i = 1; i <= nThreads; i++) {
-      t[i] = new UnitTestThread(prunnable, &done, testDurationMillis);
+      t[i] = new UnitTestThread(&prunnable, &done, testDurationMillis);
     }
 
     for (size_t i = 0; i <= nThreads; i++) {
