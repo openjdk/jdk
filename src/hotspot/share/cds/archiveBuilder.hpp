@@ -237,11 +237,9 @@ public:
   };
 
 private:
-  bool is_dumping_full_module_graph();
   FollowMode get_follow_mode(MetaspaceClosure::Ref *ref);
 
   void iterate_sorted_roots(MetaspaceClosure* it);
-  void sort_symbols_and_fix_hash();
   void sort_klasses();
   static int compare_symbols_by_address(Symbol** a, Symbol** b);
   static int compare_klass_by_name(Klass** a, Klass** b);
@@ -341,6 +339,7 @@ public:
   bool gather_klass_and_symbol(MetaspaceClosure::Ref* ref, bool read_only);
   bool gather_one_source_obj(MetaspaceClosure::Ref* ref, bool read_only);
   void remember_embedded_pointer_in_enclosing_obj(MetaspaceClosure::Ref* ref);
+  static void serialize_dynamic_archivable_items(SerializeClosure* soc);
 
   DumpRegion* rw_region() { return &_rw_region; }
   DumpRegion* ro_region() { return &_ro_region; }
@@ -373,6 +372,8 @@ public:
     size_t byte_size = Array<T>::byte_sizeof(length, sizeof(T));
     return align_up(byte_size, SharedSpaceObjectAlignment);
   }
+
+  char* ro_strdup(const char* s);
 
   void dump_rw_metadata();
   void dump_ro_metadata();

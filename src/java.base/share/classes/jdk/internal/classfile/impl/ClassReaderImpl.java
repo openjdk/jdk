@@ -27,40 +27,31 @@ package jdk.internal.classfile.impl;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
 
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.attribute.BootstrapMethodsAttribute;
-import jdk.internal.classfile.constantpool.ClassEntry;
-import jdk.internal.classfile.constantpool.ConstantPoolException;
-import jdk.internal.classfile.constantpool.LoadableConstantEntry;
-import jdk.internal.classfile.constantpool.MethodHandleEntry;
-import jdk.internal.classfile.constantpool.ModuleEntry;
-import jdk.internal.classfile.constantpool.NameAndTypeEntry;
-import jdk.internal.classfile.constantpool.PackageEntry;
-import jdk.internal.classfile.constantpool.PoolEntry;
-import jdk.internal.classfile.constantpool.Utf8Entry;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.BootstrapMethodsAttribute;
+import java.lang.classfile.constantpool.*;
 
-import static jdk.internal.classfile.Classfile.TAG_CLASS;
-import static jdk.internal.classfile.Classfile.TAG_CONSTANTDYNAMIC;
-import static jdk.internal.classfile.Classfile.TAG_DOUBLE;
-import static jdk.internal.classfile.Classfile.TAG_FIELDREF;
-import static jdk.internal.classfile.Classfile.TAG_FLOAT;
-import static jdk.internal.classfile.Classfile.TAG_INTEGER;
-import static jdk.internal.classfile.Classfile.TAG_INTERFACEMETHODREF;
-import static jdk.internal.classfile.Classfile.TAG_INVOKEDYNAMIC;
-import static jdk.internal.classfile.Classfile.TAG_LONG;
-import static jdk.internal.classfile.Classfile.TAG_METHODHANDLE;
-import static jdk.internal.classfile.Classfile.TAG_METHODREF;
-import static jdk.internal.classfile.Classfile.TAG_METHODTYPE;
-import static jdk.internal.classfile.Classfile.TAG_MODULE;
-import static jdk.internal.classfile.Classfile.TAG_NAMEANDTYPE;
-import static jdk.internal.classfile.Classfile.TAG_PACKAGE;
-import static jdk.internal.classfile.Classfile.TAG_STRING;
-import static jdk.internal.classfile.Classfile.TAG_UTF8;
+import static java.lang.classfile.ClassFile.TAG_CLASS;
+import static java.lang.classfile.ClassFile.TAG_CONSTANTDYNAMIC;
+import static java.lang.classfile.ClassFile.TAG_DOUBLE;
+import static java.lang.classfile.ClassFile.TAG_FIELDREF;
+import static java.lang.classfile.ClassFile.TAG_FLOAT;
+import static java.lang.classfile.ClassFile.TAG_INTEGER;
+import static java.lang.classfile.ClassFile.TAG_INTERFACEMETHODREF;
+import static java.lang.classfile.ClassFile.TAG_INVOKEDYNAMIC;
+import static java.lang.classfile.ClassFile.TAG_LONG;
+import static java.lang.classfile.ClassFile.TAG_METHODHANDLE;
+import static java.lang.classfile.ClassFile.TAG_METHODREF;
+import static java.lang.classfile.ClassFile.TAG_METHODTYPE;
+import static java.lang.classfile.ClassFile.TAG_MODULE;
+import static java.lang.classfile.ClassFile.TAG_NAMEANDTYPE;
+import static java.lang.classfile.ClassFile.TAG_PACKAGE;
+import static java.lang.classfile.ClassFile.TAG_STRING;
+import static java.lang.classfile.ClassFile.TAG_UTF8;
 
 public final class ClassReaderImpl
         implements ClassReader {
@@ -77,7 +68,7 @@ public final class ClassReaderImpl
     private final int constantPoolCount;
     private final int[] cpOffset;
 
-    final ClassfileImpl context;
+    final ClassFileImpl context;
     final int interfacesPos;
     final PoolEntry[] cp;
 
@@ -86,13 +77,16 @@ public final class ClassReaderImpl
     private BootstrapMethodsAttribute bootstrapMethodsAttribute;
 
     ClassReaderImpl(byte[] classfileBytes,
-                    ClassfileImpl context) {
+                    ClassFileImpl context) {
         this.buffer = classfileBytes;
         this.classfileLength = classfileBytes.length;
         this.context = context;
         this.attributeMapper = this.context.attributeMapperOption().attributeMapper();
         if (classfileLength < 4 || readInt(0) != 0xCAFEBABE) {
             throw new IllegalArgumentException("Bad magic number");
+        }
+        if (readU2(6) > ClassFile.latestMajorVersion()) {
+            throw new IllegalArgumentException("Unsupported class file version: " + readU2(6));
         }
         int constantPoolCount = readU2(8);
         int[] cpOffset = new int[constantPoolCount];
@@ -134,7 +128,7 @@ public final class ClassReaderImpl
         this.interfacesPos = p;
     }
 
-    public ClassfileImpl context() {
+    public ClassFileImpl context() {
         return context;
     }
 
@@ -144,7 +138,7 @@ public final class ClassReaderImpl
     }
 
     @Override
-    public int entryCount() {
+    public int size() {
         return constantPoolCount;
     }
 
@@ -156,7 +150,7 @@ public final class ClassReaderImpl
     @Override
     public ClassEntry thisClassEntry() {
         if (thisClass == null) {
-            thisClass = readClassEntry(thisClassPos);
+            thisClass = readEntry(thisClassPos, ClassEntry.class);
         }
         return thisClass;
     }
@@ -189,6 +183,9 @@ public final class ClassReaderImpl
 
     @Override
     public BootstrapMethodEntryImpl bootstrapMethodEntry(int index) {
+        if (index < 0 || index >= bootstrapMethodCount()) {
+            throw new ConstantPoolException("Bad BSM index: " + index);
+        }
         return bsmEntries().get(index);
     }
 
@@ -312,6 +309,9 @@ public final class ClassReaderImpl
         PoolEntry info = cp[index];
         if (info == null) {
             int offset = cpOffset[index];
+            if (offset == 0) {
+                throw new ConstantPoolException("Unusable CP index: " + index);
+            }
             int tag = readU1(offset);
             final int q = offset + 1;
             info = switch (tag) {
@@ -386,6 +386,13 @@ public final class ClassReaderImpl
     }
 
     @Override
+    public <T extends PoolEntry> T readEntry(int pos, Class<T> cls) {
+        var e = readEntry(pos);
+        if (cls.isInstance(e)) return cls.cast(e);
+        throw new ConstantPoolException("Not a " + cls.getSimpleName() + " at index: " + readU2(pos));
+    }
+
+    @Override
     public PoolEntry readEntryOrNull(int pos) {
         int index = readU2(pos);
         if (index == 0) {
@@ -411,32 +418,27 @@ public final class ClassReaderImpl
 
     @Override
     public ModuleEntry readModuleEntry(int pos) {
-        if (readEntry(pos) instanceof ModuleEntry me) return me;
-        throw new ConstantPoolException("Not a module entry at pos: " + pos);
+        return readEntry(pos, ModuleEntry.class);
     }
 
     @Override
     public PackageEntry readPackageEntry(int pos) {
-        if (readEntry(pos) instanceof PackageEntry pe) return pe;
-        throw new ConstantPoolException("Not a package entry at pos: " + pos);
+        return readEntry(pos, PackageEntry.class);
     }
 
     @Override
     public ClassEntry readClassEntry(int pos) {
-        if (readEntry(pos) instanceof ClassEntry ce) return ce;
-        throw new ConstantPoolException("Not a class entry at pos: " + pos);
+        return readEntry(pos, ClassEntry.class);
     }
 
     @Override
     public NameAndTypeEntry readNameAndTypeEntry(int pos) {
-        if (readEntry(pos) instanceof NameAndTypeEntry nate) return nate;
-        throw new ConstantPoolException("Not a name and type entry at pos: " + pos);
+        return readEntry(pos, NameAndTypeEntry.class);
     }
 
     @Override
     public MethodHandleEntry readMethodHandleEntry(int pos) {
-        if (readEntry(pos) instanceof MethodHandleEntry mhe) return mhe;
-        throw new ConstantPoolException("Not a method handle entry at pos: " + pos);
+        return readEntry(pos, MethodHandleEntry.class);
     }
 
     @Override

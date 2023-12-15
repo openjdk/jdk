@@ -36,7 +36,8 @@ import java.util.TimeZone;
  * @since 1.5
  */
 
-public abstract class BaseCalendar extends AbstractCalendar {
+public sealed abstract class BaseCalendar extends AbstractCalendar
+        permits Gregorian, JulianCalendar, LocalGregorianCalendar {
 
     public static final int JANUARY = 1;
     public static final int FEBRUARY = 2;
@@ -140,7 +141,8 @@ public abstract class BaseCalendar extends AbstractCalendar {
         744365, // 2039
     };
 
-    public abstract static class Date extends CalendarDate {
+    public sealed abstract static class Date extends CalendarDate
+            permits Gregorian.Date, ImmutableGregorianDate, JulianCalendar.Date, LocalGregorianCalendar.Date {
         protected Date() {
             super();
         }
@@ -188,6 +190,7 @@ public abstract class BaseCalendar extends AbstractCalendar {
         }
     }
 
+    @Override
     public boolean validate(CalendarDate date) {
         Date bdate = (Date) date;
         if (bdate.isNormalized()) {
@@ -214,6 +217,7 @@ public abstract class BaseCalendar extends AbstractCalendar {
         return true;
     }
 
+    @Override
     public boolean normalize(CalendarDate date) {
         if (date.isNormalized()) {
             return true;
@@ -303,6 +307,7 @@ public abstract class BaseCalendar extends AbstractCalendar {
      * @throws ClassCastException if the specified date is not a
      * {@link BaseCalendar.Date}
      */
+    @Override
     public int getYearLength(CalendarDate date) {
         return isLeapYear(((Date)date).getNormalizedYear()) ? 366 : 365;
     }
@@ -318,6 +323,7 @@ public abstract class BaseCalendar extends AbstractCalendar {
         //  12/1 1/1 2/1   3/1   4/1   5/1   6/1   7/1   8/1   9/1   10/1   11/1   12/1
         = {  -30,  0, 31, 59+1, 90+1,120+1,151+1,181+1,212+1,243+1, 273+1, 304+1, 334+1};
 
+    @Override
     public int getMonthLength(CalendarDate date) {
         Date gdate = (Date) date;
         int month = gdate.getMonth();
@@ -349,6 +355,7 @@ public abstract class BaseCalendar extends AbstractCalendar {
     }
 
     // protected
+    @Override
     public long getFixedDate(CalendarDate date) {
         if (!date.isNormalized()) {
             normalizeMonth(date);
@@ -415,6 +422,7 @@ public abstract class BaseCalendar extends AbstractCalendar {
      * {@code CalendarDate}.
      */
     // should be 'protected'
+    @Override
     public void getCalendarDateFromFixedDate(CalendarDate date,
                                              long fixedDate) {
         Date gdate = (Date) date;
@@ -473,7 +481,7 @@ public abstract class BaseCalendar extends AbstractCalendar {
         return getDayOfWeekFromFixedDate(fixedDate);
     }
 
-    public static final int getDayOfWeekFromFixedDate(long fixedDate) {
+    public static int getDayOfWeekFromFixedDate(long fixedDate) {
         // The fixed day 1 (January 1, 1 Gregorian) is Monday.
         if (fixedDate >= 0) {
             return (int)(fixedDate % 7) + SUNDAY;
@@ -525,6 +533,7 @@ public abstract class BaseCalendar extends AbstractCalendar {
      * false otherwise.
      * @see CalendarUtils#isGregorianLeapYear
      */
+    @Override
     protected boolean isLeapYear(CalendarDate date) {
         return isLeapYear(((Date)date).getNormalizedYear());
     }

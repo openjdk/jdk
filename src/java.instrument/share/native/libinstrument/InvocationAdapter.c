@@ -924,7 +924,7 @@ appendBootClassPath( JPLISAgent* agent,
          * Normalize the path - no duplicate slashes (except UNCs on Windows), trailing
          * slash removed.
          */
-        TRANSFORM(path, normalize(path));
+        TRANSFORM(path, normalize_path(path));
 
         /*
          * If the path is an absolute path then add to the bootclassloader

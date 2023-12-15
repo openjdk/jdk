@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,7 +54,7 @@ public class TestLookForUntestedEvents {
 
     private static final Set<String> hardToTestEvents = new HashSet<>(
         Arrays.asList(
-            "DataLoss", "IntFlag", "ReservedStackActivation",
+            "DataLoss", "IntFlag", "ReservedStackActivation", "NativeLibraryUnload",
             "DoubleFlag", "UnsignedLongFlagChanged", "IntFlagChanged",
             "UnsignedIntFlag", "UnsignedIntFlagChanged", "DoubleFlagChanged")
     );

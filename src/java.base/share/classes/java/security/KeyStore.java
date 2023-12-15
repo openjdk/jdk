@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -205,7 +205,7 @@ public class KeyStore {
      * the default keystore type.
      * In the Security properties file, the default keystore type is given as:
      * <pre>
-     * keystore.type=jks
+     * keystore.type=pkcs12
      * </pre>
      */
     private static final String KEYSTORE_TYPE = "keystore.type";
@@ -817,7 +817,7 @@ public class KeyStore {
         this.type = type;
 
         if (!skipDebug && pdebug != null) {
-            pdebug.println("KeyStore." + type.toUpperCase() + " type from: " +
+            pdebug.println("KeyStore." + type.toUpperCase(Locale.ROOT) + " type from: " +
                 getProviderName());
         }
     }
@@ -971,8 +971,7 @@ public class KeyStore {
     /**
      * Returns the default keystore type as specified by the
      * {@code keystore.type} security property, or the string
-     * {@literal "jks"} (acronym for {@literal "Java keystore"})
-     * if no such property exists.
+     * {@literal "pkcs12"} if no such property exists.
      *
      * <p>The default keystore type can be used by applications that do not
      * want to use a hard-coded keystore type when calling one of the
@@ -983,7 +982,7 @@ public class KeyStore {
      * {@code keystore.type} security property to the desired keystore type.
      *
      * @return the default keystore type as specified by the
-     * {@code keystore.type} security property, or the string {@literal "jks"}
+     * {@code keystore.type} security property, or the string {@literal "pkcs12"}
      * if no such property exists.
      * @see java.security.Security security properties
      */
@@ -992,7 +991,7 @@ public class KeyStore {
         String kstype = AccessController.doPrivileged((PrivilegedAction<String>) () ->
             Security.getProperty(KEYSTORE_TYPE));
         if (kstype == null) {
-            kstype = "jks";
+            kstype = "pkcs12";
         }
         return kstype;
     }

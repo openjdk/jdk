@@ -40,7 +40,6 @@ import com.sun.tools.javac.code.*;
 import com.sun.tools.javac.code.Source.Feature;
 import com.sun.tools.javac.file.PathFileObject;
 import com.sun.tools.javac.parser.Tokens.*;
-import com.sun.tools.javac.parser.Tokens.Comment.CommentStyle;
 import com.sun.tools.javac.resources.CompilerProperties.Errors;
 import com.sun.tools.javac.resources.CompilerProperties.Fragments;
 import com.sun.tools.javac.resources.CompilerProperties.Warnings;
@@ -207,9 +206,9 @@ public class JavacParser implements Parser {
         this.source = parser.source;
         this.preview = parser.preview;
         this.allowStringFolding = parser.allowStringFolding;
-        this.keepDocComments = false;
+        this.keepDocComments = parser.keepDocComments;
         this.parseModuleInfo = false;
-        this.docComments = null;
+        this.docComments = parser.docComments;
         this.errorTree = F.Erroneous();
         this.endPosTable = newEndPosTable(false);
         this.allowYieldStatement = Feature.SWITCH_EXPRESSION.allowedInSource(source);
@@ -654,8 +653,8 @@ public class JavacParser implements Parser {
                     log.error(DiagnosticFlag.SYNTAX, token.pos, Errors.UseOfUnderscoreNotAllowedWithBrackets);
                 }
             } else {
-                if (preview.isEnabled() && Feature.UNNAMED_VARIABLES.allowedInSource(source)) {
-                    log.error(DiagnosticFlag.SYNTAX, token.pos, Errors.UseOfUnderscoreNotAllowed);
+                if (Feature.UNNAMED_VARIABLES.allowedInSource(source)) {
+                    log.error(DiagnosticFlag.SYNTAX, token.pos, Errors.UseOfUnderscoreNotAllowedNonVariable);
                 } else {
                     log.error(DiagnosticFlag.SYNTAX, token.pos, Errors.UnderscoreAsIdentifier);
                 }
@@ -910,6 +909,7 @@ public class JavacParser implements Parser {
                 if (mods.annotations.nonEmpty()) {
                     log.error(mods.annotations.head.pos(), Errors.RecordPatternsAnnotationsNotAllowed);
                 }
+                checkNoMods(pos, mods.flags & Flags.FINAL);
                 new TreeScanner() {
                     @Override
                     public void visitAnnotatedType(JCAnnotatedType tree) {
@@ -2819,7 +2819,7 @@ public class JavacParser implements Parser {
             return List.of(parseSimpleStatement());
         case MONKEYS_AT:
         case FINAL: {
-            dc = token.comment(CommentStyle.JAVADOC);
+            dc = token.docComment();
             JCModifiers mods = modifiersOpt();
             if (isDeclaration()) {
                 return List.of(classOrRecordOrInterfaceOrEnumDeclaration(mods, dc));
@@ -2829,19 +2829,19 @@ public class JavacParser implements Parser {
             }
         }
         case ABSTRACT: case STRICTFP: {
-            dc = token.comment(CommentStyle.JAVADOC);
+            dc = token.docComment();
             JCModifiers mods = modifiersOpt();
             return List.of(classOrRecordOrInterfaceOrEnumDeclaration(mods, dc));
         }
         case INTERFACE:
         case CLASS:
-            dc = token.comment(CommentStyle.JAVADOC);
+            dc = token.docComment();
             return List.of(classOrRecordOrInterfaceOrEnumDeclaration(modifiersOpt(), dc));
         case ENUM:
             if (!allowRecords) {
                 log.error(DiagnosticFlag.SYNTAX, token.pos, Errors.LocalEnum);
             }
-            dc = token.comment(CommentStyle.JAVADOC);
+            dc = token.docComment();
             return List.of(classOrRecordOrInterfaceOrEnumDeclaration(modifiersOpt(), dc));
         case IDENTIFIER:
             if (token.name() == names.yield && allowYieldStatement) {
@@ -2853,6 +2853,7 @@ public class JavacParser implements Parser {
                     case INTLITERAL: case LONGLITERAL: case FLOATLITERAL: case DOUBLELITERAL:
                     case NULL: case IDENTIFIER: case TRUE: case FALSE:
                     case NEW: case SWITCH: case THIS: case SUPER:
+                    case BYTE, CHAR, SHORT, INT, LONG, FLOAT, DOUBLE, VOID, BOOLEAN:
                         isYieldStatement = true;
                         break;
                     case PLUSPLUS: case SUBSUB:
@@ -2898,17 +2899,17 @@ public class JavacParser implements Parser {
                     nextToken();
                     nextToken();
                     nextToken();
-                    return List.of(classOrRecordOrInterfaceOrEnumDeclaration(modifiersOpt(), token.comment(CommentStyle.JAVADOC)));
+                    return List.of(classOrRecordOrInterfaceOrEnumDeclaration(modifiersOpt(), token.docComment()));
                 } else if (isSealedClassStart(true)) {
                     checkSourceLevel(Feature.SEALED_CLASSES);
                     log.error(token.pos, Errors.SealedOrNonSealedLocalClassesNotAllowed);
                     nextToken();
-                    return List.of(classOrRecordOrInterfaceOrEnumDeclaration(modifiersOpt(), token.comment(CommentStyle.JAVADOC)));
+                    return List.of(classOrRecordOrInterfaceOrEnumDeclaration(modifiersOpt(), token.docComment()));
                 }
             }
         }
         if (isRecordStart() && allowRecords) {
-            dc = token.comment(CommentStyle.JAVADOC);
+            dc = token.docComment();
             return List.of(recordDeclaration(F.at(pos).Modifiers(0), dc));
         } else {
             Token prevToken = token;
@@ -3310,6 +3311,8 @@ public class JavacParser implements Parser {
                         } else {
                             pendingResult = PatternResult.PATTERN;
                         }
+                    } else if (typeDepth == 0 && parenDepth == 0 && (peekToken(lookahead, tk -> tk == ARROW || tk == COMMA))) {
+                        return PatternResult.EXPRESSION;
                     }
                     break;
                 case UNDERSCORE:
@@ -3359,6 +3362,8 @@ public class JavacParser implements Parser {
                 case RPAREN: parenDepth--; break;
                 case ARROW: return parenDepth > 0 ? PatternResult.EXPRESSION
                                                    : pendingResult;
+                case FINAL:
+                    if (parenDepth > 0) return PatternResult.PATTERN;
                 default: return pendingResult;
             }
             lookahead++;
@@ -3909,14 +3914,14 @@ public class JavacParser implements Parser {
             JCExpression pid = qualident(false);
             accept(SEMI);
             JCPackageDecl pd = toP(F.at(packagePos).PackageDecl(annotations, pid));
-            attach(pd, firstToken.comment(CommentStyle.JAVADOC));
+            attach(pd, firstToken.docComment());
             consumedToplevelDoc = true;
             defs.append(pd);
         }
 
-        boolean firstTypeDecl = true;   // have we see a class, enum, or interface declaration yet?
-        boolean isUnnamedClass = false;
-        while (token.kind != EOF) {
+        boolean firstTypeDecl = true;   // have we seen a class, enum, or interface declaration yet?
+        boolean isImplicitClass = false;
+        OUTER: while (token.kind != EOF) {
             if (token.pos <= endPosTable.errorEndPos) {
                 // error recovery
                 skip(firstTypeDecl, false, false, false);
@@ -3931,6 +3936,8 @@ public class JavacParser implements Parser {
             while (firstTypeDecl && mods == null && token.kind == SEMI) {
                 semiList.append(toP(F.at(token.pos).Skip()));
                 nextToken();
+                if (token.kind == EOF)
+                    break OUTER;
             }
             if (firstTypeDecl && mods == null && token.kind == IMPORT) {
                 if (!semiList.isEmpty()) {
@@ -3942,9 +3949,9 @@ public class JavacParser implements Parser {
                 seenImport = true;
                 defs.append(importDeclaration());
             } else {
-                Comment docComment = token.comment(CommentStyle.JAVADOC);
+                Comment docComment = token.docComment();
                 if (firstTypeDecl && !seenImport && !seenPackage) {
-                    docComment = firstToken.comment(CommentStyle.JAVADOC);
+                    docComment = firstToken.docComment();
                     consumedToplevelDoc = true;
                 }
                 if (mods != null || token.kind != SEMI)
@@ -3976,17 +3983,17 @@ public class JavacParser implements Parser {
                 defs.appendList(semiList.toList());
                 boolean isTopLevelMethodOrField = false;
 
-                // Do to a significant number of existing negative tests
+                // Due to a significant number of existing negative tests
                 // this code speculatively tests to see if a top level method
                 // or field can parse. If the method or field can parse then
                 // it is parsed. Otherwise, parsing continues as though
-                // unnamed classes did not exist and error reporting
+                // implicitly declared classes did not exist and error reporting
                 // is the same as in the past.
-                if (Feature.UNNAMED_CLASSES.allowedInSource(source) && !isDeclaration()) {
+                if (Feature.IMPLICIT_CLASSES.allowedInSource(source) && !isDeclaration()) {
                     final JCModifiers finalMods = mods;
                     JavacParser speculative = new VirtualParser(this);
                     List<JCTree> speculativeResult =
-                            speculative.topLevelMethodOrFieldDeclaration(finalMods);
+                            speculative.topLevelMethodOrFieldDeclaration(finalMods, null);
                     if (speculativeResult.head.hasTag(METHODDEF) ||
                         speculativeResult.head.hasTag(VARDEF)) {
                         isTopLevelMethodOrField = true;
@@ -3994,10 +4001,10 @@ public class JavacParser implements Parser {
                 }
 
                 if (isTopLevelMethodOrField) {
-                    checkSourceLevel(token.pos, Feature.UNNAMED_CLASSES);
-                    defs.appendList(topLevelMethodOrFieldDeclaration(mods));
-                    isUnnamedClass = true;
-                } else if (token.kind != EOF) {
+                    checkSourceLevel(token.pos, Feature.IMPLICIT_CLASSES);
+                    defs.appendList(topLevelMethodOrFieldDeclaration(mods, docComment));
+                    isImplicitClass = true;
+                } else {
                     JCTree def = typeDeclaration(mods, docComment);
                     if (def instanceof JCExpressionStatement statement)
                         def = statement.expr;
@@ -4008,10 +4015,10 @@ public class JavacParser implements Parser {
                 firstTypeDecl = false;
             }
         }
-        List<JCTree> topLevelDefs = isUnnamedClass ?  constructUnnamedClass(defs.toList()) : defs.toList();
+        List<JCTree> topLevelDefs = isImplicitClass ?  constructImplicitClass(defs.toList()) : defs.toList();
         JCTree.JCCompilationUnit toplevel = F.at(firstToken.pos).TopLevel(topLevelDefs);
         if (!consumedToplevelDoc)
-            attach(toplevel, firstToken.comment(CommentStyle.JAVADOC));
+            attach(toplevel, firstToken.docComment());
         if (defs.isEmpty())
             storeEnd(toplevel, S.prevToken().endPos);
         if (keepDocComments)
@@ -4023,14 +4030,14 @@ public class JavacParser implements Parser {
         return toplevel;
     }
 
-    // Restructure top level to be an unnamed class.
-    private List<JCTree> constructUnnamedClass(List<JCTree> origDefs) {
+    // Restructure top level to be an implicitly declared class.
+    private List<JCTree> constructImplicitClass(List<JCTree> origDefs) {
         ListBuffer<JCTree> topDefs = new ListBuffer<>();
         ListBuffer<JCTree> defs = new ListBuffer<>();
 
         for (JCTree def : origDefs) {
             if (def.hasTag(Tag.PACKAGEDEF)) {
-                log.error(def.pos(), Errors.UnnamedClassShouldNotHavePackageDeclaration);
+                log.error(def.pos(), Errors.ImplicitClassShouldNotHavePackageDeclaration);
             } else if (def.hasTag(Tag.IMPORT)) {
                 topDefs.append(def);
             } else if (!def.hasTag(Tag.SKIP)) {
@@ -4049,12 +4056,12 @@ public class JavacParser implements Parser {
         }
 
         Name name = names.fromString(simplename);
-        JCModifiers unnamedMods = F.at(Position.NOPOS)
-                .Modifiers(Flags.FINAL|Flags.SYNTHETIC|Flags.UNNAMED_CLASS, List.nil());
-        JCClassDecl unnamed = F.at(primaryPos).ClassDef(
-                unnamedMods, name, List.nil(), null, List.nil(), List.nil(),
+        JCModifiers implicitMods = F.at(Position.NOPOS)
+                .Modifiers(Flags.FINAL|Flags.IMPLICIT_CLASS, List.nil());
+        JCClassDecl implicit = F.at(primaryPos).ClassDef(
+                implicitMods, name, List.nil(), null, List.nil(), List.nil(),
                 defs.toList());
-        topDefs.append(unnamed);
+        topDefs.append(implicit);
         return topDefs.toList();
     }
 
@@ -4496,7 +4503,7 @@ public class JavacParser implements Parser {
     /** EnumeratorDeclaration = AnnotationsOpt [TypeArguments] IDENTIFIER [ Arguments ] [ "{" ClassBody "}" ]
      */
     JCTree enumeratorDeclaration(Name enumName) {
-        Comment dc = token.comment(CommentStyle.JAVADOC);
+        Comment dc = token.docComment();
         int flags = Flags.PUBLIC|Flags.STATIC|Flags.FINAL|Flags.ENUM;
         if (token.deprecatedFlag()) {
             flags |= Flags.DEPRECATED;
@@ -4601,7 +4608,7 @@ public class JavacParser implements Parser {
             nextToken();
             return List.nil();
         } else {
-            Comment dc = token.comment(CommentStyle.JAVADOC);
+            Comment dc = token.docComment();
             int pos = token.pos;
             mods = modifiersOpt(mods);
             if (isDeclaration()) {
@@ -4731,10 +4738,9 @@ public class JavacParser implements Parser {
          return List.of(syntaxError(token.pos, err, Errors.Expected(LPAREN)));
     }
 
-    private List<JCTree> topLevelMethodOrFieldDeclaration(JCModifiers mods) throws AssertionError {
-        int topPos = token.pos;
+    private List<JCTree> topLevelMethodOrFieldDeclaration(JCModifiers mods, Comment dc) throws AssertionError {
         int pos = token.pos;
-        Comment dc = token.comment(CommentStyle.JAVADOC);
+        dc = dc == null ? token.docComment() : dc;
         List<JCTypeParameter> typarams = typeParametersOpt();
 
         // if there are type parameters but no modifiers, save the start

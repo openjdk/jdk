@@ -34,8 +34,6 @@ import javax.lang.model.element.ModuleElement;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.Text;
-import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
-import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
 
 /**
@@ -52,23 +50,20 @@ public class ModuleIndexWriter extends AbstractOverviewIndexWriter {
      * Construct the ModuleIndexWriter.
      *
      * @param configuration the configuration object
-     * @param filename the name of the generated file
      */
-    public ModuleIndexWriter(HtmlConfiguration configuration, DocPath filename) {
-        super(configuration, filename);
+    public ModuleIndexWriter(HtmlConfiguration configuration) {
+        super(configuration, DocPaths.INDEX);
         modules = configuration.modules;
     }
 
-    /**
-     * Generate the module index page.
-     *
-     * @param configuration the current configuration of the doclet.
-     * @throws DocFileIOException if there is a problem generating the module index page
-     */
-    public static void generate(HtmlConfiguration configuration) throws DocFileIOException {
-        DocPath filename = DocPaths.INDEX;
-        ModuleIndexWriter mdlgen = new ModuleIndexWriter(configuration, filename);
-        mdlgen.buildOverviewIndexFile("doclet.Window_Overview_Summary", "module index");
+    @Override
+    public String getDescription() {
+        return "module index";
+    }
+
+    @Override
+    public String getTitleKey() {
+        return "doclet.Window_Overview_Summary";
     }
 
     /**

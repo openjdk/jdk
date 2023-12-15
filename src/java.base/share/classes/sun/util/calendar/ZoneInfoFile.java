@@ -210,7 +210,7 @@ public final class ZoneInfoFile {
 
     private static String versionId;
     private static final Map<String, ZoneInfo> zones = new ConcurrentHashMap<>();
-    private static Map<String, String> aliases = new HashMap<>();
+    private static final Map<String, String> aliases = new HashMap<>();
 
     private static byte[][] ruleArray;
     private static String[] regions;
@@ -219,7 +219,7 @@ public final class ZoneInfoFile {
     // Flag for supporting JDK backward compatible IDs, such as "EST".
     private static final boolean USE_OLDMAPPING;
 
-    private static String[][] oldMappings = new String[][] {
+    private static final String[][] oldMappings = new String[][] {
         { "ACT", "Australia/Darwin" },
         { "AET", "Australia/Sydney" },
         { "AGT", "America/Argentina/Buenos_Aires" },
@@ -468,10 +468,9 @@ public final class ZoneInfoFile {
             }
             if (i < savingsInstantTransitions.length) {
                 // javazic writes the last GMT offset into index 0!
-                if (i < savingsInstantTransitions.length) {
-                    offsets[0] = standardOffsets[standardOffsets.length - 1] * 1000;
-                    nOffsets = 1;
-                }
+                offsets[0] = standardOffsets[standardOffsets.length - 1] * 1000;
+                nOffsets = 1;
+
                 // ZoneInfo has a beginning entry for 1900.
                 // Only add it if this is not the only one in table
                 nOffsets = addTrans(transitions, nTrans++,
@@ -930,7 +929,7 @@ public final class ZoneInfoFile {
         }
 
         static final boolean isLeapYear(int year) {
-            return ((year & 3) == 0) && ((year % 100) != 0 || (year % 400) == 0);
+            return CalendarUtils.isGregorianLeapYear(year);
         }
 
         static final int lengthOfMonth(int year, int month) {

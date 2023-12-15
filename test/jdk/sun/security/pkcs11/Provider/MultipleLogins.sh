@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -98,6 +98,12 @@ esac
 
 # first make cert/key DBs writable
 
+${CP} ${TESTSRC}${FS}..${FS}nss${FS}db${FS}cert9.db ${TESTCLASSES}
+${CHMOD} +w ${TESTCLASSES}${FS}cert9.db
+
+${CP} ${TESTSRC}${FS}..${FS}nss${FS}db${FS}key4.db ${TESTCLASSES}
+${CHMOD} +w ${TESTCLASSES}${FS}key4.db
+
 ${CP} ${TESTSRC}${FS}..${FS}nss${FS}db${FS}cert8.db ${TESTCLASSES}
 ${CHMOD} +w ${TESTCLASSES}${FS}cert8.db
 
@@ -111,6 +117,7 @@ ${COMPILEJAVA}${FS}bin${FS}javac ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} \
         --add-modules jdk.crypto.cryptoki \
         --add-exports jdk.crypto.cryptoki/sun.security.pkcs11=ALL-UNNAMED \
         ${TESTSRC}${FS}..${FS}..${FS}..${FS}..${FS}..${FS}lib${FS}jdk${FS}test${FS}lib${FS}artifacts${FS}*.java \
+        ${TESTSRC}${FS}..${FS}..${FS}..${FS}..${FS}..${FS}lib${FS}jtreg${FS}*.java \
         ${TESTSRC}${FS}MultipleLogins.java \
         ${TESTSRC}${FS}..${FS}PKCS11Test.java
 
@@ -119,8 +126,6 @@ TEST_ARGS="${TESTVMOPTS} -classpath ${TESTCLASSPATH} \
         --add-exports jdk.crypto.cryptoki/sun.security.pkcs11=ALL-UNNAMED \
         -DCUSTOM_DB_DIR=${TESTCLASSES} \
         -DCUSTOM_P11_CONFIG=${TESTSRC}${FS}MultipleLogins-nss.txt \
-        -DNO_DEFAULT=true \
-        -DNO_DEIMOS=true \
         -Dtest.src=${TESTSRC} \
         -Dtest.classes=${TESTCLASSES} \
         -Djava.security.debug=${DEBUG}"

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,27 +57,24 @@ public class IndexRedirectWriter extends HtmlDocletWriter {
 
     public static void generate(HtmlConfiguration configuration, DocPath fileName, DocPath target)
             throws DocFileIOException {
-        IndexRedirectWriter indexRedirect = new IndexRedirectWriter(configuration, fileName, target);
-        indexRedirect.generateIndexFile();
+        var indexRedirect = new IndexRedirectWriter(configuration, fileName, target);
+        indexRedirect.buildPage();
     }
 
-    private DocPath target;
+    private final DocPath target;
 
     private IndexRedirectWriter(HtmlConfiguration configuration, DocPath filename, DocPath target) {
         super(configuration, filename);
         this.target = target;
     }
 
-    /**
-     * Generate an index file that redirects to an alternate file.
-     * @throws DocFileIOException if there is a problem generating the file
-     */
-    private void generateIndexFile() throws DocFileIOException {
+    @Override
+    public void buildPage() throws DocFileIOException {
         Head head = new Head(path, configuration.getDocletVersion(), configuration.getBuildDate())
                 .setTimestamp(!options.noTimestamp())
                 .setDescription("index redirect")
                 .setGenerator(getGenerator(getClass()))
-                .setStylesheets(configuration.getMainStylesheet(), List.of()) // avoid reference to default stylesheet
+                .setStylesheets(configuration.getMainStylesheet(), List.of(), List.of())
                 .addDefaultScript(false);
 
         String title = (options.windowTitle().length() > 0)

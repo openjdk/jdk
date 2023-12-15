@@ -184,21 +184,20 @@ public class SignatureFileVerifier {
     /**
      * Returns the signed JAR block file extension for a key.
      *
+     * Returns "DSA" for unknown algorithms. This is safe because the
+     * signature verification process does not require the extension to
+     * match the key algorithm as long as it is "RSA", "DSA", or "EC."
+     *
      * @param key the key used to sign the JAR file
      * @return the extension
      * @see #isBlockOrSF(String)
      */
     public static String getBlockExtension(PrivateKey key) {
-        String keyAlgorithm = key.getAlgorithm().toUpperCase(Locale.ENGLISH);
-        if (keyAlgorithm.equals("RSASSA-PSS")) {
-            return "RSA";
-        } else if (keyAlgorithm.equals("EDDSA")
-                || keyAlgorithm.equals("ED25519")
-                || keyAlgorithm.equals("ED448")) {
-            return "EC";
-        } else {
-            return keyAlgorithm;
-        }
+        return switch (key.getAlgorithm().toUpperCase(Locale.ENGLISH)) {
+            case "RSA", "RSASSA-PSS" -> "RSA";
+            case "EC", "EDDSA", "ED25519", "ED448" -> "EC";
+            default -> "DSA";
+        };
     }
 
     /**
@@ -847,16 +846,16 @@ public class SignatureFileVerifier {
          * the maximum allowed number of bytes for the signature-related files
          * in a JAR file.
          */
-        Integer tmp = GetIntegerAction.privilegedGetProperty(
-                "jdk.jar.maxSignatureFileSize", 8000000);
+        int tmp = GetIntegerAction.privilegedGetProperty(
+                "jdk.jar.maxSignatureFileSize", 16000000);
         if (tmp < 0 || tmp > MAX_ARRAY_SIZE) {
             if (debug != null) {
-                debug.println("Default signature file size 8000000 bytes " +
-                        "is used as the specified size for the " +
-                        "jdk.jar.maxSignatureFileSize system property " +
+                debug.println("The default signature file size of 16000000 bytes " +
+                        "will be used for the jdk.jar.maxSignatureFileSize " +
+                        "system property since the specified value " +
                         "is out of range: " + tmp);
             }
-            tmp = 8000000;
+            tmp = 16000000;
         }
         return tmp;
     }

@@ -56,7 +56,6 @@ import jdk.javadoc.internal.doclets.formats.html.markup.Text;
 import jdk.javadoc.internal.doclets.toolkit.DocletElement;
 import jdk.javadoc.internal.doclets.toolkit.OverviewElement;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
-import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
 import jdk.javadoc.internal.doclets.toolkit.util.IndexItem;
 
@@ -68,8 +67,6 @@ import static java.util.stream.Collectors.toList;
  */
 public class ExternalSpecsWriter extends HtmlDocletWriter {
 
-    private final Navigation navBar;
-
     /**
      * Cached contents of {@code <title>...</title>} tags of the HTML pages.
      */
@@ -79,32 +76,25 @@ public class ExternalSpecsWriter extends HtmlDocletWriter {
      * Constructs ExternalSpecsWriter object.
      *
      * @param configuration The current configuration
-     * @param filename Path to the file which is getting generated.
      */
-    public ExternalSpecsWriter(HtmlConfiguration configuration, DocPath filename) {
-        super(configuration, filename);
-        this.navBar = new Navigation(null, configuration, PageMode.EXTERNAL_SPECS, path);
-    }
-
-    public static void generate(HtmlConfiguration configuration) throws DocFileIOException {
-        generate(configuration, DocPaths.EXTERNAL_SPECS);
-    }
-
-    private static void generate(HtmlConfiguration configuration, DocPath fileName) throws DocFileIOException {
-        boolean hasExternalSpecs = configuration.mainIndex != null
-                && !configuration.mainIndex.getItems(DocTree.Kind.SPEC).isEmpty();
-        if (!hasExternalSpecs) {
-            return;
-        }
-        ExternalSpecsWriter w = new ExternalSpecsWriter(configuration, fileName);
-        w.buildExternalSpecsPage();
-        configuration.conditionalPages.add(HtmlConfiguration.ConditionalPage.EXTERNAL_SPECS);
+    public ExternalSpecsWriter(HtmlConfiguration configuration) {
+        super(configuration, DocPaths.EXTERNAL_SPECS, false);
     }
 
     /**
      * Prints all the "external specs" to the file.
      */
-    protected void buildExternalSpecsPage() throws DocFileIOException {
+    @Override
+    public void buildPage() throws DocFileIOException {
+        boolean hasExternalSpecs = configuration.indexBuilder != null
+                && !configuration.indexBuilder.getItems(DocTree.Kind.SPEC).isEmpty();
+        if (!hasExternalSpecs) {
+            return;
+        }
+
+        writeGenerating();
+        configuration.conditionalPages.add(HtmlConfiguration.ConditionalPage.EXTERNAL_SPECS);
+
         checkUniqueItems();
 
         String title = resources.getText("doclet.External_Specifications");
@@ -120,15 +110,15 @@ public class ExternalSpecsWriter extends HtmlDocletWriter {
                 .setFooter(getFooter()));
         printHtmlDocument(null, "external specifications", body);
 
-        if (configuration.mainIndex != null) {
-            configuration.mainIndex.add(IndexItem.of(IndexItem.Category.TAGS, title, path));
+        if (configuration.indexBuilder != null) {
+            configuration.indexBuilder.add(IndexItem.of(IndexItem.Category.TAGS, title, path));
         }
     }
 
     protected void checkUniqueItems() {
         Map<String, Map<String, List<IndexItem>>> itemsByURL = new HashMap<>();
         Map<String, Map<String, List<IndexItem>>> itemsByTitle = new HashMap<>();
-        for (IndexItem ii : configuration.mainIndex.getItems(DocTree.Kind.SPEC)) {
+        for (IndexItem ii : configuration.indexBuilder.getItems(DocTree.Kind.SPEC)) {
             if (ii.getDocTree() instanceof SpecTree st) {
                 String url = st.getURL().toString();
                 String title = ii.getLabel(); // normalized form of  st.getTitle()
@@ -240,7 +230,7 @@ public class ExternalSpecsWriter extends HtmlDocletWriter {
     }
 
     private Map<String, List<IndexItem>> groupExternalSpecs() {
-        return configuration.mainIndex.getItems(DocTree.Kind.SPEC).stream()
+        return configuration.indexBuilder.getItems(DocTree.Kind.SPEC).stream()
                 .collect(groupingBy(IndexItem::getLabel, () -> new TreeMap<>(getTitleComparator()), toList()));
     }
 

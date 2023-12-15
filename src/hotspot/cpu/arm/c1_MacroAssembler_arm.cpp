@@ -219,7 +219,7 @@ int C1_MacroAssembler::lock_object(Register hdr, Register obj, Register disp_hdr
     Register t2 = hdr;      // blow
     Register t3 = Rtemp;    // blow
 
-    fast_lock_2(obj /* obj */, t1, t2, t3, 1 /* savemask - save t1 */, slow_case);
+    lightweight_lock(obj /* obj */, t1, t2, t3, 1 /* savemask - save t1 */, slow_case);
     // Success: fall through
 
   } else if (LockingMode == LM_LEGACY) {
@@ -282,8 +282,8 @@ void C1_MacroAssembler::unlock_object(Register hdr, Register obj, Register disp_
     Register t2 = hdr;      // blow
     Register t3 = Rtemp;    // blow
 
-    fast_unlock_2(obj /* object */, t1, t2, t3, 1 /* savemask (save t1) */,
-                    slow_case);
+    lightweight_unlock(obj /* object */, t1, t2, t3, 1 /* savemask (save t1) */,
+                       slow_case);
     // Success: Fall through
 
   } else if (LockingMode == LM_LEGACY) {

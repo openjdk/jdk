@@ -56,12 +56,12 @@ enum membarrier_cmd {
   MEMBARRIER_CMD_REGISTER_PRIVATE_EXPEDITED = (1 << 4),
 };
 
-static int membarrier(int cmd, unsigned int flags, int cpu_id) {
+static long membarrier(int cmd, unsigned int flags, int cpu_id) {
   return syscall(SYS_membarrier, cmd, flags, cpu_id); // cpu_id only on >= 5.10
 }
 
 bool LinuxSystemMemoryBarrier::initialize() {
-  int ret = membarrier(MEMBARRIER_CMD_QUERY, 0, 0);
+  long ret = membarrier(MEMBARRIER_CMD_QUERY, 0, 0);
   if (ret < 0) {
     log_info(os)("MEMBARRIER_CMD_QUERY unsupported");
     return false;
@@ -78,6 +78,6 @@ bool LinuxSystemMemoryBarrier::initialize() {
 }
 
 void LinuxSystemMemoryBarrier::emit() {
-  int s = membarrier(MEMBARRIER_CMD_PRIVATE_EXPEDITED, 0, 0);
+  long s = membarrier(MEMBARRIER_CMD_PRIVATE_EXPEDITED, 0, 0);
   guarantee_with_errno(s >= 0, "MEMBARRIER_CMD_PRIVATE_EXPEDITED failed");
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -242,9 +242,10 @@ public final class IDN {
     private static final int MAX_LABEL_LENGTH   = 63;
 
     // single instance of nameprep
-    private static StringPrep namePrep = null;
+    private static final StringPrep namePrep;
 
     static {
+        StringPrep stringPrep = null;
         try {
             final String IDN_PROFILE = "/sun/net/idn/uidna.spp";
             @SuppressWarnings("removal")
@@ -255,12 +256,13 @@ public final class IDN {
                             }})
                     : StringPrep.class.getResourceAsStream(IDN_PROFILE);
 
-            namePrep = new StringPrep(stream);
+            stringPrep = new StringPrep(stream);
             stream.close();
         } catch (IOException e) {
             // should never reach here
             assert false;
         }
+        namePrep = stringPrep;
     }
 
 

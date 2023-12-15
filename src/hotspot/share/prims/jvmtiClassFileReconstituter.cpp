@@ -34,6 +34,7 @@
 #include "runtime/handles.inline.hpp"
 #include "runtime/signature.hpp"
 #include "utilities/bytes.hpp"
+#include "utilities/checkedCast.hpp"
 
 // FIXME: add Deprecated attribute
 // FIXME: fix Synthetic attribute
@@ -1026,7 +1027,13 @@ void JvmtiClassFileReconstituter::copy_bytecodes(const methodHandle& mh,
       case Bytecodes::_getstatic       :  // fall through
       case Bytecodes::_putstatic       :  // fall through
       case Bytecodes::_getfield        :  // fall through
-      case Bytecodes::_putfield        :  // fall through
+      case Bytecodes::_putfield        :  {
+        int field_index = Bytes::get_native_u2(bcp+1);
+        u2 pool_index = mh->constants()->resolved_field_entry_at(field_index)->constant_pool_index();
+        assert(pool_index < mh->constants()->length(), "sanity check");
+        Bytes::put_Java_u2((address)(p+1), pool_index);     // java byte ordering
+        break;
+      }
       case Bytecodes::_invokevirtual   :  // fall through
       case Bytecodes::_invokespecial   :  // fall through
       case Bytecodes::_invokestatic    :  // fall through
@@ -1039,15 +1046,13 @@ void JvmtiClassFileReconstituter::copy_bytecodes(const methodHandle& mh,
 
         int cpci = Bytes::get_native_u2(bcp+1);
         bool is_invokedynamic = (code == Bytecodes::_invokedynamic);
-        ConstantPoolCacheEntry* entry;
         int pool_index;
         if (is_invokedynamic) {
           cpci = Bytes::get_native_u4(bcp+1);
           pool_index = mh->constants()->resolved_indy_entry_at(mh->constants()->decode_invokedynamic_index(cpci))->constant_pool_index();
         } else {
-        // cache cannot be pre-fetched since some classes won't have it yet
-          entry = mh->constants()->cache()->entry_at(cpci);
-          pool_index = entry->constant_pool_index();
+          // cache cannot be pre-fetched since some classes won't have it yet
+          pool_index = mh->constants()->resolved_method_entry_at(cpci)->constant_pool_index();
         }
         assert(pool_index < mh->constants()->length(), "sanity check");
         Bytes::put_Java_u2((address)(p+1), (u2)pool_index);     // java byte ordering

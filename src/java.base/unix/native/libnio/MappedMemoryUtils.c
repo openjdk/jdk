@@ -33,25 +33,11 @@
 #include <stddef.h>
 #include <stdlib.h>
 
-#ifdef _AIX
-#include <unistd.h>
-#endif
-
 /* Output type for mincore(2) */
 #ifdef __linux__
 typedef unsigned char mincore_vec_t;
 #else
 typedef char mincore_vec_t;
-#endif
-
-#ifdef _AIX
-static long calculate_number_of_pages_in_range(void* address, size_t len, size_t pagesize) {
-    uintptr_t address_unaligned = (uintptr_t) address;
-    uintptr_t address_aligned = address_unaligned & (~(pagesize - 1));
-    size_t len2 = len + (address_unaligned - address_aligned);
-    long numPages = (len2 + pagesize - 1) / pagesize;
-    return numPages;
-}
 #endif
 
 JNIEXPORT jboolean JNICALL
@@ -63,15 +49,6 @@ Java_java_nio_MappedMemoryUtils_isLoaded0(JNIEnv *env, jobject obj, jlong addres
     long i = 0;
     void *a = (void *) jlong_to_ptr(address);
     mincore_vec_t* vec = NULL;
-
-#ifdef _AIX
-    /* See JDK-8186665 */
-    size_t pagesize = (size_t)sysconf(_SC_PAGESIZE);
-    if ((long)pagesize == -1) {
-        return JNI_FALSE;
-    }
-    numPages = (jlong) calculate_number_of_pages_in_range(a, len, pagesize);
-#endif
 
     /* Include space for one sentinel byte at the end of the buffer
      * to catch overflows. */

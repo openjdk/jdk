@@ -31,6 +31,7 @@
 #include "jvmci/jvmciRuntime.hpp"
 #include "jvmci/vmStructs_jvmci.hpp"
 #include "oops/klassVtable.hpp"
+#include "oops/methodCounters.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "prims/jvmtiThreadState.hpp"
 #include "runtime/deoptimization.hpp"
@@ -215,9 +216,12 @@
   nonstatic_field(JavaThread,                  _jni_environment,                              JNIEnv)                                \
   nonstatic_field(JavaThread,                  _poll_data,                                    SafepointMechanism::ThreadData)        \
   nonstatic_field(JavaThread,                  _stack_overflow_state._reserved_stack_activation, address)                            \
-  nonstatic_field(JavaThread,                  _held_monitor_count,                           int64_t)                               \
+  nonstatic_field(JavaThread,                  _held_monitor_count,                           intx)                                  \
+  nonstatic_field(JavaThread,                  _lock_stack,                                   LockStack)                             \
   JVMTI_ONLY(nonstatic_field(JavaThread,       _is_in_VTMS_transition,                        bool))                                 \
   JVMTI_ONLY(nonstatic_field(JavaThread,       _is_in_tmp_VTMS_transition,                    bool))                                 \
+                                                                                                                                     \
+  nonstatic_field(LockStack,                   _top,                                          uint32_t)                              \
                                                                                                                                      \
   JVMTI_ONLY(static_field(JvmtiVTMSTransitionDisabler, _VTMS_notify_jvmti_events,             bool))                                 \
                                                                                                                                      \
@@ -327,6 +331,8 @@
   static_field(StubRoutines,                _checkcast_arraycopy_uninit,                      address)                               \
   static_field(StubRoutines,                _unsafe_arraycopy,                                address)                               \
   static_field(StubRoutines,                _generic_arraycopy,                               address)                               \
+  static_field(StubRoutines,                _array_sort,                                      address)                               \
+  static_field(StubRoutines,                _array_partition,                                 address)                               \
                                                                                                                                      \
   static_field(StubRoutines,                _aescrypt_encryptBlock,                           address)                               \
   static_field(StubRoutines,                _aescrypt_decryptBlock,                           address)                               \
@@ -493,6 +499,7 @@
   declare_constant(BranchData::not_taken_off_set)                         \
                                                                           \
   declare_constant_with_value("CardTable::dirty_card", CardTable::dirty_card_val()) \
+  declare_constant_with_value("LockStack::_end_offset", LockStack::end_offset()) \
                                                                           \
   declare_constant(CodeInstaller::VERIFIED_ENTRY)                         \
   declare_constant(CodeInstaller::UNVERIFIED_ENTRY)                       \
@@ -530,9 +537,11 @@
   declare_constant(CodeInstaller::REGISTER_PRIMITIVE)                     \
   declare_constant(CodeInstaller::REGISTER_OOP)                           \
   declare_constant(CodeInstaller::REGISTER_NARROW_OOP)                    \
+  declare_constant(CodeInstaller::REGISTER_VECTOR)                        \
   declare_constant(CodeInstaller::STACK_SLOT_PRIMITIVE)                   \
   declare_constant(CodeInstaller::STACK_SLOT_OOP)                         \
   declare_constant(CodeInstaller::STACK_SLOT_NARROW_OOP)                  \
+  declare_constant(CodeInstaller::STACK_SLOT_VECTOR)                      \
   declare_constant(CodeInstaller::VIRTUAL_OBJECT_ID)                      \
   declare_constant(CodeInstaller::VIRTUAL_OBJECT_ID2)                     \
   declare_constant(CodeInstaller::NULL_CONSTANT)                          \
@@ -603,7 +612,6 @@
   declare_constant(vmIntrinsics::_invokeGeneric)                          \
   declare_constant(vmIntrinsics::_compiledLambdaForm)                     \
                                                                           \
-  declare_constant(ConstantPool::CPCACHE_INDEX_TAG)                       \
   declare_constant(ConstantPool::_has_dynamic_constant)                   \
                                                                           \
   declare_constant(ConstMethodFlags::_misc_has_linenumber_table)          \
@@ -677,6 +685,10 @@
   declare_constant(InstanceKlass::being_initialized)                      \
   declare_constant(InstanceKlass::fully_initialized)                      \
                                                                           \
+  declare_constant(LockingMode::LM_MONITOR)                               \
+  declare_constant(LockingMode::LM_LEGACY)                                \
+  declare_constant(LockingMode::LM_LIGHTWEIGHT)                           \
+                                                                          \
   /*********************************/                                     \
   /* InstanceKlass _misc_flags */                                         \
   /*********************************/                                     \
@@ -724,7 +736,8 @@
   AARCH64_ONLY(declare_constant(NMethodPatchingType::conc_instruction_and_data_patch)) \
   AARCH64_ONLY(declare_constant(NMethodPatchingType::conc_data_patch))                 \
                                                                           \
-  declare_constant(ReceiverTypeData::nonprofiled_count_off_set)           \
+  declare_constant(ObjectMonitor::ANONYMOUS_OWNER)                        \
+                                                                          \
   declare_constant(ReceiverTypeData::receiver_type_row_cell_count)        \
   declare_constant(ReceiverTypeData::receiver0_offset)                    \
   declare_constant(ReceiverTypeData::count0_offset)                       \
@@ -815,7 +828,7 @@
 #if INCLUDE_G1GC
 
 #define VM_STRUCTS_JVMCI_G1GC(nonstatic_field, static_field) \
-  static_field(HeapRegion, LogOfHRGrainBytes, int)
+  static_field(HeapRegion, LogOfHRGrainBytes, uint)
 
 #define VM_INT_CONSTANTS_JVMCI_G1GC(declare_constant, declare_constant_with_value, declare_preprocessor_constant) \
   declare_constant_with_value("G1CardTable::g1_young_gen", G1CardTable::g1_young_card_val()) \

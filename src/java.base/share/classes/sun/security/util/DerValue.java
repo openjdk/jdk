@@ -1133,7 +1133,8 @@ public class DerValue {
     @Override
     public String toString() {
         return String.format("DerValue(%02x, %s, %d, %d)",
-                0xff & tag, buffer, start, end);
+                0xff & tag, HexFormat.of().withUpperCase().formatHex(buffer),
+                start, end);
     }
 
     /**
@@ -1260,9 +1261,7 @@ public class DerValue {
     }
 
     /**
-     * Returns a hashcode for this DerValue.
-     *
-     * @return a hashcode for this DerValue.
+     * {@return a hashcode for this DerValue}
      */
     @Override
     public int hashCode() {

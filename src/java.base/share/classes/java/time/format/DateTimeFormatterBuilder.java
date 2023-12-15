@@ -4725,7 +4725,7 @@ public final class DateTimeFormatterBuilder {
          * @return the position after the parse
          */
         private int parseOffsetBased(DateTimeParseContext context, CharSequence text, int prefixPos, int position, OffsetIdPrinterParser parser) {
-            String prefix = text.subSequence(prefixPos, position).toString().toUpperCase();
+            String prefix = text.subSequence(prefixPos, position).toString().toUpperCase(Locale.ROOT);
             if (position >= text.length()) {
                 context.setParsed(ZoneId.of(prefix));
                 return position;

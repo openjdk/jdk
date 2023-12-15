@@ -32,6 +32,7 @@
 #include "utilities/macros.hpp"
 #include "runtime/rtmLocking.hpp"
 #include "runtime/vm_version.hpp"
+#include "utilities/checkedCast.hpp"
 
 // MacroAssembler extends Assembler by frequently used macros.
 //
@@ -799,6 +800,23 @@ public:
 
   void cmpxchgptr(Register reg, Address adr);
 
+
+  // cvt instructions
+  void cvtss2sd(XMMRegister dst, XMMRegister src);
+  void cvtss2sd(XMMRegister dst, Address src);
+  void cvtsd2ss(XMMRegister dst, XMMRegister src);
+  void cvtsd2ss(XMMRegister dst, Address src);
+  void cvtsi2sdl(XMMRegister dst, Register src);
+  void cvtsi2sdl(XMMRegister dst, Address src);
+  void cvtsi2ssl(XMMRegister dst, Register src);
+  void cvtsi2ssl(XMMRegister dst, Address src);
+#ifdef _LP64
+  void cvtsi2sdq(XMMRegister dst, Register src);
+  void cvtsi2sdq(XMMRegister dst, Address src);
+  void cvtsi2ssq(XMMRegister dst, Register src);
+  void cvtsi2ssq(XMMRegister dst, Address src);
+#endif
+
   void locked_cmpxchgptr(Register reg, AddressLiteral adr, Register rscratch = noreg);
 
   void imulptr(Register dst, Register src) { LP64_ONLY(imulq(dst, src)) NOT_LP64(imull(dst, src)); }
@@ -876,6 +894,7 @@ public:
 
   void testptr(Register src, int32_t imm32) {  LP64_ONLY(testq(src, imm32)) NOT_LP64(testl(src, imm32)); }
   void testptr(Register src1, Address src2) { LP64_ONLY(testq(src1, src2)) NOT_LP64(testl(src1, src2)); }
+  void testptr(Address src, int32_t imm32) {  LP64_ONLY(testq(src, imm32)) NOT_LP64(testl(src, imm32)); }
   void testptr(Register src1, Register src2);
 
   void xorptr(Register dst, Register src) { LP64_ONLY(xorq(dst, src)) NOT_LP64(xorl(dst, src)); }
@@ -1110,6 +1129,10 @@ public:
 
   using Assembler::vbroadcastss;
   void vbroadcastss(XMMRegister dst, AddressLiteral src, int vector_len, Register rscratch = noreg);
+
+  // Vector float blend
+  void vblendvps(XMMRegister dst, XMMRegister nds, XMMRegister src, XMMRegister mask, int vector_len, bool compute_mask = true, XMMRegister scratch = xnoreg);
+  void vblendvpd(XMMRegister dst, XMMRegister nds, XMMRegister src, XMMRegister mask, int vector_len, bool compute_mask = true, XMMRegister scratch = xnoreg);
 
   void divsd(XMMRegister dst, XMMRegister    src) { Assembler::divsd(dst, src); }
   void divsd(XMMRegister dst, Address        src) { Assembler::divsd(dst, src); }
@@ -1794,6 +1817,9 @@ public:
   using Assembler::evporq;
   void evporq(XMMRegister dst, XMMRegister nds, AddressLiteral src, int vector_len, Register rscratch = noreg);
 
+  using Assembler::vpshufb;
+  void vpshufb(XMMRegister dst, XMMRegister nds, AddressLiteral src, int vector_len, Register rscratch = noreg);
+
   using Assembler::vpternlogq;
   void vpternlogq(XMMRegister dst, int imm8, XMMRegister src2, AddressLiteral src3, int vector_len, Register rscratch = noreg);
 
@@ -2022,8 +2048,8 @@ public:
 
   void check_stack_alignment(Register sp, const char* msg, unsigned bias = 0, Register tmp = noreg);
 
-  void fast_lock_impl(Register obj, Register hdr, Register thread, Register tmp, Label& slow);
-  void fast_unlock_impl(Register obj, Register hdr, Register tmp, Label& slow);
+  void lightweight_lock(Register obj, Register hdr, Register thread, Register tmp, Label& slow);
+  void lightweight_unlock(Register obj, Register hdr, Register tmp, Label& slow);
 };
 
 /**

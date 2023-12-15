@@ -30,6 +30,10 @@
 #include "compiler/compileBroker.hpp"
 #include "compiler/compileLog.hpp"
 #include "interpreter/linkResolver.hpp"
+#include "logging/log.hpp"
+#include "logging/logLevel.hpp"
+#include "logging/logMessage.hpp"
+#include "logging/logStream.hpp"
 #include "opto/addnode.hpp"
 #include "opto/callGenerator.hpp"
 #include "opto/castnode.hpp"
@@ -46,7 +50,15 @@
 #include "jfr/jfr.hpp"
 #endif
 
-void trace_type_profile(Compile* C, ciMethod *method, int depth, int bci, ciMethod *prof_method, ciKlass *prof_klass, int site_count, int receiver_count) {
+void print_trace_type_profile(outputStream* out, int depth, ciKlass* prof_klass, int site_count, int receiver_count) {
+  CompileTask::print_inline_indent(depth, out);
+  out->print(" \\-> TypeProfile (%d/%d counts) = ", receiver_count, site_count);
+  prof_klass->name()->print_symbol_on(out);
+  out->cr();
+}
+
+void trace_type_profile(Compile* C, ciMethod* method, int depth, int bci, ciMethod* prof_method,
+                        ciKlass* prof_klass, int site_count, int receiver_count) {
   if (TraceTypeProfile || C->print_inlining()) {
     outputStream* out = tty;
     if (!C->print_inlining()) {
@@ -54,16 +66,17 @@ void trace_type_profile(Compile* C, ciMethod *method, int depth, int bci, ciMeth
         method->print_short_name();
         tty->cr();
       }
-      CompileTask::print_inlining_tty(prof_method, depth, bci);
+      CompileTask::print_inlining_tty(prof_method, depth, bci, InliningResult::SUCCESS);
     } else {
       out = C->print_inlining_stream();
     }
-    CompileTask::print_inline_indent(depth, out);
-    out->print(" \\-> TypeProfile (%d/%d counts) = ", receiver_count, site_count);
-    stringStream ss;
-    prof_klass->name()->print_symbol_on(&ss);
-    out->print("%s", ss.freeze());
-    out->cr();
+    print_trace_type_profile(out, depth, prof_klass, site_count, receiver_count);
+  }
+
+  LogTarget(Debug, jit, inlining) lt;
+  if (lt.is_enabled()) {
+    LogStream ls(lt);
+    print_trace_type_profile(&ls, depth, prof_klass, site_count, receiver_count);
   }
 }
 
@@ -172,7 +185,7 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
     // Try inlining a bytecoded method:
     if (!call_does_dispatch) {
       InlineTree* ilt = InlineTree::find_subtree_from_root(this->ilt(), jvms->caller(), jvms->method());
-      bool should_delay = AlwaysIncrementalInline;
+      bool should_delay = C->should_delay_inlining();
       if (ilt->ok_to_inline(callee, jvms, profile, should_delay)) {
         CallGenerator* cg = CallGenerator::for_inline(callee, expected_uses);
         // For optimized virtual calls assert at runtime that receiver object
@@ -191,14 +204,14 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
           // Delay the inlining of this method to give us the
           // opportunity to perform some high level optimizations
           // first.
-          if (should_delay_string_inlining(callee, jvms)) {
+          if (should_delay) {
+            return CallGenerator::for_late_inline(callee, cg);
+          } else if (should_delay_string_inlining(callee, jvms)) {
             return CallGenerator::for_string_late_inline(callee, cg);
           } else if (should_delay_boxing_inlining(callee, jvms)) {
             return CallGenerator::for_boxing_late_inline(callee, cg);
           } else if (should_delay_vector_reboxing_inlining(callee, jvms)) {
             return CallGenerator::for_vector_reboxing_late_inline(callee, cg);
-          } else if (should_delay) {
-            return CallGenerator::for_late_inline(callee, cg);
           } else {
             return cg;
           }
@@ -360,7 +373,7 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
   if (call_does_dispatch) {
     const char* msg = "virtual call";
     if (C->print_inlining()) {
-      print_inlining(callee, jvms->depth() - 1, jvms->bci(), msg);
+      print_inlining(callee, jvms->depth() - 1, jvms->bci(), InliningResult::FAILURE, msg);
     }
     C->log_inline_failure(msg);
     if (IncrementalInlineVirtual && allow_inline) {
@@ -928,7 +941,7 @@ void Parse::catch_inline_exceptions(SafePointNode* ex_map) {
 
   // Get the exception oop klass from its header
   Node* ex_klass_node = nullptr;
-  if (has_ex_handler() && !ex_type->klass_is_exact()) {
+  if (has_exception_handler() && !ex_type->klass_is_exact()) {
     Node* p = basic_plus_adr( ex_node, ex_node, oopDesc::klass_offset_in_bytes());
     ex_klass_node = _gvn.transform(LoadKlassNode::make(_gvn, nullptr, immutable_memory(), p, TypeInstPtr::KLASS, TypeInstKlassPtr::OBJECT));
 
@@ -984,6 +997,8 @@ void Parse::catch_inline_exceptions(SafePointNode* ex_map) {
       if (PrintOpto && WizardMode) {
         tty->print_cr("  Catching every inline exception bci:%d -> handler_bci:%d", bci(), handler_bci);
       }
+      // If this is a backwards branch in the bytecodes, add safepoint
+      maybe_add_safepoint(handler_bci);
       merge_exception(handler_bci); // jump to handler
       return;                   // No more handling to be done here!
     }
@@ -1015,6 +1030,8 @@ void Parse::catch_inline_exceptions(SafePointNode* ex_map) {
         klass->print_name();
         tty->cr();
       }
+      // If this is a backwards branch in the bytecodes, add safepoint
+      maybe_add_safepoint(handler_bci);
       merge_exception(handler_bci);
     }
     set_control(not_subtype_ctrl);

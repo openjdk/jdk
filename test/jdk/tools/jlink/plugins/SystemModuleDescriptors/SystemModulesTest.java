@@ -44,7 +44,6 @@ import static org.testng.Assert.*;
  * @bug 8142968 8173381
  * @modules java.base/jdk.internal.access
  * @modules java.base/jdk.internal.module
- * @modules java.base/jdk.internal.org.objectweb.asm
  * @build ModuleTargetHelper
  * @run testng SystemModulesTest
  * @summary Verify the properties of ModuleDescriptor created

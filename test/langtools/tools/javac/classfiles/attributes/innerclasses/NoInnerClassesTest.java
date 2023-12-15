@@ -26,27 +26,27 @@
  * @bug 8042251
  * @summary Test that there are no inner classes attributes in case of there are no inner classes.
  * @library /tools/lib /tools/javac/lib ../lib
+ * @enablePreview
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
- *          jdk.jdeps/com.sun.tools.classfile
+ *          java.base/jdk.internal.classfile.impl
  * @build toolbox.ToolBox InMemoryFileManager TestBase
  * @run main NoInnerClassesTest
  */
 
-import com.sun.tools.classfile.Attribute;
-import com.sun.tools.classfile.ClassFile;
-import com.sun.tools.classfile.ConstantPoolException;
+import java.lang.classfile.Attributes;
+import java.lang.classfile.ClassModel;
 
 import java.io.IOException;
 
 public class NoInnerClassesTest extends TestBase {
 
-    public static void main(String[] args) throws IOException, ConstantPoolException {
+    public static void main(String[] args) throws IOException {
         new NoInnerClassesTest().test();
     }
 
-    public void test() throws IOException, ConstantPoolException {
-        ClassFile classFile = readClassFile("NoInnerClassesTest");
-        assertNull(classFile.getAttribute(Attribute.InnerClasses), "Found inner class attribute");
+    public void test() throws IOException {
+        ClassModel classModel = readClassFile("NoInnerClassesTest");
+        assertNull(classModel.findAttribute(Attributes.INNER_CLASSES).orElse(null), "Found inner class attribute");
     }
 }

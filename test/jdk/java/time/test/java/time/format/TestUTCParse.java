@@ -23,7 +23,7 @@
 /*
  * @test
  * @modules jdk.localedata
- * @bug 8303440
+ * @bug 8303440 8317979
  * @summary Test parsing "UTC-XX:XX" text works correctly
  */
 package test.java.time.format;
@@ -43,8 +43,8 @@ import static org.testng.Assert.assertEquals;
 public class TestUTCParse {
 
     static {
-        // Assuming CLDR's SHORT name for "America/Los_Angeles"
-        // produces "UTC\u212208:00"
+        // Assuming CLDR's SHORT name for "America/Juneau"
+        // produces "UTC\u212209:00"
         System.setProperty("java.locale.providers", "CLDR");
     }
 
@@ -60,9 +60,9 @@ public class TestUTCParse {
     @Test
     public void testUTCShortNameRoundTrip() {
         var fmt = DateTimeFormatter.ofPattern("z", Locale.FRANCE);
-        var zdt = ZonedDateTime.of(2023, 3, 3, 0, 0, 0, 0, ZoneId.of("America/Los_Angeles"));
+        var zdt = ZonedDateTime.of(2023, 3, 3, 0, 0, 0, 0, ZoneId.of("America/Juneau"));
         var formatted = fmt.format(zdt);
-        assertEquals(formatted, "UTC\u221208:00");
+        assertEquals(formatted, "UTC\u221209:00");
         assertEquals(fmt.parse(formatted).query(TemporalQueries.zoneId()), zdt.getZone());
     }
 

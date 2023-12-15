@@ -437,6 +437,78 @@ void G1HeapVerifier::verify_region_sets() {
   _g1h->collection_set()->candidates()->verify();
 }
 
+class G1VerifyRegionMarkingStateClosure : public HeapRegionClosure {
+  class MarkedBytesClosure {
+    size_t _marked_words;
+
+  public:
+    MarkedBytesClosure() : _marked_words(0) { }
+
+    inline size_t apply(oop obj) {
+      size_t result = obj->size();
+      _marked_words += result;
+      return result;
+    }
+
+    size_t marked_bytes() const { return _marked_words * HeapWordSize; }
+  };
+
+public:
+  virtual bool do_heap_region(HeapRegion* r) {
+    if (r->is_free()) {
+      return false;
+    }
+
+    G1ConcurrentMark* cm = G1CollectedHeap::heap()->concurrent_mark();
+
+    bool part_of_marking = r->is_old_or_humongous() && !r->is_collection_set_candidate();
+
+    if (part_of_marking) {
+      guarantee(r->bottom() != r->top_at_mark_start(), "region %u (%s) does not have TAMS set",
+                                                       r->hrm_index(), r->get_short_type_str());
+      size_t marked_bytes = cm->live_bytes(r->hrm_index());
+
+      MarkedBytesClosure cl;
+      r->apply_to_marked_objects(cm->mark_bitmap(), &cl);
+
+      guarantee(cl.marked_bytes() == marked_bytes,
+                "region %u (%s) live bytes actual %zu and cache %zu differ",
+                r->hrm_index(), r->get_short_type_str(), cl.marked_bytes(), marked_bytes);
+    } else {
+      guarantee(r->bottom() == r->top_at_mark_start(),
+                "region %u (%s) has TAMS set " PTR_FORMAT " " PTR_FORMAT,
+                r->hrm_index(), r->get_short_type_str(), p2i(r->bottom()), p2i(r->top_at_mark_start()));
+      guarantee(cm->live_bytes(r->hrm_index()) == 0,
+                "region %u (%s) has %zu live bytes recorded",
+                r->hrm_index(), r->get_short_type_str(), cm->live_bytes(r->hrm_index()));
+      guarantee(cm->mark_bitmap()->get_next_marked_addr(r->bottom(), r->end()) == r->end(),
+                "region %u (%s) has mark",
+                r->hrm_index(), r->get_short_type_str());
+      guarantee(cm->is_root_region(r),
+                "region %u (%s) should be root region",
+                r->hrm_index(), r->get_short_type_str());
+    }
+    return false;
+  }
+};
+
+void G1HeapVerifier::verify_marking_state() {
+  assert(G1CollectedHeap::heap()->collector_state()->in_concurrent_start_gc(), "must be");
+
+  // Verify TAMSes, bitmaps and liveness statistics.
+  //
+  // - if part of marking: TAMS != bottom, liveness == 0, bitmap clear
+  // - if evacuation failed + part of marking: TAMS != bottom, liveness != 0, bitmap has at least on object set (corresponding to liveness)
+  // - if not part of marking: TAMS == bottom, liveness == 0, bitmap clear; must be in root region
+
+  // To compare liveness recorded in G1ConcurrentMark and actual we need to flush the
+  // cache.
+  G1CollectedHeap::heap()->concurrent_mark()->flush_all_task_caches();
+
+  G1VerifyRegionMarkingStateClosure cl;
+  _g1h->heap_region_iterate(&cl);
+}
+
 void G1HeapVerifier::prepare_for_verify() {
   if (SafepointSynchronize::is_at_safepoint() || ! UseTLAB) {
     _g1h->ensure_parsability(false);

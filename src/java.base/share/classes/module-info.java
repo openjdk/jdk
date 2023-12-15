@@ -79,6 +79,11 @@ module java.base {
     exports java.io;
     exports java.lang;
     exports java.lang.annotation;
+    exports java.lang.classfile;
+    exports java.lang.classfile.attribute;
+    exports java.lang.classfile.components;
+    exports java.lang.classfile.constantpool;
+    exports java.lang.classfile.instruction;
     exports java.lang.constant;
     exports java.lang.foreign;
     exports java.lang.invoke;
@@ -148,9 +153,14 @@ module java.base {
     // module declaration be annotated with jdk.internal.javac.ParticipatesInPreview
     exports jdk.internal.javac to
         java.compiler,
+        java.desktop, // for ScopedValue
         jdk.compiler,
         jdk.incubator.vector, // participates in preview features
-        jdk.jshell;
+        jdk.jartool, // participates in preview features
+        jdk.jdeps, // participates in preview features
+        jdk.jfr, // participates in preview features
+        jdk.jlink,   // participates in preview features
+        jdk.jshell; // participates in preview features
     exports jdk.internal.access to
         java.desktop,
         java.logging,
@@ -184,19 +194,6 @@ module java.base {
         jdk.jlink;
     exports jdk.internal.logger to
         java.logging;
-    exports jdk.internal.classfile to
-        jdk.jartool,
-        jdk.jlink,
-        jdk.jshell;
-    exports jdk.internal.classfile.attribute to
-        jdk.jartool,
-        jdk.jlink;
-    exports jdk.internal.classfile.constantpool to
-        jdk.jartool,
-        jdk.jlink;
-    exports jdk.internal.classfile.instruction to
-        jdk.jlink,
-        jdk.jshell;
     exports jdk.internal.org.objectweb.asm to
         jdk.jfr;
     exports jdk.internal.org.objectweb.asm.tree to
@@ -231,6 +228,7 @@ module java.base {
         java.instrument,
         java.management.rmi,
         jdk.jartool,
+        jdk.compiler,
         jdk.jfr,
         jdk.jlink,
         jdk.jpackage;

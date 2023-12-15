@@ -576,8 +576,6 @@ public class StructuredTaskScope<T> implements AutoCloseable {
         }
 
         SubtaskImpl<U> subtask = new SubtaskImpl<>(this, task, round);
-        boolean started = false;
-
         if (s < SHUTDOWN) {
             // create thread to run task
             Thread thread = factory.newThread(subtask);
@@ -588,15 +586,14 @@ public class StructuredTaskScope<T> implements AutoCloseable {
             // attempt to start the thread
             try {
                 flock.start(thread);
-                started = true;
             } catch (IllegalStateException e) {
                 // shutdown by another thread, or underlying flock is shutdown due
                 // to unstructured use
             }
         }
 
-        // force owner to join if thread started
-        if (started && Thread.currentThread() == flock.owner() && round > forkRound) {
+        // force owner to join if this is the first fork in the round
+        if (Thread.currentThread() == flock.owner() && round > forkRound) {
             forkRound = round;
         }
 
@@ -755,6 +752,12 @@ public class StructuredTaskScope<T> implements AutoCloseable {
      * #joinUntil(Instant)}. If the task scope owner is not waiting then its next call to
      * {@code join} or {@code joinUntil} will return immediately.
      * </ul>
+     *
+     * <p> The {@linkplain Subtask.State state} of unfinished subtasks that complete at
+     * around the time that the task scope is shutdown is not defined. A subtask that
+     * completes successfully with a result, or fails with an exception, at around
+     * the time that the task scope is shutdown may or may not <i>transition</i> to a
+     * terminal state.
      *
      * <p> This method may only be invoked by the task scope owner or threads contained
      * in the task scope.
@@ -933,7 +936,8 @@ public class StructuredTaskScope<T> implements AutoCloseable {
                 T r = (T) result;
                 return r;
             }
-            throw new IllegalStateException("Subtask not completed or did not complete successfully");
+            throw new IllegalStateException(
+                    "Result is unavailable or subtask did not complete successfully");
         }
 
         @Override
@@ -943,7 +947,8 @@ public class StructuredTaskScope<T> implements AutoCloseable {
             if (result instanceof AltResult alt && alt.state() == State.FAILED) {
                 return alt.exception();
             }
-            throw new IllegalStateException("Subtask not completed or did not complete with exception");
+            throw new IllegalStateException(
+                    "Exception is unavailable or subtask did not complete with exception");
         }
 
         @Override

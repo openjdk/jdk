@@ -178,15 +178,12 @@ PSPromotionManager::PSPromotionManager() {
   // We set the old lab's start array.
   _old_lab.set_start_array(old_gen()->start_array());
 
-  uint queue_size;
-  queue_size = claimed_stack_depth()->max_elems();
+  uint queue_size = claimed_stack_depth()->max_elems();
 
   if (ParallelGCThreads == 1) {
     _target_stack_size = 0;
   } else {
-    // don't let the target stack size to be more than 1/4 of the entries
-    _target_stack_size = (uint) MIN2((uint) GCDrainStackTargetSize,
-                                     (uint) (queue_size / 4));
+    _target_stack_size = GCDrainStackTargetSize;
   }
 
   _array_chunk_size = ParGCArrayScanChunk;
@@ -237,14 +234,9 @@ void PSPromotionManager::drain_stacks_depth(bool totally_drain) {
     // Drain overflow stack first, so other threads can steal from
     // claimed stack while we work.
     while (tq->pop_overflow(task)) {
-      // In PSCardTable::scavenge_contents_parallel(), when work is distributed
-      // among different workers, an object is never split between multiple workers.
-      // Therefore, if a worker gets owned a large objArray, it may accumulate
-      // many tasks (corresponding to every element in this array) in its
-      // task queue. When there are too many overflow tasks, publishing them
-      // (via try_push_to_taskqueue()) can incur noticeable overhead in Young GC
-      // pause, so it is better to process them locally until large-objArray-splitting is implemented.
-      process_popped_location_depth(task);
+      if (!tq->try_push_to_taskqueue(task)) {
+        process_popped_location_depth(task);
+      }
     }
 
     while (tq->pop_local(task, threshold)) {

@@ -25,97 +25,20 @@
 #include "precompiled.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "gc/serial/cardTableRS.hpp"
-#include "gc/shared/genCollectedHeap.hpp"
-#include "gc/shared/generation.hpp"
+#include "gc/serial/generation.hpp"
+#include "gc/serial/serialHeap.hpp"
 #include "gc/shared/space.inline.hpp"
-#include "memory/allocation.inline.hpp"
 #include "memory/iterator.inline.hpp"
-#include "oops/access.inline.hpp"
-#include "oops/oop.inline.hpp"
-#include "runtime/atomic.hpp"
-#include "runtime/java.hpp"
-#include "runtime/os.hpp"
-#include "utilities/macros.hpp"
-
-inline bool ClearNoncleanCardWrapper::clear_card(CardValue* entry) {
-  assert(*entry == CardTableRS::dirty_card_val(), "Only look at dirty cards.");
-  *entry = CardTableRS::clean_card_val();
-  return true;
-}
-
-ClearNoncleanCardWrapper::ClearNoncleanCardWrapper(
-  DirtyCardToOopClosure* dirty_card_closure, CardTableRS* ct) :
-    _dirty_card_closure(dirty_card_closure), _ct(ct) {
-}
-
-bool ClearNoncleanCardWrapper::is_word_aligned(CardTable::CardValue* entry) {
-  return (((intptr_t)entry) & (BytesPerWord-1)) == 0;
-}
-
-// The regions are visited in *decreasing* address order.
-// This order aids with imprecise card marking, where a dirty
-// card may cause scanning, and summarization marking, of objects
-// that extend onto subsequent cards.
-void ClearNoncleanCardWrapper::do_MemRegion(MemRegion mr) {
-  assert(mr.word_size() > 0, "Error");
-  assert(_ct->is_aligned(mr.start()), "mr.start() should be card aligned");
-  // mr.end() may not necessarily be card aligned.
-  CardValue* cur_entry = _ct->byte_for(mr.last());
-  const CardValue* limit = _ct->byte_for(mr.start());
-  HeapWord* end_of_non_clean = mr.end();
-  HeapWord* start_of_non_clean = end_of_non_clean;
-  while (cur_entry >= limit) {
-    HeapWord* cur_hw = _ct->addr_for(cur_entry);
-    if ((*cur_entry != CardTableRS::clean_card_val()) && clear_card(cur_entry)) {
-      // Continue the dirty range by opening the
-      // dirty window one card to the left.
-      start_of_non_clean = cur_hw;
-    } else {
-      // We hit a "clean" card; process any non-empty
-      // "dirty" range accumulated so far.
-      if (start_of_non_clean < end_of_non_clean) {
-        const MemRegion mrd(start_of_non_clean, end_of_non_clean);
-        _dirty_card_closure->do_MemRegion(mrd);
-      }
-
-      // fast forward through potential continuous whole-word range of clean cards beginning at a word-boundary
-      if (is_word_aligned(cur_entry)) {
-        CardValue* cur_row = cur_entry - BytesPerWord;
-        while (cur_row >= limit && *((intptr_t*)cur_row) ==  CardTableRS::clean_card_row_val()) {
-          cur_row -= BytesPerWord;
-        }
-        cur_entry = cur_row + BytesPerWord;
-        cur_hw = _ct->addr_for(cur_entry);
-      }
-
-      // Reset the dirty window, while continuing to look
-      // for the next dirty card that will start a
-      // new dirty window.
-      end_of_non_clean = cur_hw;
-      start_of_non_clean = cur_hw;
-    }
-    // Note that "cur_entry" leads "start_of_non_clean" in
-    // its leftward excursion after this point
-    // in the loop and, when we hit the left end of "mr",
-    // will point off of the left end of the card-table
-    // for "mr".
-    cur_entry--;
-  }
-  // If the first card of "mr" was dirty, we will have
-  // been left with a dirty window, co-initial with "mr",
-  // which we now process.
-  if (start_of_non_clean < end_of_non_clean) {
-    const MemRegion mrd(start_of_non_clean, end_of_non_clean);
-    _dirty_card_closure->do_MemRegion(mrd);
-  }
-}
+#include "utilities/align.hpp"
 
 void CardTableRS::younger_refs_in_space_iterate(TenuredSpace* sp,
                                                 OopIterateClosure* cl) {
   verify_used_region_at_save_marks(sp);
 
   const MemRegion urasm = sp->used_region_at_save_marks();
-  non_clean_card_iterate(sp, urasm, cl, this);
+  if (!urasm.is_empty()) {
+    non_clean_card_iterate(sp, urasm, cl, this);
+  }
 }
 
 #ifdef ASSERT
@@ -132,7 +55,7 @@ void CardTableRS::verify_used_region_at_save_marks(Space* sp) const {
 #endif
 
 void CardTableRS::maintain_old_to_young_invariant(Generation* old_gen, bool is_young_gen_empty) {
-  assert(GenCollectedHeap::heap()->is_old_gen(old_gen), "precondition");
+  assert(SerialHeap::heap()->is_old_gen(old_gen), "precondition");
 
   if (is_young_gen_empty) {
     clear_MemRegion(old_gen->prev_used_region());
@@ -193,13 +116,13 @@ public:
   virtual void do_space(Space* s) { _ct->verify_space(s, _boundary); }
 };
 
-class VerifyCTGenClosure: public GenCollectedHeap::GenClosure {
+class VerifyCTGenClosure: public SerialHeap::GenClosure {
   CardTableRS* _ct;
 public:
   VerifyCTGenClosure(CardTableRS* ct) : _ct(ct) {}
   void do_generation(Generation* gen) {
     // Skip the youngest generation.
-    if (GenCollectedHeap::heap()->is_young_gen(gen)) {
+    if (SerialHeap::heap()->is_young_gen(gen)) {
       return;
     }
     // Normally, we're interested in pointers to younger generations.
@@ -416,28 +339,204 @@ void CardTableRS::verify() {
   // At present, we only know how to verify the card table RS for
   // generational heaps.
   VerifyCTGenClosure blk(this);
-  GenCollectedHeap::heap()->generation_iterate(&blk, false);
+  SerialHeap::heap()->generation_iterate(&blk, false);
 }
 
 CardTableRS::CardTableRS(MemRegion whole_heap) :
   CardTable(whole_heap) { }
 
+// Implemented word-iteration to skip long consecutive clean cards.
+CardTable::CardValue* CardTableRS::find_first_dirty_card(CardValue* const start_card,
+                                                         CardValue* const end_card) {
+  using Word = uintptr_t;
+
+  CardValue* current_card = start_card;
+
+  while (!is_aligned(current_card, sizeof(Word))) {
+    if (current_card >= end_card) {
+      return end_card;
+    }
+    if (is_dirty(current_card)) {
+      return current_card;
+    }
+    ++current_card;
+  }
+
+  // Word comparison
+  while (current_card + sizeof(Word) <= end_card) {
+    Word* current_word = reinterpret_cast<Word*>(current_card);
+    if (*current_word != (Word)clean_card_row_val()) {
+      // Found a dirty card in this word; fall back to per-CardValue comparison.
+      break;
+    }
+    current_card += sizeof(Word);
+  }
+
+  // Per-CardValue comparison.
+  for (/* empty */; current_card < end_card; ++current_card) {
+    if (is_dirty(current_card)) {
+      return current_card;
+    }
+  }
+
+  return end_card;
+}
+
+// Because non-objArray objs can be imprecisely-marked (only obj-start card is
+// dirty instead of the part containing old-to-young pointers), if the
+// obj-start of a non-objArray is dirty, all cards that obj completely resides
+// on are considered as dirty, since that obj will be iterated (scanned for
+// old-to-young pointers) as a whole.
+template<typename Func>
+CardTable::CardValue* CardTableRS::find_first_clean_card(CardValue* const start_card,
+                                                         CardValue* const end_card,
+                                                         CardTableRS* ct,
+                                                         Func& object_start) {
+
+  // end_card might be just beyond the heap, so need to use the _raw variant.
+  HeapWord* end_address = ct->addr_for_raw(end_card);
+
+  for (CardValue* current_card = start_card; current_card < end_card; /* empty */) {
+    if (is_dirty(current_card)) {
+      current_card++;
+      continue;
+    }
+
+    // A potential candidate.
+    HeapWord* addr = ct->addr_for(current_card);
+    HeapWord* obj_start_addr = object_start(addr);
+
+    if (obj_start_addr == addr) {
+      return current_card;
+    }
+
+    // Final obj in dirty-chunk crosses card-boundary.
+    oop obj = cast_to_oop(obj_start_addr);
+    if (obj->is_objArray()) {
+      // ObjArrays are always precisely-marked so we are not allowed to jump to
+      // the end of the current object.
+      return current_card;
+    }
+
+    // This might be the last object in this area, avoid trying to access the
+    // card beyond the allowed area.
+    HeapWord* next_address = obj_start_addr + obj->size();
+    if (next_address >= end_address) {
+      break;
+    }
+
+    // Card occupied by next obj.
+    CardValue* next_obj_card = ct->byte_for(next_address);
+    if (is_clean(next_obj_card)) {
+      return next_obj_card;
+    }
+
+    // Continue the search after this known-dirty card...
+    current_card = next_obj_card + 1;
+  }
+
+  return end_card;
+}
+
+void CardTableRS::clear_cards(CardValue* start, CardValue* end) {
+  size_t num_cards = pointer_delta(end, start, sizeof(CardValue));
+  memset(start, clean_card_val(), num_cards);
+}
+
+static void prefetch_write(void *p) {
+  if (PrefetchScanIntervalInBytes >= 0) {
+    Prefetch::write(p, PrefetchScanIntervalInBytes);
+  }
+}
+
+static void scan_obj_with_limit(oop obj,
+                                OopIterateClosure* cl,
+                                HeapWord* start,
+                                HeapWord* end) {
+  if (!obj->is_typeArray()) {
+    prefetch_write(start);
+    obj->oop_iterate(cl, MemRegion(start, end));
+  }
+}
+
 void CardTableRS::non_clean_card_iterate(TenuredSpace* sp,
                                          MemRegion mr,
                                          OopIterateClosure* cl,
-                                         CardTableRS* ct)
-{
-  if (mr.is_empty()) {
-    return;
+                                         CardTableRS* ct) {
+  struct {
+    HeapWord* start_addr;
+    HeapWord* end_addr;
+  } cached_obj { nullptr, mr.start() };
+
+  auto object_start = [&] (const HeapWord* const addr) {
+    if (addr < cached_obj.end_addr) {
+      assert(cached_obj.start_addr != nullptr, "inv");
+      return cached_obj.start_addr;
+    }
+    HeapWord* result = sp->block_start_const(addr);
+
+    cached_obj.start_addr = result;
+    cached_obj.end_addr = result + cast_to_oop(result)->size();
+
+    return result;
+  };
+
+  CardValue* const start_card = ct->byte_for(mr.start());
+  CardValue* const end_card = ct->byte_for(mr.last()) + 1;
+
+  // if mr.end() is not card-aligned, that final card should not be cleared
+  // because it can be annotated dirty due to old-to-young pointers in
+  // newly-promoted objs on that card.
+  CardValue* const clear_limit_card = is_card_aligned(mr.end()) ? end_card - 1
+                                                                : end_card - 2;
+
+  for (CardValue* current_card = start_card; current_card < end_card; /* empty */) {
+    CardValue* const dirty_l = find_first_dirty_card(current_card, end_card);
+
+    if (dirty_l == end_card) {
+      // No dirty cards to iterate.
+      return;
+    }
+
+    HeapWord* const addr_l = ct->addr_for(dirty_l);
+    HeapWord* obj_addr = object_start(addr_l);
+
+    CardValue* const dirty_r = find_first_clean_card(dirty_l + 1,
+                                                     end_card,
+                                                     ct,
+                                                     object_start);
+    assert(dirty_l < dirty_r, "inv");
+    HeapWord* const addr_r = dirty_r == end_card ? mr.end()
+                                                 : ct->addr_for(dirty_r);
+
+    clear_cards(MIN2(dirty_l, clear_limit_card),
+                MIN2(dirty_r, clear_limit_card));
+
+    while (true) {
+      assert(obj_addr < addr_r, "inv");
+
+      oop obj = cast_to_oop(obj_addr);
+      const bool is_obj_array = obj->is_objArray();
+      HeapWord* const obj_end_addr = obj_addr + obj->size();
+
+      if (is_obj_array) {
+        // ObjArrays are always precise-marked.
+        scan_obj_with_limit(obj, cl, addr_l, addr_r);
+      } else {
+        scan_obj_with_limit(obj, cl, addr_l, obj_end_addr);
+      }
+
+      if (obj_end_addr >= addr_r) {
+        current_card = dirty_r + 1;
+        break;
+      }
+
+      // Move to next obj inside this dirty chunk.
+      obj_addr = obj_end_addr;
+    }
   }
-  // clear_cl finds contiguous dirty ranges of cards to process and clear.
-
-  DirtyCardToOopClosure dcto_cl{sp, cl};
-  ClearNoncleanCardWrapper clear_cl(&dcto_cl, ct);
-
-  clear_cl.do_MemRegion(mr);
 }
 
 bool CardTableRS::is_in_young(const void* p) const {
-  return GenCollectedHeap::heap()->is_in_young(p);
+  return SerialHeap::heap()->is_in_young(p);
 }

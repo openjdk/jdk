@@ -32,6 +32,7 @@
 #include "gc/shared/gc_globals.hpp"
 #include "memory/universe.hpp"
 #include "prims/jvmtiExport.hpp"
+#include "prims/upcallLinker.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/sharedRuntime.hpp"
@@ -106,10 +107,8 @@
 //     [ return_from_Java     ] <--- rsp
 //     [ argument word n      ]
 //      ...
-// -60 [ argument word 1      ]
-// -59 [ saved xmm31          ] <--- rsp after_call
-//     [ saved xmm16-xmm30    ] (EVEX enabled, else the space is blank)
-// -27 [ saved xmm15          ]
+// -28 [ argument word 1      ]
+// -27 [ saved xmm15          ] <--- rsp after_call
 //     [ saved xmm7-xmm14     ]
 //  -9 [ saved xmm6           ] (each xmm register takes 2 slots)
 //  -7 [ saved r15            ]
@@ -137,7 +136,7 @@
 #ifdef _WIN64
 enum call_stub_layout {
   xmm_save_first     = 6,  // save from xmm6
-  xmm_save_last      = 31, // to xmm31
+  xmm_save_last      = 15, // to xmm15
   xmm_save_base      = -9,
   rsp_after_call_off = xmm_save_base - 2 * (xmm_save_last - xmm_save_first), // -27
   r15_off            = -7,
@@ -237,17 +236,8 @@ address StubGenerator::generate_call_stub(address& return_address) {
 
 #ifdef _WIN64
   int last_reg = 15;
-  if (UseAVX > 2) {
-    last_reg = 31;
-  }
-  if (VM_Version::supports_evex()) {
-    for (int i = xmm_save_first; i <= last_reg; i++) {
-      __ vextractf32x4(xmm_save(i), as_XMMRegister(i), 0);
-    }
-  } else {
-    for (int i = xmm_save_first; i <= last_reg; i++) {
-      __ movdqu(xmm_save(i), as_XMMRegister(i));
-    }
+  for (int i = xmm_save_first; i <= last_reg; i++) {
+    __ movdqu(xmm_save(i), as_XMMRegister(i));
   }
 
   const Address rdi_save(rbp, rdi_off * wordSize);
@@ -326,6 +316,16 @@ address StubGenerator::generate_call_stub(address& return_address) {
   __ jcc(Assembler::equal, is_float);
   __ cmpl(c_rarg1, T_DOUBLE);
   __ jcc(Assembler::equal, is_double);
+#ifdef ASSERT
+  // make sure the type is INT
+  {
+    Label L;
+    __ cmpl(c_rarg1, T_INT);
+    __ jcc(Assembler::equal, L);
+    __ stop("StubRoutines::call_stub: unexpected result type");
+    __ bind(L);
+  }
+#endif
 
   // handle T_INT case
   __ movl(Address(c_rarg0, 0), rax);
@@ -360,14 +360,8 @@ address StubGenerator::generate_call_stub(address& return_address) {
   // restore regs belonging to calling function
 #ifdef _WIN64
   // emit the restores for xmm regs
-  if (VM_Version::supports_evex()) {
-    for (int i = xmm_save_first; i <= last_reg; i++) {
-      __ vinsertf32x4(as_XMMRegister(i), as_XMMRegister(i), xmm_save(i), 0);
-    }
-  } else {
-    for (int i = xmm_save_first; i <= last_reg; i++) {
-      __ movdqu(as_XMMRegister(i), xmm_save(i));
-    }
+  for (int i = xmm_save_first; i <= last_reg; i++) {
+    __ movdqu(as_XMMRegister(i), xmm_save(i));
   }
 #endif
   __ movptr(r15, r15_save);
@@ -3894,9 +3888,29 @@ address StubGenerator::generate_throw_exception(const char* name,
   return stub->entry_point();
 }
 
+// exception handler for upcall stubs
+address StubGenerator::generate_upcall_stub_exception_handler() {
+  StubCodeMark mark(this, "StubRoutines", "upcall stub exception handler");
+  address start = __ pc();
+
+  // native caller has no idea how to handle exceptions
+  // we just crash here. Up to callee to catch exceptions.
+  __ verify_oop(rax);
+  __ vzeroupper();
+  __ mov(c_rarg0, rax);
+  __ andptr(rsp, -StackAlignmentInBytes); // align stack as required by ABI
+  __ subptr(rsp, frame::arg_reg_save_area_bytes); // windows
+  __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, UpcallLinker::handle_uncaught_exception)));
+  __ should_not_reach_here();
+
+  return start;
+}
+
 void StubGenerator::create_control_words() {
-  // Round to nearest, 64-bit mode, exceptions masked
-  StubRoutines::x86::_mxcsr_std = 0x1F80;
+  // Round to nearest, 64-bit mode, exceptions masked, flags specialized
+  StubRoutines::x86::_mxcsr_std = EnableX86ECoreOpts ? 0x1FBF : 0x1F80;
+  // Round to zero, 64-bit mode, exceptions masked, flags specialized
+  StubRoutines::x86::_mxcsr_rz = EnableX86ECoreOpts ? 0x7FBF : 0x7F80;
 }
 
 // Initialization
@@ -3979,9 +3993,7 @@ void StubGenerator::generate_initial_stubs() {
 
   generate_libm_stubs();
 
-  if ((UseAVX >= 1) && (VM_Version::supports_avx512vlbwdq() || VM_Version::supports_fma())) {
-    StubRoutines::_fmod = generate_libmFmod(); // from stubGenerator_x86_64_fmod.cpp
-  }
+  StubRoutines::_fmod = generate_libmFmod(); // from stubGenerator_x86_64_fmod.cpp
 }
 
 void StubGenerator::generate_continuation_stubs() {
@@ -4040,12 +4052,14 @@ void StubGenerator::generate_final_stubs() {
 
   BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
   if (bs_nm != nullptr) {
-    StubRoutines::x86::_method_entry_barrier = generate_method_entry_barrier();
+    StubRoutines::_method_entry_barrier = generate_method_entry_barrier();
   }
 
   if (UseVectorizedMismatchIntrinsic) {
     StubRoutines::_vectorizedMismatch = generate_vectorizedMismatch();
   }
+
+  StubRoutines::_upcall_stub_exception_handler = generate_upcall_stub_exception_handler();
 }
 
 void StubGenerator::generate_compiler_stubs() {
@@ -4177,6 +4191,27 @@ void StubGenerator::generate_compiler_stubs() {
   if (UseMontgomerySquareIntrinsic) {
     StubRoutines::_montgomerySquare
       = CAST_FROM_FN_PTR(address, SharedRuntime::montgomery_square);
+  }
+
+  // Load x86_64_sort library on supported hardware to enable SIMD sort and partition intrinsics
+
+  if (VM_Version::is_intel() && (VM_Version::supports_avx512dq() || VM_Version::supports_avx2())) {
+    void *libsimdsort = nullptr;
+    char ebuf_[1024];
+    char dll_name_simd_sort[JVM_MAXPATHLEN];
+    if (os::dll_locate_lib(dll_name_simd_sort, sizeof(dll_name_simd_sort), Arguments::get_dll_dir(), "simdsort")) {
+      libsimdsort = os::dll_load(dll_name_simd_sort, ebuf_, sizeof ebuf_);
+    }
+    // Get addresses for SIMD sort and partition routines
+    if (libsimdsort != nullptr) {
+      log_info(library)("Loaded library %s, handle " INTPTR_FORMAT, JNI_LIB_PREFIX "simdsort" JNI_LIB_SUFFIX, p2i(libsimdsort));
+
+      snprintf(ebuf_, sizeof(ebuf_), VM_Version::supports_avx512dq() ? "avx512_sort" : "avx2_sort");
+      StubRoutines::_array_sort = (address)os::dll_lookup(libsimdsort, ebuf_);
+
+      snprintf(ebuf_, sizeof(ebuf_), VM_Version::supports_avx512dq() ? "avx512_partition" : "avx2_partition");
+      StubRoutines::_array_partition = (address)os::dll_lookup(libsimdsort, ebuf_);
+    }
   }
 
   // Get svml stub routine addresses

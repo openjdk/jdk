@@ -51,13 +51,13 @@ class ObjectSample : public JfrCHeapObj {
   JfrBlobHandle _type_set;
   WeakHandle    _object;
   Ticks _allocation_time;
-  traceid _stack_trace_id;
   traceid _thread_id;
-  int _index;
+  traceid _stack_trace_id;
+  traceid _stack_trace_hash;
   size_t _span;
   size_t _allocated;
   size_t _heap_used_at_last_gc;
-  unsigned int _stack_trace_hash;
+  int _index;
   bool _virtual_thread;
 
   void release_references() {
@@ -75,13 +75,13 @@ class ObjectSample : public JfrCHeapObj {
                    _thread(),
                    _type_set(),
                    _allocation_time(),
-                   _stack_trace_id(0),
                    _thread_id(0),
-                   _index(0),
+                   _stack_trace_id(0),
+                   _stack_trace_hash(0),
                    _span(0),
                    _allocated(0),
                    _heap_used_at_last_gc(0),
-                   _stack_trace_hash(0),
+                   _index(0),
                    _virtual_thread(false) {}
 
   ObjectSample* next() const {
@@ -170,11 +170,11 @@ class ObjectSample : public JfrCHeapObj {
     _stack_trace_id = id;
   }
 
-  unsigned int stack_trace_hash() const {
+  traceid stack_trace_hash() const {
     return _stack_trace_hash;
   }
 
-  void set_stack_trace_hash(unsigned int hash) {
+  void set_stack_trace_hash(traceid hash) {
     _stack_trace_hash = hash;
   }
 

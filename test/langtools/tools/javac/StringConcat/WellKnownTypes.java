@@ -21,14 +21,11 @@
  * questions.
  */
 
-import com.sun.tools.classfile.*;
-import com.sun.tools.classfile.ConstantPool.*;
-
 /*
  * @test
  * @bug     8273914
  * @summary Indy string concat changes order of operations
- * @modules jdk.jdeps/com.sun.tools.classfile
+ * @enablePreview
  *
  * @compile -XDstringConcat=indy              WellKnownTypes.java
  * @run main WellKnownTypes

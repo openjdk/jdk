@@ -31,6 +31,7 @@
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "code/codeCache.hpp"
+#include "compiler/compilationMemoryStatistic.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/compilerOracle.hpp"
 #include "gc/shared/collectedHeap.hpp"
@@ -45,6 +46,7 @@
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
+#include "nmt/memTracker.hpp"
 #include "oops/constantPool.hpp"
 #include "oops/generateOopMap.hpp"
 #include "oops/instanceKlass.hpp"
@@ -75,7 +77,6 @@
 #include "runtime/vmThread.hpp"
 #include "runtime/vm_version.hpp"
 #include "sanitizers/leak.hpp"
-#include "services/memTracker.hpp"
 #include "utilities/dtrace.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
@@ -204,16 +205,17 @@ void print_method_invocation_histogram() {
   total = int_total + comp_total;
   special_total = final_total + static_total +synch_total + native_total + access_total;
   tty->print_cr("Invocations summary for %d methods:", collected_invoked_methods->length());
+  double total_div = (double)total;
   tty->print_cr("\t" UINT64_FORMAT_W(12) " (100%%)  total",           total);
-  tty->print_cr("\t" UINT64_FORMAT_W(12) " (%4.1f%%) |- interpreted", int_total,     100.0 * int_total    / total);
-  tty->print_cr("\t" UINT64_FORMAT_W(12) " (%4.1f%%) |- compiled",    comp_total,    100.0 * comp_total   / total);
+  tty->print_cr("\t" UINT64_FORMAT_W(12) " (%4.1f%%) |- interpreted", int_total,     100.0 * (double)int_total    / total_div);
+  tty->print_cr("\t" UINT64_FORMAT_W(12) " (%4.1f%%) |- compiled",    comp_total,    100.0 * (double)comp_total   / total_div);
   tty->print_cr("\t" UINT64_FORMAT_W(12) " (%4.1f%%) |- special methods (interpreted and compiled)",
-                                                                         special_total, 100.0 * special_total/ total);
-  tty->print_cr("\t" UINT64_FORMAT_W(12) " (%4.1f%%)    |- synchronized",synch_total,   100.0 * synch_total  / total);
-  tty->print_cr("\t" UINT64_FORMAT_W(12) " (%4.1f%%)    |- final",       final_total,   100.0 * final_total  / total);
-  tty->print_cr("\t" UINT64_FORMAT_W(12) " (%4.1f%%)    |- static",      static_total,  100.0 * static_total / total);
-  tty->print_cr("\t" UINT64_FORMAT_W(12) " (%4.1f%%)    |- native",      native_total,  100.0 * native_total / total);
-  tty->print_cr("\t" UINT64_FORMAT_W(12) " (%4.1f%%)    |- accessor",    access_total,  100.0 * access_total / total);
+                                                                         special_total, 100.0 * (double)special_total/ total_div);
+  tty->print_cr("\t" UINT64_FORMAT_W(12) " (%4.1f%%)    |- synchronized",synch_total,   100.0 * (double)synch_total  / total_div);
+  tty->print_cr("\t" UINT64_FORMAT_W(12) " (%4.1f%%)    |- final",       final_total,   100.0 * (double)final_total  / total_div);
+  tty->print_cr("\t" UINT64_FORMAT_W(12) " (%4.1f%%)    |- static",      static_total,  100.0 * (double)static_total / total_div);
+  tty->print_cr("\t" UINT64_FORMAT_W(12) " (%4.1f%%)    |- native",      native_total,  100.0 * (double)native_total / total_div);
+  tty->print_cr("\t" UINT64_FORMAT_W(12) " (%4.1f%%)    |- accessor",    access_total,  100.0 * (double)access_total / total_div);
   tty->cr();
   SharedRuntime::print_call_statistics(comp_total);
 }
@@ -223,6 +225,13 @@ void print_bytecode_count() {
     tty->print_cr("[BytecodeCounter::counter_value = %d]", BytecodeCounter::counter_value());
   }
 }
+
+#else
+
+void print_method_invocation_histogram() {}
+void print_bytecode_count() {}
+
+#endif // PRODUCT
 
 
 // General statistics printing (profiling ...)
@@ -333,58 +342,12 @@ void print_statistics() {
     MetaspaceUtils::print_basic_report(tty, 0);
   }
 
-  ThreadsSMRSupport::log_statistics();
-}
-
-#else // PRODUCT MODE STATISTICS
-
-void print_statistics() {
-
-  if (PrintMethodData) {
-    print_method_profiling_data();
-  }
-
-  if (CITime) {
-    CompileBroker::print_times();
-  }
-
-#ifdef COMPILER2_OR_JVMCI
-  if ((LogVMOutput || LogCompilation) && UseCompiler) {
-    // Only print the statistics to the log file
-    FlagSetting fs(DisplayVMOutput, false);
-    Deoptimization::print_statistics();
-  }
-#endif /* COMPILER2 || INCLUDE_JVMCI */
-
-  if (PrintCodeCache) {
-    MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
-    CodeCache::print();
-  }
-
-  // CodeHeap State Analytics.
-  if (PrintCodeHeapAnalytics) {
-    CompileBroker::print_heapinfo(nullptr, "all", 4096); // details
-  }
-
-#ifdef COMPILER2
-  if (PrintPreciseRTMLockingStatistics) {
-    OptoRuntime::print_named_counters();
-  }
-#endif
-
-  // Native memory tracking data
-  if (PrintNMTStatistics) {
-    MemTracker::final_report(tty);
-  }
-
-  if (PrintMetaspaceStatisticsAtExit) {
-    MetaspaceUtils::print_basic_report(tty, 0);
+  if (CompilerOracle::should_print_final_memstat_report()) {
+    CompilationMemoryStatistic::print_all_by_size(tty, false, 0);
   }
 
   ThreadsSMRSupport::log_statistics();
 }
-
-#endif
 
 // Note: before_exit() can be executed only once, if more than one threads
 //       are trying to shutdown the VM at the same time, only one thread

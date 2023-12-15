@@ -242,7 +242,7 @@ void ObjectValue::print_fields_on(outputStream* st) const {
 // of the object.
 ObjectValue* ObjectMergeValue::select(frame& fr, RegisterMap& reg_map) {
   StackValue* sv_selector = StackValue::create_stack_value(&fr, &reg_map, _selector);
-  jint selector = sv_selector->get_int();
+  jint selector = sv_selector->get_jint();
 
   // If the selector is '-1' it means that execution followed the path
   // where no scalar replacement happened.
@@ -262,6 +262,14 @@ ObjectValue* ObjectMergeValue::select(frame& fr, RegisterMap& reg_map) {
     assert(selector < _possible_objects.length(), "sanity");
     _selected = (ObjectValue*) _possible_objects.at(selector);
     return _selected;
+  }
+}
+
+Handle ObjectMergeValue::value() const {
+  if (_selected != nullptr) {
+    return _selected->value();
+  } else {
+    return Handle();
   }
 }
 

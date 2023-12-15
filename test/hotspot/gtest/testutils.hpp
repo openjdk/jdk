@@ -68,4 +68,7 @@ public:
 #define LOG_HERE(s, ...)
 #endif
 
+// handy for error analysis
+#define PING { printf("%s:%d\n", __FILE__, __LINE__); fflush(stdout); }
+
 #endif // TESTUTILS_HPP

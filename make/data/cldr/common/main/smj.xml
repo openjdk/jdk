@@ -15,15 +15,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="smj">julevsámegiella</language>
 		</languages>
 	</localeDisplayNames>
-	<layout>
-		<orientation>
-			<characterOrder>left-to-right</characterOrder>
-			<lineOrder>top-to-bottom</lineOrder>
-		</orientation>
-	</layout>
 	<characters>
-		<exemplarCharacters>[a á å ä b d e f g h i j k l m n ń o p r s t u v]</exemplarCharacters>
+		<exemplarCharacters>[aáåä b d e f g h i j k l m nń o p r s t u v]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[c ñ ö q w x y z]</exemplarCharacters>
-		<exemplarCharacters type="index">[A Á Å Ä B D E F G H I J K L M N Ń O P R S T U V]</exemplarCharacters>
+		<exemplarCharacters type="index">[AÁÅÄ B D E F G H I J K L M NŃ O P R S T U V]</exemplarCharacters>
 	</characters>
 </ldml>

@@ -352,6 +352,7 @@ public class Table<T> extends Content {
      *
      * @return true if the table has no rows
      */
+    @Override
     public boolean isEmpty() {
         return bodyRows.isEmpty();
     }

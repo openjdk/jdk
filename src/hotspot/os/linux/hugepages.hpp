@@ -52,6 +52,9 @@ class StaticHugePageSupport {
   // - is the size one gets when using mmap(MAP_HUGETLB) when omitting size specifiers like MAP_HUGE_SHIFT)
   size_t _default_hugepage_size;
 
+  // If true, the kernel support for hugepages is inconsistent
+  bool _inconsistent;
+
 public:
   StaticHugePageSupport();
 
@@ -60,6 +63,8 @@ public:
   os::PageSizes pagesizes() const;
   size_t default_hugepage_size() const;
   void print_on(outputStream* os);
+
+  bool inconsistent() const { return _inconsistent; }
 };
 
 enum class THPMode { always, never, madvise };
@@ -86,22 +91,57 @@ public:
   void print_on(outputStream* os);
 };
 
+enum class ShmemTHPMode { always, within_size, advise, never, deny, force, unknown };
+
+// for transparent shmem hugepages
+class ShmemTHPSupport {
+  bool _initialized;
+
+  // See /sys/kernel/mm/transparent_hugepage/shmem_enabled
+  ShmemTHPMode _mode;
+
+  static const char* mode_to_string(ShmemTHPMode mode);
+
+public:
+
+  ShmemTHPSupport();
+
+  // Queries the OS, fills in object
+  void scan_os();
+
+  ShmemTHPMode mode() const;
+
+  bool is_forced() const;
+  bool is_enabled() const;
+  bool is_disabled() const;
+
+  // Printing
+  void print_on(outputStream* os);
+};
+
 // Umbrella static interface
 class HugePages : public AllStatic {
 
   static StaticHugePageSupport _static_hugepage_support;
   static THPSupport _thp_support;
+  static ShmemTHPSupport _shmem_thp_support;
 
 public:
 
   static const StaticHugePageSupport& static_info() { return _static_hugepage_support; }
   static const THPSupport& thp_info() { return _thp_support; }
+  static const ShmemTHPSupport& shmem_thp_info() { return _shmem_thp_support; }
 
   static size_t default_static_hugepage_size()  { return _static_hugepage_support.default_hugepage_size(); }
-  static bool supports_static_hugepages()       { return default_static_hugepage_size() > 0; }
-  static THPMode thp_mode()                     { return _thp_support.mode(); }
+  static bool supports_static_hugepages()       { return default_static_hugepage_size() > 0 && !_static_hugepage_support.inconsistent(); }
+
   static bool supports_thp()                    { return thp_mode() == THPMode::madvise || thp_mode() == THPMode::always; }
+  static THPMode thp_mode()                     { return _thp_support.mode(); }
   static size_t thp_pagesize()                  { return _thp_support.pagesize(); }
+
+  static bool supports_shmem_thp()              { return _shmem_thp_support.is_enabled(); }
+  static ShmemTHPMode shmem_thp_mode()          { return _shmem_thp_support.mode(); }
+  static bool forced_shmem_thp()                { return _shmem_thp_support.is_forced(); }
 
   static void initialize();
   static void print_on(outputStream* os);

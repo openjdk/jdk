@@ -52,6 +52,7 @@ import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.QualifiedNameable;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
+import javax.lang.model.type.ArrayType;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.SimpleAnnotationValueVisitor9;
@@ -90,8 +91,10 @@ import jdk.javadoc.internal.doclets.formats.html.markup.RawHtml;
 import jdk.javadoc.internal.doclets.formats.html.markup.Script;
 import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
 import jdk.javadoc.internal.doclets.formats.html.markup.Text;
+import jdk.javadoc.internal.doclets.formats.html.markup.TextBuilder;
 import jdk.javadoc.internal.doclets.formats.html.taglets.Taglet;
 import jdk.javadoc.internal.doclets.formats.html.taglets.TagletWriter;
+import jdk.javadoc.internal.doclets.toolkit.DocletException;
 import jdk.javadoc.internal.doclets.toolkit.Messages;
 import jdk.javadoc.internal.doclets.toolkit.Resources;
 import jdk.javadoc.internal.doclets.toolkit.util.CommentHelper;
@@ -113,11 +116,10 @@ import static com.sun.source.doctree.DocTree.Kind.TEXT;
 
 
 /**
- * Class for the Html Format Code Generation specific to JavaDoc.
- * This Class contains methods related to the Html Code Generation which
- * are used extensively while generating the entire documentation.
+ * The base class for classes that write complete HTML pages to be included in the overall API documentation.
+ * The primary method is {@link #buildPage()}.
  */
-public class HtmlDocletWriter {
+public abstract class HtmlDocletWriter {
 
     /**
      * Relative path from the file getting generated to the destination
@@ -134,12 +136,6 @@ public class HtmlDocletWriter {
      * Used when creating the file.
      */
     public final DocPath path;
-
-    /**
-     * Name of the file getting generated. If the file getting generated is
-     * "java/lang/Object.html", then the filename is "Object.html".
-     */
-    public final DocPath filename;
 
     /**
      * The global configuration information for this run.
@@ -207,7 +203,7 @@ public class HtmlDocletWriter {
      * @param path the file to be generated.
      * @param generating whether to write a "Geneterating ..." message to the console
      */
-    public HtmlDocletWriter(HtmlConfiguration configuration, DocPath path, boolean generating) {
+    protected HtmlDocletWriter(HtmlConfiguration configuration, DocPath path, boolean generating) {
         this.configuration = configuration;
         this.options = configuration.getOptions();
         this.contents = configuration.getContents();
@@ -219,7 +215,6 @@ public class HtmlDocletWriter {
         this.htmlIds = configuration.htmlIds;
         this.path = path;
         this.pathToRoot = path.parent().invert();
-        this.filename = path.basename();
         this.docPaths = configuration.docPaths;
         this.mainBodyScript = new Script();
 
@@ -227,6 +222,13 @@ public class HtmlDocletWriter {
             writeGenerating();
         }
     }
+
+    /**
+     * The top-level method to generate and write the page represented by this writer.
+     *
+     * @throws DocletException if a problem occurs while building or writing the page
+     */
+    public abstract void buildPage() throws DocletException;
 
     /**
      * Writes a "Generating _file_" message to the console
@@ -410,6 +412,20 @@ public class HtmlDocletWriter {
     }
 
     /**
+     * {@return true if the page written by this writer should be indexed,
+     * false otherwise}
+     *
+     * Some pages merely aggregate filtered information available on other pages
+     * and, thus, have no indexing value. In fact, if indexed, they would
+     * clutter the index and mislead the reader.
+     *
+     * @implSpec The default implementation returns {@code false}.
+     */
+    public boolean isIndexable() {
+        return false;
+    }
+
+    /**
      * Generates the HTML document tree and prints it out.
      *
      * @param metakeywords Array of String keywords for META tag. Each element
@@ -464,7 +480,6 @@ public class HtmlDocletWriter {
                                   Content body)
             throws DocFileIOException {
         List<DocPath> additionalStylesheets = configuration.getAdditionalStylesheets();
-        additionalStylesheets.addAll(localStylesheets);
         Head head = new Head(path, configuration.getDocletVersion(), configuration.getBuildDate())
                 .setTimestamp(!options.noTimestamp())
                 .setDescription(description)
@@ -472,7 +487,7 @@ public class HtmlDocletWriter {
                 .setTitle(winTitle)
                 .setCharset(options.charset())
                 .addKeywords(metakeywords)
-                .setStylesheets(configuration.getMainStylesheet(), additionalStylesheets)
+                .setStylesheets(configuration.getMainStylesheet(), additionalStylesheets, localStylesheets)
                 .setAdditionalScripts(configuration.getAdditionalScripts())
                 .setIndex(options.createIndex(), mainBodyScript)
                 .addContent(extraHeadContent);
@@ -503,7 +518,7 @@ public class HtmlDocletWriter {
      *
      * @return the {@code <header>} element
      */
-    protected HtmlTree getHeader(Navigation.PageMode pageMode) {
+    protected Content getHeader(Navigation.PageMode pageMode) {
         return getHeader(pageMode, null);
     }
 
@@ -516,10 +531,10 @@ public class HtmlDocletWriter {
      *
      * @return the {@code <header>} element
      */
-    protected HtmlTree getHeader(Navigation.PageMode pageMode, Element element) {
+    protected Content getHeader(Navigation.PageMode pageMode, Element element) {
         return HtmlTree.HEADER()
-                .add(RawHtml.of(replaceDocRootDir(options.top())))
-                .add(getNavBar(pageMode, element).getContent());
+                        .add(RawHtml.of(replaceDocRootDir(options.top())))
+                        .add(getNavBar(pageMode, element).getContent());
     }
 
     /**
@@ -1368,7 +1383,8 @@ public class HtmlDocletWriter {
                 @Override
                 public Boolean visitStartElement(StartElementTree node, Content content) {
                     Content attrs = new ContentBuilder();
-                    if (node.getName().toString().matches("(?i)h[1-6]")) {
+                    if (node.getName().toString().matches("(?i)h[1-6]")
+                            && isIndexable()) {
                         createSectionIdAndIndex(node, trees, attrs, element, context);
                     }
                     for (DocTree dt : node.getAttributes()) {
@@ -1469,13 +1485,13 @@ public class HtmlDocletWriter {
             attrs.add("id=\"").add(htmlId.name()).add("\"");
         }
         // Generate index item
-        if (!headingContent.isEmpty() && configuration.mainIndex != null) {
+        if (!headingContent.isEmpty() && configuration.indexBuilder != null) {
             String tagText = headingContent.replaceAll("\\s+", " ");
             IndexItem item = IndexItem.of(element, node, tagText,
                     getTagletWriterInstance(context).getHolderName(element),
                     resources.getText("doclet.Section"),
                     new DocLink(path, id));
-            configuration.mainIndex.add(item);
+            configuration.indexBuilder.add(item);
         }
     }
 
@@ -1868,23 +1884,24 @@ public class HtmlDocletWriter {
         return new SimpleAnnotationValueVisitor9<Content, Void>() {
 
             @Override
-            public Content visitType(TypeMirror t, Void p) {
+            public Content visitType(TypeMirror type, Void p) {
                 return new SimpleTypeVisitor9<Content, Void>() {
                     @Override
                     public Content visitDeclared(DeclaredType t, Void p) {
                         HtmlLinkInfo linkInfo = new HtmlLinkInfo(configuration,
                                 HtmlLinkInfo.Kind.PLAIN, t);
-                        String name = utils.isIncluded(t.asElement())
-                                ? t.asElement().getSimpleName().toString()
-                                : utils.getFullyQualifiedName(t.asElement());
-                        linkInfo.label(name + utils.getDimension(t) + ".class");
                         return getLink(linkInfo);
                     }
                     @Override
-                    protected Content defaultAction(TypeMirror e, Void p) {
-                        return Text.of(t + utils.getDimension(t) + ".class");
+                    public Content visitArray(ArrayType t, Void p) {
+                        // render declared base component type as link
+                        return visit(t.getComponentType()).add("[]");
                     }
-                }.visit(t);
+                    @Override
+                    protected Content defaultAction(TypeMirror t, Void p) {
+                        return new TextBuilder(t.toString());
+                    }
+                }.visit(type).add(".class");
             }
 
             @Override
@@ -2036,7 +2053,7 @@ public class HtmlDocletWriter {
     private List<DocPath> getStylesheets(Element element) throws DocFileIOException {
         List<DocPath> localStylesheets = configuration.localStylesheetMap.get(element);
         if (localStylesheets == null) {
-            DocFilesHandler docFilesHandler = configuration.getWriterFactory().getDocFilesHandler(element);
+            DocFilesHandler docFilesHandler = configuration.getWriterFactory().newDocFilesHandler(element);
             localStylesheets = docFilesHandler.getStylesheets();
             configuration.localStylesheetMap.put(element, localStylesheets);
         }
@@ -2047,6 +2064,14 @@ public class HtmlDocletWriter {
         if (utils.isPreviewAPI(forWhat)) {
             var div = HtmlTree.DIV(HtmlStyle.block);
             div.add(HtmlTree.SPAN(HtmlStyle.previewLabel, contents.previewPhrase));
+            target.add(div);
+        }
+    }
+
+    public void addRestrictedSummary(Element forWhat, Content target) {
+        if (utils.isRestrictedAPI(forWhat)) {
+            var div = HtmlTree.DIV(HtmlStyle.block);
+            div.add(HtmlTree.SPAN(HtmlStyle.restrictedLabel, contents.restrictedPhrase));
             target.add(div);
         }
     }
@@ -2199,6 +2224,26 @@ public class HtmlDocletWriter {
             specURI = baseURI.resolve(specURI);
         }
         return specURI;
+    }
+
+    public void addRestrictedInfo(ExecutableElement forWhat, Content target) {
+        if (utils.isRestrictedAPI(forWhat)) {
+            //in Java platform:
+            var restrictedDiv = HtmlTree.DIV(HtmlStyle.restrictedBlock);
+            restrictedDiv.setId(htmlIds.forRestrictedSection(forWhat));
+            String name = forWhat.getSimpleName().toString();
+            var nameCode = HtmlTree.CODE(Text.of(name));
+            String leadingNoteKey = "doclet.RestrictedLeadingNote";
+            Content leadingNote =
+                    contents.getContent(leadingNoteKey, nameCode);
+            restrictedDiv.add(HtmlTree.SPAN(HtmlStyle.restrictedLabel,
+                    leadingNote));
+            Content note1 = contents.getContent("doclet.RestrictedTrailingNote1", nameCode);
+            restrictedDiv.add(HtmlTree.DIV(HtmlStyle.restrictedComment, note1));
+            Content note2 = contents.getContent("doclet.RestrictedTrailingNote2", nameCode);
+            restrictedDiv.add(HtmlTree.DIV(HtmlStyle.restrictedComment, note2));
+            target.add(restrictedDiv);
+        }
     }
 
 }

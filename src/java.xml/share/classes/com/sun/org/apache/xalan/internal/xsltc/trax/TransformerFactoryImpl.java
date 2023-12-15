@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -20,8 +20,6 @@
 
 package com.sun.org.apache.xalan.internal.xsltc.trax;
 
-import jdk.xml.internal.JdkConstants;
-import jdk.xml.internal.XMLSecurityManager;
 import com.sun.org.apache.xalan.internal.utils.FeaturePropertyBase;
 import com.sun.org.apache.xalan.internal.utils.ObjectFactory;
 import com.sun.org.apache.xalan.internal.utils.XMLSecurityPropertyManager.Property;
@@ -71,6 +69,7 @@ import javax.xml.transform.sax.TransformerHandler;
 import javax.xml.transform.stax.*;
 import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
+import jdk.xml.internal.JdkConstants;
 import jdk.xml.internal.JdkProperty;
 import jdk.xml.internal.JdkXmlFeatures;
 import jdk.xml.internal.JdkXmlUtils;
@@ -78,6 +77,7 @@ import jdk.xml.internal.JdkProperty.ImplPropMap;
 import jdk.xml.internal.JdkProperty.State;
 import jdk.xml.internal.SecuritySupport;
 import jdk.xml.internal.TransformErrorListener;
+import jdk.xml.internal.XMLSecurityManager;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.XMLFilter;
@@ -88,7 +88,7 @@ import org.xml.sax.XMLReader;
  * @author G. Todd Miller
  * @author Morten Jorgensen
  * @author Santiago Pericas-Geertsen
- * @LastModified: Jan 2022
+ * @LastModified: July 2023
  */
 public class TransformerFactoryImpl
     extends SAXTransformerFactory implements SourceLoader
@@ -503,19 +503,19 @@ public class TransformerFactoryImpl
             }
         } else if (JdkXmlUtils.CATALOG_FILES.equals(name)) {
             _catalogFiles = (String) value;
-            cfBuilder = CatalogFeatures.builder().with(Feature.FILES, _catalogFiles);
+            cfBuilder = cfBuilder.with(Feature.FILES, _catalogFiles);
             return;
         } else if (JdkXmlUtils.CATALOG_DEFER.equals(name)) {
             _catalogDefer = (String) value;
-            cfBuilder = CatalogFeatures.builder().with(Feature.DEFER, _catalogDefer);
+            cfBuilder = cfBuilder.with(Feature.DEFER, _catalogDefer);
             return;
         } else if (JdkXmlUtils.CATALOG_PREFER.equals(name)) {
             _catalogPrefer = (String) value;
-            cfBuilder = CatalogFeatures.builder().with(Feature.PREFER, _catalogPrefer);
+            cfBuilder = cfBuilder.with(Feature.PREFER, _catalogPrefer);
             return;
         } else if (JdkXmlUtils.CATALOG_RESOLVE.equals(name)) {
             _catalogResolve = (String) value;
-            cfBuilder = CatalogFeatures.builder().with(Feature.RESOLVE, _catalogResolve);
+            cfBuilder = cfBuilder.with(Feature.RESOLVE, _catalogResolve);
             return;
         } else if (ImplPropMap.CDATACHUNKSIZE.is(name)) {
             _cdataChunkSize = JdkXmlUtils.getValue(value, _cdataChunkSize);
@@ -765,8 +765,11 @@ public class TransformerFactoryImpl
                 baseId = isource.getSystemId();
 
                 if (reader == null) {
-                    reader = JdkXmlUtils.getXMLReader(_overrideDefaultParser,
-                            !_isNotSecureProcessing);
+                    reader = JdkXmlUtils.getXMLReader(_xmlSecurityManager,
+                            _overrideDefaultParser,
+                            !_isNotSecureProcessing,
+                            _xmlFeatures.getFeature(JdkXmlFeatures.XmlFeature.USE_CATALOG),
+                            _catalogFeatures);
                 }
 
                 _stylesheetPIHandler.setBaseId(baseId);

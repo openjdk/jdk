@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,7 @@ final class VarHandleSegmentAs$Type$s extends VarHandleSegmentViewBase {
 
     static final ScopedMemoryAccess SCOPED_MEMORY_ACCESS = ScopedMemoryAccess.getScopedMemoryAccess();
 
-    static final int VM_ALIGN = $BoxType$.BYTES - 1;
+    static final int NON_PLAIN_ACCESS_MIN_ALIGN_MASK = $BoxType$.BYTES - 1;
 
     static final VarForm FORM = new VarForm(VarHandleSegmentAs$Type$s.class, MemorySegment.class, $type$.class, long.class);
 
@@ -104,16 +104,15 @@ final class VarHandleSegmentAs$Type$s extends VarHandleSegmentViewBase {
     }
 
     @ForceInline
-    static long offset(AbstractMemorySegmentImpl bb, long offset, long alignmentMask) {
-        long address = offsetNoVMAlignCheck(bb, offset, alignmentMask);
-        if ((address & VM_ALIGN) != 0) {
-            throw VarHandleSegmentViewBase.newIllegalArgumentExceptionForMisalignedAccess(address);
+    static long offsetNonPlain(AbstractMemorySegmentImpl bb, long offset, long alignmentMask) {
+        if ((alignmentMask & NON_PLAIN_ACCESS_MIN_ALIGN_MASK) != NON_PLAIN_ACCESS_MIN_ALIGN_MASK) {
+            throw VarHandleSegmentViewBase.newUnsupportedAccessModeForAlignment(alignmentMask + 1);
         }
-        return address;
+        return offsetPlain(bb, offset, alignmentMask);
     }
 
     @ForceInline
-    static long offsetNoVMAlignCheck(AbstractMemorySegmentImpl bb, long offset, long alignmentMask) {
+    static long offsetPlain(AbstractMemorySegmentImpl bb, long offset, long alignmentMask) {
         long base = bb.unsafeGetOffset();
         long address = base + offset;
         long maxAlignMask = bb.maxAlignMask();
@@ -130,18 +129,18 @@ final class VarHandleSegmentAs$Type$s extends VarHandleSegmentViewBase {
 #if[floatingPoint]
         $rawType$ rawValue = SCOPED_MEMORY_ACCESS.get$RawType$Unaligned(bb.sessionImpl(),
                 bb.unsafeGetBase(),
-                offsetNoVMAlignCheck(bb, base, handle.alignmentMask),
+                offsetPlain(bb, base, handle.alignmentMask),
                 handle.be);
         return $Type$.$rawType$BitsTo$Type$(rawValue);
 #else[floatingPoint]
 #if[byte]
         return SCOPED_MEMORY_ACCESS.get$Type$(bb.sessionImpl(),
                 bb.unsafeGetBase(),
-                offsetNoVMAlignCheck(bb, base, handle.alignmentMask));
+                offsetPlain(bb, base, handle.alignmentMask));
 #else[byte]
         return SCOPED_MEMORY_ACCESS.get$Type$Unaligned(bb.sessionImpl(),
                 bb.unsafeGetBase(),
-                offsetNoVMAlignCheck(bb, base, handle.alignmentMask),
+                offsetPlain(bb, base, handle.alignmentMask),
                 handle.be);
 #end[byte]
 #end[floatingPoint]
@@ -154,19 +153,19 @@ final class VarHandleSegmentAs$Type$s extends VarHandleSegmentViewBase {
 #if[floatingPoint]
         SCOPED_MEMORY_ACCESS.put$RawType$Unaligned(bb.sessionImpl(),
                 bb.unsafeGetBase(),
-                offsetNoVMAlignCheck(bb, base, handle.alignmentMask),
+                offsetPlain(bb, base, handle.alignmentMask),
                 $Type$.$type$ToRaw$RawType$Bits(value),
                 handle.be);
 #else[floatingPoint]
 #if[byte]
         SCOPED_MEMORY_ACCESS.put$Type$(bb.sessionImpl(),
                 bb.unsafeGetBase(),
-                offsetNoVMAlignCheck(bb, base, handle.alignmentMask),
+                offsetPlain(bb, base, handle.alignmentMask),
                 value);
 #else[byte]
         SCOPED_MEMORY_ACCESS.put$Type$Unaligned(bb.sessionImpl(),
                 bb.unsafeGetBase(),
-                offsetNoVMAlignCheck(bb, base, handle.alignmentMask),
+                offsetPlain(bb, base, handle.alignmentMask),
                 value,
                 handle.be);
 #end[byte]
@@ -180,7 +179,7 @@ final class VarHandleSegmentAs$Type$s extends VarHandleSegmentViewBase {
         return convEndian(handle.be,
                           SCOPED_MEMORY_ACCESS.get$RawType$Volatile(bb.sessionImpl(),
                                   bb.unsafeGetBase(),
-                                  offset(bb, base, handle.alignmentMask)));
+                                  offsetNonPlain(bb, base, handle.alignmentMask)));
     }
 
     @ForceInline
@@ -189,7 +188,7 @@ final class VarHandleSegmentAs$Type$s extends VarHandleSegmentViewBase {
         AbstractMemorySegmentImpl bb = checkAddress(obb, base, handle.length, false);
         SCOPED_MEMORY_ACCESS.put$RawType$Volatile(bb.sessionImpl(),
                 bb.unsafeGetBase(),
-                offset(bb, base, handle.alignmentMask),
+                offsetNonPlain(bb, base, handle.alignmentMask),
                 convEndian(handle.be, value));
     }
 
@@ -200,7 +199,7 @@ final class VarHandleSegmentAs$Type$s extends VarHandleSegmentViewBase {
         return convEndian(handle.be,
                           SCOPED_MEMORY_ACCESS.get$RawType$Acquire(bb.sessionImpl(),
                                   bb.unsafeGetBase(),
-                                  offset(bb, base, handle.alignmentMask)));
+                                  offsetNonPlain(bb, base, handle.alignmentMask)));
     }
 
     @ForceInline
@@ -209,7 +208,7 @@ final class VarHandleSegmentAs$Type$s extends VarHandleSegmentViewBase {
         AbstractMemorySegmentImpl bb = checkAddress(obb, base, handle.length, false);
         SCOPED_MEMORY_ACCESS.put$RawType$Release(bb.sessionImpl(),
                 bb.unsafeGetBase(),
-                offset(bb, base, handle.alignmentMask),
+                offsetNonPlain(bb, base, handle.alignmentMask),
                 convEndian(handle.be, value));
     }
 
@@ -220,7 +219,7 @@ final class VarHandleSegmentAs$Type$s extends VarHandleSegmentViewBase {
         return convEndian(handle.be,
                           SCOPED_MEMORY_ACCESS.get$RawType$Opaque(bb.sessionImpl(),
                                   bb.unsafeGetBase(),
-                                  offset(bb, base, handle.alignmentMask)));
+                                  offsetNonPlain(bb, base, handle.alignmentMask)));
     }
 
     @ForceInline
@@ -229,7 +228,7 @@ final class VarHandleSegmentAs$Type$s extends VarHandleSegmentViewBase {
         AbstractMemorySegmentImpl bb = checkAddress(obb, base, handle.length, false);
         SCOPED_MEMORY_ACCESS.put$RawType$Opaque(bb.sessionImpl(),
                 bb.unsafeGetBase(),
-                offset(bb, base, handle.alignmentMask),
+                offsetNonPlain(bb, base, handle.alignmentMask),
                 convEndian(handle.be, value));
     }
 #if[CAS]
@@ -240,7 +239,7 @@ final class VarHandleSegmentAs$Type$s extends VarHandleSegmentViewBase {
         AbstractMemorySegmentImpl bb = checkAddress(obb, base, handle.length, false);
         return SCOPED_MEMORY_ACCESS.compareAndSet$RawType$(bb.sessionImpl(),
                 bb.unsafeGetBase(),
-                offset(bb, base, handle.alignmentMask),
+                offsetNonPlain(bb, base, handle.alignmentMask),
                 convEndian(handle.be, expected), convEndian(handle.be, value));
     }
 
@@ -251,7 +250,7 @@ final class VarHandleSegmentAs$Type$s extends VarHandleSegmentViewBase {
         return convEndian(handle.be,
                           SCOPED_MEMORY_ACCESS.compareAndExchange$RawType$(bb.sessionImpl(),
                                   bb.unsafeGetBase(),
-                                  offset(bb, base, handle.alignmentMask),
+                                  offsetNonPlain(bb, base, handle.alignmentMask),
                                   convEndian(handle.be, expected), convEndian(handle.be, value)));
     }
 
@@ -262,7 +261,7 @@ final class VarHandleSegmentAs$Type$s extends VarHandleSegmentViewBase {
         return convEndian(handle.be,
                           SCOPED_MEMORY_ACCESS.compareAndExchange$RawType$Acquire(bb.sessionImpl(),
                                   bb.unsafeGetBase(),
-                                  offset(bb, base, handle.alignmentMask),
+                                  offsetNonPlain(bb, base, handle.alignmentMask),
                                   convEndian(handle.be, expected), convEndian(handle.be, value)));
     }
 
@@ -273,7 +272,7 @@ final class VarHandleSegmentAs$Type$s extends VarHandleSegmentViewBase {
         return convEndian(handle.be,
                           SCOPED_MEMORY_ACCESS.compareAndExchange$RawType$Release(bb.sessionImpl(),
                                   bb.unsafeGetBase(),
-                                  offset(bb, base, handle.alignmentMask),
+                                  offsetNonPlain(bb, base, handle.alignmentMask),
                                   convEndian(handle.be, expected), convEndian(handle.be, value)));
     }
 
@@ -283,7 +282,7 @@ final class VarHandleSegmentAs$Type$s extends VarHandleSegmentViewBase {
         AbstractMemorySegmentImpl bb = checkAddress(obb, base, handle.length, false);
         return SCOPED_MEMORY_ACCESS.weakCompareAndSet$RawType$Plain(bb.sessionImpl(),
                 bb.unsafeGetBase(),
-                offset(bb, base, handle.alignmentMask),
+                offsetNonPlain(bb, base, handle.alignmentMask),
                 convEndian(handle.be, expected), convEndian(handle.be, value));
     }
 
@@ -293,7 +292,7 @@ final class VarHandleSegmentAs$Type$s extends VarHandleSegmentViewBase {
         AbstractMemorySegmentImpl bb = checkAddress(obb, base, handle.length, false);
         return SCOPED_MEMORY_ACCESS.weakCompareAndSet$RawType$(bb.sessionImpl(),
                 bb.unsafeGetBase(),
-                offset(bb, base, handle.alignmentMask),
+                offsetNonPlain(bb, base, handle.alignmentMask),
                 convEndian(handle.be, expected), convEndian(handle.be, value));
     }
 
@@ -303,7 +302,7 @@ final class VarHandleSegmentAs$Type$s extends VarHandleSegmentViewBase {
         AbstractMemorySegmentImpl bb = checkAddress(obb, base, handle.length, false);
         return SCOPED_MEMORY_ACCESS.weakCompareAndSet$RawType$Acquire(bb.sessionImpl(),
                 bb.unsafeGetBase(),
-                offset(bb, base, handle.alignmentMask),
+                offsetNonPlain(bb, base, handle.alignmentMask),
                 convEndian(handle.be, expected), convEndian(handle.be, value));
     }
 
@@ -313,7 +312,7 @@ final class VarHandleSegmentAs$Type$s extends VarHandleSegmentViewBase {
         AbstractMemorySegmentImpl bb = checkAddress(obb, base, handle.length, false);
         return SCOPED_MEMORY_ACCESS.weakCompareAndSet$RawType$Release(bb.sessionImpl(),
                 bb.unsafeGetBase(),
-                offset(bb, base, handle.alignmentMask),
+                offsetNonPlain(bb, base, handle.alignmentMask),
                 convEndian(handle.be, expected), convEndian(handle.be, value));
     }
 
@@ -324,7 +323,7 @@ final class VarHandleSegmentAs$Type$s extends VarHandleSegmentViewBase {
         return convEndian(handle.be,
                           SCOPED_MEMORY_ACCESS.getAndSet$RawType$(bb.sessionImpl(),
                                   bb.unsafeGetBase(),
-                                  offset(bb, base, handle.alignmentMask),
+                                  offsetNonPlain(bb, base, handle.alignmentMask),
                                   convEndian(handle.be, value)));
     }
 
@@ -335,7 +334,7 @@ final class VarHandleSegmentAs$Type$s extends VarHandleSegmentViewBase {
         return convEndian(handle.be,
                           SCOPED_MEMORY_ACCESS.getAndSet$RawType$Acquire(bb.sessionImpl(),
                                   bb.unsafeGetBase(),
-                                  offset(bb, base, handle.alignmentMask),
+                                  offsetNonPlain(bb, base, handle.alignmentMask),
                                   convEndian(handle.be, value)));
     }
 
@@ -346,7 +345,7 @@ final class VarHandleSegmentAs$Type$s extends VarHandleSegmentViewBase {
         return convEndian(handle.be,
                           SCOPED_MEMORY_ACCESS.getAndSet$RawType$Release(bb.sessionImpl(),
                                   bb.unsafeGetBase(),
-                                  offset(bb, base, handle.alignmentMask),
+                                  offsetNonPlain(bb, base, handle.alignmentMask),
                                   convEndian(handle.be, value)));
     }
 #end[CAS]
@@ -359,10 +358,10 @@ final class VarHandleSegmentAs$Type$s extends VarHandleSegmentViewBase {
         if (handle.be == BE) {
             return SCOPED_MEMORY_ACCESS.getAndAdd$RawType$(bb.sessionImpl(),
                     bb.unsafeGetBase(),
-                    offset(bb, base, handle.alignmentMask),
+                    offsetNonPlain(bb, base, handle.alignmentMask),
                     delta);
         } else {
-            return getAndAddConvEndianWithCAS(bb, offset(bb, base, handle.alignmentMask), delta);
+            return getAndAddConvEndianWithCAS(bb, offsetNonPlain(bb, base, handle.alignmentMask), delta);
         }
     }
 
@@ -373,10 +372,10 @@ final class VarHandleSegmentAs$Type$s extends VarHandleSegmentViewBase {
         if (handle.be == BE) {
             return SCOPED_MEMORY_ACCESS.getAndAdd$RawType$Acquire(bb.sessionImpl(),
                     bb.unsafeGetBase(),
-                    offset(bb, base, handle.alignmentMask),
+                    offsetNonPlain(bb, base, handle.alignmentMask),
                     delta);
         } else {
-            return getAndAddConvEndianWithCAS(bb, offset(bb, base, handle.alignmentMask), delta);
+            return getAndAddConvEndianWithCAS(bb, offsetNonPlain(bb, base, handle.alignmentMask), delta);
         }
     }
 
@@ -387,10 +386,10 @@ final class VarHandleSegmentAs$Type$s extends VarHandleSegmentViewBase {
         if (handle.be == BE) {
             return SCOPED_MEMORY_ACCESS.getAndAdd$RawType$Release(bb.sessionImpl(),
                     bb.unsafeGetBase(),
-                    offset(bb, base, handle.alignmentMask),
+                    offsetNonPlain(bb, base, handle.alignmentMask),
                     delta);
         } else {
-            return getAndAddConvEndianWithCAS(bb, offset(bb, base, handle.alignmentMask), delta);
+            return getAndAddConvEndianWithCAS(bb, offsetNonPlain(bb, base, handle.alignmentMask), delta);
         }
     }
 
@@ -415,10 +414,10 @@ final class VarHandleSegmentAs$Type$s extends VarHandleSegmentViewBase {
         if (handle.be == BE) {
             return SCOPED_MEMORY_ACCESS.getAndBitwiseOr$RawType$(bb.sessionImpl(),
                     bb.unsafeGetBase(),
-                    offset(bb, base, handle.alignmentMask),
+                    offsetNonPlain(bb, base, handle.alignmentMask),
                     value);
         } else {
-            return getAndBitwiseOrConvEndianWithCAS(bb, offset(bb, base, handle.alignmentMask), value);
+            return getAndBitwiseOrConvEndianWithCAS(bb, offsetNonPlain(bb, base, handle.alignmentMask), value);
         }
     }
 
@@ -429,10 +428,10 @@ final class VarHandleSegmentAs$Type$s extends VarHandleSegmentViewBase {
         if (handle.be == BE) {
             return SCOPED_MEMORY_ACCESS.getAndBitwiseOr$RawType$Release(bb.sessionImpl(),
                     bb.unsafeGetBase(),
-                    offset(bb, base, handle.alignmentMask),
+                    offsetNonPlain(bb, base, handle.alignmentMask),
                     value);
         } else {
-            return getAndBitwiseOrConvEndianWithCAS(bb, offset(bb, base, handle.alignmentMask), value);
+            return getAndBitwiseOrConvEndianWithCAS(bb, offsetNonPlain(bb, base, handle.alignmentMask), value);
         }
     }
 
@@ -443,10 +442,10 @@ final class VarHandleSegmentAs$Type$s extends VarHandleSegmentViewBase {
         if (handle.be == BE) {
             return SCOPED_MEMORY_ACCESS.getAndBitwiseOr$RawType$Acquire(bb.sessionImpl(),
                     bb.unsafeGetBase(),
-                    offset(bb, base, handle.alignmentMask),
+                    offsetNonPlain(bb, base, handle.alignmentMask),
                     value);
         } else {
-            return getAndBitwiseOrConvEndianWithCAS(bb, offset(bb, base, handle.alignmentMask), value);
+            return getAndBitwiseOrConvEndianWithCAS(bb, offsetNonPlain(bb, base, handle.alignmentMask), value);
         }
     }
 
@@ -469,10 +468,10 @@ final class VarHandleSegmentAs$Type$s extends VarHandleSegmentViewBase {
         if (handle.be == BE) {
             return SCOPED_MEMORY_ACCESS.getAndBitwiseAnd$RawType$(bb.sessionImpl(),
                     bb.unsafeGetBase(),
-                    offset(bb, base, handle.alignmentMask),
+                    offsetNonPlain(bb, base, handle.alignmentMask),
                     value);
         } else {
-            return getAndBitwiseAndConvEndianWithCAS(bb, offset(bb, base, handle.alignmentMask), value);
+            return getAndBitwiseAndConvEndianWithCAS(bb, offsetNonPlain(bb, base, handle.alignmentMask), value);
         }
     }
 
@@ -483,10 +482,10 @@ final class VarHandleSegmentAs$Type$s extends VarHandleSegmentViewBase {
         if (handle.be == BE) {
             return SCOPED_MEMORY_ACCESS.getAndBitwiseAnd$RawType$Release(bb.sessionImpl(),
                     bb.unsafeGetBase(),
-                    offset(bb, base, handle.alignmentMask),
+                    offsetNonPlain(bb, base, handle.alignmentMask),
                     value);
         } else {
-            return getAndBitwiseAndConvEndianWithCAS(bb, offset(bb, base, handle.alignmentMask), value);
+            return getAndBitwiseAndConvEndianWithCAS(bb, offsetNonPlain(bb, base, handle.alignmentMask), value);
         }
     }
 
@@ -497,10 +496,10 @@ final class VarHandleSegmentAs$Type$s extends VarHandleSegmentViewBase {
         if (handle.be == BE) {
             return SCOPED_MEMORY_ACCESS.getAndBitwiseAnd$RawType$Acquire(bb.sessionImpl(),
                     bb.unsafeGetBase(),
-                    offset(bb, base, handle.alignmentMask),
+                    offsetNonPlain(bb, base, handle.alignmentMask),
                     value);
         } else {
-            return getAndBitwiseAndConvEndianWithCAS(bb, offset(bb, base, handle.alignmentMask), value);
+            return getAndBitwiseAndConvEndianWithCAS(bb, offsetNonPlain(bb, base, handle.alignmentMask), value);
         }
     }
 
@@ -524,10 +523,10 @@ final class VarHandleSegmentAs$Type$s extends VarHandleSegmentViewBase {
         if (handle.be == BE) {
             return SCOPED_MEMORY_ACCESS.getAndBitwiseXor$RawType$(bb.sessionImpl(),
                     bb.unsafeGetBase(),
-                    offset(bb, base, handle.alignmentMask),
+                    offsetNonPlain(bb, base, handle.alignmentMask),
                     value);
         } else {
-            return getAndBitwiseXorConvEndianWithCAS(bb, offset(bb, base, handle.alignmentMask), value);
+            return getAndBitwiseXorConvEndianWithCAS(bb, offsetNonPlain(bb, base, handle.alignmentMask), value);
         }
     }
 
@@ -538,10 +537,10 @@ final class VarHandleSegmentAs$Type$s extends VarHandleSegmentViewBase {
         if (handle.be == BE) {
             return SCOPED_MEMORY_ACCESS.getAndBitwiseXor$RawType$Release(bb.sessionImpl(),
                     bb.unsafeGetBase(),
-                    offset(bb, base, handle.alignmentMask),
+                    offsetNonPlain(bb, base, handle.alignmentMask),
                     value);
         } else {
-            return getAndBitwiseXorConvEndianWithCAS(bb, offset(bb, base, handle.alignmentMask), value);
+            return getAndBitwiseXorConvEndianWithCAS(bb, offsetNonPlain(bb, base, handle.alignmentMask), value);
         }
     }
 
@@ -552,10 +551,10 @@ final class VarHandleSegmentAs$Type$s extends VarHandleSegmentViewBase {
         if (handle.be == BE) {
             return SCOPED_MEMORY_ACCESS.getAndBitwiseXor$RawType$Acquire(bb.sessionImpl(),
                     bb.unsafeGetBase(),
-                    offset(bb, base, handle.alignmentMask),
+                    offsetNonPlain(bb, base, handle.alignmentMask),
                     value);
         } else {
-            return getAndBitwiseXorConvEndianWithCAS(bb, offset(bb, base, handle.alignmentMask), value);
+            return getAndBitwiseXorConvEndianWithCAS(bb, offsetNonPlain(bb, base, handle.alignmentMask), value);
         }
     }
 

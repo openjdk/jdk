@@ -25,19 +25,14 @@
 #ifndef SHARE_GC_SHARED_GENCOLLECTEDHEAP_HPP
 #define SHARE_GC_SHARED_GENCOLLECTEDHEAP_HPP
 
+#include "gc/serial/generation.hpp"
 #include "gc/shared/collectedHeap.hpp"
-#include "gc/shared/generation.hpp"
 #include "gc/shared/oopStorageParState.hpp"
 #include "gc/shared/preGCValues.hpp"
 #include "gc/shared/softRefPolicy.hpp"
 
-class AdaptiveSizePolicy;
 class CardTableRS;
 class GCPolicyCounters;
-class GenerationSpec;
-class StrongRootsScope;
-class SubTasksDone;
-class WorkerThreads;
 
 // A "GenCollectedHeap" is a CollectedHeap that uses generational
 // collection.  It has two generations, young and old.
@@ -66,9 +61,6 @@ protected:
   Generation* _old_gen;
 
 private:
-  GenerationSpec* _young_gen_spec;
-  GenerationSpec* _old_gen_spec;
-
   // The singleton CardTable Remembered Set.
   CardTableRS* _rem_set;
 
@@ -148,9 +140,6 @@ public:
   MemRegion reserved_region() const { return _reserved; }
   bool is_in_reserved(const void* addr) const { return _reserved.contains(addr); }
 
-  GenerationSpec* young_gen_spec() const;
-  GenerationSpec* old_gen_spec() const;
-
   SoftRefPolicy* soft_ref_policy() override { return &_soft_ref_policy; }
 
   // Performance Counter support
@@ -195,9 +184,7 @@ public:
   void prune_scavengable_nmethods();
 
   // Iteration functions.
-  void oop_iterate(OopIterateClosure* cl);
   void object_iterate(ObjectClosure* cl) override;
-  Space* space_containing(const void* addr) const;
 
   // A CollectedHeap is divided into a dense sequence of "blocks"; that is,
   // each address in the (reserved) heap is a member of exactly
@@ -227,20 +214,6 @@ public:
   HeapWord* allocate_new_tlab(size_t min_size,
                               size_t requested_size,
                               size_t* actual_size) override;
-
-  // The "requestor" generation is performing some garbage collection
-  // action for which it would be useful to have scratch space.  The
-  // requestor promises to allocate no more than "max_alloc_words" in any
-  // older generation (via promotion say.)   Any blocks of space that can
-  // be provided are returned as a list of ScratchBlocks, sorted by
-  // decreasing size.
-  ScratchBlock* gather_scratch(Generation* requestor, size_t max_alloc_words);
-  // Allow each generation to reset any scratch space that it has
-  // contributed as it needs.
-  void release_scratch();
-
-  // Ensure parsability
-  void ensure_parsability(bool retire_tlabs) override;
 
   // Total number of full collections completed.
   unsigned int total_full_collections_completed() {

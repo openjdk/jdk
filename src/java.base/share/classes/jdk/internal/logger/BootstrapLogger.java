@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,6 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.lang.System.LoggerFinder;
 import java.lang.System.Logger;
-import java.lang.System.Logger.Level;
 import java.lang.ref.WeakReference;
 import java.util.Objects;
 import java.util.concurrent.ExecutionException;
@@ -227,9 +226,19 @@ public final class BootstrapLogger implements Logger, PlatformLogger.Bridge,
 
     // The accessor in which this logger is temporarily set.
     final LazyLoggerAccessor holder;
+    // tests whether the logger is invoked by the loading thread before
+    // the LoggerFinder is loaded; can be null;
+    final BooleanSupplier isLoadingThread;
 
-    BootstrapLogger(LazyLoggerAccessor holder) {
+    // returns true if the logger is invoked by the loading thread before the
+    // LoggerFinder service is loaded
+    boolean isLoadingThread() {
+        return isLoadingThread != null && isLoadingThread.getAsBoolean();
+    }
+
+    BootstrapLogger(LazyLoggerAccessor holder, BooleanSupplier isLoadingThread) {
         this.holder = holder;
+        this.isLoadingThread = isLoadingThread;
     }
 
     // Temporary data object storing log events
@@ -505,14 +514,15 @@ public final class BootstrapLogger implements Logger, PlatformLogger.Bridge,
         static void log(LogEvent log, PlatformLogger.Bridge logger) {
             final SecurityManager sm = System.getSecurityManager();
             if (sm == null || log.acc == null) {
-                log.log(logger);
+                BootstrapExecutors.submit(() -> log.log(logger));
             } else {
                 // not sure we can actually use lambda here. We may need to create
                 // an anonymous class. Although if we reach here, then it means
                 // the VM is booted.
-                AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
-                    log.log(logger); return null;
-                }, log.acc);
+                BootstrapExecutors.submit(() ->
+                    AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
+                        log.log(logger); return null;
+                }, log.acc));
             }
         }
 
@@ -559,8 +569,9 @@ public final class BootstrapLogger implements Logger, PlatformLogger.Bridge,
      * @return true if the VM is still bootstrapping.
      */
     boolean checkBootstrapping() {
-        if (isBooted()) {
+        if (isBooted() && !isLoadingThread()) {
             BootstrapExecutors.flush();
+            holder.getConcreteLogger(this);
             return false;
         }
         return true;
@@ -935,10 +946,16 @@ public final class BootstrapLogger implements Logger, PlatformLogger.Bridge,
     //    - the logging backend is a custom backend
     //    - the logging backend is JUL, there is no custom config,
     //      and the LogManager has not been initialized yet.
-    public static synchronized boolean useLazyLoggers() {
-        return !BootstrapLogger.isBooted()
-                || DetectBackend.detectedBackend == LoggingBackend.CUSTOM
-                || useSurrogateLoggers();
+    public static boolean useLazyLoggers() {
+        // Note: avoid triggering the initialization of the DetectBackend class
+        // while holding the BootstrapLogger class monitor
+        if (!BootstrapLogger.isBooted() ||
+                DetectBackend.detectedBackend == LoggingBackend.CUSTOM) {
+            return true;
+        }
+        synchronized (BootstrapLogger.class) {
+            return useSurrogateLoggers();
+        }
     }
 
     // Called by LazyLoggerAccessor. This method will determine whether
@@ -946,9 +963,9 @@ public final class BootstrapLogger implements Logger, PlatformLogger.Bridge,
     // a SurrogateLogger (if JUL is the default backend and there
     // is no custom JUL configuration and LogManager is not yet initialized),
     // or a logger returned by the loaded LoggerFinder (all other cases).
-    static Logger getLogger(LazyLoggerAccessor accessor) {
-        if (!BootstrapLogger.isBooted()) {
-            return new BootstrapLogger(accessor);
+    static Logger getLogger(LazyLoggerAccessor accessor, BooleanSupplier isLoading) {
+        if (!BootstrapLogger.isBooted() || isLoading != null && isLoading.getAsBoolean()) {
+            return new BootstrapLogger(accessor, isLoading);
         } else {
             if (useSurrogateLoggers()) {
                 // JUL is the default backend, there is no custom configuration,
@@ -964,6 +981,12 @@ public final class BootstrapLogger implements Logger, PlatformLogger.Bridge,
         }
     }
 
+    // trigger class initialization outside of holding lock
+    static void ensureBackendDetected() {
+        assert VM.isBooted() : "VM is not booted";
+        // triggers detection of the backend
+        var backend = DetectBackend.detectedBackend;
+    }
 
     // If the backend is JUL, and there is no custom configuration, and
     // nobody has attempted to call LogManager.getLogManager() yet, then

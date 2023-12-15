@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,14 +24,41 @@
 package gc.stress;
 
 /*
- * @test TestStressG1Humongous
+ * @test
  * @key stress
  * @summary Stress G1 by humongous allocations in situation near OOM
  * @requires vm.gc.G1
  * @requires !vm.flightRecorder
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
- * @run driver/timeout=1300 gc.stress.TestStressG1Humongous
+ * @run driver/timeout=180 gc.stress.TestStressG1Humongous 4 3 1.1 120
+ */
+
+/*
+ * @test
+ * @requires vm.gc.G1
+ * @requires !vm.flightRecorder
+ * @library /test/lib
+ * @modules java.base/jdk.internal.misc
+ * @run driver/timeout=180 gc.stress.TestStressG1Humongous 16 5 2.1 120
+ */
+
+/*
+ * @test
+ * @requires vm.gc.G1
+ * @requires !vm.flightRecorder
+ * @library /test/lib
+ * @modules java.base/jdk.internal.misc
+ * @run driver/timeout=180 gc.stress.TestStressG1Humongous 32 4 0.6 120
+ */
+
+/*
+ * @test
+ * @requires vm.gc.G1
+ * @requires !vm.flightRecorder
+ * @library /test/lib
+ * @modules java.base/jdk.internal.misc
+ * @run driver/timeout=900 gc.stress.TestStressG1Humongous 1 7 0.6 600
  */
 
 import java.util.ArrayList;
@@ -48,17 +75,19 @@ import jdk.test.lib.process.OutputAnalyzer;
 public class TestStressG1Humongous{
 
     public static void main(String[] args) throws Exception {
+        if (args.length != 4) {
+            throw new IllegalArgumentException("Test expects 4 arguments");
+        }
+
         // Limit heap size on 32-bit platforms
         int heapSize = Platform.is32bit() ? 512 : 1024;
-        // Heap size, region size, threads, humongous size, timeout
-        run(heapSize, 4, 3, 1.1, 120);
-        run(heapSize, 16, 5, 2.1, 120);
-        run(heapSize, 32, 4, 0.6, 120);
-        run(heapSize, 1, 7, 0.6, 600);
-    }
 
-    private static void run(int heapSize, int regionSize, int threads, double humongousSize, int timeout)
-            throws Exception {
+        // Region size, threads, humongous size, and timeout passed as @run arguments
+        int regionSize = Integer.parseInt(args[0]);
+        int threads = Integer.parseInt(args[1]);
+        double humongousSize = Double.parseDouble(args[2]);
+        int timeout = Integer.parseInt(args[3]);
+
         ArrayList<String> options = new ArrayList<>();
         Collections.addAll(options, Utils.getTestJavaOpts());
         Collections.addAll(options,
@@ -72,7 +101,7 @@ public class TestStressG1Humongous{
                 "-Dregionsize=" + regionSize,
                 TestStressG1HumongousImpl.class.getName()
         );
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(options);
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(options);
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldHaveExitValue(0);
     }

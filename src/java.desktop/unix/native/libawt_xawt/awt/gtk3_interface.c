@@ -319,6 +319,10 @@ GtkApi* gtk3_load(JNIEnv *env, const char* lib_name)
 
         /* Pixbuf */
         fp_gdk_pixbuf_new = dl_symbol("gdk_pixbuf_new");
+        fp_gdk_pixbuf_new_from_data = dl_symbol("gdk_pixbuf_new_from_data");
+        fp_gdk_pixbuf_scale_simple = dl_symbol("gdk_pixbuf_scale_simple");
+        fp_gdk_pixbuf_copy_area = dl_symbol("gdk_pixbuf_copy_area");
+
         fp_gdk_pixbuf_new_from_file =
                 dl_symbol("gdk_pixbuf_new_from_file");
         fp_gdk_pixbuf_get_from_drawable =
@@ -604,6 +608,7 @@ GtkApi* gtk3_load(JNIEnv *env, const char* lib_name)
 
         fp_g_string_new = dl_symbol("g_string_new");
         fp_g_string_erase = dl_symbol("g_string_erase");
+        fp_g_string_set_size = dl_symbol("g_string_set_size");
         fp_g_string_free = dl_symbol("g_string_free");
 
         glib_version_2_68 = !fp_glib_check_version(2, 68, 0);
@@ -1251,7 +1256,7 @@ static GtkWidget *gtk3_get_widget(WidgetType widget_type)
             if (init_result = (NULL == gtk3_widgets[_GTK_NOTEBOOK_TYPE]))
             {
                 gtk3_widgets[_GTK_NOTEBOOK_TYPE] =
-                    (*fp_gtk_notebook_new)(NULL);
+                    (*fp_gtk_notebook_new)();
             }
             result = gtk3_widgets[_GTK_NOTEBOOK_TYPE];
             break;
@@ -1259,7 +1264,7 @@ static GtkWidget *gtk3_get_widget(WidgetType widget_type)
             if (init_result = (NULL == gtk3_widgets[_GTK_TOGGLE_BUTTON_TYPE]))
             {
                 gtk3_widgets[_GTK_TOGGLE_BUTTON_TYPE] =
-                    (*fp_gtk_toggle_button_new)(NULL);
+                    (*fp_gtk_toggle_button_new)();
             }
             result = gtk3_widgets[_GTK_TOGGLE_BUTTON_TYPE];
             break;
@@ -1268,7 +1273,7 @@ static GtkWidget *gtk3_get_widget(WidgetType widget_type)
             if (init_result = (NULL == gtk3_widgets[_GTK_TOOLBAR_TYPE]))
             {
                 gtk3_widgets[_GTK_TOOLBAR_TYPE] =
-                    (*fp_gtk_toolbar_new)(NULL);
+                    (*fp_gtk_toolbar_new)();
             }
             result = gtk3_widgets[_GTK_TOOLBAR_TYPE];
             break;
@@ -2400,9 +2405,12 @@ static gint gtk3_get_color_for_state(JNIEnv *env, WidgetType widget_type,
     init_containers();
 
     if (gtk3_version_3_20) {
-        if ((widget_type == TEXT_FIELD || widget_type == PASSWORD_FIELD || widget_type == SPINNER_TEXT_FIELD ||
-            widget_type == FORMATTED_TEXT_FIELD) && state_type == GTK_STATE_SELECTED && color_type == TEXT_BACKGROUND) {
-            widget_type = TEXT_AREA;
+        if (widget_type == TEXT_FIELD || widget_type == PASSWORD_FIELD
+            || widget_type == SPINNER_TEXT_FIELD || widget_type == FORMATTED_TEXT_FIELD) {
+                if ((state_type == GTK_STATE_SELECTED && color_type == TEXT_BACKGROUND)
+                    || (state_type == GTK_STATE_INSENSITIVE && color_type == TEXT_FOREGROUND)) {
+                    widget_type = TEXT_AREA;
+                }
         } else if (widget_type == MENU_BAR && state_type == GTK_STATE_INSENSITIVE
             && color_type == FOREGROUND) {
             widget_type = MENU;
@@ -3110,6 +3118,7 @@ static void gtk3_init(GtkApi* gtk) {
 
     gtk->g_string_new = fp_g_string_new;
     gtk->g_string_erase = fp_g_string_erase;
+    gtk->g_string_set_size = fp_g_string_set_size;
     gtk->g_string_free = fp_g_string_free;
     gtk->g_string_replace = fp_g_string_replace;
     gtk->g_string_printf = fp_g_string_printf;
@@ -3118,4 +3127,10 @@ static void gtk3_init(GtkApi* gtk) {
     gtk->g_main_context_iteration = fp_g_main_context_iteration;
     gtk->g_error_free = fp_g_error_free;
     gtk->g_unix_fd_list_get = fp_g_unix_fd_list_get;
+
+    gtk->gdk_pixbuf_new = fp_gdk_pixbuf_new;
+    gtk->gdk_pixbuf_new_from_data = fp_gdk_pixbuf_new_from_data;
+    gtk->gdk_pixbuf_scale_simple = fp_gdk_pixbuf_scale_simple;
+    gtk->gdk_pixbuf_get_pixels = fp_gdk_pixbuf_get_pixels;
+    gtk->gdk_pixbuf_copy_area = fp_gdk_pixbuf_copy_area;
 }

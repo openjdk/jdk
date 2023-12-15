@@ -175,22 +175,17 @@ public final class DelegationPermission extends BasicPermission
             return true;
         }
 
-        if (!(obj instanceof DelegationPermission that)) {
-            return false;
-        }
-
-        return this.subordinate.equals(that.subordinate) &&
-                this.service.equals(that.service);
+        return obj instanceof DelegationPermission that
+                && this.subordinate.equals(that.subordinate)
+                && this.service.equals(that.service);
     }
 
     /**
-     * Returns the hash code value for this object.
-     *
-     * @return a hash code value for this object.
+     * {@return the hash code value for this object}
      */
     @Override
     public int hashCode() {
-        return 17 * subordinate.hashCode() + 31 * service.hashCode();
+        return Objects.hash(subordinate, service);
     }
 
     /**

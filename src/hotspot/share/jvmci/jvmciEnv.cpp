@@ -115,7 +115,7 @@ bool JVMCICompileState::jvmti_state_changed() const {
   return false;
 }
 
-void JVMCIEnv::init_env_mode_runtime(JavaThread* thread, JNIEnv* parent_env, bool jni_enomem_is_fatal) {
+void JVMCIEnv::init_env_mode_runtime(JavaThread* thread, JNIEnv* parent_env) {
   assert(thread != nullptr, "npe");
   _env = nullptr;
   _pop_frame_on_close = false;
@@ -147,18 +147,15 @@ void JVMCIEnv::init_env_mode_runtime(JavaThread* thread, JNIEnv* parent_env, boo
   _is_hotspot = false;
 
   _runtime = JVMCI::compiler_runtime(thread);
-  int create_JavaVM_err = JNI_OK;
-  _env = _runtime->init_shared_library_javavm(&create_JavaVM_err);
+  _env = _runtime->init_shared_library_javavm(&_init_error, &_init_error_msg);
   if (_env != nullptr) {
     // Creating the JVMCI shared library VM also attaches the current thread
     _detach_on_close = true;
-  } else if (create_JavaVM_err != JNI_OK) {
-    if (!jni_enomem_is_fatal && create_JavaVM_err == JNI_ENOMEM) {
-      _jni_enomem = true;
-      return;
-    } else {
-      fatal("JNI_CreateJavaVM failed with return value %d", create_JavaVM_err);
-    }
+  } else if (_init_error != JNI_OK) {
+    // Caller creating this JVMCIEnv must handle the error.
+    JVMCI_event_1("[%s:%d] Error creating libjvmci (err: %d, %s)", _file, _line,
+                  _init_error, _init_error_msg == nullptr ? "unknown" : _init_error_msg);
+    return;
   } else {
     _runtime->GetEnv(thread, (void**)&parent_env, JNI_VERSION_1_2);
     if (parent_env != nullptr) {
@@ -174,15 +171,14 @@ void JVMCIEnv::init_env_mode_runtime(JavaThread* thread, JNIEnv* parent_env, boo
       attach_args.version = JNI_VERSION_1_2;
       attach_args.name = const_cast<char*>(thread->name());
       attach_args.group = nullptr;
-      jint attach_result = _runtime->AttachCurrentThread(thread, (void**) &_env, &attach_args);
-      if (attach_result == JNI_OK) {
+      _init_error = _runtime->AttachCurrentThread(thread, (void**) &_env, &attach_args);
+      if (_init_error == JNI_OK) {
         _detach_on_close = true;
-      } else if (!jni_enomem_is_fatal && attach_result == JNI_ENOMEM) {
-        _env = nullptr;
-        _jni_enomem = true;
-        return;
       } else {
-        fatal("Error attaching current thread (%s) to JVMCI shared library JNI interface", attach_args.name);
+        // Caller creating this JVMCIEnv must handle the error.
+        _env = nullptr;
+        JVMCI_event_1("[%s:%d] Error attaching to libjvmci (err: %d)", _file, _line, _init_error);
+        return;
       }
     }
   }
@@ -193,41 +189,37 @@ void JVMCIEnv::init_env_mode_runtime(JavaThread* thread, JNIEnv* parent_env, boo
   JNIAccessMark jni(this, thread);
   jint result = _env->PushLocalFrame(32);
   if (result != JNI_OK) {
-    char message[256];
-    jio_snprintf(message, 256, "Uncaught exception pushing local frame for JVMCIEnv scope entered at %s:%d", _file, _line);
-    JVMCIRuntime::fatal_exception(this, message);
+    JVMCI_event_1("[%s:%d] Error pushing local JNI frame (err: %d)", _file, _line, result);
+    return;
   }
   _pop_frame_on_close = true;
 }
 
 JVMCIEnv::JVMCIEnv(JavaThread* thread, JVMCICompileState* compile_state, const char* file, int line):
-    _throw_to_caller(false), _file(file), _line(line), _jni_enomem(false), _compile_state(compile_state) {
-  // In case of JNI_ENOMEM, there's a good chance a subsequent attempt to create libjvmci or attach to it
-  // might succeed. Other errors most likely indicate a non-recoverable error in the JVMCI runtime.
-  bool jni_enomem_is_fatal = false;
-  init_env_mode_runtime(thread, nullptr, jni_enomem_is_fatal);
-  if (_jni_enomem) {
-    compile_state->set_failure(true, "Out of memory while attaching JVMCI compiler to current thread");
-  }
+    _throw_to_caller(false), _file(file), _line(line), _init_error(JNI_OK), _init_error_msg(nullptr), _compile_state(compile_state) {
+  init_env_mode_runtime(thread, nullptr);
 }
 
 JVMCIEnv::JVMCIEnv(JavaThread* thread, const char* file, int line):
-    _throw_to_caller(false), _file(file), _line(line), _jni_enomem(false), _compile_state(nullptr) {
+    _throw_to_caller(false), _file(file), _line(line), _init_error(JNI_OK), _init_error_msg(nullptr), _compile_state(nullptr) {
   init_env_mode_runtime(thread, nullptr);
 }
 
 JVMCIEnv::JVMCIEnv(JavaThread* thread, JNIEnv* parent_env, const char* file, int line):
-    _throw_to_caller(true), _file(file), _line(line), _jni_enomem(false), _compile_state(nullptr) {
+    _throw_to_caller(true), _file(file), _line(line), _init_error(JNI_OK), _init_error_msg(nullptr), _compile_state(nullptr) {
+  assert(parent_env != nullptr, "npe");
   init_env_mode_runtime(thread, parent_env);
   assert(_env == nullptr || parent_env == _env, "mismatched JNIEnvironment");
+  assert(_init_error == JNI_OK, "err: %d", _init_error);
 }
 
-void JVMCIEnv::init(JavaThread* thread, bool is_hotspot, bool jni_enomem_is_fatal, const char* file, int line) {
+void JVMCIEnv::init(JavaThread* thread, bool is_hotspot, const char* file, int line) {
   _compile_state = nullptr;
   _throw_to_caller = false;
   _file = file;
   _line = line;
-  _jni_enomem = false;
+  _init_error = JNI_OK;
+  _init_error_msg = nullptr;
   if (is_hotspot) {
     _env = nullptr;
     _pop_frame_on_close = false;
@@ -235,8 +227,31 @@ void JVMCIEnv::init(JavaThread* thread, bool is_hotspot, bool jni_enomem_is_fata
     _is_hotspot = true;
     _runtime = JVMCI::java_runtime();
   } else {
-    init_env_mode_runtime(thread, nullptr, jni_enomem_is_fatal);
+    init_env_mode_runtime(thread, nullptr);
   }
+}
+
+void JVMCIEnv::check_init(JVMCI_TRAPS) {
+  guarantee(JVMCIENV != this, "must be");
+  if (_init_error == JNI_OK) {
+    return;
+  }
+  if (_init_error == JNI_ENOMEM) {
+    JVMCI_THROW_MSG(OutOfMemoryError, "JNI_ENOMEM creating or attaching to libjvmci");
+  }
+  JVMCI_THROW_MSG(InternalError, err_msg("Error creating or attaching to libjvmci (err: %d, description: %s)",
+                  _init_error, _init_error_msg == nullptr ? "unknown" : _init_error_msg));
+}
+
+void JVMCIEnv::check_init(TRAPS) {
+  if (_init_error == JNI_OK) {
+    return;
+  }
+  if (_init_error == JNI_ENOMEM) {
+    THROW_MSG(vmSymbols::java_lang_OutOfMemoryError(), "JNI_ENOMEM creating or attaching to libjvmci");
+  }
+  THROW_MSG(vmSymbols::java_lang_OutOfMemoryError(), err_msg("Error creating or attaching to libjvmci (err: %d, description: %s)",
+            _init_error, _init_error_msg == nullptr ? "unknown" : _init_error_msg));
 }
 
 // Prints a pending exception (if any) and its stack trace to st.
@@ -433,8 +448,16 @@ class HotSpotToSharedLibraryExceptionTranslation : public ExceptionTranslation {
  private:
   const Handle& _throwable;
 
-  int encode(JavaThread* THREAD, jlong buffer, int buffer_size) {
-    Klass* vmSupport = SystemDictionary::resolve_or_fail(vmSymbols::jdk_internal_vm_VMSupport(), true, THREAD);
+  char* print_throwable_to_buffer(Handle throwable, jlong buffer, int buffer_size) {
+    char* char_buffer = (char*) buffer + 4;
+    stringStream st(char_buffer, (size_t) buffer_size - 4);
+    java_lang_Throwable::print_stack_trace(throwable, &st);
+    u4 len = (u4) st.size();
+    *((u4*) buffer) = len;
+    return char_buffer;
+  }
+
+  bool handle_pending_exception(JavaThread* THREAD, jlong buffer, int buffer_size) {
     if (HAS_PENDING_EXCEPTION) {
       Handle throwable = Handle(THREAD, PENDING_EXCEPTION);
       Symbol *ex_name = throwable->klass()->name();
@@ -443,14 +466,25 @@ class HotSpotToSharedLibraryExceptionTranslation : public ExceptionTranslation {
         JVMCI_event_1("error translating exception: OutOfMemoryError");
         decode(THREAD, _encode_oome_fail, 0L);
       } else {
-        char* char_buffer = (char*) buffer + 4;
-        stringStream st(char_buffer, (size_t) buffer_size - 4);
-        java_lang_Throwable::print_stack_trace(throwable, &st);
-        u4 len = (u4) st.size();
-        *((u4*) buffer) = len;
+        char* char_buffer = print_throwable_to_buffer(throwable, buffer, buffer_size);
         JVMCI_event_1("error translating exception: %s", char_buffer);
         decode(THREAD, _encode_fail, buffer);
       }
+      return true;
+    }
+    return false;
+  }
+
+  int encode(JavaThread* THREAD, jlong buffer, int buffer_size) {
+    if (!THREAD->can_call_java()) {
+      char* char_buffer = print_throwable_to_buffer(_throwable, buffer, buffer_size);
+      const char* detail = log_is_enabled(Info, exceptions) ? "" : " (-Xlog:exceptions may give more detail)";
+      JVMCI_event_1("cannot call Java to translate exception%s: %s", detail, char_buffer);
+      decode(THREAD, _encode_fail, buffer);
+      return 0;
+    }
+    Klass* vmSupport = SystemDictionary::resolve_or_fail(vmSymbols::jdk_internal_vm_VMSupport(), true, THREAD);
+    if (handle_pending_exception(THREAD, buffer, buffer_size)) {
       return 0;
     }
     JavaCallArguments jargs;
@@ -462,6 +496,9 @@ class HotSpotToSharedLibraryExceptionTranslation : public ExceptionTranslation {
                             vmSupport,
                             vmSymbols::encodeThrowable_name(),
                             vmSymbols::encodeThrowable_signature(), &jargs, THREAD);
+    if (handle_pending_exception(THREAD, buffer, buffer_size)) {
+      return 0;
+    }
     return result.get_jint();
   }
 
@@ -551,7 +588,12 @@ jboolean JVMCIEnv::transfer_pending_exception(JavaThread* THREAD, JVMCIEnv* peer
 }
 
 JVMCIEnv::~JVMCIEnv() {
-  if (_jni_enomem) {
+  if (_init_error_msg != nullptr) {
+    // The memory allocated in libjvmci was not allocated with os::malloc
+    // so must not be freed with os::free.
+    ALLOW_C_FUNCTION(::free((void*) _init_error_msg));
+  }
+  if (_init_error != JNI_OK) {
     return;
   }
   if (_throw_to_caller) {
@@ -864,7 +906,7 @@ DO_THROW(InvalidInstalledCodeException)
 DO_THROW(UnsatisfiedLinkError)
 DO_THROW(UnsupportedOperationException)
 DO_THROW(OutOfMemoryError)
-DO_THROW(ClassNotFoundException)
+DO_THROW(NoClassDefFoundError)
 
 #undef DO_THROW
 
@@ -1283,6 +1325,7 @@ JVMCIObject JVMCIEnv::get_jvmci_type(const JVMCIKlassHandle& klass, JVMCI_TRAPS)
   JavaThread* THREAD = JVMCI::compilation_tick(JavaThread::current()); // For exception macros.
   jboolean exception = false;
   if (is_hotspot()) {
+    CompilerThreadCanCallJava ccj(THREAD, true);
     JavaValue result(T_OBJECT);
     JavaCallArguments args;
     args.push_long(pointer);
@@ -1449,7 +1492,7 @@ JVMCIObject JVMCIEnv::new_VMFlag(JVMCIObject name, JVMCIObject type, JVMCIObject
   }
 }
 
-JVMCIObject JVMCIEnv::new_VMIntrinsicMethod(JVMCIObject declaringClass, JVMCIObject name, JVMCIObject descriptor, int id, JVMCI_TRAPS) {
+JVMCIObject JVMCIEnv::new_VMIntrinsicMethod(JVMCIObject declaringClass, JVMCIObject name, JVMCIObject descriptor, int id, jboolean isAvailable, jboolean c1Supported, jboolean c2Supported, JVMCI_TRAPS) {
   JavaThread* THREAD = JavaThread::current(); // For exception macros.
   if (is_hotspot()) {
     HotSpotJVMCI::VMIntrinsicMethod::klass()->initialize(CHECK_(JVMCIObject()));
@@ -1458,12 +1501,15 @@ JVMCIObject JVMCIEnv::new_VMIntrinsicMethod(JVMCIObject declaringClass, JVMCIObj
     HotSpotJVMCI::VMIntrinsicMethod::set_name(this, obj, HotSpotJVMCI::resolve(name));
     HotSpotJVMCI::VMIntrinsicMethod::set_descriptor(this, obj, HotSpotJVMCI::resolve(descriptor));
     HotSpotJVMCI::VMIntrinsicMethod::set_id(this, obj, id);
+    HotSpotJVMCI::VMIntrinsicMethod::set_isAvailable(this, obj, isAvailable);
+    HotSpotJVMCI::VMIntrinsicMethod::set_c1Supported(this, obj, c1Supported);
+    HotSpotJVMCI::VMIntrinsicMethod::set_c2Supported(this, obj, c2Supported);
     return wrap(obj);
   } else {
     JNIAccessMark jni(this, THREAD);
     jobject result = jni()->NewObject(JNIJVMCI::VMIntrinsicMethod::clazz(),
                                     JNIJVMCI::VMIntrinsicMethod::constructor(),
-                                    get_jobject(declaringClass), get_jobject(name), get_jobject(descriptor), id);
+                                    get_jobject(declaringClass), get_jobject(name), get_jobject(descriptor), id, isAvailable, c1Supported, c2Supported);
     return wrap(result);
   }
 }

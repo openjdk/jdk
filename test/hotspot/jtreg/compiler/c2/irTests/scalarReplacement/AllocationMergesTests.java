@@ -43,6 +43,9 @@ public class AllocationMergesTests {
                                    "-XX:+ReduceAllocationMerges",
                                    "-XX:+TraceReduceAllocationMerges",
                                    "-XX:+DeoptimizeALot",
+                                   "-XX:CompileCommand=inline,*::charAt*",
+                                   "-XX:CompileCommand=inline,*PicturePositions::*",
+                                   "-XX:CompileCommand=inline,*Point::*",
                                    "-XX:CompileCommand=exclude,*::dummy*");
     }
 
@@ -92,9 +95,11 @@ public class AllocationMergesTests {
                  "testString_two_C2"
                 })
     public void runner(RunInfo info) {
+        invocations++;
+
         Random random = info.getRandom();
-        boolean cond1 = random.nextBoolean();
-        boolean cond2 = random.nextBoolean();
+        boolean cond1 = invocations % 2 == 0;
+        boolean cond2 = !cond1;
 
         int l = random.nextInt();
         int w = random.nextInt();
@@ -551,9 +556,10 @@ public class AllocationMergesTests {
             new F();
         }
 
+        int res = s.a;
         dummy();
 
-        return s.a;
+        return res;
     }
 
     @Test
@@ -1196,12 +1202,13 @@ public class AllocationMergesTests {
             global_escape = p;
         }
 
+        int res = p.x;
         if (is_c2) {
             // This will show up to C2 as a trap.
             dummy_defaults();
         }
 
-        return p.y;
+        return res;
     }
 
     @Test

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,8 @@ package gc.stress.gclocker;
  * @requires vm.gc != "Z"
  * @requires vm.gc != "Epsilon"
  * @requires vm.gc != "Shenandoah"
+ * @requires vm.gc != "G1"
+ * @requires vm.gc != null
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  * @run driver/timeout=1000 gc.stress.gclocker.TestExcessGCLockerCollections 300 4 2
@@ -133,18 +135,12 @@ class TestExcessGCLockerCollectionsAux {
             new Thread(new JNICriticalWorker()).start();
         }
 
-        long durationMS = (long) (1000 * durationSec);
-        long start = System.currentTimeMillis();
-        long now = start;
-        long soFar = now - start;
-        while (soFar < durationMS) {
-            try {
-                Thread.sleep(durationMS - soFar);
-            } catch (Exception e) {
-            }
-            now = System.currentTimeMillis();
-            soFar = now - start;
+        try {
+            Thread.sleep(durationSec * 1000L);
+        } catch (InterruptedException e) {
+            throw new RuntimeException("Test Failure, did not expect an InterruptedException", e);
         }
+
         println("Done.");
         keepRunning = false;
     }
@@ -157,7 +153,7 @@ public class TestExcessGCLockerCollections {
     private static final String BAD_LOCKER = locker + " [1-9][0-9]?M";
 
     private static final String[] COMMON_OPTIONS = new String[] {
-        "-Xmx1G", "-Xms1G", "-Xmn256M", "-Xlog:gc" };
+        "-Xmx1G", "-Xms1G", "-Xmn256M", "-Xlog:gc,gc+ergo*=debug,gc+ergo+cset=trace:x.log", "-XX:+UnlockDiagnosticVMOptions", "-XX:+VerifyAfterGC"};
 
     public static void main(String args[]) throws Exception {
         if (args.length < 3) {

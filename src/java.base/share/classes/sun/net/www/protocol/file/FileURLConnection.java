@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,10 +42,10 @@ import java.text.SimpleDateFormat;
 
 public class FileURLConnection extends URLConnection {
 
-    static String CONTENT_LENGTH = "content-length";
-    static String CONTENT_TYPE = "content-type";
-    static String TEXT_PLAIN = "text/plain";
-    static String LAST_MODIFIED = "last-modified";
+    private static final String CONTENT_LENGTH = "content-length";
+    private static final String CONTENT_TYPE = "content-type";
+    private static final String TEXT_PLAIN = "text/plain";
+    private static final String LAST_MODIFIED = "last-modified";
 
     String contentType;
     InputStream is;

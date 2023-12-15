@@ -47,7 +47,7 @@ julong IndexSet::_total_used_blocks = 0;
 julong IndexSet::_total_unused_blocks = 0;
 
 // Per set, or all sets operation tracing
-int IndexSet::_serial_count = 1;
+uint IndexSet::_serial_count = 1;
 #endif
 
 //---------------------------- IndexSet::populate_free_list() -----------------------------

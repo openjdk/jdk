@@ -1962,7 +1962,7 @@ class StubGenerator: public StubCodeGenerator {
   }
 
 #ifndef PRODUCT
-  int * get_arraycopy_counter(int bytes_per_count) {
+  uint * get_arraycopy_counter(int bytes_per_count) {
     switch (bytes_per_count) {
       case 1:
         return &SharedRuntime::_jbyte_array_copy_ctr;
@@ -2383,7 +2383,7 @@ class StubGenerator: public StubCodeGenerator {
     // Do a linear scan of the secondary super-klass chain.
 
 #ifndef PRODUCT
-    int* pst_counter = &SharedRuntime::_partial_subtype_ctr;
+    uint* pst_counter = &SharedRuntime::_partial_subtype_ctr;
     __ inc_counter((address) pst_counter, tmp1, tmp2);
 #endif
 
@@ -3188,7 +3188,7 @@ class StubGenerator: public StubCodeGenerator {
 
     BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
     if (bs_nm != nullptr) {
-      StubRoutines::Arm::_method_entry_barrier = generate_method_entry_barrier();
+      StubRoutines::_method_entry_barrier = generate_method_entry_barrier();
     }
 
   }

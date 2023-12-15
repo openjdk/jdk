@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -34,7 +34,6 @@ import com.sun.org.apache.xerces.internal.util.DOMUtil;
 import com.sun.org.apache.xerces.internal.util.SymbolTable;
 import com.sun.org.apache.xerces.internal.util.XMLChar;
 import com.sun.org.apache.xerces.internal.util.XMLSymbols;
-import com.sun.org.apache.xerces.internal.utils.XMLSecurityManager;
 import com.sun.org.apache.xerces.internal.xni.QName;
 import com.sun.org.apache.xerces.internal.xs.XSConstants;
 import java.util.ArrayList;
@@ -42,6 +41,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
+import jdk.xml.internal.XMLSecurityManager;
 import org.w3c.dom.Attr;
 import org.w3c.dom.Element;
 
@@ -67,7 +67,7 @@ import org.w3c.dom.Element;
  * @xerces.internal
  *
  * @author Sandy Gao, IBM
- * @LastModified: Apr 2022
+ * @LastModified: July 2023
  */
 
 public class XSAttributeChecker {

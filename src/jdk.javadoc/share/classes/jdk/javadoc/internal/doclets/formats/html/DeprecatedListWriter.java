@@ -25,20 +25,19 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
-import com.sun.source.doctree.DeprecatedTree;
 import java.util.List;
 
 import javax.lang.model.element.Element;
 
+import com.sun.source.doctree.DeprecatedTree;
+
+import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlAttr;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlId;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
-import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
 import jdk.javadoc.internal.doclets.formats.html.markup.Text;
 import jdk.javadoc.internal.doclets.toolkit.util.DeprecatedAPIListBuilder;
-import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
-import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
 
 /**
@@ -53,27 +52,29 @@ public class DeprecatedListWriter extends SummaryListWriter<DeprecatedAPIListBui
      * Constructor.
      *
      * @param configuration the configuration for this doclet
-     * @param filename the file to be generated
      */
-    public DeprecatedListWriter(HtmlConfiguration configuration, DocPath filename) {
-        super(configuration, filename, configuration.deprecatedAPIListBuilder);
+    public DeprecatedListWriter(HtmlConfiguration configuration) {
+        super(configuration, DocPaths.DEPRECATED_LIST, configuration.deprecatedAPIListBuilder);
     }
 
-    /**
-     * Get list of all the deprecated classes and members in all the Packages
-     * specified on the command line.
-     * Then instantiate DeprecatedListWriter and generate File.
-     *
-     * @param configuration the current configuration of the doclet.
-     * @throws DocFileIOException if there is a problem writing the deprecated list
-     */
-    public static void generate(HtmlConfiguration configuration) throws DocFileIOException {
-        if (configuration.conditionalPages.contains(HtmlConfiguration.ConditionalPage.DEPRECATED)) {
-            DocPath filename = DocPaths.DEPRECATED_LIST;
-            DeprecatedListWriter depr = new DeprecatedListWriter(configuration, filename);
-            depr.generateSummaryListFile(PageMode.DEPRECATED, "deprecated elements",
-                    configuration.contents.deprecatedAPI, "doclet.Window_Deprecated_List");
-        }
+    @Override
+    protected PageMode getPageMode() {
+        return PageMode.DEPRECATED;
+    }
+
+    @Override
+    protected String getDescription() {
+        return "deprecated elements";
+    }
+
+    @Override
+    protected Content getHeadContent() {
+        return configuration.contents.deprecatedAPI;
+    }
+
+    @Override
+    protected String getTitleKey() {
+        return "doclet.Window_Deprecated_List";
     }
 
     @Override

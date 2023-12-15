@@ -46,7 +46,7 @@ public class TrimLibcHeapTest {
         if (Platform.isMusl()) {
             output.shouldContain("Not available");
         } else {
-            output.shouldMatch("Trim native heap: RSS\\+Swap: \\d+[BKMG]->\\d+[BKMG] \\(-\\d+[BKMG]\\)");
+            output.shouldMatch("Trim native heap: RSS\\+Swap: \\d+[BKMG]->\\d+[BKMG] \\([+-]\\d+[BKMG]\\)");
         }
     }
 

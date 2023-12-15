@@ -45,6 +45,7 @@
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/vm_version.hpp"
 #include "utilities/bitMap.inline.hpp"
+#include "utilities/checkedCast.hpp"
 #include "utilities/powerOfTwo.hpp"
 #include "utilities/macros.hpp"
 #if INCLUDE_JFR
@@ -998,8 +999,8 @@ void GraphBuilder::load_constant() {
     // Unbox the value at runtime, if needed.
     // ConstantDynamic entry can be of a primitive type, but it is cached in boxed form.
     if (patch_state != nullptr) {
-      int index = stream()->get_constant_pool_index();
-      BasicType type = stream()->get_basic_type_for_constant_at(index);
+      int cp_index = stream()->get_constant_pool_index();
+      BasicType type = stream()->get_basic_type_for_constant_at(cp_index);
       if (is_java_primitive(type)) {
         ciInstanceKlass* box_klass = ciEnv::current()->get_box_klass_for_primitive_type(type);
         assert(box_klass->is_loaded(), "sanity");
@@ -1246,7 +1247,7 @@ void GraphBuilder::shift_op(ValueType* type, Bytecodes::Code code) {
             } else {
               // pattern: (a << s0c) >>> s0c => simplify to: a & m, with m constant
               assert(0 < s0c && s0c < BitsPerInt, "adjust code below to handle corner cases");
-              const int m = (1 << (BitsPerInt - s0c)) - 1;
+              const int m = checked_cast<int>(right_n_bits(BitsPerInt - s0c));
               Value s = append(new Constant(new IntConstant(m)));
               ipush(append(new LogicOp(Bytecodes::_iand, l->x(), s)));
             }
@@ -2087,9 +2088,10 @@ void GraphBuilder::invoke(Bytecodes::Code code) {
         assert(singleton != declared_interface, "not a unique implementor");
         cha_monomorphic_target = target->find_monomorphic_target(calling_klass, declared_interface, singleton);
         if (cha_monomorphic_target != nullptr) {
-          if (cha_monomorphic_target->holder() != compilation()->env()->Object_klass()) {
-            ciInstanceKlass* holder = cha_monomorphic_target->holder();
-            ciInstanceKlass* constraint = (holder->is_subtype_of(singleton) ? holder : singleton); // avoid upcasts
+          ciInstanceKlass* holder = cha_monomorphic_target->holder();
+          ciInstanceKlass* constraint = (holder->is_subtype_of(singleton) ? holder : singleton); // avoid upcasts
+          if (holder != compilation()->env()->Object_klass() &&
+              (!type_is_exact || receiver_klass->is_subtype_of(constraint))) {
             actual_recv = declared_interface;
 
             // insert a check it's really the expected class.
@@ -2102,7 +2104,7 @@ void GraphBuilder::invoke(Bytecodes::Code code) {
 
             dependency_recorder()->assert_unique_implementor(declared_interface, singleton);
           } else {
-            cha_monomorphic_target = nullptr; // subtype check against Object is useless
+            cha_monomorphic_target = nullptr;
           }
         }
       }
@@ -2515,6 +2517,8 @@ XHandlers* GraphBuilder::handle_exception(Instruction* instruction) {
 
         // xhandler start with an empty expression stack
         if (cur_state->stack_size() != 0) {
+          // locals are preserved
+          // stack will be truncated
           cur_state = cur_state->copy(ValueStack::ExceptionState, cur_state->bci());
         }
         if (instruction->exception_state() == nullptr) {
@@ -2564,15 +2568,19 @@ XHandlers* GraphBuilder::handle_exception(Instruction* instruction) {
       // This scope and all callees do not handle exceptions, so the local
       // variables of this scope are not needed. However, the scope itself is
       // required for a correct exception stack trace -> clear out the locals.
-      if (_compilation->env()->should_retain_local_variables()) {
-        cur_state = cur_state->copy(ValueStack::ExceptionState, cur_state->bci());
-      } else {
-        cur_state = cur_state->copy(ValueStack::EmptyExceptionState, cur_state->bci());
-      }
+      // Stack and locals are invalidated but not truncated in caller state.
       if (prev_state != nullptr) {
+        assert(instruction->exception_state() != nullptr, "missed set?");
+        ValueStack::Kind exc_kind = ValueStack::empty_exception_kind(true /* caller */);
+        cur_state = cur_state->copy(exc_kind, cur_state->bci());
+        // reset caller exception state
         prev_state->set_caller_state(cur_state);
-      }
-      if (instruction->exception_state() == nullptr) {
+      } else {
+        assert(instruction->exception_state() == nullptr, "already set");
+        // set instruction exception state
+        // truncate stack
+        ValueStack::Kind exc_kind = ValueStack::empty_exception_kind();
+        cur_state = cur_state->copy(exc_kind, cur_state->bci());
         instruction->set_exception_state(cur_state);
       }
     }
@@ -3485,11 +3493,9 @@ ValueStack* GraphBuilder::copy_state_exhandling_with_bci(int bci) {
 ValueStack* GraphBuilder::copy_state_for_exception_with_bci(int bci) {
   ValueStack* s = copy_state_exhandling_with_bci(bci);
   if (s == nullptr) {
-    if (_compilation->env()->should_retain_local_variables()) {
-      s = state()->copy(ValueStack::ExceptionState, bci);
-    } else {
-      s = state()->copy(ValueStack::EmptyExceptionState, bci);
-    }
+    // no handler, no need to retain locals
+    ValueStack::Kind exc_kind = ValueStack::empty_exception_kind();
+    s = state()->copy(exc_kind, bci);
   }
   return s;
 }
@@ -3503,7 +3509,6 @@ int GraphBuilder::recursive_inline_level(ciMethod* cur_callee) const {
   }
   return recur_level;
 }
-
 
 bool GraphBuilder::try_inline(ciMethod* callee, bool holder_known, bool ignore_return, Bytecodes::Code bc, Value receiver) {
   const char* msg = nullptr;
@@ -4436,12 +4441,12 @@ void GraphBuilder::print_inlining(ciMethod* callee, const char* msg, bool succes
     CompilerEvent::InlineEvent::post(event, compilation()->env()->task()->compile_id(), method()->get_Method(), callee, success, msg, bci());
   }
 
-  CompileTask::print_inlining_ul(callee, scope()->level(), bci(), msg);
+  CompileTask::print_inlining_ul(callee, scope()->level(), bci(), inlining_result_of(success), msg);
 
   if (!compilation()->directive()->PrintInliningOption) {
     return;
   }
-  CompileTask::print_inlining_tty(callee, scope()->level(), bci(), msg);
+  CompileTask::print_inlining_tty(callee, scope()->level(), bci(), inlining_result_of(success), msg);
   if (success && CIPrintMethodCodes) {
     callee->print_codes();
   }

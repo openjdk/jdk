@@ -95,12 +95,12 @@ static void post_safepoint_synchronize_event(EventSafepointStateSynchronization&
                                              uint64_t safepoint_id,
                                              int initial_number_of_threads,
                                              int threads_waiting_to_block,
-                                             uint64_t iterations) {
+                                             int iterations) {
   if (event.should_commit()) {
     event.set_safepointId(safepoint_id);
     event.set_initialThreadCount(initial_number_of_threads);
     event.set_runningThreadCount(threads_waiting_to_block);
-    event.set_iterations(iterations);
+    event.set_iterations(checked_cast<u4>(iterations));
     event.commit();
   }
 }
@@ -808,7 +808,7 @@ void SafepointSynchronize::print_safepoint_timeout() {
 
   // To debug the long safepoint, specify both AbortVMOnSafepointTimeout &
   // ShowMessageBoxOnError.
-  if (AbortVMOnSafepointTimeout) {
+  if (AbortVMOnSafepointTimeout && (os::elapsedTime() * MILLIUNITS > AbortVMOnSafepointTimeoutDelay)) {
     // Send the blocking thread a signal to terminate and write an error file.
     for (JavaThreadIteratorWithHandle jtiwh; JavaThread *cur_thread = jtiwh.next(); ) {
       if (cur_thread->safepoint_state()->is_running()) {
