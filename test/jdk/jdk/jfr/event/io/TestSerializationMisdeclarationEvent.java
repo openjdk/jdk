@@ -34,6 +34,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static jdk.internal.event.SerializationMisdeclarationEvent.*;
+import static jdk.test.lib.jfr.EventNames.SerializationMisdeclaration;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 
@@ -42,11 +43,10 @@ import static org.junit.jupiter.params.provider.Arguments.arguments;
  * @bug 8275338
  * @summary Check generation of JFR events for misdeclared fields and methods
  *          relevant to serialization
- *
  * @modules java.base/jdk.internal.event
  * @key jfr
  * @requires vm.hasJFR
- * @library /test/lib /test/jdk
+ * @library /test/lib
  * @run junit/othervm jdk.jfr.event.io.TestSerializationMisdeclarationEvent
  */
 public class TestSerializationMisdeclarationEvent {
@@ -144,10 +144,10 @@ public class TestSerializationMisdeclarationEvent {
     static {
         events = new ArrayList<>();
         try (var rs = new RecordingStream()) {
-            rs.enable("jdk.SerializationMisdeclaration")
+            rs.enable(SerializationMisdeclaration)
                     .withoutThreshold()
                     .withoutStackTrace();
-            rs.onEvent("jdk.SerializationMisdeclaration", events::add);
+            rs.onEvent(SerializationMisdeclaration, events::add);
             rs.startAsync();
             doLookups();
             rs.stop();
