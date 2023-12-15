@@ -3589,14 +3589,24 @@ void SuperWord::adjust_pre_loop_limit_to_align_main_loop_vectors() {
   //
   // We can construct XBOI by additionally defining:
   //
-  //   xboi = -boi = (-base - offset - invar)                                 (13a, stride * scale > 0)
-  //   xboi = +boi = (+base + offset + invar)                                 (13b, stride * scale < 0)
+  //   xboi = (stride * scale > 0) ? -boi              : boi                  (13)
   //
   // which gives us:
   //
   //   XBOI = (stride * scale > 0) ? -BOI              : BOI
   //        = (stride * scale > 0) ? -boi / abs(scale) : boi / abs(scale)
   //        = xboi / abs(scale)                                               (14)
+  //
+  // When we have computed adjust_pre_iter, we update the pre-loop limit
+  // with (3a, b). However, we have to make sure that the adjust_pre_iter
+  // additional pre-loop iterations do not lead the pre-loop to execute
+  // iterations that would step over the original limit (orig_limit) of
+  // the loop. Hence, we must constrain the updated limit as follows:
+  //
+  // constrained_limit = MIN(old_limit + adjust_pre_iter, orig_limit)
+  //                   = MIN(new_limit,                   orig_limit)         (15a, stride > 0)
+  // constrained_limit = MAX(old_limit - adjust_pre_iter, orig_limit)
+  //                   = MAX(new_limit,                   orig_limit)         (15a, stride < 0)
 
   // We chose an aw that is the maximal possible vector width for the type of
   // align_to_ref.
@@ -3652,9 +3662,9 @@ void SuperWord::adjust_pre_loop_limit_to_align_main_loop_vectors() {
   }
 #endif
 
-  // 1: Compute:
-  //    xboi = (-base - offset - invar)         (stride * scale > 0)
-  //    xboi = (+base + offset + invar)         (stride * scale < 0)
+  // 1: Compute (13a, b):
+  //    xboi = -boi = (-base - offset - invar)         (stride * scale > 0)
+  //    xboi = +boi = (+base + offset + invar)         (stride * scale < 0)
   const bool is_sub = scale * stride > 0;
 
   // 1.1: offset
@@ -3698,14 +3708,18 @@ void SuperWord::adjust_pre_loop_limit_to_align_main_loop_vectors() {
     _phase->set_ctrl(xboi, pre_ctrl);
   }
 
-  // 2: Compute: XBOI = xboi / abs(scale)
+  // 2: Compute (14):
+  //    XBOI = xboi / abs(scale)
   //    The division is executed as shift
   Node* log2_abs_scale = _igvn.intcon(exact_log2(abs(scale)));
   Node* XBOI = new URShiftINode(xboi, log2_abs_scale);
   _igvn.register_new_node_with_optimizer(XBOI);
   _phase->set_ctrl(XBOI, pre_ctrl);
 
-  // 3: Compute: XBOI_OP_old_limit = XBOI OP old_limit
+  // 3: Compute (12):
+  //    adjust_pre_iter = (XBOI OP old_limit) % AW
+  //
+  // 3.1: XBOI_OP_old_limit = XBOI OP old_limit
   Node* XBOI_OP_old_limit = nullptr;
   if (stride > 0) {
     XBOI_OP_old_limit = new SubINode(XBOI, old_limit);
@@ -3715,7 +3729,7 @@ void SuperWord::adjust_pre_loop_limit_to_align_main_loop_vectors() {
   _igvn.register_new_node_with_optimizer(XBOI_OP_old_limit);
   _phase->set_ctrl(XBOI_OP_old_limit, pre_ctrl);
 
-  // 4: Compute:
+  // 3.2: Compute:
   //    adjust_pre_iter = (XBOI OP old_limit) % AW
   //                    = XBOI_OP_old_limit % AW
   //                    = XBOI_OP_old_limit AND (AW - 1)
@@ -3726,7 +3740,7 @@ void SuperWord::adjust_pre_loop_limit_to_align_main_loop_vectors() {
   _igvn.register_new_node_with_optimizer(adjust_pre_iter);
   _phase->set_ctrl(adjust_pre_iter, pre_ctrl);
 
-  // 5: Compute:
+  // 4: Compute (3a, b):
   //    new_limit = old_limit + adjust_pre_iter     (stride > 0)
   //    new_limit = old_limit - adjust_pre_iter     (stride < 0)
   Node* new_limit = nullptr;
@@ -3738,13 +3752,14 @@ void SuperWord::adjust_pre_loop_limit_to_align_main_loop_vectors() {
   _igvn.register_new_node_with_optimizer(new_limit);
   _phase->set_ctrl(new_limit, pre_ctrl);
 
-  // 6. Make sure not to exceed the original limit with the new limit
-  Node* constrained =
+  // 5: Compute (15a, b):
+  //    Prevent pre-loop from going past the original limit of the loop.
+  Node* constrained_limit =
     (stride > 0) ? (Node*) new MinINode(new_limit, orig_limit)
                  : (Node*) new MaxINode(new_limit, orig_limit);
-  _igvn.register_new_node_with_optimizer(constrained);
-  _phase->set_ctrl(constrained, pre_ctrl);
-  _igvn.replace_input_of(pre_opaq, 1, constrained);
+  _igvn.register_new_node_with_optimizer(constrained_limit);
+  _phase->set_ctrl(constrained_limit, pre_ctrl);
+  _igvn.replace_input_of(pre_opaq, 1, constrained_limit);
 }
 
 //------------------------------init---------------------------

@@ -95,7 +95,7 @@
                                                                             \
   develop(bool, VerifyAlignVector, false,                                   \
           "Check that vector stores/loads are aligned if AlignVector"       \
-          "is enabled."                                                     \
+          "is enabled.")                                                    \
                                                                             \
   product(intx, NumberOfLoopInstrToAlign, 4,                                \
           "Number of first instructions in a loop to align")                \
