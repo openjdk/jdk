@@ -70,7 +70,7 @@
 #include "gc/g1/g1UncommitRegionTask.hpp"
 #include "gc/g1/g1VMOperations.hpp"
 #include "gc/g1/g1YoungCollector.hpp"
-#include "gc/g1/g1YoungGCEvacFailureInjector.hpp"
+#include "gc/g1/g1YoungGCAllocationFailureInjector.hpp"
 #include "gc/g1/heapRegion.inline.hpp"
 #include "gc/g1/heapRegionRemSet.inline.hpp"
 #include "gc/g1/heapRegionSet.inline.hpp"
@@ -103,6 +103,7 @@
 #include "oops/compressedOops.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/cpuTimeCounters.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/init.hpp"
 #include "runtime/java.hpp"
@@ -1143,7 +1144,7 @@ G1CollectedHeap::G1CollectedHeap() :
   _numa(G1NUMA::create()),
   _hrm(),
   _allocator(nullptr),
-  _evac_failure_injector(),
+  _allocation_failure_injector(),
   _verifier(nullptr),
   _summary_bytes_used(0),
   _bytes_used_during_gc(0),
@@ -1431,7 +1432,12 @@ jint G1CollectedHeap::initialize() {
 
   _collection_set.initialize(max_reserved_regions());
 
-  evac_failure_injector()->reset();
+  allocation_failure_injector()->reset();
+
+  CPUTimeCounters::create_counter(CPUTimeGroups::CPUTimeType::gc_parallel_workers);
+  CPUTimeCounters::create_counter(CPUTimeGroups::CPUTimeType::gc_conc_mark);
+  CPUTimeCounters::create_counter(CPUTimeGroups::CPUTimeType::gc_conc_refine);
+  CPUTimeCounters::create_counter(CPUTimeGroups::CPUTimeType::gc_service);
 
   G1InitLogger::print();
 
@@ -2224,6 +2230,8 @@ void G1CollectedHeap::gc_epilogue(bool full) {
 
   _free_arena_memory_task->notify_new_stats(&_young_gen_card_set_stats,
                                             &_collection_set_candidates_card_set_stats);
+
+  update_parallel_gc_threads_cpu_time();
 }
 
 uint G1CollectedHeap::uncommit_regions(uint region_limit) {
@@ -2307,6 +2315,26 @@ void G1CollectedHeap::verify_region_attr_remset_is_tracked() {
   heap_region_iterate(&cl);
 }
 #endif
+
+void G1CollectedHeap::update_parallel_gc_threads_cpu_time() {
+  assert(Thread::current()->is_VM_thread(),
+         "Must be called from VM thread to avoid races");
+  if (!UsePerfData || !os::is_thread_cpu_time_supported()) {
+    return;
+  }
+
+  // Ensure ThreadTotalCPUTimeClosure destructor is called before publishing gc
+  // time.
+  {
+    ThreadTotalCPUTimeClosure tttc(CPUTimeGroups::CPUTimeType::gc_parallel_workers);
+    // Currently parallel worker threads never terminate (JDK-8081682), so it is
+    // safe for VMThread to read their CPU times. However, if JDK-8087340 is
+    // resolved so they terminate, we should rethink if it is still safe.
+    workers()->threads_do(&tttc);
+  }
+
+  CPUTimeCounters::publish_gc_total_cpu_time();
+}
 
 void G1CollectedHeap::start_new_collection_set() {
   collection_set()->start_incremental_building();
@@ -2974,9 +3002,6 @@ void G1CollectedHeap::unregister_nmethod(nmethod* nm) {
 
 void G1CollectedHeap::update_used_after_gc(bool evacuation_failed) {
   if (evacuation_failed) {
-    // Reset the G1EvacuationFailureALot counters and flags
-    evac_failure_injector()->reset();
-
     set_used(recalculate_used());
   } else {
     // The "used" of the collection set have already been subtracted

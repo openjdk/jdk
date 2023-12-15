@@ -32,7 +32,7 @@
 #include "runtime/threadCritical.hpp"
 #include "utilities/ostream.hpp"
 
-size_t VirtualMemorySummary::_snapshot[CALC_OBJ_SIZE_IN_TYPE(VirtualMemorySnapshot, size_t)];
+VirtualMemorySnapshot VirtualMemorySummary::_snapshot;
 
 void VirtualMemory::update_peak(size_t size) {
   size_t peak_sz = peak_size();
@@ -44,12 +44,6 @@ void VirtualMemory::update_peak(size_t size) {
       peak_sz = old_sz;
     }
   }
-}
-
-void VirtualMemorySummary::initialize() {
-  assert(sizeof(_snapshot) >= sizeof(VirtualMemorySnapshot), "Sanity Check");
-  // Use placement operator new to initialize static data area.
-  ::new ((void*)_snapshot) VirtualMemorySnapshot();
 }
 
 void VirtualMemorySummary::snapshot(VirtualMemorySnapshot* s) {
@@ -334,7 +328,6 @@ address ReservedMemoryRegion::thread_stack_uncommitted_bottom() const {
 bool VirtualMemoryTracker::initialize(NMT_TrackingLevel level) {
   assert(_reserved_regions == nullptr, "only call once");
   if (level >= NMT_summary) {
-    VirtualMemorySummary::initialize();
     _reserved_regions = new (std::nothrow, mtNMT)
       SortedLinkedList<ReservedMemoryRegion, compare_reserved_region_base>();
     return (_reserved_regions != nullptr);

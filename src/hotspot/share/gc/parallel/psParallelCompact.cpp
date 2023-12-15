@@ -1496,7 +1496,7 @@ void PSParallelCompact::fill_dense_prefix_end(SpaceId id)
     _mark_bitmap.mark_obj(obj_beg, obj_len);
     _summary_data.add_obj(obj_beg, obj_len);
     assert(start_array(id) != nullptr, "sanity");
-    start_array(id)->allocate_block(obj_beg);
+    start_array(id)->update_for_block(obj_beg, obj_beg + obj_len);
   }
 }
 
@@ -2462,7 +2462,6 @@ void PSParallelCompact::compact() {
 
   ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
   PSOldGen* old_gen = heap->old_gen();
-  old_gen->start_array()->reset();
   uint active_gc_threads = ParallelScavengeHeap::heap()->workers().active_workers();
 
   // for [0..last_space_id)
@@ -2534,7 +2533,7 @@ void PSParallelCompact::verify_complete(SpaceId space_id) {
 #endif  // #ifdef ASSERT
 
 inline void UpdateOnlyClosure::do_addr(HeapWord* addr) {
-  _start_array->allocate_block(addr);
+  _start_array->update_for_block(addr, addr + cast_to_oop(addr)->size());
   compaction_manager()->update_contents(cast_to_oop(addr));
 }
 
@@ -2627,7 +2626,7 @@ void PSParallelCompact::update_deferred_object(ParCompactionManager* cm, HeapWor
   const SpaceInfo* const space_info = _space_info + space_id(addr);
   ObjectStartArray* const start_array = space_info->start_array();
   if (start_array != nullptr) {
-    start_array->allocate_block(addr);
+    start_array->update_for_block(addr, addr + cast_to_oop(addr)->size());
   }
 
   cm->update_contents(cast_to_oop(addr));
@@ -3133,7 +3132,7 @@ MoveAndUpdateClosure::do_addr(HeapWord* addr, size_t words) {
 
   // The start_array must be updated even if the object is not moving.
   if (_start_array != nullptr) {
-    _start_array->allocate_block(destination());
+    _start_array->update_for_block(destination(), destination() + words);
   }
 
   if (copy_destination() != source()) {
@@ -3197,8 +3196,9 @@ FillClosure::do_addr(HeapWord* addr, size_t size) {
   CollectedHeap::fill_with_objects(addr, size);
   HeapWord* const end = addr + size;
   do {
-    _start_array->allocate_block(addr);
-    addr += cast_to_oop(addr)->size();
+    size_t size = cast_to_oop(addr)->size();
+    _start_array->update_for_block(addr, addr + size);
+    addr += size;
   } while (addr < end);
   return ParMarkBitMap::incomplete;
 }
