@@ -171,6 +171,7 @@ public sealed interface ClassBuilder
                                    Utf8Entry descriptor,
                                    int flags) {
         return withField(name, descriptor, new Consumer<FieldBuilder>() {
+            //cannot use lambda here
             @Override
             public void accept(FieldBuilder fb) {
                 fb.withFlags(flags);
