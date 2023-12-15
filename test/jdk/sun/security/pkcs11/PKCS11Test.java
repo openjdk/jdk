@@ -61,6 +61,7 @@ import java.util.stream.Collectors;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 
+import jdk.test.lib.Platform;
 import jdk.test.lib.artifacts.Artifact;
 import jdk.test.lib.artifacts.ArtifactResolver;
 import jdk.test.lib.artifacts.ArtifactResolverException;
@@ -746,14 +747,14 @@ public abstract class PKCS11Test {
                 return fetchNssLib(MACOSX_AARCH64.class);
 
             case "Linux-amd64-64":
-                if (isOracleLinux7()) {
+                if (Platform.isOracleLinux7()) {
                     throw new SkippedException("Skipping Oracle Linux prior to v8");
                 } else {
                     return fetchNssLib(LINUX_X64.class);
                 }
 
             case "Linux-aarch64-64":
-                if (isOracleLinux7()) {
+                if (Platform.isOracleLinux7()) {
                     throw new SkippedException("Skipping Oracle Linux prior to v8");
                 } else {
                     return fetchNssLib(LINUX_AARCH64.class);
@@ -761,20 +762,6 @@ public abstract class PKCS11Test {
             default:
                 return null;
         }
-    }
-
-    private static boolean isOracleLinux7() {
-        if (System.getProperty("os.name").toLowerCase().contains("linux") &&
-                System.getProperty("os.version").toLowerCase().contains("el")) {
-            Pattern p = Pattern.compile("el(\\d+)");
-            Matcher m = p.matcher(System.getProperty("os.version"));
-            if (m.find()) {
-                try {
-                    return Integer.parseInt(m.group(1)) <= 7;
-                } catch (NumberFormatException nfe) {}
-            }
-        }
-        return false;
     }
 
     private static String fetchNssLib(Class<?> clazz) {
