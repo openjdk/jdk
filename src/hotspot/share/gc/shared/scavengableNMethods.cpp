@@ -59,18 +59,8 @@ void ScavengableNMethods::register_nmethod(nmethod* nm) {
 }
 
 void ScavengableNMethods::unregister_nmethod(nmethod* nm) {
-  assert_locked_or_safepoint(CodeCache_lock);
-
-  if (gc_data(nm).on_list()) {
-    nmethod* prev = nullptr;
-    for (nmethod* cur = _head; cur != nullptr; cur = gc_data(cur).next()) {
-      if (cur == nm) {
-        unlist_nmethod(cur, prev);
-        return;
-      }
-      prev = cur;
-    }
-  }
+  // All users of this method only unregister in bulk during code unloading.
+  ShouldNotReachHere();
 }
 
 #ifndef PRODUCT
