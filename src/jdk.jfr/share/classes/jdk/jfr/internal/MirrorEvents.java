@@ -35,6 +35,7 @@ import jdk.jfr.events.ExceptionThrownEvent;
 import jdk.jfr.events.ProcessStartEvent;
 import jdk.jfr.events.SecurityPropertyModificationEvent;
 import jdk.jfr.events.SecurityProviderServiceEvent;
+import jdk.jfr.events.SerializationMisdeclarationEvent;
 import jdk.jfr.events.SocketReadEvent;
 import jdk.jfr.events.SocketWriteEvent;
 import jdk.jfr.events.TLSHandshakeEvent;
@@ -52,6 +53,7 @@ public final class MirrorEvents {
         ProcessStartEvent.class,
         SecurityPropertyModificationEvent.class,
         SecurityProviderServiceEvent.class,
+        SerializationMisdeclarationEvent.class,
         SocketReadEvent.class,
         SocketWriteEvent.class,
         ThreadSleepEvent.class,

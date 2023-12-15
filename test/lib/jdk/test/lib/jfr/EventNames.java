@@ -209,6 +209,7 @@ public class EventNames {
     public static final String SecurityProviderService = PREFIX + "SecurityProviderService";
     public static final String DirectBufferStatistics = PREFIX + "DirectBufferStatistics";
     public static final String Deserialization = PREFIX + "Deserialization";
+    public static final String SerializationMisdeclaration = PREFIX + "SerializationMisdeclaration";
     public static final String VirtualThreadStart = PREFIX + "VirtualThreadStart";
     public static final String VirtualThreadEnd = PREFIX + "VirtualThreadEnd";
     public static final String VirtualThreadPinned = PREFIX + "VirtualThreadPinned";
