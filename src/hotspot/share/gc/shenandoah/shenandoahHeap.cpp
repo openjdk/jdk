@@ -968,7 +968,6 @@ HeapWord* ShenandoahHeap::allocate_memory(ShenandoahAllocRequest& req, bool* gc_
 
         // With Shenandoah, there are two mechanisms to detect violation of the limit: CPU time or a full GC with no progress.
         if (result == nullptr) {
-          
           intptr_t no_progess_count = get_gc_no_progress_count();
           intptr_t no_progress_count_at_last_oom = get_gc_no_progress_count_at_last_oom();
           if (no_progress_count_at_last_oom == -1) {
