@@ -246,7 +246,7 @@ public class SequenceInputStream extends InputStream {
                     try {
                         transferred = Math.addExact(transferred, in.transferTo(out));
                     } catch (ArithmeticException ignore) {
-                        return Long.MAX_VALUE;
+                        transferred = Long.MAX_VALUE;
                     }
                 }
                 nextStream();
