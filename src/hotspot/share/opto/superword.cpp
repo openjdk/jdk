@@ -3578,25 +3578,25 @@ void SuperWord::adjust_pre_loop_limit_to_align_main_loop_vectors() {
   //   (BOI - old_limit + adjust_pre_iter) % AW = 0
   //   adjust_pre_iter = (-BOI + old_limit) % AW                              (11d)
   //
-  // We now generalize (11), using:
+  // We now generalize the equations (11*) by using:
   //
   //   OP:   (stride         > 0) ? SUB   : ADD
   //   XBOI: (stride * scale > 0) ? -BOI  : BOI
   //
+  // which gives us the final pre-loop limit adjustment:
+  //
   //   adjust_pre_iter = (XBOI OP old_limit) % AW                             (12)
   //
-  // And we construct XBOI, where:
+  // We can construct XBOI by additionally defining:
   //
   //   xboi = -boi = (-base - offset - invar)                                 (13a, stride * scale > 0)
-  //   xboi = +boi = (+base + offset + invar)                                 (13a, stride * scale < 0)
+  //   xboi = +boi = (+base + offset + invar)                                 (13b, stride * scale < 0)
   //
-  //   XBOI = -BOI
-  //       = -boi / abs(scale)
-  //       = xboi / abs(scale)                                                (14a, stride * scale > 0)
+  // which gives us:
   //
-  //   XBOI = BOI
-  //       = boi / abs(scale)
-  //       = xboi / abs(scale)                                                (14b, stride * scale < 0)
+  //   XBOI = (stride * scale > 0) ? -BOI              : BOI
+  //        = (stride * scale > 0) ? -boi / abs(scale) : boi / abs(scale)
+  //        = xboi / abs(scale)                                               (14)
 
   // We chose an aw that is the maximal possible vector width for the type of
   // align_to_ref.
