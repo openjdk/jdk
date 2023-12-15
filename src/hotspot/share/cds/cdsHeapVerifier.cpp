@@ -216,7 +216,7 @@ inline bool CDSHeapVerifier::do_entry(oop& orig_obj, HeapShared::CachedOopInfo& 
   StaticFieldInfo* info = _table.get(orig_obj);
   if (info != nullptr) {
     if (value.orig_referrer() == nullptr && java_lang_String::is_instance(orig_obj)) {
-      // This string object is not refernced by any of the archived object graphs. It's archived
+      // This string object is not referenced by any of the archived object graphs. It's archived
       // only because it's in the interned string table. So we are not in a condition that
       // should be flagged by CDSHeapVerifier.
       return true; /* keep on iterating */
