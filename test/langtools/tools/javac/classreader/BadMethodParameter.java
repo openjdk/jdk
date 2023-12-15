@@ -29,17 +29,16 @@
  * @modules
  *      jdk.compiler/com.sun.tools.javac.api
  *      jdk.compiler/com.sun.tools.javac.main
- *      java.base/jdk.internal.classfile
- *      java.base/jdk.internal.classfile.attribute
  * @build toolbox.ToolBox toolbox.JavacTask
+ * @enablePreview
  * @run main BadMethodParameter
  */
 
-import jdk.internal.classfile.ClassModel;
-import jdk.internal.classfile.ClassTransform;
-import jdk.internal.classfile.Classfile;
-import jdk.internal.classfile.MethodTransform;
-import jdk.internal.classfile.attribute.MethodParametersAttribute;
+import java.lang.classfile.ClassModel;
+import java.lang.classfile.ClassTransform;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.MethodTransform;
+import java.lang.classfile.attribute.MethodParametersAttribute;
 
 import toolbox.JavacTask;
 import toolbox.Task;
@@ -99,7 +98,9 @@ public class BadMethodParameter extends TestRunner {
         Path classDir = getClassDir();
         new JavacTask(tb)
                 .classpath(classes, classDir)
-                .options("-verbose", "-parameters", "-processor", P.class.getName())
+                .options("--enable-preview",
+                         "-source", String.valueOf(Runtime.version().feature()),
+                         "-verbose", "-parameters", "-processor", P.class.getName())
                 .classes(P.class.getName())
                 .outdir(classes)
                 .run(Task.Expect.SUCCESS);
@@ -132,7 +133,7 @@ public class BadMethodParameter extends TestRunner {
 
     private static void transform(Path path) throws IOException {
         byte[] bytes = Files.readAllBytes(path);
-        Classfile cf = Classfile.of();
+        ClassFile cf = ClassFile.of();
         ClassModel classModel = cf.parse(bytes);
         MethodTransform methodTransform =
                 (mb, me) -> {
