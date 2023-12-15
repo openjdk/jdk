@@ -3493,6 +3493,7 @@ void SuperWord::adjust_pre_loop_limit_to_align_main_loop_vectors() {
   // alignment of the address.
   //
   //   adr = base + offset + invar + scale * iv                               (1)
+  //   adr % aw = 0                                                           (2)
   //
   // The limit of the pre-loop needs to be adjusted:
   //
@@ -3503,21 +3504,20 @@ void SuperWord::adjust_pre_loop_limit_to_align_main_loop_vectors() {
   // We want to find adjust_pre_iter, such that the address is aligned when entering
   // the main-loop:
   //
-  //   iv = new_limit = old_limit + adjust_pre_iter                           (2a, stride > 0)
-  //   iv = new_limit = old_limit - adjust_pre_iter                           (2b, stride < 0)
-  //   adr % aw = 0                                                           (3)
+  //   iv = new_limit = old_limit + adjust_pre_iter                           (3a, stride > 0)
+  //   iv = new_limit = old_limit - adjust_pre_iter                           (3b, stride < 0)
   //
   // We define boi as:
   //
   //   boi = base + offset + invar                                            (4)
   //
-  // And now we can simplify the address, using (1), (2), and (4):
+  // And now we can simplify the address using (1), (3), and (4):
   //
   //   adr = boi + scale * new_limit
   //   adr = boi + scale * (old_limit + adjust_pre_iter)                      (5a, stride > 0)
   //   adr = boi + scale * (old_limit - adjust_pre_iter)                      (5b, stride < 0)
   //
-  // And hence we can restate (3) with (5), and solve the equation for adjust_pre_iter:
+  // And hence we can restate (2) with (5), and solve the equation for adjust_pre_iter:
   //
   //   (boi + scale * (old_limit + adjust_pre_iter) % aw = 0                  (6a, stride > 0)
   //   (boi + scale * (old_limit - adjust_pre_iter) % aw = 0                  (6b, stride < 0)
@@ -3562,19 +3562,19 @@ void SuperWord::adjust_pre_loop_limit_to_align_main_loop_vectors() {
   //
   // We solve (9) for adjust_pre_iter, in the following 4 cases:
   //
-  // Case A: scale > 0 && stride > 0 (i.e. sign(scale) = 1, adjust_pre_iter >= 0)
+  // Case A: scale > 0 && stride > 0 (i.e. sign(scale) =  1)
   //   (BOI + old_limit + adjust_pre_iter) % AW = 0
   //   adjust_pre_iter = (-BOI - old_limit) % AW                              (11a)
   //
-  // Case B: scale < 0 && stride > 0 (i.e. sign(scale) = -1, adjust_pre_iter >= 0)
+  // Case B: scale < 0 && stride > 0 (i.e. sign(scale) = -1)
   //   (BOI - old_limit - adjust_pre_iter) % AW = 0
   //   adjust_pre_iter = (BOI - old_limit) % AW                               (11b)
   //
-  // Case C: scale > 0 && stride < 0 (i.e. sign(scale) = 1, adjust_pre_iter <= 0)
+  // Case C: scale > 0 && stride < 0 (i.e. sign(scale) =  1)
   //   (BOI + old_limit - adjust_pre_iter) % AW = 0
   //   adjust_pre_iter = (BOI + old_limit) % AW                               (11c)
   //
-  // Case D: scale < 0 && stride < 0 (i.e. sign(scale) = -1, adjust_pre_iter <= 0)
+  // Case D: scale < 0 && stride < 0 (i.e. sign(scale) = -1)
   //   (BOI - old_limit + adjust_pre_iter) % AW = 0
   //   adjust_pre_iter = (-BOI + old_limit) % AW                              (11d)
   //
