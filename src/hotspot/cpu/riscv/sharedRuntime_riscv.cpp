@@ -1675,7 +1675,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
       __ sd(swap_reg, Address(lock_reg, mark_word_offset));
 
       // src -> dest if dest == x10 else x10 <- dest
-      __ cmpxchg_obj_header(x10, lock_reg, obj_reg, t0, count, /*fallthrough*/nullptr);
+      __ cmpxchg_obj_header(x10, lock_reg, obj_reg, lock_tmp, count, /*fallthrough*/nullptr);
 
       // Test if the oopMark is an obvious stack pointer, i.e.,
       //  1) (mark & 3) == 0, and
@@ -1815,7 +1815,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
       // Atomic swap old header if oop still contains the stack lock
       Label count;
-      __ cmpxchg_obj_header(x10, old_hdr, obj_reg, t0, count, &slow_path_unlock);
+      __ cmpxchg_obj_header(x10, old_hdr, obj_reg, lock_tmp, count, &slow_path_unlock);
       __ bind(count);
       __ decrement(Address(xthread, JavaThread::held_monitor_count_offset()));
     } else {
