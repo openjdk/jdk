@@ -618,6 +618,7 @@ public class Proxy implements java.io.Serializable {
         private final List<Class<?>> interfaces;
         private final ProxyClassContext context;
         ProxyBuilder(ClassLoader loader, List<Class<?>> interfaces) {
+            Objects.requireNonNull(interfaces);
             if (!VM.isModuleSystemInited()) {
                 throw new InternalError("Proxy is not supported until "
                         + "module system is fully initialized");
