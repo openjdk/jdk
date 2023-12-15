@@ -281,7 +281,6 @@ class os: AllStatic {
   // actually run.  The first function indicates whether the OS supports
   // this functionality for the current thread, and if so the second
   // returns the elapsed virtual time for the current thread.
-  static bool supports_vtime();
   static double elapsedVTime();
 
   // Return current local time in a string (YYYY-MM-DD HH:MM:SS).

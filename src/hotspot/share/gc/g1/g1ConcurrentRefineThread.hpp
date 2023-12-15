@@ -74,11 +74,7 @@ protected:
   // Update concurrent refine threads stats.
   // If we are in Primary thread, we additionally update CPU time tracking.
   virtual void track_usage() {
-    if (os::supports_vtime()) {
-      _vtime_accum = (os::elapsedVTime() - _vtime_start);
-    } else {
-      _vtime_accum = 0.0;
-    }
+    _vtime_accum = (os::elapsedVTime() - _vtime_start);
   };
 
   // Helper for do_refinement_step implementations.  Try to perform some

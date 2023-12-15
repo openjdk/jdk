@@ -1049,8 +1049,6 @@ FILETIME java_to_windows_time(jlong l) {
   return result;
 }
 
-bool os::supports_vtime() { return true; }
-
 double os::elapsedVTime() {
   FILETIME created;
   FILETIME exited;
