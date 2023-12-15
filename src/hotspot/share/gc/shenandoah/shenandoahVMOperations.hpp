@@ -47,7 +47,7 @@ protected:
   uint         _gc_id;
 public:
   VM_ShenandoahOperation() : _gc_id(GCId::current()) {};
-  virtual bool skip_thread_oop_barriers() const { return true; }
+  bool skip_thread_oop_barriers() const override { return true; }
   bool doit_prologue() override;
   void doit_epilogue() override;
 };
