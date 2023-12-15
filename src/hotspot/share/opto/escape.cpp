@@ -889,15 +889,6 @@ void ConnectionGraph::reduce_phi_on_castpp_field_load(Node* curr_castpp, Growabl
     --i;
     i = MIN2(i, (int)curr_castpp->outcnt()-1);
   }
-
-#ifdef ASSERT
-  if (VerifyReduceAllocationMerges && !can_reduce_phi(ophi->as_Phi())) {
-    TraceReduceAllocationMerges = true;
-    ophi->dump(2);
-    ophi->dump(-2);
-    assert(can_reduce_phi(ophi->as_Phi()), "Sanity: previous reducible Phi is no longer reducible after reduce_phi_on_castpp_field_load.");
-  }
-#endif
 }
 
 // This method split a given CmpP/N through the Phi used in one of its inputs.
@@ -981,15 +972,6 @@ void ConnectionGraph::reduce_phi_on_cmp(Node* cmp) {
 
   Node* new_cmp = _igvn->transform(new CmpINode(res_phi, zero));
   _igvn->replace_node(cmp, new_cmp);
-
-#ifdef ASSERT
-  if (VerifyReduceAllocationMerges && !can_reduce_phi(ophi->as_Phi())) {
-    TraceReduceAllocationMerges = true;
-    ophi->dump(2);
-    ophi->dump(-2);
-    assert(can_reduce_phi(ophi->as_Phi()), "Sanity: previous reducible Phi is no longer reducible after reduce_phi_on_cmp.");
-  }
-#endif
 }
 
 // Push the newly created AddP on alloc_worklist and patch
@@ -1057,10 +1039,6 @@ void ConnectionGraph::reduce_phi_on_field_access(Node* previous_addp, GrowableAr
   // All AddPs are present in the connection graph
   FieldNode* fn = ptnode_adr(previous_addp->_idx)->as_Field();
 
-#ifdef ASSERT
-  PhiNode* ophi = previous_addp->in(1)->as_Phi();
-#endif
-
   // Iterate over AddP looking for a Load
   for (int k = previous_addp->outcnt()-1; k >= 0;) {
     Node* previous_load = previous_addp->raw_out(k);
@@ -1080,15 +1058,6 @@ void ConnectionGraph::reduce_phi_on_field_access(Node* previous_addp, GrowableAr
   // Remove the old AddP from the processing list because it's dead now
   assert(previous_addp->outcnt() == 0, "AddP should be dead now.");
   alloc_worklist.remove_if_existing(previous_addp);
-
-#ifdef ASSERT
-  if (VerifyReduceAllocationMerges && ophi != nullptr && !can_reduce_phi(ophi)) {
-    TraceReduceAllocationMerges = true;
-    ophi->dump(2);
-    ophi->dump(-2);
-    assert(can_reduce_phi(ophi), "Sanity: previous reducible Phi is no longer reducible after reduce_phi_on_field_access.");
-  }
-#endif
 }
 
 // Create a 'selector' Phi based on the inputs of 'ophi'. If index 'i' of the
