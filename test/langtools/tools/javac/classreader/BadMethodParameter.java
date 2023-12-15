@@ -98,7 +98,7 @@ public class BadMethodParameter extends TestRunner {
         Path classDir = getClassDir();
         new JavacTask(tb)
                 .classpath(classes, classDir)
-                .options("--enable-preview", 
+                .options("--enable-preview",
                          "-source", String.valueOf(Runtime.version().feature()),
                          "-verbose", "-parameters", "-processor", P.class.getName())
                 .classes(P.class.getName())
