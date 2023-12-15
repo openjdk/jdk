@@ -220,8 +220,17 @@ public abstract class RSASignature extends SignatureSpi {
             byte[] decrypted = RSACore.rsa(sigBytes, publicKey);
 
             byte[] digest = getDigestValue();
+
             byte[] encoded = encodeSignature(digestOID, digest);
             byte[] padded = padding.pad(encoded);
+            if (MessageDigest.isEqual(padded, decrypted)) {
+                return true;
+            }
+
+            // Some vendors might omit the NULL params in digest algorithm
+            // identifier. Try again.
+            encoded = encodeSignatureWithoutNULL(digestOID, digest);
+            padded = padding.pad(encoded);
             return MessageDigest.isEqual(padded, decrypted);
         } catch (javax.crypto.BadPaddingException e) {
             return false;
@@ -247,27 +256,19 @@ public abstract class RSASignature extends SignatureSpi {
     }
 
     /**
-     * Decode the signature data. Verify that the object identifier matches
-     * and return the message digest.
+     * Encode the digest without the NULL params, return the to-be-signed data.
+     * This is only used by SunRsaSign.
      */
-    public static byte[] decodeSignature(ObjectIdentifier oid, byte[] sig)
+    static byte[] encodeSignatureWithoutNULL(ObjectIdentifier oid, byte[] digest)
             throws IOException {
-        // Enforce strict DER checking for signatures
-        DerInputStream in = new DerInputStream(sig, 0, sig.length, false);
-        DerValue[] values = in.getSequence(2);
-        if ((values.length != 2) || (in.available() != 0)) {
-            throw new IOException("SEQUENCE length error");
-        }
-        AlgorithmId algId = AlgorithmId.parse(values[0]);
-        if (algId.getOID().equals(oid) == false) {
-            throw new IOException("ObjectIdentifier mismatch: "
-                + algId.getOID());
-        }
-        if (algId.getEncodedParams() != null) {
-            throw new IOException("Unexpected AlgorithmId parameters");
-        }
-        byte[] digest = values[1].getOctetString();
-        return digest;
+        DerOutputStream out = new DerOutputStream();
+        DerOutputStream oidout = new DerOutputStream();
+        oidout.putOID(oid);
+        out.write(DerValue.tag_Sequence, oidout);
+        out.putOctetString(digest);
+        DerValue result =
+                new DerValue(DerValue.tag_Sequence, out.toByteArray());
+        return result.toByteArray();
     }
 
     // set parameter, not supported. See JCA doc
