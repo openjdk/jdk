@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -759,9 +759,12 @@ final class P11Signature extends SignatureSpi {
             int len = (p11Key.length() + 7) >> 3;
             RSAPadding padding = RSAPadding.getInstance
                                         (RSAPadding.PAD_BLOCKTYPE_1, len);
-            byte[] padded = padding.pad(data);
-            return padded;
-        } catch (GeneralSecurityException e) {
+            byte[] result = padding.pad(data);
+            if (result == null) {
+                throw new ProviderException("Error padding data");
+            }
+            return result;
+        } catch (InvalidKeyException | InvalidAlgorithmParameterException e) {
             throw new ProviderException(e);
         }
     }

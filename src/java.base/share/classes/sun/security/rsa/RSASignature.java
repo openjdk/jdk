@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -190,13 +190,15 @@ public abstract class RSASignature extends SignatureSpi {
         try {
             byte[] encoded = encodeSignature(digestOID, digest);
             byte[] padded = padding.pad(encoded);
-            byte[] encrypted = RSACore.rsa(padded, privateKey, true);
-            return encrypted;
+            if (padded != null) {
+                return RSACore.rsa(padded, privateKey, true);
+            }
         } catch (GeneralSecurityException e) {
             throw new SignatureException("Could not sign data", e);
         } catch (IOException e) {
             throw new SignatureException("Could not encode data", e);
         }
+        throw new SignatureException("Could not sign data");
     }
 
     // verify the data and return the result. See JCA doc
@@ -208,20 +210,20 @@ public abstract class RSASignature extends SignatureSpi {
         }
         try {
             if (sigBytes.length != RSACore.getByteLength(publicKey)) {
-                throw new SignatureException("Signature length not correct: got " +
+                throw new SignatureException("Bad signature length: got " +
                     sigBytes.length + " but was expecting " +
                     RSACore.getByteLength(publicKey));
             }
-            byte[] digest = getDigestValue();
+
+            // https://www.rfc-editor.org/rfc/rfc8017.html#section-8.2.2
+            // Step 4 suggests comparing the encoded message
             byte[] decrypted = RSACore.rsa(sigBytes, publicKey);
-            byte[] unpadded = padding.unpad(decrypted);
-            byte[] decodedDigest = decodeSignature(digestOID, unpadded);
-            return MessageDigest.isEqual(digest, decodedDigest);
+
+            byte[] digest = getDigestValue();
+            byte[] encoded = encodeSignature(digestOID, digest);
+            byte[] padded = padding.pad(encoded);
+            return MessageDigest.isEqual(padded, decrypted);
         } catch (javax.crypto.BadPaddingException e) {
-            // occurs if the app has used the wrong RSA public key
-            // or if sigBytes is invalid
-            // return false rather than propagating the exception for
-            // compatibility/ease of use
             return false;
         } catch (IOException e) {
             throw new SignatureException("Signature encoding error", e);
