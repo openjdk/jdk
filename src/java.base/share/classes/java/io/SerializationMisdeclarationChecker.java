@@ -193,7 +193,8 @@ final class SerializationMisdeclarationChecker {
         }
     }
 
-    private void privilegedCheckAccessibleMethod(String name, Class<?>[] paramTypes, Class<?> retType) {
+    private void privilegedCheckAccessibleMethod(String name,
+            Class<?>[] paramTypes, Class<?> retType) {
         for (Class<?> cls = cl; cls != null; cls = cls.getSuperclass()) {
             for (Method m : cls.getDeclaredMethods()) {
                 if (m.getName().equals(name)) {
@@ -203,7 +204,8 @@ final class SerializationMisdeclarationChecker {
         }
     }
 
-    private void privilegedCheckAccessibleMethod(Class<?> cls, Method m, Class<?>[] paramTypes, Class<?> retType) {
+    private void privilegedCheckAccessibleMethod(Class<?> cls, Method m,
+            Class<?>[] paramTypes, Class<?> retType) {
         if (cls.isEnum()) {
             commitEvent(cls, ACC_METH_INEFFECTIVE_ENUM,
                     m + " is not effective on an enum class");
@@ -226,14 +228,14 @@ final class SerializationMisdeclarationChecker {
         }
         if (isPrivate(m) && cl != cls
                 || isPackageProtected(m) && !isSamePackage(cl, cls)) {
-            commitEvent(cl, ACC_METH_NON_ACCESSIBLE,
-                    m + " is not accessible from " + cl);
+            commitEvent(ACC_METH_NON_ACCESSIBLE,
+                    m + " is not accessible");
         }
     }
 
-    private static boolean isSamePackage(Class<?> cl, Class<?> mcl) {
-        return cl.getClassLoader() == mcl.getClassLoader()
-                && cl.getPackageName().equals(mcl.getPackageName());
+    private static boolean isSamePackage(Class<?> cl0, Class<?> cl1) {
+        return cl0.getClassLoader() == cl1.getClassLoader()
+                && cl0.getPackageName().equals(cl1.getPackageName());
     }
 
     private boolean isOrdinaryClass() {
@@ -248,8 +250,7 @@ final class SerializationMisdeclarationChecker {
     }
 
     private static boolean isPackageProtected(Member m) {
-        return (m.getModifiers()
-                & (PRIVATE | PROTECTED | PUBLIC)) == 0;
+        return (m.getModifiers() & (PRIVATE | PROTECTED | PUBLIC)) == 0;
     }
 
     private static boolean isAbstract(Member m) {
@@ -267,9 +268,9 @@ final class SerializationMisdeclarationChecker {
     private static Field declaredField(Class<?> cl, String name) {
         try {
             return cl.getDeclaredField(name);
-        } catch (NoSuchFieldException e) {
-            return null;
+        } catch (NoSuchFieldException ignored) {
         }
+        return null;
     }
 
     private static Object getObject(Field f) {

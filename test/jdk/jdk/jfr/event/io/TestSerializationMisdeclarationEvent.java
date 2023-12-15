@@ -154,7 +154,7 @@ public class TestSerializationMisdeclarationEvent {
         }
     }
 
-    class A  implements Serializable {
+    private static class A implements Serializable {
 
         @Serial
         private static final long serialVersionUID = 0xAAAA;
@@ -181,7 +181,7 @@ public class TestSerializationMisdeclarationEvent {
 
     }
 
-    class B extends A {
+    private static class B extends A {
 
         @Serial
         private static final long serialVersionUID = 0xBBBB;
@@ -193,25 +193,25 @@ public class TestSerializationMisdeclarationEvent {
 
     }
 
-    public class C extends B {
+    private static final class C extends B {
 
         @Serial
         private static final long serialVersionUID = 0xCCCCL;
 
     }
 
-    public class NoSUID implements Serializable {
+    private static final class NoSUID implements Serializable {
 
         private static final ObjectStreamField[] serialPersistentFields = null;
 
     }
 
-    public class NonLongSUID implements Serializable {
+    private static final class NonLongSUID implements Serializable {
         private static final Object serialVersionUID = 1.2;
 
     }
 
-    public enum EnumClass implements Serializable {
+    private enum EnumClass implements Serializable {
         __;  // ignored constant
 
         Object serialVersionUID = 1.2;
@@ -227,7 +227,7 @@ public class TestSerializationMisdeclarationEvent {
 
     }
 
-    public record RecordClass() implements Serializable {
+    private record RecordClass() implements Serializable {
 
         private static final Object serialPersistentFields = new String[0];
 
@@ -237,7 +237,7 @@ public class TestSerializationMisdeclarationEvent {
 
     }
 
-    public abstract class Acc implements Serializable {
+    private abstract static class Acc implements Serializable {
 
         @Serial
         private static final long serialVersionUID = 0xAcc;
