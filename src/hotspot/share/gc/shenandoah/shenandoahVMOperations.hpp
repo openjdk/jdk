@@ -48,6 +48,8 @@ protected:
 public:
   VM_ShenandoahOperation() : _gc_id(GCId::current()) {};
   virtual bool skip_thread_oop_barriers() const { return true; }
+  bool doit_prologue() override;
+  void doit_epilogue() override;
 };
 
 class VM_ShenandoahReferenceOperation : public VM_ShenandoahOperation {

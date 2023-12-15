@@ -35,12 +35,23 @@
 #include "interpreter/oopMapCache.hpp"
 #include "memory/universe.hpp"
 
+bool VM_ShenandoahOperation::doit_prologue() {
+  assert(!ShenandoahHeap::heap()->has_gc_state_changed(), "GC State can only be changed on a safepoint.");
+  return true;
+}
+
+void VM_ShenandoahOperation::doit_epilogue() {
+  assert(!ShenandoahHeap::heap()->has_gc_state_changed(), "GC State was not synchronized to java threads.");
+}
+
 bool VM_ShenandoahReferenceOperation::doit_prologue() {
+  VM_ShenandoahOperation::doit_prologue();
   Heap_lock->lock();
   return true;
 }
 
 void VM_ShenandoahReferenceOperation::doit_epilogue() {
+  VM_ShenandoahOperation::doit_epilogue();
   OopMapCache::cleanup_old_entries();
   if (Universe::has_reference_pending_list()) {
     Heap_lock->notify_all();
