@@ -800,7 +800,8 @@ AlignmentSolution* AlignmentSolver::solve() const {
   }
 
   // In what follows, we need to show that the C_const, init and invar terms can be aligned by
-  // adjusting the pre-loop limit (pre_iter). We decompose pre_iter:
+  // adjusting the pre-loop iteration count (pre_iter), which is controlled by the pre-loop
+  // limit. We decompose pre_iter:
   //
   //   pre_iter = pre_iter_C_const + pre_iter_C_invar + pre_iter_C_init
   //
@@ -821,12 +822,18 @@ AlignmentSolution* AlignmentSolver::solve() const {
   //   (C_invar * var_invar + C_pre * pre_iter_C_invar) % aw = 0                 (4b)
   //   (C_const             + C_pre * pre_iter_C_const) % aw = 0                 (4c)
   //
-  // We can only guarantee solutions to (4a) and (4b) if:
+  // If we cannot prove that the C_const, init and invar terms can be aligned independently, then
+  // we can always modify init (by 1) or invar (by var_invar), and hence invalidate (3). Hence,
+  // this strengthening is necessary to guarantee statically that (3) has a solution, i.e. that
+  // we can ensure alignment for and init or invar.
+  //
+  // We can only guarantee solutions to (4a) and (4b) if C_init and C_invar are zero or
+  // multiples of C_pre:
   //
   //   C_init  % abs(C_pre) = 0                                                  (5a*)
   //   C_invar % abs(C_pre) = 0                                                  (5b*)
   //
-  // Which means there are X and Y such that:
+  // Which means there are integers X and Y such that:
   //
   //   C_init  = C_pre * X       (X = 0 if C_init  = 0, else X = C_init  / C_pre)
   //   C_invar = C_pre * Y       (Y = 0 if C_invar = 0, else Y = C_invar / C_pre)
@@ -897,12 +904,14 @@ AlignmentSolution* AlignmentSolver::solve() const {
 
   // Otherwise, if abs(C_pre) < aw, we find all solutions for pre_iter_C_const in (4c).
   // We state pre_iter_C_const in terms of the smallest possible pre_q and pre_r, such
-  // that pre_q >= 0 and 0 <= pre_r < pre_q:
+  // that 0 <= pre_r < pre_q:
   //
   //   pre_iter_C_const = pre_r + pre_q * m  (for any m >= 0)                     (7)
   //
   // We can now restate (4c) with (7):
   //
+  //   (C_const + C_pre * pre_iter_C_const         ) % aw = 0                     (take (4c))
+  //   (C_const + C_pre * (pre_r + pre_q * m)      ) % aw = 0                     (apply (7))
   //   (C_const + C_pre * pre_r + C_pre * pre_q * m) % aw = 0                     (8)
   //
   // Since this holds for any m >= 0, we require:
@@ -912,7 +921,7 @@ AlignmentSolution* AlignmentSolver::solve() const {
   //
   // Given that abs(C_pre) is a powers of 2, and abs(C_pre) < aw:
   //
-  const int  pre_q = _aw / abs(C_pre);
+  const int pre_q = _aw / abs(C_pre);
   //
   // We brute force the solution for pre_r by enumerating all values 0..pre_q-1 and
   // checking EQ(10*).
@@ -923,7 +932,7 @@ AlignmentSolution* AlignmentSolver::solve() const {
   //   pre_iter = pre_iter_C_const  + pre_iter_C_init              + pre_iter_C_invar
   //            = pre_r + pre_q * m + alignment_init(X * var_init) + alignment_invar(Y * var_invar)
   //
-  // Hence, the solution depends on:
+  // Hence, the solution for pre_iter depends on:
   //   - Always: pre_r and pre_q
   //   - If a variable init is present (i.e. C_init = scale), then we know that to
   //     satisfy (5a*), we must have abs(pre_stride) = 1, X = 1 and C_pre = scale.
