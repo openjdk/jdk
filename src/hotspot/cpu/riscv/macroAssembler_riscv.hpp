@@ -1345,11 +1345,13 @@ public:
     vmfle_vv(vd, vs1, vs2, vm);
   }
 
-  inline void vmsltu_vi(VectorRegister Vd, VectorRegister Vs2, int32_t imm, VectorMask vm = unmasked) {
+  inline void vmsltu_vi(VectorRegister Vd, VectorRegister Vs2, uint32_t imm, VectorMask vm = unmasked) {
+    guarantee(imm >= 1 && imm <= 16, "imm is invalid");
     vmsleu_vi(Vd, Vs2, imm-1, vm);
   }
 
-  inline void vmsgeu_vi(VectorRegister Vd, VectorRegister Vs2, int32_t imm, VectorMask vm = unmasked) {
+  inline void vmsgeu_vi(VectorRegister Vd, VectorRegister Vs2, uint32_t imm, VectorMask vm = unmasked) {
+    guarantee(imm >= 1 && imm <= 16, "imm is invalid");
     vmsgtu_vi(Vd, Vs2, imm-1, vm);
   }
 

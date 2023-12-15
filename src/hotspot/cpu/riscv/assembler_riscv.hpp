@@ -1810,6 +1810,7 @@ enum Nf {
   }
 
   // Vector unordered indexed load instructions
+  INSN( vluxei8_v, 0b0000111, 0b000, 0b01, 0b0);
   INSN(vluxei32_v, 0b0000111, 0b110, 0b01, 0b0);
 
   // Vector unordered indexed store instructions

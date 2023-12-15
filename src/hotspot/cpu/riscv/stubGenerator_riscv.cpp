@@ -3933,28 +3933,18 @@ class StubGenerator: public StubCodeGenerator {
       // ta: tail agnostic (don't care about those lanes)
       // ma: mask agnostic (don't care about those lanes)
       // x0 is not written, we known the number of vector elements.
+
       __ vsetivli(x0, 4, vset_sew, Assembler::m1, Assembler::ma, Assembler::ta);
+      // Splat indexes in v26 if SEW = e64, but don't hurt anything.
+      int64_t indexes = vset_sew == Assembler::e32 ? 0x00041014ul : 0x00082028ul;
+      __ li(t0, indexes);
+      __ vmv_s_x(v26, t0);
 
-      // Load H[0..8] to produce
-      //  v16 = {a,b,e,f}
-      //  v17 = {c,d,g,h}
-      __ vleXX_v(vset_sew, v16, state);                // v16 = {d,c,b,a}
-      __ addi(state, state, const_add);
-      __ vleXX_v(vset_sew, v17, state);                // v17 = {h,g,f,e}
-
-      __ vid_v(v30);                                   // v30 = {3,2,1,0}
-      __ vxor_vi(v30, v30, 0x3);                       // v30 = {0,1,2,3}
-      __ vrgather_vv(v26, v16, v30);                   // v26 = {a,b,c,d}
-      __ vrgather_vv(v27, v17, v30);                   // v27 = {e,f,g,h}
-      __ vmsgeu_vi(v0, v30, 2);                        // v0  = {f,f,t,t}
-      // Copy elements [3..2] of v26 ({d,c}) into elements [3..2] of v17.
-      __ vslideup_vi(v17, v26, 2);                     // v17 = {c,d,_,_}
-      // Merge elements [1..0] of v27 ({g,h}) into elements [1..0] of v17
-      __ vmerge_vvm(v17, v17, v27);                    // v17 = {c,d,g,h}
-      // Copy elements [1..0] of v27 ({f,e}) into elements [1..0] of v16.
-      __ vslidedown_vi(v16, v27, 2);                   // v16 = {_,_,e,f}
-      // Merge elements [3..2] of v26 ({a,b}) into elements [3..2] of v16
-      __ vmerge_vvm(v16, v26, v16);                    // v16 = {a,b,e,f}
+      // Use index-load to get {f,e,b,a},{h,g,d,c}
+      __ vluxei8_v(v16, state, v26);
+      // Step-over a,b, so we are pointing to c.
+      __ addi(t0, state, const_add/2);
+      __ vluxei8_v(v17, t0, v26);
 
       __ bind(multi_block_loop);
 
@@ -4053,9 +4043,9 @@ class StubGenerator: public StubCodeGenerator {
       __ vmerge_vvm(v16, v16, v26);                    // v16 = {d,c,b,a}
 
       // Save the hash
-      __ vseXX_v(vset_sew, v17, state);
-      __ addi(state, state, -const_add);
       __ vseXX_v(vset_sew, v16, state);
+      __ addi(state, state, const_add);
+      __ vseXX_v(vset_sew, v17, state);
 
       __ pop_reg(saved_regs, sp);
       __ leave();
