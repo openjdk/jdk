@@ -53,7 +53,7 @@ public class TestMutuallyExclusivePlatformPredicates {
         IGNORED("isEmulatedClient", "isDebugBuild", "isFastDebugBuild", "isMusl",
                 "isSlowDebugBuild", "hasSA", "isRoot", "isTieredSupported",
                 "areCustomLoadersSupportedForCDS", "isDefaultCDSArchiveSupported",
-                "isHardenedOSX", "hasOSXPlistEntries");
+                "isHardenedOSX", "hasOSXPlistEntries", "isOracleLinux7");
 
         public final List<String> methodNames;
 
