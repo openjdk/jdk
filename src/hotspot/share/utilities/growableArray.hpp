@@ -199,7 +199,7 @@ public:
     this->at_put(i, this->at(j));
     this->at_put(j, tmp);
   }
-  
+
   bool contains(const E& elem) const {
     for (int i = 0; i < _len; i++) {
       if (_data[i] == elem) return true;
@@ -732,7 +732,7 @@ private:
 #endif // ASSERT
 };
 
-// The GrowableArrayCHeap internal data is allocated from C-Heap, 
+// The GrowableArrayCHeap internal data is allocated from C-Heap,
 // with compile-time decided MEMFLAGS.
 //
 // The GrowableArrayCHeap itself can be stack allocated, embedded
