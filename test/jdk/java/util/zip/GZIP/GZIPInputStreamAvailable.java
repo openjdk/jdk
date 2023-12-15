@@ -24,7 +24,11 @@
 /* @test
  * @bug 7036144
  * @summary Test concatenated gz streams when available() returns zero
+ * @run junit GZIPInputStreamAvailable
  */
+
+import org.junit.Test;
+import org.junit.Assert;
 
 import java.io.*;
 import java.util.*;
@@ -32,42 +36,37 @@ import java.util.zip.*;
 
 public class GZIPInputStreamAvailable {
 
-    public static void main(String [] args) throws IOException {
+    @Test
+    public void testZeroAvailable() throws IOException {
 
-        // Create gz data
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        try (GZIPOutputStream out = new GZIPOutputStream(baos)) {
+        // Create some compressed data
+        ByteArrayOutputStream buf = new ByteArrayOutputStream();
+        try (GZIPOutputStream out = new GZIPOutputStream(buf)) {
             out.write("boo".getBytes("ASCII"));
         }
-        final byte[] gz = baos.toByteArray();
+        byte[] gz = buf.toByteArray();
 
-        // Repeat 32 times
-        baos.reset();
-        for(int i = 0; i < 32; i++)
-            baos.write(gz);
-        final byte[] gz32 = baos.toByteArray();
+        // Repeat to build a sequence of concatenated compressed streams
+        buf.reset();
+        for(int i = 0; i < 100; i++)
+            buf.write(gz);
+        final byte[] gz32 = buf.toByteArray();
 
-        // (a) Read it from a stream where available() is accurate
-        final long count1;
-        try (GZIPInputStream in = new GZIPInputStream(new ByteArrayInputStream(gz32))) {
-            count1 = countBytes(in);
-        }
+        // (a) Read it back from a stream where available() is accurate
+        long count1 = countBytes(new GZIPInputStream(new ByteArrayInputStream(gz32)));
 
-        // (a) Read it from a stream where available() always returns zero
-        final long count2;
-        try (GZIPInputStream in = new GZIPInputStream(new ZeroAvailableInputStream(new ByteArrayInputStream(gz32)))) {
-            count2 = countBytes(in);
-        }
+        // (b) Read it back from a stream where available() always returns zero
+        long count2 = countBytes(new GZIPInputStream(new ZeroAvailableInputStream(new ByteArrayInputStream(gz32))));
 
         // They should be the same
-        if (count2 != count1)
-            throw new AssertionError(count2 + " != " + count1);
+        Assert.assertEquals(count2, count1);
     }
 
-    public static long countBytes(InputStream in) throws IOException {
+    public long countBytes(InputStream in) throws IOException {
         long count = 0;
         while (in.read() != -1)
             count++;
+        in.close();
         return count;
     }
 
