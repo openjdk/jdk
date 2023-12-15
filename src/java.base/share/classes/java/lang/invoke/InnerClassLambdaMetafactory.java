@@ -544,7 +544,8 @@ import static java.lang.invoke.MethodType.methodType;
     }
 
     static ClassDesc classDesc(Class<?> cls) {
-        return ClassDesc.ofDescriptor(cls.descriptorString());
+        return cls.isHidden() ? ClassDesc.ofInternalName(cls.getName().replace('.', '/'))
+                              : ClassDesc.ofDescriptor(cls.descriptorString());
     }
 
     static MethodTypeDesc methodDesc(MethodType mt) {
