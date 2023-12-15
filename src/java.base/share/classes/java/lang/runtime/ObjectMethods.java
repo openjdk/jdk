@@ -216,6 +216,15 @@ public class ObjectMethods {
         MethodHandle isInstance = MethodHandles.dropArguments(CLASS_IS_INSTANCE.bindTo(receiverClass), 0, receiverClass); // (RO)Z
         MethodHandle accumulator = MethodHandles.dropArguments(TRUE, 0, receiverClass, receiverClass); // (RR)Z
 
+        getters.sort((mh1, mh2) -> {
+            var rt1 = mh1.type().returnType();
+            var rt2 = mh2.type().returnType();
+            if (rt1.isPrimitive() == rt2.isPrimitive() || rt1.isEnum() == rt2.isEnum()) {
+                return 0;
+            }
+            return rt1.isPrimitive() || rt1.isEnum() ? 1 : -1;
+        });
+
         for (MethodHandle getter : getters) {
             MethodHandle equalator = equalator(getter.type().returnType()); // (TT)Z
             MethodHandle thisFieldEqual = MethodHandles.filterArguments(equalator, 0, getter, getter); // (RR)Z
@@ -419,7 +428,7 @@ public class ObjectMethods {
             if (!MethodHandle.class.equals(type))
                 throw new IllegalArgumentException(type.toString());
         }
-        List<MethodHandle> getterList = List.of(getters);
+        List<MethodHandle> getterList = Arrays.asList(getters);
         MethodHandle handle = switch (methodName) {
             case "equals"   -> {
                 if (methodType != null && !methodType.equals(MethodType.methodType(boolean.class, recordClass, Object.class)))
@@ -434,7 +443,7 @@ public class ObjectMethods {
             case "toString" -> {
                 if (methodType != null && !methodType.equals(MethodType.methodType(String.class, recordClass)))
                     throw new IllegalArgumentException("Bad method type: " + methodType);
-                List<String> nameList = "".equals(names) ? List.of() : List.of(names.split(";"));
+                List<String> nameList = names.isEmpty() ? List.of() : List.of(names.split(";"));
                 if (nameList.size() != getterList.size())
                     throw new IllegalArgumentException("Name list and accessor list do not match");
                 yield makeToString(lookup, recordClass, getters, nameList);
