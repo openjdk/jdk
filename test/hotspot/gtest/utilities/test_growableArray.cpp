@@ -143,6 +143,10 @@ public:
   // No copy assign
   PointNoAssign(int x, int y) : _x(x), _y(y) {}
   PointNoAssign& operator=(PointNoAssign& other) = delete;
+  // Now we have to explicitly define the copy constructor, so that
+  // some compilers do not complain about:
+  // "error: definition of implicit copy constructor for 'PointNoAssign' is deprecated because it has a user-declared copy assignment operator"
+  PointNoAssign(PointNoAssign const&) = default;
 
   bool operator==(const PointNoAssign& other) const {
     return _x == other._x && _y == other._y;
