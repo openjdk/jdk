@@ -2966,9 +2966,7 @@ void MacroAssembler::cmpxchg(Register addr, Register expected,
       xorr(t0, t0, expected);
       seqz(result, t0);
     } else {
-      if (result != expected) {
-        mv(result, expected);
-      }
+      mv(result, expected);
       atomic_cas(result, new_val, addr, size, acquire, release);
     }
     return;
@@ -3093,7 +3091,7 @@ ATOMIC_CAS(casalw, amocas_w, Assembler::aq, Assembler::rl)
 
 #undef ATOMIC_CAS
 
-#define ATOMIC_CASU(OP1, OP2)                                                       \
+#define ATOMIC_CASU(OP1, OP2)                                                        \
 void MacroAssembler::atomic_##OP1(Register prev, Register newv, Register addr) {     \
   atomic_##OP2(prev, newv, addr);                                                    \
   zero_extend(prev, prev, 32);                                                       \
