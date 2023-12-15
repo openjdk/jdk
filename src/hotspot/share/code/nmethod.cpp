@@ -1445,6 +1445,8 @@ void nmethod::unlink() {
 }
 
 void nmethod::purge(bool free_code_cache_data, bool unregister_nmethod) {
+  assert(!free_code_cache_data, "must only call not freeing code cache data");
+
   MutexLocker ml(CodeCache_lock, Mutex::_no_safepoint_check_flag);
 
   // completely deallocate this method
@@ -1465,16 +1467,12 @@ void nmethod::purge(bool free_code_cache_data, bool unregister_nmethod) {
   }
 
   if (unregister_nmethod) {
-    assert(!free_code_cache_data, "must not free when postponing unregistering");
     Universe::heap()->unregister_nmethod(this);
   }
 
   CodeCache::unregister_old_nmethod(this);
 
   CodeBlob::purge(free_code_cache_data, unregister_nmethod);
-  if (free_code_cache_data) {
-    CodeCache::free(this);
-  }
 }
 
 oop nmethod::oop_at(int index) const {
