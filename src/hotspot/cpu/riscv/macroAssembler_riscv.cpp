@@ -3716,21 +3716,23 @@ void MacroAssembler::update_word_crc32(Register crc, Register v, Register tmp1, 
   shadd(tmp1, tmp1, table3, tmp2, 2);
   Assembler::lwu(crc, tmp1, 0);
 
-  srli(tmp1, v, 8);
-  andi(tmp1, tmp1, bits8);
-  shadd(tmp1, tmp1, table2, tmp2, 2);
+  srli(tmp1, v, 6);
+  andi(tmp1, tmp1, (bits8 << 2));
+  add(tmp1, tmp1, table2);
   Assembler::lwu(tmp2, tmp1, 0);
+
+  srli(tmp1, v, 14);
   xorr(crc, crc, tmp2);
 
-  srli(tmp1, v, 16);
-  andi(tmp1, tmp1, bits8);
-  shadd(tmp1, tmp1, table1, tmp2, 2);
+  andi(tmp1, tmp1, (bits8 << 2));
+  add(tmp1, tmp1, table1);
   Assembler::lwu(tmp2, tmp1, 0);
+
+  srli(tmp1, v, 22);
   xorr(crc, crc, tmp2);
 
-  srli(tmp1, v, 24);
-  andi(tmp1, tmp1, bits8);
-  shadd(tmp1, tmp1, table0, tmp2, 2);
+  andi(tmp1, tmp1, (bits8 << 2));
+  add(tmp1, tmp1, table0);
   Assembler::lwu(tmp2, tmp1, 0);
   xorr(crc, crc, tmp2);
 }
