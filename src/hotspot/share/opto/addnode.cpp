@@ -784,6 +784,24 @@ Node* rotate_shift(PhaseGVN* phase, Node* lshift, Node* rshift, int mask) {
   return nullptr;
 }
 
+// Check if the given node is a NOT operation, i.e., n == m ^ (-1).
+static bool is_not(PhaseGVN* phase, Node* n, BasicType bt) {
+  return n->Opcode() == Op_Xor(bt) && phase->type(n->in(2)) == TypeInteger::minus_1(bt);
+}
+
+// Make a NOT operation, i.e., returning n ^ (-1).
+static Node* make_not(PhaseGVN* phase, Node* n, BasicType bt) {
+  switch (bt) {
+    case T_INT:
+      return new XorINode(n, phase->intcon(-1));
+    case T_LONG:
+      return new XorLNode(n, phase->longcon(-1L));
+    default:
+      fatal("Not implemented for %s", type2name(bt));
+  }
+  return nullptr;
+}
+
 Node* OrINode::Ideal(PhaseGVN* phase, bool can_reshape) {
   int lopcode = in(1)->Opcode();
   int ropcode = in(2)->Opcode();
@@ -808,11 +826,10 @@ Node* OrINode::Ideal(PhaseGVN* phase, bool can_reshape) {
   }
 
   // Convert "~a | ~b" into "~(a & b)"
-  if (in(1)->Opcode() == Op_XorI
-      && phase->type(in(1)->in(2)) == TypeInt::MINUS_1
-      && in(2)->Opcode() == Op_XorI
-      && in(1)->in(2) == in(2)->in(2)) {
-    return new XorINode(phase->transform(new AndINode(in(1)->in(1), in(2)->in(1))), in(1)->in(2));
+  if (is_not(phase, in(1), T_INT) && is_not(phase, in(2), T_INT)) {
+    return make_not(phase,
+		    phase->transform(new AndINode(in(1)->in(1), in(2)->in(1))),
+		    T_INT);
   }
   return nullptr;
 }
@@ -882,11 +899,10 @@ Node* OrLNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   }
 
   // Convert "~a | ~b" into "~(a & b)"
-  if (in(1)->Opcode() == Op_XorL
-      && phase->type(in(1)->in(2)) == TypeLong::MINUS_1
-      && in(2)->Opcode() == Op_XorL
-      && in(1)->in(2) == in(2)->in(2)) {
-    return new XorLNode(phase->transform(new AndLNode(in(1)->in(1), in(2)->in(1))), in(1)->in(2));
+  if (is_not(phase, in(1), T_LONG) && is_not(phase, in(2), T_LONG)) {
+    return make_not(phase,
+		    phase->transform(new AndLNode(in(1)->in(1), in(2)->in(1))),
+		    T_LONG);
   }
 
   return nullptr;
