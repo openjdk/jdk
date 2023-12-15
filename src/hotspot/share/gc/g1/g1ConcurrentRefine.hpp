@@ -44,8 +44,7 @@ class ThreadClosure;
 // iterate over them.
 class G1ConcurrentRefineThreadControl {
   G1ConcurrentRefine* _cr;
-  GrowableArray<G1ConcurrentRefineThread*>* _threads;
-  uint _max_num_threads;
+  GrowableArrayCHeap<G1ConcurrentRefineThread*, mtGC> _threads;
 
   // Create the refinement thread for the given worker id.
   // If initializing is true, ignore InjectGCWorkerCreationFailure.
@@ -54,14 +53,14 @@ class G1ConcurrentRefineThreadControl {
   NONCOPYABLE(G1ConcurrentRefineThreadControl);
 
 public:
-  G1ConcurrentRefineThreadControl();
+  G1ConcurrentRefineThreadControl(uint max_num_threads);
   ~G1ConcurrentRefineThreadControl();
 
-  jint initialize(G1ConcurrentRefine* cr, uint max_num_threads);
+  jint initialize(G1ConcurrentRefine* cr);
 
   void assert_current_thread_is_primary_refinement_thread() const NOT_DEBUG_RETURN;
 
-  uint max_num_threads() const { return _max_num_threads; }
+  uint max_num_threads() const { return _threads.capacity(); }
 
   // Activate the indicated thread.  If the thread has not yet been allocated,
   // allocate and then activate.  If allocation is needed and fails, return
