@@ -361,16 +361,59 @@ public:
   }
 };
 
-TEST_VM(os_linux, pretouch_thp_concurrent) {
+class UseMemoryRunnable : public TestRunnable {
+  char* addr;
+  size_t byte;
+public:
+  UseMemoryRunnable(char* addr, size_t byte): addr(addr), byte(byte) {}
+
+  void runUnitTest() const {
+    int* iptr = reinterpret_cast<int*>(addr);
+    for (int i = 0; i < 1000 && i < (byte / (sizeof(int))); i++)
+      *iptr++ = i;
+  }
+};
+
+TEST_VM(os_linux, pretouch_thp_and_use_concurrent) {
   // Explicitly enable thp to test cocurrent system calls.
   bool useThp = UseTransparentHugePages;
   UseTransparentHugePages = true;
   char* heap = os::reserve_memory(1 * G, false, mtInternal);
   EXPECT_NE(heap, (char*)NULL);
   EXPECT_TRUE(os::commit_memory(heap, 1 * G, false));
-  PretouchMemoryRunnable runnable(heap, 1 * G);
-  ConcurrentTestRunner testRunner(&runnable, os::active_processor_count(), 1000);
-  testRunner.run();
+
+  {
+    PretouchMemoryRunnable prunnable(heap, 1 * G);
+    UseMemoryRunnable urunnable(heap, 1 * G);
+    const long testDurationMillis = 1000;
+    const size_t nThreads = os::active_processor_count();
+    Semaphore done(0);
+    UnitTestThread** t = NEW_C_HEAP_ARRAY(UnitTestThread*, nThreads + 1, mtInternal);
+    t[0] = new UnitTestThread(urunnable, &done, testDurationMillis);
+
+    for (size_t i = 1; i <= nThreads; i++) {
+      t[i] = new UnitTestThread(prunnable, &done, testDurationMillis);
+    }
+
+    for (size_t i = 0; i <= nThreads; i++) {
+      t[i]->doit();
+    }
+
+    for (size_t i = 0; i <= nThreads; i++) {
+      done.wait();
+    }
+
+    for (size_t i = 0; i <= nThreads; i++) {
+      delete t[i];
+    }
+
+    FREE_C_HEAP_ARRAY(UnitTestThread**, t);
+  }
+
+  int* iptr = reinterpret_cast<int*>(heap);
+  for (int i = 0; i < 1000; i++)
+    EXPECT_EQ(*iptr++, i);
+
   EXPECT_TRUE(os::uncommit_memory(heap, 1 * G, false));
   EXPECT_TRUE(os::release_memory(heap, 1 * G));
   UseTransparentHugePages = useThp;
