@@ -138,27 +138,28 @@ private:
 
   class ChunkAllocator {
     // The chunk allocator relies on a growable array data structure that allows resizing without the
-    // need to copy existing items. The fundamental approach involves organizing the array into chunks,
+    // need to copy existing items. The basic approach involves organizing the array into chunks,
     // essentially creating an "array of arrays"; referred to as buckets in this implementation. To
-    // facilitate efficient indexing, the size of the first chunk is set to a power of 2. This choice
+    // facilitate efficient indexing, the size of the first bucket is set to a power of 2. This choice
     // allows for quick conversion of an array index into a bucket index and the corresponding offset
-    // within the bucket. Additionally, each new chunk added to the growable array doubles the capacity of
+    // within the bucket. Additionally, each new bucket added to the growable array doubles the capacity of
     // the growable array.
     //
     // Illustration of the Growable Array data structure.
     //
     //        +----+        +----+----+
     //        |    |------->|    |    |
-    //        +----+        +----+----+
     //        |    |        +----+----+
-    //        |    |------->|    |    |
     //        +----+        +----+----+
-    //        |    |        +-----+-----+-----+-----+
-    //        |    |------->|     |     |     |     |
+    //        |    |------->|    |    |
+    //        |    |        +----+----+
     //        +----+        +-----+-----+-----+-----+
-    //        |    |        +-----+-----+-----+-----+-----+-----+-----+----+
-    //        |    |------->|     |     |     |     |     |     |     |    |
+    //        |    |------->|     |     |     |     |
+    //        |    |        +-----+-----+-----+-----+
     //        +----+        +-----+-----+-----+-----+-----+-----+-----+----+
+    //        |    |------->|     |     |     |     |     |     |     |    |
+    //        |    |        +-----+-----+-----+-----+-----+-----+-----+----+
+    //        +----+
     //
     size_t _min_capacity;
     size_t _max_capacity;
@@ -176,7 +177,6 @@ private:
               _min_capacity * ( 1ULL << (bucket -1));
     }
 
-    // Find highest 1, undefined if empty/0
     static unsigned int find_highest_bit(uintptr_t mask) {
       return count_leading_zeros(mask) ^ (BitsPerWord - 1U);
     }
@@ -216,7 +216,7 @@ private:
 
     size_t capacity() const { return _capacity; }
 
-    void expand();
+    bool expand();
 
     TaskQueueEntryChunk* allocate_new_chunk();
   };
@@ -229,10 +229,6 @@ private:
   TaskQueueEntryChunk* volatile _chunk_list; // List of chunks currently containing data.
   volatile size_t _chunks_in_chunk_list;
   char _pad2[DEFAULT_CACHE_LINE_SIZE - sizeof(TaskQueueEntryChunk*) - sizeof(size_t)];
-
-  // Allocate a new chunk from the reserved memory, using the high water mark. Returns
-  // null if out of memory.
-  TaskQueueEntryChunk* allocate_new_chunk();
 
   // Atomically add the given chunk to the list.
   void add_chunk_to_list(TaskQueueEntryChunk* volatile* list, TaskQueueEntryChunk* elem);
