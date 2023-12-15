@@ -24,6 +24,7 @@
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
+import java.io.IOException;
 import java.io.OutputStream;
 import java.io.SequenceInputStream;
 import java.util.Arrays;
@@ -124,6 +125,40 @@ public class TransferTo {
         // tests writing beyond target EOF (must extend output stream)
         checkTransferredContents(inputStreamProvider,
                 outputStreamProvider, createRandomBytes(4096, 0), 0, 4096);
+    }
+
+    /*
+     * Special case: Assert subsequent input stream is read when preceding stream already was MAX_VALUE long.
+     * Note: Not testing actual content as it requires multiple GBs of memory and long time.
+     */
+    @Test
+    public void testHugeStream() throws Exception {
+        InputStream is1 = repeat(0, Integer.MAX_VALUE);
+        InputStream is2 = repeat(0, 1);
+        assertEquals(is1.available(), Integer.MAX_VALUE);
+        assertEquals(is2.available(), 1);
+        SequenceInputStream sis = new SequenceInputStream(is1, is2);
+        OutputStream nos = OutputStream.nullOutputStream();
+        sis.transferTo(nos);
+        assertEquals(is1.available(), 0);
+        assertEquals(is2.available(), 0);
+    }
+
+    private static InputStream repeat(int b, long count) {
+        return new InputStream() {
+            private int pos;
+            @Override
+            public int available() throws IOException {
+                return (int) Math.min(count - pos, Integer.MAX_VALUE);
+            }
+            @Override
+            public int read() throws IOException {
+                if (pos >= count)
+                    return -1;
+                pos++;
+                return b;
+            }
+        };
     }
 
     /*
