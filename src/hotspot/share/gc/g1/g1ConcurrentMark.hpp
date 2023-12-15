@@ -210,6 +210,15 @@ private:
       _should_grow = false;
     }
 
+    // During G1CMConcurrentMarkingTask or finalize_marking phases, we prefer to restart the marking when
+    // the G1CMMarkStack overflows. Attempts to expand the G1CMMarkStack should be followed with a restart
+    // of the marking. On failure to allocate a new chuck, the caller just returns and forces a restart.
+    // This approach offers better memory utilization for the G1CMMarkStack, as each iteration of the
+    // marking potentially involves traversing fewer unmarked nodes in the graph.
+
+    // However, during the reference processing phase, instead of restarting the marking process, the
+    // G1CMMarkStack is expanded upon failure to allocate a new chunk. The decision between these two
+    // modes of expansion is determined by the _should_grow parameter.
     void set_should_grow() {
       _should_grow = true;
     }
