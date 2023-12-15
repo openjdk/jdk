@@ -514,6 +514,7 @@ ShenandoahHeap::ShenandoahHeap(ShenandoahCollectorPolicy* policy) :
   _gc_no_progress_count(0),
   _gcu_historical(0.0),
   _gc_history_first(0),
+  _gc_no_progress_count_at_last_oom(-1),
   _control_thread(nullptr),
   _shenandoah_policy(policy),
   _gc_mode(nullptr),
@@ -908,10 +909,35 @@ HeapWord* ShenandoahHeap::allocate_memory(ShenandoahAllocRequest& req, bool* gc_
     // retry the allocation after blocking until the control thread has had a chance to perform more GC.
 
     if (result == nullptr) {
-#define KELVIN_TRACE
-#ifdef KELVIN_TRACE
-      uint iters = 0;
-#endif
+      intptr_t no_progress_count = get_gc_no_progress_count();
+      intptr_t no_progress_count_at_last_oom = get_gc_no_progress_count_at_last_oom();
+      if (no_progress_count_at_last_oom >= 0) {
+        // The rationale for only immediately throwing OOM if !is_lab_alloc is that lab_allocs are speculative
+        // allocations.  The mutator has not yet demanded this memory, so it would be inappropriate to penalize
+        // the mutator with an OOM.  Note that a typical mutator response to a failed lab alloc will be to
+        // request a shared alloc, so the mutator will eventually see an OOM when it demands the shared alloc.
+        //
+        // TODO: experiment with immediately throwing the OOM even for lab allocs.  does this cause premature OOM?
+        if (!req.is_lab_alloc() &&
+            no_progress_count >= (intptr_t) (no_progress_count_at_last_oom + ShenandoahNoProgressThreshold)) {
+          // We've experienced ShenandoahNoProgressThreshold consecutive GCs without progress following an
+          // initial OOM condition.  We've provided plenty of opportunity for the application to recover
+          // from its OOM situation, and it hasn't.  Don't waste any more efforts on urgent GC.
+          //
+          // Note that a successful allocation following an initial OOM is not sufficient to end our counting
+          // of consecutive unproductive GCs following an initial OOM condition.  Even after an unproductive
+          // GC, we may be able to allocate a small number of small objects.  But we won't be able to allocate
+          // large objects or large numbers of objects between GCs until we begin to experience productive GCs.
+          //
+          // Note that even if we no longer trigger GCs in response to failed allocation request, GCs will still
+          // be triggered by heuristics, and these GCs may eventually recover from the low-memory situation.
+          if (UseGCOverheadLimit && (gc_overhead_limit_was_exceeded != nullptr)) {
+            *gc_overhead_limit_was_exceeded = true;
+          }
+          return nullptr;
+        }
+      }
+
       size_t original_count = shenandoah_policy()->full_gc_count();
       if (UseGCOverheadLimit) {
         // "Use policy to limit proportion of time spent in GC before an OutOfMemory error is thrown."
@@ -938,24 +964,21 @@ HeapWord* ShenandoahHeap::allocate_memory(ShenandoahAllocRequest& req, bool* gc_
           // clean up enough memory, or if other threads consume all of the newly available memory before this thread
           // has an opportunity to repeat its request, the current thread will also experience OOM.
 
-#ifdef KELVIN_TRACE
-          iters++;
-#endif
         } while ((result == nullptr) && !gc_overhead_exceeds_limit() && (original_count == shenandoah_policy()->full_gc_count()));
 
-#ifdef KELVIN_TRACE
-        log_info(gc)("Upon awaiting %u iterations for result: " PTR_FORMAT ", gcu: %.3f which %s limit, "
-                     "original_count: " SIZE_FORMAT ", full_gc_count :" SIZE_FORMAT ", no progress count: " SIZE_FORMAT,
-                     iters, p2i(result), _gcu_historical, (gc_overhead_exceeds_limit()? "exceeds": "does not exceed"),
-                     original_count, shenandoah_policy()->full_gc_count(), get_gc_no_progress_count());
-#endif
-
-        // With Shenandoah, there are two mechanisms to detect violation of the limit: CPU time or a full GC with no progress. 
-        if ((result == nullptr) &&
-            (gc_overhead_limit_was_exceeded != nullptr) &&
-            (gc_overhead_exceeds_limit() ||
-             ((original_count != shenandoah_policy()->full_gc_count()) && (get_gc_no_progress_count() != 0)))) {
-          *gc_overhead_limit_was_exceeded = true;
+        // With Shenandoah, there are two mechanisms to detect violation of the limit: CPU time or a full GC with no progress.
+        if (result == nullptr) {
+          
+          intptr_t no_progess_count = get_gc_no_progress_count();
+          intptr_t no_progress_count_at_last_oom = get_gc_no_progress_count_at_last_oom();
+          if (no_progress_count_at_last_oom == -1) {
+            capture_gc_no_progress_count_at_last_oom();
+          }
+          if ((gc_overhead_limit_was_exceeded != nullptr) &&
+              (gc_overhead_exceeds_limit() ||
+               ((original_count != shenandoah_policy()->full_gc_count()) && (no_progress_count != 0)))) {
+            *gc_overhead_limit_was_exceeded = true;
+          }
         }
       } else {
         // Retry allocation request until at least one full GC has completed
@@ -975,6 +998,13 @@ HeapWord* ShenandoahHeap::allocate_memory(ShenandoahAllocRequest& req, bool* gc_
           // we are operating too close to the edge, and an OOM is appropriate.
 
         } while (result == nullptr && (original_count == shenandoah_policy()->full_gc_count()));
+
+        if (result == nullptr) {
+          intptr_t no_progress_count_at_last_oom = get_gc_no_progress_count_at_last_oom();
+          if (no_progress_count_at_last_oom == -1) {
+            capture_gc_no_progress_count_at_last_oom();
+          }
+        }
       }
     }
 

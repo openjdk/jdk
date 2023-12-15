@@ -295,13 +295,17 @@ private:
 
   size_t _gc_no_progress_count;
 
-  double* _gc_historical_utilization;
-  double* _gc_historical_duration;
-  double _gcu_historical;
-  size_t _gc_history_first;
+  double*   _gc_historical_utilization;
+  double*   _gc_historical_duration;
+  double    _gcu_historical;
+  size_t    _gc_history_first;
+  intptr_t  _gc_no_progress_count_at_last_oom;
 
   void set_gc_state_all_threads(char state);
   void set_gc_state_mask(uint mask, bool value);
+
+  void capture_gc_no_progress_count_at_last_oom();
+  intptr_t get_gc_no_progress_count_at_last_oom() const;
 
 public:
   char gc_state() const;

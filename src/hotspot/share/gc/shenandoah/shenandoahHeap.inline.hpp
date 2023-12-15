@@ -75,14 +75,24 @@ inline WorkerThreads* ShenandoahHeap::safepoint_workers() {
 
 inline void ShenandoahHeap::notify_gc_progress() {
   Atomic::store(&_gc_no_progress_count, (size_t) 0);
-
+  Atomic::store(&_gc_no_progress_count_at_last_oom, (intptr_t) -1);
 }
+
 inline void ShenandoahHeap::notify_gc_no_progress() {
   Atomic::inc(&_gc_no_progress_count);
 }
 
 inline size_t ShenandoahHeap::get_gc_no_progress_count() const {
   return Atomic::load(&_gc_no_progress_count);
+}
+
+inline void ShenandoahHeap::capture_gc_no_progress_count_at_last_oom() {
+  intptr_t no_progress_count = get_gc_no_progress_count();
+  Atomic::store(&_gc_no_progress_count_at_last_oom, no_progress_count);
+}
+
+inline intptr_t ShenandoahHeap::get_gc_no_progress_count_at_last_oom() const {
+  return Atomic::load(&_gc_no_progress_count_at_last_oom);
 }
 
 inline size_t ShenandoahHeap::heap_region_index_containing(const void* addr) const {
