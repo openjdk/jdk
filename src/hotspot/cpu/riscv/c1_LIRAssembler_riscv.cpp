@@ -1637,13 +1637,10 @@ void LIR_Assembler::emit_updatecrc32(LIR_OpUpdateCRC32* op) {
   assert_different_registers(val, crc, res);
   __ la(res, ExternalAddress(StubRoutines::crc_table_addr()));
 
-  __ xori(crc, crc, -1); // ~crc
-  __ slli(crc, crc, 32);
-  __ srli(crc, crc, 32);
+  __ notr(crc, crc); // ~crc
+  __ zero_extend(crc, crc, 32);
   __ update_byte_crc32(crc, val, res);
-  __ xori(res, crc, -1); // ~crc
-  __ slli(crc, crc, 32);
-  __ srli(crc, crc, 32);
+  __ notr(res, crc); // ~crc
 }
 
 void LIR_Assembler::check_conflict(ciKlass* exact_klass, intptr_t current_klass,
