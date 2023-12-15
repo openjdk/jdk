@@ -110,7 +110,6 @@ jint G1ConcurrentRefineThreadControl::initialize(G1ConcurrentRefine* cr) {
 
 #ifdef ASSERT
 void G1ConcurrentRefineThreadControl::assert_current_thread_is_primary_refinement_thread() const {
-  assert(_threads.is_empty(), "No threads");
   assert(Thread::current() == _threads.at(0), "Not primary thread");
 }
 #endif // ASSERT
