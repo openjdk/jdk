@@ -2503,7 +2503,7 @@ void G1CollectedHeap::unload_classes_and_code(const char* description, BoolObjec
   }
   {
     GCTraceTime(Debug, gc, phases) ur("Unregister NMethods", timer);
-    G1CollectedHeap::heap()->remove_unlinked_nmethods_from_code_root_sets();
+    G1CollectedHeap::heap()->bulk_unregister_nmethods();
   }
   {
     GCTraceTime(Debug, gc, phases) t("Free Code Blobs", timer);
@@ -2516,20 +2516,20 @@ void G1CollectedHeap::unload_classes_and_code(const char* description, BoolObjec
   }
 }
 
-class G1RemoveUnlinkedFromCodeRootSetsTask : public WorkerTask {
+class G1BulkUnregisterNMethodTask : public WorkerTask {
   HeapRegionClaimer _hrclaimer;
 
-  class RemoveUnlinkedHeapRegionClosure : public HeapRegionClosure {
+  class UnregisterNMethodsHeapRegionClosure : public HeapRegionClosure {
   public:
 
     bool do_heap_region(HeapRegion* hr) {
-      hr->rem_set()->remove_unlinked_nmethods();
+      hr->rem_set()->bulk_remove_code_roots();
       return false;
     }
   } _cl;
 
 public:
-  G1RemoveUnlinkedFromCodeRootSetsTask(uint num_workers)
+  G1BulkUnregisterNMethodTask(uint num_workers)
   : WorkerTask("G1 Remove Unlinked NMethods From Code Root Set Task"),
     _hrclaimer(num_workers) { }
 
@@ -2538,10 +2538,10 @@ public:
   }
 };
 
-void G1CollectedHeap::remove_unlinked_nmethods_from_code_root_sets() {
+void G1CollectedHeap::bulk_unregister_nmethods() {
   uint num_workers = workers()->active_workers();
-  G1RemoveUnlinkedFromCodeRootSetsTask remove_unlinked_task(num_workers);
-  workers()->run_task(&remove_unlinked_task);
+  G1BulkUnregisterNMethodTask t(num_workers);
+  workers()->run_task(&t);
 }
 
 bool G1STWSubjectToDiscoveryClosure::do_object_b(oop obj) {

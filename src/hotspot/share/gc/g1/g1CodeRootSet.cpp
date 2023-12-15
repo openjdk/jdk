@@ -188,7 +188,7 @@ public:
   }
 
   // Removes dead/unlinked entries.
-  void remove_unlinked_entries() {
+  void bulk_remove() {
     auto delete_check = [&] (nmethod** value) {
       return (*value)->is_unlinked();
     };
@@ -264,9 +264,9 @@ bool G1CodeRootSet::remove(nmethod* method) {
   return _table->remove(method);
 }
 
-void G1CodeRootSet::remove_unlinked_entries() {
+void G1CodeRootSet::bulk_remove() {
   assert(!_is_iterating, "should not mutate while iterating the table");
-  _table->remove_unlinked_entries();
+  _table->bulk_remove();
 }
 
 bool G1CodeRootSet::contains(nmethod* method) {

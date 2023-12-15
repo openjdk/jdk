@@ -115,8 +115,8 @@ void HeapRegionRemSet::remove_code_root(nmethod* nm) {
   guarantee(!_code_roots.contains(nm), "duplicate entry found");
 }
 
-void HeapRegionRemSet::remove_unlinked_nmethods() {
-  _code_roots.remove_unlinked_entries();
+void HeapRegionRemSet::bulk_remove_code_roots() {
+  _code_roots.bulk_remove();
 }
 
 void HeapRegionRemSet::code_roots_do(CodeBlobClosure* blk) const {

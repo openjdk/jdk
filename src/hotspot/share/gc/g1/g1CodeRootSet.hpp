@@ -44,7 +44,7 @@ class G1CodeRootSet {
 
   void add(nmethod* method);
   bool remove(nmethod* method);
-  void remove_unlinked_entries();
+  void bulk_remove();
   bool contains(nmethod* method);
   void clear();
 
