@@ -587,8 +587,8 @@ bool SuperWord::SLP_extract() {
 //------------------------------find_adjacent_refs---------------------------
 // Find the adjacent memory references and create pack pairs for them.
 // We can find adjacent memory references by comparing their relative
-// alignment. If the final vectors can be aligned can not yet be determined,
-// that is only done once all vectors are extended and combined.
+// alignment. Whether the final vectors can be aligned is determined later
+// once all vectors are extended and combined.
 void SuperWord::find_adjacent_refs() {
   // Get list of memory operations
   Node_List memops;
@@ -3514,15 +3514,15 @@ void SuperWord::adjust_pre_loop_limit_to_align_main_loop_vectors() {
   // And now we can simplify the address, using (1), (2), and (4):
   //
   //   adr = boi + scale * new_limit
-  //   adr = boi + scale * old_limit + scale * adjust_pre_iter                (5a, stride > 0)
-  //   adr = boi + scale * old_limit - scale * adjust_pre_iter                (5b, stride < 0)
+  //   adr = boi + scale * (old_limit + adjust_pre_iter)                      (5a, stride > 0)
+  //   adr = boi + scale * (old_limit - adjust_pre_iter)                      (5b, stride < 0)
   //
   // And hence we can restate (3) with (5), and solve the equation for adjust_pre_iter:
   //
-  //   (boi + scale * old_limit + scale * adjust_pre_iter) % aw = 0           (6a, stride > 0)
-  //   (boi + scale * old_limit - scale * adjust_pre_iter) % aw = 0           (6b, stride < 0)
+  //   (boi + scale * (old_limit + adjust_pre_iter) % aw = 0                  (6a, stride > 0)
+  //   (boi + scale * (old_limit - adjust_pre_iter) % aw = 0                  (6b, stride < 0)
   //
-  // In most cases, scale is the element size (elt_size), for example:
+  // In most cases, scale is the element size, for example:
   //
   //   for (i = 0; i < a.length; i++) { a[i] = ...; }
   //
@@ -3534,7 +3534,7 @@ void SuperWord::adjust_pre_loop_limit_to_align_main_loop_vectors() {
   // Further, if abs(scale) >= aw, then adjust_pre_iter has no effect on alignment, and
   // we are not able to affect the alignment at all. Hence, we require abs(scale) < aw.
   //
-  // Moreover, for alignment to be acheivabe, boi must be a multiple of scale. If strict
+  // Moreover, for alignment to be achievable, boi must be a multiple of scale. If strict
   // alignment is required (i.e. -XX:+AlignVector), this is guaranteed by the filtering
   // done with the AlignmentSolver / AlignmentSolution. If strict alignment is not
   // required, then alignment is still preferrable for performance, but not necessary.
@@ -3549,8 +3549,8 @@ void SuperWord::adjust_pre_loop_limit_to_align_main_loop_vectors() {
   //
   // and restate (6), using (7) and (8), i.e. we divide (6) by abs(scale):
   //
-  //   (BOI + sign(scale) * old_limit + sign(scale) * adjust_pre_iter) % AW = 0  (9a, stride > 0)
-  //   (BOI + sign(scale) * old_limit - sign(scale) * adjust_pre_iter) % AW = 0  (9b, stride < 0)
+  //   (BOI + sign(scale) * (old_limit + adjust_pre_iter) % AW = 0           (9a, stride > 0)
+  //   (BOI + sign(scale) * (old_limit - adjust_pre_iter) % AW = 0           (9b, stride < 0)
   //
   //   where: sign(scale) = scale / abs(scale) = (scale > 0 ? 1 : -1)
   //
@@ -3562,19 +3562,19 @@ void SuperWord::adjust_pre_loop_limit_to_align_main_loop_vectors() {
   //
   // We solve (9) for adjust_pre_iter, in the following 4 cases:
   //
-  // Case A: scale > 0 && stride > 0 (i.e. adjust_pre_iter >= 0)
+  // Case A: scale > 0 && stride > 0 (i.e. sign(scale) = 1, adjust_pre_iter >= 0)
   //   (BOI + old_limit + adjust_pre_iter) % AW = 0
   //   adjust_pre_iter = (-BOI - old_limit) % AW                              (11a)
   //
-  // Case B: scale < 0 && stride > 0 (i.e. adjust_pre_iter >= 0)
+  // Case B: scale < 0 && stride > 0 (i.e. sign(scale) = -1, adjust_pre_iter >= 0)
   //   (BOI - old_limit - adjust_pre_iter) % AW = 0
   //   adjust_pre_iter = (BOI - old_limit) % AW                               (11b)
   //
-  // Case C: scale > 0 && stride < 0 (i.e. adjust_pre_iter <= 0)
+  // Case C: scale > 0 && stride < 0 (i.e. sign(scale) = 1, adjust_pre_iter <= 0)
   //   (BOI + old_limit - adjust_pre_iter) % AW = 0
   //   adjust_pre_iter = (BOI + old_limit) % AW                               (11c)
   //
-  // Case D: scale < 0 && stride < 0 (i.e. adjust_pre_iter <= 0)
+  // Case D: scale < 0 && stride < 0 (i.e. sign(scale) = -1, adjust_pre_iter <= 0)
   //   (BOI - old_limit + adjust_pre_iter) % AW = 0
   //   adjust_pre_iter = (-BOI + old_limit) % AW                              (11d)
   //
