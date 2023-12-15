@@ -2771,7 +2771,7 @@ void MacroAssembler::load_reserved(Register dst,
       break;
     case uint32:
       lr_w(dst, addr, acquire);
-      zero_extend(t0, t0, 32);
+      zero_extend(dst, dst, 32);
       break;
     default:
       ShouldNotReachHere();
