@@ -923,7 +923,7 @@ static const char* rtv_linkedin_libpath() {
   if (libpath) {
     return libpath;
   }
-  
+
   // retrieve the path to the currently running executable binary
   // to open it
   snprintf(buffer, 100, "/proc/%ld/object/a.out", (long)getpid());
