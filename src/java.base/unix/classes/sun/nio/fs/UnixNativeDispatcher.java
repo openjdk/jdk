@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -597,17 +597,17 @@ class UnixNativeDispatcher {
     /**
      * access(const char* path, int amode);
      */
-    static void access(UnixPath path, int amode) throws UnixException {
+    static int access(UnixPath path, int amode) {
         try (NativeBuffer buffer = copyToNativeBuffer(path)) {
             long comp = Blocker.begin();
             try {
-                access0(buffer.address(), amode);
+                return access0(buffer.address(), amode);
             } finally {
                 Blocker.end(comp);
             }
         }
     }
-    private static native void access0(long pathAddress, int amode) throws UnixException;
+    private static native int access0(long pathAddress, int amode);
 
     /**
      * access(constant char* path, F_OK)

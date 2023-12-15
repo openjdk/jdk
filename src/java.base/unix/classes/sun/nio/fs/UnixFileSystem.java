@@ -893,7 +893,9 @@ abstract class UnixFileSystem
             sourceAttrs = UnixFileAttributes.get(source, false);
             if (sourceAttrs.isDirectory()) {
                 // ensure source can be moved
-                access(source, W_OK);
+                int errno = access(source, W_OK);
+                if (errno != 0)
+                    throw new UnixException(errno);
             }
         } catch (UnixException x) {
             x.rethrowAsIOException(source);
@@ -1027,7 +1029,10 @@ abstract class UnixFileSystem
             try {
                 // the access(2) system call always follows links so it
                 // is suppressed if the source is an unfollowed link
-                access(source, R_OK);
+                int errno = access(source, R_OK);
+                if (errno != 0)
+                    throw new UnixException(errno);
+
             } catch (UnixException exc) {
                 exc.rethrowAsIOException(source);
             }
