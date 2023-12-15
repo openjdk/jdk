@@ -27,13 +27,13 @@
  * @run junit GZIPInputStreamAvailable
  */
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.*;
 import java.util.*;
 import java.util.zip.*;
 
-import static org.junit.Assert.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 
 public class GZIPInputStreamAvailable {
 
@@ -47,15 +47,15 @@ public class GZIPInputStreamAvailable {
         byte[] uncompressedN = repeat(uncompressed1, NUM_COPIES);
 
         // Compress the original data and then repeat that NUM_COPIES times
-        byte[] compressed1 = gzip(uncompressed1);
+        byte[] compressed1 = deflate(uncompressed1);
         byte[] compressedN = repeat(compressed1, NUM_COPIES);
 
-        // (a) Read back copied compressed data from a stream where available() is accurate and verify
-        byte[] readback1 = new GZIPInputStream(new ByteArrayInputStream(compressedN)).readAllBytes();
+        // (a) Read back inflated data from a stream where available() is accurate and verify
+        byte[] readback1 = inflate(new ByteArrayInputStream(compressedN));
         assertArrayEquals(uncompressedN, readback1);
 
-        // (b) Read back copied compressed data from a stream where available() always returns zero and verify
-        byte[] readback2 = new GZIPInputStream(new ZeroAvailableStream(new ByteArrayInputStream(compressedN))).readAllBytes();
+        // (b) Read back inflated data from a stream where available() always returns zero and verify
+        byte[] readback2 = inflate(new ZeroAvailableStream(new ByteArrayInputStream(compressedN)));
         assertArrayEquals(uncompressedN, readback2);
     }
 
@@ -69,12 +69,16 @@ public class GZIPInputStreamAvailable {
         return repeat;
     }
 
-    public static byte[] gzip(byte[] data) throws IOException {
+    public static byte[] deflate(byte[] data) throws IOException {
         ByteArrayOutputStream buf = new ByteArrayOutputStream();
         try (GZIPOutputStream out = new GZIPOutputStream(buf)) {
             out.write(data);
         }
         return buf.toByteArray();
+    }
+
+    public static byte[] inflate(InputStream in) throws IOException {
+        return new GZIPInputStream(in).readAllBytes();
     }
 
     public static class ZeroAvailableStream extends FilterInputStream {
