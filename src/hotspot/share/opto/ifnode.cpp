@@ -566,9 +566,10 @@ static void adjust_check(IfProjNode* proj, Node* range, Node* index,
   Node* new_bol = gvn->transform(new BoolNode(new_cmp, bol->as_Bool()->_test._test));
   igvn->rehash_node_delayed(iff);
   iff->set_req_X(1, new_bol, igvn);
-  // Loads and range check Cast nodes that are control dependent on this range check now also depend on a dominating
-  // range check and can't float if the range check they are control dependent on is replaced by some dominating range
-  // check: pin them.
+  // Loads and range check Cast nodes that are control dependent on this range check now depend on multiple dominating
+  // range checks. These control dependent nodes end up at the lowest/nearest dominating check in the graph. To ensure
+  // that these Loads/Casts do not float above any of the dominating checks (even when the lowest dominating check is
+  // later replaced by yet another dominating check), we need to pin them at the lowest dominating check.
   proj->pin_array_loads(igvn);
 }
 
@@ -1533,9 +1534,11 @@ Node* IfNode::dominated_by(Node* prev_dom, PhaseIterGVN* igvn, bool range_check_
         // Do not rewire Div and Mod nodes which could have a zero divisor to avoid skipping their zero check.
         igvn->replace_input_of(s, 0, data_target); // Move child to data-target
         if (range_check_smearing && data_target != top) {
-          // Loads and range check Cast nodes that are control dependent on this range check depend on multiple
-          // dominating range checks and can't float even if the range check they'll be control dependent on once this
-          // function returns is replaced by a dominating range check: pin them.
+          // Loads and range check Cast nodes that are control dependent on this range check (that is about to be
+          // removed) now depend on multiple dominating range checks. After the removal of this range check, these
+          // control dependent nodes end up at the lowest/nearest dominating check in the graph. To ensure that these
+          // Loads/Casts do not float above any of the dominating checks (even when the lowest dominating check is later
+          // replaced by yet another dominating check), we need to pin them at the lowest dominating check.
           Node* clone = s->pin_for_array_access();
           if (clone != nullptr) {
             clone = igvn->transform(clone);
