@@ -71,6 +71,9 @@ public:
 
   void worker_threads_do(ThreadClosure* tc);
   void stop();
+
+private:
+  bool ensure_threads_created(uint worker_id, bool initializing);
 };
 
 // Controls concurrent refinement.
