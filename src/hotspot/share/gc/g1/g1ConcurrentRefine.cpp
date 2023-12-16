@@ -74,12 +74,10 @@ bool G1ConcurrentRefineThreadControl::ensure_threads_created(uint worker_id, boo
 
   while ((uint)_threads.length() <= worker_id) {
     G1ConcurrentRefineThread* rt = create_refinement_thread(_threads.length(), initializing);
-    _threads.push(rt);
-
     if (rt == nullptr) {
-      _threads.pop();
       return false;
     }
+    _threads.push(rt);
   }
 
   return true;
@@ -96,11 +94,7 @@ jint G1ConcurrentRefineThreadControl::initialize(G1ConcurrentRefine* cr) {
       return JNI_ENOMEM;
     }
 
-    if (UseDynamicNumberOfGCThreads) {
-      for (uint i = 1; i < max_num_threads(); ++i) {
-        _threads.push(nullptr);
-      }
-    } else {
+    if (!UseDynamicNumberOfGCThreads) {
       if (!ensure_threads_created(max_num_threads() - 1, true)) {
         vm_shutdown_during_initialization("Could not allocate refinement threads");
         return JNI_ENOMEM;
@@ -127,18 +121,14 @@ bool G1ConcurrentRefineThreadControl::activate(uint worker_id) {
 }
 
 void G1ConcurrentRefineThreadControl::worker_threads_do(ThreadClosure* tc) {
-  for (uint i = 0; i < max_num_threads(); i++) {
-    if (_threads.at(i) != nullptr) {
-      tc->do_thread(_threads.at(i));
-    }
+  for (uint i = 0; i < (uint)_threads.length(); i++) {
+    tc->do_thread(_threads.at(i));
   }
 }
 
 void G1ConcurrentRefineThreadControl::stop() {
-  for (uint i = 0; i < max_num_threads(); i++) {
-    if (_threads.at(i) != nullptr) {
-      _threads.at(i)->stop();
-    }
+  for (uint i = 0; i < (uint)_threads.length(); i++) {
+    _threads.at(i)->stop();
   }
 }
 

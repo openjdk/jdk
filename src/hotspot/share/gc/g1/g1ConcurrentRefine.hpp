@@ -50,6 +50,8 @@ class G1ConcurrentRefineThreadControl {
   // If initializing is true, ignore InjectGCWorkerCreationFailure.
   G1ConcurrentRefineThread* create_refinement_thread(uint worker_id, bool initializing);
 
+  bool ensure_threads_created(uint worker_id, bool initializing);
+
   NONCOPYABLE(G1ConcurrentRefineThreadControl);
 
 public:
@@ -71,9 +73,6 @@ public:
 
   void worker_threads_do(ThreadClosure* tc);
   void stop();
-
-private:
-  bool ensure_threads_created(uint worker_id, bool initializing);
 };
 
 // Controls concurrent refinement.
