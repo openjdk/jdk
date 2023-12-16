@@ -495,10 +495,6 @@ void Arguments::init_version_specific_system_properties() {
 static SpecialFlag const special_jvm_flags[] = {
   // -------------- Deprecated Flags --------------
   // --- Non-alias flags - sorted by obsolete_in then expired_in:
-  { "MaxGCMinorPauseMillis",        JDK_Version::jdk(8), JDK_Version::undefined(), JDK_Version::undefined() },
-  { "MaxRAMFraction",               JDK_Version::jdk(10),  JDK_Version::undefined(), JDK_Version::undefined() },
-  { "MinRAMFraction",               JDK_Version::jdk(10),  JDK_Version::undefined(), JDK_Version::undefined() },
-  { "InitialRAMFraction",           JDK_Version::jdk(10),  JDK_Version::undefined(), JDK_Version::undefined() },
   { "AllowRedefinitionToAddDeleteMethods", JDK_Version::jdk(13), JDK_Version::undefined(), JDK_Version::undefined() },
   { "FlightRecorder",               JDK_Version::jdk(13), JDK_Version::undefined(), JDK_Version::undefined() },
   { "DumpSharedSpaces",             JDK_Version::jdk(18), JDK_Version::jdk(19), JDK_Version::undefined() },
@@ -508,23 +504,29 @@ static SpecialFlag const special_jvm_flags[] = {
   { "RegisterFinalizersAtInit",     JDK_Version::jdk(22), JDK_Version::jdk(23), JDK_Version::jdk(24) },
 
   // --- Deprecated alias flags (see also aliased_jvm_flags) - sorted by obsolete_in then expired_in:
-  { "DefaultMaxRAMFraction",        JDK_Version::jdk(8),  JDK_Version::undefined(), JDK_Version::undefined() },
   { "CreateMinidumpOnCrash",        JDK_Version::jdk(9),  JDK_Version::undefined(), JDK_Version::undefined() },
-  { "TLABStats",                    JDK_Version::jdk(12), JDK_Version::undefined(), JDK_Version::undefined() },
 
   // -------------- Obsolete Flags - sorted by expired_in --------------
 
-  { "G1ConcRefinementGreenZone",    JDK_Version::undefined(), JDK_Version::jdk(20), JDK_Version::undefined() },
-  { "G1ConcRefinementYellowZone",   JDK_Version::undefined(), JDK_Version::jdk(20), JDK_Version::undefined() },
-  { "G1ConcRefinementRedZone",      JDK_Version::undefined(), JDK_Version::jdk(20), JDK_Version::undefined() },
-  { "G1ConcRefinementThresholdStep", JDK_Version::undefined(), JDK_Version::jdk(20), JDK_Version::undefined() },
-  { "G1UseAdaptiveConcRefinement",  JDK_Version::undefined(), JDK_Version::jdk(20), JDK_Version::undefined() },
-  { "G1ConcRefinementServiceIntervalMillis", JDK_Version::undefined(), JDK_Version::jdk(20), JDK_Version::undefined() },
+  { "G1ConcRefinementGreenZone",    JDK_Version::undefined(), JDK_Version::jdk(20), JDK_Version::jdk(23) },
+  { "G1ConcRefinementYellowZone",   JDK_Version::undefined(), JDK_Version::jdk(20), JDK_Version::jdk(23) },
+  { "G1ConcRefinementRedZone",      JDK_Version::undefined(), JDK_Version::jdk(20), JDK_Version::jdk(23) },
+  { "G1ConcRefinementThresholdStep", JDK_Version::undefined(), JDK_Version::jdk(20), JDK_Version::jdk(23) },
+  { "G1UseAdaptiveConcRefinement",  JDK_Version::undefined(), JDK_Version::jdk(20), JDK_Version::jdk(23) },
+  { "G1ConcRefinementServiceIntervalMillis", JDK_Version::undefined(), JDK_Version::jdk(20), JDK_Version::jdk(23) },
 
-  { "G1ConcRSLogCacheSize",         JDK_Version::undefined(), JDK_Version::jdk(21), JDK_Version::undefined() },
-  { "G1ConcRSHotCardLimit",         JDK_Version::undefined(), JDK_Version::jdk(21), JDK_Version::undefined() },
-  { "RefDiscoveryPolicy",           JDK_Version::undefined(), JDK_Version::jdk(21), JDK_Version::undefined() },
+  { "G1ConcRSLogCacheSize",         JDK_Version::undefined(), JDK_Version::jdk(21), JDK_Version::jdk(23) },
+  { "G1ConcRSHotCardLimit",         JDK_Version::undefined(), JDK_Version::jdk(21), JDK_Version::jdk(23) },
+  { "RefDiscoveryPolicy",           JDK_Version::undefined(), JDK_Version::jdk(21), JDK_Version::jdk(23) },
   { "MetaspaceReclaimPolicy",       JDK_Version::undefined(), JDK_Version::jdk(21), JDK_Version::undefined() },
+
+  { "MaxGCMinorPauseMillis",        JDK_Version::jdk(8), JDK_Version::jdk(23), JDK_Version::jdk(24) },
+  { "MaxRAMFraction",               JDK_Version::jdk(10),  JDK_Version::jdk(23), JDK_Version::jdk(24) },
+  { "MinRAMFraction",               JDK_Version::jdk(10),  JDK_Version::jdk(23), JDK_Version::jdk(24) },
+  { "InitialRAMFraction",           JDK_Version::jdk(10),  JDK_Version::jdk(23), JDK_Version::jdk(24) },
+
+  { "DefaultMaxRAMFraction",        JDK_Version::jdk(8),  JDK_Version::jdk(23), JDK_Version::jdk(24) },
+  { "TLABStats",                    JDK_Version::jdk(12), JDK_Version::jdk(23), JDK_Version::jdk(24) },
 
 #ifdef ASSERT
   { "DummyObsoleteTestFlag",        JDK_Version::undefined(), JDK_Version::jdk(18), JDK_Version::undefined() },
