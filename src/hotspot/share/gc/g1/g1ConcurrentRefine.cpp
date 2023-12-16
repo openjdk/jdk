@@ -90,17 +90,10 @@ jint G1ConcurrentRefineThreadControl::initialize(G1ConcurrentRefine* cr) {
   _cr = cr;
 
   if (max_num_threads() > 0) {
-    _threads.push(create_refinement_thread(0, true));
-    if (_threads.at(0) == nullptr) {
+    uint ensure_id = UseDynamicNumberOfGCThreads ? 0 : max_num_threads() - 1;
+    if (!ensure_threads_created(ensure_id, true)) {
       vm_shutdown_during_initialization("Could not allocate primary refinement thread");
       return JNI_ENOMEM;
-    }
-
-    if (!UseDynamicNumberOfGCThreads) {
-      if (!ensure_threads_created(max_num_threads() - 1, true)) {
-        vm_shutdown_during_initialization("Could not allocate refinement threads");
-        return JNI_ENOMEM;
-      }
     }
   }
 
