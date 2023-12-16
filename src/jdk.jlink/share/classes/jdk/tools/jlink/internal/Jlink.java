@@ -147,7 +147,7 @@ public final class Jlink {
         private final Path output;
         private final Set<String> modules;
         private final ModuleFinder finder;
-        private final boolean useModulePath;
+        private final boolean linkFromRuntimeImage;
         private final boolean singleHop;
 
         /**
@@ -160,12 +160,12 @@ public final class Jlink {
         public JlinkConfiguration(Path output,
                                   Set<String> modules,
                                   ModuleFinder finder,
-                                  boolean useModulePath,
+                                  boolean linkFromRuntimeImage,
                                   boolean singleHop) {
             this.output = output;
             this.modules = Objects.requireNonNull(modules);
             this.finder = finder;
-            this.useModulePath = useModulePath;
+            this.linkFromRuntimeImage = linkFromRuntimeImage;
             this.singleHop = singleHop;
         }
 
@@ -191,8 +191,8 @@ public final class Jlink {
             return finder;
         }
 
-        public boolean useModulePath() {
-            return useModulePath;
+        public boolean linkFromRuntimeImage() {
+            return linkFromRuntimeImage;
         }
 
         public boolean singleHop() {

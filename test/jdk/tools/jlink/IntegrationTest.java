@@ -159,7 +159,7 @@ public class IntegrationTest {
         limits.add("java.management");
         JlinkConfiguration config = new Jlink.JlinkConfiguration(output,
                 mods,
-                JlinkTask.newModuleFinder(modulePaths, limits, mods, true), true, true);
+                JlinkTask.newModuleFinder(modulePaths, limits, mods), true, true);
 
         List<Plugin> lst = new ArrayList<>();
 

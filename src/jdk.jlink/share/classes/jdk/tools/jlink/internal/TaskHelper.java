@@ -422,7 +422,7 @@ public final class TaskHelper {
 
             // if we perform a run-time based link, add relevant exclude
             // patterns, so as to match the packaged-modules-based link
-            if (!config.useModulePath()) {
+            if (config.linkFromRuntimeImage()) {
                 Plugin systemModulesPlugin = null;
                 Plugin excludeResourcePlugin = null;
                 List<String> excludePatterns = new ArrayList<>();

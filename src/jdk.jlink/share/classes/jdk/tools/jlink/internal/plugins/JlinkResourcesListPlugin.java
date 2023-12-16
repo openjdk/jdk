@@ -25,12 +25,9 @@
 
 package jdk.tools.jlink.internal.plugins;
 
-import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.EnumSet;
-import java.util.HexFormat;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -41,14 +38,17 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import jdk.internal.util.OperatingSystem;
+import jdk.tools.jlink.internal.JRTArchive;
 import jdk.tools.jlink.internal.JlinkCLIArgsListener;
 import jdk.tools.jlink.internal.Platform;
-import jdk.tools.jlink.internal.RuntimeImageLinkException;
 import jdk.tools.jlink.plugin.ResourcePool;
 import jdk.tools.jlink.plugin.ResourcePoolBuilder;
 import jdk.tools.jlink.plugin.ResourcePoolEntry;
 import jdk.tools.jlink.plugin.ResourcePoolModule;
+
+import static jdk.tools.jlink.internal.JlinkTask.RUNIMAGE_LINK_STAMP;
+import static jdk.tools.jlink.internal.JlinkTask.CLI_RESOURCE_FILE;
+import static jdk.tools.jlink.internal.JlinkTask.RESPATH_PATTERN;
 
 
 /**
@@ -56,19 +56,11 @@ import jdk.tools.jlink.plugin.ResourcePoolModule;
  * resources. Needed for the the run-time image based jlink.
  */
 public final class JlinkResourcesListPlugin extends AbstractPlugin implements JlinkCLIArgsListener {
-
-    public static final String RESPATH_PREFIX = "jdk/tools/jlink/internal/fs_";
-    public static final String RESPATH_SUFFIX = "_files";
-    public static final String CLI_RESOURCE_FILE = "jdk/tools/jlink/internal/cli_cmd.txt";
-    private static final int SYMLINKED_RES = 1;
-    private static final int REGULAR_RES = 0;
-    private static final String BIN_DIRNAME = "bin";
-    private static final String LIB_DIRNAME = "lib";
     private static final String NAME = "add-run-image-resources";
     private static final String JLINK_MOD_NAME = "jdk.jlink";
     // This resource is being used in JLinkTask which passes its contents to
     // RunImageArchive for further processing.
-    private static final String RESPATH = "/" + JLINK_MOD_NAME + "/" + RESPATH_PREFIX + "%s" + RESPATH_SUFFIX;
+    private static final String RESPATH = "/" + JLINK_MOD_NAME + "/" + RESPATH_PATTERN;
     private static final String CLI_RESOURCE = "/" + JLINK_MOD_NAME + "/" + CLI_RESOURCE_FILE;
     private static final Pattern WHITESPACE_PATTERN = Pattern.compile(".*\\s.*");
     private static final byte[] EMPTY_RESOURCE_BYTES = new byte[] {};
@@ -142,7 +134,7 @@ public final class JlinkResourcesListPlugin extends AbstractPlugin implements Jl
     @Override
     public List<String> getExcludePatterns() {
         return List.of("glob:" + CLI_RESOURCE,
-                       "regex:/jdk\\.jlink/" + RESPATH_PREFIX + ".*" + RESPATH_SUFFIX);
+                       "regex:/jdk\\.jlink/" + String.format(RESPATH_PATTERN, ".*"));
     }
 
     private Platform getTargetPlatform(ResourcePool in) {
@@ -167,8 +159,7 @@ public final class JlinkResourcesListPlugin extends AbstractPlugin implements Jl
             } else {
                 String mResContent = mResources.stream().sorted()
                                                .collect(Collectors.joining("\n"));
-                out.add(ResourcePoolEntry.create(mResource,
-                    mResContent.getBytes(StandardCharsets.UTF_8)));
+                out.add(ResourcePoolEntry.create(mResource, mResContent.getBytes(StandardCharsets.UTF_8)));
             }
         });
     }
@@ -182,70 +173,11 @@ public final class JlinkResourcesListPlugin extends AbstractPlugin implements Jl
                 return entry; // Handled by ReleaseInfoPlugin, nothing to do
             }
             List<String> moduleResources = nonClassResEntries.computeIfAbsent(entry.moduleName(), a -> new ArrayList<>());
-            int type = entry.type().ordinal();
-            int isSymlink = entry.linkedTarget() != null ? SYMLINKED_RES : REGULAR_RES;
-            String resPathWithoutMod = resPathWithoutModule(entry, platform);
-            String sha512 = computeSha512(entry, platform);
-            moduleResources.add(String.format(TYPE_FILE_FORMAT, type, isSymlink, sha512, resPathWithoutMod));
+
+            JRTArchive.ResourceFileEntry rfEntry = JRTArchive.ResourceFileEntry.toResourceFileEntry(entry, platform);
+            moduleResources.add(rfEntry.encodeToString());
         }
         return entry;
-    }
-
-    private String computeSha512(ResourcePoolEntry entry, Platform platform) {
-        try {
-            if (entry.linkedTarget() != null) {
-                // Symlinks don't have a hash sum, but a link to the target instead
-                return resPathWithoutModule(entry.linkedTarget(), platform);
-            } else {
-                MessageDigest digest = MessageDigest.getInstance("SHA-512");
-                try (InputStream is = entry.content()) {
-                    byte[] buf = new byte[1024];
-                    int bytesRead = -1;
-                    while ((bytesRead = is.read(buf)) != -1) {
-                        digest.update(buf, 0, bytesRead);
-                    }
-                }
-                byte[] db = digest.digest();
-                HexFormat format = HexFormat.of();
-                return format.formatHex(db);
-            }
-        } catch (RuntimeImageLinkException e) {
-            // RunImageArchive::RunImageFile.content() may throw this when
-            // getting the content(). Propagate this specific exception.
-            throw e;
-        } catch (Exception e) {
-            throw new AssertionError("Failed to generate hash sum for " + entry.path());
-        }
-    }
-
-    private String resPathWithoutModule(ResourcePoolEntry entry, Platform platform) {
-        String resPath = entry.path().substring(entry.moduleName().length() + 2 /* prefixed and suffixed '/' */);
-        if (!isWindows(platform)) {
-            return resPath;
-        }
-        // For Windows the libraries live in the 'bin' folder rather than the 'lib' folder
-        // in the final image. Note that going by the NATIVE_LIB type only is insufficient since
-        // only files with suffix .dll/diz/map/pdb are transplanted to 'bin'.
-        // See: DefaultImageBuilder.nativeDir()
-        return nativeDir(entry, resPath);
-    }
-
-    private boolean isWindows(Platform platform) {
-        return platform.os() == OperatingSystem.WINDOWS;
-    }
-
-    private String nativeDir(ResourcePoolEntry entry, String resPath) {
-        if (entry.type() != ResourcePoolEntry.Type.NATIVE_LIB) {
-            return resPath;
-        }
-        // precondition: Native lib, windows platform
-        if (resPath.endsWith(".dll") || resPath.endsWith(".diz")
-                || resPath.endsWith(".pdb") || resPath.endsWith(".map")) {
-            if (resPath.startsWith(LIB_DIRNAME + "/")) {
-                return BIN_DIRNAME + "/" + resPath.substring((LIB_DIRNAME + "/").length());
-            }
-        }
-        return resPath;
     }
 
     @Override
