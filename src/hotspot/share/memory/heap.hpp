@@ -168,6 +168,9 @@ class CodeHeap : public CHeapObj<mtCode> {
   // Boundaries of reserved space.
   char* low_boundary() const                     { return _memory.low_boundary(); }
   char* high_boundary() const                    { return _memory.high_boundary(); }
+  // Boundaries of segment map
+  const char* low_boundary_segmap() const        { return _segmap.low_boundary(); }
+  const char* high_boundary_segmap() const       { return _segmap.high_boundary(); }
 
   // Containment means "contained in committed space".
   bool contains(const void* p) const             { return low() <= p && p < high(); }

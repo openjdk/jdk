@@ -1242,19 +1242,19 @@ void CompilationMemoryStatisticDCmd::execute(DCmdSource source, TRAPS) {
 
 SystemMapDCmd::SystemMapDCmd(outputStream* output, bool heap) :
     DCmdWithParser(output, heap),
-  _human_readable("-H", "Human readable format", "BOOLEAN", false, "false") {
-  _dcmdparser.add_dcmd_option(&_human_readable);
+  _summary("summary", "Print only summary", "BOOLEAN", false, "false") {
+  _dcmdparser.add_dcmd_option(&_summary);
 }
 
 void SystemMapDCmd::execute(DCmdSource source, TRAPS) {
-  MemMapPrinter::print_all_mappings(output(), _human_readable.value());
+  MemMapPrinter::print_all_mappings(output(), _summary.value());
 }
 
 SystemDumpMapDCmd::SystemDumpMapDCmd(outputStream* output, bool heap) :
     DCmdWithParser(output, heap),
-  _human_readable("-H", "Human readable format", "BOOLEAN", false, "false"),
+  _summary("summary", "Print only summary", "BOOLEAN", false, "false"),
   _filename("-F", "file path (defaults: \"vm_memory_map_<pid>.txt\")", "STRING", false) {
-  _dcmdparser.add_dcmd_option(&_human_readable);
+  _dcmdparser.add_dcmd_option(&_summary);
   _dcmdparser.add_dcmd_option(&_filename);
 }
 
@@ -1267,7 +1267,7 @@ void SystemDumpMapDCmd::execute(DCmdSource source, TRAPS) {
     if (!MemTracker::enabled()) {
       output()->print_cr("(NMT is disabled, will not annotate mappings).");
     }
-    MemMapPrinter::print_all_mappings(&fs, _human_readable.value());
+    MemMapPrinter::print_all_mappings(&fs, _summary.value());
     // For the readers convenience, resolve path name.
     char tmp[JVM_MAXPATHLEN];
     const char* absname = os::Posix::realpath(name, tmp, sizeof(tmp));
