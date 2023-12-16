@@ -40,6 +40,7 @@ import jdk.test.lib.RandomFactory;
 import static java.lang.String.format;
 
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNotEquals;
 import static org.testng.Assert.assertThrows;
 import static org.testng.Assert.assertTrue;
 
@@ -133,10 +134,10 @@ public class TransferTo {
      */
     @Test
     public void testHugeStream() throws Exception {
-        InputStream is1 = repeat(0, Integer.MAX_VALUE);
+        InputStream is1 = repeat(0, Long.MAX_VALUE);
         InputStream is2 = repeat(0, 1);
-        assertEquals(is1.available(), Integer.MAX_VALUE);
-        assertEquals(is2.available(), 1);
+        assertNotEquals(is1.available(), 0);
+        assertNotEquals(is2.available(), 0);
         SequenceInputStream sis = new SequenceInputStream(is1, is2);
         OutputStream nos = OutputStream.nullOutputStream();
         sis.transferTo(nos);
@@ -144,19 +145,28 @@ public class TransferTo {
         assertEquals(is2.available(), 0);
     }
 
+    /*
+     * Produces an input stream that returns b count times.
+     * Builds a dysfunctional mock that solely implements
+     * available() and transferTo() particually,
+     * but fails with any other operation.
+     */
     private static InputStream repeat(int b, long count) {
         return new InputStream() {
-            private int pos;
+            private long pos;
             @Override
             public int available() throws IOException {
                 return (int) Math.min(count - pos, Integer.MAX_VALUE);
             }
             @Override
             public int read() throws IOException {
-                if (pos >= count)
-                    return -1;
-                pos++;
-                return b;
+                throw new UnsupportedOperationException();
+            }
+            @Override
+            public long transferTo(OutputStream os) throws IOException {
+                // skipping actual writing to os to spare time
+                pos += count;
+                return count;
             }
         };
     }
