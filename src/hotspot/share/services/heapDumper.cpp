@@ -44,6 +44,7 @@
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/typeArrayOop.inline.hpp"
+#include "prims/jvmtiEnvBase.hpp"
 #include "runtime/continuationWrapper.inline.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
@@ -1641,6 +1642,10 @@ public:
         && java_lang_VirtualThread::state(vt) != java_lang_VirtualThread::TERMINATED;
   }
 
+  static bool is_vthread_mounted(oop vt) {
+    return JvmtiEnvBase::get_JavaThread_or_null(vt) != nullptr;
+  }
+
   ThreadDumper(ThreadType thread_type, JavaThread* java_thread, oop thread_oop);
 
   // affects frame_count
@@ -1918,7 +1923,8 @@ void HeapObjectDumper::do_object(oop o) {
   if (o->is_instance()) {
     // create a HPROF_GC_INSTANCE record for each object
     DumperSupport::dump_instance(writer(), o, &_class_cache);
-    if (java_lang_VirtualThread::is_instance(o) && ThreadDumper::should_dump_vthread(o)) {
+    if (java_lang_VirtualThread::is_instance(o)
+        && ThreadDumper::should_dump_vthread(o) && !ThreadDumper::is_vthread_mounted(o)) {
       _vthread_dumper->dump_vthread(o, writer());
     }
   } else if (o->is_objArray()) {
