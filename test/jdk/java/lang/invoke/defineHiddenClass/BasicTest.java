@@ -26,6 +26,7 @@
  * @modules jdk.compiler
  * @library /test/lib
  * @enablePreview
+ * @comment Change enablePreview with the flag in setup's compileSources
  * @compile BadClassFile.jcod
  *          BadClassFile2.jcod
  *          BadClassFileVersion.jcod
@@ -39,7 +40,6 @@ import java.io.IOException;
 import java.lang.classfile.ClassFile;
 import java.lang.constant.ClassDesc;
 import java.lang.invoke.MethodHandles.Lookup;
-import java.lang.reflect.AccessFlag;
 import java.lang.reflect.Array;
 import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
@@ -48,11 +48,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Set;
 import java.util.stream.Stream;
 
-import jdk.internal.org.objectweb.asm.ClassWriter;
-import jdk.internal.org.objectweb.asm.Type;
 import jdk.test.lib.compiler.CompilerUtils;
 import jdk.test.lib.Utils;
 
@@ -60,16 +57,11 @@ import org.testng.annotations.BeforeTest;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
+import static java.lang.classfile.ClassFile.*;
 import static java.lang.constant.ConstantDescs.CD_Enum;
 import static java.lang.constant.ConstantDescs.CD_Object;
 import static java.lang.invoke.MethodHandles.lookup;
 import static java.lang.invoke.MethodHandles.Lookup.ClassOption.*;
-import static java.lang.reflect.AccessFlag.ABSTRACT;
-import static java.lang.reflect.AccessFlag.ANNOTATION;
-import static java.lang.reflect.AccessFlag.ENUM;
-import static java.lang.reflect.AccessFlag.INTERFACE;
-import static java.lang.reflect.AccessFlag.SYNTHETIC;
-import static jdk.internal.org.objectweb.asm.Opcodes.*;
 import static org.testng.Assert.*;
 
 interface HiddenTest {
@@ -86,7 +78,7 @@ public class BasicTest {
 
     @BeforeTest
     static void setup() throws IOException {
-        compileSources(SRC_DIR, CLASSES_DIR);
+        compileSources(SRC_DIR, CLASSES_DIR, "--enable-preview", "--release", "23");
         hiddenClassBytes = Files.readAllBytes(CLASSES_DIR.resolve("HiddenClass.class"));
 
         // compile with --release 10 with no NestHost and NestMembers attribute
@@ -527,17 +519,9 @@ public class BasicTest {
     }
 
     private static byte[] classBytes(String classname, ClassDesc superType, int accessFlags) {
-        ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS + ClassWriter.COMPUTE_FRAMES);
-        cw.visit(V14, ACC_PUBLIC|accessFlags, classname, null, internalName(superType), null);
-        cw.visitEnd();
-
-        return cw.toByteArray();
-    }
-
-    private static String internalName(ClassDesc cd) {
-        if (!cd.isClassOrInterface())
-            throw new IllegalArgumentException(cd.descriptorString());
-        var d = cd.descriptorString();
-        return d.substring(1, d.length() - 1);
+        return ClassFile.of().build(ClassDesc.ofInternalName(classname), clb -> clb
+                .withVersion(JAVA_14_VERSION, 0)
+                .withFlags(accessFlags | ACC_PUBLIC)
+                .withSuperclass(superType));
     }
 }

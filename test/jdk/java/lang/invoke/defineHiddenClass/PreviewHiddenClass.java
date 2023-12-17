@@ -31,6 +31,8 @@
  * @run testng PreviewHiddenClass
  * @summary verify UnsupportedClassVersionError thrown when defining a hidden class
  *         with preview minor version but --enable-preview is not set
+ * @comment This test itself cannot enablePreview, or hidden class definition
+ *         will pass
  */
 
 import java.io.ByteArrayInputStream;
@@ -63,9 +65,8 @@ public class PreviewHiddenClass {
 
         byte[] bytes = Files.readAllBytes(CLASSES_DIR.resolve("HiddenInterface.class"));
         var dis = new DataInputStream(new ByteArrayInputStream(bytes));
-        dis.skipBytes(4);
-        // Minor version
-        assertEquals(dis.readUnsignedByte(), 65535);
+        dis.skipBytes(4); // 0xCAFEBABE
+        assertEquals(dis.readUnsignedShort(), 65535); // Minor version
         MethodHandles.lookup().defineHiddenClass(bytes, false);
     }
 }
