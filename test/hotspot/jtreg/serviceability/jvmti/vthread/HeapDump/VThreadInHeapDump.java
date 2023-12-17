@@ -227,7 +227,7 @@ public class VThreadInHeapDump {
             List<Root> roots = Collections.list(snapshot.getRoots());
             // And detect thread object duplicates.
             Set<Long> uniqueThreads = new HashSet<>();
-            
+
             log("Threads:");
             for (ThreadObject thread: threads) {
                 JavaHeapObject threadObj = snapshot.findThing(thread.getId());
@@ -235,7 +235,7 @@ public class VThreadInHeapDump {
                 StackTrace st = thread.getStackTrace();
                 StackFrame[] frames = st.getFrames();
                 log("thread " + thread.getIdString() + " (" + threadClass.getName() + "), " + frames.length + " frames");
-                
+
                 if (uniqueThreads.contains(thread.getId())) {
                     log(" - ERROR: duplicate");
                 } else {
