@@ -59,6 +59,7 @@ import static java.lang.constant.ConstantDescs.CD_void;
  *          jdk.jartool/sun.tools.jar
  *          jdk.jfr
  * @enablePreview
+ * @comment update --enable-preview in launchTest() too
  *
  * @run main/othervm jdk.jfr.event.io.TestInstrumentation
  */
@@ -280,8 +281,7 @@ public class TestInstrumentation implements ClassFileTransformer {
 
         String[] args = {
             "-Xbootclasspath/a:" + testClassDir + "InstrumentationCallback.jar",
-            "--add-exports", "java.base/jdk.internal.classfile=ALL-UNNAMED",
-            "--add-exports", "java.base/jdk.internal.classfile.constantpool=ALL-UNNAMED",
+            "--enable-preview",
             "-classpath", classpath,
             "-javaagent:" + testClassDir + "TestInstrumentation.jar",
             "jdk.jfr.event.io.TestInstrumentation$TestMain" };
