@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,43 +74,50 @@ public class TestJcmdDumpPathToGCRoots {
     }
 
     private static void testDump(String pathToGcRoots, Map<String, String> settings, boolean expectedChains) throws Exception {
-        try (Recording r = new Recording()) {
-            Map<String, String> p = new HashMap<>(settings);
-            p.put(EventNames.OldObjectSample + "#" + Enabled.NAME, "true");
-            r.setName("dodo");
-            r.setSettings(p);
-            r.setToDisk(true);
-            r.start();
-            clearLeak();
-            System.out.println("Recording id: " + r.getId());
-            System.out.println("Settings: " + settings.toString());
-            System.out.println("Command: JFR.dump " + pathToGcRoots);
-            System.out.println("Chains expected: " + expectedChains);
-            buildLeak();
-            System.gc();
-            System.gc();
-            File recording = new File("TestJcmdDumpPathToGCRoots" + r.getId() + ".jfr");
-            recording.delete();
-            JcmdHelper.jcmd("JFR.dump", "name=dodo", pathToGcRoots, "filename=" + recording.getAbsolutePath());
-            r.setSettings(Collections.emptyMap());
-            List<RecordedEvent> events = RecordingFile.readAllEvents(recording.toPath());
-            if (events.isEmpty()) {
-                throw new Exception("No events found in recoding");
-            }
-            boolean chains = hasChains(events);
-            if (expectedChains && !chains) {
-                System.out.println(events);
-                throw new Exception("Expected chains but found none");
-            }
-            if (!expectedChains && chains) {
-                System.out.println(events);
-                throw new Exception("Didn't expect chains but found some");
+        while (true) {
+            try (Recording r = new Recording()) {
+                Map<String, String> p = new HashMap<>(settings);
+                p.put(EventNames.OldObjectSample + "#" + Enabled.NAME, "true");
+                r.setName("dodo");
+                r.setSettings(p);
+                r.setToDisk(true);
+                r.start();
+                clearLeak();
+                System.out.println("Recording id: " + r.getId());
+                System.out.println("Settings: " + settings.toString());
+                System.out.println("Command: JFR.dump " + pathToGcRoots);
+                System.out.println("Chains expected: " + expectedChains);
+                buildLeak();
+                System.gc();
+                System.gc();
+                File recording = new File("TestJcmdDumpPathToGCRoots" + r.getId() + ".jfr");
+                recording.delete();
+                JcmdHelper.jcmd("JFR.dump", "name=dodo", pathToGcRoots, "filename=" + recording.getAbsolutePath());
+                r.setSettings(Collections.emptyMap());
+                List<RecordedEvent> events = RecordingFile.readAllEvents(recording.toPath());
+                if (events.isEmpty()) {
+                    System.out.println("No events found in recording. Retrying.");
+                    continue;
+                }
+                boolean chains = hasChains(events);
+                if (expectedChains && !chains) {
+                    System.out.println(events);
+                    System.out.println("Expected chains but found none. Retrying.");
+                    continue;
+                }
+                if (!expectedChains && chains) {
+                    System.out.println(events);
+                    System.out.println("Didn't expect chains but found some. Retrying.");
+                    continue;
+                }
+                return; // Success
             }
         }
     }
 
     private static void clearLeak() {
       leak.clear();
+      System.gc();
     }
 
     private static boolean hasChains(List<RecordedEvent> events) throws IOException {

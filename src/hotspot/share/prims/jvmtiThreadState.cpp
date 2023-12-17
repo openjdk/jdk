@@ -557,7 +557,11 @@ JvmtiVTMSTransitionDisabler::VTMS_vthread_start(jobject vthread) {
   // If interp_only_mode has been enabled then we must eagerly create JvmtiThreadState
   // objects for globally enabled virtual thread filtered events. Otherwise,
   // it is an important optimization to create JvmtiThreadState objects lazily.
-  if (JvmtiThreadState::seen_interp_only_mode()) {
+  // This optimization is disabled when watchpoint capabilities are present. It is to
+  // work around a bug with virtual thread frames which can be not deoptimized in time.
+  if (JvmtiThreadState::seen_interp_only_mode() ||
+      JvmtiExport::should_post_field_access() ||
+      JvmtiExport::should_post_field_modification()){
     JvmtiEventController::thread_started(thread);
   }
   if (JvmtiExport::should_post_vthread_start()) {

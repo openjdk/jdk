@@ -245,7 +245,7 @@ ifeq ($(call isTargetOs, linux)+$(call isTargetCpu, x86_64)+$(INCLUDE_COMPILER2)
       TOOLCHAIN := TOOLCHAIN_LINK_CXX, \
       OPTIMIZATION := HIGH, \
       CFLAGS := $(CFLAGS_JDKLIB), \
-      CXXFLAGS := $(CXXFLAGS_JDKLIB), \
+      CXXFLAGS := $(CXXFLAGS_JDKLIB) -std=c++17, \
       LDFLAGS := $(LDFLAGS_JDKLIB) \
           $(call SET_SHARED_LIBRARY_ORIGIN), \
       LIBS := $(LIBCXX), \
