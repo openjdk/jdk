@@ -79,9 +79,8 @@ class DynamicLoadWarningTest {
     @BeforeAll
     static void setup() throws Exception {
         // get absolute path to JVM TI agents
-        String prefix = Platform.isWindows() ? "" : "lib";
-        String libname1 = prefix + JVMTI_AGENT1_LIB + "." + Platform.sharedLibraryExt();
-        String libname2 = prefix + JVMTI_AGENT2_LIB + "." + Platform.sharedLibraryExt();
+        String libname1 = Platform.buildSharedLibraryName(JVMTI_AGENT1_LIB);
+        String libname2 = Platform.buildSharedLibraryName(JVMTI_AGENT2_LIB);
         jvmtiAgentPath1 = Path.of(Utils.TEST_NATIVE_PATH, libname1).toAbsolutePath().toString();
         jvmtiAgentPath2 = Path.of(Utils.TEST_NATIVE_PATH, libname2).toAbsolutePath().toString();
 
@@ -124,18 +123,15 @@ class DynamicLoadWarningTest {
                 .whenRunning(loadJvmtiAgent1)
                 .stderrShouldNotContain(JVMTI_AGENT_WARNING);
 
-        // test behavior on platforms that can detect if an agent library was previously loaded
-        if (!Platform.isAix()) {
-            // start loadJvmtiAgent1 via the command line, then dynamically load loadJvmtiAgent1
-            test().withOpts("-agentpath:" + jvmtiAgentPath1)
-                    .whenRunning(loadJvmtiAgent1)
-                    .stderrShouldNotContain(JVMTI_AGENT_WARNING);
+        // start loadJvmtiAgent1 via the command line, then dynamically load loadJvmtiAgent1
+        test().withOpts("-agentpath:" + jvmtiAgentPath1)
+                .whenRunning(loadJvmtiAgent1)
+                .stderrShouldNotContain(JVMTI_AGENT_WARNING);
 
-            // dynamically load loadJvmtiAgent1 twice, should be one warning
-            test().whenRunning(loadJvmtiAgent1)
-                    .whenRunning(loadJvmtiAgent1)
-                    .stderrShouldContain(JVMTI_AGENT_WARNING, 1);
-        }
+        // dynamically load loadJvmtiAgent1 twice, should be one warning
+        test().whenRunning(loadJvmtiAgent1)
+                .whenRunning(loadJvmtiAgent1)
+                .stderrShouldContain(JVMTI_AGENT_WARNING, 1);
     }
 
     /**

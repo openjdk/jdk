@@ -332,7 +332,7 @@ class LambdaForm {
         this.isCompiled = false;
     }
 
-    // root factory pre/post processing and calls simple cosntructor
+    // root factory pre/post processing and calls simple constructor
     private static LambdaForm create(int arity, Name[] names, int result, boolean forceInline, MethodHandle customized, Kind kind) {
         names = names.clone();
         assert(namesOK(arity, names));

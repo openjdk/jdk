@@ -221,7 +221,7 @@ inline intptr_t* frame::real_fp() const {
 
 inline int frame::frame_size() const {
   return is_interpreted_frame()
-    ? sender_sp() - sp()
+    ? pointer_delta_as_int(sender_sp(), sp())
     : cb()->frame_size();
 }
 
@@ -250,7 +250,9 @@ inline intptr_t* frame::interpreter_frame_locals() const {
 }
 
 inline intptr_t* frame::interpreter_frame_last_sp() const {
-  return (intptr_t*)at(interpreter_frame_last_sp_offset);
+  intptr_t n = *addr_at(interpreter_frame_last_sp_offset);
+  assert(n <= 0, "n: " INTPTR_FORMAT, n);
+  return n != 0 ? &fp()[n] : nullptr;
 }
 
 inline intptr_t* frame::interpreter_frame_bcp_addr() const {

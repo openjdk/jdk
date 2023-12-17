@@ -283,6 +283,15 @@ public class Check {
             preview.reportPreviewWarning(pos, Warnings.DeclaredUsingPreview(kindName(sym), sym));
     }
 
+    /** Log a preview warning.
+     *  @param pos        Position to be used for error reporting.
+     *  @param msg        A Warning describing the problem.
+     */
+    public void warnRestrictedAPI(DiagnosticPosition pos, Symbol sym) {
+        if (lint.isEnabled(LintCategory.RESTRICTED))
+            log.warning(LintCategory.RESTRICTED, pos, Warnings.RestrictedMethod(sym.enclClass(), sym));
+    }
+
     /** Warn about unchecked operation.
      *  @param pos        Position to be used for error reporting.
      *  @param msg        A string describing the problem.
@@ -348,15 +357,6 @@ public class Check {
         }
         log.error(pos, Errors.TypeFoundReq(found, required));
         return types.createErrorType(found instanceof Type type ? type : syms.errType);
-    }
-
-    /** Report an error that symbol cannot be referenced before super
-     *  has been called.
-     *  @param pos        Position to be used for error reporting.
-     *  @param sym        The referenced symbol.
-     */
-    void earlyRefError(DiagnosticPosition pos, Symbol sym) {
-        log.error(pos, Errors.CantRefBeforeCtorCalled(sym));
     }
 
     /** Report duplicate declaration error.
@@ -452,7 +452,8 @@ public class Check {
             }
         }
         for (Symbol sym = s.owner; sym != null; sym = sym.owner) {
-            if (sym.kind == TYP && sym.name == name && sym.name != names.error) {
+            if (sym.kind == TYP && sym.name == name && sym.name != names.error &&
+                    !sym.isImplicit()) {
                 duplicateError(pos, sym);
                 return true;
             }
@@ -2276,7 +2277,7 @@ public class Check {
         }
 
         if (!found) {
-            log.error(pos, Errors.UnnamedClassDoesNotHaveMainMethod);
+            log.error(pos, Errors.ImplicitClassDoesNotHaveMainMethod);
         }
     }
 
@@ -3850,6 +3851,12 @@ public class Check {
         }
     }
 
+    void checkRestricted(DiagnosticPosition pos, Symbol s) {
+        if (s.kind == MTH && (s.flags() & RESTRICTED) != 0) {
+            deferredLintHandler.report(() -> warnRestrictedAPI(pos, s));
+        }
+    }
+
 /* *************************************************************************
  * Check for recursive annotation elements.
  **************************************************************************/
@@ -3919,10 +3926,11 @@ public class Check {
 
         // enter each constructor this-call into the map
         for (List<JCTree> l = tree.defs; l.nonEmpty(); l = l.tail) {
-            JCMethodInvocation app = TreeInfo.firstConstructorCall(l.head);
-            if (app == null) continue;
-            JCMethodDecl meth = (JCMethodDecl) l.head;
-            if (TreeInfo.name(app.meth) == names._this) {
+            if (!TreeInfo.isConstructor(l.head))
+                continue;
+            JCMethodDecl meth = (JCMethodDecl)l.head;
+            JCMethodInvocation app = TreeInfo.findConstructorCall(meth);
+            if (app != null && TreeInfo.name(app.meth) == names._this) {
                 callMap.put(meth.sym, TreeInfo.symbol(app.meth));
             } else {
                 meth.sym.flags_field |= ACYCLIC;
@@ -3952,6 +3960,128 @@ public class Check {
                 ctor.flags_field &= ~LOCKED;
             }
             ctor.flags_field |= ACYCLIC;
+        }
+    }
+
+/* *************************************************************************
+ * Verify the proper placement of super()/this() calls.
+ *
+ *    - super()/this() may only appear in constructors
+ *    - There must be at most one super()/this() call per constructor
+ *    - The super()/this() call, if any, must be a top-level statement in the
+ *      constructor, i.e., not nested inside any other statement or block
+ *    - There must be no return statements prior to the super()/this() call
+ **************************************************************************/
+
+    void checkSuperInitCalls(JCClassDecl tree) {
+        new SuperThisChecker().check(tree);
+    }
+
+    private class SuperThisChecker extends TreeScanner {
+
+        // Match this scan stack: 1=JCMethodDecl, 2=JCExpressionStatement, 3=JCMethodInvocation
+        private static final int MATCH_SCAN_DEPTH = 3;
+
+        private boolean constructor;        // is this method a constructor?
+        private boolean firstStatement;     // at the first statement in method?
+        private JCReturn earlyReturn;       // first return prior to the super()/init(), if any
+        private Name initCall;              // whichever of "super" or "init" we've seen already
+        private int scanDepth;              // current scan recursion depth in method body
+
+        public void check(JCClassDecl classDef) {
+            scan(classDef.defs);
+        }
+
+        @Override
+        public void visitMethodDef(JCMethodDecl tree) {
+            Assert.check(!constructor);
+            Assert.check(earlyReturn == null);
+            Assert.check(initCall == null);
+            Assert.check(scanDepth == 1);
+
+            // Initialize state for this method
+            constructor = TreeInfo.isConstructor(tree);
+            try {
+
+                // Scan method body
+                if (tree.body != null) {
+                    firstStatement = true;
+                    for (List<JCStatement> l = tree.body.stats; l.nonEmpty(); l = l.tail) {
+                        scan(l.head);
+                        firstStatement = false;
+                    }
+                }
+
+                // Verify no 'return' seen prior to an explicit super()/this() call
+                if (constructor && earlyReturn != null && initCall != null)
+                    log.error(earlyReturn.pos(), Errors.ReturnBeforeSuperclassInitialized);
+            } finally {
+                firstStatement = false;
+                constructor = false;
+                earlyReturn = null;
+                initCall = null;
+            }
+        }
+
+        @Override
+        public void scan(JCTree tree) {
+            scanDepth++;
+            try {
+                super.scan(tree);
+            } finally {
+                scanDepth--;
+            }
+        }
+
+        @Override
+        public void visitApply(JCMethodInvocation apply) {
+            do {
+
+                // Is this a super() or this() call?
+                Name methodName = TreeInfo.name(apply.meth);
+                if (methodName != names._super && methodName != names._this)
+                    break;
+
+                // super()/this() calls must only appear in a constructor
+                if (!constructor) {
+                    log.error(apply.pos(), Errors.CallMustOnlyAppearInCtor);
+                    break;
+                }
+
+                // super()/this() calls must be a top level statement
+                if (scanDepth != MATCH_SCAN_DEPTH) {
+                    log.error(apply.pos(), Errors.CtorCallsNotAllowedHere);
+                    break;
+                }
+
+                // super()/this() calls must not appear more than once
+                if (initCall != null) {
+                    log.error(apply.pos(), Errors.RedundantSuperclassInit);
+                    break;
+                }
+
+                // If super()/this() isn't first, require "statements before super()" feature
+                if (!firstStatement)
+                    preview.checkSourceLevel(apply.pos(), Feature.SUPER_INIT);
+
+                // We found a legitimate super()/this() call; remember it
+                initCall = methodName;
+            } while (false);
+
+            // Proceed
+            super.visitApply(apply);
+        }
+
+        @Override
+        public void visitReturn(JCReturn tree) {
+            if (constructor && initCall == null && earlyReturn == null)
+                earlyReturn = tree;             // we have seen a return but not (yet) a super()/this()
+            super.visitReturn(tree);
+        }
+
+        @Override
+        public void visitClassDef(JCClassDecl tree) {
+            // don't descend any further
         }
     }
 
@@ -4355,8 +4485,7 @@ public class Check {
             if (typeArguments.size() == 2) {
                 resultType = typeArguments.head;
             } else {
-                log.error(DiagnosticFlag.RESOLVE_ERROR, processor.pos,
-                        Errors.ProcessorTypeCannotBeARawType(processorType.tsym));
+                resultType = syms.objectType;
             }
         } else {
             log.error(DiagnosticFlag.RESOLVE_ERROR, processor.pos,
@@ -4609,6 +4738,19 @@ public class Check {
                 if (!allUnderscore) {
                     log.error(c.labels.tail.head.pos(), Errors.FlowsThroughFromPattern);
                 }
+
+                boolean allPatternCaseLabels = c.labels.stream().allMatch(p -> p instanceof JCPatternCaseLabel);
+
+                if (allPatternCaseLabels) {
+                    preview.checkSourceLevel(c.labels.tail.head.pos(), Feature.UNNAMED_VARIABLES);
+                }
+
+                for (JCCaseLabel label : c.labels.tail) {
+                    if (label instanceof JCConstantCaseLabel) {
+                        log.error(label.pos(), Errors.InvalidCaseLabelCombination);
+                        break;
+                    }
+                }
             }
         }
 
@@ -4622,11 +4764,11 @@ public class Check {
                 if (previousCompletessNormally &&
                     c.stats.nonEmpty() &&
                     c.labels.head instanceof JCPatternCaseLabel patternLabel &&
-                    hasBindings(patternLabel.pat)) {
+                    (hasBindings(patternLabel.pat) || hasBindings(c.guard))) {
                     log.error(c.labels.head.pos(), Errors.FlowsThroughToPattern);
                 } else if (c.stats.isEmpty() &&
                            c.labels.head instanceof JCPatternCaseLabel patternLabel &&
-                           hasBindings(patternLabel.pat) &&
+                           (hasBindings(patternLabel.pat) || hasBindings(c.guard)) &&
                            hasStatements(l.tail)) {
                     log.error(c.labels.head.pos(), Errors.FlowsThroughFromPattern);
                 }
@@ -4635,7 +4777,7 @@ public class Check {
         }
     }
 
-    boolean hasBindings(JCPattern p) {
+    boolean hasBindings(JCTree p) {
         boolean[] bindings = new boolean[1];
 
         new TreeScanner() {
@@ -4699,7 +4841,7 @@ public class Check {
                                          TreeInfo.unguardedCase(testCase);
                         } else if (label instanceof JCPatternCaseLabel patternCL &&
                                    testCaseLabel instanceof JCPatternCaseLabel testPatternCaseLabel &&
-                                   TreeInfo.unguardedCase(testCase)) {
+                                   (testCase.equals(c) || TreeInfo.unguardedCase(testCase))) {
                             dominated = patternDominated(testPatternCaseLabel.pat,
                                                          patternCL.pat);
                         }
@@ -4733,10 +4875,13 @@ public class Check {
                     return false;
                 }
             }
-            if (currentPattern instanceof JCBindingPattern) {
-                return existingPattern instanceof JCBindingPattern;
+            if (currentPattern instanceof JCBindingPattern ||
+                currentPattern instanceof JCAnyPattern) {
+                return existingPattern instanceof JCBindingPattern ||
+                       existingPattern instanceof JCAnyPattern;
             } else if (currentPattern instanceof JCRecordPattern currentRecordPattern) {
-                if (existingPattern instanceof JCBindingPattern) {
+                if (existingPattern instanceof JCBindingPattern ||
+                    existingPattern instanceof JCAnyPattern) {
                     return true;
                 } else if (existingPattern instanceof JCRecordPattern existingRecordPattern) {
                     List<JCPattern> existingNested = existingRecordPattern.nested;
@@ -4765,8 +4910,7 @@ public class Check {
     boolean isExternalizable(Type t) {
         try {
             syms.externalizableType.complete();
-        }
-        catch (CompletionFailure e) {
+        } catch (CompletionFailure e) {
             return false;
         }
         return types.isSubtype(t, syms.externalizableType);
@@ -5137,6 +5281,25 @@ public class Check {
             checkExceptions(tree, e, method, syms.objectStreamExceptionType);
         }
 
+        private void checkWriteExternalRecord(JCClassDecl tree, Element e, MethodSymbol method, boolean isExtern) {
+            //public void writeExternal(ObjectOutput) throws IOException
+            checkExternMethodRecord(tree, e, method, syms.objectOutputType, isExtern);
+        }
+
+        private void checkReadExternalRecord(JCClassDecl tree, Element e, MethodSymbol method, boolean isExtern) {
+            // public void readExternal(ObjectInput) throws IOException
+            checkExternMethodRecord(tree, e, method, syms.objectInputType, isExtern);
+         }
+
+        private void checkExternMethodRecord(JCClassDecl tree, Element e, MethodSymbol method, Type argType,
+                                             boolean isExtern) {
+            if (isExtern && isExternMethod(tree, e, method, argType)) {
+                log.warning(LintCategory.SERIAL,
+                            TreeInfo.diagnosticPositionFor(method, tree),
+                            Warnings.IneffectualExternalizableMethodRecord(method.getSimpleName().toString()));
+            }
+        }
+
         void checkPrivateNonStaticMethod(JCClassDecl tree, MethodSymbol method) {
             var flags = method.flags();
             if ((flags & PRIVATE) == 0) {
@@ -5163,6 +5326,7 @@ public class Check {
         @Override
         public Void visitTypeAsEnum(TypeElement e,
                                     JCClassDecl p) {
+            boolean isExtern = isExternalizable((Type)e.asType());
             for(Element el : e.getEnclosedElements()) {
                 runUnderLint(el, p, (enclosed, tree) -> {
                     String name = enclosed.getSimpleName().toString();
@@ -5183,11 +5347,56 @@ public class Check {
                                         TreeInfo.diagnosticPositionFor(method, tree),
                                         Warnings.IneffectualSerialMethodEnum(name));
                         }
+
+                        if (isExtern) {
+                            switch(name) {
+                            case "writeExternal" -> checkWriteExternalEnum(tree, e, method);
+                            case "readExternal"  -> checkReadExternalEnum(tree, e, method);
+                            }
+                        }
                     }
+
+                    // Also perform checks on any class bodies of enum constants, see JLS 8.9.1.
+                    case ENUM_CONSTANT -> {
+                        var field = (VarSymbol)enclosed;
+                        JCVariableDecl decl = (JCVariableDecl) TreeInfo.declarationFor(field, p);
+                        if (decl.init instanceof JCNewClass nc && nc.def != null) {
+                            ClassSymbol enumConstantType = nc.def.sym;
+                            visitTypeAsEnum(enumConstantType, p);
+                        }
                     }
-                });
+
+                    }});
             }
             return null;
+        }
+
+        private void checkWriteExternalEnum(JCClassDecl tree, Element e, MethodSymbol method) {
+            //public void writeExternal(ObjectOutput) throws IOException
+            checkExternMethodEnum(tree, e, method, syms.objectOutputType);
+        }
+
+        private void checkReadExternalEnum(JCClassDecl tree, Element e, MethodSymbol method) {
+             // public void readExternal(ObjectInput) throws IOException
+            checkExternMethodEnum(tree, e, method, syms.objectInputType);
+         }
+
+        private void checkExternMethodEnum(JCClassDecl tree, Element e, MethodSymbol method, Type argType) {
+            if (isExternMethod(tree, e, method, argType)) {
+                log.warning(LintCategory.SERIAL,
+                            TreeInfo.diagnosticPositionFor(method, tree),
+                            Warnings.IneffectualExternMethodEnum(method.getSimpleName().toString()));
+            }
+        }
+
+        private boolean isExternMethod(JCClassDecl tree, Element e, MethodSymbol method, Type argType) {
+            long flags = method.flags();
+            Type rtype = method.getReturnType();
+
+            // Not necessary to check throws clause in this context
+            return (flags & PUBLIC) != 0 && (flags & STATIC) == 0 &&
+                types.isSameType(syms.voidType, rtype) &&
+                hasExactlyOneArgWithType(tree, e, method, argType);
         }
 
         /**
@@ -5235,8 +5444,7 @@ public class Check {
                             }
 
                         }
-                    }
-                    }
+                    }}
                 });
             }
 
@@ -5295,6 +5503,7 @@ public class Check {
         @Override
         public Void visitTypeAsRecord(TypeElement e,
                                       JCClassDecl p) {
+            boolean isExtern = isExternalizable((Type)e.asType());
             for(Element el : e.getEnclosedElements()) {
                 runUnderLint(el, p, (enclosed, tree) -> {
                     String name = enclosed.getSimpleName().toString();
@@ -5313,9 +5522,7 @@ public class Check {
                             // svuid value is not checked to match for
                             // records.
                             checkSerialVersionUID(tree, e, field);
-                        }
-
-                        }
+                        }}
                     }
 
                     case METHOD -> {
@@ -5324,18 +5531,17 @@ public class Check {
                         case "writeReplace" -> checkWriteReplace(tree, e, method);
                         case "readResolve"  -> checkReadResolve(tree, e, method);
 
+                        case "writeExternal" -> checkWriteExternalRecord(tree, e, method, isExtern);
+                        case "readExternal"  -> checkReadExternalRecord(tree, e, method, isExtern);
+
                         default -> {
                             if (serialMethodNames.contains(name)) {
                                 log.warning(LintCategory.SERIAL,
                                             TreeInfo.diagnosticPositionFor(method, tree),
                                             Warnings.IneffectualSerialMethodRecord(name));
                             }
-                        }
-                        }
-
-                    }
-                    }
-                });
+                        }}
+                    }}});
             }
             return null;
         }
@@ -5392,6 +5598,16 @@ public class Check {
                                                                parameterType));
             }
         }
+
+        private boolean hasExactlyOneArgWithType(JCClassDecl tree,
+                                                 Element enclosing,
+                                                 MethodSymbol method,
+                                                 Type expectedType) {
+            var parameters = method.getParameters();
+            return (parameters.size() == 1) &&
+                types.isSameType(parameters.get(0).asType(), expectedType);
+        }
+
 
         private void checkNoArgs(JCClassDecl tree, Element enclosing, MethodSymbol method) {
             var parameters = method.getParameters();

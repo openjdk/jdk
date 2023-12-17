@@ -29,7 +29,7 @@
 
 void ConstMethodFlags::print_on(outputStream* st) const {
 #define CM_PRINT(name, ignore)          \
-  if (name()) st->print(" " #name " ");
+  if (name()) st->print(#name " ");
   CM_FLAGS_DO(CM_PRINT)
 #undef CM_PRINT
 }

@@ -42,7 +42,7 @@ inline void BitMap::clear_bit(idx_t bit) {
   *word_addr(bit) &= ~bit_mask(bit);
 }
 
-inline const BitMap::bm_word_t BitMap::load_word_ordered(const volatile bm_word_t* const addr, atomic_memory_order memory_order) {
+inline BitMap::bm_word_t BitMap::load_word_ordered(const volatile bm_word_t* const addr, atomic_memory_order memory_order) {
   if (memory_order == memory_order_relaxed || memory_order == memory_order_release) {
     return Atomic::load(addr);
   } else {

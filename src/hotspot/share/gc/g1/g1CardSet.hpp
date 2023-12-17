@@ -55,7 +55,7 @@ class G1CardSetConfiguration {
   uint _max_cards_in_howl_bitmap;
   uint _cards_in_howl_bitmap_threshold;
   uint _log2_max_cards_in_howl_bitmap;
-  size_t _bitmap_hash_mask;
+  uint _bitmap_hash_mask;
   uint _log2_card_regions_per_heap_region;
   uint _log2_cards_per_card_region;
 

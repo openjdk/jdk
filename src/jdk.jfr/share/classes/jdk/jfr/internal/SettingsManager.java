@@ -135,7 +135,7 @@ final class SettingsManager {
         // store settings so they are available if a new event class is loaded
         availableSettings = createSettingsMap(activeSettings);
         List<EventControl> eventControls = MetadataRepository.getInstance().getEventControls();
-        if (!JVM.getJVM().isRecording()) {
+        if (!JVM.isRecording()) {
             for (EventControl ec : eventControls) {
                 ec.disable();
             }
@@ -148,8 +148,8 @@ final class SettingsManager {
                 setEventControl(ec, writeSettingEvents, timestamp);
             }
         }
-        if (JVM.getJVM().getAllowedToDoEventRetransforms()) {
-            updateRetransform(JVM.getJVM().getAllEventClasses());
+        if (JVM.getAllowedToDoEventRetransforms()) {
+            updateRetransform(JVM.getAllEventClasses());
         }
     }
 
@@ -169,7 +169,7 @@ final class SettingsManager {
             }
         }
         if (!classes.isEmpty()) {
-            JVM.getJVM().retransformClasses(classes.toArray(new Class<?>[0]));
+            JVM.retransformClasses(classes.toArray(new Class<?>[0]));
         }
     }
 

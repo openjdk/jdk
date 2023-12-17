@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,21 +26,18 @@
  * @bug 8192920 8204588 8246774 8248843 8268869 8235876
  * @summary Test source launcher
  * @library /tools/lib
+ * @enablePreview
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.launcher
  *          jdk.compiler/com.sun.tools.javac.main
- *          jdk.jdeps/com.sun.tools.classfile
+ *          java.base/jdk.internal.classfile.impl
+ *          java.base/jdk.internal.module
  * @build toolbox.JavaTask toolbox.JavacTask toolbox.TestRunner toolbox.ToolBox
  * @run main SourceLauncherTest
  */
 
-import com.sun.tools.classfile.Attribute;
-import com.sun.tools.classfile.Attributes;
-import com.sun.tools.classfile.ClassFile;
-import com.sun.tools.classfile.ClassWriter;
-import com.sun.tools.classfile.ConstantPool;
-import com.sun.tools.classfile.ConstantPool.CPInfo;
-import com.sun.tools.classfile.ModuleResolution_attribute;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.ModuleResolutionAttribute;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
@@ -61,14 +58,16 @@ import java.util.Properties;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import com.sun.tools.javac.launcher.Main;
+import com.sun.tools.javac.launcher.SourceLauncher;
+import com.sun.tools.javac.launcher.Fault;
 
 import toolbox.JavaTask;
 import toolbox.JavacTask;
 import toolbox.Task;
 import toolbox.TestRunner;
-import toolbox.TestRunner.Test;
 import toolbox.ToolBox;
+
+import static jdk.internal.module.ClassFileConstants.WARN_INCUBATING;
 
 public class SourceLauncherTest extends TestRunner {
     public static void main(String... args) throws Exception {
@@ -294,10 +293,18 @@ public class SourceLauncherTest extends TestRunner {
 
     @Test
     public void testNoClass(Path base) throws IOException {
-        Files.createDirectories(base);
-        Path file = base.resolve("NoClass.java");
+        var path = Files.createDirectories(base.resolve("p"));
+        Path file = path.resolve("NoClass.java");
         Files.write(file, List.of("package p;"));
         testError(file, "", "error: no class declared in source file");
+    }
+
+    @Test
+    public void testMismatchOfPathAndPackage(Path base) throws IOException {
+        Files.createDirectories(base);
+        Path file = base.resolve("MismatchOfPathAndPackage.java");
+        Files.write(file, List.of("package p;"));
+        testError(file, "", "error: end of path to source file does not match its package name p: " + file);
     }
 
     @Test
@@ -540,7 +547,7 @@ public class SourceLauncherTest extends TestRunner {
                 "error: can't find main(String[]) method in class: NoMain");
     }
 
-    @Test
+    //@Test temporary disabled as enabled preview allows no-param main
     public void testMainBadParams(Path base) throws IOException {
         tb.writeJavaFiles(base,
                 "class BadParams { public static void main() { } }");
@@ -548,7 +555,7 @@ public class SourceLauncherTest extends TestRunner {
                 "error: can't find main(String[]) method in class: BadParams");
     }
 
-    @Test
+    //@Test temporary disabled as enabled preview allows non-public main
     public void testMainNotPublic(Path base) throws IOException {
         tb.writeJavaFiles(base,
                 "class NotPublic { static void main(String... args) { } }");
@@ -556,12 +563,12 @@ public class SourceLauncherTest extends TestRunner {
                 "error: can't find main(String[]) method in class: NotPublic");
     }
 
-    @Test
+    //@Test temporary disabled as enabled preview allows non-static main
     public void testMainNotStatic(Path base) throws IOException {
         tb.writeJavaFiles(base,
                 "class NotStatic { public void main(String... args) { } }");
         testError(base.resolve("NotStatic.java"), "",
-                "error: 'main' method is not declared 'public static'");
+                "error: can't find main(String[]) method in class: NotStatic");
     }
 
     @Test
@@ -569,7 +576,7 @@ public class SourceLauncherTest extends TestRunner {
         tb.writeJavaFiles(base,
                 "class NotVoid { public static int main(String... args) { return 0; } }");
         testError(base.resolve("NotVoid.java"), "",
-                "error: 'main' method is not declared with a return type of 'void'");
+                "error: can't find main(String[]) method in class: NotVoid");
     }
 
     @Test
@@ -620,7 +627,7 @@ public class SourceLauncherTest extends TestRunner {
     public void testNoOptionsWarnings(Path base) throws IOException {
         tb.writeJavaFiles(base, "public class Main { public static void main(String... args) {}}");
         String log = new JavaTask(tb)
-                .vmOptions("--source", "8")
+                .vmOptions("--source", "21")
                 .className(base.resolve("Main.java").toString())
                 .run(Task.Expect.SUCCESS)
                 .getOutput(Task.OutputKind.STDERR);
@@ -717,29 +724,12 @@ public class SourceLauncherTest extends TestRunner {
     }
         //where:
         private static void markModuleAsIncubator(Path moduleInfoFile) throws Exception {
-            ClassFile cf = ClassFile.read(moduleInfoFile);
-            List<CPInfo> newPool = new ArrayList<>();
-            newPool.add(null);
-            cf.constant_pool.entries().forEach(newPool::add);
-            int moduleResolutionIndex = newPool.size();
-            newPool.add(new ConstantPool.CONSTANT_Utf8_info(Attribute.ModuleResolution));
-            Map<String, Attribute> newAttributes = new HashMap<>(cf.attributes.map);
-            newAttributes.put(Attribute.ModuleResolution,
-                              new ModuleResolution_attribute(moduleResolutionIndex,
-                                                             ModuleResolution_attribute.WARN_INCUBATING));
-            ClassFile newClassFile = new ClassFile(cf.magic,
-                                                   cf.minor_version,
-                                                   cf.major_version,
-                                                   new ConstantPool(newPool.toArray(new CPInfo[0])),
-                                                   cf.access_flags,
-                                                   cf.this_class,
-                                                   cf.super_class,
-                                                   cf.interfaces,
-                                                   cf.fields,
-                                                   cf.methods,
-                                                   new Attributes(newAttributes));
+            ClassModel cf = ClassFile.of().parse(moduleInfoFile);
+            ModuleResolutionAttribute newAttr = ModuleResolutionAttribute.of(WARN_INCUBATING);
+            byte[] newBytes = ClassFile.of().transform(cf, ClassTransform.dropping(ce -> ce instanceof Attributes)
+                    .andThen(ClassTransform.endHandler(classBuilder -> classBuilder.with(newAttr))));
             try (OutputStream out = Files.newOutputStream(moduleInfoFile)) {
-                new ClassWriter().write(newClassFile, out);
+                out.write(newBytes);
             }
         }
 
@@ -754,7 +744,7 @@ public class SourceLauncherTest extends TestRunner {
             System.setOut(out);
             StringWriter sw = new StringWriter();
             try (PrintWriter err = new PrintWriter(sw, true)) {
-                Main m = new Main(err);
+                SourceLauncher m = new SourceLauncher(err);
                 m.run(toArray(runtimeArgs), toArray(args));
                 return new Result(baos.toString(), sw.toString(), null);
             } catch (Throwable t) {
@@ -811,10 +801,10 @@ public class SourceLauncherTest extends TestRunner {
         expect = expect.replace("\n", tb.lineSeparator);
         out.println(name + ": " + found);
         if (found == null) {
-            error("No exception thrown; expected Main.Fault");
+            error("No exception thrown; expected Fault");
         } else {
-            if (!(found instanceof Main.Fault)) {
-                error("Unexpected exception; expected Main.Fault");
+            if (!(found instanceof Fault)) {
+                error("Unexpected exception; expected Fault");
             }
             if (!(found.getMessage().equals(expect))) {
                 error("Unexpected detail message; expected: " + expect);
@@ -846,15 +836,5 @@ public class SourceLauncherTest extends TestRunner {
         return list.toArray(new String[list.size()]);
     }
 
-    class Result {
-        private final String stdOut;
-        private final String stdErr;
-        private final Throwable exception;
-
-        Result(String stdOut, String stdErr, Throwable exception) {
-            this.stdOut = stdOut;
-            this.stdErr = stdErr;
-            this.exception = exception;
-        }
-    }
+    record Result(String stdOut, String stdErr, Throwable exception) {}
 }

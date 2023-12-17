@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -53,10 +53,9 @@ JMH_UNPACKED_DIR := $(MICROBENCHMARK_OUTPUT)/jmh_jars
 JMH_UNPACKED_JARS_DONE := $(JMH_UNPACKED_DIR)/_unpacked.marker
 
 # External dependencies
-JMH_COMPILE_JARS := $(JMH_CORE_JAR) $(JMH_GENERATOR_JAR)
+WHITEBOX_JAR := $(SUPPORT_OUTPUTDIR)/test/lib/wb.jar
+JMH_COMPILE_JARS := $(JMH_CORE_JAR) $(JMH_GENERATOR_JAR) $(WHITEBOX_JAR)
 JMH_RUNTIME_JARS := $(JMH_CORE_JAR) $(JMH_COMMONS_MATH_JAR) $(JMH_JOPT_SIMPLE_JAR)
-
-MICROBENCHMARK_CLASSPATH := $(call PathList, $(JMH_COMPILE_JARS))
 
 # Native dependencies
 MICROBENCHMARK_NATIVE_SRC_DIRS := $(MICROBENCHMARK_SRC)
@@ -84,31 +83,36 @@ $(eval $(call SetupJavaCompilation, BUILD_INDIFY, \
 #### Compile Targets
 
 # Building microbenchmark requires the jdk.unsupported and java.management modules.
-# sun.security.util is required to compile Cache benchmark
+# sun.security.util is required to compile Cache benchmark.
+# jmh uses annotation processors to generate the benchmark jar and thus
+# requires the use of -processor option during benchmark compilation.
 
 # Build microbenchmark suite for the current JDK
 $(eval $(call SetupJavaCompilation, BUILD_JDK_MICROBENCHMARK, \
     TARGET_RELEASE := $(TARGET_RELEASE_NEWJDK_UPGRADED), \
     SMALL_JAVA := false, \
-    CLASSPATH := $(MICROBENCHMARK_CLASSPATH), \
-    DISABLED_WARNINGS := this-escape processing rawtypes cast serial preview, \
+    CLASSPATH := $(JMH_COMPILE_JARS), \
+    DISABLED_WARNINGS := restricted this-escape processing rawtypes cast \
+        serial preview, \
     SRC := $(MICROBENCHMARK_SRC), \
     BIN := $(MICROBENCHMARK_CLASSES), \
-    JAVAC_FLAGS := --add-exports java.base/sun.security.util=ALL-UNNAMED \
-        --add-exports java.base/sun.invoke.util=ALL-UNNAMED \
-        --add-exports java.base/jdk.internal.classfile=ALL-UNNAMED \
-        --add-exports java.base/jdk.internal.classfile.attribute=ALL-UNNAMED \
-        --add-exports java.base/jdk.internal.classfile.constantpool=ALL-UNNAMED \
-        --add-exports java.base/jdk.internal.classfile.instruction=ALL-UNNAMED \
-        --add-exports java.base/jdk.internal.classfile.components=ALL-UNNAMED \
+    JAVAC_FLAGS := \
         --add-exports java.base/jdk.internal.classfile.impl=ALL-UNNAMED \
-        --add-exports java.base/jdk.internal.org.objectweb.asm=ALL-UNNAMED \
+        --add-exports java.base/jdk.internal.event=ALL-UNNAMED \
+        --add-exports java.base/jdk.internal.foreign=ALL-UNNAMED \
+        --add-exports java.base/jdk.internal.misc=ALL-UNNAMED \
         --add-exports java.base/jdk.internal.org.objectweb.asm.tree=ALL-UNNAMED \
+        --add-exports java.base/jdk.internal.org.objectweb.asm=ALL-UNNAMED \
         --add-exports java.base/jdk.internal.vm=ALL-UNNAMED \
-        --enable-preview, \
-    JAVA_FLAGS := --add-modules jdk.unsupported --limit-modules java.management \
+        --add-exports java.base/sun.invoke.util=ALL-UNNAMED \
+        --add-exports java.base/sun.security.util=ALL-UNNAMED \
+        --enable-preview \
+        -processor org.openjdk.jmh.generators.BenchmarkProcessor, \
+    JAVA_FLAGS := \
         --add-exports java.base/jdk.internal.vm=ALL-UNNAMED \
-        --enable-preview, \
+        --add-modules jdk.unsupported \
+        --enable-preview \
+        --limit-modules java.management, \
 ))
 
 $(BUILD_JDK_MICROBENCHMARK): $(JMH_COMPILE_JARS)
@@ -155,10 +159,10 @@ $(eval $(call SetupTestFilesCompilation, BUILD_MICROBENCHMARK_LIBRARIES, \
 
 # Setup copy of native dependencies to image output dir
 $(eval $(call SetupCopyFiles, COPY_MICROBENCHMARK_NATIVE, \
-    SRC := $(MICROBENCHMARK_NATIVE_OUTPUT), \
+    SRC := $(MICROBENCHMARK_NATIVE_OUTPUT)/lib, \
     DEST := $(MICROBENCHMARK_IMAGE_DIR)/native, \
-    FILES := $(BUILD_MICROBENCHMARK_LIBRARIES), \
-    FLATTEN := true, \
+    FILES := $(filter $(MICROBENCHMARK_NATIVE_OUTPUT)/lib/%, \
+        $(BUILD_MICROBENCHMARK_LIBRARIES)), \
 ))
 
 all: $(MICROBENCHMARK_JAR) $(BUILD_MICROBENCHMARK_LIBRARIES) $(COPY_MICROBENCHMARK_NATIVE)

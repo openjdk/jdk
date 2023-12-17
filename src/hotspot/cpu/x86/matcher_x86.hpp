@@ -97,14 +97,14 @@
   }
 
   // Prefer ConN+DecodeN over ConP.
-  static const bool const_oop_prefer_decode() {
+  static bool const_oop_prefer_decode() {
     NOT_LP64(ShouldNotCallThis();)
     // Prefer ConN+DecodeN over ConP.
     return true;
   }
 
   // Prefer ConP over ConNKlass+DecodeNKlass.
-  static const bool const_klass_prefer_decode() {
+  static bool const_klass_prefer_decode() {
     NOT_LP64(ShouldNotCallThis();)
     return false;
   }
@@ -165,12 +165,12 @@
   }
 
   // Does the CPU supports vector unsigned comparison instructions?
-  static const bool supports_vector_comparison_unsigned(int vlen, BasicType bt) {
+  static constexpr bool supports_vector_comparison_unsigned(int vlen, BasicType bt) {
     return true;
   }
 
   // Some microarchitectures have mask registers used on vectors
-  static const bool has_predicated_vectors(void) {
+  static bool has_predicated_vectors(void) {
     return VM_Version::supports_evex();
   }
 
@@ -245,6 +245,19 @@
       case Op_RoundD: {
         return 30;
       }
+    }
+  }
+
+  // Is SIMD sort supported for this CPU?
+  static bool supports_simd_sort(BasicType bt) {
+    if (VM_Version::supports_avx512dq()) {
+      return true;
+    }
+    else if (VM_Version::supports_avx2() && !is_double_word_type(bt)) {
+      return true;
+    }
+    else {
+      return false;
     }
   }
 

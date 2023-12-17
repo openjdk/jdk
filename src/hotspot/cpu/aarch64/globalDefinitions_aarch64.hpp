@@ -27,6 +27,7 @@
 #define CPU_AARCH64_GLOBALDEFINITIONS_AARCH64_HPP
 
 const int StackAlignmentInBytes  = 16;
+const size_t pd_segfault_address = 1024;
 
 // Indicates whether the C calling conventions require that
 // 32-bit integer argument values are extended to 64 bits.
@@ -40,6 +41,8 @@ const bool CCallingConventionRequiresIntsAsLongs = false;
 // is.  See: "Simplifying ARM Concurrency: Multicopy-atomic Axiomatic
 // and Operational Models for ARMv8"
 #define CPU_MULTI_COPY_ATOMIC
+
+#define DEFAULT_CACHE_LINE_SIZE 64
 
 // According to the ARMv8 ARM, "Concurrent modification and execution
 // of instructions can lead to the resulting instruction performing

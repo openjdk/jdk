@@ -35,6 +35,7 @@ import java.io.Serializable;
 import java.lang.invoke.CallSite;
 import java.lang.invoke.ConstantCallSite;
 import java.lang.invoke.MethodHandle;
+import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Executable;
 import java.lang.reflect.Field;
@@ -49,6 +50,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.ServiceLoader;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -498,7 +500,32 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
         }
     }
 
-    @NativeImageReinitialize private HashMap<Long, WeakReference<ResolvedJavaType>> resolvedJavaTypes;
+
+    /**
+     * A weak reference that also tracks the key used to insert the value into {@link #resolvedJavaTypes} so that
+     * it can be removed when the referent is cleared.
+     */
+    static class KlassWeakReference extends WeakReference<HotSpotResolvedObjectTypeImpl> {
+
+        private final Long klassPointer;
+
+        public KlassWeakReference(Long klassPointer, HotSpotResolvedObjectTypeImpl referent, ReferenceQueue<HotSpotResolvedObjectTypeImpl> q) {
+            super(referent, q);
+            this.klassPointer = klassPointer;
+        }
+    }
+
+    /**
+     * A mapping from the {@code Klass*} to the corresponding {@link HotSpotResolvedObjectTypeImpl}.  The value is
+     * held weakly through a {@link KlassWeakReference} so that unused types can be unloaded when the compiler no longer needs them.
+     */
+    @NativeImageReinitialize private HashMap<Long, KlassWeakReference> resolvedJavaTypes;
+
+    /**
+     * A {@link ReferenceQueue} to track when {@link KlassWeakReference}s have been freed so that the corresponding
+     * entry in {@link #resolvedJavaTypes} can be cleared.
+     */
+    @NativeImageReinitialize private ReferenceQueue<HotSpotResolvedObjectTypeImpl> resolvedJavaTypesQueue;
 
     /**
      * Stores the value set by {@link #excludeFromJVMCICompilation(Module...)} so that it can be
@@ -509,18 +536,7 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
 
     private final Map<Class<? extends Architecture>, JVMCIBackend> backends = new HashMap<>();
 
-    private volatile List<HotSpotVMEventListener> vmEventListeners;
-
-    private Iterable<HotSpotVMEventListener> getVmEventListeners() {
-        if (vmEventListeners == null) {
-            synchronized (this) {
-                if (vmEventListeners == null) {
-                    vmEventListeners = JVMCIServiceLocator.getProviders(HotSpotVMEventListener.class);
-                }
-            }
-        }
-        return vmEventListeners;
-    }
+    private final List<HotSpotVMEventListener> vmEventListeners;
 
     @SuppressWarnings("try")
     private HotSpotJVMCIRuntime() {
@@ -574,12 +590,14 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
             }
             Option.printProperties(vmLogStream);
             compilerFactory.printProperties(vmLogStream);
-            System.exit(0);
+            exitHotSpot(0);
         }
 
         if (Option.PrintConfig.getBoolean()) {
             configStore.printConfig(this);
         }
+
+        vmEventListeners = JVMCIServiceLocator.getProviders(HotSpotVMEventListener.class);
     }
 
     /**
@@ -627,11 +645,7 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
             return HotSpotResolvedPrimitiveType.forKind(JavaKind.fromJavaClass(javaClass));
         }
         if (IS_IN_NATIVE_IMAGE) {
-            try {
-                return compilerToVm.lookupType(javaClass.getName().replace('.', '/'), null, true);
-            } catch (ClassNotFoundException e) {
-                throw new JVMCIError(e);
-            }
+            return compilerToVm.lookupType(javaClass.getClassLoader(), javaClass.getName().replace('.', '/'));
         }
         return compilerToVm.lookupClass(javaClass);
     }
@@ -674,22 +688,39 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
         return fromClass0(javaClass);
     }
 
-    synchronized HotSpotResolvedObjectTypeImpl fromMetaspace(long klassPointer) {
+    synchronized HotSpotResolvedObjectTypeImpl fromMetaspace(Long klassPointer) {
         if (resolvedJavaTypes == null) {
             resolvedJavaTypes = new HashMap<>();
+            resolvedJavaTypesQueue = new ReferenceQueue<>();
         }
         assert klassPointer != 0;
-        WeakReference<ResolvedJavaType> klassReference = resolvedJavaTypes.get(klassPointer);
+        KlassWeakReference klassReference = resolvedJavaTypes.get(klassPointer);
         HotSpotResolvedObjectTypeImpl javaType = null;
         if (klassReference != null) {
-            javaType = (HotSpotResolvedObjectTypeImpl) klassReference.get();
+            javaType = klassReference.get();
         }
         if (javaType == null) {
             String name = compilerToVm.getSignatureName(klassPointer);
             javaType = new HotSpotResolvedObjectTypeImpl(klassPointer, name);
-            resolvedJavaTypes.put(klassPointer, new WeakReference<>(javaType));
+            resolvedJavaTypes.put(klassPointer, new KlassWeakReference(klassPointer, javaType, resolvedJavaTypesQueue));
         }
+        expungeStaleKlassEntries();
         return javaType;
+    }
+
+
+    /**
+     * Clean up WeakReferences whose referents have been cleared.  This should be called from a synchronized context.
+     */
+    private void expungeStaleKlassEntries() {
+        KlassWeakReference current = (KlassWeakReference) resolvedJavaTypesQueue.poll();
+        while (current != null) {
+            // Make sure the entry is still mapped to the weak reference
+            if (resolvedJavaTypes.get(current.klassPointer) == current) {
+                resolvedJavaTypes.remove(current.klassPointer);
+            }
+            current = (KlassWeakReference) resolvedJavaTypesQueue.poll();
+        }
     }
 
     private JVMCIBackend registerBackend(JVMCIBackend backend) {
@@ -869,17 +900,13 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
 
         // Resolve non-primitive types in the VM.
         HotSpotResolvedObjectTypeImpl hsAccessingType = (HotSpotResolvedObjectTypeImpl) accessingType;
-        try {
-            final HotSpotResolvedJavaType klass = compilerToVm.lookupType(name, hsAccessingType, resolve);
+        final HotSpotResolvedJavaType klass = compilerToVm.lookupType(name, hsAccessingType, resolve);
 
-            if (klass == null) {
-                assert resolve == false : name;
-                return UnresolvedJavaType.create(name);
-            }
-            return klass;
-        } catch (ClassNotFoundException e) {
-            throw (NoClassDefFoundError) new NoClassDefFoundError().initCause(e);
+        if (klass == null) {
+            assert resolve == false : name;
+            return UnresolvedJavaType.create(name);
         }
+        return klass;
     }
 
     /**
@@ -946,22 +973,21 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
     }
 
     /**
-     * Guard to ensure shut down actions are performed at most once.
+     * Guard to ensure shut down actions are performed by at most one thread.
      */
-    private boolean isShutdown;
+    private final AtomicBoolean isShutdown = new AtomicBoolean();
 
     /**
      * Shuts down the runtime.
      */
     @VMEntryPoint
-    private synchronized void shutdown() throws Exception {
-        if (!isShutdown) {
-            isShutdown = true;
+    private void shutdown() throws Exception {
+        if (isShutdown.compareAndSet(false, true)) {
             // Cleaners are normally only processed when a new Cleaner is
             // instantiated so process all remaining cleaners now.
             Cleaner.clean();
 
-            for (HotSpotVMEventListener vmEventListener : getVmEventListeners()) {
+            for (HotSpotVMEventListener vmEventListener : vmEventListeners) {
                 vmEventListener.notifyShutdown();
             }
         }
@@ -972,7 +998,7 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
      */
     @VMEntryPoint
     private void bootstrapFinished() throws Exception {
-        for (HotSpotVMEventListener vmEventListener : getVmEventListeners()) {
+        for (HotSpotVMEventListener vmEventListener : vmEventListeners) {
             vmEventListener.notifyBootstrapFinished();
         }
     }
@@ -985,7 +1011,7 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
      * @param compiledCode
      */
     void notifyInstall(HotSpotCodeCacheProvider hotSpotCodeCacheProvider, InstalledCode installedCode, CompiledCode compiledCode) {
-        for (HotSpotVMEventListener vmEventListener : getVmEventListeners()) {
+        for (HotSpotVMEventListener vmEventListener : vmEventListeners) {
             vmEventListener.notifyInstall(hotSpotCodeCacheProvider, installedCode, compiledCode);
         }
     }

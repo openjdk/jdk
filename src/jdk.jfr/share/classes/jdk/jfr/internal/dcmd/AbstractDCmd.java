@@ -65,13 +65,15 @@ abstract class AbstractDCmd {
     // Remember to keep the two sides in synch.
     public abstract Argument[] getArgumentInfos();
 
-    // Called by native
     protected abstract void execute(ArgumentParser parser) throws DCmdException;
 
 
     // Called by native
     public final String[] execute(String source, String arg, char delimiter) throws DCmdException {
         this.source = source;
+        if (isInteractive()) {
+            JVM.exclude(Thread.currentThread());
+        }
         try {
             boolean log = Logger.shouldLog(LogTag.JFR_DCMD, LogLevel.DEBUG);
             if (log) {
@@ -92,7 +94,17 @@ abstract class AbstractDCmd {
             DCmdException e = new DCmdException(iae.getMessage());
             e.addSuppressed(iae);
             throw e;
+       } finally {
+           if (isInteractive()) {
+               JVM.include(Thread.currentThread());
+           }
        }
+    }
+
+    // Diagnostic commands that are meant to be used interactively
+    // should turn off events to avoid noise in the output.
+    protected boolean isInteractive() {
+        return false;
     }
 
     protected final Output getOutput() {
@@ -117,10 +129,10 @@ abstract class AbstractDCmd {
 
     public String getPid() {
         // Invoking ProcessHandle.current().pid() would require loading more
-        // classes during startup so instead JVM.getJVM().getPid() is used.
+        // classes during startup so instead JVM.getPid() is used.
         // The pid will not be exposed to running Java application, only when starting
         // JFR from command line (-XX:StartFlightRecording) or jcmd (JFR.start and JFR.check)
-        return JVM.getJVM().getPid();
+        return JVM.getPid();
     }
 
     protected final SafePath resolvePath(Recording recording, String filename) throws InvalidPathException {
@@ -294,7 +306,7 @@ abstract class AbstractDCmd {
                     i++;
                 } else if (nc == 'p') {
                     if (pid == null) {
-                        pid = JVM.getJVM().getPid();
+                        pid = JVM.getPid();
                     }
                     sb.append(pid);
                     i++;

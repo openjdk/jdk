@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -141,8 +141,7 @@ endif
 # pick them up since they aren't generated when the source dirs are
 # searched and they aren't referenced by any other classes so they won't
 # be picked up by implicit compilation. On a rebuild, they are picked up
-# and compiled. Exclude them here to produce the same rt.jar as the old
-# build does when building just once.
+# and compiled.
 EXCLUDE_FILES += \
     javax/swing/plaf/nimbus/InternalFrameTitlePanePainter.java \
     javax/swing/plaf/nimbus/OptionPaneMessageAreaPainter.java \

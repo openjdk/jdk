@@ -51,14 +51,21 @@ public class TestFloatConversionsVector {
     }
 
     @Test
-    @IR(counts = {IRNode.VECTOR_CAST_F2HF, "> 0"})
+    @IR(counts = {IRNode.VECTOR_CAST_F2HF, IRNode.VECTOR_SIZE + "min(max_float, max_short)", "> 0"})
     public void test_float_float16(short[] sout, float[] finp) {
         for (int i = 0; i < finp.length; i++) {
             sout[i] = Float.floatToFloat16(finp[i]);
         }
     }
 
-    @Run(test = {"test_float_float16"}, mode = RunMode.STANDALONE)
+    @Test
+    public void test_float_float16_strided(short[] sout, float[] finp) {
+        for (int i = 0; i < finp.length/2; i++) {
+            sout[i*2] = Float.floatToFloat16(finp[i*2]);
+        }
+    }
+
+    @Run(test = {"test_float_float16", "test_float_float16_strided"}, mode = RunMode.STANDALONE)
     public void kernel_test_float_float16() {
         finp = new float[ARRLEN];
         sout = new short[ARRLEN];
@@ -75,17 +82,33 @@ public class TestFloatConversionsVector {
         for (int i = 0; i < ARRLEN; i++) {
             Asserts.assertEquals(Float.floatToFloat16(finp[i]), sout[i]);
         }
+
+        for (int i = 0; i < ITERS; i++) {
+            test_float_float16_strided(sout, finp);
+        }
+
+        // Verifying the result
+        for (int i = 0; i < ARRLEN/2; i++) {
+            Asserts.assertEquals(Float.floatToFloat16(finp[i*2]), sout[i*2]);
+        }
     }
 
     @Test
-    @IR(counts = {IRNode.VECTOR_CAST_HF2F, "> 0"})
+    @IR(counts = {IRNode.VECTOR_CAST_HF2F, IRNode.VECTOR_SIZE + "min(max_float, max_short)", "> 0"})
     public void test_float16_float(float[] fout, short[] sinp) {
         for (int i = 0; i < sinp.length; i++) {
             fout[i] = Float.float16ToFloat(sinp[i]);
         }
     }
 
-    @Run(test = {"test_float16_float"}, mode = RunMode.STANDALONE)
+    @Test
+    public void test_float16_float_strided(float[] fout, short[] sinp) {
+        for (int i = 0; i < sinp.length/2; i++) {
+            fout[i*2] = Float.float16ToFloat(sinp[i*2]);
+        }
+    }
+
+    @Run(test = {"test_float16_float", "test_float16_float_strided"}, mode = RunMode.STANDALONE)
     public void kernel_test_float16_float() {
         sinp = new short[ARRLEN];
         fout = new float[ARRLEN];
@@ -101,6 +124,15 @@ public class TestFloatConversionsVector {
         // Verifying the result
         for (int i = 0; i < ARRLEN; i++) {
             Asserts.assertEquals(Float.float16ToFloat(sinp[i]), fout[i]);
+        }
+
+        for (int i = 0; i < ITERS; i++) {
+            test_float16_float_strided(fout, sinp);
+        }
+
+        // Verifying the result
+        for (int i = 0; i < ARRLEN/2; i++) {
+            Asserts.assertEquals(Float.float16ToFloat(sinp[i*2]), fout[i*2]);
         }
     }
 }

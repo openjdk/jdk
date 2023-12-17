@@ -68,7 +68,6 @@ static SpinWait get_spin_wait_desc() {
 }
 
 void VM_Version::initialize() {
-  _supports_cx8 = true;
   _supports_atomic_getset4 = true;
   _supports_atomic_getadd4 = true;
   _supports_atomic_getset8 = true;
@@ -79,7 +78,7 @@ void VM_Version::initialize() {
   int dcache_line = VM_Version::dcache_line_size();
 
   // Limit AllocatePrefetchDistance so that it does not exceed the
-  // constraint in AllocatePrefetchDistanceConstraintFunc.
+  // static constraint of 512 defined in runtime/globals.hpp.
   if (FLAG_IS_DEFAULT(AllocatePrefetchDistance))
     FLAG_SET_DEFAULT(AllocatePrefetchDistance, MIN2(512, 3*dcache_line));
 
@@ -100,7 +99,7 @@ void VM_Version::initialize() {
       PrefetchCopyIntervalInBytes = 32760;
   }
 
-  if (AllocatePrefetchDistance !=-1 && (AllocatePrefetchDistance & 7)) {
+  if (AllocatePrefetchDistance != -1 && (AllocatePrefetchDistance & 7)) {
     warning("AllocatePrefetchDistance must be multiple of 8");
     AllocatePrefetchDistance &= ~7;
   }
@@ -187,7 +186,7 @@ void VM_Version::initialize() {
   }
 
   // Cortex A53
-  if (_cpu == CPU_ARM && (_model == 0xd03 || _model2 == 0xd03)) {
+  if (_cpu == CPU_ARM && model_is(0xd03)) {
     _features |= CPU_A53MAC;
     if (FLAG_IS_DEFAULT(UseSIMDForArrayEquals)) {
       FLAG_SET_DEFAULT(UseSIMDForArrayEquals, false);
@@ -195,7 +194,7 @@ void VM_Version::initialize() {
   }
 
   // Cortex A73
-  if (_cpu == CPU_ARM && (_model == 0xd09 || _model2 == 0xd09)) {
+  if (_cpu == CPU_ARM && model_is(0xd09)) {
     if (FLAG_IS_DEFAULT(SoftwarePrefetchHintDistance)) {
       FLAG_SET_DEFAULT(SoftwarePrefetchHintDistance, -1);
     }
@@ -205,10 +204,13 @@ void VM_Version::initialize() {
     }
   }
 
-  // Neoverse N1, N2 and V1
-  if (_cpu == CPU_ARM && ((_model == 0xd0c || _model2 == 0xd0c)
-                          || (_model == 0xd49 || _model2 == 0xd49)
-                          || (_model == 0xd40 || _model2 == 0xd40))) {
+  // Neoverse
+  //   N1: 0xd0c
+  //   N2: 0xd49
+  //   V1: 0xd40
+  //   V2: 0xd4f
+  if (_cpu == CPU_ARM && (model_is(0xd0c) || model_is(0xd49) ||
+                          model_is(0xd40) || model_is(0xd4f))) {
     if (FLAG_IS_DEFAULT(UseSIMDForMemoryOps)) {
       FLAG_SET_DEFAULT(UseSIMDForMemoryOps, true);
     }
@@ -228,15 +230,6 @@ void VM_Version::initialize() {
     }
   }
 
-  char buf[512];
-  int buf_used_len = os::snprintf_checked(buf, sizeof(buf), "0x%02x:0x%x:0x%03x:%d", _cpu, _variant, _model, _revision);
-  if (_model2) os::snprintf_checked(buf + buf_used_len, sizeof(buf) - buf_used_len, "(0x%03x)", _model2);
-#define ADD_FEATURE_IF_SUPPORTED(id, name, bit) if (VM_Version::supports_##name()) strcat(buf, ", " #name);
-  CPU_FEATURE_FLAGS(ADD_FEATURE_IF_SUPPORTED)
-#undef ADD_FEATURE_IF_SUPPORTED
-
-  _features_string = os::strdup(buf);
-
   if (FLAG_IS_DEFAULT(UseCRC32)) {
     UseCRC32 = VM_Version::supports_crc32();
   }
@@ -246,8 +239,10 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseCRC32, false);
   }
 
-  // Neoverse V1
-  if (_cpu == CPU_ARM && (_model == 0xd40 || _model2 == 0xd40)) {
+  // Neoverse
+  //   V1: 0xd40
+  //   V2: 0xd4f
+  if (_cpu == CPU_ARM && (model_is(0xd40) || model_is(0xd4f))) {
     if (FLAG_IS_DEFAULT(UseCryptoPmullForCRC32)) {
       FLAG_SET_DEFAULT(UseCryptoPmullForCRC32, true);
     }
@@ -390,14 +385,14 @@ void VM_Version::initialize() {
   }
 
   if (_features & CPU_ASIMD) {
-      if (FLAG_IS_DEFAULT(UseChaCha20Intrinsics)) {
-          UseChaCha20Intrinsics = true;
-      }
+    if (FLAG_IS_DEFAULT(UseChaCha20Intrinsics)) {
+      UseChaCha20Intrinsics = true;
+    }
   } else if (UseChaCha20Intrinsics) {
-      if (!FLAG_IS_DEFAULT(UseChaCha20Intrinsics)) {
-          warning("ChaCha20 intrinsic requires ASIMD instructions");
-      }
-      FLAG_SET_DEFAULT(UseChaCha20Intrinsics, false);
+    if (!FLAG_IS_DEFAULT(UseChaCha20Intrinsics)) {
+      warning("ChaCha20 intrinsic requires ASIMD instructions");
+    }
+    FLAG_SET_DEFAULT(UseChaCha20Intrinsics, false);
   }
 
   if (FLAG_IS_DEFAULT(UseBASE64Intrinsics)) {
@@ -456,16 +451,12 @@ void VM_Version::initialize() {
              strcmp(UseBranchProtection, "pac-ret") == 0) {
     _rop_protection = false;
     // Enable ROP-protection if
-    // 1) this code has been built with branch-protection,
-    // 2) the CPU/OS supports it, and
-    // 3) incompatible VMContinuations isn't enabled.
+    // 1) this code has been built with branch-protection and
+    // 2) the CPU/OS supports it
 #ifdef __ARM_FEATURE_PAC_DEFAULT
     if (!VM_Version::supports_paca()) {
       // Disable PAC to prevent illegal instruction crashes.
       warning("ROP-protection specified, but not supported on this CPU. Disabling ROP-protection.");
-    } else if (VMContinuations) {
-      // Not currently compatible with continuation freeze/thaw.
-      warning("ROP-protection is incompatible with VMContinuations. Disabling ROP-protection.");
     } else {
       _rop_protection = true;
     }
@@ -480,12 +471,6 @@ void VM_Version::initialize() {
     // Determine the mask of address bits used for PAC. Clear bit 55 of
     // the input to make it look like a user address.
     _pac_mask = (uintptr_t)pauth_strip_pointer((address)~(UINT64_C(1) << 55));
-
-    // The frame pointer must be preserved for ROP protection.
-    if (FLAG_IS_DEFAULT(PreserveFramePointer) == false && PreserveFramePointer == false ) {
-      vm_exit_during_initialization(err_msg("PreserveFramePointer cannot be disabled for ROP-protection"));
-    }
-    PreserveFramePointer = true;
   }
 
 #ifdef COMPILER2
@@ -574,6 +559,30 @@ void VM_Version::initialize() {
   _spin_wait = get_spin_wait_desc();
 
   check_virtualizations();
+
+  // Sync SVE related CPU features with flags
+  if (UseSVE < 2) {
+    _features &= ~CPU_SVE2;
+    _features &= ~CPU_SVEBITPERM;
+  }
+  if (UseSVE < 1) {
+    _features &= ~CPU_SVE;
+  }
+
+  // Construct the "features" string
+  char buf[512];
+  int buf_used_len = os::snprintf_checked(buf, sizeof(buf), "0x%02x:0x%x:0x%03x:%d", _cpu, _variant, _model, _revision);
+  if (_model2) {
+    os::snprintf_checked(buf + buf_used_len, sizeof(buf) - buf_used_len, "(0x%03x)", _model2);
+  }
+#define ADD_FEATURE_IF_SUPPORTED(id, name, bit)                 \
+  do {                                                          \
+    if (VM_Version::supports_##name()) strcat(buf, ", " #name); \
+  } while(0);
+  CPU_FEATURE_FLAGS(ADD_FEATURE_IF_SUPPORTED)
+#undef ADD_FEATURE_IF_SUPPORTED
+
+  _features_string = os::strdup(buf);
 }
 
 #if defined(LINUX)

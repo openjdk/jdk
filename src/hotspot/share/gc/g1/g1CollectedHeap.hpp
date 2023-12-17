@@ -44,7 +44,7 @@
 #include "gc/g1/g1MonotonicArenaFreePool.hpp"
 #include "gc/g1/g1NUMA.hpp"
 #include "gc/g1/g1SurvivorRegions.hpp"
-#include "gc/g1/g1YoungGCEvacFailureInjector.hpp"
+#include "gc/g1/g1YoungGCAllocationFailureInjector.hpp"
 #include "gc/g1/heapRegionManager.hpp"
 #include "gc/g1/heapRegionSet.hpp"
 #include "gc/shared/barrierSet.hpp"
@@ -220,7 +220,7 @@ private:
   // Manages all allocations with regions except humongous object allocations.
   G1Allocator* _allocator;
 
-  G1YoungGCEvacFailureInjector _evac_failure_injector;
+  G1YoungGCAllocationFailureInjector _allocation_failure_injector;
 
   // Manages all heap verification.
   G1HeapVerifier* _verifier;
@@ -264,6 +264,7 @@ public:
   void set_collection_set_candidates_stats(G1MonotonicArenaMemoryStats& stats);
   void set_young_gen_card_set_stats(const G1MonotonicArenaMemoryStats& stats);
 
+  void update_parallel_gc_threads_cpu_time();
 private:
 
   G1HRPrinter _hr_printer;
@@ -549,7 +550,7 @@ public:
     return _allocator;
   }
 
-  G1YoungGCEvacFailureInjector* evac_failure_injector() { return &_evac_failure_injector; }
+  G1YoungGCAllocationFailureInjector* allocation_failure_injector() { return &_allocation_failure_injector; }
 
   G1HeapVerifier* verifier() {
     return _verifier;
@@ -559,6 +560,9 @@ public:
     assert(_monitoring_support != nullptr, "should have been initialized");
     return _monitoring_support;
   }
+
+  void pin_object(JavaThread* thread, oop obj) override;
+  void unpin_object(JavaThread* thread, oop obj) override;
 
   void resize_heap_if_necessary();
 
@@ -613,7 +617,7 @@ public:
   // We register a region with the fast "in collection set" test. We
   // simply set to true the array slot corresponding to this region.
   void register_young_region_with_region_attr(HeapRegion* r) {
-    _region_attr.set_in_young(r->hrm_index());
+    _region_attr.set_in_young(r->hrm_index(), r->has_pinned_objects());
   }
   inline void register_new_survivor_region_with_region_attr(HeapRegion* r);
   inline void register_region_with_region_attr(HeapRegion* r);
@@ -684,6 +688,8 @@ public:
   // at the same time.
   void free_region(HeapRegion* hr, FreeRegionList* free_list);
 
+  // Add the given region to the retained regions collection set candidates.
+  void retain_region(HeapRegion* hr);
   // It dirties the cards that cover the block so that the post
   // write barrier never queues anything when updating objects on this
   // block. It is assumed (and in fact we assert) that the block
@@ -1028,7 +1034,7 @@ public:
 
   // Return "TRUE" iff the given object address is within the collection
   // set. Assumes that the reference points into the heap.
-  inline bool is_in_cset(const HeapRegion *hr) const;
+  inline bool is_in_cset(const HeapRegion* hr) const;
   inline bool is_in_cset(oop obj) const;
   inline bool is_in_cset(HeapWord* addr) const;
 
@@ -1262,6 +1268,8 @@ public:
   // Performs cleaning of data structures after class unloading.
   void complete_cleaning(bool class_unloading_occurred);
 
+  void unload_classes_and_code(const char* description, BoolObjectClosure* cl, GCTimer* timer);
+
   // Verification
 
   // Perform any cleanup actions necessary before allowing a verification.
@@ -1289,9 +1297,6 @@ public:
 
   G1HeapSummary create_g1_heap_summary();
   G1EvacSummary create_g1_evac_summary(G1EvacStats* stats);
-
-  void pin_object(JavaThread* thread, oop obj) override;
-  void unpin_object(JavaThread* thread, oop obj) override;
 
   // Printing
 private:

@@ -42,8 +42,8 @@ import tests.Helper;
  * @author Jean-Francois Denise
  * @requires vm.compMode != "Xcomp"
  * @library ../lib
+ * @enablePreview
  * @modules java.base/jdk.internal.jimage
- *          jdk.jdeps/com.sun.tools.classfile
  *          jdk.jlink/jdk.tools.jlink.internal
  *          jdk.jlink/jdk.tools.jlink.plugin
  *          jdk.jlink/jdk.tools.jmod

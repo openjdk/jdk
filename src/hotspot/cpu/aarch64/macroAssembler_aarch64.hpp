@@ -30,6 +30,7 @@
 #include "code/vmreg.hpp"
 #include "metaprogramming/enableIf.hpp"
 #include "oops/compressedOops.hpp"
+#include "oops/compressedKlass.hpp"
 #include "runtime/vm_version.hpp"
 #include "utilities/powerOfTwo.hpp"
 
@@ -570,6 +571,19 @@ public:
     msr(0b011, 0b0100, 0b0100, 0b001, zr);
   }
 
+  // FPCR : op1 == 011
+  //        CRn == 0100
+  //        CRm == 0100
+  //        op2 == 000
+
+  inline void get_fpcr(Register reg) {
+    mrs(0b11, 0b0100, 0b0100, 0b000, reg);
+  }
+
+  inline void set_fpcr(Register reg) {
+    msr(0b011, 0b0100, 0b0100, 0b000, reg);
+  }
+
   // DCZID_EL0: op1 == 011
   //            CRn == 0000
   //            CRm == 0000
@@ -716,9 +730,9 @@ public:
 
   // ROP Protection
   void protect_return_address();
-  void protect_return_address(Register return_reg, Register temp_reg);
-  void authenticate_return_address(Register return_reg = lr);
-  void authenticate_return_address(Register return_reg, Register temp_reg);
+  void protect_return_address(Register return_reg);
+  void authenticate_return_address();
+  void authenticate_return_address(Register return_reg);
   void strip_return_address();
   void check_return_address(Register return_reg=lr) PRODUCT_RETURN;
 
@@ -942,6 +956,15 @@ public:
                                Label& no_such_interface,
                    bool return_method = true);
 
+  void lookup_interface_method_stub(Register recv_klass,
+                                    Register holder_klass,
+                                    Register resolved_klass,
+                                    Register method_result,
+                                    Register temp_reg,
+                                    Register temp_reg2,
+                                    int itable_index,
+                                    Label& L_no_such_interface);
+
   // virtual method calling
   // n.b. x86 allows RegisterOrConstant for vtable_index
   void lookup_virtual_method(Register recv_klass,
@@ -1024,8 +1047,8 @@ public:
 #define verify_method_ptr(reg) _verify_method_ptr(reg, "broken method " #reg, __FILE__, __LINE__)
 #define verify_klass_ptr(reg) _verify_klass_ptr(reg, "broken klass " #reg, __FILE__, __LINE__)
 
-  // only if +VerifyFPU
-  void verify_FPU(int stack_depth, const char* s = "illegal FPU state");
+  // Restore cpu control state after JNI call
+  void restore_cpu_control_state_after_jni(Register tmp1, Register tmp2);
 
   // prints msg, dumps registers and stops execution
   void stop(const char* msg);
@@ -1582,8 +1605,8 @@ public:
   // Code for java.lang.Thread::onSpinWait() intrinsic.
   void spin_wait();
 
-  void fast_lock(Register obj, Register hdr, Register t1, Register t2, Label& slow);
-  void fast_unlock(Register obj, Register hdr, Register t1, Register t2, Label& slow);
+  void lightweight_lock(Register obj, Register hdr, Register t1, Register t2, Label& slow);
+  void lightweight_unlock(Register obj, Register hdr, Register t1, Register t2, Label& slow);
 
 private:
   // Check the current thread doesn't need a cross modify fence.

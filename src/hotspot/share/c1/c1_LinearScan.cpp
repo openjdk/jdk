@@ -1949,6 +1949,14 @@ void LinearScan::resolve_exception_edge(XHandler* handler, int throwing_op_id, i
     // interval at the throwing instruction must be searched using the operands
     // of the phi function
     Value from_value = phi->operand_at(handler->phi_operand());
+    if (from_value == nullptr) {
+      // We have reached here in a kotlin application running with JVMTI
+      // capability "can_access_local_variables".
+      // The illegal state is not yet propagated to this phi. Do it here.
+      phi->make_illegal();
+      // We can skip the illegal phi edge.
+      return;
+    }
 
     // with phi functions it can happen that the same from_value is used in
     // multiple mappings, so notify move-resolver that this is allowed
@@ -2913,16 +2921,10 @@ IRScopeDebugInfo* LinearScan::compute_debug_info_for_scope(int op_id, IRScope* c
 
       assert(locals->length() == pos, "must match");
     }
-    assert(locals->length() == cur_scope->method()->max_locals(), "wrong number of locals");
-    assert(locals->length() == cur_state->locals_size(), "wrong number of locals");
-  } else if (cur_scope->method()->max_locals() > 0) {
-    assert(cur_state->kind() == ValueStack::EmptyExceptionState, "should be");
-    nof_locals = cur_scope->method()->max_locals();
-    locals = new GrowableArray<ScopeValue*>(nof_locals);
-    for(int i = 0; i < nof_locals; i++) {
-      locals->append(_illegal_value);
-    }
+    assert(locals->length() == nof_locals, "wrong number of locals");
   }
+  assert(nof_locals == cur_scope->method()->max_locals(), "wrong number of locals");
+  assert(nof_locals == cur_state->locals_size(), "wrong number of locals");
 
   // describe expression stack
   int nof_stack = cur_state->stack_size();
@@ -2931,8 +2933,8 @@ IRScopeDebugInfo* LinearScan::compute_debug_info_for_scope(int op_id, IRScope* c
 
     int pos = 0;
     while (pos < nof_stack) {
-      Value expression = cur_state->stack_at_inc(pos);
-      append_scope_value(op_id, expression, expressions);
+      Value expression = cur_state->stack_at(pos);
+      pos += append_scope_value(op_id, expression, expressions);
 
       assert(expressions->length() == pos, "must match");
     }

@@ -27,27 +27,33 @@
 #include "jvmtifiles/jvmti.h"
 #include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"
+#include "nmt/memTracker.hpp"
 #include "os_posix.inline.hpp"
-#include "runtime/globals_extension.hpp"
-#include "runtime/osThread.hpp"
-#include "runtime/frame.inline.hpp"
-#include "runtime/interfaceSupport.inline.hpp"
-#include "runtime/sharedRuntime.hpp"
-#include "services/attachListener.hpp"
-#include "services/memTracker.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/frame.inline.hpp"
+#include "runtime/globals_extension.hpp"
+#include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/orderAccess.hpp"
+#include "runtime/osThread.hpp"
 #include "runtime/park.hpp"
 #include "runtime/perfMemory.hpp"
+#include "runtime/sharedRuntime.hpp"
+#include "services/attachListener.hpp"
 #include "utilities/align.hpp"
+#include "utilities/checkedCast.hpp"
+#include "utilities/debug.hpp"
 #include "utilities/defaultStream.hpp"
 #include "utilities/events.hpp"
 #include "utilities/formatBuffer.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/vmError.hpp"
+#if INCLUDE_JFR
+#include "jfr/support/jfrNativeLibraryLoadEvent.hpp"
+#endif
+
 #ifdef AIX
 #include "loadlib_aix.hpp"
 #endif
@@ -85,16 +91,6 @@
 #ifndef MAP_ANONYMOUS
   #define MAP_ANONYMOUS MAP_ANON
 #endif
-
-#define check_with_errno(check_type, cond, msg)                             \
-  do {                                                                      \
-    int err = errno;                                                        \
-    check_type(cond, "%s; error='%s' (errno=%s)", msg, os::strerror(err),   \
-               os::errno_name(err));                                        \
-} while (false)
-
-#define assert_with_errno(cond, msg)    check_with_errno(assert, cond, msg)
-#define guarantee_with_errno(cond, msg) check_with_errno(guarantee, cond, msg)
 
 static jlong initial_time_count = 0;
 
@@ -160,13 +156,10 @@ int os::get_native_stack(address* stack, int frames, int toSkip) {
       stack[frame_idx ++] = fr.pc();
     }
     if (fr.fp() == nullptr || fr.cb() != nullptr ||
-        fr.sender_pc() == nullptr || os::is_first_C_frame(&fr)) break;
-
-    if (fr.sender_pc() && !os::is_first_C_frame(&fr)) {
-      fr = os::get_sender_for_C_frame(&fr);
-    } else {
+        fr.sender_pc() == nullptr || os::is_first_C_frame(&fr)) {
       break;
     }
+    fr = os::get_sender_for_C_frame(&fr);
   }
   num_of_frames = frame_idx;
   for (; frame_idx < frames; frame_idx ++) {
@@ -350,9 +343,10 @@ char* os::replace_existing_mapping_with_file_mapping(char* base, size_t size, in
 }
 
 static size_t calculate_aligned_extra_size(size_t size, size_t alignment) {
-  assert((alignment & (os::vm_allocation_granularity() - 1)) == 0,
+  assert(is_aligned(alignment, os::vm_allocation_granularity()),
       "Alignment must be a multiple of allocation granularity (page size)");
-  assert((size & (alignment -1)) == 0, "size must be 'alignment' aligned");
+  assert(is_aligned(size, os::vm_allocation_granularity()),
+      "Size must be a multiple of allocation granularity (page size)");
 
   size_t extra_size = size + alignment;
   assert(extra_size >= size, "overflow, size is too large to allow alignment");
@@ -454,7 +448,7 @@ void os::Posix::print_load_average(outputStream* st) {
 // for reboot at least on my test machines
 void os::Posix::print_uptime_info(outputStream* st) {
   int bootsec = -1;
-  int currsec = time(nullptr);
+  time_t currsec = time(nullptr);
   struct utmpx* ent;
   setutxent();
   while ((ent = getutxent())) {
@@ -465,7 +459,7 @@ void os::Posix::print_uptime_info(outputStream* st) {
   }
 
   if (bootsec != -1) {
-    os::print_dhm(st, "OS uptime:", (long) (currsec-bootsec));
+    os::print_dhm(st, "OS uptime:", currsec-bootsec);
   }
 }
 
@@ -723,6 +717,7 @@ void os::dll_unload(void *lib) {
   // calling dlclose the dynamic loader may free the memory containing the string, thus we need to
   // copy the string to be able to reference it after dlclose.
   const char* l_path = nullptr;
+
 #ifdef LINUX
   char* l_pathdup = nullptr;
   l_path = os::Linux::dll_path(lib);
@@ -730,6 +725,9 @@ void os::dll_unload(void *lib) {
     l_path = l_pathdup = os::strdup(l_path);
   }
 #endif  // LINUX
+
+  JFR_ONLY(NativeLibraryUnloadEvent unload_event(l_path);)
+
   if (l_path == nullptr) {
     l_path = "<not available>";
   }
@@ -739,6 +737,7 @@ void os::dll_unload(void *lib) {
     Events::log_dll_message(nullptr, "Unloaded shared library \"%s\" [" INTPTR_FORMAT "]",
                             l_path, p2i(lib));
     log_info(os)("Unloaded shared library \"%s\" [" INTPTR_FORMAT "]", l_path, p2i(lib));
+    JFR_ONLY(unload_event.set_result(true);)
   } else {
     const char* error_report = ::dlerror();
     if (error_report == nullptr) {
@@ -749,6 +748,7 @@ void os::dll_unload(void *lib) {
                             l_path, p2i(lib), error_report);
     log_info(os)("Attempt to unload shared library \"%s\" [" INTPTR_FORMAT "] failed, %s",
                   l_path, p2i(lib), error_report);
+    JFR_ONLY(unload_event.set_error_msg(error_report);)
   }
   // Update the dll cache
   AIX_ONLY(LoadedLibraries::reload());
@@ -808,20 +808,20 @@ int os::socket_close(int fd) {
   return ::close(fd);
 }
 
-int os::recv(int fd, char* buf, size_t nBytes, uint flags) {
-  RESTARTABLE_RETURN_INT(::recv(fd, buf, nBytes, flags));
+ssize_t os::recv(int fd, char* buf, size_t nBytes, uint flags) {
+  RESTARTABLE_RETURN_SSIZE_T(::recv(fd, buf, nBytes, flags));
 }
 
-int os::send(int fd, char* buf, size_t nBytes, uint flags) {
-  RESTARTABLE_RETURN_INT(::send(fd, buf, nBytes, flags));
+ssize_t os::send(int fd, char* buf, size_t nBytes, uint flags) {
+  RESTARTABLE_RETURN_SSIZE_T(::send(fd, buf, nBytes, flags));
 }
 
-int os::raw_send(int fd, char* buf, size_t nBytes, uint flags) {
+ssize_t os::raw_send(int fd, char* buf, size_t nBytes, uint flags) {
   return os::send(fd, buf, nBytes, flags);
 }
 
-int os::connect(int fd, struct sockaddr* him, socklen_t len) {
-  RESTARTABLE_RETURN_INT(::connect(fd, him, len));
+ssize_t os::connect(int fd, struct sockaddr* him, socklen_t len) {
+  RESTARTABLE_RETURN_SSIZE_T(::connect(fd, him, len));
 }
 
 void os::exit(int num) {
@@ -1217,7 +1217,7 @@ void os::Posix::init(void) {
 #if defined(_ALLBSD_SOURCE)
   clock_tics_per_sec = CLK_TCK;
 #else
-  clock_tics_per_sec = sysconf(_SC_CLK_TCK);
+  clock_tics_per_sec = checked_cast<int>(sysconf(_SC_CLK_TCK));
 #endif
   // NOTE: no logging available when this is called. Put logging
   // statements in init_2().
@@ -1341,7 +1341,7 @@ static jlong millis_to_nanos_bounded(jlong millis) {
 
 static void to_abstime(timespec* abstime, jlong timeout,
                        bool isAbsolute, bool isRealtime) {
-  DEBUG_ONLY(int max_secs = MAX_SECS;)
+  DEBUG_ONLY(time_t max_secs = MAX_SECS;)
 
   if (timeout < 0) {
     timeout = 0;
@@ -1423,7 +1423,7 @@ void os::javaTimeNanos_info(jvmtiTimerInfo *info_ptr) {
 
 // Time since start-up in seconds to a fine granularity.
 double os::elapsedTime() {
-  return ((double)os::elapsed_counter()) / os::elapsed_frequency(); // nanosecond resolution
+  return ((double)os::elapsed_counter()) / (double)os::elapsed_frequency(); // nanosecond resolution
 }
 
 jlong os::elapsed_counter() {

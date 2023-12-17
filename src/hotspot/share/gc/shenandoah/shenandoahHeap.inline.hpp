@@ -73,6 +73,18 @@ inline WorkerThreads* ShenandoahHeap::safepoint_workers() {
   return _safepoint_workers;
 }
 
+inline void ShenandoahHeap::notify_gc_progress() {
+  Atomic::store(&_gc_no_progress_count, (size_t) 0);
+
+}
+inline void ShenandoahHeap::notify_gc_no_progress() {
+  Atomic::inc(&_gc_no_progress_count);
+}
+
+inline size_t ShenandoahHeap::get_gc_no_progress_count() const {
+  return Atomic::load(&_gc_no_progress_count);
+}
+
 inline size_t ShenandoahHeap::heap_region_index_containing(const void* addr) const {
   uintptr_t region_start = ((uintptr_t) addr);
   uintptr_t index = (region_start - (uintptr_t) base()) >> ShenandoahHeapRegion::region_size_bytes_shift();
@@ -80,7 +92,7 @@ inline size_t ShenandoahHeap::heap_region_index_containing(const void* addr) con
   return index;
 }
 
-inline ShenandoahHeapRegion* const ShenandoahHeap::heap_region_containing(const void* addr) const {
+inline ShenandoahHeapRegion* ShenandoahHeap::heap_region_containing(const void* addr) const {
   size_t index = heap_region_index_containing(addr);
   ShenandoahHeapRegion* const result = get_region(index);
   assert(addr >= result->bottom() && addr < result->end(), "Heap region contains the address: " PTR_FORMAT, p2i(addr));
@@ -244,7 +256,7 @@ inline bool ShenandoahHeap::cancelled_gc() const {
 }
 
 inline bool ShenandoahHeap::check_cancelled_gc_and_yield(bool sts_active) {
-  if (sts_active && ShenandoahSuspendibleWorkers && !cancelled_gc()) {
+  if (sts_active && !cancelled_gc()) {
     if (SuspendibleThreadSet::should_yield()) {
       SuspendibleThreadSet::yield();
     }
@@ -381,10 +393,6 @@ inline bool ShenandoahHeap::is_concurrent_mark_in_progress() const {
 
 inline bool ShenandoahHeap::is_evacuation_in_progress() const {
   return _gc_state.is_set(EVACUATION);
-}
-
-inline bool ShenandoahHeap::is_gc_in_progress_mask(uint mask) const {
-  return _gc_state.is_set(mask);
 }
 
 inline bool ShenandoahHeap::is_degenerated_gc_in_progress() const {
@@ -548,7 +556,7 @@ inline void ShenandoahHeap::marked_object_oop_iterate(ShenandoahHeapRegion* regi
   }
 }
 
-inline ShenandoahHeapRegion* const ShenandoahHeap::get_region(size_t region_idx) const {
+inline ShenandoahHeapRegion* ShenandoahHeap::get_region(size_t region_idx) const {
   if (region_idx < _num_regions) {
     return _regions[region_idx];
   } else {

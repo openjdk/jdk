@@ -175,13 +175,13 @@ inline void SATBMarkQueueSet::apply_filter(Filter filter_out, SATBMarkQueue& que
   void** buf = queue.buffer();
 
   if (buf == nullptr) {
-    // nothing to do
+    // Nothing to do, and avoid pointer arithmetic on nullptr below.
     return;
   }
 
   // Two-fingered compaction toward the end.
-  void** src = &buf[queue.index()];
-  void** dst = &buf[buffer_capacity()];
+  void** src = buf + queue.index();
+  void** dst = buf + queue.current_capacity();
   assert(src <= dst, "invariant");
   for ( ; src < dst; ++src) {
     // Search low to high for an entry to keep.

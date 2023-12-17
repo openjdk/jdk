@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -664,7 +664,7 @@ public class TestSnippetTag extends SnippetTester {
                 "-sourcepath", srcDir.toString(),
                 "pkg");
         checkExit(Exit.ERROR);
-        long actual = Pattern.compile("error: unknown tag: snippet:")
+        long actual = Pattern.compile("error: unknown tag. Mistyped @snippet")
                 .matcher(getOutput(Output.OUT)).results().count();
         checking("Number of errors");
         int expected = unknownTags.size();

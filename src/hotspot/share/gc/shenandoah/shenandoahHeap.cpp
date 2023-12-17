@@ -27,6 +27,7 @@
 #include "memory/allocation.hpp"
 #include "memory/universe.hpp"
 
+#include "gc/shared/classUnloadingContext.hpp"
 #include "gc/shared/gcArguments.hpp"
 #include "gc/shared/gcTimer.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
@@ -76,6 +77,8 @@
 #include "code/codeCache.hpp"
 #include "memory/classLoaderMetaspace.hpp"
 #include "memory/metaspaceUtils.hpp"
+#include "nmt/mallocTracker.hpp"
+#include "nmt/memTracker.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "prims/jvmtiTagMap.hpp"
 #include "runtime/atomic.hpp"
@@ -85,8 +88,6 @@
 #include "runtime/orderAccess.hpp"
 #include "runtime/safepointMechanism.hpp"
 #include "runtime/vmThread.hpp"
-#include "services/mallocTracker.hpp"
-#include "services/memTracker.hpp"
 #include "utilities/events.hpp"
 #include "utilities/powerOfTwo.hpp"
 
@@ -192,6 +193,10 @@ jint ShenandoahHeap::initialize() {
 
   assert((((size_t) base()) & ShenandoahHeapRegion::region_size_bytes_mask()) == 0,
          "Misaligned heap: " PTR_FORMAT, p2i(base()));
+  os::trace_page_sizes_for_requested_size("Heap",
+                                          max_byte_size, heap_alignment,
+                                          heap_rs.base(),
+                                          heap_rs.size(), heap_rs.page_size());
 
 #if SHENANDOAH_OPTIMIZED_MARKTASK
   // The optimized ShenandoahMarkTask takes some bits away from the full object bits.
@@ -215,8 +220,8 @@ jint ShenandoahHeap::initialize() {
   // Reserve and commit memory for bitmap(s)
   //
 
-  _bitmap_size = ShenandoahMarkBitMap::compute_size(heap_rs.size());
-  _bitmap_size = align_up(_bitmap_size, bitmap_page_size);
+  size_t bitmap_size_orig = ShenandoahMarkBitMap::compute_size(heap_rs.size());
+  _bitmap_size = align_up(bitmap_size_orig, bitmap_page_size);
 
   size_t bitmap_bytes_per_region = reg_size_bytes / ShenandoahMarkBitMap::heap_map_factor();
 
@@ -242,6 +247,10 @@ jint ShenandoahHeap::initialize() {
             _bitmap_bytes_per_slice, bitmap_page_size);
 
   ReservedSpace bitmap(_bitmap_size, bitmap_page_size);
+  os::trace_page_sizes_for_requested_size("Mark Bitmap",
+                                          bitmap_size_orig, bitmap_page_size,
+                                          bitmap.base(),
+                                          bitmap.size(), bitmap.page_size());
   MemTracker::record_virtual_memory_type(bitmap.base(), mtGC);
   _bitmap_region = MemRegion((HeapWord*) bitmap.base(), bitmap.size() / HeapWordSize);
   _bitmap_region_special = bitmap.special();
@@ -258,6 +267,10 @@ jint ShenandoahHeap::initialize() {
 
   if (ShenandoahVerify) {
     ReservedSpace verify_bitmap(_bitmap_size, bitmap_page_size);
+    os::trace_page_sizes_for_requested_size("Verify Bitmap",
+                                            bitmap_size_orig, bitmap_page_size,
+                                            verify_bitmap.base(),
+                                            verify_bitmap.size(), verify_bitmap.page_size());
     if (!verify_bitmap.special()) {
       os::commit_memory_or_exit(verify_bitmap.base(), verify_bitmap.size(), bitmap_page_size, false,
                                 "Cannot commit verification bitmap memory");
@@ -269,7 +282,20 @@ jint ShenandoahHeap::initialize() {
   }
 
   // Reserve aux bitmap for use in object_iterate(). We don't commit it here.
-  ReservedSpace aux_bitmap(_bitmap_size, bitmap_page_size);
+  size_t aux_bitmap_page_size = bitmap_page_size;
+#ifdef LINUX
+  // In THP "advise" mode, we refrain from advising the system to use large pages
+  // since we know these commits will be short lived, and there is no reason to trash
+  // the THP area with this bitmap.
+  if (UseTransparentHugePages) {
+    aux_bitmap_page_size = os::vm_page_size();
+  }
+#endif
+  ReservedSpace aux_bitmap(_bitmap_size, aux_bitmap_page_size);
+  os::trace_page_sizes_for_requested_size("Aux Bitmap",
+                                          bitmap_size_orig, aux_bitmap_page_size,
+                                          aux_bitmap.base(),
+                                          aux_bitmap.size(), aux_bitmap.page_size());
   MemTracker::record_virtual_memory_type(aux_bitmap.base(), mtGC);
   _aux_bitmap_region = MemRegion((HeapWord*) aux_bitmap.base(), aux_bitmap.size() / HeapWordSize);
   _aux_bitmap_region_special = aux_bitmap.special();
@@ -279,10 +305,15 @@ jint ShenandoahHeap::initialize() {
   // Create regions and region sets
   //
   size_t region_align = align_up(sizeof(ShenandoahHeapRegion), SHENANDOAH_CACHE_LINE_SIZE);
-  size_t region_storage_size = align_up(region_align * _num_regions, region_page_size);
-  region_storage_size = align_up(region_storage_size, os::vm_allocation_granularity());
+  size_t region_storage_size_orig = region_align * _num_regions;
+  size_t region_storage_size = align_up(region_storage_size_orig,
+                                        MAX2(region_page_size, os::vm_allocation_granularity()));
 
   ReservedSpace region_storage(region_storage_size, region_page_size);
+  os::trace_page_sizes_for_requested_size("Region Storage",
+                                          region_storage_size_orig, region_page_size,
+                                          region_storage.base(),
+                                          region_storage.size(), region_storage.page_size());
   MemTracker::record_virtual_memory_type(region_storage.base(), mtGC);
   if (!region_storage.special()) {
     os::commit_memory_or_exit(region_storage.base(), region_storage_size, region_page_size, false,
@@ -293,16 +324,18 @@ jint ShenandoahHeap::initialize() {
   // Go up until a sensible limit (subject to encoding constraints) and try to reserve the space there.
   // If not successful, bite a bullet and allocate at whatever address.
   {
-    size_t cset_align = MAX2<size_t>(os::vm_page_size(), os::vm_allocation_granularity());
-    size_t cset_size = align_up(((size_t) sh_rs.base() + sh_rs.size()) >> ShenandoahHeapRegion::region_size_bytes_shift(), cset_align);
+    const size_t cset_align = MAX2<size_t>(os::vm_page_size(), os::vm_allocation_granularity());
+    const size_t cset_size = align_up(((size_t) sh_rs.base() + sh_rs.size()) >> ShenandoahHeapRegion::region_size_bytes_shift(), cset_align);
+    const size_t cset_page_size = os::vm_page_size();
 
     uintptr_t min = round_up_power_of_2(cset_align);
     uintptr_t max = (1u << 30u);
+    ReservedSpace cset_rs;
 
     for (uintptr_t addr = min; addr <= max; addr <<= 1u) {
       char* req_addr = (char*)addr;
       assert(is_aligned(req_addr, cset_align), "Should be aligned");
-      ReservedSpace cset_rs(cset_size, cset_align, os::vm_page_size(), req_addr);
+      cset_rs = ReservedSpace(cset_size, cset_align, cset_page_size, req_addr);
       if (cset_rs.is_reserved()) {
         assert(cset_rs.base() == req_addr, "Allocated where requested: " PTR_FORMAT ", " PTR_FORMAT, p2i(cset_rs.base()), addr);
         _collection_set = new ShenandoahCollectionSet(this, cset_rs, sh_rs.base());
@@ -311,9 +344,13 @@ jint ShenandoahHeap::initialize() {
     }
 
     if (_collection_set == nullptr) {
-      ReservedSpace cset_rs(cset_size, cset_align, os::vm_page_size());
+      cset_rs = ReservedSpace(cset_size, cset_align, os::vm_page_size());
       _collection_set = new ShenandoahCollectionSet(this, cset_rs, sh_rs.base());
     }
+    os::trace_page_sizes_for_requested_size("Collection Set",
+                                            cset_size, cset_page_size,
+                                            cset_rs.base(),
+                                            cset_rs.size(), cset_rs.page_size());
   }
 
   _regions = NEW_C_HEAP_ARRAY(ShenandoahHeapRegion*, _num_regions, mtGC);
@@ -467,6 +504,7 @@ ShenandoahHeap::ShenandoahHeap(ShenandoahCollectorPolicy* policy) :
   _num_regions(0),
   _regions(nullptr),
   _update_refs_iterator(this),
+  _gc_no_progress_count(0),
   _control_thread(nullptr),
   _shenandoah_policy(policy),
   _gc_mode(nullptr),
@@ -633,6 +671,10 @@ size_t ShenandoahHeap::used() const {
 
 size_t ShenandoahHeap::committed() const {
   return Atomic::load(&_committed);
+}
+
+size_t ShenandoahHeap::available() const {
+  return free_set()->available();
 }
 
 void ShenandoahHeap::increase_committed(size_t bytes) {
@@ -833,30 +875,37 @@ HeapWord* ShenandoahHeap::allocate_memory(ShenandoahAllocRequest& req) {
       result = allocate_memory_under_lock(req, in_new_region);
     }
 
-    // Allocation failed, block until control thread reacted, then retry allocation.
+    // Check that gc overhead is not exceeded.
+    //
+    // Shenandoah will grind along for quite a while allocating one
+    // object at a time using shared (non-tlab) allocations. This check
+    // is testing that the GC overhead limit has not been exceeded.
+    // This will notify the collector to start a cycle, but will raise
+    // an OOME to the mutator if the last Full GCs have not made progress.
+    if (result == nullptr && !req.is_lab_alloc() && get_gc_no_progress_count() > ShenandoahNoProgressThreshold) {
+      control_thread()->handle_alloc_failure(req, false);
+      return nullptr;
+    }
+
+    // Block until control thread reacted, then retry allocation.
     //
     // It might happen that one of the threads requesting allocation would unblock
     // way later after GC happened, only to fail the second allocation, because
     // other threads have already depleted the free storage. In this case, a better
-    // strategy is to try again, as long as GC makes progress.
-    //
-    // Then, we need to make sure the allocation was retried after at least one
-    // Full GC, which means we want to try more than ShenandoahFullGCThreshold times.
-
-    size_t tries = 0;
-
-    while (result == nullptr && _progress_last_gc.is_set()) {
-      tries++;
+    // strategy is to try again, as long as GC makes progress (or until at least
+    // one full GC has completed).
+    size_t original_count = shenandoah_policy()->full_gc_count();
+    while (result == nullptr
+        && (get_gc_no_progress_count() == 0 || original_count == shenandoah_policy()->full_gc_count())) {
       control_thread()->handle_alloc_failure(req);
       result = allocate_memory_under_lock(req, in_new_region);
     }
 
-    while (result == nullptr && tries <= ShenandoahFullGCThreshold) {
-      tries++;
-      control_thread()->handle_alloc_failure(req);
-      result = allocate_memory_under_lock(req, in_new_region);
+    if (log_is_enabled(Debug, gc, alloc)) {
+      ResourceMark rm;
+      log_debug(gc, alloc)("Thread: %s, Result: " PTR_FORMAT ", Request: %s, Size: " SIZE_FORMAT ", Original: " SIZE_FORMAT ", Latest: " SIZE_FORMAT,
+                           Thread::current()->name(), p2i(result), req.type_string(), req.size(), original_count, get_gc_no_progress_count());
     }
-
   } else {
     assert(req.is_gc_alloc(), "Can only accept GC allocs here");
     result = allocate_memory_under_lock(req, in_new_region);
@@ -974,7 +1023,7 @@ public:
   void work(uint worker_id) {
     if (_concurrent) {
       ShenandoahConcurrentWorkerSession worker_session(worker_id);
-      ShenandoahSuspendibleThreadSetJoiner stsj(ShenandoahSuspendibleWorkers);
+      ShenandoahSuspendibleThreadSetJoiner stsj;
       ShenandoahEvacOOMScope oom_evac_scope;
       do_work();
     } else {
@@ -1138,13 +1187,9 @@ void ShenandoahHeap::gclabs_retire(bool resize) {
 
 // Returns size in bytes
 size_t ShenandoahHeap::unsafe_max_tlab_alloc(Thread *thread) const {
-  if (ShenandoahElasticTLAB) {
-    // With Elastic TLABs, return the max allowed size, and let the allocation path
-    // figure out the safe size for current allocation.
-    return ShenandoahHeapRegion::max_tlab_size_bytes();
-  } else {
-    return MIN2(_free_set->unsafe_peek_free(), ShenandoahHeapRegion::max_tlab_size_bytes());
-  }
+  // Return the max allowed size, and let the allocation path
+  // figure out the safe size for current allocation.
+  return ShenandoahHeapRegion::max_tlab_size_bytes();
 }
 
 size_t ShenandoahHeap::max_tlab_size() const {
@@ -1776,27 +1821,34 @@ void ShenandoahHeap::stop() {
 
 void ShenandoahHeap::stw_unload_classes(bool full_gc) {
   if (!unload_classes()) return;
+  ClassUnloadingContext ctx(_workers->active_workers(),
+                            false /* lock_codeblob_free_separately */);
+
   // Unload classes and purge SystemDictionary.
   {
     ShenandoahPhaseTimings::Phase phase = full_gc ?
                                           ShenandoahPhaseTimings::full_gc_purge_class_unload :
                                           ShenandoahPhaseTimings::degen_gc_purge_class_unload;
     ShenandoahIsAliveSelector is_alive;
-    CodeCache::UnloadingScope scope(is_alive.is_alive_closure());
-    ShenandoahGCPhase gc_phase(phase);
-    ShenandoahGCWorkerPhase worker_phase(phase);
-    bool purged_class = SystemDictionary::do_unloading(gc_timer());
+    {
+      CodeCache::UnlinkingScope scope(is_alive.is_alive_closure());
+      ShenandoahGCPhase gc_phase(phase);
+      ShenandoahGCWorkerPhase worker_phase(phase);
+      bool unloading_occurred = SystemDictionary::do_unloading(gc_timer());
 
-    uint num_workers = _workers->active_workers();
-    ShenandoahClassUnloadingTask unlink_task(phase, num_workers, purged_class);
-    _workers->run_task(&unlink_task);
+      uint num_workers = _workers->active_workers();
+      ShenandoahClassUnloadingTask unlink_task(phase, num_workers, unloading_occurred);
+      _workers->run_task(&unlink_task);
+    }
+    // Release unloaded nmethods's memory.
+    ClassUnloadingContext::context()->purge_and_free_nmethods();
   }
 
   {
     ShenandoahGCPhase phase(full_gc ?
                             ShenandoahPhaseTimings::full_gc_purge_cldg :
                             ShenandoahPhaseTimings::degen_gc_purge_cldg);
-    ClassLoaderDataGraph::purge(/*at_safepoint*/true);
+    ClassLoaderDataGraph::purge(true /* at_safepoint */);
   }
   // Resize and verify metaspace
   MetaspaceGC::compute_new_size();
@@ -1864,15 +1916,7 @@ address ShenandoahHeap::in_cset_fast_test_addr() {
   return (address) heap->collection_set()->biased_map_address();
 }
 
-address ShenandoahHeap::cancelled_gc_addr() {
-  return (address) ShenandoahHeap::heap()->_cancelled_gc.addr_of();
-}
-
-address ShenandoahHeap::gc_state_addr() {
-  return (address) ShenandoahHeap::heap()->_gc_state.addr_of();
-}
-
-size_t ShenandoahHeap::bytes_allocated_since_gc_start() {
+size_t ShenandoahHeap::bytes_allocated_since_gc_start() const {
   return Atomic::load(&_bytes_allocated_since_gc_start);
 }
 
@@ -1974,19 +2018,13 @@ void ShenandoahHeap::assert_gc_workers(uint nworkers) {
   assert(nworkers > 0 && nworkers <= max_workers(), "Sanity");
 
   if (ShenandoahSafepoint::is_at_shenandoah_safepoint()) {
-    if (UseDynamicNumberOfGCThreads) {
-      assert(nworkers <= ParallelGCThreads, "Cannot use more than it has");
-    } else {
-      // Use ParallelGCThreads inside safepoints
-      assert(nworkers == ParallelGCThreads, "Use ParallelGCThreads within safepoints");
-    }
+    // Use ParallelGCThreads inside safepoints
+    assert(nworkers == ParallelGCThreads, "Use ParallelGCThreads (%u) within safepoint, not %u",
+           ParallelGCThreads, nworkers);
   } else {
-    if (UseDynamicNumberOfGCThreads) {
-      assert(nworkers <= ConcGCThreads, "Cannot use more than it has");
-    } else {
-      // Use ConcGCThreads outside safepoints
-      assert(nworkers == ConcGCThreads, "Use ConcGCThreads outside safepoints");
-    }
+    // Use ConcGCThreads outside safepoints
+    assert(nworkers == ConcGCThreads, "Use ConcGCThreads (%u) outside safepoints, %u",
+           ConcGCThreads, nworkers);
   }
 }
 #endif
@@ -2012,7 +2050,7 @@ public:
   void work(uint worker_id) {
     if (CONCURRENT) {
       ShenandoahConcurrentWorkerSession worker_session(worker_id);
-      ShenandoahSuspendibleThreadSetJoiner stsj(ShenandoahSuspendibleWorkers);
+      ShenandoahSuspendibleThreadSetJoiner stsj;
       do_work<ShenandoahConcUpdateRefsClosure>();
     } else {
       ShenandoahParallelWorkerSession worker_session(worker_id);
@@ -2194,15 +2232,11 @@ bool ShenandoahHeap::uncommit_bitmap_slice(ShenandoahHeapRegion *r) {
 }
 
 void ShenandoahHeap::safepoint_synchronize_begin() {
-  if (ShenandoahSuspendibleWorkers) {
-    SuspendibleThreadSet::synchronize();
-  }
+  SuspendibleThreadSet::synchronize();
 }
 
 void ShenandoahHeap::safepoint_synchronize_end() {
-  if (ShenandoahSuspendibleWorkers) {
-    SuspendibleThreadSet::desynchronize();
-  }
+  SuspendibleThreadSet::desynchronize();
 }
 
 void ShenandoahHeap::entry_uncommit(double shrink_before, size_t shrink_until) {

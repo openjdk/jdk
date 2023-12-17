@@ -26,6 +26,7 @@
  * @bug 8296412
  * @compile TestInfiniteLoopWithUnmergedBackedges.jasm
  * @summary Infinite loops may not have the backedges merged, before we call IdealLoopTree::check_safepts
+ * @requires vm.compiler2.enabled
  * @run main/othervm -Xcomp -XX:-TieredCompilation -XX:-LoopUnswitching
  *      -XX:CompileCommand=compileonly,TestInfiniteLoopWithUnmergedBackedges::test*
  *      TestInfiniteLoopWithUnmergedBackedgesMain

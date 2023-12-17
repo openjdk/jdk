@@ -54,7 +54,6 @@ public class TestVirtualThreadExclusion {
     private final static String EVENT_NAME_VIRTUAL_THREAD_START = EventNames.VirtualThreadStart;
     private final static String EVENT_NAME_VIRTUAL_THREAD_END = EventNames.VirtualThreadEnd;
     private static final String THREAD_NAME_PREFIX = "TestVirtualThread-";
-    private static JVM jvm;
 
     public static void main(String[] args) throws Throwable {
         // Test Java Thread Start event
@@ -84,10 +83,9 @@ public class TestVirtualThreadExclusion {
 
     private static LatchedThread[] startThreads() {
         LatchedThread threads[] = new LatchedThread[10];
-        jvm = JVM.getJVM();
         for (int i = 0; i < threads.length; i++) {
             threads[i] = new LatchedThread(THREAD_NAME_PREFIX + i, true);
-            jvm.exclude(threads[i].getThread());
+            JVM.exclude(threads[i].getThread());
             threads[i].start();
             System.out.println("Started virtual thread id=" + threads[i].getId());
         }
@@ -104,7 +102,7 @@ public class TestVirtualThreadExclusion {
 
     private static void stopThreads(LatchedThread[] threads) {
         for (LatchedThread t : threads) {
-            assertTrue(jvm.isExcluded(t.getThread()), "Virtual Thread " + t.getThread() + "should be excluded");
+            assertTrue(JVM.isExcluded(t.getThread()), "Virtual Thread " + t.getThread() + "should be excluded");
             try {
                 t.stopAndJoin();
             } catch (InterruptedException e) {

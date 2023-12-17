@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -96,27 +96,27 @@ class JfrTraceIdEpoch : AllStatic {
     return Atomic::load_acquire(&_synchronizing);
   }
 
-  static traceid this_epoch_bit() {
+  static uint8_t this_epoch_bit() {
     return _epoch_state ? EPOCH_1_BIT : EPOCH_0_BIT;
   }
 
-  static traceid previous_epoch_bit() {
+  static uint8_t previous_epoch_bit() {
     return _epoch_state ? EPOCH_0_BIT : EPOCH_1_BIT;
   }
 
-  static traceid this_epoch_method_bit() {
+  static uint8_t this_epoch_method_bit() {
     return _epoch_state ? EPOCH_1_METHOD_BIT : EPOCH_0_METHOD_BIT;
   }
 
-  static traceid previous_epoch_method_bit() {
+  static uint8_t previous_epoch_method_bit() {
     return _epoch_state ? EPOCH_0_METHOD_BIT : EPOCH_1_METHOD_BIT;
   }
 
-  static traceid this_epoch_method_and_class_bits() {
+  static uint8_t this_epoch_method_and_class_bits() {
     return _epoch_state ? EPOCH_1_METHOD_AND_CLASS_BITS : EPOCH_0_METHOD_AND_CLASS_BITS;
   }
 
-  static traceid previous_epoch_method_and_class_bits() {
+  static uint8_t previous_epoch_method_and_class_bits() {
     return _epoch_state ? EPOCH_0_METHOD_AND_CLASS_BITS : EPOCH_1_METHOD_AND_CLASS_BITS;
   }
 

@@ -32,7 +32,7 @@
 #include "gc/g1/g1RootClosures.hpp"
 #include "gc/g1/g1StringDedup.hpp"
 #include "gc/g1/g1Trace.hpp"
-#include "gc/g1/g1YoungGCEvacFailureInjector.inline.hpp"
+#include "gc/g1/g1YoungGCAllocationFailureInjector.inline.hpp"
 #include "gc/shared/continuationGCSupport.inline.hpp"
 #include "gc/shared/partialArrayTaskStepper.inline.hpp"
 #include "gc/shared/preservedMarks.inline.hpp"
@@ -85,10 +85,11 @@ G1ParScanThreadState::G1ParScanThreadState(G1CollectedHeap* g1h,
     _max_num_optional_regions(collection_set->optional_region_length()),
     _numa(g1h->numa()),
     _obj_alloc_stat(nullptr),
-    EVAC_FAILURE_INJECTOR_ONLY(_evac_failure_inject_counter(0) COMMA)
+    ALLOCATION_FAILURE_INJECTOR_ONLY(_allocation_failure_inject_counter(0) COMMA)
     _preserved_marks(preserved_marks),
     _evacuation_failed_info(),
-    _evac_failure_regions(evac_failure_regions)
+    _evac_failure_regions(evac_failure_regions),
+    _evac_failure_enqueued_cards(0)
 {
   // We allocate number of young gen regions in the collection set plus one
   // entries, since entry 0 keeps track of surviving bytes for non-young regions.
@@ -145,6 +146,10 @@ size_t G1ParScanThreadState::lab_waste_words() const {
 
 size_t G1ParScanThreadState::lab_undo_waste_words() const {
   return _plab_allocator->undo_waste();
+}
+
+size_t G1ParScanThreadState::evac_failure_enqueued_cards() const {
+  return _evac_failure_enqueued_cards;
 }
 
 #ifdef ASSERT
@@ -422,9 +427,9 @@ HeapWord* G1ParScanThreadState::allocate_copy_slow(G1HeapRegionAttr* dest_attr,
   return obj_ptr;
 }
 
-#if EVAC_FAILURE_INJECTOR
-bool G1ParScanThreadState::inject_evacuation_failure(uint region_idx) {
-  return _g1h->evac_failure_injector()->evacuation_should_fail(_evac_failure_inject_counter, region_idx);
+#if ALLOCATION_FAILURE_INJECTOR
+bool G1ParScanThreadState::inject_allocation_failure(uint region_idx) {
+  return _g1h->allocation_failure_injector()->allocation_should_fail(_allocation_failure_inject_counter, region_idx);
 }
 #endif
 
@@ -456,6 +461,11 @@ oop G1ParScanThreadState::do_copy_to_survivor_space(G1HeapRegionAttr const regio
   Klass* klass = old->klass();
   const size_t word_sz = old->size_given_klass(klass);
 
+  // JNI only allows pinning of typeArrays, so we only need to keep those in place.
+  if (region_attr.is_pinned() && klass->is_typeArray_klass()) {
+    return handle_evacuation_failure_par(old, old_mark, word_sz, true /* cause_pinned */);
+  }
+
   uint age = 0;
   G1HeapRegionAttr dest_attr = next_region_attr(region_attr, old_mark, age);
   HeapRegion* const from_region = _g1h->heap_region_containing(old);
@@ -470,7 +480,7 @@ oop G1ParScanThreadState::do_copy_to_survivor_space(G1HeapRegionAttr const regio
     if (obj_ptr == nullptr) {
       // This will either forward-to-self, or detect that someone else has
       // installed a forwarding pointer.
-      return handle_evacuation_failure_par(old, old_mark, word_sz);
+      return handle_evacuation_failure_par(old, old_mark, word_sz, false /* cause_pinned */);
     }
   }
 
@@ -478,11 +488,11 @@ oop G1ParScanThreadState::do_copy_to_survivor_space(G1HeapRegionAttr const regio
   assert(_g1h->is_in_reserved(obj_ptr), "Allocated memory should be in the heap");
 
   // Should this evacuation fail?
-  if (inject_evacuation_failure(from_region->hrm_index())) {
+  if (inject_allocation_failure(from_region->hrm_index())) {
     // Doing this after all the allocation attempts also tests the
     // undo_allocation() method too.
     undo_allocation(dest_attr, obj_ptr, word_sz, node_index);
-    return handle_evacuation_failure_par(old, old_mark, word_sz);
+    return handle_evacuation_failure_par(old, old_mark, word_sz, false /* cause_pinned */);
   }
 
   // We're going to allocate linearly, so might as well prefetch ahead.
@@ -595,10 +605,12 @@ void G1ParScanThreadStateSet::flush_stats() {
     size_t lab_waste_bytes = pss->lab_waste_words() * HeapWordSize;
     size_t lab_undo_waste_bytes = pss->lab_undo_waste_words() * HeapWordSize;
     size_t copied_bytes = pss->flush_stats(_surviving_young_words_total, _num_workers) * HeapWordSize;
+    size_t evac_fail_enqueued_cards = pss->evac_failure_enqueued_cards();
 
     p->record_or_add_thread_work_item(G1GCPhaseTimes::MergePSS, worker_id, copied_bytes, G1GCPhaseTimes::MergePSSCopiedBytes);
     p->record_or_add_thread_work_item(G1GCPhaseTimes::MergePSS, worker_id, lab_waste_bytes, G1GCPhaseTimes::MergePSSLABWasteBytes);
     p->record_or_add_thread_work_item(G1GCPhaseTimes::MergePSS, worker_id, lab_undo_waste_bytes, G1GCPhaseTimes::MergePSSLABUndoWasteBytes);
+    p->record_or_add_thread_work_item(G1GCPhaseTimes::MergePSS, worker_id, evac_fail_enqueued_cards, G1GCPhaseTimes::MergePSSEvacFailExtra);
 
     delete pss;
     _states[worker_id] = nullptr;
@@ -617,7 +629,7 @@ void G1ParScanThreadStateSet::record_unused_optional_region(HeapRegion* hr) {
 }
 
 NOINLINE
-oop G1ParScanThreadState::handle_evacuation_failure_par(oop old, markWord m, size_t word_sz) {
+oop G1ParScanThreadState::handle_evacuation_failure_par(oop old, markWord m, size_t word_sz, bool cause_pinned) {
   assert(_g1h->is_in_cset(old), "Object " PTR_FORMAT " should be in the CSet", p2i(old));
 
   oop forward_ptr = old->forward_to_atomic(old, m, memory_order_relaxed);
@@ -625,7 +637,7 @@ oop G1ParScanThreadState::handle_evacuation_failure_par(oop old, markWord m, siz
     // Forward-to-self succeeded. We are the "owner" of the object.
     HeapRegion* r = _g1h->heap_region_containing(old);
 
-    if (_evac_failure_regions->record(r->hrm_index())) {
+    if (_evac_failure_regions->record(_worker_id, r->hrm_index(), cause_pinned)) {
       _g1h->hr_printer()->evac_failure(r);
     }
 
@@ -640,12 +652,9 @@ oop G1ParScanThreadState::handle_evacuation_failure_par(oop old, markWord m, siz
     _evacuation_failed_info.register_copy_failure(word_sz);
 
     // For iterating objects that failed evacuation currently we can reuse the
-    // existing closure to scan evacuated objects because:
-    // - for objects referring into the collection set we do not need to gather
-    // cards at this time. The regions they are in will be unconditionally turned
-    // to old regions without remembered sets.
-    // - since we are iterating from a collection set region (i.e. never a Survivor
-    // region), we always need to gather cards for this case.
+    // existing closure to scan evacuated objects; since we are iterating from a
+    // collection set region (i.e. never a Survivor region), we always need to
+    // gather cards for this case.
     G1SkipCardEnqueueSetter x(&_scanner, false /* skip_card_enqueue */);
     old->oop_iterate_backwards(&_scanner);
 

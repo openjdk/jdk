@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "classfile/javaThreadStatus.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "jfr/recorder/jfrRecorder.hpp"
 #include "jfr/periodic/sampling/jfrCallTrace.hpp"
@@ -200,7 +201,7 @@ void OSThreadSampler::protected_task(const SuspendedThreadTaskContext& context) 
       ev->set_starttime(_suspend_time);
       ev->set_endtime(_suspend_time); // fake to not take an end time
       ev->set_sampledThread(JfrThreadLocal::thread_id(jt));
-      ev->set_state(static_cast<u8>(java_lang_Thread::get_thread_status(_thread_oop)));
+      ev->set_state(static_cast<u8>(JavaThreadStatus::RUNNABLE));
     }
   }
 }
@@ -230,7 +231,7 @@ static void write_native_event(JfrThreadSampleClosure& closure, JavaThread* jt, 
   EventNativeMethodSample *ev = closure.next_event_native();
   ev->set_starttime(JfrTicks::now());
   ev->set_sampledThread(JfrThreadLocal::thread_id(jt));
-  ev->set_state(static_cast<u8>(java_lang_Thread::get_thread_status(thread_oop)));
+  ev->set_state(static_cast<u8>(JavaThreadStatus::RUNNABLE));
 }
 
 void JfrNativeSamplerCallback::call() {
@@ -554,11 +555,13 @@ void JfrThreadSampler::run() {
       os::naked_sleep(sleep_to_next);
     }
 
-    if ((next_j - sleep_to_next) <= 0) {
+    // Note, this code used to check (next_j - sleep_to_next) <= 0,
+    // but that can overflow (UB) and cause a spurious sample.
+    if (next_j <= sleep_to_next) {
       task_stacktrace(JAVA_SAMPLE, &_last_thread_java);
       last_java_ms = get_monotonic_ms();
     }
-    if ((next_n - sleep_to_next) <= 0) {
+    if (next_n <= sleep_to_next) {
       task_stacktrace(NATIVE_SAMPLE, &_last_thread_native);
       last_native_ms = get_monotonic_ms();
     }

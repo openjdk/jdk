@@ -167,12 +167,10 @@ static void verify_empty_dirty_card_logs() {
   ResourceMark rm;
 
   struct Verifier : public ThreadClosure {
-    size_t _buffer_capacity;
-    Verifier() : _buffer_capacity(G1BarrierSet::dirty_card_queue_set().buffer_capacity()) {}
+    Verifier() {}
     void do_thread(Thread* t) override {
       G1DirtyCardQueue& queue = G1ThreadLocalData::dirty_card_queue(t);
-      assert((queue.buffer() == nullptr) || (queue.index() == _buffer_capacity),
-             "non-empty dirty card queue for thread %s", t->name());
+      assert(queue.is_empty(), "non-empty dirty card queue for thread %s", t->name());
     }
   } verifier;
   Threads::threads_do(&verifier);
@@ -195,4 +193,3 @@ G1PreEvacuateCollectionSetBatchTask::~G1PreEvacuateCollectionSetBatchTask() {
   size_t thread_buffer_cards = pending_cards - _old_pending_cards;
   G1CollectedHeap::heap()->policy()->record_concurrent_refinement_stats(pending_cards, thread_buffer_cards);
 }
-

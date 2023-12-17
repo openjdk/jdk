@@ -21,73 +21,45 @@
  * questions.
  */
 
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.Utils;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
-import static org.testng.Assert.assertNotEquals;
 import static org.testng.Assert.assertTrue;
 
 public class UpcallTestHelper extends NativeTestHelper {
-    public record Output(List<String> stdout, List<String> stderr) {
-        private static void assertContains(List<String> lines, String shouldInclude, String name) {
-            assertTrue(lines.stream().anyMatch(line -> line.contains(shouldInclude)),
-                "Did not find '" + shouldInclude + "' in " + name);
-        }
 
-        public Output assertStdErrContains(String shouldInclude) {
-            assertContains(stderr, shouldInclude, "stderr");
-            return this;
-        }
-
-        public Output assertStdOutContains(String shouldInclude) {
-            assertContains(stdout, shouldInclude, "stdout");
-            return this;
-        }
+    public OutputAnalyzer runInNewProcess(Class<?> target, boolean useSpec, String... programArgs) throws IOException, InterruptedException {
+        return runInNewProcess(target, useSpec, List.of(), List.of(programArgs));
     }
 
-    public Output runInNewProcess(Class<?> target, boolean useSpec, String... programArgs) throws IOException, InterruptedException {
+    public OutputAnalyzer runInNewProcess(Class<?> target, boolean useSpec, List<String> vmArgs, List<String> programArgs) throws IOException, InterruptedException {
         assert !target.isArray();
 
         List<String> command = new ArrayList<>(List.of(
-            Paths.get(Utils.TEST_JDK)
-                    .resolve("bin")
-                    .resolve("java")
-                    .toAbsolutePath()
-                    .toString(),
-            "--enable-preview",
             "--enable-native-access=ALL-UNNAMED",
             "-Djava.library.path=" + System.getProperty("java.library.path"),
-            "-Djdk.internal.foreign.UpcallLinker.USE_SPEC=" + useSpec,
-            "-cp", Utils.TEST_CLASS_PATH,
-            target.getName()
+            "-Djdk.internal.foreign.UpcallLinker.USE_SPEC=" + useSpec
         ));
-        command.addAll(Arrays.asList(programArgs));
-        Process process = new ProcessBuilder()
-            .command(command)
-            .start();
+        command.addAll(vmArgs);
+        command.add(target.getName());
+        command.addAll(programArgs);
 
-        int result = process.waitFor();
-        assertNotEquals(result, 0);
+        Process process = ProcessTools.createTestJavaProcessBuilder(command).start();
 
-        List<String> outLines = linesFromStream(process.getInputStream());
-        outLines.forEach(System.out::println);
-        List<String> errLines = linesFromStream(process.getErrorStream());
-        errLines.forEach(System.err::println);
+        long timeOut = (long) (Utils.TIMEOUT_FACTOR * 1L);
+        boolean completed = process.waitFor(timeOut, TimeUnit.MINUTES);
+        assertTrue(completed, "Time out while waiting for process");
 
-        return new Output(outLines, errLines);
-    }
+        OutputAnalyzer output = new OutputAnalyzer(process);
+        output.outputTo(System.out);
+        output.errorTo(System.err);
 
-    private static List<String> linesFromStream(InputStream stream) throws IOException {
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(stream))) {
-            return reader.lines().toList();
-        }
+        return output;
     }
 }

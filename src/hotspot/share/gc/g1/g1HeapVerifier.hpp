@@ -70,6 +70,9 @@ public:
   void verify_before_gc();
   void verify_after_gc();
 
+  // Verify that marking state is set up correctly after a concurrent start pause.
+  void verify_marking_state();
+
   void verify_bitmap_clear(bool above_tams_only);
 
   // Do sanity check on the contents of the in-cset fast test table.

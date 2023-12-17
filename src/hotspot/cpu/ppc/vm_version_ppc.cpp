@@ -200,10 +200,6 @@ void VM_Version::initialize() {
     print_features();
   }
 
-  // PPC64 supports 8-byte compare-exchange operations (see Atomic::cmpxchg)
-  // and 'atomic long memory ops' (see Unsafe_GetLongVolatile).
-  _supports_cx8 = true;
-
   // Used by C1.
   _supports_atomic_getset4 = true;
   _supports_atomic_getadd4 = true;
@@ -497,7 +493,7 @@ void VM_Version::print_features() {
   if (Verbose) {
     if (ContendedPaddingWidth > 0) {
       tty->cr();
-      tty->print_cr("ContendedPaddingWidth " INTX_FORMAT, ContendedPaddingWidth);
+      tty->print_cr("ContendedPaddingWidth %d", ContendedPaddingWidth);
     }
   }
 }

@@ -2004,7 +2004,9 @@ JVM_ENTRY(void, jmm_GetDiagnosticCommandInfo(JNIEnv *env, jobjectArray cmds,
         THROW_MSG(vmSymbols::java_lang_NullPointerException(),
                 "Command name cannot be null.");
     }
-    int pos = info_list->find((void*)cmd_name,DCmdInfo::by_name);
+    int pos = info_list->find_if([&](DCmdInfo* info) {
+      return info->name_equals(cmd_name);
+    });
     if (pos == -1) {
         THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
              "Unknown diagnostic command");
@@ -2116,6 +2118,7 @@ JVM_ENTRY(jlong, jmm_GetTotalThreadAllocatedMemory(JNIEnv *env))
     }
 
     {
+      assert(MonitoringSupport_lock != nullptr, "Must be");
       MutexLocker ml(MonitoringSupport_lock, Mutex::_no_safepoint_check_flag);
       if (result < high_water_result) {
         // Encountered (2) above, or result wrapped to a negative value. In

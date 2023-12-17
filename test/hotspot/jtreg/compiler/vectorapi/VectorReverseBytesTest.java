@@ -70,7 +70,7 @@ public class VectorReverseBytesTest {
     }
 
     @Test
-    @IR(failOn = IRNode.REVERSE_BYTES_V)
+    @IR(failOn = IRNode.REVERSE_BYTES_VB)
     public static void testReverseBytesV() {
         for (int i = 0; i < LENGTH; i += B_SPECIES.length()) {
             ByteVector v = ByteVector.fromArray(B_SPECIES, input, i);
@@ -84,8 +84,8 @@ public class VectorReverseBytesTest {
     }
 
     @Test
-    @IR(failOn = IRNode.REVERSE_BYTES_V)
-    @IR(failOn = IRNode.VECTOR_BLEND)
+    @IR(failOn = IRNode.REVERSE_BYTES_VB)
+    @IR(failOn = IRNode.VECTOR_BLEND_B)
     public static void testReverseBytesVMasked() {
         VectorMask<Byte> mask = VectorMask.fromArray(B_SPECIES, m, 0);
         for (int i = 0; i < LENGTH; i += B_SPECIES.length()) {

@@ -94,7 +94,6 @@ class VectorNode : public TypeNode {
 
   static int opcode(int sopc, BasicType bt);         // scalar_opc -> vector_opc
   static int scalar_opcode(int vopc, BasicType bt);  // vector_opc -> scalar_opc
-  static int replicate_opcode(BasicType bt);
 
   // Limits on vector size (number of elements) for auto-vectorization.
   static bool vector_size_supported_superword(const BasicType bt, int size);
@@ -109,7 +108,6 @@ class VectorNode : public TypeNode {
   static bool is_vector_rotate_supported(int opc, uint vlen, BasicType bt);
   static bool is_vector_integral_negate_supported(int opc, uint vlen, BasicType bt, bool use_predicate);
   static bool is_populate_index_supported(BasicType bt);
-  static bool is_invariant_vector(Node* n);
   // Return true if every bit in this vector is 1.
   static bool is_all_ones_vector(Node* n);
   // Return true if every bit in this vector is 0.
@@ -376,19 +374,29 @@ class MulAddVS2VINode : public VectorNode {
     virtual int Opcode() const;
 };
 
-//------------------------------FmaVDNode--------------------------------------
-// Vector multiply double
-class FmaVDNode : public VectorNode {
+//------------------------------FmaVNode--------------------------------------
+// Vector fused-multiply-add
+class FmaVNode : public VectorNode {
 public:
-  FmaVDNode(Node* in1, Node* in2, Node* in3, const TypeVect* vt) : VectorNode(in1, in2, in3, vt) {}
+  FmaVNode(Node* in1, Node* in2, Node* in3, const TypeVect* vt) : VectorNode(in1, in2, in3, vt) {
+    assert(UseFMA, "Needs FMA instructions support.");
+  }
+  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
+};
+
+//------------------------------FmaVDNode--------------------------------------
+// Vector fused-multiply-add double
+class FmaVDNode : public FmaVNode {
+public:
+  FmaVDNode(Node* in1, Node* in2, Node* in3, const TypeVect* vt) : FmaVNode(in1, in2, in3, vt) {}
   virtual int Opcode() const;
 };
 
 //------------------------------FmaVFNode--------------------------------------
-// Vector multiply float
-class FmaVFNode : public VectorNode {
+// Vector fused-multiply-add float
+class FmaVFNode : public FmaVNode {
 public:
-  FmaVFNode(Node* in1, Node* in2, Node* in3, const TypeVect* vt) : VectorNode(in1, in2, in3, vt) {}
+  FmaVFNode(Node* in1, Node* in2, Node* in3, const TypeVect* vt) : FmaVNode(in1, in2, in3, vt) {}
   virtual int Opcode() const;
 };
 
@@ -508,7 +516,9 @@ class AbsVDNode : public VectorNode {
 // Vector Neg parent class (not for code generation).
 class NegVNode : public VectorNode {
  public:
-  NegVNode(Node* in, const TypeVect* vt) : VectorNode(in, vt) {}
+  NegVNode(Node* in, const TypeVect* vt) : VectorNode(in, vt) {
+    init_class_id(Class_NegV);
+  }
   virtual int Opcode() const = 0;
   virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
 
@@ -1123,51 +1133,12 @@ class XorVMaskNode : public XorVNode {
 
 //=========================Promote_Scalar_to_Vector============================
 
-//------------------------------ReplicateBNode---------------------------------
-// Replicate byte scalar to be vector
-class ReplicateBNode : public VectorNode {
+class ReplicateNode : public VectorNode {
  public:
-  ReplicateBNode(Node* in1, const TypeVect* vt) : VectorNode(in1, vt) {}
-  virtual int Opcode() const;
-};
-
-//------------------------------ReplicateSNode---------------------------------
-// Replicate short scalar to be vector
-class ReplicateSNode : public VectorNode {
- public:
-  ReplicateSNode(Node* in1, const TypeVect* vt) : VectorNode(in1, vt) {}
-  virtual int Opcode() const;
-};
-
-//------------------------------ReplicateINode---------------------------------
-// Replicate int scalar to be vector
-class ReplicateINode : public VectorNode {
- public:
-  ReplicateINode(Node* in1, const TypeVect* vt) : VectorNode(in1, vt) {}
-  virtual int Opcode() const;
-};
-
-//------------------------------ReplicateLNode---------------------------------
-// Replicate long scalar to be vector
-class ReplicateLNode : public VectorNode {
- public:
-  ReplicateLNode(Node* in1, const TypeVect* vt) : VectorNode(in1, vt) {}
-  virtual int Opcode() const;
-};
-
-//------------------------------ReplicateFNode---------------------------------
-// Replicate float scalar to be vector
-class ReplicateFNode : public VectorNode {
- public:
-  ReplicateFNode(Node* in1, const TypeVect* vt) : VectorNode(in1, vt) {}
-  virtual int Opcode() const;
-};
-
-//------------------------------ReplicateDNode---------------------------------
-// Replicate double scalar to be vector
-class ReplicateDNode : public VectorNode {
- public:
-  ReplicateDNode(Node* in1, const TypeVect* vt) : VectorNode(in1, vt) {}
+  ReplicateNode(Node* in1, const TypeVect* vt) : VectorNode(in1, vt) {
+    assert(vt->element_basic_type() != T_BOOLEAN, "not support");
+    assert(vt->element_basic_type() != T_CHAR, "not support");
+  }
   virtual int Opcode() const;
 };
 
@@ -1280,12 +1251,8 @@ class VectorLoadConstNode : public VectorNode {
 // Extract a scalar from a vector at position "pos"
 class ExtractNode : public Node {
  public:
-  ExtractNode(Node* src, ConINode* pos) : Node(nullptr, src, (Node*)pos) {
-    assert(in(2)->get_int() >= 0, "positive constants");
-  }
+  ExtractNode(Node* src, Node* pos) : Node(nullptr, src, pos) {}
   virtual int Opcode() const;
-  uint  pos() const { return in(2)->get_int(); }
-
   static Node* make(Node* v, ConINode* pos, BasicType bt);
   static int opcode(BasicType bt);
 };
@@ -1294,7 +1261,7 @@ class ExtractNode : public Node {
 // Extract a byte from a vector at position "pos"
 class ExtractBNode : public ExtractNode {
  public:
-  ExtractBNode(Node* src, ConINode* pos) : ExtractNode(src, pos) {}
+  ExtractBNode(Node* src, Node* pos) : ExtractNode(src, pos) {}
   virtual int Opcode() const;
   virtual const Type* bottom_type() const { return TypeInt::BYTE; }
   virtual uint ideal_reg() const { return Op_RegI; }
@@ -1304,9 +1271,9 @@ class ExtractBNode : public ExtractNode {
 // Extract a boolean from a vector at position "pos"
 class ExtractUBNode : public ExtractNode {
  public:
-  ExtractUBNode(Node* src, ConINode* pos) : ExtractNode(src, pos) {}
+  ExtractUBNode(Node* src, Node* pos) : ExtractNode(src, pos) {}
   virtual int Opcode() const;
-  virtual const Type* bottom_type() const { return TypeInt::UBYTE; }
+  virtual const Type* bottom_type() const { return TypeInt::BOOL; }
   virtual uint ideal_reg() const { return Op_RegI; }
 };
 
@@ -1314,7 +1281,7 @@ class ExtractUBNode : public ExtractNode {
 // Extract a char from a vector at position "pos"
 class ExtractCNode : public ExtractNode {
  public:
-  ExtractCNode(Node* src, ConINode* pos) : ExtractNode(src, pos) {}
+  ExtractCNode(Node* src, Node* pos) : ExtractNode(src, pos) {}
   virtual int Opcode() const;
   virtual const Type *bottom_type() const { return TypeInt::CHAR; }
   virtual uint ideal_reg() const { return Op_RegI; }
@@ -1324,7 +1291,7 @@ class ExtractCNode : public ExtractNode {
 // Extract a short from a vector at position "pos"
 class ExtractSNode : public ExtractNode {
  public:
-  ExtractSNode(Node* src, ConINode* pos) : ExtractNode(src, pos) {}
+  ExtractSNode(Node* src, Node* pos) : ExtractNode(src, pos) {}
   virtual int Opcode() const;
   virtual const Type *bottom_type() const { return TypeInt::SHORT; }
   virtual uint ideal_reg() const { return Op_RegI; }
@@ -1334,7 +1301,7 @@ class ExtractSNode : public ExtractNode {
 // Extract an int from a vector at position "pos"
 class ExtractINode : public ExtractNode {
  public:
-  ExtractINode(Node* src, ConINode* pos) : ExtractNode(src, pos) {}
+  ExtractINode(Node* src, Node* pos) : ExtractNode(src, pos) {}
   virtual int Opcode() const;
   virtual const Type *bottom_type() const { return TypeInt::INT; }
   virtual uint ideal_reg() const { return Op_RegI; }
@@ -1344,7 +1311,7 @@ class ExtractINode : public ExtractNode {
 // Extract a long from a vector at position "pos"
 class ExtractLNode : public ExtractNode {
  public:
-  ExtractLNode(Node* src, ConINode* pos) : ExtractNode(src, pos) {}
+  ExtractLNode(Node* src, Node* pos) : ExtractNode(src, pos) {}
   virtual int Opcode() const;
   virtual const Type *bottom_type() const { return TypeLong::LONG; }
   virtual uint ideal_reg() const { return Op_RegL; }
@@ -1354,7 +1321,7 @@ class ExtractLNode : public ExtractNode {
 // Extract a float from a vector at position "pos"
 class ExtractFNode : public ExtractNode {
  public:
-  ExtractFNode(Node* src, ConINode* pos) : ExtractNode(src, pos) {}
+  ExtractFNode(Node* src, Node* pos) : ExtractNode(src, pos) {}
   virtual int Opcode() const;
   virtual const Type *bottom_type() const { return Type::FLOAT; }
   virtual uint ideal_reg() const { return Op_RegF; }
@@ -1364,7 +1331,7 @@ class ExtractFNode : public ExtractNode {
 // Extract a double from a vector at position "pos"
 class ExtractDNode : public ExtractNode {
  public:
-  ExtractDNode(Node* src, ConINode* pos) : ExtractNode(src, pos) {}
+  ExtractDNode(Node* src, Node* pos) : ExtractNode(src, pos) {}
   virtual int Opcode() const;
   virtual const Type *bottom_type() const { return Type::DOUBLE; }
   virtual uint ideal_reg() const { return Op_RegD; }
@@ -1606,38 +1573,6 @@ class VectorCastD2XNode : public VectorCastNode {
   virtual int Opcode() const;
 };
 
-class RoundVFNode : public VectorNode {
- public:
-  RoundVFNode(Node* in, const TypeVect* vt) :VectorNode(in, vt) {
-    assert(in->bottom_type()->is_vect()->element_basic_type() == T_FLOAT, "must be float");
-  }
-  virtual int Opcode() const;
-};
-
-class VectorUCastB2XNode : public VectorCastNode {
- public:
-  VectorUCastB2XNode(Node* in, const TypeVect* vt) : VectorCastNode(in, vt) {
-    assert(in->bottom_type()->is_vect()->element_basic_type() == T_BYTE, "must be byte");
-  }
-  virtual int Opcode() const;
-};
-
-class RoundVDNode : public VectorNode {
- public:
-  RoundVDNode(Node* in, const TypeVect* vt) : VectorNode(in, vt) {
-    assert(in->bottom_type()->is_vect()->element_basic_type() == T_DOUBLE, "must be double");
-  }
-  virtual int Opcode() const;
-};
-
-class VectorUCastS2XNode : public VectorCastNode {
- public:
-  VectorUCastS2XNode(Node* in, const TypeVect* vt) : VectorCastNode(in, vt) {
-    assert(in->bottom_type()->is_vect()->element_basic_type() == T_SHORT, "must be short");
-  }
-  virtual int Opcode() const;
-};
-
 class VectorCastHF2FNode : public VectorCastNode {
  public:
   VectorCastHF2FNode(Node* in, const TypeVect* vt) : VectorCastNode(in, vt) {
@@ -1654,10 +1589,50 @@ class VectorCastF2HFNode : public VectorCastNode {
   virtual int Opcode() const;
 };
 
+// So far, VectorUCastNode can only be used in Vector API unsigned extensions
+// between integral types. E.g., extending byte to float is not supported now.
+class VectorUCastB2XNode : public VectorCastNode {
+ public:
+  VectorUCastB2XNode(Node* in, const TypeVect* vt) : VectorCastNode(in, vt) {
+    assert(in->bottom_type()->is_vect()->element_basic_type() == T_BYTE, "must be byte");
+    assert(vt->element_basic_type() == T_SHORT ||
+           vt->element_basic_type() == T_INT ||
+           vt->element_basic_type() == T_LONG, "must be");
+  }
+  virtual int Opcode() const;
+};
+
+class VectorUCastS2XNode : public VectorCastNode {
+ public:
+  VectorUCastS2XNode(Node* in, const TypeVect* vt) : VectorCastNode(in, vt) {
+    assert(in->bottom_type()->is_vect()->element_basic_type() == T_SHORT, "must be short");
+    assert(vt->element_basic_type() == T_INT ||
+           vt->element_basic_type() == T_LONG, "must be");
+  }
+  virtual int Opcode() const;
+};
+
 class VectorUCastI2XNode : public VectorCastNode {
  public:
   VectorUCastI2XNode(Node* in, const TypeVect* vt) : VectorCastNode(in, vt) {
     assert(in->bottom_type()->is_vect()->element_basic_type() == T_INT, "must be int");
+    assert(vt->element_basic_type() == T_LONG, "must be");
+  }
+  virtual int Opcode() const;
+};
+
+class RoundVFNode : public VectorNode {
+ public:
+  RoundVFNode(Node* in, const TypeVect* vt) :VectorNode(in, vt) {
+    assert(in->bottom_type()->is_vect()->element_basic_type() == T_FLOAT, "must be float");
+  }
+  virtual int Opcode() const;
+};
+
+class RoundVDNode : public VectorNode {
+ public:
+  RoundVDNode(Node* in, const TypeVect* vt) : VectorNode(in, vt) {
+    assert(in->bottom_type()->is_vect()->element_basic_type() == T_DOUBLE, "must be double");
   }
   virtual int Opcode() const;
 };

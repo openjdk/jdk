@@ -34,7 +34,6 @@ import java.text.ParseException;
 import java.text.RuleBasedCollator;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Deque;
@@ -116,13 +115,12 @@ import com.sun.source.tree.LineMap;
 import com.sun.source.util.DocSourcePositions;
 import com.sun.source.util.DocTrees;
 import com.sun.source.util.TreePath;
+
 import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 import jdk.javadoc.internal.doclets.toolkit.BaseOptions;
 import jdk.javadoc.internal.doclets.toolkit.CommentUtils;
 import jdk.javadoc.internal.doclets.toolkit.CommentUtils.DocCommentInfo;
 import jdk.javadoc.internal.doclets.toolkit.Resources;
-import jdk.javadoc.internal.doclets.toolkit.taglets.BaseTaglet;
-import jdk.javadoc.internal.doclets.toolkit.taglets.Taglet;
 
 import static javax.lang.model.element.ElementKind.*;
 import static javax.lang.model.type.TypeKind.*;
@@ -380,6 +378,11 @@ public class Utils {
         return typeUtils.isSameType(amirror.getAnnotationType(), getFunctionalInterface()) &&
                 configuration.docEnv.getSourceVersion()
                         .compareTo(SourceVersion.RELEASE_8) >= 0;
+    }
+
+    public boolean isFunctionalInterface(TypeElement typeElement) {
+        return typeElement.getAnnotationMirrors().stream()
+                .anyMatch(this::isFunctionalInterface);
     }
 
     public boolean isUndocumentedEnclosure(TypeElement enclosingTypeElement) {
@@ -662,7 +665,7 @@ public class Utils {
     }
 
     public SortedSet<TypeElement> getTypeElementsAsSortedSet(Iterable<TypeElement> typeElements) {
-        SortedSet<TypeElement> set = new TreeSet<>(comparators.makeGeneralPurposeComparator());
+        SortedSet<TypeElement> set = new TreeSet<>(comparators.generalPurposeComparator());
         typeElements.forEach(set::add);
         return set;
     }
@@ -803,20 +806,6 @@ public class Utils {
     }
 
     /**
-     * Lookup for a class within this package.
-     *
-     * @return TypeElement of found class, or null if not found.
-     */
-    public TypeElement findClassInPackageElement(PackageElement pkg, String className) {
-        for (TypeElement c : getAllClasses(pkg)) {
-            if (getSimpleName(c).equals(className)) {
-                return c;
-            }
-        }
-        return null;
-    }
-
-    /**
      * Returns true if {@code type} or any of its enclosing types has non-empty type arguments.
      * @param type the type
      * @return {@code true} if type arguments were found
@@ -829,30 +818,6 @@ public class Utils {
             type = dt.getEnclosingType();
         }
         return false;
-    }
-
-    /**
-     * TODO: FIXME: port to javax.lang.model
-     * Find a class within the context of this class. Search order: qualified name, in this class
-     * (inner), in this package, in the class imports, in the package imports. Return the
-     * TypeElement if found, null if not found.
-     */
-    //### The specified search order is not the normal rule the
-    //### compiler would use.  Leave as specified or change it?
-    public TypeElement findClass(Element element, String className) {
-        TypeElement encl = getEnclosingTypeElement(element);
-        TypeElement searchResult = configuration.workArounds.searchClass(encl, className);
-        if (searchResult == null) {
-            encl = getEnclosingTypeElement(encl);
-            //Expand search space to include enclosing class.
-            while (encl != null && getEnclosingTypeElement(encl) != null) {
-                encl = getEnclosingTypeElement(encl);
-            }
-            searchResult = encl == null
-                    ? null
-                    : configuration.workArounds.searchClass(encl, className);
-        }
-        return searchResult;
     }
 
     /**
@@ -991,7 +956,7 @@ public class Utils {
     /**
      * Return the type's dimension information, as a string.
      * <p>
-     * For example, a two dimensional array of String returns "{@code [][]}".
+     * For example, a two-dimensional array of String returns "{@code [][]}".
      *
      * @return the type's dimension information as a string.
      */
@@ -1319,7 +1284,7 @@ public class Utils {
     public SortedSet<TypeElement> filterOutPrivateClasses(Iterable<TypeElement> classlist,
             boolean javafx) {
         SortedSet<TypeElement> filteredOutClasses =
-                new TreeSet<>(comparators.makeGeneralPurposeComparator());
+                new TreeSet<>(comparators.generalPurposeComparator());
         if (!javafx) {
             for (TypeElement te : classlist) {
                 if (!hasHiddenTag(te)) {
@@ -1561,17 +1526,6 @@ public class Utils {
     }
 
     /**
-     * Returns the documented classes in an element,
-     * such as a package element or type element.
-     *
-     * @param e the element
-     * @return the classes
-     */
-    public List<TypeElement> getClasses(Element e) {
-        return getDocumentedItems(e, CLASS, TypeElement.class);
-    }
-
-    /**
      * Returns the documented constructors in a type element.
      *
      * @param te the type element
@@ -1606,7 +1560,7 @@ public class Utils {
     }
 
     public Map<ModuleElement, String> getDependentModules(ModuleElement mdle) {
-        Map<ModuleElement, String> result = new TreeMap<>(comparators.makeModuleComparator());
+        Map<ModuleElement, String> result = new TreeMap<>(comparators.moduleComparator());
         Deque<ModuleElement> queue = new ArrayDeque<>();
         // get all the requires for the element in question
         for (RequiresDirective rd : ElementFilter.requiresIn(mdle.getDirectives())) {
@@ -1680,7 +1634,7 @@ public class Utils {
      * @return the interfaces
      */
     public SortedSet<TypeElement> getAllClassesUnfiltered(PackageElement pkg) {
-        SortedSet<TypeElement> set = new TreeSet<>(comparators.makeGeneralPurposeComparator());
+        SortedSet<TypeElement> set = new TreeSet<>(comparators.generalPurposeComparator());
         set.addAll(getItems(pkg, true, this::isTypeElement, TypeElement.class));
         return set;
     }
@@ -1696,7 +1650,7 @@ public class Utils {
     public SortedSet<TypeElement> getAllClasses(PackageElement pkg) {
         return cachedClasses.computeIfAbsent(pkg, p_ -> {
             List<TypeElement> clist = getItems(pkg, false, this::isTypeElement, TypeElement.class);
-            SortedSet<TypeElement>oset = new TreeSet<>(comparators.makeGeneralPurposeComparator());
+            SortedSet<TypeElement>oset = new TreeSet<>(comparators.generalPurposeComparator());
             oset.addAll(clist);
             return oset;
         });
@@ -2087,47 +2041,102 @@ public class Utils {
         commentHelperCache.remove(element);
     }
 
+    /**
+     * Returns the "raw" list of block tags from the doc-comment tree for an element,
+     * or an empty list if there is no such comment.
+     *
+     * Note: The list may include {@code ErroneousTree} nodes.
+     *
+     * @param element the element
+     * @return the list
+     */
     public List<? extends DocTree> getBlockTags(Element element) {
         return getBlockTags(getDocCommentTree(element));
     }
 
+    /**
+     * Returns the "raw" list of block tags from a {@code DocCommentTree}, or an empty list
+     * if the doc-comment tree is {@code null}.
+     *
+     * Note: The list may include {@code ErroneousTree} nodes.
+     *
+     * @param dcTree the doc-comment tree
+     * @return the list
+     */
     public List<? extends DocTree> getBlockTags(DocCommentTree dcTree) {
         return dcTree == null ? List.of() : dcTree.getBlockTags();
     }
 
-    public List<? extends DocTree> getBlockTags(Element element, Predicate<DocTree> filter) {
+    /**
+     * Returns the list of block tags for the doc-comment tree for an element that match
+     * a given filter, or an empty list if there is no such doc-comment.
+     *
+     * @param element the element
+     * @param filter  the filter
+     * @return the list
+     */
+    public List<? extends BlockTagTree> getBlockTags(Element element, Predicate<? super BlockTagTree> filter) {
         return getBlockTags(element).stream()
                 .filter(t -> t.getKind() != ERRONEOUS)
+                .map(t -> (BlockTagTree) t)
                 .filter(filter)
                 .toList();
     }
 
-    public <T extends DocTree> List<T> getBlockTags(Element element, Predicate<DocTree> filter, Class<T> tClass) {
+    /**
+     * Returns the list of block tags for the doc-comment tree for an element that match
+     * a given filter, or an empty list if there is no such doc-comment.
+     *
+     * @param <T> the type of the required block tags
+     * @param element the element
+     * @param filter  the filter
+     * @return the list
+     */
+    public <T extends BlockTagTree> List<T> getBlockTags(Element element,
+                                                         Predicate<? super BlockTagTree> filter,
+                                                         Class<T> tClass) {
         return getBlockTags(element).stream()
                 .filter(t -> t.getKind() != ERRONEOUS)
+                .map(t -> (BlockTagTree) t)
                 .filter(filter)
                 .map(tClass::cast)
                 .toList();
     }
 
-    public List<? extends DocTree> getBlockTags(Element element, DocTree.Kind kind) {
+    /**
+     * Returns the list of block tags for the doc-comment tree for an element,
+     * or an empty list if there is no such doc-comment.
+     *
+     * @param element the element
+     * @return the list
+     */
+    public List<? extends BlockTagTree> getBlockTags(Element element, DocTree.Kind kind) {
         return getBlockTags(element, t -> t.getKind() == kind);
     }
 
-    public <T extends DocTree> List<? extends T> getBlockTags(Element element, DocTree.Kind kind, Class<T> tClass) {
+    /**
+     * Returns the list of block tags for the doc-comment tree for an element that match a given kind,
+     * or an empty list if there is no such doc-comment.
+     *
+     * @param <T> the type of the required block tags
+     * @param element the element
+     * @param kind the kind for the required block tags
+     * @return the list
+     */
+    public <T extends BlockTagTree> List<? extends T> getBlockTags(Element element, DocTree.Kind kind, Class<T> tClass) {
         return getBlockTags(element, t -> t.getKind() == kind, tClass);
     }
 
-    public List<? extends DocTree> getBlockTags(Element element, Taglet taglet) {
-        return getBlockTags(element, t -> {
-            if (taglet instanceof BaseTaglet baseTaglet) {
-                return baseTaglet.accepts(t);
-            } else if (t instanceof BlockTagTree blockTagTree) {
-                return blockTagTree.getTagName().equals(taglet.getName());
-            } else {
-                return false;
-            }
-        });
+    /**
+     * Returns the list of block tags for the doc-comment tree for an element that match a given name,
+     * or an empty list if there is no such doc-comment.
+     *
+     * @param element the element
+     * @param tagName the name of the required block tags
+     * @return the list
+     */
+    public List<? extends BlockTagTree> getBlockTags(Element element, String tagName) {
+        return getBlockTags(element, t -> t.getTagName().equals(tagName));
     }
 
     public boolean hasBlockTag(Element element, DocTree.Kind kind) {
@@ -2683,6 +2692,16 @@ public class Utils {
     }
 
     /**
+     * Checks whether the given ExecutableElement should be marked as a restricted API.
+     *
+     * @param el the element to check
+     * @return true if and only if the given element should be marked as a restricted API
+     */
+    public boolean isRestrictedAPI(Element el) {
+        return configuration.workArounds.isRestrictedAPI(el);
+    }
+
+    /**
      * Return all flags for the given Element.
      *
      * @param el the element to test
@@ -2693,6 +2712,10 @@ public class Utils {
 
         if (isDeprecated(el)) {
             flags.add(ElementFlag.DEPRECATED);
+        }
+
+        if (el.getKind() == ElementKind.METHOD && configuration.workArounds.isRestrictedAPI((ExecutableElement)el)) {
+            flags.add(ElementFlag.RESTRICTED);
         }
 
         if (previewFlagProvider.isPreview(el)) {
@@ -2708,7 +2731,8 @@ public class Utils {
      */
     public enum ElementFlag {
         DEPRECATED,
-        PREVIEW
+        PREVIEW,
+        RESTRICTED
     }
 
     private boolean isClassOrInterface(Element el) {

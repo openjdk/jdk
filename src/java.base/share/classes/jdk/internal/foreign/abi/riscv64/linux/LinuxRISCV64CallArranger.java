@@ -6,7 +6,9 @@
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -38,12 +40,10 @@ import jdk.internal.foreign.abi.CallingSequence;
 import jdk.internal.foreign.abi.CallingSequenceBuilder;
 import jdk.internal.foreign.abi.DowncallLinker;
 import jdk.internal.foreign.abi.LinkerOptions;
-import jdk.internal.foreign.abi.UpcallLinker;
 import jdk.internal.foreign.abi.SharedUtils;
 import jdk.internal.foreign.abi.VMStorage;
 import jdk.internal.foreign.Utils;
 
-import java.lang.foreign.ValueLayout;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
 import java.util.List;
@@ -85,8 +85,8 @@ public class LinuxRISCV64CallArranger {
 
     public static Bindings getBindings(MethodType mt, FunctionDescriptor cDesc, boolean forUpcall, LinkerOptions options) {
         CallingSequenceBuilder csb = new CallingSequenceBuilder(CLinux, forUpcall, options);
-        BindingCalculator argCalc = forUpcall ? new BoxBindingCalculator(true) : new UnboxBindingCalculator(true);
-        BindingCalculator retCalc = forUpcall ? new UnboxBindingCalculator(false) : new BoxBindingCalculator(false);
+        BindingCalculator argCalc = forUpcall ? new BoxBindingCalculator(true) : new UnboxBindingCalculator(true, options.allowsHeapAccess());
+        BindingCalculator retCalc = forUpcall ? new UnboxBindingCalculator(false, false) : new BoxBindingCalculator(false);
 
         boolean returnInMemory = isInMemoryReturn(cDesc.returnLayout());
         if (returnInMemory) {
@@ -148,7 +148,7 @@ public class LinuxRISCV64CallArranger {
             this.forArguments = forArguments;
         }
 
-        // Aggregates or scalars passed on the stack are aligned to the greater of
+        // Aggregates or scalars passed on the stack are aligned to the greatest of
         // the type alignment and XLEN bits, but never more than the stack alignment.
         void alignStack(long alignment) {
             alignment = Utils.alignUp(Math.clamp(alignment, STACK_SLOT_SIZE, 16), STACK_SLOT_SIZE);
@@ -251,12 +251,14 @@ public class LinuxRISCV64CallArranger {
                               Map.entry(STRUCT_REGISTER_XF, STRUCT_REGISTER_X));
     }
 
-    static class UnboxBindingCalculator extends BindingCalculator {
-        boolean forArguments;
+    static final class UnboxBindingCalculator extends BindingCalculator {
+        protected final boolean forArguments;
+        private final boolean useAddressPairs;
 
-        UnboxBindingCalculator(boolean forArguments) {
+        UnboxBindingCalculator(boolean forArguments, boolean useAddressPairs) {
             super(forArguments);
             this.forArguments = forArguments;
+            this.useAddressPairs = useAddressPairs;
         }
 
         @Override
@@ -280,9 +282,17 @@ public class LinuxRISCV64CallArranger {
                     bindings.vmStore(storage, carrier);
                 }
                 case POINTER -> {
-                    bindings.unboxAddress();
                     VMStorage storage = storageCalculator.getStorage(StorageType.INTEGER);
-                    bindings.vmStore(storage, long.class);
+                    if (useAddressPairs) {
+                        bindings.dup()
+                                .segmentBase()
+                                .vmStore(storage, Object.class)
+                                .segmentOffsetAllowHeap()
+                                .vmStore(null, long.class);
+                    } else {
+                        bindings.unboxAddress();
+                        bindings.vmStore(storage, long.class);
+                    }
                 }
                 case STRUCT_REGISTER_X -> {
                     assert carrier == MemorySegment.class;

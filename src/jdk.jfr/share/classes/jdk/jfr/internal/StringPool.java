@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,8 @@ public final class StringPool {
     private static final int MAX_SIZE = 32 * 1024;
     /* max size bytes */
     private static final long MAX_SIZE_UTF16 = 16 * 1024 * 1024;
+    /* mask for constructing generation relative string id. */
+    private static final long SID_MASK = -65536;
     /* string id index */
     private static final AtomicLong sidIdx = new AtomicLong(1);
     /* looking at a biased data set 4 is a good value */
@@ -48,18 +50,69 @@ public final class StringPool {
     private static int preCacheOld = 0;
     /* max size bytes */
     private static long currentSizeUTF16;
+    /* string pool generation (0-65535) set by the JVM on epoch shift. Not private to avoid being optimized away. */
+    static short generation = 0;
 
-    public static void reset() {
-        cache.clear();
-        synchronized (StringPool.class) {
-            currentSizeUTF16 = 0;
-        }
+    /* internalSid is a composite id [48-bit externalSid][16-bit generation]. */
+    private static boolean isCurrentGeneration(long internalSid) {
+        return generation == (short)internalSid;
     }
 
+    private static long updateInternalSid(long internalSid) {
+        return (internalSid & SID_MASK) | generation;
+    }
+
+    private static long nextInternalSid() {
+        return sidIdx.getAndIncrement() << 16  | generation;
+    }
+
+    /* externalSid is the most significant 48-bits of the internalSid. */
+    private static long externalSid(long internalSid) {
+        return internalSid >> 16;
+    }
+
+    /* synchronized because of writing the string to the JVM. */
+    private static synchronized long storeString(String s) {
+        Long lsid = cache.get(s);
+        long internalSid;
+        if (lsid != null) {
+            internalSid = lsid.longValue();
+            if (isCurrentGeneration(internalSid)) {
+                // Someone already updated the cache.
+                return externalSid(internalSid);
+            }
+            internalSid = updateInternalSid(internalSid);
+        } else {
+            // Not yet added or the cache was cleared.
+            internalSid = nextInternalSid();
+            currentSizeUTF16 += s.length();
+        }
+        long extSid = externalSid(internalSid);
+        // Write the string to the JVM before publishing to the cache.
+        JVM.addStringConstant(extSid, s);
+        cache.put(s, internalSid);
+        return extSid;
+    }
+
+    /* a string fetched from the string pool must be of the current generation */
+    private static long ensureCurrentGeneration(String s, Long lsid) {
+        long internalSid = lsid.longValue();
+        return isCurrentGeneration(internalSid) ? externalSid(internalSid) : storeString(s);
+    }
+
+    /*
+     * The string pool uses a generational id scheme to sync the JVM and Java sides.
+     * The string pool relies on the EventWriter and its implementation, especially
+     * its ability to restart event write attempts on interleaving epoch shifts.
+     * Even though a string id is generationally valid during StringPool lookup,
+     * the JVM can evolve the generation before the event is committed,
+     * effectively invalidating the fetched string id. The event restart mechanism
+     * of the EventWriter ensures that committed strings are in the correct generation.
+     */
     public static long addString(String s) {
         Long lsid = cache.get(s);
         if (lsid != null) {
-            return lsid.longValue();
+            return ensureCurrentGeneration(s, lsid);
         }
         if (!preCache(s)) {
             /* we should not pool this string */
@@ -70,17 +123,6 @@ public final class StringPool {
             reset();
         }
         return storeString(s);
-    }
-
-    private static long storeString(String s) {
-        long sid = sidIdx.getAndIncrement();
-        /* we can race but it is ok */
-        cache.put(s, sid);
-        synchronized (StringPool.class) {
-            JVM.addStringConstant(sid, s);
-            currentSizeUTF16 += s.length();
-        }
-        return sid;
     }
 
     private static boolean preCache(String s) {
@@ -99,5 +141,10 @@ public final class StringPool {
         preCacheOld = (preCacheOld - 1) & preCacheMask;
         preCache[preCacheOld] = s;
         return false;
+    }
+
+    private static synchronized void reset() {
+        cache.clear();
+        currentSizeUTF16 = 0;
     }
 }

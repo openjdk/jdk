@@ -125,7 +125,7 @@ class markWord {
   static const uintptr_t marked_value             = 3;
 
   static const uintptr_t no_hash                  = 0 ;  // no hash value assigned
-  static const uintptr_t no_hash_in_place         = (address_word)no_hash << hash_shift;
+  static const uintptr_t no_hash_in_place         = (uintptr_t)no_hash << hash_shift;
   static const uintptr_t no_lock_in_place         = unlocked_value;
 
   static const uint max_age                       = age_mask;

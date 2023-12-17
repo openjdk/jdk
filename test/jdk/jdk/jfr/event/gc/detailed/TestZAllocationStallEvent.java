@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@ import jdk.test.lib.jfr.Events;
  * @requires vm.hasJFR & vm.gc.ZSinglegen
  * @key jfr
  * @library /test/lib /test/jdk /test/hotspot/jtreg
- * @run main/othervm -XX:+UseZGC -XX:-ZGenerational -Xmx32M jdk.jfr.event.gc.detailed.TestZAllocationStallEvent
+ * @run main/othervm -XX:+UseZGC -XX:-ZGenerational -Xmx32M -Xlog:gc*:gc.log::filecount=0 jdk.jfr.event.gc.detailed.TestZAllocationStallEvent
  */
 
 /**
@@ -44,7 +44,7 @@ import jdk.test.lib.jfr.Events;
  * @requires vm.hasJFR & vm.gc.ZGenerational
  * @key jfr
  * @library /test/lib /test/jdk /test/hotspot/jtreg
- * @run main/othervm -XX:+UseZGC -XX:+ZGenerational -Xmx32M jdk.jfr.event.gc.detailed.TestZAllocationStallEvent
+ * @run main/othervm -XX:+UseZGC -XX:+ZGenerational -Xmx32M -Xlog:gc*:gc.log::filecount=0 jdk.jfr.event.gc.detailed.TestZAllocationStallEvent
  */
 
 public class TestZAllocationStallEvent {
@@ -65,7 +65,7 @@ public class TestZAllocationStallEvent {
             List<RecordedEvent> events = Events.fromRecording(recording);
             System.out.println("Events: " + events.size());
             Events.hasEvents(events);
-            for (RecordedEvent event : Events.fromRecording(recording)) {
+            for (RecordedEvent event : events) {
                 Events.assertField(event, "size").atLeast(2L * 1024 * 1024);
             }
         }

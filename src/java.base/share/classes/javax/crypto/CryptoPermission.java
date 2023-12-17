@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ import java.security.*;
 import java.security.spec.AlgorithmParameterSpec;
 import java.io.Serializable;
 import java.util.Enumeration;
+import java.util.Objects;
 import java.util.Vector;
 
 import javax.crypto.spec.*;
@@ -252,6 +253,7 @@ class CryptoPermission extends java.security.Permission {
      * @param obj the object to test for equality with this object.
      * @return {@code true} if {@code obj} is equal to this object.
      */
+    @Override
     public boolean equals(Object obj) {
         if (obj == this)
             return true;
@@ -266,29 +268,20 @@ class CryptoPermission extends java.security.Permission {
         if (this.checkParam != that.checkParam) {
             return false;
         }
-        return (equalObjects(this.exemptionMechanism,
-                             that.exemptionMechanism) &&
-                equalObjects(this.algParamSpec,
-                             that.algParamSpec));
+        return Objects.equals(this.exemptionMechanism, that.exemptionMechanism)
+                && Objects.equals(this.algParamSpec, that.algParamSpec);
     }
 
     /**
-     * Returns the hash code value for this object.
-     *
-     * @return a hash code value for this object.
+     * {@return the hash code value for this object}
      */
-
+    @Override
     public int hashCode() {
-        int retval = alg.hashCode();
-        retval ^= maxKeySize;
-        if (exemptionMechanism != null) {
-            retval ^= exemptionMechanism.hashCode();
-        }
-        if (checkParam) retval ^= 100;
-        if (algParamSpec != null) {
-            retval ^= algParamSpec.hashCode();
-        }
-        return retval;
+        return alg.hashCode()
+                ^ maxKeySize
+                ^ Objects.hashCode(exemptionMechanism)
+                ^ (checkParam ? 100 : 0)
+                ^ Objects.hashCode(algParamSpec);
     }
 
     /**
@@ -436,14 +429,6 @@ class CryptoPermission extends java.security.Permission {
         } else {
             return !this.checkParam;
         }
-    }
-
-    private boolean equalObjects(Object obj1, Object obj2) {
-        if (obj1 == null) {
-            return (obj2 == null);
-        }
-
-        return obj1.equals(obj2);
     }
 }
 

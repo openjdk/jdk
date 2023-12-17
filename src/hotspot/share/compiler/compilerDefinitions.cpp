@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "code/codeCache.hpp"
 #include "compiler/compilerDefinitions.inline.hpp"
+#include "interpreter/invocationCounter.hpp"
 #include "jvm_io.h"
 #include "runtime/arguments.hpp"
 #include "runtime/continuation.hpp"
@@ -497,6 +498,11 @@ bool CompilerConfig::check_args_consistency(bool status) {
                 "Invalid NonNMethodCodeHeapSize=%dK. Must be at least %uK.\n", NonNMethodCodeHeapSize/K,
                 min_code_cache_size/K);
     status = false;
+  } else if (InlineCacheBufferSize > NonNMethodCodeHeapSize / 2) {
+    jio_fprintf(defaultStream::error_stream(),
+                "Invalid InlineCacheBufferSize=" SIZE_FORMAT "K. Must be less than or equal to " SIZE_FORMAT "K.\n",
+                InlineCacheBufferSize/K, NonNMethodCodeHeapSize/2/K);
+    status = false;
   }
 
 #ifdef _LP64
@@ -511,15 +517,6 @@ bool CompilerConfig::check_args_consistency(bool status) {
     }
     FLAG_SET_CMDLINE(BackgroundCompilation, false);
   }
-
-#ifdef COMPILER2
-  if (PostLoopMultiversioning && !RangeCheckElimination) {
-    if (!FLAG_IS_DEFAULT(PostLoopMultiversioning)) {
-      warning("PostLoopMultiversioning disabled because RangeCheckElimination is disabled.");
-    }
-    FLAG_SET_CMDLINE(PostLoopMultiversioning, false);
-  }
-#endif // COMPILER2
 
   if (CompilerConfig::is_interpreter_only()) {
     if (UseCompiler) {
@@ -614,6 +611,7 @@ void CompilerConfig::ergo_initialize() {
     IncrementalInline = false;
     IncrementalInlineMH = false;
     IncrementalInlineVirtual = false;
+    StressIncrementalInlining = false;
   }
 #ifndef PRODUCT
   if (!IncrementalInline) {

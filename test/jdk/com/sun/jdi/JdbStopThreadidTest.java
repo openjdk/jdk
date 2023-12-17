@@ -51,9 +51,9 @@ class JdbStopThreadidTestTarg {
         MyTask myTask1 = test.new MyTask();
         MyTask myTask2 = test.new MyTask();
         MyTask myTask3 = test.new MyTask();
-        Thread myThread1 = TestScaffold.newThread(myTask1, "MYTHREAD-1");
-        Thread myThread2 = TestScaffold.newThread(myTask2, "MYTHREAD-2");
-        Thread myThread3 = TestScaffold.newThread(myTask3, "MYTHREAD-3");
+        Thread myThread1 = DebuggeeWrapper.newThread(myTask1, "MYTHREAD-1");
+        Thread myThread2 = DebuggeeWrapper.newThread(myTask2, "MYTHREAD-2");
+        Thread myThread3 = DebuggeeWrapper.newThread(myTask3, "MYTHREAD-3");
 
         synchronized (lockObj) {
             myThread1.start();

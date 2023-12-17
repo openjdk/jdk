@@ -61,7 +61,7 @@ class MyClass {
  }
 }
 
-@State(Scope.Benchmark)
+@State(Scope.Thread)
 @BenchmarkMode(Mode.Throughput)
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
 @Warmup(iterations = 10, time = 1)

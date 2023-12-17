@@ -25,13 +25,14 @@
  * @test
  * @summary Wrong classfile attribution in inner class of lambda expression.
  * @bug 8010015
- * @modules jdk.jdeps/com.sun.tools.classfile
+ * @enablePreview
+ * @modules java.base/jdk.internal.classfile.impl
  */
 
 import java.lang.annotation.*;
 import static java.lang.annotation.RetentionPolicy.*;
 import static java.lang.annotation.ElementType.*;
-import com.sun.tools.classfile.*;
+import java.lang.classfile.*;
 
 /*
  * A type-annotations on a field in an inner class not in a lambda expression
@@ -47,9 +48,9 @@ public class T8010015 extends ClassfileTestHelper{
     public void run() throws Exception {
         expected_tvisibles = 1;
         expected_visibles = 1;
-        ClassFile cf = getClassFile("T8010015$Test$1innerClass.class");
-        for (Field f : cf.fields) {
-            test(cf, f);
+        ClassModel cm = getClassFile("T8010015$Test$1innerClass.class");
+        for (FieldModel fm : cm.fields()) {
+            test(fm);
         }
         countAnnotations();
 

@@ -186,18 +186,9 @@ void outputStream::put(char ch) {
   write(buf, 1);
 }
 
-#define SP_USE_TABS false
-
 void outputStream::sp(int count) {
   if (count < 0)  return;
-  if (SP_USE_TABS && count >= 8) {
-    int target = position() + count;
-    while (count >= 8) {
-      this->write("\t", 1);
-      count -= 8;
-    }
-    count = target - position();
-  }
+
   while (count > 0) {
     int nw = (count > 8) ? 8 : count;
     this->write("        ", nw);
@@ -257,7 +248,7 @@ void outputStream::date_stamp(bool guard,
 }
 
 outputStream& outputStream::indent() {
-  while (_position < _indentation) sp();
+  sp(_indentation - _position);
   return *this;
 }
 
@@ -1000,16 +991,6 @@ bufferedStream::bufferedStream(size_t initial_size, size_t bufmax) : outputStrea
   buffer_length = initial_size;
   buffer        = NEW_C_HEAP_ARRAY(char, buffer_length, mtInternal);
   buffer_pos    = 0;
-  buffer_fixed  = false;
-  buffer_max    = bufmax;
-  truncated     = false;
-}
-
-bufferedStream::bufferedStream(char* fixed_buffer, size_t fixed_buffer_size, size_t bufmax) : outputStream() {
-  buffer_length = fixed_buffer_size;
-  buffer        = fixed_buffer;
-  buffer_pos    = 0;
-  buffer_fixed  = true;
   buffer_max    = bufmax;
   truncated     = false;
 }
@@ -1026,38 +1007,32 @@ void bufferedStream::write(const char* s, size_t len) {
 
   size_t end = buffer_pos + len;
   if (end >= buffer_length) {
-    if (buffer_fixed) {
-      // if buffer cannot resize, silently truncate
-      len = buffer_length - buffer_pos - 1;
-      truncated = true;
-    } else {
-      // For small overruns, double the buffer.  For larger ones,
-      // increase to the requested size.
-      if (end < buffer_length * 2) {
-        end = buffer_length * 2;
+    // For small overruns, double the buffer.  For larger ones,
+    // increase to the requested size.
+    if (end < buffer_length * 2) {
+      end = buffer_length * 2;
+    }
+    // Impose a cap beyond which the buffer cannot grow - a size which
+    // in all probability indicates a real error, e.g. faulty printing
+    // code looping, while not affecting cases of just-very-large-but-its-normal
+    // output.
+    const size_t reasonable_cap = MAX2(100 * M, buffer_max * 2);
+    if (end > reasonable_cap) {
+      // In debug VM, assert right away.
+      assert(false, "Exceeded max buffer size for this string.");
+      // Release VM: silently truncate. We do this since these kind of errors
+      // are both difficult to predict with testing (depending on logging content)
+      // and usually not serious enough to kill a production VM for it.
+      end = reasonable_cap;
+      size_t remaining = end - buffer_pos;
+      if (len >= remaining) {
+        len = remaining - 1;
+        truncated = true;
       }
-      // Impose a cap beyond which the buffer cannot grow - a size which
-      // in all probability indicates a real error, e.g. faulty printing
-      // code looping, while not affecting cases of just-very-large-but-its-normal
-      // output.
-      const size_t reasonable_cap = MAX2(100 * M, buffer_max * 2);
-      if (end > reasonable_cap) {
-        // In debug VM, assert right away.
-        assert(false, "Exceeded max buffer size for this string.");
-        // Release VM: silently truncate. We do this since these kind of errors
-        // are both difficult to predict with testing (depending on logging content)
-        // and usually not serious enough to kill a production VM for it.
-        end = reasonable_cap;
-        size_t remaining = end - buffer_pos;
-        if (len >= remaining) {
-          len = remaining - 1;
-          truncated = true;
-        }
-      }
-      if (buffer_length < end) {
-        buffer = REALLOC_C_HEAP_ARRAY(char, buffer, end, mtInternal);
-        buffer_length = end;
-      }
+    }
+    if (buffer_length < end) {
+      buffer = REALLOC_C_HEAP_ARRAY(char, buffer, end, mtInternal);
+      buffer_length = end;
     }
   }
   if (len > 0) {
@@ -1075,9 +1050,7 @@ char* bufferedStream::as_string() {
 }
 
 bufferedStream::~bufferedStream() {
-  if (!buffer_fixed) {
-    FREE_C_HEAP_ARRAY(char, buffer);
-  }
+  FREE_C_HEAP_ARRAY(char, buffer);
 }
 
 #ifndef PRODUCT
@@ -1105,15 +1078,15 @@ networkStream::networkStream() : bufferedStream(1024*10, 1024*10) {
   }
 }
 
-int networkStream::read(char *buf, size_t len) {
-  return os::recv(_socket, buf, (int)len, 0);
+ssize_t networkStream::read(char *buf, size_t len) {
+  return os::recv(_socket, buf, len, 0);
 }
 
 void networkStream::flush() {
   if (size() != 0) {
-    int result = os::raw_send(_socket, (char *)base(), size(), 0);
+    ssize_t result = os::raw_send(_socket, (char *)base(), size(), 0);
     assert(result != -1, "connection error");
-    assert(result == (int)size(), "didn't send enough data");
+    assert(result >= 0 && (size_t)result == size(), "didn't send enough data");
   }
   reset();
 }
@@ -1152,9 +1125,9 @@ bool networkStream::connect(const char *host, short port) {
     return false;
   }
 
-  ret = os::connect(_socket, addr_info->ai_addr, (socklen_t)addr_info->ai_addrlen);
+  ssize_t conn = os::connect(_socket, addr_info->ai_addr, (socklen_t)addr_info->ai_addrlen);
   freeaddrinfo(addr_info);
-  return (ret >= 0);
+  return (conn >= 0);
 }
 
 #endif

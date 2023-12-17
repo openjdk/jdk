@@ -28,10 +28,10 @@
 #include "memory/arena.hpp"
 #include "memory/metaspace.hpp"
 #include "memory/resourceArea.hpp"
+#include "nmt/memTracker.hpp"
 #include "runtime/os.hpp"
 #include "runtime/task.hpp"
 #include "runtime/threadCritical.hpp"
-#include "services/memTracker.hpp"
 #include "utilities/ostream.hpp"
 
 // allocate using malloc; will fail if no memory available
@@ -111,7 +111,7 @@ void* ArenaObj::operator new(size_t size, Arena *arena) throw() {
 // AnyObj
 //
 
-void* AnyObj::operator new(size_t size, Arena *arena) throw() {
+void* AnyObj::operator new(size_t size, Arena *arena) {
   address res = (address)arena->Amalloc(size);
   DEBUG_ONLY(set_allocation_type(res, ARENA);)
   return res;

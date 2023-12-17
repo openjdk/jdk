@@ -34,6 +34,7 @@
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/allocation.inline.hpp"
+#include "nmt/memTracker.hpp"
 #include "oops/oop.inline.hpp"
 #include "os_bsd.inline.hpp"
 #include "os_posix.inline.hpp"
@@ -60,7 +61,6 @@
 #include "runtime/threads.hpp"
 #include "runtime/timer.hpp"
 #include "services/attachListener.hpp"
-#include "services/memTracker.hpp"
 #include "services/runtimeService.hpp"
 #include "signals_posix.hpp"
 #include "utilities/align.hpp"
@@ -71,12 +71,14 @@
 #include "utilities/vmError.hpp"
 #if INCLUDE_JFR
 #include "jfr/jfrEvents.hpp"
+#include "jfr/support/jfrNativeLibraryLoadEvent.hpp"
 #endif
 
 // put OS-includes here
 # include <dlfcn.h>
 # include <errno.h>
 # include <fcntl.h>
+# include <fenv.h>
 # include <inttypes.h>
 # include <poll.h>
 # include <pthread.h>
@@ -202,11 +204,13 @@ static char cpu_arch[] = "ppc";
   #error Add appropriate cpu_arch setting
 #endif
 
-// Compiler variant
-#ifdef COMPILER2
-  #define COMPILER_VARIANT "server"
+// JVM variant
+#if   defined(ZERO)
+  #define JVM_VARIANT "zero"
+#elif defined(COMPILER2)
+  #define JVM_VARIANT "server"
 #else
-  #define COMPILER_VARIANT "client"
+  #define JVM_VARIANT "client"
 #endif
 
 
@@ -891,6 +895,9 @@ bool os::address_is_in_vm(address addr) {
   return false;
 }
 
+void os::prepare_native_symbols() {
+}
+
 bool os::dll_address_to_function_name(address addr, char *buf,
                                       int buflen, int *offset,
                                       bool demangle) {
@@ -972,6 +979,57 @@ bool os::dll_address_to_library_name(address addr, char* buf,
 // in case of error it checks if .dll/.so was built for the
 // same architecture as Hotspot is running on
 
+void *os::Bsd::dlopen_helper(const char *filename, int mode) {
+#ifndef IA32
+  bool ieee_handling = IEEE_subnormal_handling_OK();
+  if (!ieee_handling) {
+    Events::log_dll_message(nullptr, "IEEE subnormal handling check failed before loading %s", filename);
+    log_info(os)("IEEE subnormal handling check failed before loading %s", filename);
+  }
+
+  // Save and restore the floating-point environment around dlopen().
+  // There are known cases where global library initialization sets
+  // FPU flags that affect computation accuracy, for example, enabling
+  // Flush-To-Zero and Denormals-Are-Zero. Do not let those libraries
+  // break Java arithmetic. Unfortunately, this might affect libraries
+  // that might depend on these FPU features for performance and/or
+  // numerical "accuracy", but we need to protect Java semantics first
+  // and foremost. See JDK-8295159.
+
+  // This workaround is ineffective on IA32 systems because the MXCSR
+  // register (which controls flush-to-zero mode) is not stored in the
+  // legacy fenv.
+
+  fenv_t default_fenv;
+  int rtn = fegetenv(&default_fenv);
+  assert(rtn == 0, "fegetenv must succeed");
+#endif // IA32
+
+  void * result= ::dlopen(filename, RTLD_LAZY);
+
+#ifndef IA32
+  if (result  != nullptr && ! IEEE_subnormal_handling_OK()) {
+    // We just dlopen()ed a library that mangled the floating-point
+    // flags. Silently fix things now.
+    int rtn = fesetenv(&default_fenv);
+    assert(rtn == 0, "fesetenv must succeed");
+    bool ieee_handling_after_issue = IEEE_subnormal_handling_OK();
+
+    if (ieee_handling_after_issue) {
+      Events::log_dll_message(nullptr, "IEEE subnormal handling had to be corrected after loading %s", filename);
+      log_info(os)("IEEE subnormal handling had to be corrected after loading %s", filename);
+    } else {
+      Events::log_dll_message(nullptr, "IEEE subnormal handling could not be corrected after loading %s", filename);
+      log_info(os)("IEEE subnormal handling could not be corrected after loading %s", filename);
+    }
+
+    assert(ieee_handling_after_issue, "fesetenv didn't work");
+  }
+#endif // IA32
+
+  return result;
+}
+
 #ifdef __APPLE__
 void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
 #ifdef STATIC_BUILD
@@ -979,7 +1037,9 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
 #else
   log_info(os)("attempting shared library load of %s", filename);
 
-  void * result= ::dlopen(filename, RTLD_LAZY);
+  void* result;
+  JFR_ONLY(NativeLibraryLoadEvent load_event(filename, &result);)
+  result = os::Bsd::dlopen_helper(filename, RTLD_LAZY);
   if (result != nullptr) {
     Events::log_dll_message(nullptr, "Loaded shared library %s", filename);
     // Successful loading
@@ -998,6 +1058,7 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
   }
   Events::log_dll_message(nullptr, "Loading shared library %s failed, %s", filename, error_report);
   log_info(os)("shared library load of %s failed, %s", filename, error_report);
+  JFR_ONLY(load_event.set_error_msg(error_report);)
 
   return nullptr;
 #endif // STATIC_BUILD
@@ -1008,7 +1069,10 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
   return os::get_default_process_handle();
 #else
   log_info(os)("attempting shared library load of %s", filename);
-  void * result= ::dlopen(filename, RTLD_LAZY);
+
+  void* result;
+  JFR_ONLY(NativeLibraryLoadEvent load_event(filename, &result);)
+  result = os::Bsd::dlopen_helper(filename, RTLD_LAZY);
   if (result != nullptr) {
     Events::log_dll_message(nullptr, "Loaded shared library %s", filename);
     // Successful loading
@@ -1029,7 +1093,7 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
   }
   Events::log_dll_message(nullptr, "Loading shared library %s failed, %s", filename, error_report);
   log_info(os)("shared library load of %s failed, %s", filename, error_report);
-
+  JFR_ONLY(load_event.set_error_msg(error_report);)
   int diag_msg_max_length=ebuflen-strlen(ebuf);
   char* diag_msg_buf=ebuf+strlen(ebuf);
 
@@ -1471,10 +1535,10 @@ void os::jvm_path(char *buf, jint buflen) {
           snprintf(jrelib_p, buflen-len, "/lib");
         }
 
-        // Add the appropriate client or server subdir
+        // Add the appropriate JVM variant subdir
         len = strlen(buf);
         jrelib_p = buf + len;
-        snprintf(jrelib_p, buflen-len, "/%s", COMPILER_VARIANT);
+        snprintf(jrelib_p, buflen-len, "/%s", JVM_VARIANT);
         if (0 != access(buf, F_OK)) {
           snprintf(jrelib_p, buflen-len, "%s", "");
         }
@@ -1597,7 +1661,7 @@ int os::numa_get_group_id() {
   return 0;
 }
 
-size_t os::numa_get_leaf_groups(int *ids, size_t size) {
+size_t os::numa_get_leaf_groups(uint *ids, size_t size) {
   if (size > 0) {
     ids[0] = 0;
     return 1;
@@ -1612,11 +1676,6 @@ int os::numa_get_group_id_for_address(const void* address) {
 bool os::numa_get_group_ids_for_range(const void** addresses, int* lgrp_ids, size_t count) {
   return false;
 }
-
-char *os::scan_pages(char *start, char* end, page_info* page_expected, page_info* page_found) {
-  return end;
-}
-
 
 bool os::pd_uncommit_memory(char* addr, size_t size, bool exec) {
 #if defined(__OpenBSD__)
@@ -1790,6 +1849,17 @@ char* os::pd_attempt_reserve_memory_at(char* requested_addr, size_t bytes, bool 
   }
 
   return nullptr;
+}
+
+size_t os::vm_min_address() {
+#ifdef __APPLE__
+  // On MacOS, the lowest 4G are denied to the application (see "PAGEZERO" resp.
+  // -pagezero_size linker option).
+  return 4 * G;
+#else
+  assert(is_aligned(_vm_min_address_default, os::vm_allocation_granularity()), "Sanity");
+  return _vm_min_address_default;
+#endif
 }
 
 // Used to convert frequent JVM_Yield() to nops
@@ -2178,9 +2248,9 @@ static inline struct timespec get_mtime(const char* filename) {
 int os::compare_file_modified_times(const char* file1, const char* file2) {
   struct timespec filetime1 = get_mtime(file1);
   struct timespec filetime2 = get_mtime(file2);
-  int diff = filetime1.tv_sec - filetime2.tv_sec;
+  int diff = primitive_compare(filetime1.tv_sec, filetime2.tv_sec);
   if (diff == 0) {
-    return filetime1.tv_nsec - filetime2.tv_nsec;
+    diff = primitive_compare(filetime1.tv_nsec, filetime2.tv_nsec);
   }
   return diff;
 }
@@ -2470,7 +2540,9 @@ void os::jfr_report_memory_info() {
     // Send the RSS JFR event
     EventResidentSetSize event;
     event.set_size(info.resident_size);
-    event.set_peak(info.resident_size_max);
+    // We've seen that resident_size_max sometimes trails resident_size with one page.
+    // Make sure we always report size <= peak
+    event.set_peak(MAX2(info.resident_size_max, info.resident_size));
     event.commit();
   } else {
     // Log a warning

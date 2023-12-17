@@ -24,33 +24,33 @@
 /*
  * @test
  * @bug 8025636
- * @summary Synthetic frames should be hidden in exceptions
- * @modules java.base/jdk.internal.classfile
+ * @library /test/lib/
+ * @modules java.base/jdk.internal.org.objectweb.asm
  *          jdk.compiler
- * @compile -XDignore.symbol.file LUtils.java LambdaStackTrace.java
+ * @compile LambdaStackTrace.java
  * @run main LambdaStackTrace
+ * @summary Synthetic frames should be hidden in exceptions
  */
 
-import java.io.File;
-import java.io.FileOutputStream;
+import jdk.internal.org.objectweb.asm.ClassWriter;
+import jdk.test.lib.compiler.CompilerUtils;
+
 import java.io.IOException;
-import java.lang.constant.ClassDesc;
-import java.lang.constant.MethodTypeDesc;
-import java.lang.reflect.AccessFlag;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
-import jdk.internal.classfile.Classfile;
 
-import static java.lang.constant.ConstantDescs.CD_Object;
-import static java.lang.constant.ConstantDescs.CD_String;
-import static jdk.internal.classfile.Classfile.ACC_ABSTRACT;
-import static jdk.internal.classfile.Classfile.ACC_PUBLIC;
+import static jdk.internal.org.objectweb.asm.Opcodes.ACC_ABSTRACT;
+import static jdk.internal.org.objectweb.asm.Opcodes.ACC_INTERFACE;
+import static jdk.internal.org.objectweb.asm.Opcodes.ACC_PUBLIC;
+import static jdk.internal.org.objectweb.asm.Opcodes.V1_7;
 
 public class LambdaStackTrace {
 
-    private static final ClassDesc CD_Maker = ClassDesc.of("Maker");
-    static File classes = new File(System.getProperty("test.classes"));
+    static Path CLASSES = Path.of(System.getProperty("test.classes", "."));
 
     public static void main(String[] args) throws Exception {
         testBasic();
@@ -124,41 +124,36 @@ public class LambdaStackTrace {
         // We can't let javac compile these interfaces because in > 1.8 it will insert
         // bridge methods into the interfaces - we want code that looks like <= 1.7,
         // so we generate it.
-        try (FileOutputStream fw = new FileOutputStream(new File(classes, "Maker.class"))) {
-            fw.write(generateMaker());
-        }
-        try (FileOutputStream fw = new FileOutputStream(new File(classes, "StringMaker.class"))) {
-            fw.write(generateStringMaker());
-        }
+        Files.write(CLASSES.resolve("Maker.class"), generateMaker());
+        Files.write(CLASSES.resolve("StringMaker.class"), generateStringMaker());
     }
 
     private static byte[] generateMaker() {
         // interface Maker {
         //   Object make();
         // }
-        return Classfile.of().build(CD_Maker, clb -> {
-            clb.withFlags(AccessFlag.ABSTRACT, AccessFlag.INTERFACE);
-            clb.withSuperclass(CD_Object);
-            clb.withMethod("make", MethodTypeDesc.of(CD_Object),
-                    ACC_PUBLIC | ACC_ABSTRACT, mb -> {});
-        });
+        ClassWriter cw = new ClassWriter(0);
+        cw.visit(V1_7, ACC_INTERFACE | ACC_ABSTRACT, "Maker", null, "java/lang/Object", null);
+        cw.visitMethod(ACC_PUBLIC | ACC_ABSTRACT, "make",
+                "()Ljava/lang/Object;", null, null);
+        cw.visitEnd();
+        return cw.toByteArray();
     }
 
     private static byte[] generateStringMaker() {
         // interface StringMaker extends Maker {
         //   String make();
         // }
-        return Classfile.of().build(ClassDesc.of("StringMaker"), clb -> {
-            clb.withFlags(AccessFlag.ABSTRACT, AccessFlag.INTERFACE);
-            clb.withSuperclass(CD_Object);
-            clb.withInterfaceSymbols(CD_Maker);
-            clb.withMethod("make", MethodTypeDesc.of(CD_String),
-                    ACC_PUBLIC | ACC_ABSTRACT, mb -> {});
-        });
+        ClassWriter cw = new ClassWriter(0);
+        cw.visit(V1_7, ACC_INTERFACE | ACC_ABSTRACT, "StringMaker", null, "java/lang/Object", new String[]{"Maker"});
+        cw.visitMethod(ACC_PUBLIC | ACC_ABSTRACT, "make",
+                "()Ljava/lang/String;", null, null);
+        cw.visitEnd();
+        return cw.toByteArray();
     }
 
 
-    static void emitCode(File f) {
+    static void emitCode(Path file) throws IOException {
         ArrayList<String> scratch = new ArrayList<>();
         scratch.add("public class Caller {");
         scratch.add("    public static void callStringMaker() {");
@@ -170,13 +165,17 @@ public class LambdaStackTrace {
         scratch.add("        ((Maker) sm).make();");  // <-- This will call the bridge method
         scratch.add("    }");
         scratch.add("}");
-        LUtils.createFile(f, scratch);
+
+        Files.write(file, scratch, Charset.defaultCharset());
     }
 
-    static void compileCaller() {
-        File caller = new File(classes, "Caller.java");
+    static void compileCaller() throws IOException {
+        Path src = Path.of("src");
+        Files.createDirectories(src);
+
+        Path caller = src.resolve("Caller.java");
         emitCode(caller);
-        LUtils.compile("-cp", classes.getAbsolutePath(), "-d", classes.getAbsolutePath(), caller.getAbsolutePath());
+        CompilerUtils.compile(src, CLASSES, "-cp", CLASSES.toAbsolutePath().toString());
     }
 
     private static void verifyFrames(StackTraceElement[] stack, String... patterns) throws Exception {

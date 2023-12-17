@@ -1103,13 +1103,16 @@ Node* CallStaticJavaNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   return CallNode::Ideal(phase, can_reshape);
 }
 
+//----------------------------is_uncommon_trap----------------------------
+// Returns true if this is an uncommon trap.
+bool CallStaticJavaNode::is_uncommon_trap() const {
+  return (_name != nullptr && !strcmp(_name, "uncommon_trap"));
+}
+
 //----------------------------uncommon_trap_request----------------------------
 // If this is an uncommon trap, return the request code, else zero.
 int CallStaticJavaNode::uncommon_trap_request() const {
-  if (_name != nullptr && !strcmp(_name, "uncommon_trap")) {
-    return extract_uncommon_trap_request(this);
-  }
-  return 0;
+  return is_uncommon_trap() ? extract_uncommon_trap_request(this) : 0;
 }
 int CallStaticJavaNode::extract_uncommon_trap_request(const Node* call) {
 #ifndef PRODUCT
@@ -1229,7 +1232,7 @@ bool CallLeafVectorNode::cmp( const Node &n ) const {
 
 //------------------------------calling_convention-----------------------------
 void CallRuntimeNode::calling_convention(BasicType* sig_bt, VMRegPair *parm_regs, uint argcnt) const {
-  SharedRuntime::c_calling_convention(sig_bt, parm_regs, /*regs2=*/nullptr, argcnt);
+  SharedRuntime::c_calling_convention(sig_bt, parm_regs, argcnt);
 }
 
 void CallLeafVectorNode::calling_convention( BasicType* sig_bt, VMRegPair *parm_regs, uint argcnt ) const {
@@ -1460,22 +1463,14 @@ void SafePointNode::disconnect_from_root(PhaseIterGVN *igvn) {
 
 //==============  SafePointScalarObjectNode  ==============
 
-SafePointScalarObjectNode::SafePointScalarObjectNode(const TypeOopPtr* tp,
-#ifdef ASSERT
-                                                     Node* alloc,
-#endif
-                                                     uint first_index,
-                                                     uint n_fields) :
+SafePointScalarObjectNode::SafePointScalarObjectNode(const TypeOopPtr* tp, Node* alloc, uint first_index, uint n_fields) :
   TypeNode(tp, 1), // 1 control input -- seems required.  Get from root.
   _first_index(first_index),
-  _n_fields(n_fields)
-#ifdef ASSERT
-  , _alloc(alloc)
-#endif
+  _n_fields(n_fields),
+  _alloc(alloc)
 {
 #ifdef ASSERT
-  if (!alloc->is_Allocate()
-      && !(alloc->Opcode() == Op_VectorBox)) {
+  if (!alloc->is_Allocate() && !(alloc->Opcode() == Op_VectorBox)) {
     alloc->dump();
     assert(false, "unexpected call node");
   }
@@ -1521,10 +1516,58 @@ SafePointScalarObjectNode::clone(Dict* sosn_map, bool& new_node) const {
 
 #ifndef PRODUCT
 void SafePointScalarObjectNode::dump_spec(outputStream *st) const {
-  st->print(" # fields@[%d..%d]", first_index(),
-             first_index() + n_fields() - 1);
+  st->print(" # fields@[%d..%d]", first_index(), first_index() + n_fields() - 1);
+}
+#endif
+
+//==============  SafePointScalarMergeNode  ==============
+
+SafePointScalarMergeNode::SafePointScalarMergeNode(const TypeOopPtr* tp, int merge_pointer_idx) :
+  TypeNode(tp, 1), // 1 control input -- seems required.  Get from root.
+  _merge_pointer_idx(merge_pointer_idx)
+{
+  init_class_id(Class_SafePointScalarMerge);
 }
 
+// Do not allow value-numbering for SafePointScalarMerge node.
+uint SafePointScalarMergeNode::hash() const { return NO_HASH; }
+bool SafePointScalarMergeNode::cmp( const Node &n ) const {
+  return (&n == this); // Always fail except on self
+}
+
+uint SafePointScalarMergeNode::ideal_reg() const {
+  return 0; // No matching to machine instruction
+}
+
+const RegMask &SafePointScalarMergeNode::in_RegMask(uint idx) const {
+  return *(Compile::current()->matcher()->idealreg2debugmask[in(idx)->ideal_reg()]);
+}
+
+const RegMask &SafePointScalarMergeNode::out_RegMask() const {
+  return RegMask::Empty;
+}
+
+uint SafePointScalarMergeNode::match_edge(uint idx) const {
+  return 0;
+}
+
+SafePointScalarMergeNode*
+SafePointScalarMergeNode::clone(Dict* sosn_map, bool& new_node) const {
+  void* cached = (*sosn_map)[(void*)this];
+  if (cached != nullptr) {
+    new_node = false;
+    return (SafePointScalarMergeNode*)cached;
+  }
+  new_node = true;
+  SafePointScalarMergeNode* res = (SafePointScalarMergeNode*)Node::clone();
+  sosn_map->Insert((void*)this, (void*)res);
+  return res;
+}
+
+#ifndef PRODUCT
+void SafePointScalarMergeNode::dump_spec(outputStream *st) const {
+  st->print(" # merge_pointer_idx=%d, scalarized_objects=%d", _merge_pointer_idx, req()-1);
+}
 #endif
 
 //=============================================================================

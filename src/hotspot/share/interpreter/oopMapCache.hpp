@@ -84,7 +84,7 @@ class InterpreterOopMap: ResourceObj {
  private:
   Method*        _method;         // the method for which the mask is valid
   unsigned short _bci;            // the bci    for which the mask is valid
-  int            _mask_size;      // the mask size in bits
+  int            _mask_size;      // the mask size in bits (USHRT_MAX if invalid)
   int            _expression_stack_size; // the size of the expression stack in slots
 
  protected:
@@ -146,6 +146,8 @@ class InterpreterOopMap: ResourceObj {
 
   int expression_stack_size() const              { return _expression_stack_size; }
 
+  // Determines if a valid mask has been computed
+  bool has_valid_mask() const { return _mask_size != USHRT_MAX; }
 };
 
 class OopMapCache : public CHeapObj<mtClass> {

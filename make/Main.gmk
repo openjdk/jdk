@@ -405,8 +405,9 @@ JMOD_TARGETS := $(addsuffix -jmod, $(JMOD_MODULES))
 
 define DeclareJmodRecipe
   $1-jmod:
-	+($(CD) $(TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f CreateJmods.gmk \
-	    MODULE=$1)
+	+($(CD) $(TOPDIR)/make && $(MAKE) $(MAKE_ARGS) \
+	    $(patsubst %,-I%/modules/$1,$(PHASE_MAKEDIRS)) \
+	    -f CreateJmods.gmk MODULE=$1)
 endef
 
 $(foreach m, $(JMOD_MODULES), $(eval $(call DeclareJmodRecipe,$m)))
@@ -607,11 +608,11 @@ endif
 ifeq ($(CREATING_BUILDJDK), true)
   # This target is only called by the recursive call below.
   create-buildjdk-interim-image-helper: interim-image jdk.jlink-launchers \
-      java.base-copy jdk.jdeps-launchers
+      java.base-copy jdk.jdeps-launchers jdk.compiler-launchers
 endif
 
-BUILDJDK_MODULES := $(sort $(foreach m, jdk.jlink $(INTERIM_IMAGE_MODULES), \
-    $(call FindTransitiveDepsForModule, $m) $m))
+BUILDJDK_MODULES := $(sort $(foreach m, jdk.jlink jdk.compiler \
+    $(INTERIM_IMAGE_MODULES), $(call FindTransitiveDepsForModule, $m) $m))
 
 $(eval $(call SetupTarget, create-buildjdk-interim-image, \
     MAKEFILE := Main, \
@@ -743,7 +744,14 @@ endif
 
 $(eval $(call SetupTarget, build-test-lib, \
     MAKEFILE := test/BuildTestLib, \
+    TARGET := build-test-lib, \
     DEPS := exploded-image, \
+))
+
+$(eval $(call SetupTarget, test-image-lib, \
+    MAKEFILE := test/BuildTestLib, \
+    TARGET := test-image-lib, \
+    DEPS := build-test-lib, \
 ))
 
 ifeq ($(BUILD_FAILURE_HANDLER), true)
@@ -780,7 +788,7 @@ endif
 
 $(eval $(call SetupTarget, build-microbenchmark, \
     MAKEFILE := test/BuildMicrobenchmark, \
-    DEPS := interim-langtools exploded-image, \
+    DEPS := interim-langtools exploded-image build-test-lib, \
 ))
 
 ################################################################################
@@ -851,6 +859,12 @@ $(eval $(call SetupTarget, static-libs-bundles, \
     DEPS := static-libs-image, \
 ))
 
+$(eval $(call SetupTarget, static-libs-graal-bundles, \
+    MAKEFILE := Bundles, \
+    TARGET := static-libs-graal-bundles, \
+    DEPS := static-libs-graal-image, \
+))
+
 ifeq ($(JCOV_ENABLED), true)
   $(eval $(call SetupTarget, jcov-bundles, \
       MAKEFILE := Bundles, \
@@ -858,14 +872,6 @@ ifeq ($(JCOV_ENABLED), true)
       DEPS := jcov-image, \
   ))
 endif
-
-################################################################################
-# Install targets
-
-$(eval $(call SetupTarget, install, \
-    MAKEFILE := Install, \
-    DEPS := product-images, \
-))
 
 ################################################################################
 #
@@ -964,15 +970,31 @@ else
   jdk.jdeps-gendata: java
 
   # The ct.sym generation uses all the moduleinfos as input
-  jdk.compiler-gendata: $(GENSRC_MODULEINFO_TARGETS)
+  jdk.compiler-gendata: $(GENSRC_MODULEINFO_TARGETS) $(JAVA_TARGETS)
+  # jdk.compiler-gendata needs the BUILD_JDK. If the BUILD_JDK was supplied
+  # externally, no extra prerequisites are needed.
+  ifeq ($(CREATE_BUILDJDK), true)
+    ifneq ($(CREATING_BUILDJDK), true)
+      # When cross compiling and an external BUILD_JDK wasn't supplied, it's
+      # produced by the create-buildjdk target.
+      jdk.compiler-gendata: create-buildjdk
+    endif
+  else ifeq ($(EXTERNAL_BUILDJDK), false)
+    # When not cross compiling, the BUILD_JDK is the interim jdk image, and
+    # the javac launcher is needed.
+    jdk.compiler-gendata: jdk.compiler-launchers
+  endif
 
   # Declare dependencies between jmod targets.
-  # java.base jmod needs jrt-fs.jar and access to the other jmods to be built.
+  # java.base jmod needs jrt-fs.jar and access to the jmods for all non
+  # upgradeable modules and their transitive dependencies.
   # When creating the BUILDJDK, we don't need to add hashes to java.base, thus
   # we don't need to depend on all other jmods
   ifneq ($(CREATING_BUILDJDK), true)
-    java.base-jmod: jrtfs-jar $(filter-out java.base-jmod \
-        $(addsuffix -jmod, $(call FindAllUpgradeableModules)), $(JMOD_TARGETS))
+    java.base-jmod: jrtfs-jar $(addsuffix -jmod, $(filter-out java.base, $(sort \
+        $(foreach m, $(filter-out $(call FindAllUpgradeableModules), $(JMOD_MODULES)), \
+          $m $(call FindTransitiveDepsForModules, $m) \
+        ))))
   endif
 
   # If not already set, set the JVM target so that the JVM will be built.
@@ -1043,6 +1065,9 @@ else
 
   # All modules include the main license files from java.base.
   $(JMOD_TARGETS): java.base-copy
+
+  # jdk.javadoc uses an internal copy of the main license files from java.base.
+  jdk.javadoc-copy: java.base-copy
 
   zip-security: $(filter jdk.crypto%, $(JAVA_TARGETS))
 
@@ -1246,7 +1271,7 @@ all-docs-bundles: docs-jdk-bundles docs-javase-bundles docs-reference-bundles
 # This target builds the test image
 test-image: prepare-test-image test-image-jdk-jtreg-native \
     test-image-demos-jdk test-image-libtest-jtreg-native \
-    test-image-lib-native
+    test-image-lib test-image-lib-native
 
 ifneq ($(JVM_TEST_IMAGE_TARGETS), )
   # If JVM_TEST_IMAGE_TARGETS is externally defined, use it instead of the
@@ -1422,13 +1447,13 @@ ALL_TARGETS += $(addsuffix -only, $(filter-out dist-clean clean%, $(ALL_TARGETS)
 # are internal only, to support Init.gmk.
 
 print-targets:
-	  @$(ECHO) $(sort $(ALL_TARGETS))
+	$(info $(subst $(SPACE),$(NEWLINE),$(sort $(ALL_TARGETS))))
 
 print-modules:
-	  @$(ECHO) $(sort $(ALL_MODULES))
+	$(info $(subst $(SPACE),$(NEWLINE),$(sort $(ALL_MODULES))))
 
 print-tests:
-	  @$(ECHO) $(sort $(ALL_NAMED_TESTS))
+	$(info $(subst $(SPACE),$(NEWLINE),$(sort $(ALL_NAMED_TESTS))))
 
 create-main-targets-include:
 	  $(call LogInfo, Generating main target list)

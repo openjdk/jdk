@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "cds/archiveHeapLoader.inline.hpp"
+#include "cds/cdsConfig.hpp"
 #include "cds/heapShared.hpp"
 #include "cds/metaspaceShared.hpp"
 #include "classfile/classLoaderDataShared.hpp"
@@ -54,18 +55,20 @@ intx ArchiveHeapLoader::_runtime_offset = 0;
 bool ArchiveHeapLoader::_loading_failed = false;
 
 // Support for mapped heap.
+uintptr_t ArchiveHeapLoader::_mapped_heap_bottom = 0;
 bool      ArchiveHeapLoader::_mapped_heap_relocation_initialized = false;
 ptrdiff_t ArchiveHeapLoader::_mapped_heap_delta = 0;
 
 // Every mapped region is offset by _mapped_heap_delta from its requested address.
 // See FileMapInfo::heap_region_requested_address().
-void ArchiveHeapLoader::init_mapped_heap_relocation(ptrdiff_t delta, int dumptime_oop_shift) {
+void ArchiveHeapLoader::init_mapped_heap_info(address mapped_heap_bottom, ptrdiff_t delta, int dumptime_oop_shift) {
   assert(!_mapped_heap_relocation_initialized, "only once");
   if (!UseCompressedOops) {
     assert(dumptime_oop_shift == 0, "sanity");
   }
   assert(can_map(), "sanity");
   init_narrow_oop_decoding(CompressedOops::base() + delta, dumptime_oop_shift);
+  _mapped_heap_bottom = (intptr_t)mapped_heap_bottom;
   _mapped_heap_delta = delta;
   _mapped_heap_relocation_initialized = true;
 }
@@ -85,7 +88,7 @@ void ArchiveHeapLoader::fixup_region() {
     fill_failed_loaded_heap();
   }
   if (is_in_use()) {
-    if (!MetaspaceShared::use_full_module_graph()) {
+    if (!CDSConfig::is_loading_full_module_graph()) {
       // Need to remove all the archived java.lang.Module objects from HeapShared::roots().
       ClassLoaderDataShared::clear_archived_oops();
     }
@@ -374,6 +377,9 @@ void ArchiveHeapLoader::finish_initialization() {
   }
   if (is_in_use()) {
     patch_native_pointers();
+    intptr_t bottom = is_loaded() ? _loaded_heap_bottom : _mapped_heap_bottom;
+    intptr_t roots_oop = bottom + FileMapInfo::current_info()->heap_roots_offset();
+    HeapShared::init_roots(cast_to_oop(roots_oop));
   }
 }
 

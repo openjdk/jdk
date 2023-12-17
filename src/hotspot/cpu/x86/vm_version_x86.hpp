@@ -643,7 +643,6 @@ public:
   // Feature identification
   //
   static bool supports_cpuid()        { return _features  != 0; }
-  static bool supports_cmpxchg8()     { return (_features & CPU_CX8) != 0; }
   static bool supports_cmov()         { return (_features & CPU_CMOV) != 0; }
   static bool supports_fxsr()         { return (_features & CPU_FXSR) != 0; }
   static bool supports_ht()           { return (_features & CPU_HT) != 0; }
@@ -750,7 +749,7 @@ public:
 
   static bool supports_compare_and_exchange() { return true; }
 
-  static intx allocate_prefetch_distance(bool use_watermark_prefetch);
+  static int allocate_prefetch_distance(bool use_watermark_prefetch);
 
   // SSE2 and later processors implement a 'pause' instruction
   // that can be used for efficient implementation of
