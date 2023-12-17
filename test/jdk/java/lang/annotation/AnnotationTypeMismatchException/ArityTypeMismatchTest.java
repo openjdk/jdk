@@ -27,20 +27,18 @@
  * @summary Annotation property which is compiled as an array property but
  *          changed observed as a singular element should throw an
  *          AnnotationTypeMismatchException
- * @modules java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
+ * @enablePreview
  * @run main ArityTypeMismatchTest
  */
-
-import jdk.internal.classfile.Annotation;
-import jdk.internal.classfile.AnnotationElement;
-import jdk.internal.classfile.AnnotationValue;
-import jdk.internal.classfile.Classfile;
-import jdk.internal.classfile.attribute.RuntimeVisibleAnnotationsAttribute;
 
 import java.lang.annotation.AnnotationTypeMismatchException;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
+import java.lang.classfile.Annotation;
+import java.lang.classfile.AnnotationElement;
+import java.lang.classfile.AnnotationValue;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.attribute.RuntimeVisibleAnnotationsAttribute;
 import java.lang.constant.ClassDesc;
 
 import static java.lang.constant.ConstantDescs.CD_Object;
@@ -59,7 +57,7 @@ public class ArityTypeMismatchTest {
          *
          * where @AnAnnotation expects a singular value.
          */
-        byte[] b = Classfile.of().build(ClassDesc.of("sample", "Carrier"), clb -> {
+        byte[] b = ClassFile.of().build(ClassDesc.of("sample", "Carrier"), clb -> {
             clb.withSuperclass(CD_Object);
             clb.with(RuntimeVisibleAnnotationsAttribute.of(
                     Annotation.of(

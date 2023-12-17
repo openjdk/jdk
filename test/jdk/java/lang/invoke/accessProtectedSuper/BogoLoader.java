@@ -24,11 +24,12 @@
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.classfile.ClassTransform;
+import java.lang.classfile.ClassFile;
 import java.util.Map;
 import java.util.Set;
 import java.util.Vector;
-import jdk.internal.classfile.ClassTransform;
-import jdk.internal.classfile.Classfile;
+
 // Compile with -XDignore.symbol.file=true
 
 public class BogoLoader extends ClassLoader {
@@ -123,7 +124,7 @@ public class BogoLoader extends ClassLoader {
                     if (verbose) {
                         System.err.println("Replacing class " + name);
                     }
-                    var cf = Classfile.of();
+                    var cf = ClassFile.of();
                     classData = cf.transform(cf.parse(classData), replaced.get(name));
                 }
                 clazz = defineClass(name, classData, 0, classData.length);

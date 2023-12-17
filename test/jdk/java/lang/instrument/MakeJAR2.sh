@@ -87,8 +87,7 @@ ${JAVAC} ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} bootreporter/*.java
 cd ..
 
 ${JAVAC} ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} \
-    --add-exports java.base/jdk.internal.classfile=ALL-UNNAMED \
-    --add-exports java.base/jdk.internal.classfile.constantpool=ALL-UNNAMED \
+    --enable-preview \
     ${AGENT}.java asmlib/*.java
 ${JAVAC} ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} -classpath .${PATHSEP}bootpath ${APP}.java
 

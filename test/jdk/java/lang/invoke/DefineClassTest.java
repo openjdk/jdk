@@ -23,35 +23,32 @@
 
 /* @test
  * @modules java.base/java.lang:open
- *          java.base/jdk.internal.classfile
+ * @enablePreview
  * @run testng/othervm test.DefineClassTest
  * @summary Basic test for java.lang.invoke.MethodHandles.Lookup.defineClass
  */
 
 package test;
 
+import java.lang.classfile.ClassFile;
 import java.lang.constant.ClassDesc;
 import java.lang.invoke.MethodHandles.Lookup;
-
-import static java.lang.constant.ConstantDescs.CD_Object;
-import static java.lang.constant.ConstantDescs.CLASS_INIT_NAME;
-import static java.lang.constant.ConstantDescs.INIT_NAME;
-import static java.lang.constant.ConstantDescs.MTD_void;
-import static java.lang.invoke.MethodHandles.*;
-import static java.lang.invoke.MethodHandles.Lookup.*;
-
 import java.lang.reflect.AccessFlag;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-
-import jdk.internal.classfile.Classfile;
 import org.testng.annotations.Test;
 
-import static jdk.internal.classfile.Classfile.ACC_PUBLIC;
-import static jdk.internal.classfile.Classfile.ACC_STATIC;
+import static java.lang.classfile.ClassFile.ACC_PUBLIC;
+import static java.lang.classfile.ClassFile.ACC_STATIC;
+import static java.lang.constant.ConstantDescs.CD_Object;
+import static java.lang.constant.ConstantDescs.CLASS_INIT_NAME;
+import static java.lang.constant.ConstantDescs.INIT_NAME;
+import static java.lang.constant.ConstantDescs.MTD_void;
+import static java.lang.invoke.MethodHandles.*;
+import static java.lang.invoke.MethodHandles.Lookup.*;
 import static org.testng.Assert.*;
 
 public class DefineClassTest {
@@ -261,7 +258,7 @@ public class DefineClassTest {
      * Generates a class file with the given class name
      */
     byte[] generateClass(String className) {
-        return Classfile.of().build(ClassDesc.of(className), clb -> {
+        return ClassFile.of().build(ClassDesc.of(className), clb -> {
             clb.withFlags(AccessFlag.PUBLIC, AccessFlag.SUPER);
             clb.withSuperclass(CD_Object);
             clb.withMethodBody(INIT_NAME, MTD_void, PUBLIC, cob -> {
@@ -280,7 +277,7 @@ public class DefineClassTest {
                           String targetClass,
                           String targetMethod) throws Exception {
 
-        return Classfile.of().build(ClassDesc.of(className), clb -> {
+        return ClassFile.of().build(ClassDesc.of(className), clb -> {
             clb.withSuperclass(CD_Object);
             clb.withInterfaceSymbols(CD_Runnable);
             clb.withMethodBody(INIT_NAME, MTD_void, PUBLIC, cob -> {
@@ -303,7 +300,7 @@ public class DefineClassTest {
                                         String targetClass,
                                         String targetMethod) throws Exception {
 
-        return Classfile.of().build(ClassDesc.of(className), clb -> {
+        return ClassFile.of().build(ClassDesc.of(className), clb -> {
             clb.withFlags(AccessFlag.PUBLIC, AccessFlag.SUPER);
             clb.withSuperclass(CD_Object);
             clb.withMethodBody(INIT_NAME, MTD_void, ACC_PUBLIC, cob -> {
@@ -322,7 +319,7 @@ public class DefineClassTest {
      * Generates a non-linkable class file with the given class name
      */
     byte[] generateNonLinkableClass(String className) {
-        return Classfile.of().build(ClassDesc.of(className), clb -> {
+        return ClassFile.of().build(ClassDesc.of(className), clb -> {
             clb.withFlags(AccessFlag.PUBLIC, AccessFlag.SUPER);
             clb.withSuperclass(CD_MissingSuperClass);
             clb.withMethodBody(INIT_NAME, MTD_void, ACC_PUBLIC, cob -> {
@@ -337,7 +334,7 @@ public class DefineClassTest {
      * Generates a class file with the given class name
      */
     byte[] generateModuleInfo() {
-        return Classfile.of().build(ClassDesc.of("module-info"), cb -> cb.withFlags(AccessFlag.MODULE));
+        return ClassFile.of().build(ClassDesc.of("module-info"), cb -> cb.withFlags(AccessFlag.MODULE));
     }
 
     private int nextNumber() {

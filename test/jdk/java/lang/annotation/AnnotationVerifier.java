@@ -39,9 +39,8 @@ import java.util.stream.Stream;
  * @test
  * @bug 8158510
  * @summary Verify valid annotation
- * @modules java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/sun.reflect.annotation
+ * @modules java.base/sun.reflect.annotation
+ * @enablePreview
  * @clean AnnotationWithVoidReturn AnnotationWithParameter
  *        AnnotationWithExtraInterface AnnotationWithException
  *        AnnotationWithHashCode AnnotationWithDefaultMember

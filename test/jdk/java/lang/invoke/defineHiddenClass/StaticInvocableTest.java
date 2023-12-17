@@ -25,11 +25,13 @@
  * @test
  * @bug 8266925
  * @summary hidden class members can't be statically invocable
- * @modules java.base/jdk.internal.misc java.base/jdk.internal.classfile
+ * @modules java.base/jdk.internal.misc
+ * @enablePreview
  * @build java.base/*
  * @run testng StaticInvocableTest
  */
 
+import java.lang.classfile.ClassFile;
 import java.lang.constant.ClassDesc;
 import java.lang.constant.MethodTypeDesc;
 import java.lang.invoke.MethodHandle;
@@ -37,15 +39,14 @@ import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.LookupHelper;
 import java.lang.reflect.AccessFlag;
-import jdk.internal.classfile.Classfile;
 import org.testng.annotations.Test;
 
+import static java.lang.classfile.ClassFile.ACC_PUBLIC;
+import static java.lang.classfile.ClassFile.ACC_STATIC;
 import static java.lang.constant.ConstantDescs.CD_Object;
 import static java.lang.constant.ConstantDescs.CD_int;
 import static java.lang.constant.ConstantDescs.INIT_NAME;
 import static java.lang.constant.ConstantDescs.MTD_void;
-import static jdk.internal.classfile.Classfile.ACC_PUBLIC;
-import static jdk.internal.classfile.Classfile.ACC_STATIC;
 
 public class StaticInvocableTest {
     public static void main(String[] args) throws Throwable {
@@ -114,7 +115,7 @@ public class StaticInvocableTest {
      * }
      */
     public static byte[] dumpClass(String pkg) {
-        return Classfile.of().build(ClassDesc.of(pkg.replace('/', '.'), "MyClass"), clb -> {
+        return ClassFile.of().build(ClassDesc.of(pkg.replace('/', '.'), "MyClass"), clb -> {
             clb.withSuperclass(CD_Object);
             clb.withFlags(AccessFlag.PUBLIC, AccessFlag.SUPER);
             clb.withMethodBody(INIT_NAME, MTD_void, 0, cob -> {

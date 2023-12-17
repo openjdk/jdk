@@ -26,28 +26,26 @@
  * @bug 8266766
  * @summary An array property of a type that is no longer of a type that is a legal member of an
  *          annotation should throw an AnnotationTypeMismatchException.
- * @modules java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
+ * @enablePreview
  * @run main ArrayTypeMismatchTest
  */
-
-import jdk.internal.classfile.AnnotationElement;
-import jdk.internal.classfile.AnnotationValue;
-import jdk.internal.classfile.Classfile;
-import jdk.internal.classfile.attribute.RuntimeVisibleAnnotationsAttribute;
 
 import java.lang.annotation.Annotation;
 import java.lang.annotation.AnnotationTypeMismatchException;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
+import java.lang.classfile.AnnotationElement;
+import java.lang.classfile.AnnotationValue;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.attribute.RuntimeVisibleAnnotationsAttribute;
 import java.lang.constant.ClassDesc;
 import java.lang.constant.MethodTypeDesc;
 import java.lang.reflect.AccessFlag;
 import java.lang.reflect.InvocationTargetException;
 
+import static java.lang.classfile.ClassFile.ACC_ABSTRACT;
+import static java.lang.classfile.ClassFile.ACC_PUBLIC;
 import static java.lang.constant.ConstantDescs.CD_Object;
-import static jdk.internal.classfile.Classfile.ACC_ABSTRACT;
-import static jdk.internal.classfile.Classfile.ACC_PUBLIC;
 
 public class ArrayTypeMismatchTest {
 
@@ -88,14 +86,14 @@ public class ArrayTypeMismatchTest {
     }
 
     private static byte[] carrierType() {
-        return Classfile.of().build(ClassDesc.of("sample", "Carrier"), clb -> {
+        return ClassFile.of().build(ClassDesc.of("sample", "Carrier"), clb -> {
             clb.withSuperclass(CD_Object);
             var badAnnotationArray = AnnotationValue.ofArray(AnnotationValue.ofAnnotation(
-                    jdk.internal.classfile.Annotation.of(
+                    java.lang.classfile.Annotation.of(
                             NoAnnotation.class.describeConstable().orElseThrow()
                     )));
             clb.with(RuntimeVisibleAnnotationsAttribute.of(
-                    jdk.internal.classfile.Annotation.of(ClassDesc.of("sample", "Host"),
+                    java.lang.classfile.Annotation.of(ClassDesc.of("sample", "Host"),
                             AnnotationElement.of("value", badAnnotationArray)
                     )
             ));
@@ -103,13 +101,13 @@ public class ArrayTypeMismatchTest {
     }
 
     private static byte[] annotationType() {
-        return Classfile.of().build(ClassDesc.of("sample", "Host"), clb -> {
+        return ClassFile.of().build(ClassDesc.of("sample", "Host"), clb -> {
             clb.withSuperclass(CD_Object);
             clb.withInterfaceSymbols(Annotation.class.describeConstable().orElseThrow());
             clb.withFlags(AccessFlag.PUBLIC, AccessFlag.ABSTRACT, AccessFlag.INTERFACE,
                     AccessFlag.ANNOTATION);
             clb.with(RuntimeVisibleAnnotationsAttribute.of(
-                    jdk.internal.classfile.Annotation.of(
+                    java.lang.classfile.Annotation.of(
                             Retention.class.describeConstable().orElseThrow(),
                             AnnotationElement.of("value", AnnotationValue.of(RetentionPolicy.RUNTIME))
                     )

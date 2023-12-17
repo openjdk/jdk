@@ -24,25 +24,24 @@
 /* @test
  * @bug 8057919
  * @summary Class.getSimpleName() should work for non-JLS compliant class names
- * @modules java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
+ * @enablePreview
  */
 
+import java.lang.classfile.ClassBuilder;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.CodeBuilder;
+import java.lang.classfile.attribute.EnclosingMethodAttribute;
+import java.lang.classfile.attribute.InnerClassInfo;
+import java.lang.classfile.attribute.InnerClassesAttribute;
 import java.lang.constant.ClassDesc;
 import java.lang.reflect.AccessFlag;
 import java.util.Optional;
-import jdk.internal.classfile.ClassBuilder;
-import jdk.internal.classfile.Classfile;
-import jdk.internal.classfile.CodeBuilder;
-import jdk.internal.classfile.attribute.EnclosingMethodAttribute;
-import jdk.internal.classfile.attribute.InnerClassInfo;
-import jdk.internal.classfile.attribute.InnerClassesAttribute;
 
+import static java.lang.classfile.ClassFile.ACC_PUBLIC;
+import static java.lang.classfile.ClassFile.ACC_STATIC;
 import static java.lang.constant.ConstantDescs.CD_Object;
 import static java.lang.constant.ConstantDescs.INIT_NAME;
 import static java.lang.constant.ConstantDescs.MTD_void;
-import static jdk.internal.classfile.Classfile.ACC_PUBLIC;
-import static jdk.internal.classfile.Classfile.ACC_STATIC;
 
 public class GetSimpleNameTest {
     static class NestedClass {}
@@ -166,7 +165,7 @@ public class GetSimpleNameTest {
 
         byte[] getNestedClasses(boolean isInner) {
             var name = (isInner ? innerName : outerName);
-            return Classfile.of().build(name, clb -> {
+            return ClassFile.of().build(name, clb -> {
                 clb.withSuperclass(CD_Object);
                 clb.withFlags(AccessFlag.PUBLIC, AccessFlag.SUPER);
                 clb.with(InnerClassesAttribute.of(
@@ -179,7 +178,7 @@ public class GetSimpleNameTest {
 
         byte[] getInnerClasses(boolean isInner) {
             var name = (isInner ? innerName : outerName);
-            return Classfile.of().build(name, clb -> {
+            return ClassFile.of().build(name, clb -> {
                 clb.withSuperclass(CD_Object);
                 clb.withFlags(AccessFlag.PUBLIC, AccessFlag.SUPER);
                 clb.with(InnerClassesAttribute.of(
@@ -193,7 +192,7 @@ public class GetSimpleNameTest {
 
         byte[] getLocalClasses(boolean isInner) {
             var name = (isInner ? innerName : outerName);
-            return Classfile.of().build(name, clb -> {
+            return ClassFile.of().build(name, clb -> {
                 clb.withSuperclass(CD_Object);
                 clb.withFlags(AccessFlag.PUBLIC, AccessFlag.SUPER);
                 clb.with(InnerClassesAttribute.of(
@@ -208,7 +207,7 @@ public class GetSimpleNameTest {
 
         byte[] getAnonymousClasses(boolean isInner) {
             var name = (isInner ? innerName : outerName);
-            return Classfile.of().build(name, clb -> {
+            return ClassFile.of().build(name, clb -> {
                 clb.withSuperclass(CD_Object);
                 clb.withFlags(AccessFlag.PUBLIC, AccessFlag.SUPER);
                 clb.with(InnerClassesAttribute.of(

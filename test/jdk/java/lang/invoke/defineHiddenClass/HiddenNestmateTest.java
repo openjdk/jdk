@@ -24,11 +24,12 @@
 /*
  * @test
  * @library /test/lib
- * @modules java.base/jdk.internal.classfile
+ * @enablePreview
  * @build  HiddenNestmateTest
  * @run testng/othervm HiddenNestmateTest
  */
 
+import java.lang.classfile.ClassFile;
 import java.lang.constant.ClassDesc;
 import java.lang.constant.MethodTypeDesc;
 import java.lang.invoke.*;
@@ -38,7 +39,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.stream.Stream;
 import java.util.Arrays;
-import jdk.internal.classfile.Classfile;
 
 import org.testng.annotations.Test;
 
@@ -172,7 +172,7 @@ public class HiddenNestmateTest {
     }
 
     private static byte[] classBytes(String classname) {
-        return Classfile.of().build(ClassDesc.ofInternalName(classname), clb -> {
+        return ClassFile.of().build(ClassDesc.ofInternalName(classname), clb -> {
             clb.withSuperclass(CD_Object);
             clb.withFlags(AccessFlag.FINAL);
             clb.withMethodBody(INIT_NAME, MTD_void, PUBLIC, cob -> {

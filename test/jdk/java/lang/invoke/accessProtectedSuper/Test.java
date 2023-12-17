@@ -25,25 +25,23 @@
  * @test
  * @bug 8022718
  * @summary Runtime accessibility checking: protected class, if extended, should be accessible from another package
- * @modules java.base/jdk.internal.classfile
- * @modules java.base/jdk.internal.classfile.attribute
- * @modules java.base/jdk.internal.classfile.constantpool
+ * @enablePreview
  * @compile -XDignore.symbol.file BogoLoader.java MethodInvoker.java Test.java anotherpkg/MethodSupplierOuter.java
  * @run main/othervm Test
  */
 
+import java.lang.classfile.ClassTransform;
+import java.lang.classfile.attribute.InnerClassInfo;
+import java.lang.classfile.attribute.InnerClassesAttribute;
+import java.lang.classfile.constantpool.ClassEntry;
+import java.lang.classfile.constantpool.Utf8Entry;
 import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.HashSet;
-import jdk.internal.classfile.ClassTransform;
-import jdk.internal.classfile.attribute.InnerClassInfo;
-import jdk.internal.classfile.attribute.InnerClassesAttribute;
-import jdk.internal.classfile.constantpool.ClassEntry;
-import jdk.internal.classfile.constantpool.Utf8Entry;
 
-import static jdk.internal.classfile.Classfile.ACC_PRIVATE;
-import static jdk.internal.classfile.Classfile.ACC_PROTECTED;
-import static jdk.internal.classfile.Classfile.ACC_PUBLIC;
+import static java.lang.classfile.ClassFile.ACC_PRIVATE;
+import static java.lang.classfile.ClassFile.ACC_PROTECTED;
+import static java.lang.classfile.ClassFile.ACC_PUBLIC;
 
 interface MyFunctionalInterface {
 

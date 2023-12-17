@@ -25,27 +25,27 @@
  * @test
  * @bug 8255560
  * @summary Class::isRecord should check that the current class is final and not abstract
- * @modules java.base/jdk.internal.classfile java.base/jdk.internal.classfile.attribute
+ * @enablePreview
  * @library /test/lib
  * @run testng/othervm IsRecordTest
  * @run testng/othervm/java.security.policy=allPermissions.policy IsRecordTest
  */
 
+import java.lang.classfile.ClassFile;
 import java.lang.constant.ClassDesc;
 import java.lang.reflect.AccessFlag;
 import java.util.List;
 import java.util.Map;
 
-import jdk.internal.classfile.Classfile;
-import jdk.internal.classfile.attribute.RecordAttribute;
-import jdk.internal.classfile.attribute.RecordComponentInfo;
+import java.lang.classfile.attribute.RecordAttribute;
+import java.lang.classfile.attribute.RecordComponentInfo;
 import jdk.test.lib.ByteCodeLoader;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import static java.lang.System.out;
+import static java.lang.classfile.ClassFile.ACC_ABSTRACT;
+import static java.lang.classfile.ClassFile.ACC_FINAL;
 import static java.lang.constant.ConstantDescs.CD_int;
-import static jdk.internal.classfile.Classfile.ACC_ABSTRACT;
-import static jdk.internal.classfile.Classfile.ACC_FINAL;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertTrue;
@@ -166,7 +166,7 @@ public class IsRecordTest {
                               boolean isAbstract,
                               String superName,
                               List<RecordComponentInfo> components) {
-        return Classfile.of().build(ClassDesc.ofInternalName(className), clb -> {
+        return ClassFile.of().build(ClassDesc.ofInternalName(className), clb -> {
             int access = 0;
             if (isFinal)
                 access = access | ACC_FINAL;

@@ -27,8 +27,7 @@
  * @summary InvalidClassException is thrown when the canonical constructor
  *          cannot be found during deserialization.
  * @library /test/lib
- * @modules java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.constantpool
+ * @enablePreview
  * @run testng BadCanonicalCtrTest
  */
 
@@ -39,22 +38,22 @@ import java.io.InvalidClassException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.ObjectStreamClass;
+import java.lang.classfile.ClassTransform;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.MethodModel;
 import java.lang.constant.MethodTypeDesc;
 
-import jdk.internal.classfile.ClassTransform;
-import jdk.internal.classfile.Classfile;
-import jdk.internal.classfile.MethodModel;
 import jdk.test.lib.compiler.InMemoryJavaCompiler;
 import jdk.test.lib.ByteCodeLoader;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import static java.lang.System.out;
+import static java.lang.classfile.ClassFile.ACC_PUBLIC;
 import static java.lang.constant.ConstantDescs.CD_Object;
 import static java.lang.constant.ConstantDescs.CD_void;
 import static java.lang.constant.ConstantDescs.INIT_NAME;
 import static java.lang.constant.ConstantDescs.MTD_void;
-import static jdk.internal.classfile.Classfile.ACC_PUBLIC;
 import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.expectThrows;
 
@@ -207,7 +206,7 @@ public class BadCanonicalCtrTest {
      * Assumes just a single, canonical, constructor.
      */
     static byte[] removeConstructor(byte[] classBytes) {
-        var cf = Classfile.of();
+        var cf = ClassFile.of();
         return cf.transform(cf.parse(classBytes), ClassTransform.dropping(ce ->
                 ce instanceof MethodModel mm && mm.methodName().equalsString(INIT_NAME)));
     }
@@ -217,7 +216,7 @@ public class BadCanonicalCtrTest {
      * Assumes just a single, canonical, constructor.
      */
     static byte[] modifyConstructor(byte[] classBytes) {
-        var cf = Classfile.of();
+        var cf = ClassFile.of();
         return cf.transform(cf.parse(classBytes), ClassTransform.dropping(ce ->
                         ce instanceof MethodModel mm && mm.methodName().equalsString(INIT_NAME))
                 .andThen(ClassTransform.endHandler(clb -> clb.withMethodBody(INIT_NAME,

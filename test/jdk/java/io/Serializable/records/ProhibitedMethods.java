@@ -26,7 +26,7 @@
  * @bug 8246774
  * @summary Basic tests for prohibited magic serialization methods
  * @library /test/lib
- * @modules java.base/jdk.internal.classfile
+ * @enablePreview
  * @run testng ProhibitedMethods
  */
 
@@ -41,13 +41,13 @@ import java.io.ObjectOutputStream;
 import java.io.ObjectStreamClass;
 import java.io.OutputStream;
 import java.io.Serializable;
+import java.lang.classfile.ClassTransform;
+import java.lang.classfile.ClassFile;
 import java.lang.constant.MethodTypeDesc;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.math.BigDecimal;
 
-import jdk.internal.classfile.ClassTransform;
-import jdk.internal.classfile.Classfile;
 import jdk.test.lib.compiler.InMemoryJavaCompiler;
 import jdk.test.lib.ByteCodeLoader;
 import org.testng.Assert;
@@ -55,9 +55,9 @@ import org.testng.annotations.BeforeTest;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import static java.lang.System.out;
+import static java.lang.classfile.ClassFile.ACC_PRIVATE;
 import static java.lang.constant.ConstantDescs.CD_String;
 import static java.lang.constant.ConstantDescs.CD_void;
-import static jdk.internal.classfile.Classfile.ACC_PRIVATE;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.expectThrows;
@@ -242,7 +242,7 @@ public class ProhibitedMethods {
 
     static byte[] addMethod(byte[] classBytes,
                             String name, MethodTypeDesc desc) {
-        var cf = Classfile.of();
+        var cf = ClassFile.of();
         return cf.transform(cf.parse(classBytes), ClassTransform.endHandler(clb -> {
             clb.withMethodBody(name, desc, ACC_PRIVATE, cob -> {
                 cob.constantInstruction(name + " should not be invoked");

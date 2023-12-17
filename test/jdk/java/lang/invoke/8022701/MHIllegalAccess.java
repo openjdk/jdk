@@ -21,26 +21,25 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 8022701
  * @summary Illegal access exceptions via methodhandle invocations threw wrong error.
- * @modules java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.constantpool
+ * @enablePreview
  * @compile -XDignore.symbol.file BogoLoader.java InvokeSeveralWays.java MHIllegalAccess.java MethodSupplier.java
  * @run main/othervm MHIllegalAccess
  */
 
+import java.lang.classfile.AccessFlags;
+import java.lang.classfile.ClassTransform;
+import java.lang.classfile.MethodModel;
 import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
 import java.util.HashSet;
-import jdk.internal.classfile.AccessFlags;
-import jdk.internal.classfile.ClassTransform;
-import jdk.internal.classfile.MethodModel;
 
-import static jdk.internal.classfile.Classfile.ACC_PRIVATE;
-import static jdk.internal.classfile.Classfile.ACC_PROTECTED;
-import static jdk.internal.classfile.Classfile.ACC_PUBLIC;
+import static java.lang.classfile.ClassFile.ACC_PRIVATE;
+import static java.lang.classfile.ClassFile.ACC_PROTECTED;
+import static java.lang.classfile.ClassFile.ACC_PUBLIC;
 
 public class MHIllegalAccess {
 

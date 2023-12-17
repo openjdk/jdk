@@ -27,9 +27,8 @@
  * @summary test retransformClasses
  * @author Robert Field, Sun Microsystems
  *
- * @modules java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.constantpool
- *          java.instrument
+ * @enablePreview
+ * @modules java.instrument
  * @run shell/timeout=240 MakeJAR2.sh RetransformAgent RetransformApp 'Can-Retransform-Classes: true'
  * @run main/othervm -javaagent:RetransformAgent.jar RetransformApp
  */

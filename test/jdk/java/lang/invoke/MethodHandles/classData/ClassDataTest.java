@@ -25,13 +25,16 @@
  * @test
  * @bug 8230501
  * @library /test/lib
- * @modules java.base/jdk.internal.classfile
+ * @enablePreview
  * @run testng/othervm ClassDataTest
  */
 
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.UncheckedIOException;
+import java.lang.classfile.ClassBuilder;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.TypeKind;
 import java.lang.constant.ClassDesc;
 import java.lang.constant.ConstantDescs;
 import java.lang.constant.DirectMethodHandleDesc;
@@ -52,22 +55,12 @@ import java.util.Map;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
-import jdk.internal.classfile.ClassBuilder;
-import jdk.internal.classfile.Classfile;
-import jdk.internal.classfile.TypeKind;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
-import static java.lang.constant.ConstantDescs.BSM_CLASS_DATA;
-import static java.lang.constant.ConstantDescs.BSM_CLASS_DATA_AT;
-import static java.lang.constant.ConstantDescs.CD_Class;
-import static java.lang.constant.ConstantDescs.CD_MethodHandle;
-import static java.lang.constant.ConstantDescs.CD_Object;
-import static java.lang.constant.ConstantDescs.DEFAULT_NAME;
-import static java.lang.constant.ConstantDescs.INIT_NAME;
-import static java.lang.constant.ConstantDescs.MTD_void;
+import static java.lang.classfile.ClassFile.*;
+import static java.lang.constant.ConstantDescs.*;
 import static java.lang.invoke.MethodHandles.Lookup.*;
-import static jdk.internal.classfile.Classfile.*;
 import static org.testng.Assert.*;
 
 public class ClassDataTest {
@@ -379,7 +372,7 @@ public class ClassDataTest {
         }
 
         byte[] build() {
-            byte[] bytes = Classfile.of().build(classname, cw);
+            byte[] bytes = ClassFile.of().build(classname, cw);
             Path p = Paths.get(classname + ".class");
                 try (OutputStream os = Files.newOutputStream(p)) {
                 os.write(bytes);

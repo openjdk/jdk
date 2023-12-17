@@ -26,21 +26,21 @@
  * @bug 8026213
  * @summary Reflection support for private methods in interfaces
  * @author  Robert Field
- * @modules java.base/jdk.internal.classfile
+ * @enablePreview
  * @run main TestPrivateInterfaceMethodReflect
  */
 
+import java.lang.classfile.ClassFile;
 import java.lang.constant.ClassDesc;
 import java.lang.constant.MethodTypeDesc;
 import java.lang.reflect.*;
 
-import jdk.internal.classfile.Classfile;
+import static java.lang.classfile.ClassFile.ACC_PRIVATE;
+import static java.lang.classfile.ClassFile.ACC_PUBLIC;
 import static java.lang.constant.ConstantDescs.CD_Object;
 import static java.lang.constant.ConstantDescs.CD_int;
 import static java.lang.constant.ConstantDescs.INIT_NAME;
 import static java.lang.constant.ConstantDescs.MTD_void;
-import static jdk.internal.classfile.Classfile.ACC_PRIVATE;
-import static jdk.internal.classfile.Classfile.ACC_PUBLIC;
 
 public class TestPrivateInterfaceMethodReflect {
 
@@ -64,7 +64,7 @@ public class TestPrivateInterfaceMethodReflect {
 
         private byte[] loadClassData(String name) {
             return switch (name) {
-                case INTERFACE_NAME -> Classfile.of().build(ClassDesc.ofInternalName(INTERFACE_NAME), clb -> {
+                case INTERFACE_NAME -> ClassFile.of().build(ClassDesc.ofInternalName(INTERFACE_NAME), clb -> {
                     clb.withFlags(AccessFlag.ABSTRACT, AccessFlag.INTERFACE, AccessFlag.PUBLIC);
                     clb.withSuperclass(CD_Object);
                     clb.withMethodBody("privInstance", MethodTypeDesc.of(CD_int), ACC_PRIVATE, cob -> {
@@ -72,7 +72,7 @@ public class TestPrivateInterfaceMethodReflect {
                         cob.ireturn();
                     });
                 });
-                case CLASS_NAME -> Classfile.of().build(ClassDesc.of(CLASS_NAME), clb -> {
+                case CLASS_NAME -> ClassFile.of().build(ClassDesc.of(CLASS_NAME), clb -> {
                     clb.withFlags(AccessFlag.PUBLIC);
                     clb.withSuperclass(CD_Object);
                     clb.withInterfaceSymbols(ClassDesc.ofInternalName(INTERFACE_NAME));

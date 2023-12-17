@@ -24,12 +24,13 @@
 /* @test
  * @bug 8032400
  * @summary JSR292: invokeSpecial: InternalError attempting to lookup a method
- * @modules java.base/jdk.internal.classfile
+ * @enablePreview
  * @compile -XDignore.symbol.file SpecialStatic.java
  * @run testng test.java.lang.invoke.lookup.SpecialStatic
  */
 package test.java.lang.invoke.lookup;
 
+import java.lang.classfile.ClassFile;
 import java.lang.constant.ClassDesc;
 import java.lang.constant.MethodHandleDesc;
 import java.lang.constant.MethodTypeDesc;
@@ -38,12 +39,12 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.reflect.AccessFlag;
 
-import jdk.internal.classfile.Classfile;
 import org.testng.annotations.*;
+
+import static java.lang.classfile.ClassFile.ACC_PUBLIC;
+import static java.lang.classfile.ClassFile.ACC_STATIC;
 import static java.lang.constant.ConstantDescs.*;
 import static java.lang.constant.DirectMethodHandleDesc.Kind.SPECIAL;
-import static jdk.internal.classfile.Classfile.ACC_PUBLIC;
-import static jdk.internal.classfile.Classfile.ACC_STATIC;
 import static org.testng.Assert.*;
 
 /**
@@ -117,7 +118,7 @@ public class SpecialStatic {
     }
 
     public static byte[] dumpT1() {
-        return Classfile.of().build(CD_T1, clb -> {
+        return ClassFile.of().build(CD_T1, clb -> {
             clb.withSuperclass(CD_Object);
             clb.withFlags(AccessFlag.PUBLIC, AccessFlag.SUPER);
             clb.withMethodBody(INIT_NAME, MTD_void, ACC_PUBLIC, cob -> {
@@ -133,7 +134,7 @@ public class SpecialStatic {
     }
 
     public static byte[] dumpT2() {
-        return Classfile.of().build(CD_T2, clb -> {
+        return ClassFile.of().build(CD_T2, clb -> {
             clb.withSuperclass(CD_T1);
             clb.withFlags(AccessFlag.PUBLIC, AccessFlag.SUPER);
             clb.withMethodBody(INIT_NAME, MTD_void, ACC_PUBLIC, cob -> {
@@ -149,7 +150,7 @@ public class SpecialStatic {
     }
 
     public static byte[] dumpT3() {
-        return Classfile.of().build(CD_T3, clb -> {
+        return ClassFile.of().build(CD_T3, clb -> {
             clb.withSuperclass(CD_T2);
             clb.withFlags(AccessFlag.PUBLIC, AccessFlag.SUPER);
             clb.withMethodBody(INIT_NAME, MTD_void, ACC_PUBLIC, cob -> {

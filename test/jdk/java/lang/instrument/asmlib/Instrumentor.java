@@ -23,23 +23,22 @@
 
 package asmlib;
 
-import jdk.internal.classfile.AccessFlags;
-import jdk.internal.classfile.ClassBuilder;
-import jdk.internal.classfile.ClassElement;
-import jdk.internal.classfile.ClassModel;
-import jdk.internal.classfile.ClassTransform;
-import jdk.internal.classfile.Classfile;
-import jdk.internal.classfile.CodeBuilder;
-import jdk.internal.classfile.CodeElement;
-import jdk.internal.classfile.CodeModel;
-import jdk.internal.classfile.CodeTransform;
-import jdk.internal.classfile.MethodBuilder;
-import jdk.internal.classfile.MethodElement;
-import jdk.internal.classfile.MethodModel;
-import jdk.internal.classfile.MethodTransform;
-import jdk.internal.classfile.Opcode;
-import jdk.internal.classfile.TypeKind;
-
+import java.lang.classfile.AccessFlags;
+import java.lang.classfile.ClassBuilder;
+import java.lang.classfile.ClassElement;
+import java.lang.classfile.ClassModel;
+import java.lang.classfile.ClassTransform;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.CodeBuilder;
+import java.lang.classfile.CodeElement;
+import java.lang.classfile.CodeModel;
+import java.lang.classfile.CodeTransform;
+import java.lang.classfile.MethodBuilder;
+import java.lang.classfile.MethodElement;
+import java.lang.classfile.MethodModel;
+import java.lang.classfile.MethodTransform;
+import java.lang.classfile.Opcode;
+import java.lang.classfile.TypeKind;
 import java.lang.constant.MethodTypeDesc;
 import java.lang.reflect.AccessFlag;
 import java.util.HashSet;
@@ -48,7 +47,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
-import static jdk.internal.classfile.Classfile.ACC_NATIVE;
+import static java.lang.classfile.ClassFile.ACC_NATIVE;
 
 public class Instrumentor {
 
@@ -61,7 +60,7 @@ public class Instrumentor {
     private final AtomicBoolean dirty = new AtomicBoolean(false);
 
     private Instrumentor(byte[] classData) {
-        model = Classfile.of().parse(classData);
+        model = ClassFile.of().parse(classData);
     }
 
     public synchronized Instrumentor addMethodEntryInjection(String methodName, Consumer<CodeBuilder> injector) {
@@ -149,7 +148,7 @@ public class Instrumentor {
     }
 
     public synchronized byte[] apply() {
-        var bytes = Classfile.of().transform(model, transform);
+        var bytes = ClassFile.of().transform(model, transform);
 
         return dirty.get() ? bytes : null;
     }

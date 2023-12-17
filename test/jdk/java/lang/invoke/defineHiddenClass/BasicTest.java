@@ -23,9 +23,9 @@
 
 /*
  * @test
- * @modules java.base/jdk.internal.classfile
- *          jdk.compiler
+ * @modules jdk.compiler
  * @library /test/lib
+ * @enablePreview
  * @compile BadClassFile.jcod
  *          BadClassFile2.jcod
  *          BadClassFileVersion.jcod
@@ -36,6 +36,7 @@
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.classfile.ClassFile;
 import java.lang.constant.ClassDesc;
 import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.reflect.AccessFlag;
@@ -50,7 +51,6 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Stream;
-import jdk.internal.classfile.Classfile;
 import jdk.test.lib.compiler.CompilerUtils;
 import jdk.test.lib.Utils;
 
@@ -58,6 +58,7 @@ import org.testng.annotations.BeforeTest;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
+import static java.lang.classfile.ClassFile.ACC_PUBLIC;
 import static java.lang.constant.ConstantDescs.CD_Enum;
 import static java.lang.constant.ConstantDescs.CD_Object;
 import static java.lang.invoke.MethodHandles.lookup;
@@ -67,7 +68,6 @@ import static java.lang.reflect.AccessFlag.ANNOTATION;
 import static java.lang.reflect.AccessFlag.ENUM;
 import static java.lang.reflect.AccessFlag.INTERFACE;
 import static java.lang.reflect.AccessFlag.SYNTHETIC;
-import static jdk.internal.classfile.Classfile.ACC_PUBLIC;
 import static org.testng.Assert.*;
 
 interface HiddenTest {
@@ -498,7 +498,7 @@ public class BasicTest {
     }
 
     private static byte[] classBytes(String classname, ClassDesc supertType, Set<AccessFlag> accessFlags) {
-        return Classfile.of().build(ClassDesc.ofInternalName(classname), cb -> {
+        return ClassFile.of().build(ClassDesc.ofInternalName(classname), cb -> {
             cb.withSuperclass(supertType);
             var allFlags = EnumSet.copyOf(accessFlags);
             allFlags.add(AccessFlag.PUBLIC);

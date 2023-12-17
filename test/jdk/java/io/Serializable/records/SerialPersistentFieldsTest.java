@@ -26,8 +26,7 @@
  * @bug 8246774
  * @summary Basic tests for prohibited magic serialPersistentFields
  * @library /test/lib
- * @modules java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.constantpool
+ * @enablePreview
  * @run testng SerialPersistentFieldsTest
  */
 
@@ -39,6 +38,11 @@ import java.io.ObjectOutputStream;
 import java.io.ObjectStreamClass;
 import java.io.ObjectStreamField;
 import java.io.Serializable;
+import java.lang.classfile.ClassBuilder;
+import java.lang.classfile.ClassElement;
+import java.lang.classfile.ClassTransform;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.FieldModel;
 import java.lang.constant.ClassDesc;
 import java.lang.constant.ConstantDescs;
 import java.lang.constant.DynamicConstantDesc;
@@ -47,26 +51,21 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.math.BigDecimal;
 
-import jdk.internal.classfile.ClassBuilder;
-import jdk.internal.classfile.ClassElement;
-import jdk.internal.classfile.ClassTransform;
-import jdk.internal.classfile.Classfile;
-import jdk.internal.classfile.FieldModel;
 import jdk.test.lib.ByteCodeLoader;
 import jdk.test.lib.compiler.InMemoryJavaCompiler;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import static java.lang.System.out;
+import static java.lang.classfile.ClassFile.ACC_FINAL;
+import static java.lang.classfile.ClassFile.ACC_PRIVATE;
+import static java.lang.classfile.ClassFile.ACC_STATIC;
 import static java.lang.constant.ConstantDescs.CD_Class;
 import static java.lang.constant.ConstantDescs.CD_String;
 import static java.lang.constant.ConstantDescs.CD_void;
 import static java.lang.constant.ConstantDescs.CLASS_INIT_NAME;
 import static java.lang.constant.ConstantDescs.INIT_NAME;
 import static java.lang.constant.ConstantDescs.MTD_void;
-import static jdk.internal.classfile.Classfile.ACC_FINAL;
-import static jdk.internal.classfile.Classfile.ACC_PRIVATE;
-import static jdk.internal.classfile.Classfile.ACC_STATIC;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
 
@@ -230,7 +229,7 @@ public class SerialPersistentFieldsTest {
 
     static byte[] addSerialPersistentFields(byte[] classBytes,
                                             ObjectStreamField[] spf) {
-        var cf = Classfile.of();
+        var cf = ClassFile.of();
         var model = cf.parse(classBytes);
         return cf.transform(model, new SerialPersistentFieldsVisitor(model.thisClass().asSymbol(), spf));
     }

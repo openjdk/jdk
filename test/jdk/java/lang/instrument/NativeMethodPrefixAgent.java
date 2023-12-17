@@ -28,9 +28,8 @@
  * @summary test setNativeMethodPrefix
  * @author Robert Field, Sun Microsystems
  *
- * @modules java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.constantpool
- *          java.management
+ * @enablePreview
+ * @modules java.management
  *          java.instrument
  * @run shell/timeout=240 MakeJAR2.sh NativeMethodPrefixAgent NativeMethodPrefixApp 'Can-Retransform-Classes: true' 'Can-Set-Native-Method-Prefix: true'
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:-CheckIntrinsics -javaagent:NativeMethodPrefixAgent.jar NativeMethodPrefixApp

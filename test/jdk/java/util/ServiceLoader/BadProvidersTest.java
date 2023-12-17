@@ -24,14 +24,15 @@
 /**
  * @test
  * @library /test/lib
- * @modules java.base/jdk.internal.classfile
- *          jdk.compiler
+ * @modules jdk.compiler
+ * @enablePrevieww
  * @build jdk.test.lib.compiler.CompilerUtils
  * @run testng/othervm BadProvidersTest
  * @summary Basic test of ServiceLoader with bad provider and bad provider
  *          factories deployed on the module path
  */
 
+import java.lang.classfile.ClassFile;
 import java.lang.constant.ClassDesc;
 import java.lang.constant.MethodTypeDesc;
 import java.lang.module.Configuration;
@@ -48,18 +49,17 @@ import java.util.ServiceLoader.Provider;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import jdk.internal.classfile.Classfile;
 import jdk.test.lib.compiler.CompilerUtils;
 
 import org.testng.annotations.Test;
 import org.testng.annotations.DataProvider;
 
+import static java.lang.classfile.ClassFile.ACC_PUBLIC;
+import static java.lang.classfile.ClassFile.ACC_STATIC;
 import static java.lang.constant.ConstantDescs.CD_Object;
-import static java.lang.constant.ConstantDescs.CD_void;
 import static java.lang.constant.ConstantDescs.INIT_NAME;
 import static java.lang.constant.ConstantDescs.MTD_void;
-import static jdk.internal.classfile.Classfile.ACC_PUBLIC;
-import static jdk.internal.classfile.Classfile.ACC_STATIC;
+
 import static org.testng.Assert.*;
 
 /**
@@ -214,7 +214,7 @@ public class BadProvidersTest {
     public void testWithTwoFactoryMethods() throws Exception {
         Path mods = compileTest(TEST1_MODULE);
 
-        var bytes = Classfile.of().build(ClassDesc.of("p", "ProviderFactory"), clb -> {
+        var bytes = ClassFile.of().build(ClassDesc.of("p", "ProviderFactory"), clb -> {
             clb.withSuperclass(CD_Object);
             clb.withFlags(AccessFlag.PUBLIC, AccessFlag.SUPER);
 
