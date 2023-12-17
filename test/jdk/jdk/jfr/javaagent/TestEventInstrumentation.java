@@ -22,6 +22,12 @@
  */
 package jdk.jfr.javaagent;
 
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.CodeBuilder;
+import java.lang.classfile.CodeElement;
+import java.lang.classfile.CodeTransform;
+import java.lang.classfile.MethodModel;
+import java.lang.classfile.MethodTransform;
 import java.lang.constant.ClassDesc;
 import java.lang.instrument.ClassFileTransformer;
 import java.lang.instrument.IllegalClassFormatException;
@@ -30,12 +36,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.ProtectionDomain;
 
-import jdk.internal.classfile.Classfile;
-import jdk.internal.classfile.CodeBuilder;
-import jdk.internal.classfile.CodeElement;
-import jdk.internal.classfile.CodeTransform;
-import jdk.internal.classfile.MethodModel;
-import jdk.internal.classfile.MethodTransform;
 import jdk.jfr.Event;
 import jdk.jfr.Recording;
 import jdk.jfr.consumer.RecordingFile;
@@ -51,9 +51,8 @@ import static java.lang.constant.ConstantDescs.MTD_void;
  * @key jfr
  * @requires vm.hasJFR
  * @library /test/lib
- * @modules java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.constantpool
- *          jdk.jartool/sun.tools.jar
+ * @modules jdk.jartool/sun.tools.jar
+ * @enablePreview
  * @build jdk.jfr.javaagent.InstrumentationEventCallback
  *        jdk.jfr.javaagent.TestEventInstrumentation
  * @run driver jdk.test.lib.util.JavaAgentBuilder
@@ -116,7 +115,7 @@ public class TestEventInstrumentation {
                     return null;
                 }
 
-                var cf = Classfile.of();
+                var cf = ClassFile.of();
                 result = cf.transform(cf.parse(bytes), (clb, ce) -> {
                     if (ce instanceof MethodModel mm && mm.methodName().equalsString(INIT_NAME)) {
                         clb.transformMethod(mm, MethodTransform.transformingCode(new CodeTransform() {

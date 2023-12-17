@@ -23,6 +23,12 @@
 
 package jdk.jfr.event.io;
 
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.CodeBuilder;
+import java.lang.classfile.CodeElement;
+import java.lang.classfile.CodeTransform;
+import java.lang.classfile.MethodModel;
+import java.lang.classfile.MethodTransform;
 import java.lang.constant.ClassDesc;
 import java.lang.constant.MethodTypeDesc;
 import java.util.Arrays;
@@ -36,12 +42,6 @@ import java.lang.instrument.IllegalClassFormatException;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import jdk.internal.classfile.Classfile;
-import jdk.internal.classfile.CodeBuilder;
-import jdk.internal.classfile.CodeElement;
-import jdk.internal.classfile.CodeTransform;
-import jdk.internal.classfile.MethodModel;
-import jdk.internal.classfile.MethodTransform;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 
@@ -55,11 +55,10 @@ import static java.lang.constant.ConstantDescs.CD_void;
  * @requires vm.hasJFR
  *
  * @library /test/lib /test/jdk
- * @modules java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.constantpool
- *          java.instrument
+ * @modules java.instrument
  *          jdk.jartool/sun.tools.jar
  *          jdk.jfr
+ * @enablePreview
  *
  * @run main/othervm jdk.jfr.event.io.TestInstrumentation
  */
@@ -317,7 +316,7 @@ public class TestInstrumentation implements ClassFileTransformer {
         log("instrument class(" + className + ") " + (isRedefinition ? "redef" : "load"));
 
         instrClassesDone.add(target);
-        var cf = Classfile.of();
+        var cf = ClassFile.of();
         return cf.transform(cf.parse(bytes), (clb, ce) -> {
             MethodKey key;
             if (ce instanceof MethodModel mm && instrMethodKeys.contains(key = new MethodKey(

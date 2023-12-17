@@ -23,10 +23,6 @@
 
 package jdk.jfr.event.compiler;
 
-import jdk.internal.classfile.ClassModel;
-import jdk.internal.classfile.Classfile;
-import jdk.internal.classfile.Instruction;
-import jdk.internal.classfile.instruction.InvokeInstruction;
 import jdk.jfr.Recording;
 import jdk.jfr.consumer.RecordedEvent;
 import jdk.jfr.consumer.RecordedMethod;
@@ -38,6 +34,10 @@ import jdk.test.lib.jfr.Events;
 import jdk.test.whitebox.WhiteBox;
 
 import java.io.IOException;
+import java.lang.classfile.ClassModel;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.Instruction;
+import java.lang.classfile.instruction.InvokeInstruction;
 import java.lang.constant.ClassDesc;
 import java.lang.constant.MethodTypeDesc;
 import java.lang.reflect.Constructor;
@@ -60,10 +60,8 @@ import static java.lang.constant.ConstantDescs.INIT_NAME;
  *
  * @requires vm.opt.Inline == true | vm.opt.Inline == null
  * @library /test/lib
- * @modules java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.constantpool
- *          java.base/jdk.internal.classfile.instruction
- *          jdk.jfr
+ * @modules jdk.jfr
+ * @enablePreview
  *
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
@@ -378,7 +376,7 @@ class InlineCalls {
             if (stream == null) {
                 throw new IOException("Cannot find class file for " + aClass.getName());
             }
-            clm = Classfile.of().parse(stream.readAllBytes());
+            clm = ClassFile.of().parse(stream.readAllBytes());
         } catch (IOException e) {
             throw new Error("TESTBUG : unexpected IOE during class reading", e);
         }
