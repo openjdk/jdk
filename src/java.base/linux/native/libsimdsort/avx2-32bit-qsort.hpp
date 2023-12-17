@@ -331,8 +331,9 @@ struct avx2_32bit_swizzle_ops {
         if constexpr (scale == 2) {
             return swap_n<vtype, 2>(reg);
         } else if constexpr (scale == 4) {
+            constexpr uint64_t mask = 0b00011011;
             __m256 vf = _mm256_castsi256_ps(v);
-            vf = _mm256_permute_ps(vf, 0b00011011);
+            vf = _mm256_permute_ps(vf, mask);
             v = _mm256_castps_si256(vf);
         } else if constexpr (scale == 8) {
             return vtype::reverse(reg);

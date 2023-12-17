@@ -309,7 +309,8 @@ struct avx512_64bit_swizzle_ops {
         if constexpr (scale == 2) {
             return swap_n<vtype, 2>(reg);
         } else if constexpr (scale == 4) {
-            v = _mm512_permutex_epi64(v, 0b00011011);
+            constexpr uint64_t mask = 0b00011011;
+            v = _mm512_permutex_epi64(v, mask);
         } else if constexpr (scale == 8) {
             return vtype::reverse(reg);
         } else {
