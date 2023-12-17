@@ -25,7 +25,7 @@
  * @test
  * @library /test/lib
  * @modules jdk.compiler
- * @enablePrevieww
+ * @enablePreview
  * @build jdk.test.lib.compiler.CompilerUtils
  * @run testng/othervm BadProvidersTest
  * @summary Basic test of ServiceLoader with bad provider and bad provider

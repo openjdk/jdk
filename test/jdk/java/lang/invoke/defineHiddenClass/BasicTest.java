@@ -47,10 +47,12 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
-import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Stream;
+
+import jdk.internal.org.objectweb.asm.ClassWriter;
+import jdk.internal.org.objectweb.asm.Type;
 import jdk.test.lib.compiler.CompilerUtils;
 import jdk.test.lib.Utils;
 
@@ -58,7 +60,6 @@ import org.testng.annotations.BeforeTest;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
-import static java.lang.classfile.ClassFile.ACC_PUBLIC;
 import static java.lang.constant.ConstantDescs.CD_Enum;
 import static java.lang.constant.ConstantDescs.CD_Object;
 import static java.lang.invoke.MethodHandles.lookup;
@@ -68,6 +69,7 @@ import static java.lang.reflect.AccessFlag.ANNOTATION;
 import static java.lang.reflect.AccessFlag.ENUM;
 import static java.lang.reflect.AccessFlag.INTERFACE;
 import static java.lang.reflect.AccessFlag.SYNTHETIC;
+import static jdk.internal.org.objectweb.asm.Opcodes.*;
 import static org.testng.Assert.*;
 
 interface HiddenTest {
@@ -253,11 +255,11 @@ public class BasicTest {
     @DataProvider(name = "emptyClasses")
     private Object[][] emptyClasses() {
         return new Object[][] {
-                new Object[] { "EmptyHiddenSynthetic", Set.of(SYNTHETIC) },
-                new Object[] { "EmptyHiddenEnum", Set.of(ENUM) },
-                new Object[] { "EmptyHiddenAbstractClass", Set.of(ABSTRACT) },
-                new Object[] { "EmptyHiddenInterface", Set.of(ABSTRACT, INTERFACE) },
-                new Object[] { "EmptyHiddenAnnotation", Set.of(ANNOTATION, ABSTRACT, INTERFACE) },
+                new Object[] { "EmptyHiddenSynthetic", ACC_SYNTHETIC },
+                new Object[] { "EmptyHiddenEnum", ACC_ENUM },
+                new Object[] { "EmptyHiddenAbstractClass", ACC_ABSTRACT },
+                new Object[] { "EmptyHiddenInterface", ACC_ABSTRACT|ACC_INTERFACE },
+                new Object[] { "EmptyHiddenAnnotation", ACC_ANNOTATION|ACC_ABSTRACT|ACC_INTERFACE },
         };
     }
 
@@ -270,19 +272,46 @@ public class BasicTest {
      * class.
      */
     @Test(dataProvider = "emptyClasses")
-    public void emptyHiddenClass(String name, Set<AccessFlag> accessFlags) throws Exception {
-        byte[] bytes = accessFlags.contains(ENUM) ? classBytes(name, CD_Enum, accessFlags)
-                                                  : classBytes(name, accessFlags);
+    public void emptyHiddenClass(String name, int accessFlags) throws Exception {
+        byte[] bytes = (accessFlags == ACC_ENUM) ? classBytes(name, CD_Enum, accessFlags)
+                : classBytes(name, accessFlags);
         Class<?> hc = lookup().defineHiddenClass(bytes, false).lookupClass();
-        assertEquals(hc.isSynthetic(), accessFlags.contains(SYNTHETIC));
-        assertEquals(hc.isEnum(), accessFlags.contains(ENUM));
-        assertEquals(hc.isAnnotation(), accessFlags.contains(ANNOTATION));
-        assertEquals(hc.isInterface(), accessFlags.contains(INTERFACE));
-
+        switch (accessFlags) {
+            case ACC_SYNTHETIC:
+                assertTrue(hc.isSynthetic());
+                assertFalse(hc.isEnum());
+                assertFalse(hc.isAnnotation());
+                assertFalse(hc.isInterface());
+                break;
+            case ACC_ENUM:
+                assertFalse(hc.isSynthetic());
+                assertTrue(hc.isEnum());
+                assertFalse(hc.isAnnotation());
+                assertFalse(hc.isInterface());
+                break;
+            case ACC_ABSTRACT:
+                assertFalse(hc.isSynthetic());
+                assertFalse(hc.isEnum());
+                assertFalse(hc.isAnnotation());
+                assertFalse(hc.isInterface());
+                break;
+            case ACC_ABSTRACT|ACC_INTERFACE:
+                assertFalse(hc.isSynthetic());
+                assertFalse(hc.isEnum());
+                assertFalse(hc.isAnnotation());
+                assertTrue(hc.isInterface());
+                break;
+            case ACC_ANNOTATION|ACC_ABSTRACT|ACC_INTERFACE:
+                assertFalse(hc.isSynthetic());
+                assertFalse(hc.isEnum());
+                assertTrue(hc.isAnnotation());
+                assertTrue(hc.isInterface());
+                break;
+            default:
+                throw new IllegalArgumentException("unexpected access flag: " + accessFlags);
+        }
         assertTrue(hc.isHidden());
-        assertEquals(hc.getModifiers(), accessFlags.stream()
-                .mapToInt(AccessFlag::mask)
-                .reduce(ACC_PUBLIC, (a, b) -> a | b));
+        assertTrue(hc.getModifiers() == (ACC_PUBLIC|accessFlags));
         assertFalse(hc.isLocalClass());
         assertFalse(hc.isMemberClass());
         assertFalse(hc.isAnonymousClass());
@@ -493,16 +522,22 @@ public class BasicTest {
         assertFalse(hc.getSimpleName().isEmpty()); // sanity check
     }
 
-    private static byte[] classBytes(String classname, Set<AccessFlag> accessFlags) {
+    private static byte[] classBytes(String classname, int accessFlags) {
         return classBytes(classname, CD_Object, accessFlags);
     }
 
-    private static byte[] classBytes(String classname, ClassDesc supertType, Set<AccessFlag> accessFlags) {
-        return ClassFile.of().build(ClassDesc.ofInternalName(classname), cb -> {
-            cb.withSuperclass(supertType);
-            var allFlags = EnumSet.copyOf(accessFlags);
-            allFlags.add(AccessFlag.PUBLIC);
-            cb.withFlags(allFlags.toArray(AccessFlag[]::new));
-        });
+    private static byte[] classBytes(String classname, ClassDesc superType, int accessFlags) {
+        ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS + ClassWriter.COMPUTE_FRAMES);
+        cw.visit(V14, ACC_PUBLIC|accessFlags, classname, null, internalName(superType), null);
+        cw.visitEnd();
+
+        return cw.toByteArray();
+    }
+
+    private static String internalName(ClassDesc cd) {
+        if (!cd.isClassOrInterface())
+            throw new IllegalArgumentException(cd.descriptorString());
+        var d = cd.descriptorString();
+        return d.substring(1, d.length() - 1);
     }
 }

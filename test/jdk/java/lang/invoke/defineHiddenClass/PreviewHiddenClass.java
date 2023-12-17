@@ -28,13 +28,13 @@
  * @library /test/lib
  * @build jdk.test.lib.Utils
  *        jdk.test.lib.compiler.CompilerUtils
- * @enablePreview
  * @run testng PreviewHiddenClass
  * @summary verify UnsupportedClassVersionError thrown when defining a hidden class
  *         with preview minor version but --enable-preview is not set
  */
 
-import java.lang.classfile.ClassFile;
+import java.io.ByteArrayInputStream;
+import java.io.DataInputStream;
 import java.lang.invoke.MethodHandles;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -62,7 +62,10 @@ public class PreviewHiddenClass {
         }
 
         byte[] bytes = Files.readAllBytes(CLASSES_DIR.resolve("HiddenInterface.class"));
-        assertEquals(ClassFile.of().parse(bytes).minorVersion(), ClassFile.PREVIEW_MINOR_VERSION);
+        var dis = new DataInputStream(new ByteArrayInputStream(bytes));
+        dis.skipBytes(4);
+        // Minor version
+        assertEquals(dis.readUnsignedByte(), 65535);
         MethodHandles.lookup().defineHiddenClass(bytes, false);
     }
 }

@@ -87,7 +87,7 @@ ${JAVAC} ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} bootreporter/*.java
 cd ..
 
 ${JAVAC} ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} \
-    --enable-preview \
+    --enable-preview --release 23 \
     ${AGENT}.java asmlib/*.java
 ${JAVAC} ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} -classpath .${PATHSEP}bootpath ${APP}.java
 
