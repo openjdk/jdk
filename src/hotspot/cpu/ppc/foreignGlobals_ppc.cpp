@@ -179,7 +179,7 @@ static void move_float(MacroAssembler* masm, int out_stk_bias,
     case StorageType::STACK:
       if (from_reg.segment_mask() == REG32_MASK) {
         assert(to_reg.stack_size() == 4, "size should match");
-        // TODO: Check if AIX needs 4 Byte offset
+        // Note: Argument::float_on_stack_offset_in_bytes_c is handled by CallArranger
         __ stfs(as_FloatRegister(from_reg), reg2offset(to_reg, out_stk_bias), R1_SP);
       } else {
         assert(to_reg.stack_size() == 8, "size should match");
@@ -204,6 +204,7 @@ static void move_stack(MacroAssembler* masm, Register callerSP, int in_stk_bias,
     case StorageType::FLOAT:
       switch (from_reg.stack_size()) {
         case 8: __ lfd(as_FloatRegister(to_reg), reg2offset(from_reg, in_stk_bias), callerSP); break;
+        // Note: Argument::float_on_stack_offset_in_bytes_c is handled by CallArranger
         case 4: __ lfs(as_FloatRegister(to_reg), reg2offset(from_reg, in_stk_bias), callerSP); break;
         default: ShouldNotReachHere();
       }
@@ -226,20 +227,12 @@ static void move_stack(MacroAssembler* masm, Register callerSP, int in_stk_bias,
   }
 }
 
-void ArgumentShuffle::pd_generate(MacroAssembler* masm, VMStorage tmp, int in_stk_bias, int out_stk_bias, const StubLocations& locs) const {
+void ArgumentShuffle::pd_generate(MacroAssembler* masm, VMStorage tmp, int in_stk_bias, int out_stk_bias) const {
   Register callerSP = as_Register(tmp); // preset
   for (int i = 0; i < _moves.length(); i++) {
     Move move = _moves.at(i);
     VMStorage from_reg = move.from;
     VMStorage to_reg   = move.to;
-
-    // replace any placeholders
-    if (from_reg.type() == StorageType::PLACEHOLDER) {
-      from_reg = locs.get(from_reg);
-    }
-    if (to_reg.type() == StorageType::PLACEHOLDER) {
-      to_reg = locs.get(to_reg);
-    }
 
     switch (from_reg.type()) {
       case StorageType::INTEGER:

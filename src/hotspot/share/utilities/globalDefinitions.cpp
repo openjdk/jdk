@@ -40,8 +40,6 @@ int BytesPerHeapOop    = 0;
 int BitsPerHeapOop     = 0;
 
 // Old CDS options
-bool DumpSharedSpaces;
-bool DynamicDumpSharedSpaces;
 bool RequireSharedSpaces;
 extern "C" {
 JNIEXPORT jboolean UseSharedSpaces = true;

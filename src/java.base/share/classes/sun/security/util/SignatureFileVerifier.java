@@ -184,21 +184,20 @@ public class SignatureFileVerifier {
     /**
      * Returns the signed JAR block file extension for a key.
      *
+     * Returns "DSA" for unknown algorithms. This is safe because the
+     * signature verification process does not require the extension to
+     * match the key algorithm as long as it is "RSA", "DSA", or "EC."
+     *
      * @param key the key used to sign the JAR file
      * @return the extension
      * @see #isBlockOrSF(String)
      */
     public static String getBlockExtension(PrivateKey key) {
-        String keyAlgorithm = key.getAlgorithm().toUpperCase(Locale.ENGLISH);
-        if (keyAlgorithm.equals("RSASSA-PSS")) {
-            return "RSA";
-        } else if (keyAlgorithm.equals("EDDSA")
-                || keyAlgorithm.equals("ED25519")
-                || keyAlgorithm.equals("ED448")) {
-            return "EC";
-        } else {
-            return keyAlgorithm;
-        }
+        return switch (key.getAlgorithm().toUpperCase(Locale.ENGLISH)) {
+            case "RSA", "RSASSA-PSS" -> "RSA";
+            case "EC", "EDDSA", "ED25519", "ED448" -> "EC";
+            default -> "DSA";
+        };
     }
 
     /**

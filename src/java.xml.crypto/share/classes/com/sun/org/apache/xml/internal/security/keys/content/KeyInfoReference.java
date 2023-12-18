@@ -95,6 +95,7 @@ public class KeyInfoReference extends Signature11ElementProxy implements KeyInfo
     }
 
     /** {@inheritDoc} */
+    @Override
     public String getBaseLocalName() {
         return Constants._TAG_KEYINFOREFERENCE;
     }

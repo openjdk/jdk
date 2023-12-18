@@ -43,7 +43,7 @@
 #include "utilities/ostream.hpp"
 #include "utilities/vmError.hpp"
 
-size_t MallocMemorySummary::_snapshot[CALC_OBJ_SIZE_IN_TYPE(MallocMemorySnapshot, size_t)];
+MallocMemorySnapshot MallocMemorySummary::_snapshot;
 
 void MemoryCounter::update_peak(size_t size, size_t cnt) {
   size_t peak_sz = peak_size();
@@ -78,9 +78,7 @@ void MallocMemorySnapshot::make_adjustment() {
 }
 
 void MallocMemorySummary::initialize() {
-  assert(sizeof(_snapshot) >= sizeof(MallocMemorySnapshot), "Sanity Check");
   // Uses placement new operator to initialize static area.
-  ::new ((void*)_snapshot)MallocMemorySnapshot();
   MallocLimitHandler::initialize(MallocLimit);
 }
 
@@ -212,7 +210,7 @@ bool MallocTracker::print_pointer_information(const void* p, outputStream* st) {
     const uint8_t* const end = here - (0x1000 + sizeof(MallocHeader)); // stop searching after 4k
     for (; here >= end; here -= smallest_possible_alignment) {
       // JDK-8306561: cast to a MallocHeader needs to guarantee it can reside in readable memory
-      if (!os::is_readable_range(here, here + sizeof(MallocHeader) - 1)) {
+      if (!os::is_readable_range(here, here + sizeof(MallocHeader))) {
         // Probably OOB, give up
         break;
       }
