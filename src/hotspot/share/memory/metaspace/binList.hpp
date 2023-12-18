@@ -194,7 +194,6 @@ public:
       int pos = 0;
       Block* b_last = nullptr; // catch simple circularities
       for (Block* b = _blocks[i]; b != nullptr; b = b->_next, pos++) {
-        if (UseNewCode) printf(PTR_FORMAT "->", p2i(b));
         assert(check_canary(b, s), "");
         assert(b != b_last, "Circle");
         local_counter.add(s);

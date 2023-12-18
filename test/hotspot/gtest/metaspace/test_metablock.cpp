@@ -30,6 +30,19 @@
 
 using metaspace::MetaBlock;
 
+
+#define CHECK_BLOCK_EMPTY(block) { \
+  EXPECT_TRUE(block.is_empty()); \
+  block.verify(); \
+}
+
+#define CHECK_BLOCK(block, expected_base, expected_size) { \
+    EXPECT_EQ(block.base(), (MetaWord*)expected_base); \
+    EXPECT_EQ((size_t)expected_size, block.word_size()); \
+    EXPECT_EQ(block.end(), expected_base + expected_size); \
+    block.verify(); \
+}
+
 static constexpr uintptr_t large_pointer = NOT_LP64(0x99999999) LP64_ONLY(0x9999999999999999ULL);
 
 TEST(metaspace, MetaBlock_1) {

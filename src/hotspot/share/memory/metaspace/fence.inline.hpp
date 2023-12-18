@@ -34,7 +34,6 @@
 namespace metaspace {
 
 STATIC_ASSERT(is_aligned(sizeof(Fence), BytesPerWord));
-
 inline void Fence::verify() const {
   assert(_eye1 == EyeCatcher && _eye2 == EyeCatcher,
          "Metaspace corruption: fence block at " PTR_FORMAT " broken.", p2i(this));
@@ -44,6 +43,3 @@ inline void Fence::verify() const {
 
 #endif // ASSERT
 #endif // SHARE_MEMORY_METASPACE_FENCE_INLINE_HPP
-
-
-

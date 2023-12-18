@@ -28,14 +28,12 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ostream.hpp"
 
-namespace metaspace {
-
 #ifdef ASSERT
+namespace metaspace {
 void MetaBlock::verify() const {
   assert( (_base == nullptr && _word_size == 0) ||
           (_base != nullptr && _word_size > 0),
           "block invalid " METABLOCKFORMAT, METABLOCKFORMATARGS(*this));
 }
-#endif
-
 }
+#endif

@@ -78,10 +78,6 @@ public:
   // Smallest blocks we can keep in this structure.
   const static size_t MinWordSize = BinList32::MinWordSize;
 
-  // Cutoff point: blocks larger than this size are kept in the
-  // tree, blocks smaller than or equal to this size in the bin list.
-  const size_t MaxSmallBlocksWordSize = BinList32::MaxWordSize;
-
   // Add a block to the deallocation management.
   void add_block(MetaBlock bl);
 

@@ -31,7 +31,7 @@
 namespace metaspace {
 
 void FreeBlocks::add_block(MetaBlock bl) {
-  if (bl.word_size() > MaxSmallBlocksWordSize) {
+  if (bl.word_size() > _small_blocks.MaxWordSize) {
     _tree.add_block(bl);
   } else {
     _small_blocks.add_block(bl);
@@ -41,7 +41,7 @@ void FreeBlocks::add_block(MetaBlock bl) {
 MetaBlock FreeBlocks::remove_block(size_t requested_word_size) {
   size_t real_size = 0;
   MetaBlock bl;
-  if (requested_word_size > MaxSmallBlocksWordSize) {
+  if (requested_word_size > _small_blocks.MaxWordSize) {
     bl = _tree.remove_block(requested_word_size);
   } else {
     bl = _small_blocks.remove_block(requested_word_size);
@@ -50,4 +50,3 @@ MetaBlock FreeBlocks::remove_block(size_t requested_word_size) {
 }
 
 } // namespace metaspace
-

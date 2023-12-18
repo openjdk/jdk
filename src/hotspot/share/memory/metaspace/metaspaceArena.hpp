@@ -106,7 +106,9 @@ class MetaspaceArena : public CHeapObj<mtClass> {
   // A name for purely debugging/logging purposes.
   const char* const _name;
 
-  DEBUG_ONLY(const Fence* _first_fence;)
+#ifdef ASSERT
+  const Fence* _first_fence;
+#endif
 
   ChunkManager* chunk_manager() const           { return _chunk_manager; }
 
