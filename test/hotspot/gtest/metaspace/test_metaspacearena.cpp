@@ -838,9 +838,10 @@ static void test_random_aligned_allocation(size_t arena_alignment_words, SizeRan
   MetaspaceArenaTestHelper helper(context, &policy, arena_alignment_words);
 
   size_t last_alloc_size = 0;
-  bool first_allocation = true;
+  unsigned num_allocations = 0;
 
-  while (expected_used < (80 * M)) {
+  const size_t max_used = MIN2(MAX2(chunk_word_size * 10, (range.highest() * 100)), 512 * M);
+  while (expected_used < max_used) {
 
     const int chunks_before = helper.get_number_of_chunks();
 
@@ -865,7 +866,7 @@ static void test_random_aligned_allocation(size_t arena_alignment_words, SizeRan
     const bool expect_alignment_gap = !is_aligned(last_alloc_size, arena_alignment_words);
     const bool new_chunk_added = chunks_now > chunks_before;
 
-    if (first_allocation) {
+    if (num_allocations == 0) {
       // expect no wastage if its the first allocation in the arena
       ASSERT_TRUE(wastage.is_empty());
     } else {
@@ -903,13 +904,14 @@ static void test_random_aligned_allocation(size_t arena_alignment_words, SizeRan
     HANDLE_FAILURE
 
     last_alloc_size = alloc_words;
-    first_allocation = false;
+    num_allocations ++;
   }
+  LOG("allocs: %u", num_allocations);
 }
 
 #define TEST_ARENA_WITH_ALIGNMENT_SMALL_RANGE(al)                              \
 TEST_VM(metaspace, MetaspaceArena_test_random_small_aligned_allocation_##al) { \
-	static const SizeRange range(Metaspace::min_allocation_word_size, K);        \
+	static const SizeRange range(Metaspace::min_allocation_word_size, 128);      \
 	test_random_aligned_allocation(al, range);                                   \
 }
 

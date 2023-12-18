@@ -107,7 +107,7 @@ public:
   // The largest possible single allocation
   static size_t max_allocation_word_size();
 
-  // Minimum allocation alignment Metaspace observes.
+  // Minimum allocation alignment, in words, Metaspace observes.
   static constexpr size_t min_allocation_alignment = sizeof(uint64_t) / BytesPerWord;
 
   // Every allocation will get rounded up to the minimum word size.

@@ -33,6 +33,7 @@ class outputStream;
 
 namespace metaspace {
   struct ClmsStats;
+  class ClmsTester;
   class MetaspaceArena;
   class MetaspaceContext;
 }
@@ -58,7 +59,7 @@ namespace metaspace {
 //                                                               alloc top
 //
 class ClassLoaderMetaspace : public CHeapObj<mtClass> {
-  friend class CLMSTester; // for gtests
+  friend class metaspace::ClmsTester; // for gtests
 
   // A reference to an outside lock, held by the CLD.
   Mutex* const _lock;
@@ -72,6 +73,10 @@ class ClassLoaderMetaspace : public CHeapObj<mtClass> {
   // Arena for allocations from class space
   //  (null if -XX:-UseCompressedClassPointers).
   metaspace::MetaspaceArena* _class_space_arena;
+
+  // In tests, we create CLMS from test-contexts; these won't use the official
+  // class space, so certain asserts must be disabled.
+  DEBUG_ONLY(bool _uses_class_space;)
 
   Mutex* lock() const                             { return _lock; }
   metaspace::MetaspaceArena* non_class_space_arena() const   { return _non_class_space_arena; }
