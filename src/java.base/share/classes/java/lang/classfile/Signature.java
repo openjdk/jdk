@@ -185,6 +185,7 @@ public sealed interface Signature {
     /**
      * Models the type argument.
      *
+     * @sealedGraph
      * @since 22
      */
     @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
@@ -204,6 +205,7 @@ public sealed interface Signature {
          */
         @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
         public sealed interface Bounded extends TypeArg permits SignaturesImpl.TypeArgImpl {
+
             /**
              * Models a type argument's wildcard indicator.
              * @since 23
@@ -274,6 +276,8 @@ public sealed interface Signature {
          * @param boundType optional bound type
          */
         public static TypeArg.Bounded bounded(Bounded.WildcardIndicator wildcard, RefTypeSig boundType) {
+            requireNonNull(wildcard);
+            requireNonNull(boundType);
             return new SignaturesImpl.TypeArgImpl(wildcard, boundType);
         }
     }
