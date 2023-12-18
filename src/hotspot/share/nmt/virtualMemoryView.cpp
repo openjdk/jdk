@@ -769,10 +769,45 @@ address VirtualMemoryView::thread_stack_uncommitted_bottom(TrackedRange& rng, Re
   }
   return bottom;
 }
+
+// Iterate the range, find committed region within its bound.
+class RegionIterator : public StackObj {
+private:
+  const address _start;
+  const size_t  _size;
+
+  address _current_start;
+public:
+  RegionIterator(address start, size_t size) :
+    _start(start), _size(size), _current_start(start) {
+  }
+
+  // return true if committed region is found
+  bool next_committed(address& start, size_t& size);
+private:
+  address end() const { return _start + _size; }
+};
+
+bool RegionIterator::next_committed(address& committed_start, size_t& committed_size) {
+  if (end() <= _current_start) return false;
+
+  const size_t page_sz = os::vm_page_size();
+  const size_t current_size = end() - _current_start;
+  if (os::committed_in_range(_current_start, current_size, committed_start, committed_size)) {
+    assert(committed_start != nullptr, "Must be");
+    assert(committed_size > 0 && is_aligned(committed_size, os::vm_page_size()), "Must be");
+
+    _current_start = committed_start + committed_size;
+    return true;
+  } else {
+    return false;
+  }
+}
+
 void VirtualMemoryView::snapshot_thread_stacks() {
   thread_stacks->clear();
-  OffsetRegionStorage& reserved_ranges = _virt_mem->reserved_regions.at(virt_mem.id);
-  RegionStorage& committed_ranges = _virt_mem->committed_regions.at(virt_mem.id);
+  OffsetRegionStorage& reserved_ranges = _virt_mem->reserved_regions.at(_virt_mem.id);
+  RegionStorage& committed_ranges = _virt_mem->committed_regions.at(_virt_mem.id);
   for (int i = 0; i < reserved_ranges.length(); i++) {
     TrackedOffsetRange& rng = reserved_ranges.at(i);
     if (rng.flag == mtThreadStack) {
