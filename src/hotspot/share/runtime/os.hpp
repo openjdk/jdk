@@ -1064,8 +1064,6 @@ class os: AllStatic {
   static bool set_boot_path(char fileSep, char pathSep);
 
   static bool pd_dll_unload(void* libhandle, char* ebuf, int ebuflen);
-
-
 };
 
 // Note that "PAUSE" is almost always used with synchronization

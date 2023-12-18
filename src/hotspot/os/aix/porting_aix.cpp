@@ -961,7 +961,6 @@ static const char* rtv_linkedin_libpath() {
   libpath = buffer;
 
   return libpath;
-
 }
 
 // Simulate the library search algorithm of dlopen() (in os::dll_load)
@@ -982,10 +981,11 @@ static bool search_file_in_LIBPATH(const char* path, struct stat64x* stat) {
   // But if FilePath does not start with / or . we have to prepend it with ./
   if (strchr(path2, '/')) {
     stringStream combined;
-    if (*path2 == '/' || *path2 == '.')
+    if (*path2 == '/' || *path2 == '.') {
       combined.print("%s", path2);
-    else
+    } else {
       combined.print("./%s", path2);
+    }
     ret = (0 == stat64x(combined.base(), stat));
     os::free (path2);
     return ret;

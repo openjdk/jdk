@@ -1108,7 +1108,6 @@ bool os::dll_address_to_library_name(address addr, char* buf,
   return true;
 }
 
-
 void *os::dll_load(const char *filename, char *ebuf, int ebuflen) {
 
   log_info(os)("attempting shared library load of %s", filename);
