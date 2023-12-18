@@ -45,6 +45,6 @@ public class TestFillerObjectInstantiation {
 
     public static void main(String[] args) throws Exception {
         testInstantiationFails("jdk.internal.vm.FillerObject");
-        testInstantiationFails("jdk.internal.vm.ArrayFiller");
+        testInstantiationFails("jdk.internal.vm.FillerElement");
     }
 }
