@@ -75,8 +75,6 @@ class PSAdaptiveSizePolicy : public AdaptiveSizePolicy {
   // Statistical data gathered for GC
   GCStats _gc_stats;
 
-  const double _collection_cost_margin_fraction;
-
   // Variable for estimating the major and minor pause times.
   // These variables represent linear least-squares fits of
   // the data.
