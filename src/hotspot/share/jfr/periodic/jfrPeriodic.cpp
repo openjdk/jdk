@@ -36,6 +36,7 @@
 #include "gc/shared/gcVMOperations.hpp"
 #include "gc/shared/objectCountEventSender.hpp"
 #include "jfr/jfrEvents.hpp"
+#include "jfr/periodic/jfrCompilerQueueUtilization.hpp"
 #include "jfr/periodic/jfrFinalizerStatisticsEvent.hpp"
 #include "jfr/periodic/jfrModuleEvent.hpp"
 #include "jfr/periodic/jfrOSInterface.hpp"
@@ -138,7 +139,7 @@ TRACE_REQUEST_FUNC(ModuleExport) {
 /*
  * This is left empty on purpose, having ExecutionSample as a requestable
  * is a way of getting the period. The period is passed to ThreadSampling::update_period.
- * Implementation in jfrSamples.cpp
+ * Implementation in periodic/sampling/jfrThreadSampler.cpp.
  */
 TRACE_REQUEST_FUNC(ExecutionSample) {
 }
@@ -219,6 +220,10 @@ TRACE_REQUEST_FUNC(CPULoad) {
 
 TRACE_REQUEST_FUNC(ThreadCPULoad) {
   JfrThreadCPULoadEvent::send_events();
+}
+
+TRACE_REQUEST_FUNC(CompilerQueueUtilization) {
+  JfrCompilerQueueUtilization::send_events();
 }
 
 TRACE_REQUEST_FUNC(NetworkUtilization) {
