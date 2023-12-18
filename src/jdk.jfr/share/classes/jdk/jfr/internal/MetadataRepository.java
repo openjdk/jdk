@@ -34,7 +34,6 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -58,7 +57,6 @@ public final class MetadataRepository {
     private final List<EventType> nativeEventTypes = new ArrayList<>(150);
     private final List<EventControl> nativeControls = new ArrayList<EventControl>(nativeEventTypes.size());
     private final SettingsManager settingsManager = new SettingsManager();
-    private final Map<String, Class<? extends Event>> mirrors = new HashMap<>();
     private Constructor<EventConfiguration> cachedEventConfigurationConstructor;
     private boolean staleMetadata = true;
     private boolean unregistered;
@@ -73,10 +71,9 @@ public final class MetadataRepository {
         for (Type type : TypeLibrary.getTypes()) {
             if (type instanceof PlatformEventType pEventType) {
                 EventType eventType = PrivateAccess.getInstance().newEventType(pEventType);
-                pEventType.setHasDuration(eventType.getAnnotation(Threshold.class) != null);
-                pEventType.setHasStackTrace(eventType.getAnnotation(StackTrace.class) != null);
                 pEventType.setHasCutoff(eventType.getAnnotation(Cutoff.class) != null);
                 pEventType.setHasThrottle(eventType.getAnnotation(Throttle.class) != null);
+                pEventType.setHasLevel(eventType.getAnnotation(Level.class) != null);
                 pEventType.setHasPeriod(eventType.getAnnotation(Period.class) != null);
                 // Must add hook before EventControl is created as it removes
                 // annotations, such as Period and Threshold.
@@ -163,7 +160,7 @@ public final class MetadataRepository {
 
     private PlatformEventType findMirrorType(Class<? extends jdk.internal.event.Event> eventClass) throws InternalError {
         String fullName = eventClass.getModule().getName() + ":" + eventClass.getName();
-        Class<? extends Event> mirrorClass = mirrors.get(fullName);
+        Class<? extends Event> mirrorClass = MirrorEvents.find(fullName);
         if (mirrorClass == null) {
             return null; // not a mirror
         }
@@ -325,6 +322,9 @@ public final class MetadataRepository {
                     if (!knownIds.contains(pe.getId())) {
                         if (!pe.isJVM()) {
                             pe.setRegistered(false);
+                            if (pe.hasStackFilters()) {
+                                JVM.unregisterStackFilter(pe.getStackFilterId());
+                            }
                         }
                     }
                 }
@@ -334,16 +334,6 @@ public final class MetadataRepository {
 
     synchronized void setUnregistered() {
        unregistered = true;
-    }
-
-    public synchronized void registerMirror(Class<? extends Event> eventClass) {
-        MirrorEvent me = eventClass.getAnnotation(MirrorEvent.class);
-        if (me != null) {
-            String fullName = me.module() + ":" + me.className();
-            mirrors.put(fullName, eventClass);
-            return;
-        }
-        throw new InternalError("Mirror class must have annotation " + MirrorEvent.class.getName());
     }
 
     public synchronized void flush() {
@@ -368,5 +358,9 @@ public final class MetadataRepository {
 
     public synchronized List<Type> getVisibleTypes() {
         return TypeLibrary.getVisibleTypes();
+    }
+
+    public synchronized long registerStackFilter(String[] typeArray, String[] methodArray) {
+        return JVM.registerStackFilter(typeArray, methodArray);
     }
 }

@@ -16,7 +16,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="ar_001">جدید معیاری عربی</language>
 			<language type="awa">اودھی</language>
 			<language type="ckb">سورانی کردی</language>
-			<language type="ckb" alt="menu">سورانی کردی</language>
 			<language type="ckb" alt="variant">سورانی کردی</language>
 			<language type="dje">زرمہ</language>
 			<language type="hr">کروشین</language>
@@ -43,7 +42,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="GF">فرانسیسی گیانا</territory>
 			<territory type="HM">جزائر ہرڈ و مکڈونلڈ</territory>
 			<territory type="IC">جزائر کناری</territory>
-			<territory type="IO">برطانوی بحرہند خطہ</territory>
+			<territory type="IO" draft="provisional">برطانوی بحرہند خطہ</territory>
 			<territory type="MH">جزائر مارشل</territory>
 			<territory type="MP">جزائر شمالی ماریانا</territory>
 			<territory type="NF">جزیرہ نارفوک</territory>
@@ -73,10 +72,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</relativeTime>
 			</field>
 			<field type="year-short">
-				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} سال میں</relativeTimePattern>
-					<relativeTimePattern count="other">{0} سالوں میں</relativeTimePattern>
-				</relativeTime>
 				<relativeTime type="past">
 					<relativeTimePattern count="one">{0} سال پہلے</relativeTimePattern>
 					<relativeTimePattern count="other">{0} سالوں پہلے</relativeTimePattern>
@@ -99,7 +94,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>مہینہ</displayName>
 			</field>
 			<field type="month-narrow">
-				<displayName>مہینہ</displayName>
 				<relativeTime type="past">
 					<relativeTimePattern count="one">{0} ماہ قبل</relativeTimePattern>
 					<relativeTimePattern count="other">{0} ماہ قبل</relativeTimePattern>
@@ -185,31 +179,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<relativeTimePattern count="other">{0} منٹ قبل</relativeTimePattern>
 				</relativeTime>
 			</field>
-			<field type="minute-short">
-				<relativeTime type="past">
-					<relativeTimePattern count="one">{0} منٹ قبل</relativeTimePattern>
-					<relativeTimePattern count="other">{0} منٹ قبل</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="minute-narrow">
-				<relativeTime type="past">
-					<relativeTimePattern count="one">{0} منٹ قبل</relativeTimePattern>
-					<relativeTimePattern count="other">{0} منٹ قبل</relativeTimePattern>
-				</relativeTime>
-			</field>
 			<field type="second">
-				<relativeTime type="past">
-					<relativeTimePattern count="one">{0} سیکنڈ قبل</relativeTimePattern>
-					<relativeTimePattern count="other">{0} سیکنڈ قبل</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="second-short">
-				<relativeTime type="past">
-					<relativeTimePattern count="one">{0} سیکنڈ قبل</relativeTimePattern>
-					<relativeTimePattern count="other">{0} سیکنڈ قبل</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="second-narrow">
 				<relativeTime type="past">
 					<relativeTimePattern count="one">{0} سیکنڈ قبل</relativeTimePattern>
 					<relativeTimePattern count="other">{0} سیکنڈ قبل</relativeTimePattern>
@@ -524,33 +494,21 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<currencies>
 			<currency type="CRC">
 				<displayName>کوسٹا ریکا کولون</displayName>
-				<displayName count="one">کوسٹا ریکا کولون</displayName>
-				<displayName count="other">کوسٹا ریکا کولون</displayName>
 			</currency>
 			<currency type="CUC">
 				<displayName>قابل منتقلی کیوبائی پیسو</displayName>
-				<displayName count="one">قابل منتقلی کیوبائی پیسو</displayName>
-				<displayName count="other">قابل منتقلی کیوبائی پیسو</displayName>
 			</currency>
 			<currency type="CUP">
 				<displayName>کیوبائی پیسو</displayName>
-				<displayName count="one">کیوبائی پیسو</displayName>
-				<displayName count="other">کیوبائی پیسو</displayName>
 			</currency>
 			<currency type="CVE">
 				<displayName>کیپ ورڈی اسکیوڈو</displayName>
-				<displayName count="one">کیپ ورڈی اسکیوڈو</displayName>
-				<displayName count="other">کیپ ورڈی اسکیوڈو</displayName>
 			</currency>
 			<currency type="GBP">
 				<displayName>برطانوی پاونڈ سٹرلنگ</displayName>
-				<displayName count="one">برطانوی پاونڈ سٹرلنگ</displayName>
-				<displayName count="other">برطانوی پاونڈ سٹرلنگ</displayName>
 			</currency>
 			<currency type="GHS">
 				<displayName>گھانی سیڈی</displayName>
-				<displayName count="one">گھانی سیڈی</displayName>
-				<displayName count="other">گھانی سیڈی</displayName>
 			</currency>
 			<currency type="PKR">
 				<displayName count="one">پاکستانی روپیہ</displayName>
@@ -559,8 +517,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="WST">
 				<displayName>ساموآئی ٹالا</displayName>
-				<displayName count="one">ساموآئی ٹالا</displayName>
-				<displayName count="other">ساموآئی ٹالا</displayName>
 			</currency>
 		</currencies>
 		<miscPatterns numberSystem="latn">

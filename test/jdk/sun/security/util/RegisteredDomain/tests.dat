@@ -152,6 +152,10 @@ s.k12.oh.us             k12.oh.us       s.k12.oh.us
 s.pvt.k12.ma.us         pvt.k12.ma.us   s.pvt.k12.ma.us
 w.s.pvt.k12.ma.us       pvt.k12.ma.us   s.pvt.k12.ma.us
 
+# vn
+site.com.vn             com.vn          site.com.vn
+site.ai.vn              ai.vn           site.ai.vn
+
 # السعودية
 السعودية                السعودية        null
 foo.السعودية            السعودية        foo.السعودية
