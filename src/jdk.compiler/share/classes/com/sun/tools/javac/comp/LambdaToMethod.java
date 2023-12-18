@@ -2067,6 +2067,7 @@ public class LambdaToMethod extends TreeTranslator {
                                 return sym;
                             }
                         };
+                        ((VarSymbol)ret).adr = ((VarSymbol)sym).adr;
                         break;
                     case CAPTURED_OUTER_THIS:
                         Name name = names.fromString(sym.flatName().toString().replace('.', '$') + names.dollarThis);
@@ -2095,6 +2096,7 @@ public class LambdaToMethod extends TreeTranslator {
                         if (((VarSymbol) sym).isExceptionParameter()) {
                             ((VarSymbol) ret).setData(ElementKind.EXCEPTION_PARAMETER);
                         }
+                        ((VarSymbol)ret).adr = ((VarSymbol)sym).adr;
                         break;
                     case PARAM:
                         ret = new VarSymbol((sym.flags() & FINAL) | PARAMETER, sym.name, types.erasure(sym.type), translatedSym);
