@@ -55,7 +55,11 @@ class MemoryCounter {
  public:
   MemoryCounter() : _count(0), _size(0), _peak_count(0), _peak_size(0) {}
 
-  inline void set_size_and_count(size_t size, size_t count) { _size = size; _count = count; }
+  inline void set_size_and_count(size_t size, size_t count) {
+    _size = size;
+    _count = count;
+    update_peak(size, count);
+  }
 
   inline void allocate(size_t sz) {
     size_t cnt = Atomic::add(&_count, size_t(1), memory_order_relaxed);
