@@ -226,6 +226,12 @@ void BlockTree::print_tree(outputStream* st) const {
         }
       }
 
+      // Handle simple circularities
+      if (n == n->_right || n == n->_left || n == n->_next) {
+        st->print_cr("@" PTR_FORMAT ": circularity detected.", p2i(n));
+        return; // stop printing
+      }
+
       // Handle children.
       if (n->_right != nullptr) {
         walkinfo info2;
