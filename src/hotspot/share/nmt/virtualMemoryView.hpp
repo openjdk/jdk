@@ -36,6 +36,9 @@
 /*
   Remaining issues:
   1. No VirtualMemorySummary accounting.
+     This is pretty simple. We need to store a VirtualMemorySnapshot for each space (as we need to save the peak values).
+     Then, we need to reset the _reserved and _committed but not _peak_size.
+
   3. No baseline diffing
   4. Reporting not part of Reporter class but part of VirtualMemoryView, not too bad.
   5. Insufficient amount of unit tests
@@ -261,8 +264,19 @@ public:
     return *_virt_mem;
   }
 
-  static VirtualMemorySnapshot summary_snapshot() {
+  static VirtualMemorySnapshot summary_snapshot(PhysicalMemorySpace space) {
     VirtualMemorySnapshot snap;
+    const RegionStorage& reserved_ranges = virtual_memory().reserved_regions;
+    for (int i = 0; i < virtual_memory().reserved_regions.length(); i++) {
+      const TrackedRange& range = reserved_ranges.at(i);
+      snap.by_type(range.flag)->reserve_memory(range.size);
+    }
+    const RegionStorage& committed_ranges = virtual_memory().committed_regions.at(space.id);
+    for (int i = 0; i < committed_ranges.length(); i++) {
+      const TrackedRange& range = committed_ranges.at(i);
+      snap.by_type(range.flag)->commit_memory(range.size);
+    }
+
     return snap;
   }
 };
