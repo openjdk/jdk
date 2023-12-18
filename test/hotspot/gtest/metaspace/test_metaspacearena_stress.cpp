@@ -296,7 +296,8 @@ class MetaspaceArenaTest {
     bool success = bed->checked_random_allocate();
     if (success == false) {
       // We must have hit a limit.
-      EXPECT_LT(_context.commit_limiter().possible_expansion_words(), bed->size_of_last_failed_allocation());
+      EXPECT_LT(_context.commit_limiter().possible_expansion_words(),
+                metaspace::get_raw_word_size_for_requested_word_size(bed->size_of_last_failed_allocation()));
     }
     return success;
   }

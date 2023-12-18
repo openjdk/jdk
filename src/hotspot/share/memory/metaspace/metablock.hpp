@@ -74,11 +74,13 @@ public:
 
   DEBUG_ONLY(void verify() const;)
 
-  // Convenience function
+  // Convenience functions
   bool is_aligned_base(size_t alignment_words) const {
     return is_aligned(_base, alignment_words * BytesPerWord);
   }
-
+  bool is_aligned_size(size_t alignment_words) const {
+    return is_aligned(_word_size, alignment_words * BytesPerWord);
+  }
 };
 
 #define METABLOCKFORMAT                 "block (@" PTR_FORMAT " size " SIZE_FORMAT ")"
@@ -88,8 +90,8 @@ public:
 #define assert_block_aligned(block, alignment_words) \
   assert(block.is_aligned_base(alignment_words), "Block wrong alignment " METABLOCKFORMAT, METABLOCKFORMATARGS(block));
 
-#define assert_block_larger_or_equal(block, word_size) \
-  assert(block.word_size() >= word_size, "Block too small " METABLOCKFORMAT, METABLOCKFORMATARGS(block));
+#define assert_block_larger_or_equal(block, x) \
+  assert(block.word_size() >= x, "Block too small " METABLOCKFORMAT, METABLOCKFORMATARGS(block));
 
 }
 

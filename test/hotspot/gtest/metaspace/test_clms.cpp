@@ -32,9 +32,12 @@
 #include "memory/metaspace/metaspaceStatistics.hpp"
 #include "memory/metaspace.hpp"
 #include "oops/klass.hpp"
+#include "runtime/mutex.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/align.hpp"
 #include "utilities/globalDefinitions.hpp"
+
+#ifdef _LP64
 
 #define LOG_PLEASE
 #include "metaspaceGtestCommon.hpp"
@@ -235,7 +238,6 @@ public:
   MetaBlock allocate_expect_success(size_t word_size, bool is_class) {
     MetaBlock bl = allocate_and_check(word_size, is_class);
     EXPECT_TRUE(bl.is_nonempty());
-    EXPECT_EQ(bl.word_size(), word_size);
     return bl;
   }
 
@@ -303,7 +305,7 @@ static void basic_test(size_t klass_arena_alignment) {
     HANDLE_FAILURE;
     EXPECT_EQ(bl3, bl1); // should have gotten the same block back from freelist
 
-    MetaBlock bl4 = tester.allocate_expect_success(1, false);
+    MetaBlock bl4 = tester.allocate_expect_success(Metaspace::min_allocation_word_size, false);
     HANDLE_FAILURE;
 
     MetaBlock bl5 = tester.allocate_expect_success(K, false);
@@ -358,7 +360,8 @@ static void test_random(size_t klass_arena_alignment) {
         const int slot = IntRange(0, max_allocations).random_value();
         if (life_allocations[slot].bl.is_empty()) {
           const bool is_class = one_out_of_ten.random_value() == 0;
-          const size_t word_size = is_class ? class_alloc_range.random_value() : nonclass_alloc_range.random_value();
+          const size_t word_size =
+              is_class ? class_alloc_range.random_value() : nonclass_alloc_range.random_value();
           MetaBlock bl = tester.allocate_expect_success(word_size, is_class);
           life_allocations[slot].bl = bl;
           life_allocations[slot].is_class = is_class;
@@ -403,3 +406,5 @@ TEST_RANDOM_N(32)
 TEST_RANDOM_N(128)
 
 } // namespace metaspace
+
+#endif // _LP64
