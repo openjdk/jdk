@@ -82,6 +82,7 @@ class ClassLoaderMetaspace : public CHeapObj<mtClass> {
                        metaspace::MetaspaceContext* non_class_context,
                        metaspace::MetaspaceContext* class_context,
                        size_t klass_alignment_words);
+
 public:
   ClassLoaderMetaspace(Mutex* lock, Metaspace::MetaspaceType space_type);
 

@@ -103,16 +103,28 @@ MetaWord* ClassLoaderMetaspace::allocate(size_t word_size, Metaspace::MetadataTy
   word_size = align_up(word_size, Metaspace::min_allocation_word_size);
   MutexLocker fcl(lock(), Mutex::_no_safepoint_check_flag);
   MetaBlock result, wastage;
-  if (Metaspace::is_class_space_allocation(mdType)) {
+  const bool is_class = Metaspace::is_class_space_allocation(mdType);
+  if (is_class) {
     assert(word_size >= (sizeof(Klass)/BytesPerWord), "weird size for klass: %zu", word_size);
     result = class_space_arena()->allocate(word_size, wastage);
-    assert(class_space_arena()->contains(result), "Not from class arena?");
+    assert(class_space_arena()->contains(result),
+           "Not from class arena " METABLOCKFORMAT "?", METABLOCKFORMATARGS(result));
   } else {
     result = non_class_space_arena()->allocate(word_size, wastage);
   }
   if (wastage.is_nonempty()) {
     non_class_space_arena()->deallocate(wastage);
   }
+#ifdef ASSERT
+  if (result.is_nonempty()) {
+    // Result block must be contained in one of our arenas. In case of class allocations, it must come
+    // from the class arena. In case of non-class allocation, it can come from either arena.
+    const bool in_class_arena = class_space_arena() != nullptr ? class_space_arena()->contains(result) : false;
+    const bool in_nonclass_arena = non_class_space_arena()->contains(result);
+    assert((is_class && in_class_arena) || (!is_class && in_class_arena != in_nonclass_arena),
+           "block from neither arena " METABLOCKFORMAT "?", METABLOCKFORMATARGS(result));
+  }
+#endif
   return result.base();
 }
 
@@ -155,7 +167,8 @@ void ClassLoaderMetaspace::deallocate(MetaWord* ptr, size_t word_size, bool is_c
   if (word_size >= Metaspace::min_allocation_word_size) {
     MutexLocker fcl(lock(), Mutex::_no_safepoint_check_flag);
     if (Metaspace::using_class_space() && is_class) {
-      assert(class_space_arena()->contains(bl), "Not from class arena?");
+      assert(class_space_arena()->contains(bl),
+             "Not from class arena " METABLOCKFORMAT "?", METABLOCKFORMATARGS(bl));
       class_space_arena()->deallocate(MetaBlock(ptr, word_size));
     } else {
       non_class_space_arena()->deallocate(MetaBlock(ptr, word_size));
