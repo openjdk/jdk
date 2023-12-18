@@ -524,6 +524,7 @@ void GenCollectedHeap::do_collection(bool           full,
     CodeCache::on_gc_marking_cycle_start();
 
     ClassUnloadingContext ctx(1 /* num_nmethod_unlink_workers */,
+                              false /* unregister_nmethods_during_purge */,
                               false /* lock_codeblob_free_separately */);
 
     collect_generation(_old_gen,
@@ -582,7 +583,11 @@ void GenCollectedHeap::verify_nmethod(nmethod* nm) {
 }
 
 void GenCollectedHeap::prune_scavengable_nmethods() {
-  ScavengableNMethods::prune_nmethods();
+  ScavengableNMethods::prune_nmethods_not_into_young();
+}
+
+void GenCollectedHeap::prune_unlinked_nmethods() {
+  ScavengableNMethods::prune_unlinked_nmethods();
 }
 
 HeapWord* GenCollectedHeap::satisfy_failed_allocation(size_t size, bool is_tlab) {
