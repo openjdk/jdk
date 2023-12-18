@@ -263,9 +263,9 @@ static bool is_directory_secure(const char* path) {
 }
 
 // return the file name of the backing store file for the named
-// shared memory region for the given user name and vmid.
+// shared memory region for the given user name and vmid
 //
-// the caller is expected to free the allocated memory.
+// the caller is expected to free the allocated memory
 //
 static char* get_sharedmem_filename(const char* dirname, int vmid) {
 
