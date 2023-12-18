@@ -270,13 +270,13 @@ class Child {
             Robot robot = new Robot();
             robot.setAutoWaitForIdle(true);
             robot.mouseMove(sourcePoint.x, sourcePoint.y);
-            Thread.sleep(50);
+            robot.delay(50);
             robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
             for (Point p = new Point(sourcePoint); !p.equals(targetPoint);
-                 p.translate(Util.sign(targetPoint.x - p.x),
+                p.translate(Util.sign(targetPoint.x - p.x),
                              Util.sign(targetPoint.y - p.y))) {
                 robot.mouseMove(p.x, p.y);
-                Thread.sleep(50);
+                robot.delay(50);
             }
 
             synchronized (Util.SYNC_LOCK) {
@@ -284,8 +284,8 @@ class Child {
                 Util.SYNC_LOCK.wait(Util.FRAME_ACTIVATION_TIMEOUT);
             }
 
-            EventQueue.invokeAndWait(()-> {
-                 if (!dragSourceListener.isDropFinished()) {
+            EventQueue.invokeAndWait(() -> {
+                if (!dragSourceListener.isDropFinished()) {
                     throw new RuntimeException("Drop not finished");
                 }
                 success1 = dragSourceListener.getDropSuccess();
@@ -294,13 +294,13 @@ class Child {
 
 
             robot.mouseMove(sourcePoint.x, sourcePoint.y);
-            Thread.sleep(50);
+            robot.delay(50);
             robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
             for (Point p = new Point(sourcePoint); !p.equals(targetPoint);
-                 p.translate(Util.sign(targetPoint.x - p.x),
+                p.translate(Util.sign(targetPoint.x - p.x),
                              Util.sign(targetPoint.y - p.y))) {
                 robot.mouseMove(p.x, p.y);
-                Thread.sleep(50);
+                robot.delay(50);
             }
 
             synchronized (Util.SYNC_LOCK) {
@@ -308,7 +308,7 @@ class Child {
                 Util.SYNC_LOCK.wait(Util.FRAME_ACTIVATION_TIMEOUT);
             }
 
-            EventQueue.invokeAndWait(()-> {
+            EventQueue.invokeAndWait(() -> {
                 if (!dragSourceListener.isDropFinished()) {
                     throw new RuntimeException("Drop not finished");
                 }
