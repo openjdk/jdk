@@ -111,7 +111,7 @@ public:
     emergency(0),
     is_detailed_mode(is_detailed_mode) {
     NCSChunk* chunk = new NCSChunk();
-    stack_chunks.at_put(0, chunk);
+    stack_chunks.push(chunk);
   }
 };
 
