@@ -162,7 +162,7 @@ class ConstantPool : public Metadata {
   }
 
   ConstantPool(Array<u1>* tags);
-  ConstantPool() { assert(DumpSharedSpaces || UseSharedSpaces, "only for CDS"); }
+  ConstantPool();
  public:
   static ConstantPool* allocate(ClassLoaderData* loader_data, int length, TRAPS);
 
@@ -413,7 +413,7 @@ class ConstantPool : public Metadata {
     unresolved_klass_at_put(cp_index, name_index, CPKlassSlot::_temp_resolved_klass_index);
   }
 
-  jint int_at(int cp_index) {
+  jint int_at(int cp_index) const {
     assert(tag_at(cp_index).is_int(), "Corrupted constant pool");
     return *int_at_addr(cp_index);
   }

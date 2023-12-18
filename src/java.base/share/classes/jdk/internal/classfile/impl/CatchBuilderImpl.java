@@ -24,9 +24,9 @@
  */
 package jdk.internal.classfile.impl;
 
-import jdk.internal.classfile.CodeBuilder;
-import jdk.internal.classfile.Label;
-import jdk.internal.classfile.Opcode;
+import java.lang.classfile.CodeBuilder;
+import java.lang.classfile.Label;
+import java.lang.classfile.Opcode;
 
 import java.lang.constant.ClassDesc;
 import java.lang.constant.ConstantDesc;

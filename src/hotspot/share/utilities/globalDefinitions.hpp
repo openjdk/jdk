@@ -553,7 +553,6 @@ const int max_method_code_size = 64*K - 1;  // JVM spec, 2nd ed. section 4.8.1 (
 
 //----------------------------------------------------------------------------------------------------
 // old CDS options
-extern bool DumpSharedSpaces;
 extern bool RequireSharedSpaces;
 extern "C" {
 // Make sure UseSharedSpaces is accessible to the serviceability agent.
@@ -605,7 +604,7 @@ const bool support_IRIW_for_not_multiple_copy_atomic_cpu = PPC64_ONLY(true) NOT_
 
 // The expected size in bytes of a cache line, used to pad data structures.
 #ifndef DEFAULT_CACHE_LINE_SIZE
-  #define DEFAULT_CACHE_LINE_SIZE 64
+#error "Platform should define DEFAULT_CACHE_LINE_SIZE"
 #endif
 
 

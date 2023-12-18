@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -456,12 +456,14 @@ public class IPPPrintService implements PrintService, SunPrinterJobService {
                 // IPP currently does not support it but PPD does.
 
                 try {
-                    cps = new CUPSPrinter(printer);
-                    mediaSizeNames = cps.getMediaSizeNames();
-                    mediaTrays = cps.getMediaTrays();
-                    customMediaSizeNames = cps.getCustomMediaSizeNames();
-                    defaultMediaIndex = cps.getDefaultMediaIndex();
-                    rawResolutions = cps.getRawResolutions();
+                    if (cps == null) {
+                        cps = new CUPSPrinter(printer);
+                        mediaSizeNames = cps.getMediaSizeNames();
+                        mediaTrays = cps.getMediaTrays();
+                        customMediaSizeNames = cps.getCustomMediaSizeNames();
+                        defaultMediaIndex = cps.getDefaultMediaIndex();
+                        rawResolutions = cps.getRawResolutions();
+                    }
                     urlConnection.disconnect();
                     init = true;
                     return;
@@ -1225,9 +1227,17 @@ public class IPPPrintService implements PrintService, SunPrinterJobService {
 
 
     public synchronized PrintServiceAttributeSet getAttributes() {
-        // update getAttMap by sending again get-attributes IPP request
-        init = false;
-        initAttributes();
+        if (!init) {
+            // get all attributes for the first time.
+            initAttributes();
+        } else {
+            // only need service attributes updated.
+            // update getAttMap by sending again get-attributes IPP request
+            if ((urlConnection = getIPPConnection(myURL)) != null) {
+                opGetAttributes();
+                urlConnection.disconnect();
+            }
+        }
 
         HashPrintServiceAttributeSet attrs =
             new HashPrintServiceAttributeSet();

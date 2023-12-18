@@ -185,7 +185,7 @@ void ShenandoahMark::mark_loop_work(T* cl, ShenandoahLiveData* live_data, uint w
     if (work == 0) {
       // No work encountered in current stride, try to terminate.
       // Need to leave the STS here otherwise it might block safepoints.
-      ShenandoahSuspendibleThreadSetLeaver stsl(CANCELLABLE && ShenandoahSuspendibleWorkers);
+      ShenandoahSuspendibleThreadSetLeaver stsl(CANCELLABLE);
       ShenandoahTerminatorTerminator tt(heap);
       if (terminator->offer_termination(&tt)) return;
     }

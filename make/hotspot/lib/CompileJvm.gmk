@@ -88,13 +88,6 @@ DISABLED_WARNINGS_gcc := array-bounds comment delete-non-virtual-dtor \
     maybe-uninitialized missing-field-initializers parentheses \
     shift-negative-value unknown-pragmas
 
-ifeq ($(DEBUG_LEVEL), fastdebug)
-  ifeq ($(call And, $(call isTargetOs, linux) $(call isTargetCpu, aarch64)), true)
-    # False positive warnings for atomic_linux_aarch64.hpp on GCC >= 13
-    DISABLED_WARNINGS_gcc += stringop-overflow
-  endif
-endif
-
 DISABLED_WARNINGS_clang := sometimes-uninitialized \
     missing-braces delete-non-abstract-non-virtual-dtor unknown-pragmas
 
@@ -171,8 +164,12 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBJVM, \
     DISABLED_WARNINGS_gcc_ad_$(HOTSPOT_TARGET_CPU_ARCH).cpp := nonnull, \
     DISABLED_WARNINGS_gcc_cgroupV1Subsystem_linux.cpp := address, \
     DISABLED_WARNINGS_gcc_cgroupV2Subsystem_linux.cpp := address, \
+    DISABLED_WARNINGS_gcc_handshake.cpp := stringop-overflow, \
     DISABLED_WARNINGS_gcc_interp_masm_x86.cpp := uninitialized, \
+    DISABLED_WARNINGS_gcc_jvmciCodeInstaller.cpp := stringop-overflow, \
+    DISABLED_WARNINGS_gcc_jvmtiTagMap.cpp := stringop-overflow, \
     DISABLED_WARNINGS_gcc_postaloc.cpp := address, \
+    DISABLED_WARNINGS_gcc_synchronizer.cpp := stringop-overflow, \
     DISABLED_WARNINGS_clang := $(DISABLED_WARNINGS_clang), \
     DISABLED_WARNINGS_clang_arguments.cpp := missing-field-initializers, \
     DISABLED_WARNINGS_clang_codeBuffer.cpp := tautological-undefined-compare, \

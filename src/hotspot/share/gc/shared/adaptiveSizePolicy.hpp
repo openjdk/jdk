@@ -344,17 +344,11 @@ class AdaptiveSizePolicy : public CHeapObj<mtGC> {
   AdaptiveWeightedAverage* avg_eden_live() const { return _avg_eden_live; }
   AdaptiveWeightedAverage* avg_old_live() const { return _avg_old_live; }
 
-  AdaptivePaddedAverage*  avg_survived() const { return _avg_survived; }
-  AdaptivePaddedNoZeroDevAverage*  avg_pretenured() { return _avg_pretenured; }
-
   // Methods indicating events of interest to the adaptive size policy,
   // called by GC algorithms. It is the responsibility of users of this
   // policy to call these methods at the correct times!
   virtual void minor_collection_begin();
   virtual void minor_collection_end(GCCause::Cause gc_cause);
-  virtual LinearLeastSquareFit* minor_pause_old_estimator() const {
-    return _minor_pause_old_estimator;
-  }
 
   LinearLeastSquareFit* minor_pause_young_estimator() {
     return _minor_pause_young_estimator;
@@ -402,10 +396,6 @@ class AdaptiveSizePolicy : public CHeapObj<mtGC> {
   }
   void set_gc_overhead_limit_exceeded(bool v) {
     _overhead_checker.set_gc_overhead_limit_exceeded(v);
-  }
-
-  bool gc_overhead_limit_near() {
-    return _overhead_checker.gc_overhead_limit_near();
   }
 
   void reset_gc_overhead_limit_count() {

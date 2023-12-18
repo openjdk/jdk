@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -222,7 +222,7 @@ public abstract class XMLInputFactory {
    * <li>
    *   <p>
    *   Use the value of the property {@code factoryId} set in the
-   * <a href="{@docRoot}/java.xml/module-summary.html#ConfigurationFile">configuration file</a>,
+   * <a href="{@docRoot}/java.xml/module-summary.html#Conf_CF">configuration file</a>,
    * jaxp.properties by default. If the file exists and the property {@code factoryId}
    * is specified in the file, its value will be used as the implementation class.
    * </li>
