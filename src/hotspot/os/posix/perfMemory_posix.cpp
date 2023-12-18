@@ -596,20 +596,13 @@ static char* get_user_name_slow(int vmid, int nspid, TRAPS) {
     int result;
     // check if it exists; don't follow symbolic links for the file
     RESTARTABLE(::lstat(filename, &statbuf), result);
-    if (result == OS_ERR) {
-      FREE_C_HEAP_ARRAY(char, filename);
-      FREE_C_HEAP_ARRAY(char, usrdir_name);
-      os::closedir(subdirp);
-      continue;
-    }
-    // skip over files that are not regular files.
-    if (!S_ISREG(statbuf.st_mode)) {
-      FREE_C_HEAP_ARRAY(char, filename);
-      FREE_C_HEAP_ARRAY(char, usrdir_name);
-      os::closedir(subdirp);
-      continue;
-    }
     FREE_C_HEAP_ARRAY(char, filename);
+    // skip over files that are not regular files
+    if (result == OS_ERR || !S_ISREG(statbuf.st_mode)) {
+      FREE_C_HEAP_ARRAY(char, usrdir_name);
+      os::closedir(subdirp);
+      continue;
+    }
     // compare and save filename with latest creation time
     if (statbuf.st_size > 0 && statbuf.st_ctime > oldest_ctime) {
 

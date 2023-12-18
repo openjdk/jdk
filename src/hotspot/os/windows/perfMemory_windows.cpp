@@ -374,20 +374,14 @@ static char* get_user_name_slow(int vmid) {
     const char* filename = get_sharedmem_filename(usrdir_name, vmid);
     struct stat statbuf;
     // check if it exists
-    if (::stat(filename, &statbuf) == OS_ERR) {
-      FREE_C_HEAP_ARRAY(char, filename);
+    const int stat_result = ::stat(filename, &statbuf);
+    FREE_C_HEAP_ARRAY(char, filename);
+    // skip over files that are not regular files
+    if (stat_result == OS_ERR || (statbuf.st_mode & S_IFMT) != S_IFREG) {
       FREE_C_HEAP_ARRAY(char, usrdir_name);
       os::closedir(subdirp);
       continue;
     }
-    // skip over files that are not regular files.
-    if ((statbuf.st_mode & S_IFMT) != S_IFREG) {
-      FREE_C_HEAP_ARRAY(char, filename);
-      FREE_C_HEAP_ARRAY(char, usrdir_name);
-      os::closedir(subdirp);
-      continue;
-    }
-
     // If we found a matching file with a newer creation time, then
     // save the user name. The newer creation time indicates that
     // we found a newer incarnation of the process associated with
@@ -412,7 +406,6 @@ static char* get_user_name_slow(int vmid) {
       strcpy(latest_user, user);
       latest_ctime = statbuf.st_ctime;
     }
-    FREE_C_HEAP_ARRAY(char, filename);
     os::closedir(subdirp);
     FREE_C_HEAP_ARRAY(char, usrdir_name);
   }
