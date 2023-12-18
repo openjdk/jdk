@@ -901,6 +901,10 @@ bool AixMisc::query_stack_bounds_for_current_thread(stackbounds_t* out) {
 // variables needed to emulate linux behavior in os::dll_load() if library is loaded twice
 static pthread_mutex_t g_handletable_mutex = PTHREAD_MUTEX_INITIALIZER;
 
+struct TableLocker {
+  TableLocker() { pthread_mutex_lock(&g_handletable_mutex); }
+  ~TableLocker() { pthread_mutex_unlock(&g_handletable_mutex); }
+};
 struct handletableentry{
     void*   handle;
     ino64_t inode;
@@ -931,11 +935,14 @@ static const char* rtv_linkedin_libpath() {
   struct xcoffhdr the_xcoff;
   struct scnhdr the_scn;
   struct ldhdr the_ldr;
-  size_t sz = FILHSZ + _AOUTHSZ_EXEC;
+  constexpr size_t xcoffsz = FILHSZ + _AOUTHSZ_EXEC;
+  STATIC_ASSERT(sizeof(the_xcoff) == xcoffsz);
+  STATIC_ASSERT(sizeof(the_scn) == SCNHSZ);
+  STATIC_ASSERT(sizeof(the_ldr) == LDHDRSZ);
   // read the generic XCOFF header and analyze the substructures
   // to find the burned in libpath. In any case of error perform the assert
   if (nullptr == (f = fopen(buffer, "r")) ||
-      sz != fread(&the_xcoff, 1, sz, f) ||
+      xcoffsz != fread(&the_xcoff, 1, xcoffsz, f) ||
       the_xcoff.filehdr.f_magic != U64_TOCMAGIC ||
       0 != fseek(f, (FILHSZ + the_xcoff.filehdr.f_opthdr + (the_xcoff.aouthdr.o_snloader -1)*SCNHSZ), SEEK_SET) ||
       SCNHSZ != fread(&the_scn, 1, SCNHSZ, f) ||
@@ -1036,7 +1043,7 @@ void* Aix_dlopen(const char* filename, int Flags, char *ebuf, int ebuflen) {
   }
   else {
     int i = 0;
-    pthread_mutex_lock(&g_handletable_mutex);
+    TableLocker lock;
     // check if library belonging to filename is already loaded.
     // If yes use stored handle from previous ::dlopen() and increase refcount
     for (i = 0; i < g_handletable_used; i++) {
@@ -1053,7 +1060,6 @@ void* Aix_dlopen(const char* filename, int Flags, char *ebuf, int ebuflen) {
       // to store new ::dlopen() handle
       if (g_handletable_used == max_handletable) {
         // Array is already full. No place for new handle. Cry and give up.
-        pthread_mutex_unlock(&g_handletable_mutex);
         if (ebuf != nullptr && ebuflen > 0) {
           ::strncpy(ebuf, "dlopen: too many libraries loaded", ebuflen - 1);
         }
@@ -1080,7 +1086,6 @@ void* Aix_dlopen(const char* filename, int Flags, char *ebuf, int ebuflen) {
         }
       }
     }
-    pthread_mutex_unlock(&g_handletable_mutex);
   }
   return result;
 }
@@ -1094,66 +1099,61 @@ bool os::pd_dll_unload(void* libhandle, char* ebuf, int ebuflen) {
     ebuf[ebuflen - 1] = '\0';
   }
 
-  pthread_mutex_lock(&g_handletable_mutex);
-  // try to find handle in array, which means library was loaded by os::dll_load() call
-  for (i = 0; i < g_handletable_used; i++) {
-    if (g_handletable[i].handle == libhandle) {
-      // handle found, decrease refcount
-      g_handletable[i].refcount--;
-      if (g_handletable[i].refcount > 0) {
-        // if refcount is still >0 then we have to keep library and just return true
-        pthread_mutex_unlock(&g_handletable_mutex);
-        return true;
-      }
-      // refcount == 0, so we have to ::dlclose() the lib
-      // and delete the entry from the array.
-      break;
-    }
-  }
-
-  // If we reach this point either the libhandle was found with refcount == 0, or the libhandle
-  // was not found in the array at all. In both cases we have to ::dlclose the lib and perform
-  // the error handling. In the first case we then also have to delete the entry from the array
-  // while in the second case we simply have to nag.
-  res = (0 == ::dlclose(libhandle));
-  if (!res) {
-    // error analysis when dlopen fails
-    const char* error_report = ::dlerror();
-    if (error_report == nullptr) {
-      error_report = "dlerror returned no error description";
-    }
-    if (ebuf != nullptr && ebuflen > 0) {
-      snprintf(ebuf, ebuflen - 1, "%s", error_report);
-    }
-  #ifdef ASSERT
-    pthread_mutex_unlock(&g_handletable_mutex);
-  #endif
-    assert(false, "os::pd_dll_unload() ::dlclose() failed");
-  }
-
-  if (i < g_handletable_used) {
-    if (res) {
-      // First case: libhandle was found (with refcount == 0) and ::dlclose successful,
-      // so delete entry from array
-      g_handletable_used--;
-      // If the entry was the last one of the array, the previous g_handletable_used--
-      // is sufficient to remove the entry from the array, otherwise we move the last
-      // entry of the array to the place of the entry we want to remove and overwrite it
-      if (i < g_handletable_used) {
-        g_handletable[i] = g_handletable[g_handletable_used];
+  {
+    TableLocker lock;
+    // try to find handle in array, which means library was loaded by os::dll_load() call
+    for (i = 0; i < g_handletable_used; i++) {
+      if (g_handletable[i].handle == libhandle) {
+        // handle found, decrease refcount
+        assert(g_handletable[i].refcount > 0, "Sanity");
+        g_handletable[i].refcount--;
+        if (g_handletable[i].refcount > 0) {
+          // if refcount is still >0 then we have to keep library and just return true
+          return true;
+        }
+        // refcount == 0, so we have to ::dlclose() the lib
+        // and delete the entry from the array.
+        break;
       }
     }
-  }
-  else {
-  #ifdef ASSERT
-    pthread_mutex_unlock(&g_handletable_mutex);
-  #endif
-    // Second case: libhandle was not found (library was not loaded by os::dll_load())
-    // therefore nag
-    assert(false, "os::pd_dll_unload() library was not loaded by os::dll_load()");
-  }
 
-  pthread_mutex_unlock(&g_handletable_mutex);
+    // If we reach this point either the libhandle was found with refcount == 0, or the libhandle
+    // was not found in the array at all. In both cases we have to ::dlclose the lib and perform
+    // the error handling. In the first case we then also have to delete the entry from the array
+    // while in the second case we simply have to nag.
+    res = (0 == ::dlclose(libhandle));
+    if (!res) {
+      // error analysis when dlopen fails
+      const char* error_report = ::dlerror();
+      if (error_report == nullptr) {
+        error_report = "dlerror returned no error description";
+      }
+      if (ebuf != nullptr && ebuflen > 0) {
+        snprintf(ebuf, ebuflen - 1, "%s", error_report);
+      }
+      assert(false, "os::pd_dll_unload() ::dlclose() failed");
+    }
+
+    if (i < g_handletable_used) {
+      if (res) {
+        // First case: libhandle was found (with refcount == 0) and ::dlclose successful,
+        // so delete entry from array
+        g_handletable_used--;
+        // If the entry was the last one of the array, the previous g_handletable_used--
+        // is sufficient to remove the entry from the array, otherwise we move the last
+        // entry of the array to the place of the entry we want to remove and overwrite it
+        if (i < g_handletable_used) {
+          g_handletable[i] = g_handletable[g_handletable_used];
+          g_handletable[g_handletable_used].handle = nullptr;
+        }
+      }
+    }
+    else {
+      // Second case: libhandle was not found (library was not loaded by os::dll_load())
+      // therefore nag
+      assert(false, "os::pd_dll_unload() library was not loaded by os::dll_load()");
+    }
+  }
 
   // Update the dll cache
   LoadedLibraries::reload();

@@ -27,7 +27,6 @@
 // with C++ compiler before referencing the function alloca()
 #pragma alloca
 
-
 // no precompiled headers
 #include "classfile/vmSymbols.hpp"
 #include "code/icBuffer.hpp"
@@ -189,7 +188,6 @@ int       os::Aix::_extshm = -1;
 
 ////////////////////////////////////////////////////////////////////////////////
 // local variables
-
 
 static volatile jlong max_real_time = 0;
 
