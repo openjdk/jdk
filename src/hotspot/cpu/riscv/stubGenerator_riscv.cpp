@@ -4664,7 +4664,18 @@ class StubGenerator: public StubCodeGenerator {
     saved_regs += RegSet::of(t2);
     __ push_reg(saved_regs, sp);
 
-    // load 5 words state into a, b, c, d, e
+    // load 5 words state into a, b, c, d, e.
+    //
+    // To minimize the number of memory operations, we apply following
+    // optimization: read the states (a/b/c/d) of 4-byte values in pairs,
+    // with a single ld, and split them into 2 registers.
+    //
+    // And, as the core algorithm of SHA-1 works on 32-bits words, so
+    // in the following code, it does not care about the content of
+    // higher 32-bits in a/b/c/d/e. Based on this observation,
+    // we can apply further optimization, which is to just ignore the
+    // higher 32-bits in a/c/e, rather than set the higher
+    // 32-bits of a/c/e to zero explicitly with extra instructions.
     __ ld(a, Address(state, 0));
     __ srli(b, a, 32);
     __ ld(c, Address(state, 8));
