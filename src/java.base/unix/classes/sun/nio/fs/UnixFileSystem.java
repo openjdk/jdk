@@ -1026,16 +1026,11 @@ abstract class UnixFileSystem
 
         // ensure source can be copied
         if (!sourceAttrs.isSymbolicLink() || flags.followLinks) {
-            try {
-                // the access(2) system call always follows links so it
-                // is suppressed if the source is an unfollowed link
-                int errno = access(source, R_OK);
-                if (errno != 0)
-                    throw new UnixException(errno);
-
-            } catch (UnixException exc) {
-                exc.rethrowAsIOException(source);
-            }
+            // the access(2) system call always follows links so it
+            // is suppressed if the source is an unfollowed link
+            int errno = access(source, R_OK);
+            if (errno != 0)
+                new UnixException(errno).rethrowAsIOException(source);
         }
 
         // get attributes of target file (don't follow links)
