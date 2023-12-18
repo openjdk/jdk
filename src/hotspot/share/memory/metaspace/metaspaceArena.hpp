@@ -132,10 +132,6 @@ class MetaspaceArena : public CHeapObj<mtClass> {
   // On success, true is returned, false otherwise.
   bool attempt_enlarge_current_chunk(size_t requested_word_size);
 
-  // Returns true if the area indicated by pointer and size have actually been allocated
-  // from this arena.
-  DEBUG_ONLY(bool is_valid_area(MetaWord* p, size_t word_size) const;)
-
   // Allocate from the arena proper, once dictionary allocations and fencing are sorted out.
   MetaBlock allocate_inner(size_t word_size, MetaBlock& wastage);
 
@@ -174,6 +170,8 @@ public:
 
   void print_on(outputStream* st) const;
 
+  // Returns true if the given block is contained in this arena
+  DEBUG_ONLY(bool contains(MetaBlock bl) const;)
 };
 
 } // namespace metaspace

@@ -28,6 +28,7 @@
 
 #include "memory/metaspace/chunklevel.hpp"
 #include "memory/metaspace/counters.hpp"
+#include "memory/metaspace/metablock.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 
@@ -351,7 +352,6 @@ public:
   bool is_valid_committed_pointer(const MetaWord* p) const {
     return base() <= p && p < committed_top();
   }
-
 #endif // ASSERT
 
   void print_on(outputStream* st) const;

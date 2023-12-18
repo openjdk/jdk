@@ -483,15 +483,15 @@ void MetaspaceArena::verify_allocation_guards() const {
   }
 }
 
-// Returns true if the area indicated by pointer and size have actually been allocated
-// from this arena.
-bool MetaspaceArena::is_valid_area(MetaWord* p, size_t word_size) const {
-  assert(p != nullptr && word_size > 0, "Sanity");
+// Returns true if the given block is contained in this arena
+// Returns true if the given block is contained in this arena
+bool MetaspaceArena::contains(MetaBlock bl) const {
+  assert(bl.is_nonempty(), "Sanity");
   bool found = false;
   for (const Metachunk* c = _chunks.first(); c != nullptr && !found; c = c->next()) {
-    assert(c->is_valid_committed_pointer(p) ==
-           c->is_valid_committed_pointer(p + word_size - 1), "range intersects");
-    found = c->is_valid_committed_pointer(p);
+    assert(c->is_valid_committed_pointer(bl.base()) ==
+           c->is_valid_committed_pointer(bl.end() - 1), "range intersects");
+    found = c->is_valid_committed_pointer(bl.base());
   }
   return found;
 }

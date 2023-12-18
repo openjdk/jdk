@@ -848,9 +848,16 @@ MetaWord* Metaspace::allocate(ClassLoaderData* loader_data, size_t word_size,
   MetaWord* result = loader_data->metaspace_non_null()->allocate(word_size, mdtype);
 
   if (result != nullptr) {
+#ifdef ASSERT
+    if (using_class_space() && mdtype == ClassType) {
+      assert(is_in_class_space(result) && is_aligned(result, KlassAlignmentInBytes), "Sanity");
+    } else {
+      assert((is_in_class_space(result) || is_in_nonclass_metaspace(result)) &&
+             is_aligned(result, Metaspace::min_allocation_alignment * BytesPerWord), "Sanity");
+    }
+#endif
     // Zero initialize.
     Copy::fill_to_words((HeapWord*)result, word_size, 0);
-
     log_trace(metaspace)("Metaspace::allocate: type %d return " PTR_FORMAT ".", (int)type, p2i(result));
   }
 

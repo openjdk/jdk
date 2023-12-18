@@ -69,7 +69,6 @@ ClassLoaderMetaspace::ClassLoaderMetaspace(Mutex* lock, Metaspace::MetaspaceType
   _space_type(space_type),
   _non_class_space_arena(nullptr),
   _class_space_arena(nullptr)
-  DEBUG_ONLY(COMMA _uses_class_space(class_context == MetaspaceContext::context_class()))
 {
   // Initialize non-class Arena
   _non_class_space_arena = new MetaspaceArena(
@@ -107,7 +106,7 @@ MetaWord* ClassLoaderMetaspace::allocate(size_t word_size, Metaspace::MetadataTy
   if (Metaspace::is_class_space_allocation(mdType)) {
     assert(word_size >= (sizeof(Klass)/BytesPerWord), "weird size for klass: %zu", word_size);
     result = class_space_arena()->allocate(word_size, wastage);
-    assert(!_uses_class_space || Metaspace::is_in_class_space(result.base()), "Expected class space allocation");
+    assert(class_space_arena()->contains(result), "Not from class arena?");
   } else {
     result = non_class_space_arena()->allocate(word_size, wastage);
   }
@@ -152,10 +151,11 @@ MetaWord* ClassLoaderMetaspace::expand_and_allocate(size_t word_size, Metaspace:
 // because it is not needed anymore.
 void ClassLoaderMetaspace::deallocate(MetaWord* ptr, size_t word_size, bool is_class) {
   NOT_LP64(word_size = align_down(word_size, Metaspace::min_allocation_word_size);)
+  MetaBlock bl(ptr, word_size);
   if (word_size >= Metaspace::min_allocation_word_size) {
     MutexLocker fcl(lock(), Mutex::_no_safepoint_check_flag);
     if (Metaspace::using_class_space() && is_class) {
-      assert(!_uses_class_space || Metaspace::is_in_class_space(ptr), "Not a class space pointer");
+      assert(class_space_arena()->contains(bl), "Not from class arena?");
       class_space_arena()->deallocate(MetaBlock(ptr, word_size));
     } else {
       non_class_space_arena()->deallocate(MetaBlock(ptr, word_size));
