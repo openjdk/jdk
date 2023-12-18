@@ -610,23 +610,6 @@ class UnixNativeDispatcher {
     private static native int access0(long pathAddress, int amode);
 
     /**
-     * access(constant char* path, F_OK)
-     *
-     * @return true if the file exists, false otherwise
-     */
-    static boolean exists(UnixPath path) {
-        try (NativeBuffer buffer = copyToNativeBuffer(path)) {
-            long comp = Blocker.begin();
-            try {
-                return exists0(buffer.address());
-            } finally {
-                Blocker.end(comp);
-            }
-        }
-    }
-    private static native boolean exists0(long pathAddress);
-
-    /**
      * struct passwd *getpwuid(uid_t uid);
      *
      * @return  passwd->pw_name

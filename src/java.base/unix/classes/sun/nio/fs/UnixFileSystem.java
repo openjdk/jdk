@@ -895,7 +895,7 @@ abstract class UnixFileSystem
                 // ensure source can be moved
                 int errno = access(source, W_OK);
                 if (errno != 0)
-                    throw new UnixException(errno);
+                    new UnixException(errno).rethrowAsIOException(source);
             }
         } catch (UnixException x) {
             x.rethrowAsIOException(source);

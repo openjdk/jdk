@@ -1199,7 +1199,7 @@ Java_sun_nio_fs_UnixNativeDispatcher_access0(JNIEnv* env, jclass this,
 
     RESTARTABLE(access(path, (int)amode), err);
 
-    return err == -1 ? errno : 0;
+    return (err == -1) ? errno : 0;
 }
 
 JNIEXPORT void JNICALL

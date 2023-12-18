@@ -76,11 +76,11 @@ import java.util.Spliterators;
 import java.util.function.BiPredicate;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
-import sun.nio.fs.AbstractFileSystemProvider;
 
 import jdk.internal.util.ArraysSupport;
 import sun.nio.ch.FileChannelImpl;
 import sun.nio.cs.UTF_8;
+import sun.nio.fs.AbstractFileSystemProvider;
 
 /**
  * This class consists exclusively of static methods that operate on files,

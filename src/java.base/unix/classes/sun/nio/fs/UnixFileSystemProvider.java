@@ -349,13 +349,9 @@ public abstract class UnixFileSystemProvider
             }
             mode |= X_OK;
         }
-        try {
-            int errno = access(file, mode);
-            if (errno != 0)
-                throw new UnixException(errno);
-        } catch (UnixException exc) {
-            exc.rethrowAsIOException(file);
-        }
+        int errno = access(file, mode);
+        if (errno != 0)
+            new UnixException(errno).rethrowAsIOException(file);
     }
 
     @Override
