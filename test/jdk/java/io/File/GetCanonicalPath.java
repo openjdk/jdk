@@ -82,20 +82,13 @@ public class GetCanonicalPath {
     }
 
     private static Stream<Arguments> pathProviderUnix() {
-        List<Arguments> list = new ArrayList<Arguments>();
-
-        list.add(Arguments.of("/../../../../../a/b/c",
-                              "/a/b/c"));
-        list.add(Arguments.of("/../../../../../a/../b/c",
-                              "/b/c"));
-        list.add(Arguments.of("/../../../../../a/../../b/c",
-                              "/b/c"));
-        list.add(Arguments.of("/../../../../../a/../../../b/c",
-                              "/b/c"));
-        list.add(Arguments.of("/../../../../../a/../../../../b/c",
-                              "/b/c"));
-
-        return list.stream();
+        return Stream.of(
+            Arguments.of("/../../../../../a/b/c", "/a/b/c"),
+            Arguments.of("/../../../../../a/../b/c", "/b/c"),
+            Arguments.of("/../../../../../a/../../b/c", "/b/c"),
+            Arguments.of("/../../../../../a/../../../b/c", "/b/c"),
+            Arguments.of("/../../../../../a/../../../../b/c", "/b/c")
+        );
     }
 
     @ParameterizedTest
