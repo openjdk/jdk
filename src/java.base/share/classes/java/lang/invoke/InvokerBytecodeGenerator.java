@@ -987,7 +987,7 @@ class InvokerBytecodeGenerator {
         cob.swap();
         cob.invokevirtual(MRE_Class_isInstance);
         Label L_rethrow = cob.newLabel();
-        cob.branchInstruction(Opcode.IFEQ, L_rethrow);
+        cob.ifeq(L_rethrow);
 
         // Invoke catcher
         // load catcher
@@ -1128,7 +1128,7 @@ class InvokerBytecodeGenerator {
         if (isNonVoid) {
             emitPopInsn(cob, basicReturnType);
         }
-        cob.throwInstruction();
+        cob.athrow();
 
         // DONE:
         cob.labelBinding(lDone);

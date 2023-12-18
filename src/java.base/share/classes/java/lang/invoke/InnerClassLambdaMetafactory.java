@@ -315,7 +315,7 @@ import static java.lang.invoke.MethodType.methodType;
                 itfs.add(classDesc(i));
                 accidentallySerializable |= !isSerializable && Serializable.class.isAssignableFrom(i);
             }
-            interfaces = new ArrayList<>(itfs);
+            interfaces = List.copyOf(itfs);
         }
         final boolean finalAccidentallySerializable = accidentallySerializable;
         final byte[] classBytes = ClassFile.of().build(lambdaClassDesc, new Consumer<ClassBuilder>() {
@@ -403,7 +403,7 @@ import static java.lang.invoke.MethodType.methodType;
                     @Override
                     public void accept(CodeBuilder cob) {
                         cob.aload(0)
-                           .invokespecial(CD_Object, INIT_NAME, MethodTypeDesc.of(CD_void));
+                           .invokespecial(CD_Object, INIT_NAME, MTD_void);
                         int parameterCount = factoryType.parameterCount();
                         for (int i = 0; i < parameterCount; i++) {
                             cob.aload(0);
