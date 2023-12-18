@@ -32,6 +32,15 @@ import java.lang.classfile.TypeKind;
 import java.lang.classfile.constantpool.ConstantPoolBuilder;
 import java.lang.classfile.constantpool.MethodRefEntry;
 import static java.lang.constant.ConstantDescs.*;
+import static sun.invoke.util.Wrapper.BOOLEAN;
+import static sun.invoke.util.Wrapper.BYTE;
+import static sun.invoke.util.Wrapper.CHAR;
+import static sun.invoke.util.Wrapper.DOUBLE;
+import static sun.invoke.util.Wrapper.FLOAT;
+import static sun.invoke.util.Wrapper.INT;
+import static sun.invoke.util.Wrapper.LONG;
+import static sun.invoke.util.Wrapper.SHORT;
+import static sun.invoke.util.Wrapper.VOID;
 
 class TypeConvertingMethodAdapter {
 
@@ -64,22 +73,15 @@ class TypeConvertingMethodAdapter {
                                         UNBOX_DOUBLE  = unbox(CD_Number, "doubleValue", CD_double);
 
     static private TypeKind primitiveTypeKindFromClass(Class<?> type) {
-        return switch (type.getName().length()) {
-            case 14 -> type == Long.class ? TypeKind.LongType
-                     : type == Byte.class ? TypeKind.ByteType
-                     : null;
-            case 15 -> type == Short.class ? TypeKind.ShortType
-                     : type == Float.class ? TypeKind.FloatType
-                     : null;
-            case 16 -> type == Double.class ? TypeKind.DoubleType
-                     : null;
-            case 17 -> type == Integer.class ? TypeKind.IntType
-                     : type == Boolean.class ? TypeKind.BooleanType
-                     : null;
-            case 19 -> type == Character.class ? TypeKind.CharType
-                     : null;
-            default -> null;
-        };
+        if (type == int.class)     return TypeKind.IntType;
+        if (type == long.class)    return TypeKind.LongType;
+        if (type == boolean.class) return TypeKind.BooleanType;
+        if (type == short.class)   return TypeKind.ShortType;
+        if (type == byte.class)    return TypeKind.ByteType;
+        if (type == char.class)    return TypeKind.CharType;
+        if (type == float.class)   return TypeKind.FloatType;
+        if (type == double.class)  return TypeKind.DoubleType;
+        return null;
     }
 
     static void boxIfTypePrimitive(CodeBuilder cob, TypeKind tk) {

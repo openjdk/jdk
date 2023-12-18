@@ -1291,16 +1291,21 @@ class MethodType
      */
     @Override
     public Optional<MethodTypeDesc> describeConstable() {
-        try {
-            var params = new ClassDesc[parameterCount()];
-            for (int i = 0; i < params.length; i++) {
-                params[i] = parameterType(i).describeConstable().orElseThrow();
-            }
-            return Optional.of(MethodTypeDesc.of(returnType().describeConstable().orElseThrow(), params));
-        }
-        catch (NoSuchElementException e) {
+        var retDesc = returnType().describeConstable();
+        if (retDesc.isEmpty())
             return Optional.empty();
+
+        if (parameterCount() == 0)
+            return Optional.of(MethodTypeDesc.of(retDesc.get()));
+
+        var params = new ClassDesc[parameterCount()];
+        for (int i = 0; i < params.length; i++) {
+            var paramDesc = parameterType(i).describeConstable();
+            if (paramDesc.isEmpty())
+                return Optional.empty();
+            params[i] = paramDesc.get();
         }
+        return Optional.of(MethodTypeDesc.of(retDesc.get(), params));
     }
 
     /// Serialization.

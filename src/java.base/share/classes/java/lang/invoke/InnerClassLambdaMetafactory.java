@@ -170,7 +170,7 @@ import static java.lang.invoke.MethodType.methodType;
         super(caller, factoryType, interfaceMethodName, interfaceMethodType,
               implementation, dynamicMethodType,
               isSerializable, altInterfaces, altMethods);
-        implMethodClassDesc = classDesc(implClass);
+        implMethodClassDesc = implClassDesc(implClass);
         implMethodName = implInfo.getName();
         implMethodDesc = methodDesc(implInfo.getMethodType());
         constructorType = factoryType.changeReturnType(Void.TYPE);
@@ -543,9 +543,13 @@ import static java.lang.invoke.MethodType.methodType;
         };
     }
 
-    static ClassDesc classDesc(Class<?> cls) {
+    static ClassDesc implClassDesc(Class<?> cls) {
         return cls.isHidden() ? ClassDesc.ofInternalName(cls.getName().replace('.', '/'))
-                              : ClassDesc.ofDescriptor(cls.descriptorString());
+                              : classDesc(cls);
+    }
+
+    static ClassDesc classDesc(Class<?> cls) {
+        return ClassDesc.ofDescriptor(cls.descriptorString());
     }
 
     static MethodTypeDesc methodDesc(MethodType mt) {

@@ -47,11 +47,9 @@ import java.lang.classfile.constantpool.PackageEntry;
 import java.lang.classfile.constantpool.PoolEntry;
 import java.lang.classfile.constantpool.StringEntry;
 import java.lang.classfile.constantpool.Utf8Entry;
-import java.lang.constant.ClassDesc;
 
 import java.lang.constant.MethodTypeDesc;
 import java.util.List;
-import static java.util.Objects.requireNonNull;
 
 public final class TemporaryConstantPool implements ConstantPoolBuilder {
 
@@ -87,16 +85,6 @@ public final class TemporaryConstantPool implements ConstantPoolBuilder {
     @Override
     public ClassEntry classEntry(Utf8Entry name) {
         return new AbstractPoolEntry.ClassEntryImpl(this, -2, (AbstractPoolEntry.Utf8EntryImpl) name);
-    }
-
-    @Override
-    public ClassEntry classEntry(ClassDesc classDesc) {
-        if (requireNonNull(classDesc).isPrimitive()) {
-            throw new IllegalArgumentException("Cannot be encoded as ClassEntry: " + classDesc.displayName());
-        }
-        var ret = (AbstractPoolEntry.ClassEntryImpl)classEntry(utf8Entry(classDesc.isArray() ? classDesc.descriptorString() : Util.toInternalName(classDesc)));
-        ret.sym = classDesc;
-        return ret;
     }
 
     @Override

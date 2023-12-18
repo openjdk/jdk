@@ -40,10 +40,13 @@ import jdk.internal.classfile.impl.ClassReaderImpl;
 import java.lang.constant.ModuleDesc;
 import java.lang.constant.PackageDesc;
 import java.lang.classfile.WritableElement;
+import jdk.internal.classfile.impl.AbstractPoolEntry.ClassEntryImpl;
 import jdk.internal.classfile.impl.AbstractPoolEntry.NameAndTypeEntryImpl;
 import jdk.internal.classfile.impl.SplitConstantPool;
 import jdk.internal.classfile.impl.TemporaryConstantPool;
+import jdk.internal.classfile.impl.Util;
 import jdk.internal.javac.PreviewFeature;
+import static java.util.Objects.requireNonNull;
 
 /**
  * Builder for the constant pool of a classfile.  Provides read and write access
@@ -151,7 +154,14 @@ public sealed interface ConstantPoolBuilder
      * @param classDesc the symbolic descriptor for the class
      * @throws IllegalArgumentException if {@code classDesc} represents a primitive type
      */
-    ClassEntry classEntry(ClassDesc classDesc);
+    default ClassEntry classEntry(ClassDesc classDesc) {
+        if (requireNonNull(classDesc).isPrimitive()) {
+            throw new IllegalArgumentException("Cannot be encoded as ClassEntry: " + classDesc.displayName());
+        }
+        ClassEntryImpl ret = (ClassEntryImpl)classEntry(utf8Entry(classDesc.isArray() ? classDesc.descriptorString() : Util.toInternalName(classDesc)));
+        ret.sym = classDesc;
+        return ret;
+    }
 
     /**
      * {@return A {@link PackageEntry} describing the class whose internal name

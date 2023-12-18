@@ -55,9 +55,6 @@ import static java.lang.classfile.ClassFile.TAG_MODULE;
 import static java.lang.classfile.ClassFile.TAG_NAMEANDTYPE;
 import static java.lang.classfile.ClassFile.TAG_PACKAGE;
 import static java.lang.classfile.ClassFile.TAG_STRING;
-import java.lang.constant.ClassDesc;
-import java.lang.constant.ConstantDescs;
-import static java.util.Objects.requireNonNull;
 
 public final class SplitConstantPool implements ConstantPoolBuilder {
 
@@ -70,7 +67,6 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
     private boolean doneFullScan;
     private EntryMap<PoolEntry> map;
     private EntryMap<BootstrapMethodEntryImpl> bsmMap;
-    private ClassEntry objectEntry;
 
     public SplitConstantPool() {
         this.size = 1;
@@ -372,26 +368,6 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
         AbstractPoolEntry.Utf8EntryImpl ne = maybeCloneUtf8Entry(nameEntry);
         var e = (AbstractPoolEntry.ClassEntryImpl) findEntry(TAG_CLASS, ne);
         return e == null ? internalAdd(new AbstractPoolEntry.ClassEntryImpl(this, size, ne)) : e;
-    }
-
-    @Override
-    public ClassEntry classEntry(ClassDesc classDesc) {
-        if (classDesc == ConstantDescs.CD_Object) {
-            if (objectEntry == null) {
-                objectEntry = _classEntry(classDesc);
-            }
-            return objectEntry;
-        }
-        if (requireNonNull(classDesc).isPrimitive()) {
-            throw new IllegalArgumentException("Cannot be encoded as ClassEntry: " + classDesc.displayName());
-        }
-        return _classEntry(classDesc);
-    }
-
-    private ClassEntry _classEntry(ClassDesc classDesc) {
-        var ret = classEntry(utf8Entry(classDesc.isArray() ? classDesc.descriptorString() : Util.toInternalName(classDesc)));
-        ret.sym = classDesc;
-        return ret;
     }
 
     @Override
