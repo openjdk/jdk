@@ -34,6 +34,7 @@
 #include "oops/methodData.hpp"
 #include "oops/resolvedFieldEntry.hpp"
 #include "oops/resolvedIndyEntry.hpp"
+#include "oops/resolvedMethodEntry.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiThreadState.hpp"
 #include "runtime/frame.inline.hpp"
@@ -453,13 +454,6 @@ void InterpreterMacroAssembler::get_cache_index_at_bcp(Register Rdst, int bcp_of
   // Rdst now contains cp cache index.
 }
 
-void InterpreterMacroAssembler::get_cache_and_index_at_bcp(Register cache, int bcp_offset,
-                                                           size_t index_size) {
-  get_cache_index_at_bcp(cache, bcp_offset, index_size);
-  sldi(cache, cache, exact_log2(in_words(ConstantPoolCacheEntry::size()) * BytesPerWord));
-  add(cache, R27_constPoolCache, cache);
-}
-
 // Load 4-byte signed or unsigned integer in Java format (that is, big-endian format)
 // from (Rsrc)+offset.
 void InterpreterMacroAssembler::get_u4(Register Rdst, Register Rsrc, int offset,
@@ -484,13 +478,14 @@ void InterpreterMacroAssembler::get_u4(Register Rdst, Register Rsrc, int offset,
 }
 
 void InterpreterMacroAssembler::load_resolved_indy_entry(Register cache, Register index) {
-  // Get index out of bytecode pointer, get_cache_entry_pointer_at_bcp
+  // Get index out of bytecode pointer
   get_cache_index_at_bcp(index, 1, sizeof(u4));
 
   // Get address of invokedynamic array
   ld_ptr(cache, in_bytes(ConstantPoolCache::invokedynamic_entries_offset()), R27_constPoolCache);
   // Scale the index to be the entry index * sizeof(ResolvedIndyEntry)
   sldi(index, index, log2i_exact(sizeof(ResolvedIndyEntry)));
+  addi(cache, cache, Array<ResolvedIndyEntry>::base_offset_in_bytes());
   add(cache, cache, index);
 }
 
@@ -509,6 +504,18 @@ void InterpreterMacroAssembler::load_field_entry(Register cache, Register index,
   ld_ptr(cache, in_bytes(ConstantPoolCache::field_entries_offset()), R27_constPoolCache);
   addi(cache, cache, Array<ResolvedFieldEntry>::base_offset_in_bytes());
   add(cache, cache, index);
+}
+
+void InterpreterMacroAssembler::load_method_entry(Register cache, Register index, int bcp_offset) {
+  // Get index out of bytecode pointer
+  get_cache_index_at_bcp(index, bcp_offset, sizeof(u2));
+  // Scale the index to be the entry index * sizeof(ResolvedMethodEntry)
+  mulli(index, index, sizeof(ResolvedMethodEntry));
+
+  // Get address of field entries array
+  ld_ptr(cache, ConstantPoolCache::method_entries_offset(), R27_constPoolCache);
+  addi(cache, cache, Array<ResolvedMethodEntry>::base_offset_in_bytes());
+  add(cache, cache, index); // method_entries + base_offset + scaled index
 }
 
 // Load object from cpool->resolved_references(index).
@@ -562,18 +569,6 @@ void InterpreterMacroAssembler::load_resolved_klass_at_offset(Register Rcpool, R
   addi(Roffset, Roffset, Array<Klass*>::base_offset_in_bytes());
   isync(); // Order load of instance Klass wrt. tags.
   ldx(Rklass, Rklass, Roffset);
-}
-
-void InterpreterMacroAssembler::load_resolved_method_at_index(int byte_no,
-                                                              Register cache,
-                                                              Register method) {
-  const int method_offset = in_bytes(
-    ConstantPoolCache::base_offset() +
-      ((byte_no == TemplateTable::f2_byte)
-       ? ConstantPoolCacheEntry::f2_offset()
-       : ConstantPoolCacheEntry::f1_offset()));
-
-  ld(method, method_offset, cache); // get f1 Method*
 }
 
 // Generate a subtype check: branch to ok_is_subtype if sub_klass is
@@ -1978,7 +1973,7 @@ void InterpreterMacroAssembler::profile_parameters_type(Register tmp1, Register 
   }
 }
 
-// Add a InterpMonitorElem to stack (see frame_sparc.hpp).
+// Add a monitor (see frame_ppc.hpp).
 void InterpreterMacroAssembler::add_monitor_to_stack(bool stack_is_empty, Register Rtemp1, Register Rtemp2) {
 
   // Very-local scratch registers.

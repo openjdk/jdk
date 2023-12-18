@@ -77,7 +77,7 @@ void Compiler::initialize() {
   }
 }
 
-int Compiler::code_buffer_size() {
+uint Compiler::code_buffer_size() {
   return Compilation::desired_max_code_buffer_size() + Compilation::desired_max_constant_size();
 }
 
