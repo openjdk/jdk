@@ -806,10 +806,10 @@ bool RegionIterator::next_committed(address& committed_start, size_t& committed_
 
 void VirtualMemoryView::snapshot_thread_stacks() {
   thread_stacks->clear();
-  OffsetRegionStorage& reserved_ranges = _virt_mem->reserved_regions.at(heap.id);
+  RegionStorage& reserved_ranges = _virt_mem->reserved_regions;
   RegionStorage& committed_ranges = _virt_mem->committed_regions.at(heap.id);
   for (int i = 0; i < reserved_ranges.length(); i++) {
-    TrackedOffsetRange& rng = reserved_ranges.at(i);
+    TrackedRange& rng = reserved_ranges.at(i);
     if (rng.flag == mtThreadStack) {
       address stack_bottom = thread_stack_uncommitted_bottom(rng, committed_ranges);
       address committed_start;
