@@ -55,6 +55,8 @@ public class TestThreadCounts {
                 "-version");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
 
+
+        try {
         if (conc == 0) {
             output.shouldContain("Shenandoah expects ConcGCThreads > 0");
             output.shouldHaveExitValue(1);
@@ -67,6 +69,10 @@ public class TestThreadCounts {
         } else {
             output.shouldNotContain("Shenandoah expects ConcGCThreads <= ParallelGCThreads");
             output.shouldHaveExitValue(0);
+        }
+        } catch (Throwable t) {
+          String msg = t.getMessage() + ", conc: " + conc + ", par: " + par;
+          throw new RuntimeException(msg);
         }
     }
 
