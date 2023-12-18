@@ -387,7 +387,7 @@ bool LoaderConstraintTable::add_entry(Symbol* class_name,
   } else if (pp1 == nullptr) {
     pp2->extend_loader_constraint(class_name, loader1, klass);
   } else if (pp2 == nullptr) {
-    pp1->extend_loader_constraint(class_name, loader1, klass);
+    pp1->extend_loader_constraint(class_name, loader2, klass);
   } else {
     merge_loader_constraints(class_name, pp1, pp2, klass);
   }
