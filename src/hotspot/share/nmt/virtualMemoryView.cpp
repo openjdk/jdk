@@ -86,7 +86,8 @@ void VirtualMemoryView::report_new(VirtualMemory& mem, outputStream* output, siz
       stack.print_on(output, "| |", 9);
     }
   };
-  for (Id space_id = 0; space_id < PhysicalMemorySpace::unique_id; space_id++) {
+  // First space_id is reserved for the heap.
+  for (Id space_id = 1; space_id < PhysicalMemorySpace::unique_id; space_id++) {
     RegionStorage& reserved_ranges = _virt_mem->reserved_regions;
     OffsetRegionStorage& mapped_ranges = _virt_mem->mapped_regions.at(space_id);
     RegionStorage& committed_ranges = _virt_mem->committed_regions.at(space_id);
