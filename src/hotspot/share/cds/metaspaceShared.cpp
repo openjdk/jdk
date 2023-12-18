@@ -141,11 +141,16 @@ size_t MetaspaceShared::core_region_alignment() {
 }
 
 static bool shared_base_valid(char* shared_base) {
-#ifdef _LP64
-  return CompressedKlassPointers::is_valid_base((address)shared_base);
-#else
-  return true;
-#endif
+  // We check user input for SharedBaseAddress at dump time. We must weed out values
+  // we already know to be invalid later.
+
+  // At CDS runtime, "shared_base" will be the (attempted) mapping start. It will also
+  // be the encoding base, since the the headers of archived base objects (and with Lilliput,
+  // the prototype mark words) carry pre-computed narrow Klass IDs that refer to the mapping
+  // start as base.
+  //
+  // Therefore, "shared_base" must be later usable as encoding base.
+  return AARCH64_ONLY(is_aligned(shared_base, 4 * G)) NOT_AARCH64(true);
 }
 
 class DumpClassListCLDClosure : public CLDClosure {
@@ -534,7 +539,7 @@ void VM_PopulateDumpSharedSpace::doit() {
   builder.relocate_to_requested();
 
   // Write the archive file
-  const char* static_archive = Arguments::GetSharedArchivePath();
+  const char* static_archive = CDSConfig::static_archive_path();
   assert(static_archive != nullptr, "SharedArchiveFile not set?");
   FileMapInfo* mapinfo = new FileMapInfo(static_archive, true);
   mapinfo->populate_header(MetaspaceShared::core_region_alignment());
@@ -646,8 +651,7 @@ void MetaspaceShared::link_shared_classes(bool jcmd_request, TRAPS) {
 
 void MetaspaceShared::prepare_for_dumping() {
   assert(CDSConfig::is_dumping_archive(), "sanity");
-  Arguments::check_unsupported_dumping_properties();
-
+  CDSConfig::check_unsupported_dumping_properties();
   ClassLoader::initialize_shared_path(JavaThread::current());
 }
 
@@ -778,7 +782,6 @@ void MetaspaceShared::preload_and_dump_impl(TRAPS) {
 
 #if INCLUDE_CDS_JAVA_HEAP
   if (CDSConfig::is_dumping_heap()) {
-    StringTable::allocate_shared_strings_array(CHECK);
     if (!HeapShared::is_archived_boot_layer_available(THREAD)) {
       log_info(cds)("archivedBootLayer not available, disabling full module graph");
       CDSConfig::disable_dumping_full_module_graph();
@@ -788,6 +791,10 @@ void MetaspaceShared::preload_and_dump_impl(TRAPS) {
     if (CDSConfig::is_dumping_full_module_graph()) {
       HeapShared::reset_archived_object_states(CHECK);
     }
+
+    // Do this at the very end, when no Java code will be executed. Otherwise
+    // some new strings may be added to the intern table.
+    StringTable::allocate_shared_strings_array(CHECK);
   }
 #endif
 
@@ -979,8 +986,8 @@ void MetaspaceShared::initialize_runtime_shared_and_meta_spaces() {
 }
 
 FileMapInfo* MetaspaceShared::open_static_archive() {
-  const char* static_archive = Arguments::GetSharedArchivePath();
-  assert(static_archive != nullptr, "SharedArchivePath is nullptr");
+  const char* static_archive = CDSConfig::static_archive_path();
+  assert(static_archive != nullptr, "sanity");
   FileMapInfo* mapinfo = new FileMapInfo(static_archive, true);
   if (!mapinfo->initialize()) {
     delete(mapinfo);
@@ -993,7 +1000,7 @@ FileMapInfo* MetaspaceShared::open_dynamic_archive() {
   if (CDSConfig::is_dumping_dynamic_archive()) {
     return nullptr;
   }
-  const char* dynamic_archive = Arguments::GetSharedDynamicArchivePath();
+  const char* dynamic_archive = CDSConfig::dynamic_archive_path();
   if (dynamic_archive == nullptr) {
     return nullptr;
   }
@@ -1257,12 +1264,6 @@ char* MetaspaceShared::reserve_address_space_for_archives(FileMapInfo* static_ma
   if (base_address != nullptr) {
     assert(is_aligned(base_address, archive_space_alignment),
            "Archive base address invalid: " PTR_FORMAT ".", p2i(base_address));
-#ifdef _LP64
-    if (Metaspace::using_class_space()) {
-      assert(CompressedKlassPointers::is_valid_base(base_address),
-             "Archive base address invalid: " PTR_FORMAT ".", p2i(base_address));
-    }
-#endif
   }
 
   if (!Metaspace::using_class_space()) {
@@ -1332,11 +1333,11 @@ char* MetaspaceShared::reserve_address_space_for_archives(FileMapInfo* static_ma
                                      os::vm_page_size(), (char*) base_address);
     } else {
       // We did not manage to reserve at the preferred address, or were instructed to relocate. In that
-      // case we reserve whereever possible, but the start address needs to be encodable as narrow Klass
-      // encoding base since the archived heap objects contain nKlass IDs precalculated toward the start
+      // case we reserve wherever possible, but the start address needs to be encodable as narrow Klass
+      // encoding base since the archived heap objects contain nKlass IDs pre-calculated toward the start
       // of the shared Metaspace. That prevents us from using zero-based encoding and therefore we won't
       // try allocating in low-address regions.
-      total_space_rs = Metaspace::reserve_address_space_for_compressed_classes(total_range_size, false /* try_in_low_address_ranges */);
+      total_space_rs = Metaspace::reserve_address_space_for_compressed_classes(total_range_size, false /* optimize_for_zero_base */);
     }
 
     if (!total_space_rs.is_reserved()) {
@@ -1348,7 +1349,6 @@ char* MetaspaceShared::reserve_address_space_for_archives(FileMapInfo* static_ma
            "Sanity (" PTR_FORMAT " vs " PTR_FORMAT ")", p2i(base_address), p2i(total_space_rs.base()));
     assert(is_aligned(total_space_rs.base(), archive_space_alignment), "Sanity");
     assert(total_space_rs.size() == total_range_size, "Sanity");
-    assert(CompressedKlassPointers::is_valid_base((address)total_space_rs.base()), "Sanity");
 
     // Now split up the space into ccs and cds archive. For simplicity, just leave
     //  the gap reserved at the end of the archive space. Do not do real splitting.
@@ -1493,7 +1493,7 @@ void MetaspaceShared::initialize_shared_spaces() {
   if (PrintSharedArchiveAndExit) {
     // Print archive names
     if (dynamic_mapinfo != nullptr) {
-      tty->print_cr("\n\nBase archive name: %s", Arguments::GetSharedArchivePath());
+      tty->print_cr("\n\nBase archive name: %s", CDSConfig::static_archive_path());
       tty->print_cr("Base archive version %d", static_mapinfo->version());
     } else {
       tty->print_cr("Static archive name: %s", static_mapinfo->full_path());

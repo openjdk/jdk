@@ -2332,7 +2332,12 @@ public class ClassReader {
                 thrown.add(addTypeAnnotations(thrownType, thrownType(i++)));
             }
             mt.thrown = thrown.toList();
-            mt.restype = addTypeAnnotations(mt.restype, TargetType.METHOD_RETURN);
+            /* possible information loss if the type of the method is void then we can't add type
+             * annotations to it
+             */
+            if (!mt.restype.hasTag(TypeTag.VOID)) {
+                mt.restype = addTypeAnnotations(mt.restype, TargetType.METHOD_RETURN);
+            }
 
             Type recvtype = mt.recvtype != null ? mt.recvtype : s.implicitReceiverType();
             if (recvtype != null) {
@@ -2797,7 +2802,7 @@ public class ClassReader {
                 && parameterAccessFlags[mpIndex] != 0) {
             flags |= parameterAccessFlags[mpIndex];
         }
-        if (parameterNameIndicesMp != null
+        if (parameterNameIndicesMp != null && mpIndex < parameterNameIndicesMp.length
                 // if name_index is 0, then we might still get a name from the LocalVariableTable
                 && parameterNameIndicesMp[mpIndex] != 0) {
             argName = optPoolEntry(parameterNameIndicesMp[mpIndex], poolReader::getName, names.empty);
@@ -3042,14 +3047,6 @@ public class ClassReader {
             signatureBuffer = new byte[ns];
         }
         readClass(c);
-        if (previewClassFile) {
-            if ((c.flags_field & SYNTHETIC) != 0 &&
-                    c.owner.kind == PCK &&
-                    (c.flags_field & AUXILIARY) == 0 &&
-                    (c.flags_field & FINAL) != 0) {
-                c.flags_field |= UNNAMED_CLASS;
-            }
-        }
     }
 
     public void readClassFile(ClassSymbol c) {

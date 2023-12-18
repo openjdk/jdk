@@ -66,6 +66,11 @@ public interface JavaLangAccess {
     List<Method> getDeclaredPublicMethods(Class<?> klass, String name, Class<?>... parameterTypes);
 
     /**
+     * Return most specific method that matches name and parameterTypes.
+     */
+    Method findMethod(Class<?> klass, boolean publicOnly, String name, Class<?>... parameterTypes);
+
+    /**
      * Return the constant pool for a class.
      */
     ConstantPool getConstantPool(Class<?> klass);

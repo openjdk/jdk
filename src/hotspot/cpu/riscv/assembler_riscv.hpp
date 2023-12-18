@@ -1417,6 +1417,7 @@ enum VectorMask {
   INSN(vmfeq_vv, 0b1010111, 0b001, 0b011000);
 
   // Vector Floating-Point Sign-Injection Instructions
+  INSN(vfsgnj_vv, 0b1010111, 0b001, 0b001000);
   INSN(vfsgnjx_vv, 0b1010111, 0b001, 0b001010);
   INSN(vfsgnjn_vv, 0b1010111, 0b001, 0b001001);
 
