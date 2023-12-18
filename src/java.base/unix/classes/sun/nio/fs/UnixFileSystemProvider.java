@@ -585,7 +585,7 @@ public abstract class UnixFileSystemProvider
         if (Util.followLinks(options)) {
             UnixPath file = UnixPath.toUnixPath(path);
             file.checkRead();
-            return access(file, F_OK) == 0 ? true : false;
+            return access(file, F_OK) == 0;
         } else {
             return super.exists(path, options);
         }
