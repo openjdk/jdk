@@ -87,8 +87,11 @@ public:
 #define METABLOCKFORMATARGS(__block__)  p2i((__block__).base()), (__block__).word_size()
 
 // some convenience asserts
-#define assert_block_aligned(block, alignment_words) \
-  assert(block.is_aligned_base(alignment_words), "Block wrong alignment " METABLOCKFORMAT, METABLOCKFORMATARGS(block));
+#define assert_block_base_aligned(block, alignment_words) \
+  assert(block.is_aligned_base(alignment_words), "Block wrong base alignment " METABLOCKFORMAT, METABLOCKFORMATARGS(block));
+
+#define assert_block_size_aligned(block, alignment_words) \
+  assert(block.is_aligned_size(alignment_words), "Block wrong size alignment " METABLOCKFORMAT, METABLOCKFORMATARGS(block));
 
 #define assert_block_larger_or_equal(block, x) \
   assert(block.word_size() >= x, "Block too small " METABLOCKFORMAT, METABLOCKFORMATARGS(block));

@@ -143,30 +143,23 @@ public:
     }
   }
 
-  void add_block(MetaBlock mb) { verify();
+  void add_block(MetaBlock mb) {
     assert(!mb.is_empty(), "Don't add empty blocks");
-
     const size_t word_size = mb.word_size();
     MetaWord* const p = mb.base();
-
     assert(word_size >= MinWordSize &&
            word_size <= MaxWordSize, "bad block size");
-
     DEBUG_ONLY(write_canary(p, word_size);)
     const int index = index_for_word_size(word_size);
-
     Block* old_head = _blocks[index];
     Block* new_head = new (p) Block(old_head);
-
     _blocks[index] = new_head;
     _counter.add(word_size);
-
-    verify();
   }
 
   // Given a word_size, searches and returns a block of at least that size.
   // Block may be larger.
-  MetaBlock remove_block(size_t word_size) { verify();
+  MetaBlock remove_block(size_t word_size) {
     assert(word_size >= MinWordSize &&
            word_size <= MaxWordSize, "bad block size " SIZE_FORMAT ".", word_size);
     MetaBlock result;
@@ -182,9 +175,6 @@ public:
       _counter.sub(real_word_size);
       result = MetaBlock((MetaWord*)b, real_word_size);
     }
-
-    verify();
-
     return result;
   }
 
@@ -200,9 +190,6 @@ public:
   void verify() const {
     MemRangeCounter local_counter;
     for (int i = 0; i < num_lists; i++) {
-if (UseNewCode)
-printf("[%d]->", i);
-
       const size_t s = word_size_for_index(i);
       int pos = 0;
       Block* b_last = nullptr; // catch simple circularities
@@ -213,7 +200,6 @@ printf("[%d]->", i);
         local_counter.add(s);
         b_last = b;
       }
-
       if (UseNewCode)printf("\n");
     }
     local_counter.check(_counter);

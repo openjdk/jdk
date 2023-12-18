@@ -103,8 +103,8 @@ Metachunk* MetaspaceArena::allocate_new_chunk(size_t requested_word_size) {
 
 void MetaspaceArena::add_allocation_to_fbl(MetaBlock bl) {
   assert(bl.is_nonempty(), "Sanity");
-  assert_block_aligned(bl, allocation_alignment_words());
-
+  assert_block_base_aligned(bl, allocation_alignment_words());
+  assert_block_size_aligned(bl, Metaspace::min_allocation_alignment);
   if (_fbl == nullptr) {
     _fbl = new FreeBlocks(); // Create only on demand
   }
@@ -128,6 +128,9 @@ MetaspaceArena::MetaspaceArena(MetaspaceContext* context,
 {
   assert(is_power_of_2(_allocation_alignment_words), "Invalid alignment (%zu)",
          _allocation_alignment_words);
+
+  // Arena alignment shall not be smaller than minimum alignment (only matters on 32-bit)
+  assert(_allocation_alignment_words >= Metaspace::min_allocation_alignment, "Invalid alignment");
 
   // Requiring arena allocation alignment to be smaller or equal the smallest chunk size allows
   // us to allocate from a fresh chunk without having to align the result pointer.
@@ -241,7 +244,8 @@ MetaBlock MetaspaceArena::allocate(size_t requested_word_size, MetaBlock& wastag
   if (_fbl != nullptr && !_fbl->is_empty()) {
     MetaBlock block = _fbl->remove_block(aligned_word_size);
     if (block.is_nonempty()) {
-      assert_block_aligned(block, allocation_alignment_words());
+      assert_block_base_aligned(block, allocation_alignment_words());
+      assert_block_size_aligned(block, Metaspace::min_allocation_alignment);
       assert_block_larger_or_equal(block, aligned_word_size);
       // Split wastage off block
       block.split(aligned_word_size, result, wastage);
@@ -419,11 +423,7 @@ void MetaspaceArena::deallocate(MetaBlock block) {
   UL2(trace, "deallocating " METABLOCKFORMAT, METABLOCKFORMATARGS(block));
   // Only blocks that had been allocated via MetaspaceArena::allocate(size) must be handed in
   // to MetaspaceArena::deallocate(), and only with the same size that had been originally used
-  // for allocation. Therefore the pointer must be aligned correctly, and size can be
-  // alignment-adjusted (the latter only matters on 32-bit). In addition, we should only
-  // deallocate blocks that are aligned to this arena's alignment. Since that is always
-  // >= min alignment, we test for that.
-  assert_block_aligned(block, _allocation_alignment_words);
+  // for allocation. Therefore size can be alignment-adjusted. This only matters on 32-bit.
 #ifndef _LP64
   MetaBlock raw_block(block.base(), get_raw_word_size_for_requested_word_size(block.word_size()));
   add_allocation_to_fbl(raw_block);
