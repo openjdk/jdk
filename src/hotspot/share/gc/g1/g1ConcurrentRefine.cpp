@@ -121,14 +121,14 @@ bool G1ConcurrentRefineThreadControl::activate(uint worker_id) {
 }
 
 void G1ConcurrentRefineThreadControl::worker_threads_do(ThreadClosure* tc) {
-  for (uint i = 0; i < (uint)_threads.length(); i++) {
-    tc->do_thread(_threads.at(i));
+  for (Thread* t : _threads) {
+    tc->do_thread(t);
   }
 }
 
 void G1ConcurrentRefineThreadControl::stop() {
-  for (uint i = 0; i < (uint)_threads.length(); i++) {
-    _threads.at(i)->stop();
+  for (Thread* t : _threads) {
+    t->stop();
   }
 }
 
