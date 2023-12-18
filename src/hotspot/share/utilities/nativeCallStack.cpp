@@ -75,6 +75,10 @@ void NativeCallStack::print_on(outputStream* out) const {
   print_on(out, "", 0);
 }
 
+void NativeCallStack::print_on(outputStream* out, int indent) const {
+  print_on(out, "", indent);
+}
+
 // Decode and print this call path
 void NativeCallStack::print_on(outputStream* out, const char* prefix, int indent) const {
   DEBUG_ONLY(assert_not_fake();)

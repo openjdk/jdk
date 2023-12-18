@@ -155,6 +155,29 @@ private:
   // Thread stack tracking
   address thread_stack_uncommitted_bottom(TrackedRange& rng, RegionStorage& committed_ranges);
   void merge_thread_stacks(GrowableArrayCHeap<Range, mtNMT>& ranges);
+  // Iterate the range, find committed region within its bound.
+  class RegionIterator : public StackObj {
+  private:
+    const address _start;
+    const size_t _size;
+
+    address _current_start;
+
+  public:
+    RegionIterator(address start, size_t size)
+      : _start(start),
+        _size(size),
+        _current_start(start) {
+    }
+
+    // return true if committed region is found
+    bool next_committed(address& start, size_t& size);
+
+  private:
+    address end() const {
+      return _start + _size;
+    }
+  };
   void snapshot_thread_stacks();
 private:
   // Utilities

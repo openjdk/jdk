@@ -770,39 +770,22 @@ address VirtualMemoryView::thread_stack_uncommitted_bottom(TrackedRange& rng, Re
   return bottom;
 }
 
-// Iterate the range, find committed region within its bound.
-class RegionIterator : public StackObj {
-private:
-  const address _start;
-  const size_t  _size;
+bool VirtualMemoryView::RegionIterator::next_committed(address& committed_start, size_t& committed_size) {
+    if (end() <= _current_start) return false;
 
-  address _current_start;
-public:
-  RegionIterator(address start, size_t size) :
-    _start(start), _size(size), _current_start(start) {
+    const size_t page_sz = os::vm_page_size();
+    const size_t current_size = end() - _current_start;
+    if (os::committed_in_range(_current_start, current_size, committed_start, committed_size)) {
+      assert(committed_start != nullptr, "Must be");
+      assert(committed_size > 0 && is_aligned(committed_size, os::vm_page_size()), "Must be");
+
+      _current_start = committed_start + committed_size;
+      return true;
+    } else {
+      return false;
+    }
   }
 
-  // return true if committed region is found
-  bool next_committed(address& start, size_t& size);
-private:
-  address end() const { return _start + _size; }
-};
-
-bool RegionIterator::next_committed(address& committed_start, size_t& committed_size) {
-  if (end() <= _current_start) return false;
-
-  const size_t page_sz = os::vm_page_size();
-  const size_t current_size = end() - _current_start;
-  if (os::committed_in_range(_current_start, current_size, committed_start, committed_size)) {
-    assert(committed_start != nullptr, "Must be");
-    assert(committed_size > 0 && is_aligned(committed_size, os::vm_page_size()), "Must be");
-
-    _current_start = committed_start + committed_size;
-    return true;
-  } else {
-    return false;
-  }
-}
 
 void VirtualMemoryView::snapshot_thread_stacks() {
   thread_stacks->clear();
@@ -819,7 +802,7 @@ void VirtualMemoryView::snapshot_thread_stacks() {
       size_t aligned_stack_size = align_up(stack_size, os::vm_page_size());
 
       NativeCallStack ncs; // empty stack
-      RegionIterator itr(stack_bottom, aligned_stack_size);
+      VirtualMemoryView::RegionIterator itr(stack_bottom, aligned_stack_size);
       while (itr.next_committed(committed_start, committed_size)) {
         assert(committed_start != nullptr, "Should not be null");
         assert(committed_size > 0, "Should not be 0");
