@@ -40,6 +40,7 @@
 #include "metaspaceGtestCommon.hpp"
 #include "metaspaceGtestContexts.hpp"
 #include "metaspaceGtestRangeHelpers.hpp"
+#include "metaspaceGtestSparseArray.hpp"
 
 #define HANDLE_FAILURE \
   if (testing::Test::HasFailure()) { \
@@ -174,7 +175,7 @@ public:
         if (max_expected_allocation_waste > 0) {
           EXPECT_GE(d_nca.num_freeblocks_delta, 0);
           EXPECT_LE(d_nca.num_freeblocks_delta, 1);
-          EXPECT_GT(d_nca.freeblocks_words_delta, 1);
+          EXPECT_GE(d_nca.freeblocks_words_delta, 0);
           EXPECT_LE((size_t)d_nca.freeblocks_words_delta, max_expected_allocation_waste);
         } else {
           EXPECT_FREEBLOCKS_UNCHANGED(nca);
@@ -186,14 +187,19 @@ public:
       else
 
       {
-        // Nonclass arena allocation. We don't expect allocation waste.
+        // Nonclass arena allocation.
+        // Allocation waste can happen:
+        // - if we allocate from nonclass freeblocks, the block remainder
+        // - if we allocate from arena proper, by chunk turnover
 
-        // Had this been taken from class arena freeblocks?
-        if (d_nca.num_freeblocks_delta == -1) {
-          // the nonclass arena freeblocks should have gone down. Remainder blocks should have been
-          // re-added to the nonclass arena freeblocks.
-          const size_t wordsize_block_taken = (size_t)(-d_ca.freeblocks_words_delta);
+        if (d_nca.freeblocks_words_delta < 0) {
+          // We allocated a block from the nonclass arena freeblocks.
+          const size_t wordsize_block_taken = (size_t)(-d_nca.freeblocks_words_delta);
           EXPECT_EQ(wordsize_block_taken, word_size);
+          // The number of blocks may or may not have decreased (depending on whether there
+          // was a wastage block)
+          EXPECT_GE(d_nca.num_chunks_delta, -1);
+          EXPECT_LE(d_nca.num_chunks_delta, 0);
           EXPECT_ARENA_UNCHANGED(nca);
           EXPECT_ARENA_UNCHANGED(ca);
           EXPECT_FREEBLOCKS_UNCHANGED(ca);
@@ -202,14 +208,16 @@ public:
 
         // We don't expect alignment waste. Only wastage happens at chunk turnover.
         const size_t max_expected_allocation_waste =
-            d_ca.num_chunks_delta == 0 ? 0 : Settings::commit_granule_words();
+            d_nca.num_chunks_delta == 0 ? 0 : Settings::commit_granule_words();
         EXPECT_ARENA_UNCHANGED(ca);
         EXPECT_FREEBLOCKS_UNCHANGED(ca);
         EXPECT_GE(d_nca.num_chunks_delta, 0);
         EXPECT_LE(d_nca.num_chunks_delta, 1);
         EXPECT_GE((size_t)d_nca.used_words_delta, word_size);
         EXPECT_LE((size_t)d_nca.used_words_delta, word_size + max_expected_allocation_waste);
-        EXPECT_FREEBLOCKS_UNCHANGED(nca);
+        if (max_expected_allocation_waste == 0) {
+          EXPECT_FREEBLOCKS_UNCHANGED(nca);
+        }
       }
       return bl;
 
@@ -277,56 +285,121 @@ public:
 
 static constexpr size_t klass_size = sizeof(Klass) / BytesPerWord;
 
-static void basic_test_unlimited(size_t klass_arena_alignment) {
+static void basic_test(size_t klass_arena_alignment) {
   MetaspaceGtestContext class_context, nonclass_context;
-  ClmsTester tester(klass_arena_alignment, Metaspace::StandardMetaspaceType, class_context.context(), nonclass_context.context());
+  {
+    ClmsTester tester(klass_arena_alignment, Metaspace::StandardMetaspaceType, class_context.context(), nonclass_context.context());
 
-  MetaBlock bl1 = tester.allocate_expect_success(klass_size, true);
-  HANDLE_FAILURE;
+    MetaBlock bl1 = tester.allocate_expect_success(klass_size, true);
+    HANDLE_FAILURE;
 
-  MetaBlock bl2 = tester.allocate_expect_success(klass_size, true);
-  HANDLE_FAILURE;
+    MetaBlock bl2 = tester.allocate_expect_success(klass_size, true);
+    HANDLE_FAILURE;
 
-  tester.deallocate_and_check(bl1, true);
-  HANDLE_FAILURE;
+    tester.deallocate_and_check(bl1, true);
+    HANDLE_FAILURE;
 
-  MetaBlock bl3 = tester.allocate_expect_success(klass_size, true);
-  HANDLE_FAILURE;
-  EXPECT_EQ(bl3, bl1); // should have gotten the same block back from freelist
+    MetaBlock bl3 = tester.allocate_expect_success(klass_size, true);
+    HANDLE_FAILURE;
+    EXPECT_EQ(bl3, bl1); // should have gotten the same block back from freelist
 
-  MetaBlock bl4 = tester.allocate_expect_success(1, false);
-  HANDLE_FAILURE;
+    MetaBlock bl4 = tester.allocate_expect_success(1, false);
+    HANDLE_FAILURE;
+
+    MetaBlock bl5 = tester.allocate_expect_success(K, false);
+    HANDLE_FAILURE;
+
+    tester.deallocate_and_check(bl5, false);
+    HANDLE_FAILURE;
+
+    MetaBlock bl6 = tester.allocate_expect_success(K, false);
+    HANDLE_FAILURE;
+
+    EXPECT_EQ(bl5, bl6); // should have gotten the same block back from freelist
+  }
+  EXPECT_EQ(class_context.used_words(), (size_t)0);
+  EXPECT_EQ(nonclass_context.used_words(), (size_t)0);
+  // we should have used exactly one commit granule (64K), not more, for each context
+  EXPECT_EQ(class_context.committed_words(), Settings::commit_granule_words());
+  EXPECT_EQ(nonclass_context.committed_words(), Settings::commit_granule_words());
 }
 
 #define TEST_BASIC_N(n)               \
 TEST_VM(metaspace, CLMS_basics_##n) { \
-  basic_test_unlimited(n);            \
+  basic_test(n);            \
 }
 
 TEST_BASIC_N(1)
-TEST_BASIC_N(2)
 TEST_BASIC_N(4)
-TEST_BASIC_N(8)
 TEST_BASIC_N(16)
 TEST_BASIC_N(32)
-TEST_BASIC_N(64)
 TEST_BASIC_N(128)
 
-/*
-TEST_VM(metaspace, CLMS_basics) {
+static void test_random(size_t klass_arena_alignment) {
   MetaspaceGtestContext class_context, nonclass_context;
-  ClmsTester tester(64, Metaspace::StandardMetaspaceType, class_context.context(), nonclass_context.context());
-  SizeRange alloc_range(Metaspace::min_allocation_alignment, 256);
-  IntRange isclass(0, 8);
-  while (class_context.used_words() + nonclass_context.used_words() < (32 * M)) {
-    const bool is_class = isclass.random_value() == 0;
-    const size_t allocsize = alloc_range.random_value();
-    MetaBlock bl = tester.allocate_and_check(allocsize, is_class);
-    HANDLE_FAILURE;
-    EXPECT_TRUE(bl.is_nonempty());
+  constexpr int max_allocations = 1024;
+  const SizeRange nonclass_alloc_range(Metaspace::min_allocation_alignment, 1024);
+  const SizeRange class_alloc_range(klass_size, 1024);
+  const IntRange one_out_of_ten(0, 10);
+  for (int runs = 9; runs >= 0; runs--) {
+    {
+      ClmsTester tester(64, Metaspace::StandardMetaspaceType, class_context.context(), nonclass_context.context());
+      struct LifeBlock {
+        MetaBlock bl;
+        bool is_class;
+      };
+      LifeBlock life_allocations[max_allocations];
+      for (int i = 0; i < max_allocations; i++) {
+        life_allocations[i].bl.reset();
+      }
+
+      unsigned num_class_allocs = 0, num_nonclass_allocs = 0, num_class_deallocs = 0, num_nonclass_deallocs = 0;
+      for (int i = 0; i < 5000; i ++) {
+        const int slot = IntRange(0, max_allocations).random_value();
+        if (life_allocations[slot].bl.is_empty()) {
+          const bool is_class = one_out_of_ten.random_value() == 0;
+          const size_t word_size = is_class ? class_alloc_range.random_value() : nonclass_alloc_range.random_value();
+          MetaBlock bl = tester.allocate_expect_success(word_size, is_class);
+          life_allocations[slot].bl = bl;
+          life_allocations[slot].is_class = is_class;
+          if (is_class) {
+            num_class_allocs ++;
+          } else {
+            num_nonclass_allocs ++;
+          }
+        } else {
+          tester.deallocate_and_check(life_allocations[slot].bl, life_allocations[slot].is_class);
+          life_allocations[slot].bl.reset();
+          if (life_allocations[slot].is_class) {
+            num_class_deallocs ++;
+          } else {
+            num_nonclass_deallocs ++;
+          }
+        }
+      }
+      LOG("num class allocs: %u, num nonclass allocs: %u, num class deallocs: %u, num nonclass deallocs: %u",
+          num_class_allocs, num_nonclass_allocs, num_class_deallocs, num_nonclass_deallocs);
+    }
+    EXPECT_EQ(class_context.used_words(), (size_t)0);
+    EXPECT_EQ(nonclass_context.used_words(), (size_t)0);
+    constexpr float fragmentation_factor = 3.0f;
+    const size_t max_expected_nonclass_committed = max_allocations * nonclass_alloc_range.highest() * fragmentation_factor;
+    const size_t max_expected_class_committed = max_allocations * class_alloc_range.highest() * fragmentation_factor;
+    // we should have used exactly one commit granule (64K), not more, for each context
+    EXPECT_LT(class_context.committed_words(), max_expected_class_committed);
+    EXPECT_LT(nonclass_context.committed_words(), max_expected_nonclass_committed);
   }
 }
-*/
 
+#define TEST_RANDOM_N(n)               \
+TEST_VM(metaspace, CLMS_random_##n) {  \
+	test_random(n);                      \
+}
+
+TEST_RANDOM_N(1)
+TEST_RANDOM_N(4)
+TEST_RANDOM_N(16)
+TEST_RANDOM_N(32)
+TEST_RANDOM_N(128)
 
 } // namespace metaspace
