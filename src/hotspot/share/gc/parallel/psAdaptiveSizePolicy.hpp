@@ -173,9 +173,6 @@ class PSAdaptiveSizePolicy : public AdaptiveSizePolicy {
   void set_promo_size(size_t new_size) {
     _promo_size = new_size;
   }
-  void set_survivor_size(size_t new_size) {
-    _survivor_size = new_size;
-  }
 
   // Update estimators
   void update_minor_pause_old_estimator(double minor_pause_in_ms);
