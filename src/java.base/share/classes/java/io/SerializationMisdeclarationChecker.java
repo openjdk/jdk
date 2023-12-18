@@ -294,7 +294,7 @@ final class SerializationMisdeclarationChecker {
     }
 
     private static void commitEvent(Class<?> cls, int kind, String msg) {
-        commit(timestamp(), 0, cls, kind, msg);
+        commit(timestamp(), cls, kind, msg);
     }
 
 }

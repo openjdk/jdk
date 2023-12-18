@@ -30,6 +30,7 @@ import jdk.jfr.Description;
 import jdk.jfr.Label;
 import jdk.jfr.Name;
 import jdk.jfr.internal.MirrorEvent;
+import jdk.jfr.internal.RemoveFields;
 import jdk.jfr.internal.Type;
 
 @Name(Type.EVENT_NAME_PREFIX + "SerializationMisdeclaration")
@@ -37,6 +38,7 @@ import jdk.jfr.internal.Type;
 @Category({"Java Development Kit", "Serialization"})
 @Description("Methods and fields misdeclarations")
 @MirrorEvent(className = "jdk.internal.event.SerializationMisdeclarationEvent")
+@RemoveFields({"duration", "stackTrace", "thread"})
 public final class SerializationMisdeclarationEvent extends AbstractJDKEvent {
 
     @Label("Class")

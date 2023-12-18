@@ -758,8 +758,6 @@
 
     <event name="jdk.SerializationMisdeclaration">
         <setting name="enabled">false</setting>
-        <setting name="stackTrace">false</setting>
-        <setting name="threshold">0 ns</setting>
     </event>
 
     <event name="jdk.InitialSecurityProperty">
