@@ -46,7 +46,7 @@ public class TestDuplicatedLateInliningOutput {
     public static void main(String[] args) throws Exception {
         test(
             NonConstantReceiverLauncher.class,
-            "@ (\\d+)\\s+java\\.lang\\.invoke\\.LambdaForm\\$DMH\\/0x[0-9a-f]+::invokeStatic\\s\\(\\d+ bytes\\)\\s+force inline by annotation",
+            "@ (\\d+)\\s+java\\.lang\\.invoke\\.LambdaForm\\$DMH\\/0x[0-9a-f]+::invokeStatic \\(\\d+ bytes\\)\\s+force inline by annotation",
             "@ (\\d+)\\s+java\\.lang\\.invoke\\.MethodHandle::invokeBasic\\(\\)V \\(\\d+ bytes\\)\\s+failed to inline: receiver not constant");
 
         test(
