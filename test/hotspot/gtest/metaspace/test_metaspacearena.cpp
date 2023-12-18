@@ -840,7 +840,8 @@ static void test_random_aligned_allocation(size_t arena_alignment_words, SizeRan
   size_t last_alloc_size = 0;
   unsigned num_allocations = 0;
 
-  const size_t max_used = MIN2(MAX2(chunk_word_size * 10, (range.highest() * 100)), 512 * M);
+  const size_t max_used = MIN2(MAX2(chunk_word_size * 10, (range.highest() * 100)),
+                               LP64_ONLY(64) NOT_LP64(16) * M); // word size!
   while (expected_used < max_used) {
 
     const int chunks_before = helper.get_number_of_chunks();
@@ -941,6 +942,5 @@ TEST_ARENA_WITH_ALIGNMENT_LARGE_RANGE(32);
 TEST_ARENA_WITH_ALIGNMENT_LARGE_RANGE(64);
 TEST_ARENA_WITH_ALIGNMENT_LARGE_RANGE(128);
 TEST_ARENA_WITH_ALIGNMENT_LARGE_RANGE(MIN_CHUNK_WORD_SIZE);
-
 
 } // namespace metaspace

@@ -79,11 +79,11 @@ public:
     return is_aligned(_base, alignment_words * BytesPerWord);
   }
   bool is_aligned_size(size_t alignment_words) const {
-    return is_aligned(_word_size, alignment_words * BytesPerWord);
+    return is_aligned(_word_size, alignment_words);
   }
 };
 
-#define METABLOCKFORMAT                 "block (@" PTR_FORMAT " size " SIZE_FORMAT ")"
+#define METABLOCKFORMAT                 "block (@" PTR_FORMAT " word size " SIZE_FORMAT ")"
 #define METABLOCKFORMATARGS(__block__)  p2i((__block__).base()), (__block__).word_size()
 
 // some convenience asserts
