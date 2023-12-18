@@ -96,32 +96,41 @@ void VirtualMemoryView::report_new(VirtualMemory& mem, outputStream* output, siz
       ::new(&mapped_committed_per_range[i]) GrowableArray<Range>();
     }
 
-    VirtualMemoryView::sort_regions(mapped_ranges);
-    VirtualMemoryView::merge_mapped(mapped_ranges);
-
     auto range_sort_fn = [](Range* r1, Range* r2) {
       return r1->start < r2->start ? -1 : 1;
     };
 
+    // Step 0.
+    // For all non-disjoint virtual ranges with the same stack
+    // put all of their physical ranges into one array.
     struct MergedMapped {
-      Range virt;
+      TrackedRange virt;
       GrowableArray<Range> phys;
     };
 
     GrowableArray<MergedMapped> merged_maps;
+    // Always want a last_virt to instantiate.
+    if (mapped_ranges.length() > 0) {
+      merged_maps.push({mapped_ranges.at(0), {}});
+    }
+
     for (int m = 0; m < mapped_ranges.length(); m++) {
       TrackedOffsetRange& mapped_range = mapped_ranges.at(m);
+      TrackedRange& last_virt = merged_maps.at(merged_maps.length() - 1).virt;
 
       // Merge into maps
-      if (merged_maps.is_empty() || disjoint(mapped_range, merged_maps.at(merged_maps.length() - 1).virt)) {
-        merged_maps.push({mapped_range, {}});
+      if (!disjoint(mapped_range, last_virt) && same_stack(mapped_range, last_virt)) {
+        Range range_union = union_of(last_virt, mapped_range);
+        last_virt.start = range_union.start;
+        last_virt.size = range_union.size;
       } else {
-        Range& last_virt = merged_maps.at(merged_maps.length() - 1).virt;
-        last_virt = union_of(last_virt, mapped_range);
+        merged_maps.push({mapped_range, GrowableArray<Range>{}});
       }
       merged_maps.at(merged_maps.length() - 1).phys.push({mapped_range.physical_address, mapped_range.size});
 
-      // Setup mapped_committed_per_range
+      // Step 1.
+      // Setup mapped_committed_per_range.
+      // Each committed region which the mapped physical range touches is pushed here.
       for (int c = 0; c < committed_ranges.length(); c++) {
         TrackedRange& committed_range = committed_ranges.at(c);
         const Range commited(committed_range.start, committed_range.size);
@@ -133,9 +142,9 @@ void VirtualMemoryView::report_new(VirtualMemory& mem, outputStream* output, siz
       }
     }
 
+    // Step 2.
+    // Merge physical merged_maps.
     GrowableArray<Range> reusable_growable_array;
-
-    // Merge physical merged_maps
     for (int i = 0; i < merged_maps.length(); i++) {
       MergedMapped& merged_map = merged_maps.at(i);
       merged_map.phys.sort(range_sort_fn);
@@ -151,93 +160,85 @@ void VirtualMemoryView::report_new(VirtualMemory& mem, outputStream* output, siz
           last_phys = union_of(last_phys, phys_range);
         }
       }
-
       merged_map.phys.swap(&merged_phys);
     }
 
-
+    // Step 3.
+    // Print the resulting memory map.
     output->print_cr("%s:", _names->at(space_id));
     for (int reserved_range_idx = 0; reserved_range_idx < reserved_ranges.length(); reserved_range_idx++) {
+
       TrackedRange& reserved_range = reserved_ranges.at(reserved_range_idx);
       print_reserved_memory(reserved_range);
-      if (UseNewCode) {
-        // Version 2: Prints the merged mappings, maybe multi mapped.
-        //            Information is invalid if mapped range is not a sub range of reserved.
-        for (int i = 0; i < merged_maps.length(); i++) {
-          const MergedMapped& merged_map = merged_maps.at(i);
-          const Range mapped_range = merged_map.virt;
-          if (overlaps(reserved_range, mapped_range)) {
-            const char* scale_name = NMTUtil::scale_name(scale);
-            output->print_cr("+-+- [" PTR_FORMAT " - " PTR_FORMAT "]" " of size " SIZE_FORMAT "%s",
-                          p2i(mapped_range.start), p2i(mapped_range.end()),
-                          NMTUtil::amount_in_scale(mapped_range.size, scale), scale_name);
-            for (int j = 0; j < merged_map.phys.length(); j++) {
-              const Range mapped_to = merged_map.phys.at(j);
-              output->print("| +-+- [" PTR_FORMAT " - " PTR_FORMAT "]" " of size " SIZE_FORMAT "%s",
-                               p2i(mapped_to.start), p2i(mapped_to.end()),
-                               NMTUtil::amount_in_scale(mapped_to.size, scale), scale_name);
-              bool first_commit = true;
-              for (int c = 0; c < committed_ranges.length(); c++) {
-                TrackedRange& committed_range = committed_ranges.at(c);
-                const Range commited(committed_range.start, committed_range.size);
-                if (overlaps(commited, mapped_to)) {
-                  const Range mapped_committed = overlap_of(commited, mapped_to);
-                  if (first_commit) {
-                    first_commit = false;
-                    if (is_same(mapped_committed, mapped_to)) {
-                      output->print_cr(" mapped and commited");
-                      break;
-                    } else {
-                      output->print_cr(" mapped to");
-                    }
-                  }
-                  const Range mapped_not_commited_pre(mapped_to.start, pointer_delta(mapped_to.start, mapped_to.start, 1));
-                  const Range mapped_not_commited_post(mapped_committed.end(), pointer_delta(mapped_to.end(), mapped_committed.end(), 1));
-                  if (mapped_not_commited_pre.size > 0) {
-                    output->print_cr("| | +--- [" PTR_FORMAT " - " PTR_FORMAT "]" " not committed " SIZE_FORMAT "%s",
-                                  p2i(mapped_not_commited_pre.start), p2i(mapped_not_commited_pre.end()),
-                                  NMTUtil::amount_in_scale(mapped_not_commited_pre.size, scale), scale_name);
-                  }
-                  output->print_cr("| | +--- [" PTR_FORMAT " - " PTR_FORMAT "]" " committed " SIZE_FORMAT "%s",
-                                p2i(mapped_committed.start), p2i(mapped_committed.end()),
-                                NMTUtil::amount_in_scale(mapped_committed.size, scale), scale_name);
-                  if (mapped_not_commited_post.size > 0) {
-                    output->print_cr("| | +--- [" PTR_FORMAT " - " PTR_FORMAT "]" " not committed " SIZE_FORMAT "%s",
-                                  p2i(mapped_not_commited_post.start), p2i(mapped_not_commited_post.end()),
-                                  NMTUtil::amount_in_scale(mapped_not_commited_post.size, scale), scale_name);
-                  }
+
+      for (int i = 0; i < merged_maps.length(); i++) {
+        const MergedMapped& merged_map = merged_maps.at(i);
+        const TrackedRange& mapped_range = merged_map.virt;
+        if (!overlaps(reserved_range, mapped_range)) {
+          continue;
+        }
+        const char* scale_name = NMTUtil::scale_name(scale);
+        output->print_cr("+-+- [" PTR_FORMAT " - " PTR_FORMAT "]"
+                         " of size " SIZE_FORMAT "%s",
+                         p2i(mapped_range.start), p2i(mapped_range.end()),
+                         NMTUtil::amount_in_scale(mapped_range.size, scale), scale_name);
+        for (int j = 0; j < merged_map.phys.length(); j++) {
+          const Range mapped_to = merged_map.phys.at(j);
+          output->print("| +-+- [" PTR_FORMAT " - " PTR_FORMAT "]"
+                        " of size " SIZE_FORMAT "%s",
+                        p2i(mapped_to.start), p2i(mapped_to.end()),
+                        NMTUtil::amount_in_scale(mapped_to.size, scale), scale_name);
+          bool first_commit = true;
+          for (int c = 0; c < committed_ranges.length(); c++) {
+            TrackedRange& committed_range = committed_ranges.at(c);
+            const Range commited(committed_range.start, committed_range.size);
+            if (overlaps(commited, mapped_to)) {
+              const Range mapped_committed = overlap_of(commited, mapped_to);
+              if (first_commit) {
+                first_commit = false;
+                if (is_same(mapped_committed, mapped_to)) {
+                  output->print_cr(" mapped and commited");
+                  break;
+                } else {
+                  output->print_cr(" mapped to");
                 }
               }
-              if (first_commit) {
-                output->print_cr(" mapped and not commited");
+              const Range mapped_not_commited_pre(
+                  mapped_to.start, pointer_delta(mapped_to.start, mapped_to.start, 1));
+              const Range mapped_not_commited_post(
+                  mapped_committed.end(),
+                  pointer_delta(mapped_to.end(), mapped_committed.end(), 1));
+              if (mapped_not_commited_pre.size > 0) {
+                output->print_cr(
+                    "| | +--- [" PTR_FORMAT " - " PTR_FORMAT "]"
+                    " not committed " SIZE_FORMAT "%s",
+                    p2i(mapped_not_commited_pre.start), p2i(mapped_not_commited_pre.end()),
+                    NMTUtil::amount_in_scale(mapped_not_commited_pre.size, scale), scale_name);
+              }
+              output->print_cr("| | +--- [" PTR_FORMAT " - " PTR_FORMAT "]"
+                               " committed " SIZE_FORMAT "%s",
+                               p2i(mapped_committed.start), p2i(mapped_committed.end()),
+                               NMTUtil::amount_in_scale(mapped_committed.size, scale), scale_name);
+              if (mapped_not_commited_post.size > 0) {
+                output->print_cr(
+                    "| | +--- [" PTR_FORMAT " - " PTR_FORMAT "]"
+                    " not committed " SIZE_FORMAT "%s",
+                    p2i(mapped_not_commited_post.start), p2i(mapped_not_commited_post.end()),
+                    NMTUtil::amount_in_scale(mapped_not_commited_post.size, scale), scale_name);
               }
             }
-            output->print_cr("|");
+          }
+          if (first_commit) {
+            output->print_cr(" mapped and not commited");
           }
         }
-      } else {
-        // Version 1: Prints the true mappings.
-        for (int mapped_range_idx = 0; mapped_range_idx < mapped_ranges.length(); mapped_range_idx++) {
-          TrackedOffsetRange& mapped_range = mapped_ranges.at(mapped_range_idx);
-          if (overlaps(reserved_range, mapped_range)) {
-            print_mapped_virtual_memory_region(mapped_range);
-            for (int committed_range_idx = 0; committed_range_idx < committed_ranges.length();
-                committed_range_idx++) {
-              TrackedRange& committed_range = committed_ranges.at(committed_range_idx);
-              const Range commited(committed_range.start, committed_range.size);
-              const Range mapped_to(mapped_range.physical_address, mapped_range.size);
-              if (overlaps(commited, mapped_to)) {
-                const Range mapped_committed = overlap_of(commited, mapped_to);
-                print_committed_memory(committed_range, mapped_committed);
-              }
-            }
-            output->print_cr("|");
-          }
-        }
+        output->print_cr("|");
       }
       output->print_cr("");
     }
 
+    // Step 4.
+    // ???
     for (int i = 0; i < committed_ranges.length(); i++) {
       TrackedRange& committed_range = committed_ranges.at(i);
       GrowableArray<Range>& mapped_committed_ranges = mapped_committed_per_range[i];
@@ -502,7 +503,6 @@ void VirtualMemoryView::remove_view_into_space(const PhysicalMemorySpace& space,
   VirtualMemoryView::merge_mapped(range_array);
 }
 
-// TODO: Maybe sorting the regions makes this easier to understand?
 void VirtualMemoryView::add_view_into_space(const PhysicalMemorySpace& space,
                                                   address base_addr, size_t size, address offset,
                                                   MEMFLAGS flag, const NativeCallStack& stack) {
@@ -656,6 +656,12 @@ VirtualMemoryView::Range VirtualMemoryView::union_of(Range a, Range b) {
 
 bool VirtualMemoryView::is_same(Range a, Range b) {
   return a.start == b.start && a.size == b.size;
+}
+
+bool VirtualMemoryView::same_stack(TrackedRange a, TrackedRange b) {
+  NativeCallStackStorage::StackIndex ai = a.stack_idx;
+  NativeCallStackStorage::StackIndex bi = b.stack_idx;
+  return ai.index() == bi.index() && ai.chunk() == bi.chunk() || _stack_storage->get(ai).equals(_stack_storage->get(bi));
 }
 
 VirtualMemoryView::Range VirtualMemoryView::overlap_of(Range a, Range b) {

@@ -188,12 +188,14 @@ private:
   static bool is_same(Range a, Range b);
   static Range union_of(Range a, Range b);
   static Range overlap_of(Range a, Range b);
+  static bool same_stack(TrackedRange a, TrackedRange b);
 
   // Pre-condition: ranges is sorted in a left-aligned fashion
   // That is: (a,b) comes before (c,d) if a <= c
   // Merges the ranges into a minimal sequence, taking into account that two ranges can only be merged if:
   // 1. Their NativeCallStacks are the same
   // 2. Their starts align correctly
+  static void merge_ranges(GrowableArray<Range>& ranges);
   static void merge_committed(RegionStorage& ranges);
   static void merge_mapped(OffsetRegionStorage& ranges);
 
