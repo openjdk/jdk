@@ -114,8 +114,6 @@ applications/jcstress/copy.java 8229852 linux-all
 containers/docker/TestJcmd.java 8278102 linux-all
 containers/docker/TestMemoryAwareness.java 8303470 linux-all
 
-runtime/CompressedOops/CompressedClassPointers.java 8317610 linux-x64,windows-x64
-
 #############################################################################
 
 # :hotspot_serviceability
@@ -135,7 +133,7 @@ serviceability/sa/ClhsdbPstack.java#core 8267433 macosx-x64
 serviceability/sa/TestJmapCore.java 8267433 macosx-x64
 serviceability/sa/TestJmapCoreMetaspace.java 8267433 macosx-x64
 
-serviceability/attach/ConcAttachTest.java 8290043,8318866 linux-all,macosx-all
+serviceability/attach/ConcAttachTest.java 8290043 linux-all
 
 serviceability/jvmti/stress/StackTrace/NotSuspended/GetStackTraceNotSuspendedStressTest.java 8315980 linux-all,windows-x64
 

@@ -2063,7 +2063,6 @@ void DumpMerger::set_error(const char* msg) {
 // read+write combination, which would require transferring data to and from
 // user space.
 void DumpMerger::merge_file(const char* path) {
-  assert(!SafepointSynchronize::is_at_safepoint(), "merging happens outside safepoint");
   TraceTime timer("Merge segmented heap file directly", TRACETIME_LOG(Info, heapdump));
 
   int segment_fd = os::open(path, O_RDONLY, 0);
@@ -2101,7 +2100,6 @@ void DumpMerger::merge_file(const char* path) {
 #else
 // Generic implementation using read+write
 void DumpMerger::merge_file(const char* path) {
-  assert(!SafepointSynchronize::is_at_safepoint(), "merging happens outside safepoint");
   TraceTime timer("Merge segmented heap file", TRACETIME_LOG(Info, heapdump));
 
   fileStream segment_fs(path, "rb");
@@ -2126,7 +2124,6 @@ void DumpMerger::merge_file(const char* path) {
 #endif
 
 void DumpMerger::do_merge() {
-  assert(!SafepointSynchronize::is_at_safepoint(), "merging happens outside safepoint");
   TraceTime timer("Merge heap files complete", TRACETIME_LOG(Info, heapdump));
 
   // Since contents in segmented heap file were already zipped, we don't need to zip

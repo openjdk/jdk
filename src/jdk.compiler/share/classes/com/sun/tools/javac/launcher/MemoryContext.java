@@ -177,7 +177,7 @@ final class MemoryContext {
         var file = descriptor.sourceRootPath().resolve(path);
 
         // Trivial case: no matching source file exists
-        if (Files.notExists(file)) return null;
+        if (!Files.exists(file)) return null;
 
         // Compile source file (unit) with similar options as the program.
         var opts = options.forSubsequentCompilations();

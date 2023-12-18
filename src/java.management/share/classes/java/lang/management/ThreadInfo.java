@@ -533,12 +533,13 @@ public class ThreadInfo {
     }
 
     /**
-     * Tests if the thread associated with this {@code ThreadInfo}
-     * is suspended.  This method returns {@code true} if
-     * {@link Thread#suspend} has been called.
+     * Tests if the thread associated with this {@code ThreadInfo} is
+     * <a href="{@docRoot}/../specs/jvmti.html#SuspendThread">suspended</a>.
      *
      * @return {@code true} if the thread is suspended;
      *         {@code false} otherwise.
+     *
+     * @spec jvmti.html JVM Tool Interface
      */
     public boolean isSuspended() {
          return suspended;
