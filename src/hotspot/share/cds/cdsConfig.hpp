@@ -52,7 +52,7 @@ public:
   static void initialize() NOT_CDS_RETURN;
   static void check_system_property(const char* key, const char* value) NOT_CDS_RETURN;
   static void check_unsupported_dumping_properties() NOT_CDS_RETURN;
-  static bool check_vm_args_consistency(bool patch_mod_javabase,  bool mode_flag_cmd_line) NOT_CDS_RETURN_(false);
+  static bool check_vm_args_consistency(bool patch_mod_javabase,  bool mode_flag_cmd_line) NOT_CDS_RETURN_(true);
 
   // Basic CDS features
   static bool      is_dumping_archive()                      { return is_dumping_static_archive() || is_dumping_dynamic_archive(); }

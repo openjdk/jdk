@@ -1929,10 +1929,10 @@ public class X509CertSelector implements CertSelector {
         }
 
         if (debug != null) {
-            debug.println("X509CertSelector.match(SN: "
-                + (xcert.getSerialNumber()).toString(16) + "\n  Issuer: "
-                + xcert.getIssuerX500Principal() + "\n  Subject: " + xcert.getSubjectX500Principal()
-                + ")");
+            debug.println("X509CertSelector.match(Serial number: "
+                + Debug.toString(xcert.getSerialNumber())
+                + "\n  Issuer: " + xcert.getIssuerX500Principal() + "\n  Subject: "
+                + xcert.getSubjectX500Principal() + ")");
         }
 
         /* match on X509Certificate */
