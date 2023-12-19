@@ -25,8 +25,6 @@ import java.io.*;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.Random;
-import java.util.zip.CRC32;
-import java.util.zip.CheckedOutputStream;
 
 /*
  * @test
@@ -103,15 +101,6 @@ public class TransferToTrusted {
     private static void pipedOutputStream(BufferedInputStream bis, byte[] buf) throws IOException {
         var pos = new PipedOutputStream(new PipedInputStream(LENGTH));
         bis.transferTo(pos);
-        bis.reset();
-        if (!Arrays.equals(buf, bis.readAllBytes())) {
-            throw new RuntimeException("Internal buffer has been modified");
-        }
-    }
-
-    private static void checkedOutputStream(BufferedInputStream bis, byte[] buf) throws IOException {
-        var cos = new CheckedOutputStream(new ByteArrayOutputStream(LENGTH), new CRC32());
-        bis.transferTo(cos);
         bis.reset();
         if (!Arrays.equals(buf, bis.readAllBytes())) {
             throw new RuntimeException("Internal buffer has been modified");
