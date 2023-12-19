@@ -38,10 +38,10 @@ import jdk.jfr.internal.Type;
 @Category({"Java Development Kit", "Serialization"})
 @Description("Methods and fields misdeclarations")
 @MirrorEvent(className = "jdk.internal.event.SerializationMisdeclarationEvent")
-@RemoveFields({"duration", "stackTrace", "thread"})
+@RemoveFields({"duration", "stackTrace", "eventThread"})
 public final class SerializationMisdeclarationEvent extends AbstractJDKEvent {
 
-    @Label("Class")
+    @Label("MisdeclaredClass")
     public Class<?> cls;
 
     @Label("Kind")
