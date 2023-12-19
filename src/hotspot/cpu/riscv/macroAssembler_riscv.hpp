@@ -1063,6 +1063,19 @@ public:
   void atomic_xchgwu(Register prev, Register newv, Register addr);
   void atomic_xchgalwu(Register prev, Register newv, Register addr);
 
+  void atomic_cas(Register prev, Register newv, Register addr);
+  void atomic_casw(Register prev, Register newv, Register addr);
+  void atomic_casl(Register prev, Register newv, Register addr);
+  void atomic_caslw(Register prev, Register newv, Register addr);
+  void atomic_casal(Register prev, Register newv, Register addr);
+  void atomic_casalw(Register prev, Register newv, Register addr);
+  void atomic_caswu(Register prev, Register newv, Register addr);
+  void atomic_caslwu(Register prev, Register newv, Register addr);
+  void atomic_casalwu(Register prev, Register newv, Register addr);
+
+  void atomic_cas(Register prev, Register newv, Register addr, enum operand_size size,
+              Assembler::Aqrl acquire = Assembler::relaxed, Assembler::Aqrl release = Assembler::relaxed);
+
   // Emit a far call/jump. Only invalidates the tmp register which
   // is used to keep the entry address for jalr.
   // The address must be inside the code cache.
