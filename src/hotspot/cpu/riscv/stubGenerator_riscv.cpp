@@ -4160,7 +4160,7 @@ class StubGenerator: public StubCodeGenerator {
     // And, as the core algorithm of md5 works on 32-bits words, so
     // in the following code, it does not care about the content of
     // higher 32-bits in state[x]. Based on this observation,
-    // we can apply futher optimization, which is to just ignore the
+    // we can apply further optimization, which is to just ignore the
     // higher 32-bits in state0/state2, rather than set the higher
     // 32-bits of state0/state2 to zero explicitly with extra instructions.
     __ ld(state0, Address(state));
