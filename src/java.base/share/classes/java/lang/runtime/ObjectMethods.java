@@ -216,7 +216,8 @@ public class ObjectMethods {
         MethodHandle isInstance = MethodHandles.dropArguments(CLASS_IS_INSTANCE.bindTo(receiverClass), 0, receiverClass); // (RO)Z
         MethodHandle accumulator = MethodHandles.dropArguments(TRUE, 0, receiverClass, receiverClass); // (RR)Z
 
-        getters.sort((mh1, mh2) -> {
+        var equalsGetters = new ArrayList<>(getters);
+        equalsGetters.sort((mh1, mh2) -> {
             var rt1 = mh1.type().returnType();
             var rt2 = mh2.type().returnType();
             if (rt1.isPrimitive() == rt2.isPrimitive() || rt1.isEnum() == rt2.isEnum()) {
@@ -225,7 +226,7 @@ public class ObjectMethods {
             return rt1.isPrimitive() || rt1.isEnum() ? 1 : rt1.isArray() || Iterable.class.isAssignableFrom(rt1) ? -1 : 0;
         });
 
-        for (MethodHandle getter : getters) {
+        for (MethodHandle getter : equalsGetters) {
             MethodHandle equalator = equalator(getter.type().returnType()); // (TT)Z
             MethodHandle thisFieldEqual = MethodHandles.filterArguments(equalator, 0, getter, getter); // (RR)Z
             accumulator = MethodHandles.guardWithTest(thisFieldEqual, accumulator, instanceFalse.asType(rr));
@@ -428,7 +429,7 @@ public class ObjectMethods {
             if (!MethodHandle.class.equals(type))
                 throw new IllegalArgumentException(type.toString());
         }
-        List<MethodHandle> getterList = Arrays.asList(getters);
+        List<MethodHandle> getterList = List.of(getters);
         MethodHandle handle = switch (methodName) {
             case "equals"   -> {
                 if (methodType != null && !methodType.equals(MethodType.methodType(boolean.class, recordClass, Object.class)))
