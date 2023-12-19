@@ -916,8 +916,8 @@ static void test_random_aligned_allocation(size_t arena_alignment_words, SizeRan
 
 #define TEST_ARENA_WITH_ALIGNMENT_SMALL_RANGE(al)                              \
 TEST_VM(metaspace, MetaspaceArena_test_random_small_aligned_allocation_##al) { \
-	static const SizeRange range(Metaspace::min_allocation_word_size, 128);      \
-	test_random_aligned_allocation(al, range);                                   \
+  static const SizeRange range(Metaspace::min_allocation_word_size, 128);      \
+  test_random_aligned_allocation(al, range);                                   \
 }
 
 #ifdef _LP64

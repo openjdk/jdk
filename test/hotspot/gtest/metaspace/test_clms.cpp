@@ -405,7 +405,7 @@ static void test_random(size_t klass_arena_alignment) {
 
 #define TEST_RANDOM_N(n)               \
 TEST_VM(metaspace, CLMS_random_##n) {  \
-	test_random(n);                      \
+  test_random(n);                      \
 }
 
 TEST_RANDOM_N(1)
