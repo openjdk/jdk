@@ -226,8 +226,8 @@ class Child {
         }
     }
 
-    private boolean success1 = false;
-    private boolean success2 = false;
+    private volatile boolean success1 = false;
+    private volatile boolean success2 = false;
 
     final Frame frame = new Frame("Source Frame");
     final DragSource dragSource = DragSource.getDefaultDragSource();
