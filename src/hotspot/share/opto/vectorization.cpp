@@ -710,14 +710,14 @@ AlignmentSolution* AlignmentSolver::solve() const {
 
   // Out of simplicity: non power-of-2 stride not supported.
   if (!is_power_of_2(abs(_pre_stride))) {
-    return new AlignmentSolutionEmpty("non power-of-2 stride not supported");
+    return new EmptyAlignmentSolution("non power-of-2 stride not supported");
   }
   assert(is_power_of_2(abs(_main_stride)), "main_stride is power of 2");
   assert(_aw > 0 && is_power_of_2(_aw), "aw must be power of 2");
 
   // Out of simplicity: non power-of-2 scale not supported.
   if (abs(_scale) == 0 || !is_power_of_2(abs(_scale))) {
-    return new AlignmentSolutionEmpty("non power-of-2 scale not supported");
+    return new EmptyAlignmentSolution("non power-of-2 scale not supported");
   }
 
   // We analyze the address of mem_ref. The idea is to disassemble it into a linear
@@ -758,9 +758,17 @@ AlignmentSolution* AlignmentSolver::solve() const {
   //      plus "init" if it is constant.
   //   3) The "C_invar * var_invar" is the factorization of "invar" into a constant
   //      and variable term. If there is no invariant, then "C_invar" is zero.
+  //
+  //        invar = C_invar * var_invar                                                                          (FAC_INVAR)
+  //
   //   4) The "C_init * var_init" is the factorization of "scale * init" into a
   //      constant and a variable term. If "init" is constant, then "C_init" is
   //      zero, and "C_const" accounts for "init" instead.
+  //
+  //        scale * init = C_init * var_init + scale * C_const_init                                              (FAC_INIT)
+  //        C_init       = (init is constant) ? 0    : (scale * init / var_init)
+  //        C_const_init = (init is constant) ? init : 0
+  //
   //   5) The "C_pre * pre_iter" term represents how much the iv is incremented
   //      during the "pre_iter" pre-loop iterations. This term can be adjusted
   //      by changing the pre-loop limit, which defines how many pre-loop iterations
@@ -789,14 +797,14 @@ AlignmentSolution* AlignmentSolver::solve() const {
   //
   // Alignment must be maintained over all main-loop iterations, i.e. for any main_iter >= 0, we require:
   //
-  //   C_main % aw = 0                                                                                           (2*)
+  //   C_main % aw = 0                                                                                           (2)
   //
   const int C_main_mod_aw = AlignmentSolution::mod(C_main, _aw);
 
   DEBUG_ONLY( trace_main_iteration_alignment(C_const, C_invar, C_init, C_pre, C_main, C_main_mod_aw); )
 
   if (C_main_mod_aw != 0) {
-    return new AlignmentSolutionEmpty("EQ(2*) not satisfied (cannot align across main-loop iterations)");
+    return new EmptyAlignmentSolution("EQ(2) not satisfied (cannot align across main-loop iterations)");
   }
 
   // In what follows, we need to show that the C_const, init and invar terms can be aligned by
@@ -818,157 +826,272 @@ AlignmentSolution* AlignmentSolver::solve() const {
   // We strengthen the constraints by splitting the equation into 3 equations, where the C_const,
   // init, and invar term are aligned individually:
   //
-  //   (C_init  * var_init  + C_pre * pre_iter_C_init ) % aw = 0                 (4a)
+  //   (C_const             + C_pre * pre_iter_C_const) % aw = 0                 (4a)
   //   (C_invar * var_invar + C_pre * pre_iter_C_invar) % aw = 0                 (4b)
-  //   (C_const             + C_pre * pre_iter_C_const) % aw = 0                 (4c)
+  //   (C_init  * var_init  + C_pre * pre_iter_C_init ) % aw = 0                 (4c)
   //
   // If we cannot prove that the C_const, init and invar terms can be aligned independently, then
   // we can always modify init (by 1) or invar (by var_invar), and hence invalidate (3). Hence,
   // this strengthening is necessary to guarantee statically that (3) has a solution, i.e. that
   // we can ensure alignment for and init or invar.
   //
-  // We can only guarantee solutions to (4a) and (4b) if C_init and C_invar are zero or
-  // multiples of C_pre:
+  // Equations (4a, b, c) can have one of these states:
   //
-  //   C_init  % abs(C_pre) = 0                                                  (5a*)
-  //   C_invar % abs(C_pre) = 0                                                  (5b*)
+  //   trivial:     The solution can be any integer.
+  //   constrained: There is a (periodic) solution, but it is not trivial.
+  //   empty:       Statically we cannot guarantee a solution for all var_invar and var_init.
   //
-  // Which means there are integers X and Y such that:
+  // We look at (4a):
   //
-  //   C_init  = C_pre * X       (X = 0 if C_init  = 0, else X = C_init  / C_pre)
-  //   C_invar = C_pre * Y       (Y = 0 if C_invar = 0, else Y = C_invar / C_pre)
+  //   abs(C_pre) >= aw  AND  C_const % aw == 0
+  //   -> Adjustment has no effect, C_const aw aligned    -> trivial
   //
-  //   (C_init    * var_init  + C_pre * pre_iter_C_init ) % aw =
-  //   (C_pre * X * var_init  + C_pre * pre_iter_C_init ) % aw =
-  //   (C_pre * (X * var_init  + pre_iter_C_init)       ) % aw = 0
+  //   abs(C_pre) >= aw  AND  C_const % aw != 0
+  //   -> Adjustment has no effect, C_const not aligned   -> empty
   //
-  //   (C_invar   * var_invar + C_pre * pre_iter_C_invar) % aw =
-  //   (C_pre * Y * var_invar + C_pre * pre_iter_C_invar) % aw =
-  //   (C_pre * (Y * var_invar + pre_iter_C_invar)      ) % aw = 0
+  //   abs(C_pre) <  aw  AND  C_const % abs(C_pre) == 0
+  //   -> alignment has effect
+  //   -> C_const can be aligned with C_pre
+  //   -> Not trivial, because abs(C_pre) < aw            -> constrained
   //
-  // And hence, we know that there are solutions for pre_iter_C_init and pre_iter_C_invar,
-  // based on X, Y, var_init, and var_invar. We call them:
+  //   abs(C_pre) <  aw  AND  C_const % abs(C_pre) != 0
+  //   -> alignment has effect
+  //   -> But C_const cannot be aligned with C_pre        -> empty
   //
-  //   pre_iter_C_init  = alignment_init (X * var_init)
-  //   pre_iter_C_invar = alignment_invar(Y * var_invar)
+  // With analogue argumentation for (4b):
   //
-  const int C_init_mod_abs_C_pre  = AlignmentSolution::mod(C_init,  abs(C_pre));
-  const int C_invar_mod_abs_C_pre = AlignmentSolution::mod(C_invar, abs(C_pre));
+  //   abs(C_pre) >= aw  AND  C_invar % aw == 0           -> trivial
+  //   abs(C_pre) >= aw  AND  C_invar % aw != 0           -> empty
+  //   abs(C_pre) <  aw  AND  C_invar % abs(C_pre) == 0   -> constrained
+  //   abs(C_pre) <  aw  AND  C_invar % abs(C_pre) != 0   -> empty
+  //
+  // With analogue argumentation for (4c):
+  //
+  //   abs(C_pre) >= aw  AND  C_init  % aw == 0           -> trivial
+  //   abs(C_pre) >= aw  AND  C_init  % aw != 0           -> empty
+  //   abs(C_pre) <  aw  AND  C_init  % abs(C_pre) == 0   -> constrained
+  //   abs(C_pre) <  aw  AND  C_init  % abs(C_pre) != 0   -> empty
+  //
+  // Out of these states follows the state for the solution of pre_iter:
+  //
+  //   Trivial:     If (4a, b, c) are all trivial.
+  //   Empty:       If any of (4a, b, c) is empty, because then we cannot guarantee a solution
+  //                for pre_iter, for all possible invar and init values.
+  //   Constrained: Else. Incidentally, (4a, b, c) are all constrained themselves, as we argue below.
 
-  DEBUG_ONLY( trace_init_and_invar_alignment(C_invar, C_init, C_pre, C_invar_mod_abs_C_pre, C_init_mod_abs_C_pre); )
+  const EQ4 eq4(C_const, C_invar, C_init, C_pre, _aw);
+  const EQ4::State eq4a_state = eq4.eq4a_state();
+  const EQ4::State eq4b_state = eq4.eq4b_state();
+  const EQ4::State eq4c_state = eq4.eq4c_state();
 
-  if (C_init_mod_abs_C_pre != 0) {
-    return new AlignmentSolutionEmpty("EQ(5a*) not satisfied (cannot align init)");
+#ifdef ASSERT
+  if (is_trace()) {
+    eq4.trace();
   }
-  if (C_invar_mod_abs_C_pre != 0) {
-    return new AlignmentSolutionEmpty("EQ(5b*) not satisfied (cannot align invar)");
-  }
+#endif
 
-  // Having solved (4a) and (4b), we now want to find solutions for (4c), i.e. we need
-  // to show that the C_const term can be aligned with pre_iter_C_const.
-  //
-  // We can assume that abs(C_pre) as well as aw are both powers of 2.
-  //
-  // If abs(C_pre) >= aw, then:
-  //
-  //   for any pre_iter >= 0:         (C_pre * pre_iter        ) % aw = 0
-  //   for any pre_iter_C_const >= 0: (C_pre * pre_iter_C_const) % aw = 0
-  //
-  // which implies that pre_iter (and pre_iter_C_const) have no effect on the alignment of
-  // the C_const term. We thus either have a trivial solution, and any pre_iter aligns
-  // the address, or there is no solution. To have the trivial solution, we require:
-  //
-  //   C_const % aw = 0                                                       (6*)
-  //
-  assert(abs(C_pre) > 0 && is_power_of_2(abs(C_pre)), "abs(C_pre) must be power of 2");
-  const bool abs_C_pre_ge_aw = abs(C_pre) >= _aw;
-
-  DEBUG_ONLY( trace_abs_C_pre_ge_aw(C_pre, abs_C_pre_ge_aw); )
-
-  if (abs_C_pre_ge_aw) {
-    const int C_const_mod_aw = AlignmentSolution::mod(C_const, _aw);
-
-    DEBUG_ONLY( trace_C_const_mod_aw(C_const, C_const_mod_aw); )
-
-    // The C_init and C_invar terms are trivially aligned.
-    assert(AlignmentSolution::mod(C_init,  _aw) == 0,  "implied by abs(C_pre) >= aw and (5a*)");
-    assert(AlignmentSolution::mod(C_invar, _aw) == 0,  "implied by abs(C_pre) >= aw and (5b*)");
-
-    if (C_const_mod_aw != 0) {
-      return new AlignmentSolutionEmpty("EQ(6*) not satisfied: C_const not aligned");
-    } else {
-      // Solution is trivial, holds for any pre-loop limit.
-      return new AlignmentSolutionTrivial();
-    }
+  // If (4a, b, c) are all trivial, then also the solution for pre_iter is trivial:
+  if (eq4a_state == EQ4::State::TRIVIAL &&
+      eq4b_state == EQ4::State::TRIVIAL &&
+      eq4c_state == EQ4::State::TRIVIAL) {
+    return new TrivialAlignmentSolution();
   }
 
-  // Otherwise, if abs(C_pre) < aw, we find all solutions for pre_iter_C_const in (4c).
-  // We state pre_iter_C_const in terms of the smallest possible pre_q and pre_r, such
-  // that 0 <= pre_r < pre_q:
-  //
-  //   pre_iter_C_const = pre_r + pre_q * m  (for any m >= 0)                     (7)
-  //
-  // We can now restate (4c) with (7):
-  //
-  //   (C_const + C_pre * pre_iter_C_const         ) % aw = 0                     (take (4c))
-  //   (C_const + C_pre * (pre_r + pre_q * m)      ) % aw = 0                     (apply (7))
-  //   (C_const + C_pre * pre_r + C_pre * pre_q * m) % aw = 0                     (8)
-  //
-  // Since this holds for any m >= 0, we require:
-  //
-  //   (C_pre * pre_q) % aw = 0                                                   (9)
-  //   (C_const + C_pre * pre_r) % aw = 0                                         (10*)
-  //
-  // Given that abs(C_pre) is a powers of 2, and abs(C_pre) < aw:
-  //
-  const int pre_q = _aw / abs(C_pre);
-  //
-  // We brute force the solution for pre_r by enumerating all values 0..pre_q-1 and
-  // checking EQ(10*).
-  //
-  // Assuming we found a solution for (4c), and also for (4a) and (4b), we know that
-  // the solution to pre_iter is non-trivial:
-  //
-  //   pre_iter = pre_iter_C_const  + pre_iter_C_init              + pre_iter_C_invar
-  //            = pre_r + pre_q * m + alignment_init(X * var_init) + alignment_invar(Y * var_invar)
-  //
-  // Hence, the solution for pre_iter depends on:
-  //   - Always: pre_r and pre_q
-  //   - If a variable init is present (i.e. C_init = scale), then we know that to
-  //     satisfy (5a*), we must have abs(pre_stride) = 1, X = 1 and C_pre = scale.
-  //     The solution thus depends on var_init = init / scale. We thus have a
-  //     dependency on scale. We could also add a dependency for init, but since
-  //     it is the same for all mem_refs in the loop this is unnecessary. If init
-  //     is constant, then we could add a dependency that there is no variable init.
-  //     But since init is the same for all mem_refs, this is unecessary.
-  //   - If an invariant is present (i.e. C_invar = abs(invar_factor)), then we know
-  //     from (5b*), that Y = abs(invar_factor) / (scale * pre_stride). The solution
-  //     depends on Y * var_invar = abs(invar_factor) * var_invar / (scale * pre_stride),
-  //     hence we have to add a dependency for invar, and scale (pre_stride is the
-  //     same for all mem_refs in the loop). If there is no invariant, then we add
-  //     a dependency that there is no invariant.
-  //
-  // Other mem_refs must have solutions with the same dependencies, otherwise we
-  // cannot ensure that they require the same number of pre-loop iterations.
-
-  DEBUG_ONLY( trace_find_pre_q(C_const, C_pre, pre_q); )
-
-  for (int pre_r = 0; pre_r < pre_q; pre_r++) {
-    const int eq10_val = AlignmentSolution::mod(C_const + C_pre * pre_r, _aw);
-
-    DEBUG_ONLY( trace_find_pre_r(C_const, C_pre, pre_q, pre_r, eq10_val); )
-
-    if (eq10_val == 0) {
-      assert((C_init == 0) == _init_node->is_ConI(), "init consistent");
-      assert((C_invar == 0) == (_invar == nullptr), "invar consistent");
-
-      const Node* invar_dependency = _invar;
-      const int scale_dependency  = (_invar != nullptr || !_init_node->is_ConI()) ? _scale : 0;
-      return new AlignmentSolutionConstrained(pre_r, pre_q, _mem_ref,
-                                              invar_dependency, scale_dependency);
-    }
+  // If any of (4a, b, c) is empty, then we also cannot guarantee a solution for pre_iter, for
+  // any init and invar, hence the solution for pre_iter is empty:
+  if (eq4a_state == EQ4::State::EMPTY ||
+      eq4b_state == EQ4::State::EMPTY ||
+      eq4c_state == EQ4::State::EMPTY) {
+    return new EmptyAlignmentSolution("EQ(4a, b, c) not all non-empty: cannot align const, invar and init terms individually");
   }
-  return new AlignmentSolutionEmpty("EQ(10*) has no solution for pre_r");
+
+  // If abs(C_pre) >= aw, then the solutions to (4a, b, c) are all either trivial or empty, and
+  // hence we would have found the solution to pre_iter above as either trivial or empty. Thus
+  // we now know that:
+  //
+  //   abs(C_pre) < aw
+  //
+  assert(abs(C_pre) < _aw, "implied by constrained case");
+
+  // And since abs(C_pre) < aw, the solutions of (4a, b, c) can now only be constrained or empty.
+  // But since we already handled the empty case, the solutions are now all constrained.
+  assert(eq4a_state == EQ4::State::CONSTRAINED &&
+         eq4a_state == EQ4::State::CONSTRAINED &&
+         eq4a_state == EQ4::State::CONSTRAINED, "all must be constrained now");
+
+  // And since they are all constrained, we must have:
+  //
+  //   C_const % abs(C_pre) = 0                                                  (5a)
+  //   C_invar % abs(C_pre) = 0                                                  (5b)
+  //   C_init  % abs(C_pre) = 0                                                  (5c)
+  //
+  assert(AlignmentSolution::mod(C_const, abs(C_pre)) == 0, "EQ(5a): C_const must be alignable");
+  assert(AlignmentSolution::mod(C_invar, abs(C_pre)) == 0, "EQ(5b): C_invar must be alignable");
+  assert(AlignmentSolution::mod(C_init,  abs(C_pre)) == 0, "EQ(5c): C_init  must be alignable");
+
+  // With (5a, b, c), we know that there are integers X, Y, Z:
+  //
+  //   C_const = X * abs(C_pre)   ==>   X = C_const / abs(C_pre)                 (6a)
+  //   C_invar = Y * abs(C_pre)   ==>   Y = C_invar / abs(C_pre)                 (6b)
+  //   C_init  = Z * abs(C_pre)   ==>   Z = C_init  / abs(C_pre)                 (6c)
+  //
+  // Futher, we define:
+  //
+  //   sign(C_pre) = C_pre / abs(C_pre) = (C_pre > 0) ? 1 : -1,                  (7)
+  //
+  // We know that abs(C_pre) as well as aw are a powers of 2, and since (5) we can define integer q:
+  //
+  //   q = aw / abs(C_pre)                                                       (8)
+  //
+  const int q = _aw / abs(C_pre);
+
+  assert(q >= 2, "implied by constrained solution");
+
+  // We now know that all terms in (4a, b, c) are divisible by abs(C_pre):
+  //
+  //   (C_const                    / abs(C_pre) + C_pre * pre_iter_C_const /  abs(C_pre)) % (aw / abs(C_pre)) =
+  //   (X * abs(C_pre)             / abs(C_pre) + C_pre * pre_iter_C_const /  abs(C_pre)) % (aw / abs(C_pre)) =
+  //   (X                                       +         pre_iter_C_const * sign(C_pre)) % q                 = 0  (9a)
+  //
+  //   -> pre_iter_C_const * sign(C_pre) = mx1 * q -               X
+  //   -> pre_iter_C_const               = mx2 * q - sign(C_pre) * X                                               (10a)
+  //      (for any integers mx1, mx2)
+  //
+  //   (C_invar        * var_invar / abs(C_pre) + C_pre * pre_iter_C_invar /  abs(C_pre)) % (aw / abs(C_pre)) =
+  //   (Y * abs(C_pre) * var_invar / abs(C_pre) + C_pre * pre_iter_C_invar /  abs(C_pre)) % (aw / abs(C_pre)) =
+  //   (Y              * var_invar              +         pre_iter_C_invar * sign(C_pre)) % q                 = 0  (9b)
+  //
+  //   -> pre_iter_C_invar * sign(C_pre) = my1 * q -               Y * var_invar
+  //   -> pre_iter_C_invar               = my2 * q - sign(C_pre) * Y * var_invar                                   (10b)
+  //      (for any integers my1, my2)
+  //
+  //   (C_init          * var_init  / abs(C_pre) + C_pre * pre_iter_C_init /  abs(C_pre)) % (aw / abs(C_pre)) =
+  //   (Z * abs(C_pre)  * var_init  / abs(C_pre) + C_pre * pre_iter_C_init /  abs(C_pre)) % (aw / abs(C_pre)) =
+  //   (Z * var_init                             +         pre_iter_C_init * sign(C_pre)) % q                 = 0  (9c)
+  //
+  //   -> pre_iter_C_init  * sign(C_pre) = mz1 * q -               Z * var_init
+  //   -> pre_iter_C_init                = mz2 * q - sign(C_pre) * Z * var_init                                    (10c)
+  //      (for any integers mz1, mz2)
+  //
+  //
+  // Having solved the equations using the division, we can re-substitute X, Y, and Z, and apply (FAC_INVAR) as
+  // well as (FAC_INIT):
+  //
+  //   pre_iter_C_const = mx2 * q - sign(C_pre) * X
+  //                    = mx2 * q - sign(C_pre) * C_const             / abs(C_pre)
+  //                    = mx2 * q - C_const / C_pre
+  //                    = mx2 * q - C_const / (scale * pre_stride)                                  (11a)
+  //
+  // If there is an invariant:
+  //
+  //   pre_iter_C_invar = my2 * q - sign(C_pre) * Y       * var_invar
+  //                    = my2 * q - sign(C_pre) * C_invar * var_invar / abs(C_pre)
+  //                    = my2 * q - sign(C_pre) * invar               / abs(C_pre)
+  //                    = my2 * q - invar / C_pre
+  //                    = my2 * q - invar / (scale * pre_stride)                                    (11b, with invar)
+  //
+  // If there is no invariant (i.e. C_invar = 0 ==> Y = 0):
+  //
+  //   pre_iter_C_invar = my2 * q                                                                   (11b, no invar)
+  //
+  // If init is variable (i.e. C_init = scale * init / var_init):
+  //
+  //   pre_iter_C_init  = mz2 * q - sign(C_pre) * Z       * var_init
+  //                    = mz2 * q - sign(C_pre) * C_init  * var_init  / abs(C_pre)
+  //                    = mz2 * q - sign(C_pre) * scale * init        / abs(C_pre)
+  //                    = mz2 * q - scale * init / C_pre
+  //                    = mz2 * q - scale * init / (scale * pre_stride)
+  //                    = mz2 * q - init / pre_stride                                               (11c, variable init)
+  //
+  // If init is variable (i.e. C_init = 0 ==> Z = 0):
+  //
+  //   pre_iter_C_init  = mz2 * q                                                                   (11c, constant init)
+  //
+  // Note, that the solutions found by (11a, b, c) are all periodic with periodicity q. We combine them,
+  // with m = mx2 + my2 + mz2:
+  //
+  //   pre_iter =   pre_iter_C_const + pre_iter_C_invar + pre_iter_C_init
+  //            =   mx2 * q  - C_const / (scale * pre_stride)
+  //              + my2 * q [- invar / (scale * pre_stride) ]
+  //              + mz2 * q [- init / pre_stride            ]
+  //
+  //            =   m * q                                 (periodic part)
+  //              - C_const / (scale * pre_stride)        (align constant term)
+  //             [- invar / (scale * pre_stride)   ]      (align invariant term, if present)
+  //             [- init / pre_stride              ]      (align variable init term, if present)    (12)
+  //
+  // We can still simply simplifiy this solution, with:
+  //
+  //   r = (-C_const / (scale * pre_stride)) % q                                                    (13)
+  //
+  const int r = AlignmentSolution::mod(-C_const / (_scale * _pre_stride), q);
+  //
+  //   pre_iter = m * q + r
+  //                   [- invar / (scale * pre_stride)  ]
+  //                   [- init / pre_stride             ]                                           (14)
+  //
+  // We thus get a solution that can be stated in terms of:
+  //
+  //   q (periodicity), r (constant alignment), invar, scale, pre_stride, init
+  //
+  // However, pre_stride and init are shared by all mem_ref in the loop, hence we do not need to provide
+  // them in the solution description.
+
+  DEBUG_ONLY( trace_constrained_solution(C_const, C_invar, C_init, C_pre, q, r); )
+  
+  return new ConstrainedAlignmentSolution(_mem_ref, q, r, _invar, _scale);
+
+  // APPENDIX:
+  // We can now verify the success of the solution given by (12):
+  //
+  //   adr % aw =
+  //
+  //   -> Simple form
+  //   (base + offset + invar + scale * iv) % aw =
+  //
+  //   -> Expand iv
+  //   (base + offset + invar + scale * (init + pre_stride * pre_iter + main_stride * main_iter)) % aw =
+  //
+  //   -> Reshape
+  //   (base + offset + invar
+  //         + scale * init
+  //         + scale * pre_stride * pre_iter
+  //         + scale * main_stride * main_iter)) % aw =
+  //
+  //   -> base aligned: base % aw = 0
+  //   -> main-loop iterations aligned (2): C_main % aw = (scale * main_stride) % aw = 0
+  //   (offset + invar + scale * init + scale * pre_stride * pre_iter) % aw =
+  //
+  //   -> apply (12)
+  //   (offset + invar + scale * init
+  //           + scale * pre_stride * (m * q - C_const / (scale * pre_stride)
+  //                                        [- invar / (scale * pre_stride) ]
+  //                                        [- init / pre_stride            ]
+  //                                  )
+  //   ) % aw =
+  //
+  //   -> expand C_const = offset [+ init * scale]  (if init const)
+  //   (offset + invar + scale * init
+  //           + scale * pre_stride * (m * q - offset / (scale * pre_stride)
+  //                                        [- init / pre_stride            ]             (if init constant)
+  //                                        [- invar / (scale * pre_stride) ]             (if invar present)
+  //                                        [- init / pre_stride            ]             (if init variable)
+  //                                  )
+  //   ) % aw =
+  //
+  //   -> assuming invar = 0 if it is not present
+  //   -> merge the two init terms (variable or constant)
+  //   -> apply (8): q = aw / (abs(C_pre)) = aw / abs(scale * pre_stride)
+  //   -> and hence: (scale * pre_stride * q) % aw = 0
+  //   -> all terms are cancled out
+  //   (offset + invar + scale * init
+  //           + scale * pre_stride * m * q                             -> aw aligned
+  //           - scale * pre_stride * offset / (scale * pre_stride)     -> = offset
+  //           - scale * pre_stride * init / pre_stride                 -> = scale * init
+  //           - scale * pre_stride * invar / (scale * pre_stride)      -> = invar
+  //   ) % aw = 0
+  //
+  // The solution given by (12) does indeed guarantee alignment.
 }
 
 #ifdef ASSERT
@@ -1063,74 +1186,75 @@ void AlignmentSolver::trace_main_iteration_alignment(const int C_const,
                                                      const int C_main_mod_aw) const
 {
   if (is_trace()) {
-    tty->print("  EQ(1  ): (C_const(%d) + C_invar(%d) * var_invar + C_init(%d) * var_init",
+    tty->print("  EQ(1 ): (C_const(%d) + C_invar(%d) * var_invar + C_init(%d) * var_init",
                   C_const, C_invar, C_init);
     tty->print(" + C_pre(%d) * pre_iter + C_main(%d) * main_iter) %% aw(%d) = 0",
                   C_pre, C_main, _aw);
     tty->print_cr(" (given base aligned -> align rest)");
-    tty->print("  EQ(2* ): C_main(%d) %% aw(%d) = %d = 0",
+    tty->print("  EQ(2 ): C_main(%d) %% aw(%d) = %d = 0",
                C_main, _aw, C_main_mod_aw);
     tty->print_cr(" (alignment across iterations)");
   }
 }
 
-void AlignmentSolver::trace_init_and_invar_alignment(const int C_invar,
-                                                     const int C_init,
-                                                     const int C_pre,
-                                                     const int C_invar_mod_abs_C_pre,
-                                                     const int C_init_mod_abs_C_pre) const
-{
-  if (is_trace()) {
-    tty->print_cr("  EQ(5a*): C_init(%d) %% abs(C_pre(%d)) = %d = 0   (if false: cannot align init)",
-                  C_init, C_pre, C_init_mod_abs_C_pre);
-    tty->print_cr("  EQ(5b*): C_invar(%d) %% abs(C_pre(%d)) = %d = 0  (if false: cannot align invar)",
-                  C_invar, C_pre, C_invar_mod_abs_C_pre);
-  }
+void AlignmentSolver::EQ4::trace() const {
+  tty->print_cr("  EQ(4a): (C_const(%3d)             + C_pre(%d) * pre_iter_C_const) %% aw(%d) = 0  (align const term individually)",
+                _C_const, _C_pre, _aw);
+  tty->print_cr("          -> %s", state_to_str(eq4a_state()));
+ 
+  tty->print_cr("  EQ(4a): (C_invar(%3d) * var_invar + C_pre(%d) * pre_iter_C_invar) %% aw(%d) = 0  (align invar term individually)",
+                _C_invar, _C_pre, _aw);
+  tty->print_cr("          -> %s", state_to_str(eq4b_state()));
+ 
+  tty->print_cr("  EQ(4a): (C_init( %3d) * var_init  + C_pre(%d) * pre_iter_C_init ) %% aw(%d) = 0  (align init term individually)",
+                _C_init, _C_pre, _aw);
+  tty->print_cr("          -> %s", state_to_str(eq4c_state()));
 }
 
-void AlignmentSolver::trace_abs_C_pre_ge_aw(const int C_pre,
-                                            const bool abs_C_pre_ge_aw) const
+void AlignmentSolver::trace_constrained_solution(const int C_const,
+                                                 const int C_invar,
+                                                 const int C_init,
+                                                 const int C_pre,
+                                                 const int q,
+                                                 const int r) const
 {
   if (is_trace()) {
-    tty->print_cr("  abs(C_pre(%d)) >= aw(%d) -> %s", C_pre, _aw,
-                  abs_C_pre_ge_aw ? "true (pre-loop limit adjustment makes no difference)" :
-                                    "false (pre-loop limit adjustment changes alignment)");
-  }
-}
+    tty->print_cr("  EQ(4a, b, c) all constrained, hence:");
+    tty->print_cr("  EQ(5a): C_const(%3d) %% abs(C_pre(%d)) = 0", C_const, C_pre);
+    tty->print_cr("  EQ(5b): C_invar(%3d) %% abs(C_pre(%d)) = 0", C_invar, C_pre);
+    tty->print_cr("  EQ(5c): C_init( %3d) %% abs(C_pre(%d)) = 0", C_init,  C_pre);
 
-void AlignmentSolver::trace_C_const_mod_aw(const int C_const,
-                                           const int C_const_mod_aw) const
-{
-  if (is_trace()) {
-      tty->print_cr("  EQ(6* ): C_const(%d) %% aw(%d) = %d = 0 (if true: trivial, else no solution)",
-                    C_const, _aw, C_const_mod_aw);
-  }
-}
+    tty->print_cr("  All terms in EQ(4a, b, c) are divisible by abs(C_pre(%d)).", C_pre);
+    const int X    = C_const / abs(C_pre);
+    const int Y    = C_invar / abs(C_pre);
+    const int Z    = C_init  / abs(C_pre);
+    const int sign = (C_pre > 0) ? 1 : -1;
+    tty->print_cr("  X = C_const(%3d) / abs(C_pre(%d)) = %d       (6a)", C_const, C_pre, X);
+    tty->print_cr("  Y = C_invar(%3d) / abs(C_pre(%d)) = %d       (6b)", C_invar, C_pre, Y);
+    tty->print_cr("  Z = C_init( %3d) / abs(C_pre(%d)) = %d       (6c)", C_init , C_pre, Z);
+    tty->print_cr("  q = aw(     %3d) / abs(C_pre(%d)) = %d       (8)",  _aw,     C_pre, q);
+    tty->print_cr("  sign(C_pre) = (C_pre(%d) > 0) ? 1 : -1 = %d  (7)",  C_pre,   sign);
 
-void AlignmentSolver::trace_find_pre_q(const int C_const,
-                                       const int C_pre,
-                                       const int pre_q) const
-{
-  if (is_trace()) {
-    tty->print_cr("  Find alignment for C_const(%d), with:", C_const);
-    tty->print_cr("  pre_iter_C_const = pre_r + pre_q * m  (for any m >= 0)");
-    tty->print_cr("  (C_const(%d) + C_pre(%d) * pre_r + C_pre(%d) * pre_q * m) %% aw(%d) = 0:",
-                  C_const, C_pre, C_pre, _aw);
-    tty->print_cr("  pre_q = aw(%d) / abs(C_pre(%d)) = %d",
-                  _aw, C_pre, pre_q);
-    tty->print_cr("  EQ(10*): brute force pre_r = 0..%d", pre_q - 1);
-  }
-}
+    tty->print_cr("  EQ(9a): (X(%3d)             + pre_iter_C_const * sign(C_pre)) %% q(%d) = 0", X, q);
+    tty->print_cr("  EQ(9b): (Y(%3d) * var_invar + pre_iter_C_invar * sign(C_pre)) %% q(%d) = 0", Y, q);
+    tty->print_cr("  EQ(9c): (Z(%3d) * var_init  + pre_iter_C_init  * sign(C_pre)) %% q(%d) = 0", Z, q);
 
-void AlignmentSolver::trace_find_pre_r(const int C_const,
-                                       const int C_pre,
-                                       const int pre_q,
-                                       const int pre_r,
-                                       const int eq10_val) const
-{
-  if (is_trace()) {
-      tty->print_cr("   try pre_r = %d: (C_const(%d) + C_pre(%d) * pre_r(%d)) %% aw(%d) = %d = 0",
-                    pre_r, C_const, C_pre, pre_r, _aw, eq10_val);
+    tty->print_cr("  EQ(10a): pre_iter_C_const = mx2 * q(%d) - sign(C_pre) * X(%d)",             q, X);
+    tty->print_cr("  EQ(10b): pre_iter_C_invar = my2 * q(%d) - sign(C_pre) * Y(%d) * var_invar", q, Y);
+    tty->print_cr("  EQ(10c): pre_iter_C_init  = mz2 * q(%d) - sign(C_pre) * Z(%d) * var_init ", q, Z);
+
+    tty->print_cr("  r = (-C_const(%d) / (scale(%d) * pre_stride(%d)) %% q(%d) = %d",
+                  C_const, _scale, _pre_stride, q, r);
+
+    tty->print_cr("  EQ(14):  pre_iter = m * q(%3d) - r(%d)", q, r);
+    if (_invar != nullptr) {
+      tty->print_cr("                                 - invar / (scale(%d) * pre_stride(%d))",
+                    _scale, _pre_stride);
+    }
+    if (!_init_node->is_ConI()) {
+      tty->print_cr("                                 - init / pre_stride(%d)",
+                    _pre_stride);
+    }
   }
 }
 #endif

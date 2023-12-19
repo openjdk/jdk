@@ -271,26 +271,26 @@ class VectorElementSizeStats {
 //                               + scale * main_stride * main_iter
 //
 // The AlignmentSolver generates solutions of the following forms:
-//   1. Empty with a failure reason.
-//   2. Trivial (any pre-loop limit guarantees alignment).
-//   3. Constrained (r, q, mem_ref, scale, invar)
-//        Where scale is 0 if no scale dependency,
-//        and invar is nullptr if no invar dependency.
+//   1. Empty:       No pre_iter guarantees alignment.
+//   2. Trivial:     Any pre_iter guarantees alignment.
+//   3. Constrained: There is a periodic solution, but it is not trivial.
 //
 // The Constrained solution is of the following form:
 //
-//   pre_iter = pre_iter_C_const  + pre_iter_C_init              + pre_iter_C_invar
-//            = pre_r + pre_q * m + alignment_init(X * var_init) + alignment_invar(Y * var_invar)
+//   pre_iter = m * q + r                                    (for any integer m)
+//                   [- invar / (scale * pre_stride)  ]      (if there is an invariant)
+//                   [- init / pre_stride             ]      (if init is variable)
 //
-// Essentially, we get a periodic solution for the C_const term, which
-// is shifted by the init and the invar terms. For two solutions to be
-// compatible, they must have the same periodic part (or subset), which
-// we can easily check with p an q. Compatible solutions must also have
-// the same shifting, which we can check with the scale and invar dependency.
+// The solution is periodic with periodicity q, which is guaranteed to be a power of 2.
+// This periodic solution is "rotated" by three alignment terms: one for constants (r),
+// one for the invariant (if present), and one for init (if it is variable).
 //
-class AlignmentSolutionEmpty;
-class AlignmentSolutionTrivial;
-class AlignmentSolutionConstrained;
+// The "filter" method combines the solutions of two mem_refs, such that the new set of
+// values for pre_iter guarantees alignment for both mem_refs.
+//
+class EmptyAlignmentSolution;
+class TrivialAlignmentSolution;
+class ConstrainedAlignmentSolution;
 
 class AlignmentSolution : public ResourceObj {
 public:
@@ -298,7 +298,7 @@ public:
   virtual bool is_trivial() const = 0;
   virtual bool is_constrained() const = 0;
 
-  virtual const AlignmentSolutionConstrained* as_constrained() const {
+  virtual const ConstrainedAlignmentSolution* as_constrained() const {
     assert(is_constrained(), "must be constrained");
     return nullptr;
   }
@@ -317,18 +317,20 @@ public:
   }
 };
 
-class AlignmentSolutionEmpty : public AlignmentSolution {
+class EmptyAlignmentSolution : public AlignmentSolution {
 private:
   const char* _reason = nullptr;
 public:
-  AlignmentSolutionEmpty(const char* reason) :  _reason(reason) {}
+  EmptyAlignmentSolution(const char* reason) :  _reason(reason) {}
   virtual bool is_empty() const override final       { return true; }
   virtual bool is_trivial() const override final     { return false; }
   virtual bool is_constrained() const override final { return false; }
   const char* reason() const { return _reason; }
 
   virtual const AlignmentSolution* filter(const AlignmentSolution* other) const override final {
-    return new AlignmentSolutionEmpty("empty solution input to filter");
+    // If "this" cannot be guaranteed to be aligned, then we also cannot guarantee to align
+    // "this" and "other" together.
+    return new EmptyAlignmentSolution("empty solution input to filter");
   }
 
   virtual void print() const override final {
@@ -336,17 +338,21 @@ public:
   };
 };
 
-class AlignmentSolutionTrivial : public AlignmentSolution {
+class TrivialAlignmentSolution : public AlignmentSolution {
 public:
-  AlignmentSolutionTrivial() {}
+  TrivialAlignmentSolution() {}
   virtual bool is_empty() const override final       { return false; }
   virtual bool is_trivial() const override final     { return true; }
   virtual bool is_constrained() const override final { return false; }
 
   virtual const AlignmentSolution* filter(const AlignmentSolution* other) const override final {
     if (other->is_empty()) {
-      return new AlignmentSolutionEmpty("empty solution input to filter");
+      // If "other" cannot be guaranteed to be aligned, then we also cannot guarantee to align
+      // "this" and "other".
+      return new EmptyAlignmentSolution("empty solution input to filter");
     }
+    // Since "this" is trivial (no constraints), the solution of "other" guarantees alignment
+    // of both.
     return other;
   }
 
@@ -355,24 +361,24 @@ public:
   };
 };
 
-class AlignmentSolutionConstrained : public AlignmentSolution {
+class ConstrainedAlignmentSolution : public AlignmentSolution {
 private:
-  const int _r = 0;
-  const int _q = 1;
   const MemNode* _mem_ref = nullptr;
-  const Node* _invar_dependency = nullptr;
-  const int _scale_dependency = 0;
+  const int _q = 1;
+  const int _r = 0;
+  const Node* _invar = nullptr;
+  const int _scale = 0;
 public:
-  AlignmentSolutionConstrained(const int r,
+  ConstrainedAlignmentSolution(const MemNode* mem_ref,
                                const int q,
-                               const MemNode* mem_ref,
-                               const Node* invar_dependency,
-                               int scale_dependency) :
-      _r(r),
-      _q(q),
+                               const int r,
+                               const Node* invar,
+                               int scale) :
       _mem_ref(mem_ref),
-      _invar_dependency(invar_dependency),
-      _scale_dependency(scale_dependency) {
+      _q(q),
+      _r(r),
+      _invar(invar),
+      _scale(scale) {
     assert(q > 1 && is_power_of_2(q), "q must be power of 2");
     assert(0 <= r && r < q, "r must be in modulo space of q");
     assert(_mem_ref != nullptr, "must have mem_ref");
@@ -384,52 +390,93 @@ public:
 
   const MemNode* mem_ref() const        { return _mem_ref; }
 
-  virtual const AlignmentSolutionConstrained* as_constrained() const override final { return this; }
+  virtual const ConstrainedAlignmentSolution* as_constrained() const override final { return this; }
 
   virtual const AlignmentSolution* filter(const AlignmentSolution* other) const override final {
     if (other->is_empty()) {
-      return new AlignmentSolutionEmpty("empty solution input to filter");
+      // If "other" cannot be guaranteed to be aligned, then we also cannot guarantee to align
+      // "this" and "other" together.
+      return new EmptyAlignmentSolution("empty solution input to filter");
     }
+    // Since "other" is trivial (no constraints), the solution of "this" guarantees alignment
+    // of both.
     if (other->is_trivial()) {
       return this;
     }
 
-    // Both are constrained -> find the intersection
-    AlignmentSolutionConstrained const* s1 = this;
-    AlignmentSolutionConstrained const* s2 = other->as_constrained();
+    // Both solutions are constrained:
+    ConstrainedAlignmentSolution const* s1 = this;
+    ConstrainedAlignmentSolution const* s2 = other->as_constrained();
 
-    if (s1->_invar_dependency != s2->_invar_dependency) {
-      return new AlignmentSolutionEmpty("invar not identical");
+    // Thus, pre_iter is the intersection of two sets, i.e. constrained by these two equations,
+    // for any integers m1 and m2:
+    //
+    //   pre_iter = m1 * q1 + r1
+    //                     [- invar1 / (scale1 * pre_stride)  ]
+    //                     [- init / pre_stride               ]
+    //
+    //   pre_iter = m2 * q2 + r2
+    //                     [- invar2 / (scale2 * pre_stride)  ]
+    //                     [- init / pre_stride               ]
+    //
+    // Note: pre_stride and init are idential for all mem_refs in the loop.
+    //
+    // The init alignment term either does not exist for both mem_refs, or exists identically
+    // for both. The init alignment term is thus triviall identical.
+    //
+    // The invar alignment term is identical if either:
+    //   - both mem_refs have no invariant.
+    //   - both mem_refs have the same invariant and the same scale.
+    //
+    if (s1->_invar != s2->_invar) {
+      return new EmptyAlignmentSolution("invar not identical");
     }
-    if (s1->_scale_dependency != s2->_scale_dependency) {
-      return new AlignmentSolutionEmpty("different scale dependency (init / invar)");
+    if (s1->_invar != nullptr && s1->_scale != s2->_scale) {
+      return new EmptyAlignmentSolution("has invar with different scale");
     }
 
-    // Make s2 the bigger modulo space
+    // Now, we have reduced the problem to:
+    //
+    //   pre_iter = m1 * q1 + r1 [- x]       (S1)
+    //   pre_iter = m2 * q2 + r2 [- x]       (S2)
+    //
+
+    // Make s2 the bigger modulo space, i.e. has larger periodicity q.
+    // This guarantees that S2 is either identical to, a subset of,
+    // or disjunct from S1 (but cannot be a strict superset of S1).
     if (s1->_q > s2->_q) {
       swap(s1, s2);
     }
     assert(s1->_q <= s2->_q, "s1 is a smaller modulo space than s2");
 
-    // Subset check:
+    // Is S2 subset of (or equal to) S1?
+    //
+    // for any m2, there are integers a, b, m1: m2 * q2     + r2          =
+    //                                          m2 * a * q1 + b * q1 + r1 =
+    //                                          (m2 * a + b) * q1 + r1
+    //
+    // Since q1 and q2 are both powers of 2, and q1 <= q2, we know there
+    // is an integer a: a * q1 = q1. Thus, it remains to check if there
+    // is an integer b: b * q1 + r1 = r2. This is equivalent to checking:
+    //
+    //   r1 = r1 % q1 = r2 % q1
+    //
     if (mod(s2->_r, s1->_q) != s1->_r) {
-      // neither is subset of the other -> no intersection
-      return new AlignmentSolutionEmpty("empty intersection (r and q)");
+      // Neither is subset of the other -> no intersection
+      return new EmptyAlignmentSolution("empty intersection (r and q)");
     }
 
-    // Now we know: "s1 = r1 + m1 * q1" is a superset of "s2 = r2 + m2 * q2"
+    // Now we know: "s1 = m1 * q1 + r1" is a superset of "s2 = m2 * q2 + r2"
+    // Hence, any solution of S2 guarantees alignment for both mem_refs.
     return s2; // return the subset
   }
 
   virtual void print() const override final {
-    tty->print("pre_r(%d) + m * pre_q(%d), mem_ref[%d],",
-                _r, _q, mem_ref()->_idx);
-    tty->print(" scale = %d, ", _scale_dependency);
-    if (_invar_dependency == nullptr) {
-      tty->print_cr("no invar");
-    } else {
-      tty->print_cr("invar[%d]", _invar_dependency->_idx);
+    tty->print("m * q(%d) + r(%d)", _q, _r);
+    if (_invar != nullptr) {
+      tty->print(" - invar[%d] / (scale(%d) * pre_stride)", _invar->_idx, _scale);
     }
+    tty->print_cr(" [- init / pre_stride], mem_ref[%d]", mem_ref()->_idx);
   };
 };
 
@@ -546,6 +593,53 @@ public:
   AlignmentSolution* solve() const;
 
 private:
+  class EQ4 {
+    private:
+      const int _C_const;
+      const int _C_invar;
+      const int _C_init;
+      const int _C_pre;
+      const int _aw;
+
+    public:
+      EQ4(const int C_const, const int C_invar, const int C_init, const int C_pre, const int aw) :
+      _C_const(C_const), _C_invar(C_invar), _C_init(C_init), _C_pre(C_pre), _aw(aw) {}
+
+      enum State { TRIVIAL, CONSTRAINED, EMPTY };
+
+      State eq4a_state() const {
+        return (abs(_C_pre) >= _aw) ? ( (C_const_mod_aw() == 0       ) ? TRIVIAL     : EMPTY)
+                                    : ( (C_const_mod_abs_C_pre() == 0) ? CONSTRAINED : EMPTY);
+      }
+
+      State eq4b_state() const {
+        return (abs(_C_pre) >= _aw) ? ( (C_invar_mod_aw() == 0       ) ? TRIVIAL     : EMPTY)
+                                    : ( (C_invar_mod_abs_C_pre() == 0) ? CONSTRAINED : EMPTY);
+      }
+
+      State eq4c_state() const {
+        return (abs(_C_pre) >= _aw) ? ( (C_init__mod_aw() == 0       ) ? TRIVIAL     : EMPTY)
+                                    : ( (C_init__mod_abs_C_pre() == 0) ? CONSTRAINED : EMPTY);
+      }
+
+      int C_const_mod_aw() const        { return AlignmentSolution::mod(_C_const, _aw); }
+      int C_invar_mod_aw() const        { return AlignmentSolution::mod(_C_invar, _aw); }
+      int C_init__mod_aw() const        { return AlignmentSolution::mod(_C_init,  _aw); }
+      int C_const_mod_abs_C_pre() const { return AlignmentSolution::mod(_C_const, abs(_C_pre)); }
+      int C_invar_mod_abs_C_pre() const { return AlignmentSolution::mod(_C_invar, abs(_C_pre)); }
+      int C_init__mod_abs_C_pre() const { return AlignmentSolution::mod(_C_init,  abs(_C_pre)); }
+
+    public:
+#ifdef ASSERT
+      void trace() const;
+      const char* state_to_str(State s) const {
+        if (s == TRIVIAL)     { return "trivial"; }
+        if (s == CONSTRAINED) { return "constrained"; }
+        return "empty";
+      }
+#endif
+  };
+
 #ifdef ASSERT
   bool is_trace() const { return _is_trace; }
   void trace_start_solve() const;
@@ -561,23 +655,12 @@ private:
                                       const int C_pre,
                                       const int C_main,
                                       const int C_main_mod_aw) const;
-  void trace_init_and_invar_alignment(const int C_invar,
-                                      const int C_init,
-                                      const int C_pre,
-                                      const int C_invar_mod_abs_C_pre,
-                                      const int C_init_mod_abs_C_pre) const;
-  void trace_abs_C_pre_ge_aw(const int C_pre,
-                             const bool abs_C_pre_ge_aw) const;
-  void trace_C_const_mod_aw(const int C_const,
-                            const int C_const_mod_aw) const;
-  void trace_find_pre_q(const int C_const,
-                        const int C_pre,
-                        const int pre_q) const;
-  void trace_find_pre_r(const int C_const,
-                        const int C_pre,
-                        const int pre_q,
-                        const int pre_r,
-                        const int eq10_val) const;
+  void trace_constrained_solution(const int C_const,
+                                  const int C_invar,
+                                  const int C_init,
+                                  const int C_pre,
+                                  const int q,
+                                  const int r) const;
 #endif
 };
 
