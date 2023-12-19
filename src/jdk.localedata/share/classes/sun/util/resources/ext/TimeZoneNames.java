@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,26 +23,17 @@
  * questions.
  */
 
-package sun.util.resources.provider;
+package sun.util.resources.ext;
 
-import java.util.Locale;
-import java.util.ResourceBundle;
-import sun.util.resources.LocaleData;
+import sun.util.resources.TimeZoneNamesBundle;
 
-/**
- * Service Provider for loading JavaTimeSupplementary resource bundles in jdk.localedata.
- */
-public class SupplementaryLocaleDataProvider extends LocaleData.SupplementaryResourceBundleProvider {
+public final class TimeZoneNames extends TimeZoneNamesBundle {
+    /**
+     * Exists to keep sun.util.resources.ext package alive
+     * with IncludeLocales jlink plugin
+     */
     @Override
-    public ResourceBundle getBundle(String baseName, Locale locale) {
-        var bundleName = toBundleName(baseName, locale);
-        var rb = LocaleDataProvider.loadResourceBundle(bundleName);
-        if (rb == null) {
-            var otherBundleName = toOtherBundleName(baseName, bundleName, locale);
-            if (!bundleName.equals(otherBundleName)) {
-                rb = LocaleDataProvider.loadResourceBundle(otherBundleName);
-            }
-        }
-        return rb;
+    protected Object[][] getContents() {
+        return new Object[][]{};
     }
 }

@@ -25,8 +25,6 @@
 
 package sun.util.locale.provider;
 
-import java.util.Collections;
-import java.util.HashSet;
 import java.util.Locale;
 import java.util.Set;
 
@@ -58,7 +56,10 @@ public class FallbackLocaleProviderAdapter extends JRELocaleProviderAdapter {
 //                s.addAll(Set.of("en-US", "en", "und"));
 //                yield Collections.unmodifiableSet(s);
 //            }
-            case "FormatData" -> Set.of("ja", "und");
+            // check for super class whether to include "ja" for IncludeLocales
+            // jlink plugin
+            case "FormatData" -> super.createLanguageTagSet(category).contains("ja") ?
+                    Set.of("ja", "und") : Set.of("und");
             default -> Set.of("und");
         };
     }
@@ -70,10 +71,6 @@ public class FallbackLocaleProviderAdapter extends JRELocaleProviderAdapter {
         }
 
         locale = locale.stripExtensions();
-        if (langtags.contains(locale.toLanguageTag())) {
-            return true;
-        }
-
-        return false;
+        return langtags.contains(locale.toLanguageTag());
     }
 }

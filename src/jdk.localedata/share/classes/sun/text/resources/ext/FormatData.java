@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,16 +23,32 @@
  * questions.
  */
 
-/**
- * Provides the locale data for locales other than {@linkplain java.util.Locale#US US locale}.
+/*
+ * (C) Copyright Taligent, Inc. 1996, 1997 - All Rights Reserved
+ * (C) Copyright IBM Corp. 1996 - 1999 - All Rights Reserved
  *
- * @moduleGraph
- * @since 9
+ * The original version of this source code and documentation
+ * is copyrighted and owned by Taligent, Inc., a wholly-owned
+ * subsidiary of IBM. These materials are provided under terms
+ * of a License Agreement between Taligent and Sun. This technology
+ * is protected by multiple US and International patents.
+ *
+ * This notice and attribution to Taligent may not be removed.
+ * Taligent is a registered trademark of Taligent, Inc.
+ *
  */
-module jdk.localedata {
-    provides sun.util.locale.provider.LocaleDataMetaInfo with
-        sun.util.resources.cldr.provider.CLDRLocaleDataMetaInfo,
-        sun.util.resources.provider.NonBaseLocaleDataMetaInfo;
-    provides sun.util.resources.LocaleData.CommonResourceBundleProvider with
-        sun.util.resources.provider.LocaleDataProvider;
+
+package sun.text.resources.ext;
+
+import sun.util.resources.ParallelListResourceBundle;
+
+public class FormatData extends ParallelListResourceBundle {
+    /**
+     * Exists to keep sun.text.resources.ext package alive
+     * with IncludeLocales jlink plugin
+     */
+    @Override
+    protected final Object[][] getContents() {
+        return new Object[][]{};
+    }
 }
