@@ -1650,7 +1650,7 @@ void SuperWord::filter_packs_for_alignment() {
   ResourceMark rm;
 
   // Start with trivial (unconstrained) solution space
-  AlignmentSolution const* current = new AlignmentSolutionTrivial();
+  AlignmentSolution const* current = new TrivialAlignmentSolution();
   int mem_ops_count = 0;
   int mem_ops_rejected = 0;
   for (int i = 0; i < _packset.length(); i++) {
