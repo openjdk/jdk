@@ -221,6 +221,7 @@ public class PriorityQueue<E> extends AbstractQueue<E>
      *         natural ordering} of the elements will be used.
      * @throws NullPointerException if the specified collection or any
      *         of its elements are null
+     * @since 23
      */
     public PriorityQueue(Collection<? extends E> c,
                          Comparator<? super E> comparator) {
