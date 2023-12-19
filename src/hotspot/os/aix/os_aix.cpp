@@ -1128,7 +1128,7 @@ void *os::dll_load(const char *filename, char *ebuf, int ebuflen) {
   return result;    
 }    
 
-static void *os::dll_load_library(const char *filename, char *ebuf, int ebuflen) {
+static void dll_load_library(const char *filename, char *ebuf, int ebuflen) {
 
   log_info(os)("attempting shared library load of %s", filename);
 
