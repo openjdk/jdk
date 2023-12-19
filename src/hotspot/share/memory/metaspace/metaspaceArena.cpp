@@ -131,7 +131,7 @@ MetaspaceArena::MetaspaceArena(MetaspaceContext* context,
          _allocation_alignment_words <= chunklevel::MIN_CHUNK_WORD_SIZE,
          "Invalid alignment: %zu", _allocation_alignment_words);
 
-  UL(debug, ": born.");
+  UL(debug, "born.");
 
   // Update statistics
   InternalStats::inc_num_arena_births();
@@ -283,7 +283,7 @@ MetaBlock MetaspaceArena::allocate(size_t requested_word_size, MetaBlock& wastag
     LogTarget(Trace, metaspace) lt;
     if (lt.is_enabled()) {
       LogStream ls(lt);
-      ls.print("returning " METABLOCKFORMAT " taken from %s, ",
+      ls.print(LOGFMT ": returning " METABLOCKFORMAT " taken from %s, ", LOGFMT_ARGS,
                METABLOCKFORMATARGS(result), (taken_from_fbl ? "fbl" : "arena"));
       if (wastage.is_empty()) {
         ls.print("no wastage");

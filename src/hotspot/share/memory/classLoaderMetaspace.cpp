@@ -76,7 +76,7 @@ ClassLoaderMetaspace::ClassLoaderMetaspace(Mutex* lock, Metaspace::MetaspaceType
       ArenaGrowthPolicy::policy_for_space_type(space_type, false),
       Metaspace::min_allocation_alignment,
       "non-class arena");
-
+if (UseNewCodeInt > 0)klass_alignment_words = UseNewCodeInt;
   // If needed, initialize class arena
   if (class_context != nullptr) {
     _class_space_arena = new MetaspaceArena(

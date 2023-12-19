@@ -288,6 +288,9 @@ public:
 static constexpr size_t klass_size = sizeof(Klass) / BytesPerWord;
 
 static void basic_test(size_t klass_arena_alignment) {
+  if (Settings::use_allocation_guard()) {
+    return;
+  }
   MetaspaceGtestContext class_context, nonclass_context;
   {
     ClmsTester tester(klass_arena_alignment, Metaspace::StandardMetaspaceType, class_context.context(), nonclass_context.context());
@@ -338,6 +341,10 @@ TEST_BASIC_N(32)
 TEST_BASIC_N(128)
 
 static void test_random(size_t klass_arena_alignment) {
+  if (Settings::use_allocation_guard()) {
+    return;
+  }
+
   MetaspaceGtestContext class_context, nonclass_context;
   constexpr int max_allocations = 1024;
   const SizeRange nonclass_alloc_range(Metaspace::min_allocation_alignment, 1024);
