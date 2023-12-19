@@ -4261,7 +4261,7 @@ FCVT_SAFE(fcvt_l_d, d);
 
 void MacroAssembler::java_round_float(Register dst, FloatRegister src, FloatRegister ftmp) {
   Label done;
-  li(t0, jint_cast(0.5f));
+  mv(t0, jint_cast(0.5f));
   fmv_w_x(ftmp, t0);
 
   // dst = 0 if NaN
@@ -4278,7 +4278,7 @@ void MacroAssembler::java_round_float(Register dst, FloatRegister src, FloatRegi
 
 void MacroAssembler::java_round_double(Register dst, FloatRegister src, FloatRegister ftmp) {
   Label done;
-  li(t0, julong_cast(0.5));
+  mv(t0, julong_cast(0.5));
   fmv_d_x(ftmp, t0);
 
   // dst = 0 if NaN
