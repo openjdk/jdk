@@ -2725,9 +2725,9 @@ void MacroAssembler::safepoint_poll(Label& slow_path, bool at_return, bool acqui
 
 void MacroAssembler::cmpxchgptr(Register oldv, Register newv, Register addr, Register tmp,
                                 Label &succeed, Label *fail) {
-  assert_different_registers(addr, tmp);
-  assert_different_registers(newv, tmp);
-  assert_different_registers(oldv, tmp);
+  assert_different_registers(addr, tmp, t0);
+  assert_different_registers(newv, tmp, t0);
+  assert_different_registers(oldv, tmp, t0);
 
   // oldv holds comparison value
   // newv holds value to write in exchange
@@ -2771,7 +2771,7 @@ void MacroAssembler::load_reserved(Register dst,
       break;
     case uint32:
       lr_w(dst, addr, acquire);
-      zero_extend(t0, t0, 32);
+      zero_extend(dst, dst, 32);
       break;
     default:
       ShouldNotReachHere();

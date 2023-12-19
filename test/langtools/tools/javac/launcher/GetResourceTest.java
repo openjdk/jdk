@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8210009
+ * @bug 8210009 8321739
  * @summary Source Launcher classloader should support getResource and getResourceAsStream
  * @enablePreview
  * @modules jdk.compiler
@@ -41,7 +41,7 @@ import toolbox.ToolBox;
 
 /*
  * The body of this test is in ${test.src}/src/p/q/CLTest.java,
- * which is executed in single-file source-launcher mode,
+ * which is executed in source-launcher mode,
  * in order to test the classloader used to launch such programs.
  */
 public class GetResourceTest {
