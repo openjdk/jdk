@@ -1038,7 +1038,7 @@ AlignmentSolution* AlignmentSolver::solve() const {
   // them in the solution description.
 
   DEBUG_ONLY( trace_constrained_solution(C_const, C_invar, C_init, C_pre, q, r); )
-  
+
   return new ConstrainedAlignmentSolution(_mem_ref, q, r, _invar, _scale);
 
   // APPENDIX:
@@ -1201,11 +1201,11 @@ void AlignmentSolver::EQ4::trace() const {
   tty->print_cr("  EQ(4a): (C_const(%3d)             + C_pre(%d) * pre_iter_C_const) %% aw(%d) = 0  (align const term individually)",
                 _C_const, _C_pre, _aw);
   tty->print_cr("          -> %s", state_to_str(eq4a_state()));
- 
+
   tty->print_cr("  EQ(4a): (C_invar(%3d) * var_invar + C_pre(%d) * pre_iter_C_invar) %% aw(%d) = 0  (align invar term individually)",
                 _C_invar, _C_pre, _aw);
   tty->print_cr("          -> %s", state_to_str(eq4b_state()));
- 
+
   tty->print_cr("  EQ(4a): (C_init( %3d) * var_init  + C_pre(%d) * pre_iter_C_init ) %% aw(%d) = 0  (align init term individually)",
                 _C_init, _C_pre, _aw);
   tty->print_cr("          -> %s", state_to_str(eq4c_state()));
