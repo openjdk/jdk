@@ -1258,7 +1258,7 @@ JVM_ENTRY(jobjectArray, jmm_DumpThreads(JNIEnv *env, jlongArray thread_ids, jboo
       for (int depth = 0; depth < num_frames; depth++) {
         StackFrameInfo* frame = stacktrace->stack_frame_at(depth);
         int len = frame->num_locked_monitors();
-        GrowableArray<OopHandle>* locked_monitors = frame->locked_monitors();
+        GrowableArrayCHeap<OopHandle, mtServiceability>* locked_monitors = frame->locked_monitors();
         for (j = 0; j < len; j++) {
           oop monitor = locked_monitors->at(j).resolve();
           assert(monitor != nullptr, "must be a Java object");
@@ -1268,7 +1268,7 @@ JVM_ENTRY(jobjectArray, jmm_DumpThreads(JNIEnv *env, jlongArray thread_ids, jboo
         }
       }
 
-      GrowableArray<OopHandle>* jni_locked_monitors = stacktrace->jni_locked_monitors();
+      GrowableArrayCHeap<OopHandle, mtServiceability>* jni_locked_monitors = stacktrace->jni_locked_monitors();
       for (j = 0; j < jni_locked_monitors->length(); j++) {
         oop object = jni_locked_monitors->at(j).resolve();
         assert(object != nullptr, "must be a Java object");
@@ -1284,7 +1284,7 @@ JVM_ENTRY(jobjectArray, jmm_DumpThreads(JNIEnv *env, jlongArray thread_ids, jboo
       // Create Object[] filled with locked JSR-166 synchronizers
       assert(ts->threadObj() != nullptr, "Must be a valid JavaThread");
       ThreadConcurrentLocks* tcl = ts->get_concurrent_locks();
-      GrowableArray<OopHandle>* locks = (tcl != nullptr ? tcl->owned_locks() : nullptr);
+      GrowableArrayCHeap<OopHandle, mtServiceability>* locks = (tcl != nullptr ? tcl->owned_locks() : nullptr);
       int num_locked_synchronizers = (locks != nullptr ? locks->length() : 0);
 
       objArrayOop array = oopFactory::new_objArray(vmClasses::Object_klass(), num_locked_synchronizers, CHECK_NULL);
@@ -1759,7 +1759,7 @@ static Handle find_deadlocks(bool object_monitors_only, TRAPS) {
 
   int index = 0;
   for (cycle = deadlocks; cycle != nullptr; cycle = cycle->next()) {
-    GrowableArray<JavaThread*>* deadlock_threads = cycle->threads();
+    GrowableArrayCHeap<JavaThread*, mtServiceability>* deadlock_threads = cycle->threads();
     int len = deadlock_threads->length();
     for (int i = 0; i < len; i++) {
       threads_ah->obj_at_put(index, deadlock_threads->at(i)->threadObj());

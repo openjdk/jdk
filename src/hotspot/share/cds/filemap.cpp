@@ -542,7 +542,7 @@ void FileMapInfo::record_non_existent_class_path_entry(const char* path) {
   assert(CDSConfig::is_dumping_archive(), "sanity");
   log_info(class, path)("non-existent Class-Path entry %s", path);
   if (_non_existent_class_paths == nullptr) {
-    _non_existent_class_paths = new (mtClass) GrowableArray<const char*>(10, mtClass);
+    _non_existent_class_paths = new GrowableArrayCHeap<const char*, mtClass>(10);
   }
   _non_existent_class_paths->append(os::strdup(path));
 }
@@ -2246,7 +2246,7 @@ bool FileMapInfo::_heap_pointers_need_patching = false;
 SharedPathTable FileMapInfo::_shared_path_table;
 bool FileMapInfo::_validating_shared_path_table = false;
 bool FileMapInfo::_memory_mapping_failed = false;
-GrowableArray<const char*>* FileMapInfo::_non_existent_class_paths = nullptr;
+GrowableArrayCHeap<const char*, mtClass>* FileMapInfo::_non_existent_class_paths = nullptr;
 
 // Open the shared archive file, read and validate the header
 // information (version, boot classpath, etc.). If initialization

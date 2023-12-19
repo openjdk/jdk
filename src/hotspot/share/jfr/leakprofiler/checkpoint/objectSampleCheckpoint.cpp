@@ -51,11 +51,11 @@
 const int initial_array_size = 64;
 
 template <typename T>
-static GrowableArray<T>* c_heap_allocate_array(int size = initial_array_size) {
-  return new (mtTracing) GrowableArray<T>(size, mtTracing);
+static GrowableArrayCHeap<T, mtTracing>* c_heap_allocate_array(int size = initial_array_size) {
+  return new GrowableArrayCHeap<T, mtTracing>(size);
 }
 
-static GrowableArray<traceid>* unloaded_thread_id_set = nullptr;
+static GrowableArrayCHeap<traceid, mtTracing>* unloaded_thread_id_set = nullptr;
 
 class ThreadIdExclusiveAccess : public StackObj {
  private:

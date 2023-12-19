@@ -3145,10 +3145,10 @@ bool os::Linux::libnuma_init() {
         set_numa_interleave_bitmask(_numa_get_interleave_mask());
         set_numa_membind_bitmask(_numa_get_membind());
         // Create an index -> node mapping, since nodes are not always consecutive
-        _nindex_to_node = new (mtInternal) GrowableArray<int>(0, mtInternal);
+        _nindex_to_node = new GrowableArrayCHeap<int, mtInternal>(0);
         rebuild_nindex_to_node_map();
         // Create a cpu -> node mapping
-        _cpu_to_node = new (mtInternal) GrowableArray<int>(0, mtInternal);
+        _cpu_to_node = new GrowableArrayCHeap<int, mtInternal>(0);
         rebuild_cpu_to_node_map();
         return true;
       }
@@ -3307,8 +3307,8 @@ int os::Linux::get_node_by_cpu(int cpu_id) {
   return -1;
 }
 
-GrowableArray<int>* os::Linux::_cpu_to_node;
-GrowableArray<int>* os::Linux::_nindex_to_node;
+GrowableArrayCHeap<int, mtInternal>* os::Linux::_cpu_to_node;
+GrowableArrayCHeap<int, mtInternal>* os::Linux::_nindex_to_node;
 os::Linux::sched_getcpu_func_t os::Linux::_sched_getcpu;
 os::Linux::numa_node_to_cpus_func_t os::Linux::_numa_node_to_cpus;
 os::Linux::numa_node_to_cpus_v2_func_t os::Linux::_numa_node_to_cpus_v2;

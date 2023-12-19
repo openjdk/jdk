@@ -177,14 +177,14 @@ private:
 
   class SourceObjList {
     uintx _total_bytes;
-    GrowableArray<SourceObjInfo*>* _objs;     // Source objects to be archived
+    GrowableArrayCHeap<SourceObjInfo*, mtClassShared>* _objs; // Source objects to be archived
     CHeapBitMap _ptrmap;                      // Marks the addresses of the pointer fields
                                               // in the source objects
   public:
     SourceObjList();
     ~SourceObjList();
 
-    GrowableArray<SourceObjInfo*>* objs() const { return _objs; }
+    GrowableArrayCHeap<SourceObjInfo*, mtClassShared>* objs() const { return _objs; }
 
     void append(SourceObjInfo* src_info);
     void remember_embedded_pointer(SourceObjInfo* pointing_obj, MetaspaceClosure::Ref* ref);
@@ -210,8 +210,8 @@ private:
   SourceObjList _ro_src_objs;                 // objs to put in ro region
   ResizeableResourceHashtable<address, SourceObjInfo, AnyObj::C_HEAP, mtClassShared> _src_obj_table;
   ResizeableResourceHashtable<address, address, AnyObj::C_HEAP, mtClassShared> _buffered_to_src_table;
-  GrowableArray<Klass*>* _klasses;
-  GrowableArray<Symbol*>* _symbols;
+  GrowableArrayCHeap<Klass*, mtClassShared>* _klasses;
+  GrowableArrayCHeap<Symbol*, mtClassShared>* _symbols;
 
   // statistics
   DumpAllocStats _alloc_stats;
@@ -401,8 +401,8 @@ public:
   }
 
   // All klasses and symbols that will be copied into the archive
-  GrowableArray<Klass*>*  klasses() const { return _klasses; }
-  GrowableArray<Symbol*>* symbols() const { return _symbols; }
+  GrowableArrayCHeap<Klass*, mtClassShared>*  klasses() const { return _klasses; }
+  GrowableArrayCHeap<Symbol*, mtClassShared>* symbols() const { return _symbols; }
 
   static bool is_active() {
     return (_current != nullptr);

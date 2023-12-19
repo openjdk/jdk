@@ -69,7 +69,7 @@ class UnhandledOops : public CHeapObj<mtThread> {
  private:
   Thread* _thread;
   int _level;
-  GrowableArray<UnhandledOopEntry> *_oop_list;
+  GrowableArrayCHeap<UnhandledOopEntry, mtThread> *_oop_list;
   void allow_unhandled_oop(oop* op);
   void clear_unhandled_oops();
   UnhandledOops(Thread* thread);

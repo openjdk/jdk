@@ -62,7 +62,7 @@ int JvmtiDeferredUpdates::get_and_reset_relock_count_after_wait(JavaThread* jt) 
 void JvmtiDeferredUpdates::delete_updates_for_frame(JavaThread* jt, intptr_t* frame_id) {
   JvmtiDeferredUpdates* updates = jt->deferred_updates();
   if (updates != nullptr) {
-    GrowableArray<jvmtiDeferredLocalVariableSet*>* list = updates->deferred_locals();
+    GrowableArrayCHeap<jvmtiDeferredLocalVariableSet*, mtCompiler>* list = updates->deferred_locals();
     assert(list->length() > 0, "Updates holder not deleted");
     int i = 0;
     do {

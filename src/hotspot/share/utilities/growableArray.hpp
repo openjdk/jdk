@@ -188,6 +188,12 @@ public:
     _data[i] = elem;
   }
 
+  void at_swap(int i, int j) {
+    E tmp = this->at(i);
+    this->at_put(i, this->at(j));
+    this->at_put(j, tmp);
+  }
+
   bool contains(const E& elem) const {
     for (int i = 0; i < _len; i++) {
       if (_data[i] == elem) return true;

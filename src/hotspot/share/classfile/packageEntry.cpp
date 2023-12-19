@@ -80,7 +80,7 @@ void PackageEntry::add_qexport(ModuleEntry* m) {
   if (!has_qual_exports_list()) {
     // Lazily create a package's qualified exports list.
     // Initial size is small, do not anticipate export lists to be large.
-    _qualified_exports = new (mtModule) GrowableArray<ModuleEntry*>(QUAL_EXP_SIZE, mtModule);
+    _qualified_exports = new GrowableArrayCHeap<ModuleEntry*, mtModule>(QUAL_EXP_SIZE);
   }
 
   // Determine, based on this newly established export to module m,
@@ -250,7 +250,7 @@ void PackageEntry::init_as_archived_entry() {
 
   _name = ArchiveBuilder::get_buffered_symbol(_name);
   _module = ModuleEntry::get_archived_entry(_module);
-  _qualified_exports = (GrowableArray<ModuleEntry*>*)archived_qualified_exports;
+  _qualified_exports = (GrowableArrayCHeap<ModuleEntry*, mtModule>*)archived_qualified_exports;
   _defined_by_cds_in_class_path = 0;
   JFR_ONLY(set_trace_id(0)); // re-init at runtime
 

@@ -118,7 +118,7 @@ SystemProperty *Arguments::_java_class_path = nullptr;
 SystemProperty *Arguments::_jdk_boot_class_path_append = nullptr;
 SystemProperty *Arguments::_vm_info = nullptr;
 
-GrowableArray<ModulePatchPath*> *Arguments::_patch_mod_prefix = nullptr;
+GrowableArrayCHeap<ModulePatchPath*, mtArguments> *Arguments::_patch_mod_prefix = nullptr;
 PathString *Arguments::_boot_class_path = nullptr;
 bool Arguments::_has_jimage = false;
 
@@ -2837,7 +2837,7 @@ void Arguments::add_patch_mod_prefix(const char* module_name, const char* path, 
 
   // Create GrowableArray lazily, only if --patch-module has been specified
   if (_patch_mod_prefix == nullptr) {
-    _patch_mod_prefix = new (mtArguments) GrowableArray<ModulePatchPath*>(10, mtArguments);
+    _patch_mod_prefix = new GrowableArrayCHeap<ModulePatchPath*, mtArguments>(10);
   }
 
   _patch_mod_prefix->push(new ModulePatchPath(module_name, path));

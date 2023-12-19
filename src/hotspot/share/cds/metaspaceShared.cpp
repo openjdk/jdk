@@ -437,8 +437,8 @@ class VM_PopulateDumpSharedSpace : public VM_Operation {
 private:
   ArchiveHeapInfo _heap_info;
 
-  void dump_java_heap_objects(GrowableArray<Klass*>* klasses) NOT_CDS_JAVA_HEAP_RETURN;
-  void dump_shared_symbol_table(GrowableArray<Symbol*>* symbols) {
+  void dump_java_heap_objects(GrowableArrayCHeap<Klass*, mtClassShared>* klasses) NOT_CDS_JAVA_HEAP_RETURN;
+  void dump_shared_symbol_table(GrowableArrayView<Symbol*>* symbols) {
     log_info(cds)("Dumping symbol table ...");
     SymbolTable::write_to_archive(symbols);
   }
@@ -837,7 +837,7 @@ bool MetaspaceShared::try_link_class(JavaThread* current, InstanceKlass* ik) {
 }
 
 #if INCLUDE_CDS_JAVA_HEAP
-void VM_PopulateDumpSharedSpace::dump_java_heap_objects(GrowableArray<Klass*>* klasses) {
+void VM_PopulateDumpSharedSpace::dump_java_heap_objects(GrowableArrayCHeap<Klass*, mtClassShared>* klasses) {
   if(!HeapShared::can_write()) {
     log_info(cds)(
       "Archived java heap is not supported as UseG1GC "

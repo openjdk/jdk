@@ -61,7 +61,7 @@ public:
 
 class DynamicArchive : AllStatic {
 private:
-  static GrowableArray<ObjArrayKlass*>* _array_klasses;
+  static GrowableArrayCHeap<ObjArrayKlass*, mtClassShared>* _array_klasses;
   static Array<ObjArrayKlass*>* _dynamic_archive_array_klasses;
 public:
   static void check_for_dynamic_dump();

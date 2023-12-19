@@ -1364,7 +1364,7 @@ void JavaThread::oops_do_no_frames(OopClosure* f, CodeBlobClosure* cf) {
   assert(vframe_array_head() == nullptr, "deopt in progress at a safepoint!");
   // If we have deferred set_locals there might be oops waiting to be
   // written
-  GrowableArray<jvmtiDeferredLocalVariableSet*>* list = JvmtiDeferredUpdates::deferred_locals(this);
+  GrowableArrayCHeap<jvmtiDeferredLocalVariableSet*, mtCompiler>* list = JvmtiDeferredUpdates::deferred_locals(this);
   if (list != nullptr) {
     for (int i = 0; i < list->length(); i++) {
       list->at(i)->oops_do(f);

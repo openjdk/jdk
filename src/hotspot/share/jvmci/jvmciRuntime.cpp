@@ -919,13 +919,6 @@ static bool is_referent_non_null(oop* handle) {
   return handle != nullptr && *handle != nullptr;
 }
 
-// Swaps the elements in `array` at index `a` and index `b`
-static void swap(GrowableArray<oop*>* array, int a, int b) {
-  oop* tmp = array->at(a);
-  array->at_put(a, array->at(b));
-  array->at_put(b, tmp);
-}
-
 int JVMCIRuntime::release_cleared_oop_handles() {
   // Despite this lock, it's possible for another thread
   // to clear a handle's referent concurrently (e.g., a thread
@@ -949,7 +942,7 @@ int JVMCIRuntime::release_cleared_oop_handles() {
       if (is_referent_non_null(handle)) {
         if (i != next && !is_referent_non_null(_oop_handles.at(next))) {
           // Swap elements at index `next` and `i`
-          swap(&_oop_handles, next, i);
+          _oop_handles.at_swap(next, i);
         }
         next++;
       }
@@ -967,7 +960,7 @@ int JVMCIRuntime::release_cleared_oop_handles() {
       if (handle != nullptr) {
         if (i != next && _oop_handles.at(next) == nullptr) {
           // Swap elements at index `next` and `i`
-          swap(&_oop_handles, next, i);
+          _oop_handles.at_swap(next, i);
         }
         next++;
       }
@@ -1045,7 +1038,7 @@ JVMCIRuntime::JVMCIRuntime(JVMCIRuntime* next, int id, bool for_compile_broker) 
   _id(id),
   _next(next),
   _metadata_handles(new MetadataHandles()),
-  _oop_handles(100, mtJVMCI),
+  _oop_handles(100),
   _num_attached_threads(0),
   _for_compile_broker(for_compile_broker)
 {

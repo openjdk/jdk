@@ -115,6 +115,7 @@ class Mutex;
 struct jvmtiTimerInfo;
 
 template<class E> class GrowableArray;
+template<class E, MEMFLAGS F> class GrowableArrayCHeap;
 
 // %%%%% Moved ThreadState, START_FN, OSThread to new osThread.hpp. -- Rose
 

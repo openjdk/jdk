@@ -72,7 +72,7 @@ private:
   int       _bci;
   intptr_t* _id;
   int       _vframe_id;
-  GrowableArray<jvmtiDeferredLocalVariable*>* _locals;
+  GrowableArrayCHeap<jvmtiDeferredLocalVariable*, mtCompiler>* _locals;
   bool      _objects_are_deoptimized;
 
   void      update_value(StackValueCollection* locals, BasicType type, int index, jvalue value);
@@ -116,7 +116,7 @@ class JvmtiDeferredUpdates : public CHeapObj<mtCompiler> {
   int _relock_count_after_wait;
 
   // Deferred updates of locals, expressions, and monitors
-  GrowableArray<jvmtiDeferredLocalVariableSet*> _deferred_locals_updates;
+  GrowableArrayCHeap<jvmtiDeferredLocalVariableSet*, mtCompiler> _deferred_locals_updates;
 
   void inc_relock_count_after_wait() {
     _relock_count_after_wait++;
@@ -128,19 +128,18 @@ class JvmtiDeferredUpdates : public CHeapObj<mtCompiler> {
     return result;
   }
 
-  GrowableArray<jvmtiDeferredLocalVariableSet*>* deferred_locals() { return &_deferred_locals_updates; }
+  GrowableArrayCHeap<jvmtiDeferredLocalVariableSet*, mtCompiler>* deferred_locals() { return &_deferred_locals_updates; }
 
   JvmtiDeferredUpdates() :
     _relock_count_after_wait(0),
-    _deferred_locals_updates((AnyObj::set_allocation_type((address) &_deferred_locals_updates,
-                             AnyObj::C_HEAP), 1), mtCompiler) { }
+    _deferred_locals_updates(1) { }
 
 public:
   ~JvmtiDeferredUpdates();
 
   static void create_for(JavaThread* thread);
 
-  static GrowableArray<jvmtiDeferredLocalVariableSet*>* deferred_locals(JavaThread* jt) {
+  static GrowableArrayCHeap<jvmtiDeferredLocalVariableSet*, MEMFLAGS::mtCompiler>* deferred_locals(JavaThread* jt) {
     return jt->deferred_updates() == nullptr ? nullptr : jt->deferred_updates()->deferred_locals();
   }
 

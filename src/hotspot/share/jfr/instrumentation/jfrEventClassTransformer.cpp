@@ -1663,7 +1663,7 @@ static void copy_traceid(const InstanceKlass* ik, const InstanceKlass* new_ik) {
 static const Klass* klass_being_redefined(const InstanceKlass* ik, JvmtiThreadState* state) {
   assert(ik != nullptr, "invariant");
   assert(state != nullptr, "invariant");
-  const GrowableArray<Klass*>* const redef_klasses = state->get_classes_being_redefined();
+  const GrowableArrayCHeap<Klass*, mtClass>* const redef_klasses = state->get_classes_being_redefined();
   if (redef_klasses == nullptr || redef_klasses->is_empty()) {
     return nullptr;
   }

@@ -1248,18 +1248,18 @@ extern "C" bool dbg_is_safe(const void* p, intptr_t errvalue);
 
 class FrameValuesOopClosure: public OopClosure, public DerivedOopClosure {
 private:
-  GrowableArray<oop*>* _oops;
-  GrowableArray<narrowOop*>* _narrow_oops;
-  GrowableArray<derived_base*>* _base;
-  GrowableArray<derived_pointer*>* _derived;
+  GrowableArrayCHeap<oop*, mtThread>* _oops;
+  GrowableArrayCHeap<narrowOop*, mtThread>* _narrow_oops;
+  GrowableArrayCHeap<derived_base*, mtThread>* _base;
+  GrowableArrayCHeap<derived_pointer*, mtThread>* _derived;
   NoSafepointVerifier nsv;
 
 public:
   FrameValuesOopClosure() {
-    _oops = new (mtThread) GrowableArray<oop*>(100, mtThread);
-    _narrow_oops = new (mtThread) GrowableArray<narrowOop*>(100, mtThread);
-    _base = new (mtThread) GrowableArray<derived_base*>(100, mtThread);
-    _derived = new (mtThread) GrowableArray<derived_pointer*>(100, mtThread);
+    _oops = new GrowableArrayCHeap<oop*, mtThread>(100);
+    _narrow_oops = new GrowableArrayCHeap<narrowOop*, mtThread>(100);
+    _base = new GrowableArrayCHeap<derived_base*, mtThread>(100);
+    _derived = new GrowableArrayCHeap<derived_pointer*, mtThread>(100);
   }
   ~FrameValuesOopClosure() {
     delete _oops;

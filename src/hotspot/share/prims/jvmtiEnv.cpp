@@ -1354,8 +1354,8 @@ JvmtiEnv::GetOwnedMonitorInfo(jthread thread, jint* owned_monitor_count_ptr, job
   HandleMark hm(calling_thread);
 
   // growable array of jvmti monitors info on the C-heap
-  GrowableArray<jvmtiMonitorStackDepthInfo*> *owned_monitors_list =
-      new (mtServiceability) GrowableArray<jvmtiMonitorStackDepthInfo*>(1, mtServiceability);
+  GrowableArrayCHeap<jvmtiMonitorStackDepthInfo*, mtServiceability>* owned_monitors_list =
+    new GrowableArrayCHeap<jvmtiMonitorStackDepthInfo*, mtServiceability>(1);
 
   JvmtiVTMSTransitionDisabler disabler(thread);
   ThreadsListHandle tlh(calling_thread);
@@ -1427,8 +1427,8 @@ JvmtiEnv::GetOwnedMonitorStackDepthInfo(jthread thread, jint* monitor_info_count
   HandleMark hm(calling_thread);
 
   // growable array of jvmti monitors info on the C-heap
-  GrowableArray<jvmtiMonitorStackDepthInfo*> *owned_monitors_list =
-         new (mtServiceability) GrowableArray<jvmtiMonitorStackDepthInfo*>(1, mtServiceability);
+  GrowableArrayCHeap<jvmtiMonitorStackDepthInfo*, mtServiceability>* owned_monitors_list =
+    new GrowableArrayCHeap<jvmtiMonitorStackDepthInfo*, mtServiceability>(1);
 
   JvmtiVTMSTransitionDisabler disabler(thread);
   ThreadsListHandle tlh(calling_thread);

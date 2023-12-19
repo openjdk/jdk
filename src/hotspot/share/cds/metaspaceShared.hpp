@@ -35,8 +35,6 @@ class FileMapInfo;
 class outputStream;
 class SerializeClosure;
 
-template<class E> class GrowableArray;
-
 enum MapArchiveResult {
   MAP_ARCHIVE_SUCCESS,
   MAP_ARCHIVE_MMAP_FAILURE,

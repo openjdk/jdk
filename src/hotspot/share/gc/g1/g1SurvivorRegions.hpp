@@ -28,15 +28,14 @@
 #include "gc/g1/g1RegionsOnNodes.hpp"
 #include "runtime/globals.hpp"
 
-template <typename T>
-class GrowableArray;
+template <typename T, MEMFLAGS F> class GrowableArrayCHeap;
 class HeapRegion;
 
 class G1SurvivorRegions {
 private:
-  GrowableArray<HeapRegion*>* _regions;
-  volatile size_t             _used_bytes;
-  G1RegionsOnNodes            _regions_on_node;
+  GrowableArrayCHeap<HeapRegion*, mtGC>* _regions;
+  volatile size_t                        _used_bytes;
+  G1RegionsOnNodes                       _regions_on_node;
 
 public:
   G1SurvivorRegions();
@@ -50,7 +49,7 @@ public:
   uint length() const;
   uint regions_on_node(uint node_index) const;
 
-  const GrowableArray<HeapRegion*>* regions() const {
+  const GrowableArrayCHeap<HeapRegion*, mtGC>* regions() const {
     return _regions;
   }
 

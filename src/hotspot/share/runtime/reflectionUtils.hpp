@@ -173,7 +173,7 @@ class FilteredField : public CHeapObj<mtInternal>  {
 
 class FilteredFieldsMap : AllStatic {
  private:
-  static GrowableArray<FilteredField *> *_filtered_fields;
+  static GrowableArrayCHeap<FilteredField*, mtServiceability> *_filtered_fields;
  public:
   static void initialize();
   static bool is_filtered_field(Klass* klass, int field_offset) {

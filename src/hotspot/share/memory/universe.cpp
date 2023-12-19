@@ -503,7 +503,7 @@ void Universe::fixup_mirrors(TRAPS) {
     InstanceMirrorKlass::init_offset_of_static_fields();
   }
 
-  GrowableArray <Klass*>* list = java_lang_Class::fixup_mirror_list();
+  GrowableArrayCHeap<Klass*, mtClass>* list = java_lang_Class::fixup_mirror_list();
   int list_length = list->length();
   for (int i = 0; i < list_length; i++) {
     Klass* k = list->at(i);

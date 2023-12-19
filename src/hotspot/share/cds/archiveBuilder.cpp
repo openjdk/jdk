@@ -67,7 +67,7 @@ ArchiveBuilder::OtherROAllocMark::~OtherROAllocMark() {
 
 ArchiveBuilder::SourceObjList::SourceObjList() : _ptrmap(16 * K, mtClassShared) {
   _total_bytes = 0;
-  _objs = new (mtClassShared) GrowableArray<SourceObjInfo*>(128 * K, mtClassShared);
+  _objs = new GrowableArrayCHeap<SourceObjInfo*, mtClassShared>(128 * K);
 }
 
 ArchiveBuilder::SourceObjList::~SourceObjList() {
@@ -166,8 +166,8 @@ ArchiveBuilder::ArchiveBuilder() :
   _estimated_metaspaceobj_bytes(0),
   _estimated_hashtable_bytes(0)
 {
-  _klasses = new (mtClassShared) GrowableArray<Klass*>(4 * K, mtClassShared);
-  _symbols = new (mtClassShared) GrowableArray<Symbol*>(256 * K, mtClassShared);
+  _klasses = new GrowableArrayCHeap<Klass*, mtClassShared>(4 * K);
+  _symbols = new GrowableArrayCHeap<Symbol*, mtClassShared>(256 * K);
 
   assert(_current == nullptr, "must be");
   _current = this;
