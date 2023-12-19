@@ -111,8 +111,6 @@ static PFNISTHEMEBACKGROUNDPARTIALLYTRANSPARENT
                                IsThemeBackgroundPartiallyTransparentFunc = NULL;
 static PFNGETTHEMETRANSITIONDURATION GetThemeTransitionDurationFunc = NULL;
 
-static BOOL executeFallback = false;
-
 BOOL InitThemes() {
     static HMODULE hModThemes = NULL;
     hModThemes = JDK_LoadSystemLibrary("UXTHEME.DLL");
@@ -157,10 +155,9 @@ BOOL InitThemes() {
             (PFNGETTHEMETRANSITIONDURATION)GetProcAddress(hModThemes,
                                         "GetThemeTransitionDuration");
 
-
         OpenThemeDataForDpiFunc = NULL;
-        
-        if(OpenThemeDataForDpiFunc
+
+        if(OpenThemeDataFunc
            && DrawThemeBackgroundFunc
            && CloseThemeDataFunc
            && DrawThemeTextFunc
@@ -182,24 +179,17 @@ BOOL InitThemes() {
               // We need to make sure we can load the Theme.
               // Use the default DPI value of 96 on windows.
               constexpr unsigned int defaultDPI = 96;
-              HTHEME hTheme = OpenThemeDataForDpiFunc (
-                              AwtToolkit::GetInstance().GetHWnd(),
-                              L"Button", defaultDPI);
+
+              HTHEME hTheme = OpenThemeDataForDpiFunc ? OpenThemeDataForDpiFunc(AwtToolkit::GetInstance().GetHWnd(),
+                                                                         L"Button", defaultDPI) :
+                                                 OpenThemeDataFunc(AwtToolkit::GetInstance().GetHWnd(), L"Button");
+
               if(hTheme) {
                   DTRACE_PRINTLN("Loaded Theme data.\n");
                   CloseThemeDataFunc(hTheme);
                   return TRUE;
               }
             } else {
-                if(OpenThemeDataFunc && (OpenThemeDataForDpiFunc==NULL)) {
-                    HTHEME hTheme = OpenThemeDataFunc(AwtToolkit::GetInstance().GetHWnd(), L"Button");
-                    executeFallback = true;
-                    if(hTheme) {
-                        DTRACE_PRINTLN("Loaded Theme data.\n");
-                        CloseThemeDataFunc(hTheme);
-                        return TRUE;
-                    }
-                }
                 FreeLibrary(hModThemes);
                 hModThemes = NULL;
             }
@@ -267,14 +257,10 @@ JNIEXPORT jlong JNICALL Java_sun_awt_windows_ThemeReader_openTheme
      HTHEME htheme = NULL;
     // We need to open the Theme on a Window that will stick around.
     // The best one for that purpose is the Toolkit window.
-    if (executeFallback) {
-        htheme = OpenThemeDataFunc(AwtToolkit::GetInstance().GetHWnd(), str);
-    }
-    else {
-        htheme = OpenThemeDataForDpiFunc(
-        AwtToolkit::GetInstance().GetHWnd(),
-        str, dpi);
-    }
+
+     htheme = OpenThemeDataForDpiFunc ? OpenThemeDataForDpiFunc(AwtToolkit::GetInstance().GetHWnd(), str, dpi) :
+                                        OpenThemeDataFunc(AwtToolkit::GetInstance().GetHWnd(), str);
+
     JNU_ReleaseStringPlatformChars(env, widget, str);
     return (jlong) htheme;
 }
@@ -455,7 +441,7 @@ JNIEXPORT void JNICALL Java_sun_awt_windows_ThemeReader_paintBackground
     rect.left = 0;
     rect.top = 0;
 
-    if(executeFallback) {
+    if(!OpenThemeDataForDpiFunc) {
         rect.bottom = h;
         rect.right = w;
     }
@@ -488,6 +474,8 @@ JNIEXPORT void JNICALL Java_sun_awt_windows_ThemeReader_paintBackground
 void rescale(SIZE *size) {
     static int dpiX = -1;
     static int dpiY = -1;
+    constexpr unsigned int defaultDPI = 96;
+
     if (dpiX == -1 || dpiY == -1) {
         HWND hWnd = ::GetDesktopWindow();
         HDC hDC = ::GetDC(hWnd);
@@ -496,12 +484,12 @@ void rescale(SIZE *size) {
         ::ReleaseDC(hWnd, hDC);
     }
 
-    if (dpiX !=0 && dpiX != 96) {
-        float invScaleX = 96.0f / dpiX;
+    if (dpiX !=0 && dpiX != defaultDPI) {
+        float invScaleX = (float)defaultDPI / dpiX;
         size->cx = (int) round(size->cx * invScaleX);
     }
-    if (dpiY != 0 && dpiY != 96) {
-        float invScaleY = 96.0f / dpiY;
+    if (dpiY != 0 && dpiY != defaultDPI) {
+        float invScaleY = (float)defaultDPI / dpiY;
         size->cy = (int) round(size->cy * invScaleY);
     }
 }
@@ -797,7 +785,7 @@ JNIEXPORT jobject JNICALL Java_sun_awt_windows_ThemeReader_getPartSize
                 CHECK_NULL_RETURN(dimMID, NULL);
             }
 
-            if(executeFallback) {
+            if(!OpenThemeDataForDpiFunc) {
                 rescale(&size);
             }
 
