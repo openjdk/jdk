@@ -223,7 +223,7 @@ public class ObjectMethods {
             if (rt1.isPrimitive() == rt2.isPrimitive() || rt1.isEnum() == rt2.isEnum()) {
                 return 0;
             }
-            return rt1.isPrimitive() || rt1.isEnum() ? 1 : rt1.isArray() || Iterable.class.isAssignableFrom(rt1) ? -1 : 0;
+            return rt1.isPrimitive() || rt1.isEnum() || rt1.isArray() ? 1 : Iterable.class.isAssignableFrom(rt1) ? -1 : 0;
         });
 
         for (MethodHandle getter : equalsGetters) {
