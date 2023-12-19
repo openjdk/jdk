@@ -827,6 +827,10 @@ TEST_VM(metaspace, MetaspaceArena_test_repeatedly_allocate_and_deallocate_nontop
 }
 
 static void test_random_aligned_allocation(size_t arena_alignment_words, SizeRange range) {
+  if (Settings::use_allocation_guard()) {
+    return;
+  }
+
   // We let the arena use 4K chunks, unless the alloc size is larger.
   chunklevel_t level = CHUNK_LEVEL_4K;
   const ArenaGrowthPolicy policy (&level, 1);
