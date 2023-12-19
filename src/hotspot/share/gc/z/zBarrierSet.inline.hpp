@@ -440,6 +440,7 @@ inline void ZBarrierSet::AccessBarrier<decorators, BarrierSetT>::clone_in_heap(o
     // and arraycopy sequence, so the performance of this runtime call
     // does not matter for object arrays.
     clone_obj_array(objArrayOop(src), objArrayOop(dst), size);
+    return;
   }
 
   // Fix the oops

@@ -39,6 +39,8 @@ public:
   static ZBarrierSetAssembler* assembler();
   static bool barrier_needed(DecoratorSet decorators, BasicType type);
 
+  static void clone_obj_array(objArrayOop src, objArrayOop dst, size_t size);
+
   virtual void on_thread_create(Thread* thread);
   virtual void on_thread_destroy(Thread* thread);
   virtual void on_thread_attach(Thread* thread);
@@ -47,8 +49,6 @@ public:
   virtual void on_slowpath_allocation_exit(JavaThread* thread, oop new_obj);
 
   virtual void print_on(outputStream* st) const;
-
-  static void clone_obj_array(objArrayOop src, objArrayOop dst, size_t size);
 
   template <DecoratorSet decorators, typename BarrierSetT = ZBarrierSet>
   class AccessBarrier : public BarrierSet::AccessBarrier<decorators, BarrierSetT> {
