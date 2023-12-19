@@ -51,13 +51,6 @@ inline bool G1FullGCMarker::mark_object(oop obj) {
     return false;
   }
 
-  // Marked by us, preserve if needed.
-  if (_collector->is_compacting(obj)) {
-    // It is not necessary to preserve marks for objects in regions we do not
-    // compact because we do not change their headers (i.e. forward them).
-    preserved_stack()->push_if_necessary(obj, obj->mark());
-  }
-
   // Check if deduplicatable string.
   if (StringDedup::is_enabled() &&
       java_lang_String::is_instance(obj) &&

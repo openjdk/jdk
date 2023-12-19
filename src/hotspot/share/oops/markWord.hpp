@@ -162,7 +162,7 @@ class markWord {
 
   // Should this header be preserved during GC?
   bool must_be_preserved(const oopDesc* obj) const {
-    return (!is_unlocked() || !has_no_hash());
+    return !is_marked() && (is_locked() || !has_no_hash());
   }
 
   // WARNING: The following routines are used EXCLUSIVELY by
