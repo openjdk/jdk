@@ -172,7 +172,8 @@ public class InputFilesTest {
     }
 
     /**
-     * With @File as a part of jar command line, where the File is containing one or more non-existent files
+     * With @File as a part of jar command line, where the File is containing one or more
+     * non-existent files or directories
      * The final jar should not be created and correct error message should be caught.
      * IOException is triggered as expected.
      */
@@ -183,12 +184,15 @@ public class InputFilesTest {
         Files.writeString(Path.of("classes.list"), """
                 existingTestFile.txt
                 nonExistentTestFile.txt
+                nonExistentDirectory
                  """);
         onCompletion = () -> rm("existingTestFile.txt classes.list");
         try {
             jar("cf test.jar @classes.list");
         } catch (IOException e) {
-            Assert.assertEquals(e.getMessage().trim(), "nonExistentTestFile.txt : no such file or directory");
+            String msg = e.getMessage().trim();
+            Assert.assertTrue(msg.contains("nonExistentTestFile.txt : no such file or directory"));
+            Assert.assertTrue(msg.trim().contains("nonExistentDirectory : no such file or directory"));
             Assert.assertTrue(Files.notExists(Path.of("test.jar")), "Jar file should not be created.");
             throw e;
         }
