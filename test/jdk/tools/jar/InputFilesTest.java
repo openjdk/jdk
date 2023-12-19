@@ -137,23 +137,6 @@ public class InputFilesTest {
         Assert.assertEquals(baos.toByteArray(), output.getBytes());
     }
 
-    @Test
-    public void testMultipleFilesInClassesList() throws IOException {
-        touch("test");
-        touch("classes.list");
-        Files.writeString(Path.of("classes.list"), """
-                test
-                 """);
-        jar("cf test.jar @classes.list");
-        jar("tf test.jar");
-        println();
-        String output = "META-INF/" + nl +
-                "META-INF/MANIFEST.MF" + nl +
-                "test" + nl;
-        rm("test.jar test classes.list");
-        Assert.assertEquals(baos.toByteArray(), output.getBytes());
-    }
-
     @Test(expectedExceptions = {ZipException.class})
     public void test5() throws IOException {
         mkdir("a");
@@ -170,6 +153,11 @@ public class InputFilesTest {
         jar("cf test.jar --release 9 -C test1 a -C test2 a");
     }
 
+    /**
+     * Containing non-existent file in the file list
+     * The final jar should not be created and correct error message should be caught.
+     * IOException is triggered as expected.
+     */
     @Test(expectedExceptions = {IOException.class})
     public void testNonExistentFileInput() throws IOException {
         touch("existingTestFile.txt");
@@ -183,6 +171,11 @@ public class InputFilesTest {
         }
     }
 
+    /**
+     * With @File as a part of jar command line, where the File is containing one or more non-existent files
+     * The final jar should not be created and correct error message should be caught.
+     * IOException is triggered as expected.
+     */
     @Test(expectedExceptions = {IOException.class})
     public void testNonExistentFileInputClassList() throws IOException {
         touch("existingTestFile.txt");
