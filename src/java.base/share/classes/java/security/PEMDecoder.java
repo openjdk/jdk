@@ -42,21 +42,35 @@ import java.util.Base64;
 import java.util.Objects;
 
 /**
- * PEMDecoder is an immutable PEM decoding class for supported
- * {@code SecurityObject} objects.
+ * PEMDecoder is an immutable Privacy-Enhanced Mail (PEM) decoding class.
+ * Decoding is limited to specific classes which implement
+ * {@link SecurityObject}, such as:  PublicKey, PrivateKey, EncodedKeySpec,
+ * EncryptedPrivateKeyInfo, Certificate, and CRL.
+ * <p>
+ * PEM is a textual encoding used for storing and transferring security
+ * objects, such as asymmetric keys, certificates, and certificate revocation
+ * lists (CRL). Defined in RFC 1421 and RFC7468, PEM consists of a
+ * Base64-formatted binary encoding surrounded by a type identifying header
+ * and footer.
  */
 final public class PEMDecoder implements Decoder<SecurityObject> {
     final Provider factory;
     final char[] password;
 
     /**
-     * Instantiates a new Pem decoder.
+     * Create an immutable instance of PEMDecoder.
      */
     public PEMDecoder() {
         factory = null;
         password = null;
     }
 
+    /**
+     * Creates a immutable instance with a specific KeyFactory and/or password.
+     * @param withFactory KeyFactory provider
+     * @param withPassword char[] password for EncryptedPrivateKeyInfo
+     *                    decryption
+     */
     private PEMDecoder(Provider withFactory, char[] withPassword) {
         super();
         factory = withFactory;
@@ -270,7 +284,7 @@ final public class PEMDecoder implements Decoder<SecurityObject> {
      * knowledge of the PEM data class type and specify the returned object's
      * class.
      *
-     * @param <S extends SecurityObject> Type parameter
+     * @param <S> Type parameter
      * @param string the String containing PEM data.
      * @param tClass the class instance of the returned object.  The class must implement {@code SecurityObject}.
      * @return The SecurityObject typecasted to tClass.
@@ -298,29 +312,4 @@ final public class PEMDecoder implements Decoder<SecurityObject> {
             throw new IOException(e);
         }
     }
-/*
-        /**
-         * Decode object.
-         *
-         * @param data   the data
-         * @param header the header
-         * @param footer the footer
-         * @return the object
-         * @throws IOException the io exception
-
-        protected SecurityObject decode(String data, String header, String footer) throws IOException {
-            KeyType keyType;
-
-            if (header.equalsIgnoreCase(Pem.PUBHEADER) ||
-                header.startsWith(Pem.PKCS8HEADER) ||
-                header.startsWith(Pem.PKCS8ENCHEADER) ||
-                header.startsWith(Pem.CERTHEADER) ||
-                header.startsWith(Pem.CRLHEADER)) {
-                return new PEMDecoder().decode(data, header, footer);
-            }
-
-            throw new IOException("Unknown header format");
-        }
-*/
-
 }

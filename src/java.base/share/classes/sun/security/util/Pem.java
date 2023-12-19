@@ -74,6 +74,8 @@ public class Pem {
     public static final String PKCS1HEADER = "-----BEGIN RSA PRIVATE KEY-----";
     public static final String PKCS1FOOTER = "-----END RSA PRIVATE KEY-----";
 
+    public static final String LINESEPARATOR = "\r\n";
+
     private static final String STARTHEADER = "-----BEGIN ";
     private static final String ENDFOOTER = "-----END ";
 
@@ -114,7 +116,7 @@ public class Pem {
     }
 
 
-    // Sorta hack to get the right OID for PBBS2
+    // Sorta hack to get the right OID for PBEKS2
     public static ObjectIdentifier getPBEID(String algorithm) throws IOException {
         try {
             if (algorithm.contains("AES")) {
