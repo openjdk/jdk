@@ -176,6 +176,7 @@ class ParallelScavengeHeap : public CollectedHeap {
   void verify_nmethod(nmethod* nm) override;
 
   void prune_scavengable_nmethods();
+  void prune_unlinked_nmethods();
 
   size_t max_capacity() const override;
 

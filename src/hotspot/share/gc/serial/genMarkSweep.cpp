@@ -220,6 +220,10 @@ void GenMarkSweep::mark_sweep_phase1(bool clear_all_softrefs) {
       ctx->purge_nmethods();
     }
     {
+      GCTraceTime(Debug, gc, phases) ur("Unregister NMethods", gc_timer());
+      gch->prune_unlinked_nmethods();
+    }
+    {
       GCTraceTime(Debug, gc, phases) t("Free Code Blobs", gc_timer());
       ctx->free_code_blobs();
     }
