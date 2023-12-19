@@ -318,17 +318,20 @@ public class TestBase64 {
     static byte[] base64Bytes;
 
     static {
+        // Set up ByteBuffer with characters to be encoded
         int plainLength = 0;
         for (int i = 0; i < plainOffsets.length; i++) {
             plainOffsets[i] = plainLength;
             int positionLength = (BASE_LENGTH + i) % 2048;
             plainLength += positionLength;
         }
+        // Put one of each possible byte value into ByteBuffer
         plainBytes = new byte[plainLength];
         for (int i = 0; i < plainBytes.length; i++) {
             plainBytes[i] = (byte) i;
         }
 
+        // Grab various slices of the ByteBuffer and encode them
         ByteBuffer plainBuffer = ByteBuffer.wrap(plainBytes);
         int base64Length = 0;
         for (int i = 0; i < POSITIONS; i++) {
@@ -338,6 +341,8 @@ public class TestBase64 {
             ByteBuffer plainSlice = plainBuffer.slice(offset, length);
             base64Length += Base64.getEncoder().encode(plainSlice).remaining();
         }
+
+        // Decode the slices created above and ensure lengths match
         base64Offsets[base64Offsets.length - 1] = base64Length;
         base64Bytes = new byte[base64Length];
         for (int i = 0; i < POSITIONS; i++) {
@@ -359,6 +364,10 @@ public class TestBase64 {
         System.out.println("Test complete, no invalid decodes detected");
     }
 
+    // Use ByteBuffer to cause decode() to use the base + offset form of decode
+    // Checks for bug reported in JDK-8321599 where padding characters appear
+    // within the beginning of the ByteBuffer *before* the offset.  This caused
+    // the decoded string length to be off by 1 or 2 bytes.
     static void decodeAndCheck() {
         for (int i = 0; i < POSITIONS; i++) {
             ByteBuffer encodedBytes = base64BytesAtPosition(i);
@@ -373,6 +382,8 @@ public class TestBase64 {
         }
     }
 
+    // Encode strings of lengths 1-1K, decode, and ensure length and contents correct.
+    // This checks that padding characters are properly handled by decode.
     static void encodeDecode() {
         String allAs = "A(=)".repeat(128);
         for (int i = 1; i <= 512; i++) {
