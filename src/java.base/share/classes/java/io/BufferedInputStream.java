@@ -663,16 +663,15 @@ public class BufferedInputStream extends FilterInputStream {
     }
 
     /**
-     * Returns true if this class satisfies two conditions:
+     * Returns true if this class satisfies the following conditions:
      * <ul>
-     * <li>the reference to {@code byte[]} is not kept within the class</li>
-     * <li>the argument of {@link OutputStream#write(byte[])}} and {@link OutputStream#write(byte[], int, int)}} is not modified within the methods</li>
-     * <li>the {@code byte[]} is not read outside of the given bounds</li>
+     * <li>does not retain a reference to the {@code byte[]}</li>
+     * <li>does not leak a reference to the {@code byte[]} to non-trusted classes</li>
+     * <li>does not modify the contents of the {@code byte[]}</li>
+     * <li>{@code OutputStream.write(byte[], int, int)} write does not read the contents outside of the offset/length bounds</li>
      * </ul>
      *
      * @return true if this class is trusted
-     * @see java.io.ByteArrayInputStream#transferTo(OutputStream)
-     * @see java.io.BufferedInputStream#implTransferTo(OutputStream)
      */
     private static boolean isTrusted(OutputStream os) {
         var clazz = os.getClass();
