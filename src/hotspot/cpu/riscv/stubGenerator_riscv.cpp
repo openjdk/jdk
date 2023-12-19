@@ -4443,10 +4443,8 @@ class StubGenerator: public StubCodeGenerator {
     assert(round >= 0 && round < 80, "must be");
 
     if (round < 16) {
-
-      if (round%2 == 0) {
-        __ ld(ws[round/2], Address(buf, 0));
-        __ addi(buf, buf, 8);
+      if ((round % 2) == 0) {
+        __ ld(ws[round/2], Address(buf, round * 4));
         // reverse bytes, as SHA-1 is defined in big-endian.
         __ revb(ws[round/2], ws[round/2]);
         __ srli(cur_w, ws[round/2], 32);
@@ -4457,7 +4455,12 @@ class StubGenerator: public StubCodeGenerator {
       return;
     }
 
-    if (round%2 == 0) {
+    if (round == 16) {
+      int64_t block_bytes = round * 4;
+      __ addi(buf, buf, block_bytes);
+    }
+
+    if ((round % 2) == 0) {
       int idx = 16;
       // W't = ROTL'1(W't-3 ^ W't-8 ^ W't-14 ^ W't-16),  16 <= t <= 79
       __ mv(cur_w, ws[(idx-3)/2]);
@@ -4491,8 +4494,7 @@ class StubGenerator: public StubCodeGenerator {
     __ rolw_imm(cur_w, cur_w, 1, tmp);
 
     // copy the cur_w value to ws[8]
-    __ slli(cur_w, cur_w, 32);
-    __ srli(cur_w, cur_w, 32);
+    __ zero_extend(cur_w, cur_w, 32);
     __ orr(ws[idx/2], ws[idx/2], cur_w);
 
     // shift the w't registers, so they start from ws[0] again.
@@ -4540,19 +4542,22 @@ class StubGenerator: public StubCodeGenerator {
   // b = a
   // a = T
   void sha1_process_round(int round, Register a, Register b, Register c, Register d, Register e,
-                          Register cur_k, Register cur_w, Register tmp1, Register tmp2) {
+                          Register cur_k, Register cur_w, Register tmp) {
     assert(round >= 0 && round < 80, "must be");
-    assert_different_registers(a, b, c, d, e, cur_w, cur_k, tmp1, tmp2);
+    assert_different_registers(a, b, c, d, e, cur_w, cur_k, tmp);
 
     // T = ROTL'5(a) + f't(b, c, d) + e + K't + W't
     {
       Register t = e;
-      __ add(t, t, cur_w);
       __ add(t, t, cur_k);
-      __ rolw_imm(tmp1, a, 5, tmp2);
-      __ add(t, t, tmp1);
-      sha1_f(round, tmp1, b, c, d, tmp2);
-      __ add(tmp1, t, tmp1);
+      __ add(t, t, cur_w);
+      // cur_w will be recalculated at the beginning of another round,
+      // so, we can reuse it as a temp register here.
+      __ rolw_imm(tmp, a, 5, cur_w);
+      __ add(t, t, tmp);
+      // as pointed above, we can use cur_w as temporary register here.
+      sha1_f(round, tmp, b, c, d, cur_w);
+      __ add(tmp, t, tmp);
     }
 
     // e = d
@@ -4562,11 +4567,17 @@ class StubGenerator: public StubCodeGenerator {
     // a = T
     __ mv(e, d);
     __ mv(d, c);
-    __ rolw_imm(c, b, 30, tmp2);
+    // as pointed above, we can use cur_w as temporary register here.
+    __ rolw_imm(c, b, 30, cur_w);
     __ mv(b, a);
-    __ mv(a, tmp1);
+    __ mv(a, tmp);
   }
 
+  // H(i)0 = a + H(i-1)0
+  // H(i)1 = b + H(i-1)1
+  // H(i)2 = c + H(i-1)2
+  // H(i)3 = d + H(i-1)3
+  // H(i)4 = e + H(i-1)4
   void sha1_calculate_im_hash(Register a, Register b, Register c, Register d, Register e,
                               Register prev_ab, Register prev_cd, Register prev_e) {
     assert_different_registers(a, b, c, d, e, prev_ab, prev_cd, prev_e);
@@ -4582,19 +4593,18 @@ class StubGenerator: public StubCodeGenerator {
     __ add(e, e, prev_e);
   }
 
-  void sha1_reserve_prev_abcde(Register a, Register b, Register c, Register d, Register e,
+  void sha1_preserve_prev_abcde(Register a, Register b, Register c, Register d, Register e,
                                Register prev_ab, Register prev_cd, Register prev_e,
-                               Register tmp1, Register tmp2) {
-    assert_different_registers(a, b, c, d, e, prev_ab, prev_cd, prev_e, tmp1, tmp2);
-    int64_t mask32 = 0xffffffff;
+                               Register mask32, Register tmp) {
+    assert_different_registers(a, b, c, d, e, prev_ab, prev_cd, prev_e, mask32, tmp);
 
-    __ slli(tmp1, b, 32);
-    __ andi(prev_ab, a, mask32, tmp2);
-    __ orr(prev_ab, prev_ab, tmp1);
+    __ slli(tmp, b, 32);
+    __ andr(prev_ab, a, mask32);
+    __ orr(prev_ab, prev_ab, tmp);
 
-    __ slli(tmp1, d, 32);
-    __ andi(prev_cd, c, mask32, tmp2);
-    __ orr(prev_cd, prev_cd, tmp1);
+    __ slli(tmp, d, 32);
+    __ andr(prev_cd, c, mask32);
+    __ orr(prev_cd, prev_cd, tmp);
 
     __ mv(prev_e, e);
   }
@@ -4658,11 +4668,15 @@ class StubGenerator: public StubCodeGenerator {
     // current w't's value
     const Register cur_w = x25;
     // values of a, b, c, d, e in the previous round
-    const Register prev_ab = x26, prev_cd = x27, prev_e = t2;
+    const Register prev_ab = x26, prev_cd = x27, prev_e = t1;
+
+    const Register mask32 = t2;
 
     RegSet saved_regs = RegSet::range(x18, x27);
-    saved_regs += RegSet::of(t2);
+    saved_regs += RegSet::of(tp);
     __ push_reg(saved_regs, sp);
+
+    __ mv(mask32, 0xffffffff);
 
     // load 5 words state into a, b, c, d, e.
     //
@@ -4682,13 +4696,12 @@ class StubGenerator: public StubCodeGenerator {
     __ srli(d, c, 32);
     __ lw(e, Address(state, 16));
 
-
     Label L_sha1_loop;
     if (multi_block) {
       __ BIND(L_sha1_loop);
     }
 
-    sha1_reserve_prev_abcde(a, b, c, d, e, prev_ab, prev_cd, prev_e, t0, t1);
+    sha1_preserve_prev_abcde(a, b, c, d, e, prev_ab, prev_cd, prev_e, mask32, t0);
 
     for (int round = 0; round < 80; round++) {
       // prepare K't value
@@ -4698,7 +4711,7 @@ class StubGenerator: public StubCodeGenerator {
       sha1_prepare_w(round, cur_w, ws, buf, t0);
 
       // one round process
-      sha1_process_round(round, a, b, c, d, e, cur_k, cur_w, t0, t1);
+      sha1_process_round(round, a, b, c, d, e, cur_k, cur_w, t0);
     }
 
     // compute the intermediate hash value
@@ -4711,17 +4724,16 @@ class StubGenerator: public StubCodeGenerator {
       __ mv(c_rarg0, offset);
     }
 
-    int64_t mask32 = 0xffffffff;
-    __ andi(a, a, mask32, t0);
+    // store back the state.
+    __ andr(a, a, mask32);
     __ slli(b, b, 32);
     __ orr(a, a, b);
     __ sd(a, Address(state, 0));
-    __ andi(c, c, mask32, t0);
+    __ andr(c, c, mask32);
     __ slli(d, d, 32);
     __ orr(c, c, d);
     __ sd(c, Address(state, 8));
     __ sw(e, Address(state, 16));
-
 
     __ pop_reg(saved_regs, sp);
 
