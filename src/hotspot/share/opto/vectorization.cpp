@@ -813,9 +813,9 @@ AlignmentSolution* AlignmentSolver::solve() const {
   //
   //   pre_iter = pre_iter_C_const + pre_iter_C_invar + pre_iter_C_init
   //
-  // where pre_iter_C_const, pre_iter_C_invar, and pre_iter_C_init are defined as the number of
-  // pre-loop iterations required to align the C_const, init and invar terms individually.
-  // Hence, we can rewrite:
+  // where pre_iter_C_const, pre_iter_C_invar, and pre_iter_C_init are rationals (rational numbers),
+  // and define how many pre-loop iterations (or fractions thereof) are required to align the
+  // C_const, init and invar terms individually. Hence, we can rewrite:
   //
   //     (C_const + C_invar * var_invar + C_init * var_init + C_pre * pre_iter) % aw
   //   = ( C_const             + C_pre * pre_iter_C_const
@@ -823,8 +823,12 @@ AlignmentSolution* AlignmentSolver::solve() const {
   //     + C_init  * var_init  + C_pre * pre_iter_C_init ) % aw
   //   = 0                                                                       (3)
   //
-  // We strengthen the constraints by splitting the equation into 3 equations, where the C_const,
-  // init, and invar term are aligned individually:
+  // While we can now attribute the (fractional) amount of iterations required for the C_const,
+  // invar and init terms, this does not give us a way to align these terms independendly.
+  //
+  // We strengthen the constraints by splitting the equation into 3 equations, and require that
+  // pre_iter_C_const, pre_iter_C_invar, and pre_iter_C_init are integers (not just rationals),
+  // which means that the C_const, init and invar terms can be aligned independently:
   //
   //   (C_const             + C_pre * pre_iter_C_const) % aw = 0                 (4a)
   //   (C_invar * var_invar + C_pre * pre_iter_C_invar) % aw = 0                 (4b)
@@ -833,7 +837,7 @@ AlignmentSolution* AlignmentSolver::solve() const {
   // If we cannot prove that the C_const, init and invar terms can be aligned independently, then
   // we can always modify init (by 1) or invar (by var_invar), and hence invalidate (3). Hence,
   // this strengthening is necessary to guarantee statically that (3) has a solution, i.e. that
-  // we can ensure alignment for and init or invar.
+  // we can ensure alignment for any runtime value of init or invar.
   //
   // Equations (4a, b, c) can have one of these states:
   //
