@@ -358,14 +358,14 @@ public abstract class UnixFileSystemProvider
     public boolean isReadable(Path path) {
         UnixPath file = UnixPath.toUnixPath(path);
         file.checkRead();
-        return access(file, R_OK) == 0 ? true : false;
+        return access(file, R_OK) == 0;
     }
 
     @Override
     public boolean isWritable(Path path) {
         UnixPath file = UnixPath.toUnixPath(path);
         file.checkWrite();
-        return access(file, W_OK) == 0 ? true : false;
+        return access(file, W_OK) == 0;
     }
 
     @Override
@@ -377,7 +377,7 @@ public abstract class UnixFileSystemProvider
             // not cached
             sm.checkExec(file.getPathForPermissionCheck());
         }
-        return access(file, X_OK) == 0 ? true : false;
+        return access(file, X_OK) == 0;
     }
 
     @Override
