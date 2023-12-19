@@ -27,8 +27,8 @@
 #define SHARE_MEMORY_METASPACE_METABLOCK_HPP
 
 #include "utilities/globalDefinitions.hpp"
-#include "utilities/align.hpp"
-#include "utilities/debug.hpp"
+
+class outputStream;
 
 namespace metaspace {
 
@@ -56,46 +56,21 @@ public:
            word_size() == rhs.word_size();
   }
 
-  MetaBlock first_part(size_t size) const {
-    return is_nonempty() ?
-        MetaBlock(base(), MIN2(word_size(), size)) : MetaBlock();
-  }
+  // Split off tail block.
+  inline MetaBlock split_off_tail(size_t tailsize);
 
-  void split(size_t pivot, MetaBlock& part1, MetaBlock& part2) const {
-    if (is_nonempty()) {
-      MetaBlock thisblock = *this;
-      assert(pivot <= thisblock.word_size(), "invalid split point");
-      part1 = MetaBlock(thisblock.base(), pivot);
-      part2 = MetaBlock(thisblock.base() + pivot, thisblock.word_size() - pivot);
-    } else {
-      part1 = part2 = MetaBlock();
-    }
-  }
-
-  DEBUG_ONLY(void verify() const;)
+  DEBUG_ONLY(inline void verify() const;)
 
   // Convenience functions
-  bool is_aligned_base(size_t alignment_words) const {
-    return is_aligned(_base, alignment_words * BytesPerWord);
-  }
-  bool is_aligned_size(size_t alignment_words) const {
-    return is_aligned(_word_size, alignment_words);
-  }
+  inline bool is_aligned_base(size_t alignment_words) const;
+  inline bool is_aligned_size(size_t alignment_words) const;
+
+  void print_on(outputStream* st) const;
 };
 
 #define METABLOCKFORMAT                 "block (@" PTR_FORMAT " word size " SIZE_FORMAT ")"
 #define METABLOCKFORMATARGS(__block__)  p2i((__block__).base()), (__block__).word_size()
 
-// some convenience asserts
-#define assert_block_base_aligned(block, alignment_words) \
-  assert(block.is_aligned_base(alignment_words), "Block wrong base alignment " METABLOCKFORMAT, METABLOCKFORMATARGS(block));
-
-#define assert_block_size_aligned(block, alignment_words) \
-  assert(block.is_aligned_size(alignment_words), "Block wrong size alignment " METABLOCKFORMAT, METABLOCKFORMATARGS(block));
-
-#define assert_block_larger_or_equal(block, x) \
-  assert(block.word_size() >= x, "Block too small " METABLOCKFORMAT, METABLOCKFORMATARGS(block));
-
-}
+} // namespace metaspace
 
 #endif // SHARE_MEMORY_METASPACE_METABLOCK_HPP

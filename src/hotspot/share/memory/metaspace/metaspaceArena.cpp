@@ -28,10 +28,9 @@
 #include "logging/logStream.hpp"
 #include "memory/metaspace/chunkManager.hpp"
 #include "memory/metaspace/counters.hpp"
-#include "memory/metaspace/fence.inline.hpp"
 #include "memory/metaspace/freeBlocks.hpp"
 #include "memory/metaspace/internalStats.hpp"
-#include "memory/metaspace/metablock.hpp"
+#include "memory/metaspace/metablock.inline.hpp"
 #include "memory/metaspace/metachunk.hpp"
 #include "memory/metaspace/metaspaceArena.hpp"
 #include "memory/metaspace/metaspaceArenaGrowthPolicy.hpp"
@@ -236,13 +235,14 @@ MetaBlock MetaspaceArena::allocate(size_t requested_word_size, MetaBlock& wastag
 
   // Before bothering the arena proper, attempt to re-use a block from the free blocks list
   if (_fbl != nullptr && !_fbl->is_empty()) {
-    MetaBlock block = _fbl->remove_block(aligned_word_size);
-    if (block.is_nonempty()) {
-      assert_block_larger_or_equal(block, aligned_word_size);
-      assert_block_base_aligned(block, allocation_alignment_words());
-      assert_block_size_aligned(block, Metaspace::min_allocation_alignment);
+    result = _fbl->remove_block(aligned_word_size);
+    if (result.is_nonempty()) {
+      assert_block_larger_or_equal(result, aligned_word_size);
+      assert_block_base_aligned(result, allocation_alignment_words());
+      assert_block_size_aligned(result, Metaspace::min_allocation_alignment);
       // Split off wastage
-      block.split(aligned_word_size, result, wastage);
+      wastage = result.split_off_tail(result.word_size() - aligned_word_size);
+      // Stats, logging
       DEBUG_ONLY(InternalStats::inc_num_allocs_from_deallocated_blocks();)
       UL2(trace, "returning " METABLOCKFORMAT " with wastage " METABLOCKFORMAT " - taken from fbl (now: %d, " SIZE_FORMAT ").",
           METABLOCKFORMATARGS(result), METABLOCKFORMATARGS(wastage), _fbl->count(), _fbl->total_size());
@@ -255,26 +255,30 @@ MetaBlock MetaspaceArena::allocate(size_t requested_word_size, MetaBlock& wastag
   if (result.is_empty()) {
     // Free-block allocation failed; we allocate from the arena.
     // These allocations are fenced.
-    size_t outer_word_size = aligned_word_size;
+    size_t plus_fence = 0;
   #ifdef ASSERT
-    if (Settings::use_allocation_guard()) {
-      outer_word_size += (sizeof(Fence) / BytesPerWord);
+    static constexpr size_t fence_word_size = sizeof(Fence) / BytesPerWord;
+    STATIC_ASSERT(is_aligned(fence_word_size, Metaspace::min_allocation_alignment));
+    if (Settings::use_allocation_guard() &&
+        aligned_word_size <= Metaspace::max_allocation_word_size() - fence_word_size) {
+      plus_fence = fence_word_size;
     }
   #endif
+
     // Allocate from arena proper
-    result = allocate_inner(outer_word_size, wastage);
+    result = allocate_inner(aligned_word_size + plus_fence, wastage);
+
   #ifdef ASSERT
-    if (Settings::use_allocation_guard() && result.is_nonempty()) {
-      assert(result.word_size() == outer_word_size, "Sanity");
-      MetaBlock fenceblock;
-      result.split(aligned_word_size, result, fenceblock);
+    if (result.is_nonempty() && plus_fence > 0) {
+      assert(result.word_size() == aligned_word_size + plus_fence, "Sanity");
+      MetaBlock fenceblock = result.split_off_tail(fence_word_size);
       Fence* f = new(fenceblock.base()) Fence(_first_fence);
       _first_fence = f;
     }
   #endif
   } // End: allocate from arena proper
 
-  // Finally, logging & sanity checks
+  // Logging
   if (result.is_nonempty()) {
     LogTarget(Trace, metaspace) lt;
     if (lt.is_enabled()) {
@@ -287,18 +291,27 @@ MetaBlock MetaspaceArena::allocate(size_t requested_word_size, MetaBlock& wastag
         ls.print("wastage " METABLOCKFORMAT, METABLOCKFORMATARGS(wastage));
       }
     }
-    // The result we hand out must be correctly aligned, and should be precisely the requested size.
-    assert(result.word_size() == aligned_word_size &&
-           is_aligned(result.base(), _allocation_alignment_words * BytesPerWord),
-           "result bad or unaligned: " METABLOCKFORMAT ".", METABLOCKFORMATARGS(result));
-    // Any wastage block, if it exists, must be aligned to minimum alignment (only matters on 32-bit)
-    assert(wastage.is_empty() ||
-           (wastage.is_aligned_base(Metaspace::min_allocation_alignment) &&
-            wastage.is_aligned_size(Metaspace::min_allocation_alignment)),
-           "Misaligned wastage: " METABLOCKFORMAT".", METABLOCKFORMATARGS(wastage));
   } else {
     UL(info, "allocation failed, returned null.");
   }
+
+  // Final sanity checks
+#ifdef ASSERT
+    result.verify();
+    wastage.verify();
+    if (result.is_nonempty()) {
+      assert(result.word_size() == aligned_word_size &&
+             is_aligned(result.base(), _allocation_alignment_words * BytesPerWord),
+             "result bad or unaligned: " METABLOCKFORMAT ".", METABLOCKFORMATARGS(result));
+    }
+    if (wastage.is_nonempty()) {
+      assert(wastage.is_empty() ||
+             (wastage.is_aligned_base(Metaspace::min_allocation_alignment) &&
+              wastage.is_aligned_size(Metaspace::min_allocation_alignment)),
+             "Misaligned wastage: " METABLOCKFORMAT".", METABLOCKFORMATARGS(wastage));
+    }
+#endif // ASSERT
+
   return result;
 }
 
@@ -396,13 +409,18 @@ MetaBlock MetaspaceArena::allocate_inner(size_t word_size, MetaBlock& wastage) {
         _chunks.count(), METACHUNK_FULL_FORMAT_ARGS(current_chunk()));
   }
 
-  // Wastage from arena allocations only occurs for alignment waste or the remaining space
-  // of a salvaged chunk; so it has to be either too small os misaligned
-  assert(wastage.is_empty() ||
-         !wastage.is_aligned_base(allocation_alignment_words()) ||
-         wastage.word_size() < word_size,
-         "Unexpected wastage: " METABLOCKFORMAT ", arena alignment: %zu, allocation word size: %zu",
-         METABLOCKFORMATARGS(wastage), allocation_alignment_words(), word_size);
+#ifdef ASSERT
+  if (wastage.is_nonempty()) {
+    // Wastage from arena allocations only occurs if either or both are true:
+    // - it is too small to hold the requested allocation words
+    // - it is misaligned
+    assert(!wastage.is_aligned_base(allocation_alignment_words()) ||
+           wastage.word_size() < word_size,
+           "Unexpected wastage: " METABLOCKFORMAT ", arena alignment: %zu, allocation word size: %zu",
+           METABLOCKFORMATARGS(wastage), allocation_alignment_words(), word_size);
+    wastage.verify();
+  }
+#endif // ASSERT
 
   return result;
 }
@@ -410,7 +428,7 @@ MetaBlock MetaspaceArena::allocate_inner(size_t word_size, MetaBlock& wastage) {
 // Prematurely returns a metaspace allocation to the _block_freelists
 // because it is not needed anymore (requires CLD lock to be active).
 void MetaspaceArena::deallocate(MetaBlock block) {
-  UL2(trace, "deallocating " METABLOCKFORMAT, METABLOCKFORMATARGS(block));
+  DEBUG_ONLY(block.verify();)
   // This only matters on 32-bit:
   // Since we always align up allocations from arena, we align up here, too.
 #ifndef _LP64
@@ -419,6 +437,8 @@ void MetaspaceArena::deallocate(MetaBlock block) {
 #else
   add_allocation_to_fbl(block);
 #endif
+  UL2(trace, "added to fbl: " METABLOCKFORMAT ", (now: %d, " SIZE_FORMAT ").",
+      METABLOCKFORMATARGS(block), _fbl->count(), _fbl->total_size());
   SOMETIMES(verify();)
 }
 
@@ -476,6 +496,11 @@ void MetaspaceArena::verify() const {
   }
 }
 
+void MetaspaceArena::Fence::verify() const {
+  assert(_eye1 == EyeCatcher && _eye2 == EyeCatcher,
+         "Metaspace corruption: fence block at " PTR_FORMAT " broken.", p2i(this));
+}
+
 void MetaspaceArena::verify_allocation_guards() const {
   assert(Settings::use_allocation_guard(), "Don't call with guards disabled.");
   for (const Fence* f = _first_fence; f != nullptr; f = f->next()) {
@@ -486,6 +511,7 @@ void MetaspaceArena::verify_allocation_guards() const {
 // Returns true if the given block is contained in this arena
 // Returns true if the given block is contained in this arena
 bool MetaspaceArena::contains(MetaBlock bl) const {
+  DEBUG_ONLY(bl.verify();)
   assert(bl.is_nonempty(), "Sanity");
   bool found = false;
   for (const Metachunk* c = _chunks.first(); c != nullptr && !found; c = c->next()) {

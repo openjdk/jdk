@@ -103,12 +103,10 @@ MetaWord* ClassLoaderMetaspace::allocate(size_t word_size, Metaspace::MetadataTy
   word_size = align_up(word_size, Metaspace::min_allocation_word_size);
   MutexLocker fcl(lock(), Mutex::_no_safepoint_check_flag);
   MetaBlock result, wastage;
-  const bool is_class = Metaspace::is_class_space_allocation(mdType);
+  const bool is_class = have_class_space_arena() && mdType == Metaspace::ClassType;
   if (is_class) {
     assert(word_size >= (sizeof(Klass)/BytesPerWord), "weird size for klass: %zu", word_size);
     result = class_space_arena()->allocate(word_size, wastage);
-    assert(class_space_arena()->contains(result),
-           "Not from class arena " METABLOCKFORMAT "?", METABLOCKFORMATARGS(result));
   } else {
     result = non_class_space_arena()->allocate(word_size, wastage);
   }
@@ -117,8 +115,6 @@ MetaWord* ClassLoaderMetaspace::allocate(size_t word_size, Metaspace::MetadataTy
   }
 #ifdef ASSERT
   if (result.is_nonempty()) {
-    // Result block must be contained in one of our arenas. In case of class allocations, it must come
-    // from the class arena. In case of non-class allocation, it can come from either arena.
     const bool in_class_arena = class_space_arena() != nullptr ? class_space_arena()->contains(result) : false;
     const bool in_nonclass_arena = non_class_space_arena()->contains(result);
     assert((is_class && in_class_arena) || (!is_class && in_class_arena != in_nonclass_arena),
@@ -166,7 +162,7 @@ void ClassLoaderMetaspace::deallocate(MetaWord* ptr, size_t word_size, bool is_c
   MetaBlock bl(ptr, word_size);
   if (word_size >= Metaspace::min_allocation_word_size) {
     MutexLocker fcl(lock(), Mutex::_no_safepoint_check_flag);
-    if (Metaspace::using_class_space() && is_class) {
+    if (have_class_space_arena() && is_class) {
       assert(class_space_arena()->contains(bl),
              "Not from class arena " METABLOCKFORMAT "?", METABLOCKFORMATARGS(bl));
       class_space_arena()->deallocate(MetaBlock(ptr, word_size));
@@ -216,7 +212,7 @@ void ClassLoaderMetaspace::usage_numbers(size_t* p_used_words, size_t* p_committ
   {
     MutexLocker fcl(lock(), Mutex::_no_safepoint_check_flag);
     usage_numbers(Metaspace::MetadataType::NonClassType, &used_nc, &comm_nc, &cap_nc);
-    if (Metaspace::using_class_space()) {
+    if (have_class_space_arena()) {
       usage_numbers(Metaspace::MetadataType::ClassType, &used_c, &comm_c, &cap_c);
     }
   }

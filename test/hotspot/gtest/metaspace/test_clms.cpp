@@ -26,7 +26,7 @@
 #include "precompiled.hpp"
 #include "memory/classLoaderMetaspace.hpp"
 #include "memory/metaspace/freeBlocks.hpp"
-#include "memory/metaspace/metablock.hpp"
+#include "memory/metaspace/metablock.inline.hpp"
 #include "memory/metaspace/metaspaceArena.hpp"
 #include "memory/metaspace/metaspaceSettings.hpp"
 #include "memory/metaspace/metaspaceStatistics.hpp"
@@ -363,6 +363,7 @@ static void test_random(size_t klass_arena_alignment) {
           const size_t word_size =
               is_class ? class_alloc_range.random_value() : nonclass_alloc_range.random_value();
           MetaBlock bl = tester.allocate_expect_success(word_size, is_class);
+          HANDLE_FAILURE;
           life_allocations[slot].bl = bl;
           life_allocations[slot].is_class = is_class;
           if (is_class) {
@@ -372,6 +373,7 @@ static void test_random(size_t klass_arena_alignment) {
           }
         } else {
           tester.deallocate_and_check(life_allocations[slot].bl, life_allocations[slot].is_class);
+          HANDLE_FAILURE;
           life_allocations[slot].bl.reset();
           if (life_allocations[slot].is_class) {
             num_class_deallocs ++;

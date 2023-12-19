@@ -24,7 +24,7 @@
  */
 
 #include "precompiled.hpp"
-#include "memory/metaspace/metablock.hpp"
+#include "memory/metaspace/metablock.inline.hpp"
 //#define LOG_PLEASE
 #include "metaspaceGtestCommon.hpp"
 
@@ -33,17 +33,17 @@ using metaspace::MetaBlock;
 
 #define CHECK_BLOCK_EMPTY(block) { \
   EXPECT_TRUE(block.is_empty()); \
-  block.verify(); \
+  DEBUG_ONLY(block.verify()); \
 }
 
 #define CHECK_BLOCK(block, expected_base, expected_size) { \
     EXPECT_EQ(block.base(), (MetaWord*)expected_base); \
     EXPECT_EQ((size_t)expected_size, block.word_size()); \
     EXPECT_EQ(block.end(), expected_base + expected_size); \
-    block.verify(); \
+    DEBUG_ONLY(block.verify()); \
 }
 
-static constexpr uintptr_t large_pointer = NOT_LP64(0x99999999) LP64_ONLY(0x9999999999999999ULL);
+static constexpr uintptr_t large_pointer = NOT_LP64(0x99999990) LP64_ONLY(0x9999999999999990ULL);
 
 TEST(metaspace, MetaBlock_1) {
   MetaBlock bl;
@@ -63,56 +63,35 @@ TEST(metaspace, MetaBlock_3) {
   CHECK_BLOCK_EMPTY(bl);
 }
 
-TEST(metaspace, MetaBlock_4) {
-  MetaWord* const p = (MetaWord*)large_pointer;
-  MetaBlock bl(p, G);
-  MetaBlock bl_copy = bl, bl2;
-
-  bl2 = bl.first_part(M);
-  ASSERT_EQ(bl, bl_copy);
-  CHECK_BLOCK(bl2, bl.base(), M);
-
-  bl2 = bl.first_part(0);
-  ASSERT_EQ(bl, bl_copy);
-  CHECK_BLOCK_EMPTY(bl2);
-
-  bl2 = bl.first_part(bl.word_size());
-  ASSERT_EQ(bl, bl_copy);
-  ASSERT_EQ(bl, bl2);
-}
-
-TEST(metaspace, MetaBlock_5) {
+TEST_VM(metaspace, MetaBlock_4) {
   MetaWord* const p = (MetaWord*)large_pointer;
   MetaBlock bl(p, G);
   CHECK_BLOCK(bl, p, G);
 
-  MetaBlock bl_copy = bl, bl1, bl2;
+  MetaBlock bl_copy = bl, bl2;
 
-  bl.split(M, bl1, bl2);
-  ASSERT_EQ(bl, bl_copy);
-  CHECK_BLOCK(bl1, p, M);
-  CHECK_BLOCK(bl2, p + M, G - M);
+  bl2 = bl.split_off_tail(M);
+  CHECK_BLOCK(bl, p, G - M);
+  CHECK_BLOCK(bl2, p + G - M, M);
 
-  bl.split(G, bl1, bl2);
+  bl = bl_copy;
+
+bl.print_on(tty);
+bl2.print_on(tty);
+  bl2 = bl.split_off_tail(G);
+  bl.print_on(tty);
+  bl2.print_on(tty);
+
+  ASSERT_EQ(bl2, bl_copy);
+  ASSERT_TRUE(bl.is_empty());
+
+  bl = bl_copy;
+
+  bl2 = bl.split_off_tail(0);
   ASSERT_EQ(bl, bl_copy);
-  ASSERT_EQ(bl, bl1);
   ASSERT_TRUE(bl2.is_empty());
 
-  bl.split(0, bl1, bl2);
-  ASSERT_EQ(bl, bl_copy);
-  ASSERT_EQ(bl, bl2);
-  ASSERT_TRUE(bl1.is_empty());
-
-  // Check that we can pass the receiver as argument
-  bl.split(M, bl, bl2);
-  CHECK_BLOCK(bl, p, M);
-  CHECK_BLOCK(bl2, p + M, G - M);
-
-  bl = bl_copy; // restore
-
-  bl.split(M, bl1, bl);
-  CHECK_BLOCK(bl1, p, M);
-  CHECK_BLOCK(bl, p + M, G - M);
-
-  bl = bl_copy; // restore
+  MetaBlock empty;
+  bl = empty.split_off_tail(0);
+  ASSERT_TRUE(bl.is_empty());
 }

@@ -30,7 +30,7 @@
 #include "memory/metaspace/counters.hpp"
 #include "memory/metaspace/internalStats.hpp"
 #include "memory/metaspace/freeBlocks.hpp"
-#include "memory/metaspace/metablock.hpp"
+#include "memory/metaspace/metablock.inline.hpp"
 #include "memory/metaspace/metaspaceArena.hpp"
 #include "memory/metaspace/metaspaceArenaGrowthPolicy.hpp"
 #include "memory/metaspace/metachunkList.hpp"
