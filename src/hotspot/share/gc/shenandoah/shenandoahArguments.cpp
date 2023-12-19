@@ -184,8 +184,11 @@ void ShenandoahArguments::initialize() {
     FLAG_SET_DEFAULT(TLABAllocationWeight, 90);
   }
 
+  // If ParallelGCThreads is greater than active_processor_count, use ShenandoahGCTimeLimit as GCTimeLimit
   uint active_processors = os::initial_active_processor_count();
-  GCTimeLimit = (ShenandoahGCTimeLimit * ParallelGCThreads) / active_processors;
+  uint gc_time_limit = ((active_processors < ParallelGCThreads)?
+                        ShenandoahGCTimeLimit: (ShenandoahGCTimeLimit * ParallelGCThreads) / active_processors);
+  FLAG_SET_DEFAULT(GCTimeLimit, gc_time_limit);
   log_info(gc)("GCTimeLimit set to %u based on ShenandoahGCTimeLimit: %u, ParallelGCThreads: %u, active_processors: %u)",
                GCTimeLimit, ShenandoahGCTimeLimit, ParallelGCThreads, active_processors);
 }
