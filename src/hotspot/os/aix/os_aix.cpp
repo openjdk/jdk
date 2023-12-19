@@ -1118,7 +1118,9 @@ void *os::dll_load(const char *filename, char *ebuf, int ebuflen) {
   }
 
   if (!filename || strlen(filename) == 0) {
-    ::strncpy(ebuf, "dll_load: empty filename specified", ebuflen - 1);
+    if (ebuf != nullptr && ebuflen > 0) {
+      ::strncpy(ebuf, "dll_load: empty filename specified", ebuflen - 1);
+    }
     return nullptr;
   }
 
@@ -1134,7 +1136,7 @@ void *os::dll_load(const char *filename, char *ebuf, int ebuflen) {
 
   void* result;
   JFR_ONLY(NativeLibraryLoadEvent load_event(filename, &result);)
-  result = ::dlopen(filename, dflags);
+  result = Aix_dlopen(filename, dflags, ebuf, ebuflen);
   if (result != nullptr) {
     Events::log_dll_message(nullptr, "Loaded shared library %s", filename);
     // Reload dll cache. Don't do this in signal handling.
@@ -3030,43 +3032,3 @@ void os::print_memory_mappings(char* addr, size_t bytes, outputStream* st) {}
 void os::jfr_report_memory_info() {}
 
 #endif // INCLUDE_JFR
-
-// Simulate the library search algorithm of dlopen() (in os::dll_load)
-int os::Aix::stat64x_via_LIBPATH(const char* path, struct stat64x* stat) {
-  if (path[0] == '/' ||
-      (path[0] == '.' && (path[1] == '/' ||
-                          (path[1] == '.' && path[2] == '/')))) {
-    return stat64x(path, stat);
-  }
-
-  const char* env = getenv("LIBPATH");
-  if (env == nullptr || *env == 0)
-    return -1;
-
-  int ret = -1;
-  size_t libpathlen = strlen(env);
-  char* libpath = NEW_C_HEAP_ARRAY(char, libpathlen + 1, mtServiceability);
-  char* combined = NEW_C_HEAP_ARRAY(char, libpathlen + strlen(path) + 1, mtServiceability);
-  char *saveptr, *token;
-  strcpy(libpath, env);
-  for (token = strtok_r(libpath, ":", &saveptr); token != nullptr; token = strtok_r(nullptr, ":", &saveptr)) {
-    sprintf(combined, "%s/%s", token, path);
-    if (0 == (ret = stat64x(combined, stat)))
-      break;
-  }
-
-  FREE_C_HEAP_ARRAY(char*, combined);
-  FREE_C_HEAP_ARRAY(char*, libpath);
-  return ret;
-}
-
-//Replaces provided path with alternate path for the given file,if it doesnt exist.
-//For AIX,this replaces .so with .a.
-void os::Aix::mapAlternateName(char* buffer, const char *extension) {
-  unsigned long end = strlen(buffer);
-  while (end > 0 && buffer[end] != '.') {
-    end = end - 1;
-  }
-  buffer[end] = '\0';
-  strcat(buffer, extension);
- }

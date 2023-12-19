@@ -56,6 +56,7 @@
 
 #ifdef AIX
 #include "loadlib_aix.hpp"
+#include "os_aix.hpp"
 #endif
 #ifdef LINUX
 #include "os_linux.hpp"
@@ -343,9 +344,10 @@ char* os::replace_existing_mapping_with_file_mapping(char* base, size_t size, in
 }
 
 static size_t calculate_aligned_extra_size(size_t size, size_t alignment) {
-  assert((alignment & (os::vm_allocation_granularity() - 1)) == 0,
+  assert(is_aligned(alignment, os::vm_allocation_granularity()),
       "Alignment must be a multiple of allocation granularity (page size)");
-  assert((size & (alignment -1)) == 0, "size must be 'alignment' aligned");
+  assert(is_aligned(size, os::vm_allocation_granularity()),
+      "Size must be a multiple of allocation granularity (page size)");
 
   size_t extra_size = size + alignment;
   assert(extra_size >= size, "overflow, size is too large to allow alignment");
@@ -730,27 +732,22 @@ void os::dll_unload(void *lib) {
   if (l_path == nullptr) {
     l_path = "<not available>";
   }
-  int res = ::dlclose(lib);
 
-  if (res == 0) {
+  char ebuf[1024];
+  bool res = os::pd_dll_unload(lib, ebuf, sizeof(ebuf));
+
+  if (res) {
     Events::log_dll_message(nullptr, "Unloaded shared library \"%s\" [" INTPTR_FORMAT "]",
                             l_path, p2i(lib));
     log_info(os)("Unloaded shared library \"%s\" [" INTPTR_FORMAT "]", l_path, p2i(lib));
     JFR_ONLY(unload_event.set_result(true);)
   } else {
-    const char* error_report = ::dlerror();
-    if (error_report == nullptr) {
-      error_report = "dlerror returned no error description";
-    }
-
     Events::log_dll_message(nullptr, "Attempt to unload shared library \"%s\" [" INTPTR_FORMAT "] failed, %s",
-                            l_path, p2i(lib), error_report);
+                            l_path, p2i(lib), ebuf);
     log_info(os)("Attempt to unload shared library \"%s\" [" INTPTR_FORMAT "] failed, %s",
-                  l_path, p2i(lib), error_report);
-    JFR_ONLY(unload_event.set_error_msg(error_report);)
+                  l_path, p2i(lib), ebuf);
+    JFR_ONLY(unload_event.set_error_msg(ebuf);)
   }
-  // Update the dll cache
-  AIX_ONLY(LoadedLibraries::reload());
   LINUX_ONLY(os::free(l_pathdup));
 }
 

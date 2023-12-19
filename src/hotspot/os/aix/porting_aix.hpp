@@ -115,4 +115,6 @@ class AixMisc {
 
 };
 
+void* Aix_dlopen(const char* filename, int Flags, char *ebuf, int ebuflen);
+
 #endif // OS_AIX_PORTING_AIX_HPP
