@@ -756,27 +756,11 @@ public:
     init_checks();
   }
 
-  GrowableArray(int initial_capacity, MEMFLAGS memflags) :
-      GrowableArrayWithAllocator<E, GrowableArray<E> >(
-          allocate(initial_capacity, memflags),
-          initial_capacity),
-      _metadata(memflags) {
-    init_checks();
-  }
-
   GrowableArray(int initial_capacity, int initial_len, const E& filler) :
       GrowableArrayWithAllocator<E, GrowableArray<E> >(
           allocate(initial_capacity),
           initial_capacity, initial_len, filler),
       _metadata() {
-    init_checks();
-  }
-
-  GrowableArray(int initial_capacity, int initial_len, const E& filler, MEMFLAGS memflags) :
-      GrowableArrayWithAllocator<E, GrowableArray<E> >(
-          allocate(initial_capacity, memflags),
-          initial_capacity, initial_len, filler),
-      _metadata(memflags) {
     init_checks();
   }
 
