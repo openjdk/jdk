@@ -1107,28 +1107,9 @@ bool os::dll_address_to_library_name(address addr, char* buf,
 
   return true;
 }
-void *os::dll_load(const char *filename, char *ebuf, int ebuflen) {
-  void* result = nullptr;
-  unsigned long buffer_length = strlen(filename);
-  int extension_length = 3;
-  char* file_path=NEW_C_HEAP_ARRAY(char, buffer_length + extension_length + 1, mtInternal);
-  strncpy(file_path,filename, buffer_length + 1);
-  char* const pointer_to_dot = strrchr(file_path, '.');
-  assert(pointer_to_dot != nullptr, "Attempting to load a shared object without extension? %s", filename);
-  // First try to load the existing file.
-  result=dll_load_library(file_path, ebuf, ebuflen);
-  // If the load fails,we try to reload by changing the extension to .a for .so files only.
-  if(result == nullptr) {
-    if(strcmp(pointer_to_dot, ".so") == 0) {
-      sprintf(pointer_to_dot, ".a");
-      result=dll_load_library(file_path, ebuf, ebuflen);
-    }
-  }
-  FREE_C_HEAP_ARRAY(char, file_path);
-  return result;    
-}    
 
-static void dll_load_library(const char *filename, char *ebuf, int ebuflen) {
+
+static void* dll_load_library(const char *filename, char *ebuf, int ebuflen) {
 
   log_info(os)("attempting shared library load of %s", filename);
 
@@ -1179,6 +1160,27 @@ static void dll_load_library(const char *filename, char *ebuf, int ebuflen) {
   }
   return nullptr;
 }
+
+void *os::dll_load(const char *filename, char *ebuf, int ebuflen) {
+  void* result = nullptr;
+  unsigned long buffer_length = strlen(filename);
+  int extension_length = 3;
+  char* file_path=NEW_C_HEAP_ARRAY(char, buffer_length + extension_length + 1, mtInternal);
+  strncpy(file_path,filename, buffer_length + 1);
+  char* const pointer_to_dot = strrchr(file_path, '.');
+  assert(pointer_to_dot != nullptr, "Attempting to load a shared object without extension? %s", filename);
+  // First try to load the existing file.
+  result=dll_load_library(file_path, ebuf, ebuflen);
+  // If the load fails,we try to reload by changing the extension to .a for .so files only.
+  if(result == nullptr) {
+    if(strcmp(pointer_to_dot, ".so") == 0) {
+      sprintf(pointer_to_dot, ".a");
+      result=dll_load_library(file_path, ebuf, ebuflen);
+    }
+  }
+  FREE_C_HEAP_ARRAY(char, file_path);
+  return result;    
+}    
 
 void os::print_dll_info(outputStream *st) {
   st->print_cr("Dynamic libraries:");
