@@ -25,6 +25,7 @@ package jdk.jfr.event.io;
 
 import jdk.jfr.consumer.RecordedEvent;
 import jdk.jfr.consumer.RecordingStream;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -43,15 +44,28 @@ import static org.junit.jupiter.params.provider.Arguments.arguments;
  * @bug 8275338
  * @summary Check generation of JFR events for misdeclared fields and methods
  *          relevant to serialization
- * @modules java.base/jdk.internal.event
  * @key jfr
  * @requires vm.hasJFR
+ * @modules java.base/jdk.internal.event
  * @library /test/lib
- * @run junit/othervm jdk.jfr.event.io.TestSerializationMisdeclarationEvent
+ * @run junit jdk.jfr.event.io.TestSerializationMisdeclarationEvent
  */
 public class TestSerializationMisdeclarationEvent {
 
-    private static final List<RecordedEvent> events;
+    private static final List<RecordedEvent> events = new ArrayList<>();;
+
+    @BeforeAll
+    static void recordEvents() {
+        try (var rs = new RecordingStream()) {
+            rs.enable(SerializationMisdeclaration)
+                    .withoutThreshold()
+                    .withoutStackTrace();
+            rs.onEvent(SerializationMisdeclaration, events::add);
+            rs.startAsync();
+            doLookups();
+            rs.stop();
+        }
+    }
 
     static Arguments[] testSingleClassMisdeclarations() {
         return new Arguments[] {
@@ -109,7 +123,7 @@ public class TestSerializationMisdeclarationEvent {
     @ParameterizedTest
     @MethodSource
     public void testGoodClass(Class<?> cls) {
-        assertEquals(0, getEventsFor(cls).size());
+        assertEquals(0, getEventsFor(cls).size(), cls.getName());
     }
 
     private static void doLookups() {
@@ -125,7 +139,7 @@ public class TestSerializationMisdeclarationEvent {
     }
 
     private static void singleClassEvent(Class<?> cls, int kind) {
-        assertEquals(1, getEventsFor(cls, kind).size());
+        assertEquals(1, getEventsFor(cls, kind).size(), cls.getName());
     }
 
     private static List<RecordedEvent> getEventsFor(Class<?> cls, int kind) {
@@ -139,19 +153,6 @@ public class TestSerializationMisdeclarationEvent {
         return events.stream()
                 .filter(e -> e.getClass("cls").getName().equals(cls.getName()))
                 .toList();
-    }
-
-    static {
-        events = new ArrayList<>();
-        try (var rs = new RecordingStream()) {
-            rs.enable(SerializationMisdeclaration)
-                    .withoutThreshold()
-                    .withoutStackTrace();
-            rs.onEvent(SerializationMisdeclaration, events::add);
-            rs.startAsync();
-            doLookups();
-            rs.stop();
-        }
     }
 
     private static class A implements Serializable {

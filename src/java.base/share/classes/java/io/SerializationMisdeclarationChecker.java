@@ -104,14 +104,14 @@ final class SerializationMisdeclarationChecker {
         if (f.getType() != Long.TYPE) {
             commitEvent(SUID_LONG,
                     SUID_NAME + " should be declared of type long");
-        }
-        if (!isStatic(f)) {
-            return;
-        }
-        f.setAccessible(true);
-        if (getLong(f) == null) {
-            commitEvent(SUID_CONVERTIBLE_TO_LONG,
-                    SUID_NAME + " must be convertible to long via widening to be effective");
+            if (!isStatic(f)) {
+                return;
+            }
+            f.setAccessible(true);
+            if (longFromStatic(f) == null) {
+                commitEvent(SUID_CONVERTIBLE_TO_LONG,
+                        SUID_NAME + " must be convertible to long via widening to be effective");
+            }
         }
     }
 
@@ -147,7 +147,7 @@ final class SerializationMisdeclarationChecker {
             return;
         }
         f.setAccessible(true);
-        Object spf = getObject(f);
+        Object spf = objectFromStatic(f);
         if (spf == null) {
             commitEvent(SER_PERS_NOT_NULL,
                     SERIAL_PERSISTENT_FIELDS_NAME + " must not be null to be effective");
@@ -273,7 +273,7 @@ final class SerializationMisdeclarationChecker {
         return null;
     }
 
-    private static Object getObject(Field f) {
+    private static Object objectFromStatic(Field f) {
         try {
             return f.get(null);
         } catch (IllegalAccessException ignored) {
@@ -281,7 +281,7 @@ final class SerializationMisdeclarationChecker {
         return null;
     }
 
-    private static Long getLong(Field f) {
+    private static Long longFromStatic(Field f) {
         try {
             return f.getLong(null);
         } catch (IllegalArgumentException | IllegalAccessException ignored) {
