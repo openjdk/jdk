@@ -293,12 +293,12 @@ private:
 
   size_t _gc_no_progress_count;
 
-  void set_gc_state_mask(uint mask, bool value);
+  void set_gc_state(uint mask, bool value);
 
 public:
   char gc_state() const;
-  void set_gc_state_all_threads();
-  bool has_gc_state_changed() { return _gc_state_changed; }
+  void propagate_gc_state_to_java_threads();
+  bool has_gc_state_changed() const { return _gc_state_changed; }
 
   void set_concurrent_mark_in_progress(bool in_progress);
   void set_evacuation_in_progress(bool in_progress);
