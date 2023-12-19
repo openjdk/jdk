@@ -126,37 +126,20 @@ uint ConstraintCastNode::size_of() const {
 Node* ConstraintCastNode::make_cast(int opcode, Node* c, Node* n, const Type* t, DependencyType dependency,
                                     const TypeTuple* extra_types) {
   switch(opcode) {
-  case Op_CastII: {
-    Node* cast = new CastIINode(n, t, dependency, false, extra_types);
-    cast->set_req(0, c);
-    return cast;
-  }
-  case Op_CastLL: {
-    Node* cast = new CastLLNode(n, t, dependency, extra_types);
-    cast->set_req(0, c);
-    return cast;
-  }
-  case Op_CastPP: {
-    Node* cast = new CastPPNode(n, t, dependency, extra_types);
-    cast->set_req(0, c);
-    return cast;
-  }
-  case Op_CastFF: {
-    Node* cast = new CastFFNode(n, t, dependency, extra_types);
-    cast->set_req(0, c);
-    return cast;
-  }
-  case Op_CastDD: {
-    Node* cast = new CastDDNode(n, t, dependency, extra_types);
-    cast->set_req(0, c);
-    return cast;
-  }
-  case Op_CastVV: {
-    Node* cast = new CastVVNode(n, t, dependency, extra_types);
-    cast->set_req(0, c);
-    return cast;
-  }
-  case Op_CheckCastPP: return new CheckCastPPNode(c, n, t, dependency, extra_types);
+  case Op_CastII:
+    return new CastIINode(c, n, t, dependency, false, extra_types);
+  case Op_CastLL:
+    return new CastLLNode(c, n, t, dependency, extra_types);
+  case Op_CastPP:
+    return new CastPPNode(c, n, t, dependency, extra_types);
+  case Op_CastFF:
+    return new CastFFNode(c, n, t, dependency, extra_types);
+  case Op_CastDD:
+    return new CastDDNode(c, n, t, dependency, extra_types);
+  case Op_CastVV:
+    return new CastVVNode(c, n, t, dependency, extra_types);
+  case Op_CheckCastPP:
+    return new CheckCastPPNode(c, n, t, dependency, extra_types);
   default:
     fatal("Bad opcode %d", opcode);
   }
