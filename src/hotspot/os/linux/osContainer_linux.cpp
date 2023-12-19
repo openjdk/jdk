@@ -92,6 +92,16 @@ jlong OSContainer::memory_max_usage_in_bytes() {
   return cgroup_subsystem->memory_max_usage_in_bytes();
 }
 
+jlong OSContainer::rss_usage_in_bytes() {
+  assert(cgroup_subsystem != nullptr, "cgroup subsystem not available");
+  return cgroup_subsystem->rss_usage_in_bytes();
+}
+
+jlong OSContainer::cache_usage_in_bytes() {
+  assert(cgroup_subsystem != nullptr, "cgroup subsystem not available");
+  return cgroup_subsystem->cache_usage_in_bytes();
+}
+
 void OSContainer::print_version_specific_info(outputStream* st) {
   assert(cgroup_subsystem != nullptr, "cgroup subsystem not available");
   cgroup_subsystem->print_version_specific_info(st);

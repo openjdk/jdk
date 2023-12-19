@@ -139,6 +139,18 @@ jlong CgroupV2Subsystem::memory_max_usage_in_bytes() {
   return OSCONTAINER_ERROR; // not supported
 }
 
+jlong CgroupV2Subsystem::rss_usage_in_bytes() {
+  GET_CONTAINER_INFO_LINE(julong, _memory->controller(), "/memory.stat",
+                          "anon", JULONG_FORMAT, JULONG_FORMAT, rss);
+  return rss;
+}
+
+jlong CgroupV2Subsystem::cache_usage_in_bytes() {
+  GET_CONTAINER_INFO_LINE(julong, _memory->controller(), "/memory.stat",
+                          "file", JULONG_FORMAT, JULONG_FORMAT, cache);
+  return cache;
+}
+
 char* CgroupV2Subsystem::mem_soft_limit_val() {
   GET_CONTAINER_INFO_CPTR(cptr, _unified, "/memory.low",
                          "Memory Soft Limit is: %s", "%1023s", mem_soft_limit_str, 1024);

@@ -266,6 +266,8 @@ class CgroupSubsystem: public CHeapObj<mtInternal> {
     virtual jlong memory_and_swap_limit_in_bytes() = 0;
     virtual jlong memory_soft_limit_in_bytes() = 0;
     virtual jlong memory_max_usage_in_bytes() = 0;
+    virtual jlong rss_usage_in_bytes() = 0;
+    virtual jlong cache_usage_in_bytes() = 0;
 
     virtual char * cpu_cpuset_cpus() = 0;
     virtual char * cpu_cpuset_memory_nodes() = 0;
