@@ -214,8 +214,6 @@ void StubQueue::verify() {
   guarantee(0 <= _queue_begin  && _queue_begin  <  _buffer_limit, "_queue_begin out of bounds");
   guarantee(0 <= _queue_end    && _queue_end    <= _buffer_limit, "_queue_end   out of bounds");
   // verify alignment
-  guarantee(_buffer_size  % CodeEntryAlignment == 0, "_buffer_size  not aligned");
-  guarantee(_buffer_limit % CodeEntryAlignment == 0, "_buffer_limit not aligned");
   guarantee(_queue_begin  % CodeEntryAlignment == 0, "_queue_begin  not aligned");
   guarantee(_queue_end    % CodeEntryAlignment == 0, "_queue_end    not aligned");
   // verify buffer limit/size relationship
