@@ -447,7 +447,7 @@ public:
   void mask_for(int bci, InterpreterOopMap* mask);
 
   // operations on invocation counter
-  void print_invocation_count();
+  void print_invocation_count(outputStream* st);
 
   // byte codes
   void    set_code(address code)      { return constMethod()->set_code(code); }
