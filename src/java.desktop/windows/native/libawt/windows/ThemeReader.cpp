@@ -111,6 +111,8 @@ static PFNISTHEMEBACKGROUNDPARTIALLYTRANSPARENT
                                IsThemeBackgroundPartiallyTransparentFunc = NULL;
 static PFNGETTHEMETRANSITIONDURATION GetThemeTransitionDurationFunc = NULL;
 
+constexpr unsigned int defaultDPI = 96;
+
 BOOL InitThemes() {
     static HMODULE hModThemes = NULL;
     hModThemes = JDK_LoadSystemLibrary("UXTHEME.DLL");
@@ -178,8 +180,6 @@ BOOL InitThemes() {
               DTRACE_PRINTLN("Loaded function pointers.\n");
               // We need to make sure we can load the Theme.
               // Use the default DPI value of 96 on windows.
-              constexpr unsigned int defaultDPI = 96;
-
               HTHEME hTheme = OpenThemeDataForDpiFunc ? OpenThemeDataForDpiFunc(AwtToolkit::GetInstance().GetHWnd(),
                                                                          L"Button", defaultDPI) :
                                                  OpenThemeDataFunc(AwtToolkit::GetInstance().GetHWnd(), L"Button");
@@ -474,7 +474,6 @@ JNIEXPORT void JNICALL Java_sun_awt_windows_ThemeReader_paintBackground
 void rescale(SIZE *size) {
     static int dpiX = -1;
     static int dpiY = -1;
-    constexpr unsigned int defaultDPI = 96;
 
     if (dpiX == -1 || dpiY == -1) {
         HWND hWnd = ::GetDesktopWindow();
