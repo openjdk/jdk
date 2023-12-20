@@ -809,37 +809,80 @@ AlignmentSolution* AlignmentSolver::solve() const {
 
   // In what follows, we need to show that the C_const, init and invar terms can be aligned by
   // adjusting the pre-loop iteration count (pre_iter), which is controlled by the pre-loop
-  // limit. We decompose pre_iter:
+  // limit.
   //
-  //   pre_iter = pre_iter_C_const + pre_iter_C_invar + pre_iter_C_init
+  //     (C_const + C_invar * var_invar + C_init * var_init + C_pre * pre_iter) % aw = 0                         (3)
   //
-  // where pre_iter_C_const, pre_iter_C_invar, and pre_iter_C_init are rationals (rational numbers),
-  // and define how many pre-loop iterations (or fractions thereof) are required to align the
-  // C_const, init and invar terms individually. Hence, we can rewrite:
-  //
-  //     (C_const + C_invar * var_invar + C_init * var_init + C_pre * pre_iter) % aw
-  //   = ( C_const             + C_pre * pre_iter_C_const
-  //     + C_invar * var_invar + C_pre * pre_iter_C_invar
-  //     + C_init  * var_init  + C_pre * pre_iter_C_init ) % aw
-  //   = 0                                                                       (3)
-  //
-  // While we can now attribute the (fractional) amount of iterations required for the C_const,
-  // invar and init terms, this does not give us a way to align these terms independendly.
-  //
-  // We strengthen the constraints by splitting the equation into 3 equations, and require that
-  // pre_iter_C_const, pre_iter_C_invar, and pre_iter_C_init are integers (not just rationals),
-  // which means that the C_const, init and invar terms can be aligned independently:
+  // We strengthen the constraints by splitting the equation into 3 equations, where we
+  // want to find integer solutions for pre_iter_C_const, pre_iter_C_invar, and
+  // pre_iter_C_init, which means that the C_const, init and invar terms can be aligned
+  // independently:
   //
   //   (C_const             + C_pre * pre_iter_C_const) % aw = 0                 (4a)
   //   (C_invar * var_invar + C_pre * pre_iter_C_invar) % aw = 0                 (4b)
   //   (C_init  * var_init  + C_pre * pre_iter_C_init ) % aw = 0                 (4c)
   //
-  // If we cannot prove that the C_const, init and invar terms can be aligned independently, then
-  // we can always modify init (by 1) or invar (by var_invar), and hence invalidate (3). Hence,
-  // this strengthening is necessary to guarantee statically that (3) has a solution, i.e. that
-  // we can ensure alignment for any runtime value of init or invar.
+  // We now prove that (4a, b, c) are sufficient as well as necessary go guarantee (3)
+  // for any runtime value of var_invar and var_init (i.e. for any invar and init).
+  // This tells us that the "strengthening" did not restrict the algorithm more than
+  // necessary.
   //
-  // Equations (4a, b, c) can have one of these states:
+  // Sufficient (i.e (4a, b, c) imply (3)):
+  //
+  //   pre_iter = pre_iter_C_const + pre_iter_C_invar + pre_iter_C_init
+  //
+  // Adding up (4a, b, c):
+  //
+  //   0
+  //   = (  C_const             + C_pre * pre_iter_C_const
+  //      + C_invar * var_invar + C_pre * pre_iter_C_invar
+  //      + C_init  * var_init  + C_pre * pre_iter_C_init  ) % aw
+  //
+  //   = (  C_const + C_invar * var_invar + C_init * var_init
+  //      + C_pre * (pre_iter_C_const + pre_iter_C_invar + pre_iter_C_init)) % aw
+  //
+  //   = (  C_const + C_invar * var_invar + C_init * var_init
+  //      + C_pre * pre_iter) % aw
+  //
+  // Necessary (i.e. (3) implies (4a, b, c)):
+  //  (4a): Set var_invar = var_init = 0 at runtime. Applying this to (3), we get:
+  //
+  //        0 =
+  //          = (C_const + C_invar * var_invar + C_init * var_init + C_pre * pre_iter) % aw
+  //          = (C_const + C_invar * 0         + C_init * 0        + C_pre * pre_iter) % aw
+  //          = (C_const                                           + C_pre * pre_iter) % aw
+  //
+  //        This is of the same form as (4a), and we have a solution:
+  //        pre_iter_C_const = pre_iter
+  //
+  //  (4b): Set var_init = 0, and assume (4a), which we just proved is implied by (3).
+  //        Subtract (4a) from (3):
+  //
+  //        0 =
+  //          =  (C_const + C_invar * var_invar + C_init * var_init + C_pre * pre_iter) % aw
+  //           - (C_const + C_pre * pre_iter_C_const) % aw
+  //          =  (C_invar * var_invar + C_init * var_init + C_pre * pre_iter - C_pre * pre_iter_C_const) % aw
+  //          =  (C_invar * var_invar + C_init * 0        + C_pre * (pre_iter - pre_iter_C_const)) % aw
+  //          =  (C_invar * var_invar +                   + C_pre * (pre_iter - pre_iter_C_const)) % aw
+  //
+  //        This is of the same form as (4b), and we have a solution:
+  //        pre_iter_C_invar = pre_iter - pre_iter_C_const
+  //
+  //  (4c): Set var_invar = 0, and assume (4a), which we just proved is implied by (3).
+  //        Subtract (4a) from (3):
+  //
+  //        0 =
+  //          =  (C_const + C_invar * var_invar + C_init * var_init + C_pre * pre_iter) % aw
+  //           - (C_const + C_pre * pre_iter_C_const) % aw
+  //          =  (C_invar * var_invar + C_init * var_init + C_pre * pre_iter - C_pre * pre_iter_C_const) % aw
+  //          =  (C_invar * 0         + C_init * var_init + C_pre * (pre_iter - pre_iter_C_const)) % aw
+  //          =  (                    + C_init * var_init + C_pre * (pre_iter - pre_iter_C_const)) % aw
+  //
+  //        This is of the same form as (4c), and we have a solution:
+  //        pre_iter_C_invar = pre_iter - pre_iter_C_const
+  //
+  // The solutions of Equations (4a, b, c) for pre_iter_C_const, pre_iter_C_invar, and pre_iter_C_init
+  // respectively, can have one of these states:
   //
   //   trivial:     The solution can be any integer.
   //   constrained: There is a (periodic) solution, but it is not trivial.
