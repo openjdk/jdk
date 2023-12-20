@@ -86,7 +86,9 @@ protected:
     assert(_len >= 0 && _len <= _capacity, "initial_len too big");
   }
 
-  ~GrowableArrayBase() {}
+  // Declare destructor protected, so we cannot destruct only the
+  // base class part. And keep it trivial by making it default.
+  ~GrowableArrayBase() = default;
 
 public:
   int   length() const          { return _len; }
@@ -123,7 +125,9 @@ protected:
   GrowableArrayView<E>(E* data, int capacity, int initial_len) :
       GrowableArrayBase(capacity, initial_len), _data(data) {}
 
-  ~GrowableArrayView() {}
+  // Declare destructor protected, so we cannot destruct only the
+  // base class part. And keep it trivial by making it default.
+  ~GrowableArrayView() = default;
 
 public:
   const static GrowableArrayView EMPTY;
@@ -403,7 +407,9 @@ protected:
     }
   }
 
-  ~GrowableArrayWithAllocator() {}
+  // Declare destructor protected, so we cannot destruct only the
+  // base class part. And keep it trivial by making it default.
+  ~GrowableArrayWithAllocator() = default;
 
 public:
   int append(const E& elem) {
@@ -634,6 +640,18 @@ public:
 template <typename E>
 class GrowableArray : public GrowableArrayWithAllocator<E, GrowableArray<E> > {
   friend class GrowableArrayWithAllocator<E, GrowableArray<E> >;
+
+  // Since GrowableArray is arena / resource area allocated, it is a custom to
+  // simply abandon the array and hence not destruct the elements. Therefore,
+  // we only allow elements where the destruction does nothing anyway. That
+  // way there is no difference between abandoning elements or destructing them.
+#ifndef ASSERT
+  // Sadly, we can only verify this in non-ASSERT mode, because AnyObj has a
+  // destructor in ASSERT mode. Hence, we now allow non-trivial destructors
+  // in ASSERT mode, but forbid them in product mode.
+  static_assert(std::is_trivially_destructible<E>::value,
+                "GrowableArray only allows trivially destructible elements");
+#endif // ASSERT
 
 private:
   Arena* _arena;
