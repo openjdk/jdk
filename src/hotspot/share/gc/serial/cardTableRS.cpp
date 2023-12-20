@@ -382,20 +382,17 @@ CardTable::CardValue* CardTableRS::find_first_dirty_card(CardValue* const start_
   return end_card;
 }
 
-// Because non-objArray objs can be imprecisely-marked (only obj-start card is
-// dirty instead of the part containing old-to-young pointers), if the
-// obj-start of a non-objArray is dirty, all cards that obj completely resides
-// on are considered as dirty, since that obj will be iterated (scanned for
-// old-to-young pointers) as a whole.
+// Because non-objArray objs can be imprecisely marked (only the obj-start card
+// is dirty instead of the part containing old-to-young pointers), if the
+// obj-start of a non-objArray is dirty, all cards that the obj resides on,
+// except the final one, are unconditionally considered as dirty. This is
+// because that obj will be iterated (scanned for old-to-young pointers) as a
+// whole.
 template<typename Func>
 CardTable::CardValue* CardTableRS::find_first_clean_card(CardValue* const start_card,
                                                          CardValue* const end_card,
                                                          CardTableRS* ct,
                                                          Func& object_start) {
-
-  // end_card might be just beyond the heap, so need to use the _raw variant.
-  HeapWord* end_address = ct->addr_for_raw(end_card);
-
   for (CardValue* current_card = start_card; current_card < end_card; /* empty */) {
     if (is_dirty(current_card)) {
       current_card++;
@@ -418,21 +415,14 @@ CardTable::CardValue* CardTableRS::find_first_clean_card(CardValue* const start_
       return current_card;
     }
 
-    // This might be the last object in this area, avoid trying to access the
-    // card beyond the allowed area.
-    HeapWord* next_address = obj_start_addr + obj->size();
-    if (next_address >= end_address) {
-      break;
-    }
-
-    // Card occupied by next obj.
-    CardValue* next_obj_card = ct->byte_for(next_address);
-    if (is_clean(next_obj_card)) {
-      return next_obj_card;
+    // Final card occupied by obj.
+    CardValue* obj_final_card = ct->byte_for(obj_start_addr + obj->size() - 1);
+    if (is_clean(obj_final_card)) {
+      return obj_final_card;
     }
 
     // Continue the search after this known-dirty card...
-    current_card = next_obj_card + 1;
+    current_card = obj_final_card + 1;
   }
 
   return end_card;

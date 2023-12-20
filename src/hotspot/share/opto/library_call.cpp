@@ -492,7 +492,8 @@ bool LibraryCallKit::try_to_inline(int predicate) {
                                                                                          "notifyJvmtiMount", false, false);
   case vmIntrinsics::_notifyJvmtiVThreadUnmount: return inline_native_notify_jvmti_funcs(CAST_FROM_FN_PTR(address, OptoRuntime::notify_jvmti_vthread_unmount()),
                                                                                          "notifyJvmtiUnmount", false, false);
-  case vmIntrinsics::_notifyJvmtiVThreadHideFrames: return inline_native_notify_jvmti_hide();
+  case vmIntrinsics::_notifyJvmtiVThreadHideFrames:     return inline_native_notify_jvmti_hide();
+  case vmIntrinsics::_notifyJvmtiVThreadDisableSuspend: return inline_native_notify_jvmti_sync();
 #endif
 
 #ifdef JFR_HAVE_INTRINSICS
@@ -2943,6 +2944,29 @@ bool LibraryCallKit::inline_native_notify_jvmti_hide() {
 
     sync_kit(ideal);
     access_store_at(nullptr, addr, addr_type, hide, _gvn.type(hide), T_BOOLEAN, IN_NATIVE | MO_UNORDERED);
+    ideal.sync_kit(this);
+  }
+  final_sync(ideal);
+
+  return true;
+}
+
+// Always update the is_disable_suspend bit.
+bool LibraryCallKit::inline_native_notify_jvmti_sync() {
+  if (!DoJVMTIVirtualThreadTransitions) {
+    return true;
+  }
+  IdealKit ideal(this);
+
+  {
+    // unconditionally update the is_disable_suspend bit in current JavaThread
+    Node* thread = ideal.thread();
+    Node* arg = _gvn.transform(argument(1)); // argument for notification
+    Node* addr = basic_plus_adr(thread, in_bytes(JavaThread::is_disable_suspend_offset()));
+    const TypePtr *addr_type = _gvn.type(addr)->isa_ptr();
+
+    sync_kit(ideal);
+    access_store_at(nullptr, addr, addr_type, arg, _gvn.type(arg), T_BOOLEAN, IN_NATIVE | MO_UNORDERED);
     ideal.sync_kit(this);
   }
   final_sync(ideal);
