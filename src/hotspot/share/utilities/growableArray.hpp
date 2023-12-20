@@ -630,7 +630,7 @@ public:
 // the arena / resource area, but rather just abandons it until the memory is
 // released by the arena or by the ResourceMark from the resource area.
 // Because GrowableArrays are often just abandoned rather than properly destructed,
-// is is recommended that elements are trivially destructible, so that it makes no
+// we require that the element type E is trivially destructible, so that it makes no
 // difference if the destructors are called or not.
 //
 // GrowableArray is copyable, but it only creates a shallow copy. Hence, one has
