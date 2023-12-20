@@ -4155,14 +4155,18 @@ class StubGenerator: public StubCodeGenerator {
 
     // to minimize the number of memory operations:
     // read the 4 state 4-byte values in pairs, with a single ld,
-    // and split them into 2 registers
-    __ mv(t0, mask32);
+    // and split them into 2 registers.
+    //
+    // And, as the core algorithm of md5 works on 32-bits words, so
+    // in the following code, it does not care about the content of
+    // higher 32-bits in state[x]. Based on this observation,
+    // we can apply further optimization, which is to just ignore the
+    // higher 32-bits in state0/state2, rather than set the higher
+    // 32-bits of state0/state2 to zero explicitly with extra instructions.
     __ ld(state0, Address(state));
     __ srli(state1, state0, 32);
-    __ andr(state0, state0, t0);
     __ ld(state2, Address(state, 8));
     __ srli(state3, state2, 32);
-    __ andr(state2, state2, t0);
 
     Label md5_loop;
     __ BIND(md5_loop);

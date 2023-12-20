@@ -59,18 +59,8 @@ void ScavengableNMethods::register_nmethod(nmethod* nm) {
 }
 
 void ScavengableNMethods::unregister_nmethod(nmethod* nm) {
-  assert_locked_or_safepoint(CodeCache_lock);
-
-  if (gc_data(nm).on_list()) {
-    nmethod* prev = nullptr;
-    for (nmethod* cur = _head; cur != nullptr; cur = gc_data(cur).next()) {
-      if (cur == nm) {
-        unlist_nmethod(cur, prev);
-        return;
-      }
-      prev = cur;
-    }
-  }
+  // All users of this method only unregister in bulk during code unloading.
+  ShouldNotReachHere();
 }
 
 #ifndef PRODUCT
@@ -172,8 +162,35 @@ void ScavengableNMethods::nmethods_do_and_prune(CodeBlobToOopClosure* cl) {
   debug_only(verify_unlisted_nmethods(nullptr));
 }
 
-void ScavengableNMethods::prune_nmethods() {
+void ScavengableNMethods::prune_nmethods_not_into_young() {
   nmethods_do_and_prune(nullptr /* No closure */);
+}
+
+void ScavengableNMethods::prune_unlinked_nmethods() {
+  assert_locked_or_safepoint(CodeCache_lock);
+
+  debug_only(mark_on_list_nmethods());
+
+  nmethod* prev = nullptr;
+  nmethod* cur = _head;
+  while (cur != nullptr) {
+    ScavengableNMethodsData data = gc_data(cur);
+    debug_only(data.clear_marked());
+    assert(data.on_list(), "else shouldn't be on this list");
+
+    nmethod* const next = data.next();
+
+    if (cur->is_unlinked()) {
+      unlist_nmethod(cur, prev);
+    } else {
+      prev = cur;
+    }
+
+    cur = next;
+  }
+
+  // Check for stray marks.
+  debug_only(verify_unlisted_nmethods(nullptr));
 }
 
 // Walk the list of methods which might contain oops to the java heap.
@@ -218,8 +235,9 @@ void ScavengableNMethods::mark_on_list_nmethods() {
     nmethod* nm = iter.method();
     ScavengableNMethodsData data = gc_data(nm);
     assert(data.not_marked(), "clean state");
-    if (data.on_list())
+    if (data.on_list()) {
       data.set_marked();
+    }
   }
 }
 
@@ -230,7 +248,10 @@ void ScavengableNMethods::verify_unlisted_nmethods(CodeBlobClosure* cl) {
   while(iter.next()) {
     nmethod* nm = iter.method();
 
-    verify_nmethod(nm);
+    // Can not verify already unlinked nmethods as they are partially invalid already.
+    if (!nm->is_unlinked()) {
+      verify_nmethod(nm);
+    }
 
     if (cl != nullptr && !gc_data(nm).on_list()) {
       cl->do_code_blob(nm);
