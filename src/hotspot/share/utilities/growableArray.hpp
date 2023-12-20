@@ -748,7 +748,7 @@ class GrowableArrayCHeap : public GrowableArrayWithAllocator<E, GrowableArrayCHe
   }
 
 public:
-  GrowableArrayCHeap(int initial_capacity = 0) :
+  explicit GrowableArrayCHeap(int initial_capacity = 0) :
       GrowableArrayWithAllocator<E, GrowableArrayCHeap<E, F> >(
           allocate(initial_capacity, F),
           initial_capacity) {}
