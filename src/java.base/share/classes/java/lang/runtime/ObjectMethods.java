@@ -216,8 +216,8 @@ public class ObjectMethods {
         MethodHandle isInstance = MethodHandles.dropArguments(CLASS_IS_INSTANCE.bindTo(receiverClass), 0, receiverClass); // (RO)Z
         MethodHandle accumulator = MethodHandles.dropArguments(TRUE, 0, receiverClass, receiverClass); // (RR)Z
 
-        var equalsGetters = new ArrayList<>(getters);
-        equalsGetters.sort((mh1, mh2) -> {
+        var equalsGetters = getters.toArray(new MethodHandle[0]);
+        Arrays.sort(equalsGetters, (mh1, mh2) -> {
             var rt1 = mh1.type().returnType();
             var rt2 = mh2.type().returnType();
             if (rt1.isPrimitive() == rt2.isPrimitive() || rt1.isEnum() == rt2.isEnum()) {
