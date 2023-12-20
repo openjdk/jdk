@@ -60,7 +60,7 @@
 /*    ...                                                                */
 /* }                                                                     */
 /*                                                                       */
-/* If the GrowableArrays you are creating is C_Heap allocated then it    */
+/* If you are using a GrowableArrayCHeap (allocates on C-Heap) then it   */
 /* should not hold handles since the handles could trivially try and     */
 /* outlive their HandleMark. In some situations you might need to do     */
 /* this and it would be legal but be very careful and see if you can do  */
