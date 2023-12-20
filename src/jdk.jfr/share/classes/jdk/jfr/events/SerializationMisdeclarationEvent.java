@@ -45,7 +45,7 @@ import jdk.jfr.internal.Type;
 public final class SerializationMisdeclarationEvent extends AbstractJDKEvent {
 
     @Label("MisdeclaredClass")
-    public Class<?> cls;
+    public Class<?> misdeclaredClass;
 
     @Label("Message")
     public String message;

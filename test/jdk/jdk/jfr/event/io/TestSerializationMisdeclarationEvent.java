@@ -145,7 +145,7 @@ public class TestSerializationMisdeclarationEvent {
 
     private static List<RecordedEvent> getEventsFor(Class<?> cls, String[] keywords) {
         return events.stream()
-                .filter(e -> e.getClass("cls").getName().equals(cls.getName())
+                .filter(e -> e.getClass("misdeclaredClass").getName().equals(cls.getName())
                         && matchesAllKeywords(e.getString("message"), keywords))
                 .toList();
     }
@@ -156,7 +156,7 @@ public class TestSerializationMisdeclarationEvent {
 
     private static List<RecordedEvent> getEventsFor(Class<?> cls) {
         return events.stream()
-                .filter(e -> e.getClass("cls").getName().equals(cls.getName()))
+                .filter(e -> e.getClass("misdeclaredClass").getName().equals(cls.getName()))
                 .toList();
     }
 
