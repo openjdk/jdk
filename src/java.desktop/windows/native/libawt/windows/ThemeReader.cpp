@@ -113,7 +113,7 @@ static PFNGETTHEMETRANSITIONDURATION GetThemeTransitionDurationFunc = NULL;
 
 constexpr unsigned int defaultDPI = 96;
 
-BOOL InitThemes() {
+static BOOL InitThemes() {
     static HMODULE hModThemes = NULL;
     hModThemes = JDK_LoadSystemLibrary("UXTHEME.DLL");
     DTRACE_PRINTLN1("InitThemes hModThemes = %x\n", hModThemes);
@@ -472,7 +472,7 @@ JNIEXPORT void JNICALL Java_sun_awt_windows_ThemeReader_paintBackground
     ReleaseDC(NULL,defaultDC);
 }
 
-void rescale(SIZE *size) {
+static void rescale(SIZE *size) {
     static int dpiX = -1;
     static int dpiY = -1;
 
