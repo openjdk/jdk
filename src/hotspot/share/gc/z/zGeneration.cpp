@@ -1318,6 +1318,7 @@ void ZGenerationOld::process_non_strong_references() {
   _weak_roots_processor.process_weak_roots();
 
   ClassUnloadingContext ctx(_workers.active_workers(),
+                            true /* unregister_nmethods_during_purge */,
                             true /* lock_codeblob_free_separately */);
 
   // Unlink stale metadata and nmethods
