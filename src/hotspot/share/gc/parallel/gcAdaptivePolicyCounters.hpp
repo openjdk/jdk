@@ -60,7 +60,6 @@ class GCAdaptivePolicyCounters : public GCPolicyCounters {
   PerfVariable*         _decrease_for_footprint_counter;
 
   PerfVariable*         _minor_pause_young_slope_counter;
-  PerfVariable*         _major_pause_old_slope_counter;
 
   PerfVariable*         _decide_at_full_gc_counter;
 
