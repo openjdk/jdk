@@ -32,9 +32,10 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 import java.io.*;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Stream;
 
-import static jdk.internal.event.SerializationMisdeclarationEvent.*;
 import static jdk.test.lib.jfr.EventNames.SerializationMisdeclaration;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
@@ -48,7 +49,7 @@ import static org.junit.jupiter.params.provider.Arguments.arguments;
  * @requires vm.hasJFR
  * @modules java.base/jdk.internal.event
  * @library /test/lib
- * @run junit jdk.jfr.event.io.TestSerializationMisdeclarationEvent
+ * @run junit/othervm jdk.jfr.event.io.TestSerializationMisdeclarationEvent
  */
 public class TestSerializationMisdeclarationEvent {
 
@@ -69,40 +70,40 @@ public class TestSerializationMisdeclarationEvent {
 
     static Arguments[] testSingleClassMisdeclarations() {
         return new Arguments[] {
-                arguments(NoSUID.class, SUID_EXPLICIT),
-                arguments(NoSUID.class, SER_PERS_NOT_NULL),
+                arguments(NoSUID.class, new String[] {"serialVersionUID", "should", "explicitly"}),
+                arguments(NoSUID.class, new String[] {"serialPersistentFields", "must", "non-null"}),
 
-                arguments(NonLongSUID.class, SUID_LONG),
-                arguments(NonLongSUID.class, SUID_CONVERTIBLE_TO_LONG),
+                arguments(BadClass.class, new String[] {"serialVersionUID", "should", "private"}),
+                arguments(BadClass.class, new String[] {"serialVersionUID", "must", "type", "long"}),
+                arguments(BadClass.class, new String[] {"serialVersionUID", "must", "final"}),
+                arguments(BadClass.class, new String[] {"serialVersionUID", "must", "static"}),
+                arguments(BadClass.class, new String[] {"serialPersistentFields", "must", "private"}),
+                arguments(BadClass.class, new String[] {"serialPersistentFields", "must", "static"}),
+                arguments(BadClass.class, new String[] {"serialPersistentFields", "must", "final"}),
+                arguments(BadClass.class, new String[] {"serialPersistentFields", "should", "type", "ObjectStreamField[]"}),
+                arguments(BadClass.class, new String[] {"method", "writeObject(", "must", "private"}),
+                arguments(BadClass.class, new String[] {"method", "writeObject(", "must", "non-static"}),
+                arguments(BadClass.class, new String[] {"method", "writeObject(", "must", "return"}),
+                arguments(BadClass.class, new String[] {"method", "writeObject(", "must", "parameter"}),
+                arguments(BadClass.class, new String[] {"method", "readObject(", "must", "parameter"}),
+                arguments(BadClass.class, new String[] {"method", "readObjectNoData(", "must", "parameter"}),
 
-                arguments(EnumClass.class, SUID_INEFFECTIVE_ENUM),
-                arguments(EnumClass.class, SUID_PRIVATE),
-                arguments(EnumClass.class, SUID_LONG),
-                arguments(EnumClass.class, SUID_STATIC),
-                arguments(EnumClass.class, SUID_FINAL),
-                arguments(EnumClass.class, SER_PERS_INEFFECTIVE_ENUM),
-                arguments(EnumClass.class, SER_PERS_PRIVATE),
-                arguments(EnumClass.class, SER_PERS_STATIC),
-                arguments(EnumClass.class, SER_PERS_FINAL),
-                arguments(EnumClass.class, SER_PERS_TYPE_OSF_ARRAY),
-                arguments(EnumClass.class, PRIV_METH_PRIV),
-                arguments(EnumClass.class, PRIV_METH_NON_STATIC),
-                arguments(EnumClass.class, PRIV_METH_RET_TYPE),
-                arguments(EnumClass.class, PRIV_METH_PARAM_TYPES),
-                arguments(EnumClass.class, PRIV_METH_INEFFECTIVE_ENUM),
-                arguments(EnumClass.class, ACC_METH_INEFFECTIVE_ENUM),
+                arguments(EnumClass.class, new String[] {"serialVersionUID", "enum"}),
+                arguments(EnumClass.class, new String[] {"serialPersistentFields", "enum"}),
+                arguments(EnumClass.class, new String[] {"method", "writeObject(", "enum"}),
+                arguments(EnumClass.class, new String[] {"method", "readResolve(", "enum"}),
 
-                arguments(RecordClass.class, SER_PERS_INEFFECTIVE_RECORD),
-                arguments(RecordClass.class, SER_PERS_TYPE_OSF_ARRAY),
-                arguments(RecordClass.class, SER_PERS_VALUE_OSF_ARRAY),
-                arguments(RecordClass.class, PRIV_METH_INEFFECTIVE_RECORD),
+                arguments(RecordClass.class, new String[] {"serialPersistentFields", "record"}),
+                arguments(RecordClass.class, new String[] {"method", "record"}),
 
-                arguments(C.class, ACC_METH_NON_ACCESSIBLE),
+                arguments(C.class, new String[] {"method", "not", "accessible"}),
 
-                arguments(Acc.class, ACC_METH_NON_ABSTRACT),
-                arguments(Acc.class, ACC_METH_NON_STATIC),
-                arguments(Acc.class, ACC_METH_RET_TYPE),
-                arguments(Acc.class, ACC_METH_PARAM_TYPES),
+                arguments(Acc.class, new String[] {"serialPersistentFields", "should", "type", "ObjectStreamField[]"}),
+                arguments(Acc.class, new String[] {"serialPersistentFields", "must", "instance", "ObjectStreamField[]"}),
+                arguments(Acc.class, new String[] {"method", "readResolve(", "must", "non-abstract"}),
+                arguments(Acc.class, new String[] {"method", "writeReplace(", "must", "non-static"}),
+                arguments(Acc.class, new String[] {"method", "writeReplace(", "must", "return"}),
+                arguments(Acc.class, new String[] {"method", "writeReplace(", "must", "parameter"}),
         };
     }
 
@@ -116,8 +117,8 @@ public class TestSerializationMisdeclarationEvent {
 
     @ParameterizedTest
     @MethodSource
-    public void testSingleClassMisdeclarations(Class<?> cls, int kind) {
-        singleClassEvent(cls, kind);
+    public void testSingleClassMisdeclarations(Class<?> cls, String... keywords) {
+        singleClassEvent(cls, keywords);
     }
 
     @ParameterizedTest
@@ -128,7 +129,7 @@ public class TestSerializationMisdeclarationEvent {
 
     private static void doLookups() {
         ObjectStreamClass.lookup(NoSUID.class);
-        ObjectStreamClass.lookup(NonLongSUID.class);
+        ObjectStreamClass.lookup(BadClass.class);
         ObjectStreamClass.lookup(EnumClass.class);
         ObjectStreamClass.lookup(RecordClass.class);
         ObjectStreamClass.lookup(Acc.class);
@@ -138,15 +139,19 @@ public class TestSerializationMisdeclarationEvent {
         ObjectStreamClass.lookup(C.class);
     }
 
-    private static void singleClassEvent(Class<?> cls, int kind) {
-        assertEquals(1, getEventsFor(cls, kind).size(), cls.getName());
+    private static void singleClassEvent(Class<?> cls, String... keywords) {
+        assertEquals(1, getEventsFor(cls, keywords).size(), cls.getName());
     }
 
-    private static List<RecordedEvent> getEventsFor(Class<?> cls, int kind) {
+    private static List<RecordedEvent> getEventsFor(Class<?> cls, String... keywords) {
         return events.stream()
                 .filter(e -> e.getClass("cls").getName().equals(cls.getName())
-                        && e.getInt("kind") == kind)
+                        && matchesAllKeywords(e.getString("message"), keywords))
                 .toList();
+    }
+
+    private static boolean matchesAllKeywords(String msg, String[] keywords) {
+        return Arrays.stream(keywords).allMatch(msg::contains);
     }
 
     private static List<RecordedEvent> getEventsFor(Class<?> cls) {
@@ -158,7 +163,7 @@ public class TestSerializationMisdeclarationEvent {
     private static class A implements Serializable {
 
         @Serial
-        private static final long serialVersionUID = 0xAAAA;
+        private static final long serialVersionUID = 0xAAAAL;
 
         @Serial
         private static final ObjectStreamField[] serialPersistentFields = new ObjectStreamField[0];
@@ -185,7 +190,7 @@ public class TestSerializationMisdeclarationEvent {
     private static class B extends A {
 
         @Serial
-        private static final long serialVersionUID = 0xBBBB;
+        private static final long serialVersionUID = 0xBBBBL;
 
         @Serial
         private Object readResolve() {
@@ -199,29 +204,87 @@ public class TestSerializationMisdeclarationEvent {
         @Serial
         private static final long serialVersionUID = 0xCCCCL;
 
+        /*
+         * readResolve() in superclass is not accessible
+         */
+
     }
 
     private static final class NoSUID implements Serializable {
 
+        /*
+         * should declare serialVersionUID
+         */
+
+        /*
+         * value must be non-null
+         */
         private static final ObjectStreamField[] serialPersistentFields = null;
 
     }
 
-    private static final class NonLongSUID implements Serializable {
-        private static final Object serialVersionUID = 1.2;
+    private static final class BadClass implements Serializable {
+        /*
+         * should be private
+         * must be long
+         * must be final
+         */
+        Object serialVersionUID = 1.2;
+
+        /*
+         * must be private
+         * must be static
+         * must be final
+         * should be ObjectStreamField[]
+         */
+        Object serialPersistentFields = new String[0];
+
+        /*
+         * must be private
+         * must be non-static
+         * must return void
+         * must accept ObjectOutputStream
+         */
+        static int writeObject(int i) {
+            return 0;
+        }
+
+        /*
+         * must accept ObjectInputStream
+         */
+        private void readObject(ObjectOutputStream oos) {
+        }
+
+        /*
+         * must not accept parameters
+         */
+        private void readObjectNoData(ObjectInputStream ois) {
+        }
 
     }
 
     private enum EnumClass implements Serializable {
         __;  // ignored constant
 
-        Object serialVersionUID = 1.2;
-        Object serialPersistentFields = new String[0];
+        /*
+         * non-effective on enum
+         */
+        private static final long serialVersionUID = 0xABCDL;
 
-        static int writeObject(int i) {
-            return 0;
+        /*
+         * non-effective on enum
+         */
+        private static final ObjectStreamField[] serialPersistentFields = new ObjectStreamField[0];
+
+        /*
+         * non-effective on enum
+         */
+        private void writeObject(ObjectOutputStream oos) {
         }
 
+        /*
+         * non-effective on enum
+         */
         public Object readResolve() {
             return null;
         }
@@ -230,8 +293,19 @@ public class TestSerializationMisdeclarationEvent {
 
     private record RecordClass() implements Serializable {
 
-        private static final Object serialPersistentFields = new String[0];
+        /*
+         * allowed on records
+         */
+        private static final long serialVersionUID = 0x1234L;
 
+        /*
+         * non-effective on records
+         */
+        private static final ObjectStreamField[] serialPersistentFields = new ObjectStreamField[0];
+
+        /*
+         * non-effective on records
+         */
         static int writeObject(int i) {
             return 0;
         }
@@ -240,17 +314,25 @@ public class TestSerializationMisdeclarationEvent {
 
     private abstract static class Acc implements Serializable {
 
-        @Serial
-        private static final long serialVersionUID = 0xAcc;
+        private static final long serialVersionUID = 0x5678L;
 
-        @Serial
+        private static final Object serialPersistentFields = new String[0];
+        /*
+         * must be non-abstract
+         */
         abstract Object readResolve();
 
-        @Serial
+        /*
+         * must be non-static
+         */
         static Object writeReplace() {
             return null;
         }
 
+        /*
+         * must return Object
+         * must have empty parameter types
+         */
         String writeReplace(String s) {
             return null;
         }

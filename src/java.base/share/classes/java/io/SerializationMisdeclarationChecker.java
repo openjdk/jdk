@@ -79,39 +79,30 @@ final class SerializationMisdeclarationChecker {
         Field f = declaredField(cl, SUID_NAME);
         if (f == null) {
             if (isOrdinaryClass()) {
-                commitEvent(SUID_EXPLICIT,
-                        "a private static final long " + SUID_NAME +
-                                " field should be declared");
+                commitEvent(SUID_NAME +
+                        " should be declared explicitly as a private static final long field");
             }
             return;
         }
         if (cl.isEnum()) {
-            commitEvent(SUID_INEFFECTIVE_ENUM,
-                    SUID_NAME + " is not effective in an enum class");
+            commitEvent(SUID_NAME +
+                    " in an enum class is not effective");
         }
         if (!isPrivate(f)) {
-            commitEvent(SUID_PRIVATE,
-                    SUID_NAME + " should be declared private");
+            commitEvent(SUID_NAME +
+                    " should be private");
         }
         if (!isStatic(f)) {
-            commitEvent(SUID_STATIC,
-                    SUID_NAME + " must be declared static to be effective");
+            commitEvent(SUID_NAME +
+                    " must be static to be effective");
         }
         if (!isFinal(f)) {
-            commitEvent(SUID_FINAL,
-                    SUID_NAME + " must be declared final to be effective");
+            commitEvent(SUID_NAME +
+                    " must be final to be effective");
         }
         if (f.getType() != Long.TYPE) {
-            commitEvent(SUID_LONG,
-                    SUID_NAME + " should be declared of type long");
-            if (!isStatic(f)) {
-                return;
-            }
-            f.setAccessible(true);
-            if (longFromStatic(f) == null) {
-                commitEvent(SUID_CONVERTIBLE_TO_LONG,
-                        SUID_NAME + " must be convertible to long via widening to be effective");
-            }
+            commitEvent(SUID_NAME +
+                    " must be of type long to be effective");
         }
     }
 
@@ -121,27 +112,27 @@ final class SerializationMisdeclarationChecker {
             return;
         }
         if (cl.isRecord()) {
-            commitEvent(SER_PERS_INEFFECTIVE_RECORD,
-                    SERIAL_PERSISTENT_FIELDS_NAME + " is not effective in a record class");
+            commitEvent(SERIAL_PERSISTENT_FIELDS_NAME +
+                    " in a record class is not effective");
         } else if (cl.isEnum()) {
-            commitEvent(SER_PERS_INEFFECTIVE_ENUM,
-                    SERIAL_PERSISTENT_FIELDS_NAME + " is not effective in an enum class");
+            commitEvent(SERIAL_PERSISTENT_FIELDS_NAME +
+                    " in an enum class is not effective");
         }
         if (!isPrivate(f)) {
-            commitEvent(SER_PERS_PRIVATE,
-                    SERIAL_PERSISTENT_FIELDS_NAME + " must be declared private to be effective");
+            commitEvent(SERIAL_PERSISTENT_FIELDS_NAME +
+                    " must be private to be effective");
         }
         if (!isStatic(f)) {
-            commitEvent(SER_PERS_STATIC,
-                    SERIAL_PERSISTENT_FIELDS_NAME + " must be declared static to be effective");
+            commitEvent(SERIAL_PERSISTENT_FIELDS_NAME +
+                    " must be static to be effective");
         }
         if (!isFinal(f)) {
-            commitEvent(SER_PERS_FINAL,
-                    SERIAL_PERSISTENT_FIELDS_NAME + " must be declared final to be effective");
+            commitEvent(SERIAL_PERSISTENT_FIELDS_NAME +
+                    " must be final to be effective");
         }
         if (f.getType() != ObjectStreamField[].class) {
-            commitEvent(SER_PERS_TYPE_OSF_ARRAY,
-                    SERIAL_PERSISTENT_FIELDS_NAME + " should be declared of type ObjectStreamField[]");
+            commitEvent(SERIAL_PERSISTENT_FIELDS_NAME +
+                    " should be of type ObjectStreamField[]");
         }
         if (!isStatic(f)) {
             return;
@@ -149,13 +140,13 @@ final class SerializationMisdeclarationChecker {
         f.setAccessible(true);
         Object spf = objectFromStatic(f);
         if (spf == null) {
-            commitEvent(SER_PERS_NOT_NULL,
-                    SERIAL_PERSISTENT_FIELDS_NAME + " must not be null to be effective");
+            commitEvent(SERIAL_PERSISTENT_FIELDS_NAME +
+                    " must be non-null to be effective");
             return;
         }
         if (!(spf instanceof ObjectStreamField[])) {
-            commitEvent(SER_PERS_VALUE_OSF_ARRAY,
-                    SERIAL_PERSISTENT_FIELDS_NAME + " must be an instance of ObjectStreamField[] to be effective");
+            commitEvent(SERIAL_PERSISTENT_FIELDS_NAME +
+                    " must be an instance of ObjectStreamField[] to be effective");
         }
     }
 
@@ -169,27 +160,21 @@ final class SerializationMisdeclarationChecker {
 
     private void privilegedCheckPrivateMethod(Method m, Class<?>[] paramTypes, Class<?> retType) {
         if (cl.isEnum()) {
-            commitEvent(PRIV_METH_INEFFECTIVE_ENUM,
-                    m + " is not effective on an enum class");
+            commitEvent("method " + m + " on an enum class is not effective");
         } else if (cl.isRecord()) {
-            commitEvent(PRIV_METH_INEFFECTIVE_RECORD,
-                    m + " is not effective on a record class");
+            commitEvent("method " + m + " on an record class is not effective");
         }
         if (!isPrivate(m)) {
-            commitEvent(PRIV_METH_PRIV,
-                    m + " must be private to be effective");
+            commitEvent("method " + m + " must be private to be effective");
         }
         if (isStatic(m)) {
-            commitEvent(PRIV_METH_NON_STATIC,
-                    m + " must be non-static to be effective");
+            commitEvent("method " + m + " must be non-static to be effective");
         }
         if (m.getReturnType() != retType) {
-            commitEvent(PRIV_METH_RET_TYPE,
-                    m + " must have return type " + retType + " to be effective");
+            commitEvent("method " + m + " must have return type " + retType + " to be effective");
         }
         if (!Arrays.equals(m.getParameterTypes(), paramTypes)) {
-            commitEvent(PRIV_METH_PARAM_TYPES,
-                    m + " must have parameter types " + Arrays.toString(paramTypes) + " to be effective");
+            commitEvent("method " + m + " must have parameter types " + Arrays.toString(paramTypes) + " to be effective");
         }
     }
 
@@ -207,29 +192,23 @@ final class SerializationMisdeclarationChecker {
     private void privilegedCheckAccessibleMethod(Class<?> cls, Method m,
             Class<?>[] paramTypes, Class<?> retType) {
         if (cls.isEnum()) {
-            commitEvent(cls, ACC_METH_INEFFECTIVE_ENUM,
-                    m + " is not effective on an enum class");
+            commitEvent("method " + m + " on an enum class is not effective");
         }
         if (isAbstract(m)) {
-            commitEvent(ACC_METH_NON_ABSTRACT,
-                    m + " must be non-abstract to be effective");
+            commitEvent("method " + m + " must be non-abstract to be effective");
         }
         if (isStatic(m)) {
-            commitEvent(ACC_METH_NON_STATIC,
-                    m + " must be non-static to be effective");
+            commitEvent("method " + m + " must be non-static to be effective");
         }
         if (m.getReturnType() != retType) {
-            commitEvent(ACC_METH_RET_TYPE,
-                    m + " must have return type " + retType + " to be effective");
+            commitEvent("method " + m + " must have return type " + retType + " to be effective");
         }
         if (!Arrays.equals(m.getParameterTypes(), paramTypes)) {
-            commitEvent(ACC_METH_PARAM_TYPES,
-                    m + " must have parameter types " + Arrays.toString(paramTypes) + " to be effective");
+            commitEvent("method " + m + " must have parameter types " + Arrays.toString(paramTypes) + " to be effective");
         }
         if (isPrivate(m) && cl != cls
                 || isPackageProtected(m) && !isSamePackage(cl, cls)) {
-            commitEvent(ACC_METH_NON_ACCESSIBLE,
-                    m + " is not accessible");
+            commitEvent("method " + m + " is not accessible");
         }
     }
 
@@ -289,12 +268,12 @@ final class SerializationMisdeclarationChecker {
         return null;
     }
 
-    private void commitEvent(int kind, String msg, Object... args) {
-        commitEvent(cl, kind, msg);
+    private void commitEvent(String msg, Object... args) {
+        commitEvent(cl, msg);
     }
 
-    private static void commitEvent(Class<?> cls, int kind, String msg) {
-        commit(timestamp(), cls, kind, msg);
+    private static void commitEvent(Class<?> cls, String msg) {
+        commit(timestamp(), cls, msg);
     }
 
 }

@@ -36,7 +36,10 @@ import jdk.jfr.internal.Type;
 @Name(Type.EVENT_NAME_PREFIX + "SerializationMisdeclaration")
 @Label("Serialization Deserialization")
 @Category({"Java Development Kit", "Serialization"})
-@Description("Methods and fields misdeclarations")
+@Description("Methods and fields misdeclarations." +
+        " The checks are usually performed just once per serializable class," +
+        " the first time it is used by serialization." +
+        " Under high memory pressure, a class might be re-checked again.")
 @MirrorEvent(className = "jdk.internal.event.SerializationMisdeclarationEvent")
 @RemoveFields({"duration", "stackTrace", "eventThread"})
 public final class SerializationMisdeclarationEvent extends AbstractJDKEvent {
@@ -44,44 +47,7 @@ public final class SerializationMisdeclarationEvent extends AbstractJDKEvent {
     @Label("MisdeclaredClass")
     public Class<?> cls;
 
-    @Label("Kind")
-    public int kind;
-
     @Label("Message")
     public String message;
-
-    /*
-     * These constants are not final on purpose.
-     */
-    public static int SUID_EXPLICIT                   = jdk.internal.event.SerializationMisdeclarationEvent.SUID_EXPLICIT;
-    public static int SUID_INEFFECTIVE_ENUM           = jdk.internal.event.SerializationMisdeclarationEvent.SUID_INEFFECTIVE_ENUM;
-    public static int SUID_PRIVATE                    = jdk.internal.event.SerializationMisdeclarationEvent.SUID_PRIVATE;
-    public static int SUID_STATIC                     = jdk.internal.event.SerializationMisdeclarationEvent.SUID_STATIC;
-    public static int SUID_FINAL                      = jdk.internal.event.SerializationMisdeclarationEvent.SUID_FINAL;
-    public static int SUID_LONG                       = jdk.internal.event.SerializationMisdeclarationEvent.SUID_LONG;
-    public static int SUID_CONVERTIBLE_TO_LONG        = jdk.internal.event.SerializationMisdeclarationEvent.SUID_CONVERTIBLE_TO_LONG;
-
-    public static int SER_PERS_INEFFECTIVE_ENUM       = jdk.internal.event.SerializationMisdeclarationEvent.SER_PERS_INEFFECTIVE_ENUM;
-    public static int SER_PERS_INEFFECTIVE_RECORD     = jdk.internal.event.SerializationMisdeclarationEvent.SER_PERS_INEFFECTIVE_RECORD;
-    public static int SER_PERS_PRIVATE                = jdk.internal.event.SerializationMisdeclarationEvent.SER_PERS_PRIVATE;
-    public static int SER_PERS_STATIC                 = jdk.internal.event.SerializationMisdeclarationEvent.SER_PERS_STATIC;
-    public static int SER_PERS_FINAL                  = jdk.internal.event.SerializationMisdeclarationEvent.SER_PERS_FINAL;
-    public static int SER_PERS_NOT_NULL               = jdk.internal.event.SerializationMisdeclarationEvent.SER_PERS_NOT_NULL;
-    public static int SER_PERS_TYPE_OSF_ARRAY         = jdk.internal.event.SerializationMisdeclarationEvent.SER_PERS_TYPE_OSF_ARRAY;
-    public static int SER_PERS_VALUE_OSF_ARRAY        = jdk.internal.event.SerializationMisdeclarationEvent.SER_PERS_VALUE_OSF_ARRAY;
-
-    public static int PRIV_METH_INEFFECTIVE_ENUM      = jdk.internal.event.SerializationMisdeclarationEvent.PRIV_METH_INEFFECTIVE_ENUM;
-    public static int PRIV_METH_INEFFECTIVE_RECORD    = jdk.internal.event.SerializationMisdeclarationEvent.PRIV_METH_INEFFECTIVE_RECORD;
-    public static int PRIV_METH_PRIV                  = jdk.internal.event.SerializationMisdeclarationEvent.PRIV_METH_PRIV;
-    public static int PRIV_METH_NON_STATIC            = jdk.internal.event.SerializationMisdeclarationEvent.PRIV_METH_NON_STATIC;
-    public static int PRIV_METH_RET_TYPE              = jdk.internal.event.SerializationMisdeclarationEvent.PRIV_METH_RET_TYPE;
-    public static int PRIV_METH_PARAM_TYPES           = jdk.internal.event.SerializationMisdeclarationEvent.PRIV_METH_PARAM_TYPES;
-
-    public static int ACC_METH_INEFFECTIVE_ENUM       = jdk.internal.event.SerializationMisdeclarationEvent.ACC_METH_INEFFECTIVE_ENUM;
-    public static int ACC_METH_NON_ABSTRACT           = jdk.internal.event.SerializationMisdeclarationEvent.ACC_METH_NON_ABSTRACT;
-    public static int ACC_METH_NON_STATIC             = jdk.internal.event.SerializationMisdeclarationEvent.ACC_METH_NON_STATIC;
-    public static int ACC_METH_RET_TYPE               = jdk.internal.event.SerializationMisdeclarationEvent.ACC_METH_RET_TYPE;
-    public static int ACC_METH_PARAM_TYPES            = jdk.internal.event.SerializationMisdeclarationEvent.ACC_METH_PARAM_TYPES;
-    public static int ACC_METH_NON_ACCESSIBLE         = jdk.internal.event.SerializationMisdeclarationEvent.ACC_METH_NON_ACCESSIBLE;
 
 }
