@@ -1108,7 +1108,6 @@ bool os::dll_address_to_library_name(address addr, char* buf,
   return true;
 }
 
-
 static void* dll_load_library(const char *filename, char *ebuf, int ebuflen) {
 
   log_info(os)("attempting shared library load of %s", filename);
@@ -1179,8 +1178,8 @@ void *os::dll_load(const char *filename, char *ebuf, int ebuflen) {
     }
   }
   FREE_C_HEAP_ARRAY(char, file_path);
-  return result;    
-}    
+  return result;
+}
 
 void os::print_dll_info(outputStream *st) {
   st->print_cr("Dynamic libraries:");
