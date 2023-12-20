@@ -1135,8 +1135,9 @@ void *os::dll_load(const char *filename, char *ebuf, int ebuflen) {
   }
 
   void* result;
+  const char* error_report = nullptr;
   JFR_ONLY(NativeLibraryLoadEvent load_event(filename, &result);)
-  result = Aix_dlopen(filename, dflags, ebuf, ebuflen);
+  result = Aix_dlopen(filename, dflags, &error_report);
   if (result != nullptr) {
     Events::log_dll_message(nullptr, "Loaded shared library %s", filename);
     // Reload dll cache. Don't do this in signal handling.
@@ -1145,7 +1146,6 @@ void *os::dll_load(const char *filename, char *ebuf, int ebuflen) {
     return result;
   } else {
     // error analysis when dlopen fails
-    const char* error_report = ::dlerror();
     if (error_report == nullptr) {
       error_report = "dlerror returned no error description";
     }

@@ -1030,7 +1030,7 @@ static bool search_file_in_LIBPATH(const char* path, struct stat64x* stat) {
 // specific AIX versions for ::dlopen() and ::dlclose(), which handles the struct g_handletable
 // filled by os::dll_load(). This way we mimic dl handle equality for a library
 // opened a second time, as it is implemented on other platforms.
-void* Aix_dlopen(const char* filename, int Flags, char *ebuf, int ebuflen) {
+void* Aix_dlopen(const char* filename, int Flags, const char** error_report) {
   void* result;
   struct stat64x libstat;
 
@@ -1060,9 +1060,7 @@ void* Aix_dlopen(const char* filename, int Flags, char *ebuf, int ebuflen) {
       // to store new ::dlopen() handle
       if (g_handletable_used == max_handletable) {
         // Array is already full. No place for new handle. Cry and give up.
-        if (ebuf != nullptr && ebuflen > 0) {
-          ::strncpy(ebuf, "dlopen: too many libraries loaded", ebuflen - 1);
-        }
+        *error_report = "dlopen: too many libraries loaded";
         assert(false, "max_handletable reached");
         return nullptr;
       }
@@ -1077,12 +1075,9 @@ void* Aix_dlopen(const char* filename, int Flags, char *ebuf, int ebuflen) {
       }
       else {
         // error analysis when dlopen fails
-        const char* error_report = ::dlerror();
-        if (error_report == nullptr) {
-          error_report = "dlerror returned no error description";
-        }
-        if (ebuf != nullptr && ebuflen > 0) {
-          snprintf(ebuf, ebuflen - 1, "%s", error_report);
+        *error_report = ::dlerror();
+        if (*error_report == nullptr) {
+          *error_report = "dlerror returned no error description";
         }
       }
     }
