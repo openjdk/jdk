@@ -594,49 +594,52 @@ public:
 
 private:
   class EQ4 {
-    private:
-      const int _C_const;
-      const int _C_invar;
-      const int _C_init;
-      const int _C_pre;
-      const int _aw;
+   private:
+    const int _C_const;
+    const int _C_invar;
+    const int _C_init;
+    const int _C_pre;
+    const int _aw;
 
-    public:
-      EQ4(const int C_const, const int C_invar, const int C_init, const int C_pre, const int aw) :
-      _C_const(C_const), _C_invar(C_invar), _C_init(C_init), _C_pre(C_pre), _aw(aw) {}
+   public:
+    EQ4(const int C_const, const int C_invar, const int C_init, const int C_pre, const int aw) :
+    _C_const(C_const), _C_invar(C_invar), _C_init(C_init), _C_pre(C_pre), _aw(aw) {}
 
-      enum State { TRIVIAL, CONSTRAINED, EMPTY };
+    enum State { TRIVIAL, CONSTRAINED, EMPTY };
 
-      State eq4a_state() const {
-        return (abs(_C_pre) >= _aw) ? ( (C_const_mod_aw() == 0       ) ? TRIVIAL     : EMPTY)
-                                    : ( (C_const_mod_abs_C_pre() == 0) ? CONSTRAINED : EMPTY);
-      }
+    State eq4a_state() const {
+      return (abs(_C_pre) >= _aw) ? ( (C_const_mod_aw() == 0       ) ? TRIVIAL     : EMPTY)
+                                  : ( (C_const_mod_abs_C_pre() == 0) ? CONSTRAINED : EMPTY);
+    }
 
-      State eq4b_state() const {
-        return (abs(_C_pre) >= _aw) ? ( (C_invar_mod_aw() == 0       ) ? TRIVIAL     : EMPTY)
-                                    : ( (C_invar_mod_abs_C_pre() == 0) ? CONSTRAINED : EMPTY);
-      }
+    State eq4b_state() const {
+      return (abs(_C_pre) >= _aw) ? ( (C_invar_mod_aw() == 0       ) ? TRIVIAL     : EMPTY)
+                                  : ( (C_invar_mod_abs_C_pre() == 0) ? CONSTRAINED : EMPTY);
+    }
 
-      State eq4c_state() const {
-        return (abs(_C_pre) >= _aw) ? ( (C_init__mod_aw() == 0       ) ? TRIVIAL     : EMPTY)
-                                    : ( (C_init__mod_abs_C_pre() == 0) ? CONSTRAINED : EMPTY);
-      }
+    State eq4c_state() const {
+      return (abs(_C_pre) >= _aw) ? ( (C_init_mod_aw() == 0       )  ? TRIVIAL     : EMPTY)
+                                  : ( (C_init_mod_abs_C_pre() == 0)  ? CONSTRAINED : EMPTY);
+    }
 
-      int C_const_mod_aw() const        { return AlignmentSolution::mod(_C_const, _aw); }
-      int C_invar_mod_aw() const        { return AlignmentSolution::mod(_C_invar, _aw); }
-      int C_init__mod_aw() const        { return AlignmentSolution::mod(_C_init,  _aw); }
-      int C_const_mod_abs_C_pre() const { return AlignmentSolution::mod(_C_const, abs(_C_pre)); }
-      int C_invar_mod_abs_C_pre() const { return AlignmentSolution::mod(_C_invar, abs(_C_pre)); }
-      int C_init__mod_abs_C_pre() const { return AlignmentSolution::mod(_C_init,  abs(_C_pre)); }
+   private:
+    int C_const_mod_aw() const        { return AlignmentSolution::mod(_C_const, _aw); }
+    int C_invar_mod_aw() const        { return AlignmentSolution::mod(_C_invar, _aw); }
+    int C_init_mod_aw() const         { return AlignmentSolution::mod(_C_init,  _aw); }
+    int C_const_mod_abs_C_pre() const { return AlignmentSolution::mod(_C_const, abs(_C_pre)); }
+    int C_invar_mod_abs_C_pre() const { return AlignmentSolution::mod(_C_invar, abs(_C_pre)); }
+    int C_init_mod_abs_C_pre() const  { return AlignmentSolution::mod(_C_init,  abs(_C_pre)); }
 
-    public:
 #ifdef ASSERT
-      void trace() const;
-      const char* state_to_str(State s) const {
-        if (s == TRIVIAL)     { return "trivial"; }
-        if (s == CONSTRAINED) { return "constrained"; }
-        return "empty";
-      }
+   public:
+    void trace() const;
+
+   private:
+    static const char* state_to_str(State s) {
+      if (s == TRIVIAL)     { return "trivial"; }
+      if (s == CONSTRAINED) { return "constrained"; }
+      return "empty";
+    }
 #endif
   };
 
