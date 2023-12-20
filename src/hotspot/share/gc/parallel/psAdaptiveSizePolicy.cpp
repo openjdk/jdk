@@ -280,7 +280,7 @@ void PSAdaptiveSizePolicy::compute_eden_space_size(
     //
     // Make changes only to affect one of the pauses (the larger)
     // at a time.
-    adjust_eden_for_pause_time(&desired_promo_size, &desired_eden_size);
+    adjust_eden_for_pause_time(&desired_eden_size);
 
   } else if (_avg_minor_pause->padded_average() > gc_minor_pause_goal_sec()) {
     // Adjust only for the minor pause time goal
@@ -455,7 +455,7 @@ void PSAdaptiveSizePolicy::compute_old_gen_free_space(
     // at a time.
     if (is_full_gc) {
       set_decide_at_full_gc(decide_at_full_gc_true);
-      adjust_promo_for_pause_time(&desired_promo_size, &desired_eden_size);
+      adjust_promo_for_pause_time(&desired_promo_size);
     }
   } else if (adjusted_mutator_cost() < _throughput_goal) {
     // This branch used to require that (mutator_cost() > 0.0 in 1.4.2.
@@ -592,8 +592,7 @@ void PSAdaptiveSizePolicy::adjust_eden_for_minor_pause_time(size_t* desired_eden
   }
 }
 
-void PSAdaptiveSizePolicy::adjust_promo_for_pause_time(size_t* desired_promo_size_ptr,
-                                                       size_t* desired_eden_size_ptr) {
+void PSAdaptiveSizePolicy::adjust_promo_for_pause_time(size_t* desired_promo_size_ptr) {
 
   size_t promo_heap_delta = 0;
   // Add some checks for a threshold for a change.  For example,
@@ -627,8 +626,7 @@ void PSAdaptiveSizePolicy::adjust_promo_for_pause_time(size_t* desired_promo_siz
     *desired_promo_size_ptr, promo_heap_delta);
 }
 
-void PSAdaptiveSizePolicy::adjust_eden_for_pause_time(size_t* desired_promo_size_ptr,
-                                                      size_t* desired_eden_size_ptr) {
+void PSAdaptiveSizePolicy::adjust_eden_for_pause_time(size_t* desired_eden_size_ptr) {
 
   size_t eden_heap_delta = 0;
   // Add some checks for a threshold for a change.  For example,
