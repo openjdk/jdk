@@ -157,9 +157,7 @@ static BOOL InitThemes() {
             (PFNGETTHEMETRANSITIONDURATION)GetProcAddress(hModThemes,
                                         "GetThemeTransitionDuration");
 
-        OpenThemeDataForDpiFunc = NULL;
-
-        if(OpenThemeDataFunc
+        if((OpenThemeDataForDpiFunc || OpenThemeDataFunc)
            && DrawThemeBackgroundFunc
            && CloseThemeDataFunc
            && DrawThemeTextFunc
