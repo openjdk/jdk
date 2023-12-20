@@ -509,10 +509,9 @@ public:
   // Ensure capacity is at least new_capacity.
   void reserve(int new_capacity);
 
-  // TODO move to GACH only
   // Reduce capacity to length.
   void shrink_to_fit();
-  // TODO move to GACH only
+
   void clear_and_deallocate();
 };
 
@@ -609,23 +608,29 @@ public:
 };
 #endif // ASSERT
 
-// THE GrowableArray.
+// The GrowableArray internal data is allocated from either:
+//  - Resrouce area (default)
+//  - Arena
 //
-// Supports multiple allocation strategies:
-//  - Resource stack allocation: if no extra argument is provided
-//  - CHeap allocation: if memflags is provided
-//  - Arena allocation: if an arena is provided
-//
-// There are some drawbacks of using GrowableArray, that are removed in some
-// of the other implementations of GrowableArrayWithAllocator sub-classes:
-//
-// Memory overhead: The multiple allocation strategies uses extra metadata
-//  embedded in the instance.
+// Itself, it can be embedded, on stack, resource_arena or arena allocated.
 //
 // Strict allocation locations: There are rules about where the GrowableArray
 //  instance is allocated, that depends on where the data array is allocated.
 //  See: init_checks.
-
+//
+// For C-Heap allocation use GrowableArrayCHeap.
+//
+// Note, that with GrowableArray does not deallocate the allocated memory from
+// the arena / resource area, but rather just abandons it until the memory is
+// released by the arena or by the ResourceMark from the resource area.
+// Because GrowableArrays are often just abandoned rather than properly destructed,
+// is is recommended that elements are trivially destructible, so that it makes no
+// difference if the destructors are called or not.
+//
+// GrowableArray is copyable, but it only creates a shallow copy. Hence, one has
+// to be careful not to duplicate the state and then diverge while sharing the
+// underlying data.
+//
 template <typename E>
 class GrowableArray : public GrowableArrayWithAllocator<E, GrowableArray<E> > {
   friend class GrowableArrayWithAllocator<E, GrowableArray<E> >;
@@ -708,7 +713,16 @@ public:
   };
 };
 
-// Leaner GrowableArray for CHeap backed data arrays, with compile-time decided MEMFLAGS.
+// The GrowableArrayCHeap internal data is allocated from C-Heap,
+// with compile-time decided MEMFLAGS.
+//
+// The GrowableArrayCHeap itself can be stack allocated, embedded
+// or C heap allocated. It is up to the user to ensure that the
+// array is eventually destructed / deallocated.
+//
+// When the array is destructed, then all the remaining elements
+// are first destructed. Hence, we allow elements with non-trivial
+// destructors.
 template <typename E, MEMFLAGS F>
 class GrowableArrayCHeap : public GrowableArrayWithAllocator<E, GrowableArrayCHeap<E, F> > {
   friend class GrowableArrayWithAllocator<E, GrowableArrayCHeap<E, F> >;
