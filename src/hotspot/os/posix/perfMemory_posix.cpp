@@ -605,16 +605,13 @@ static char* get_user_name_slow(int vmid, int nspid, TRAPS) {
     }
     // compare and save filename with latest creation time
     if (statbuf.st_size > 0 && statbuf.st_ctime > oldest_ctime) {
-
-      if (statbuf.st_ctime > oldest_ctime) {
         char* user = strchr(dentry->d_name, '_') + 1;
-
+        // free any previously stored user name
         FREE_C_HEAP_ARRAY(char, oldest_user);
-        oldest_user = NEW_C_HEAP_ARRAY(char, strlen(user)+1, mtInternal);
 
+        oldest_user = NEW_C_HEAP_ARRAY(char, strlen(user)+1, mtInternal);
         strcpy(oldest_user, user);
         oldest_ctime = statbuf.st_ctime;
-      }
     }
     // done with this sub-directory, move on to next eligible one
     os::closedir(subdirp);
