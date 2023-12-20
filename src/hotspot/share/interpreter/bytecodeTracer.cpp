@@ -193,18 +193,13 @@ void BytecodeTracer::print_method_codes(const methodHandle& method, int from, in
   BytecodeStream s(method);
   s.set_interval(from, to);
 
-  // We are about to lock for tty. But we will want to read the ProfileData
-  // of the method. Hence, we must already now take the extra_data_lock, so
-  // that we can keep the lock order. We must also prevent the lock from
-  // being broken by a safepoint.
-  MethodData* mdo = method()->method_data();
-  MutexLocker ml(mdo->extra_data_lock(), Mutex::_no_safepoint_check_flag);
-  NoSafepointVerifier no_safepoint;
-
-  ttyLocker ttyl;  // keep the following output coherent
+  // Keep output to st coherent: collect all lines and print at once.
+  ResourceMark rm;
+  stringStream ss;
   while (s.next() >= 0) {
-    method_printer.trace(method, s.bcp(), st);
+    method_printer.trace(method, s.bcp(), &ss);
   }
+  st->print("%s", ss.as_string());
 }
 
 void BytecodePrinter::print_constant(int cp_index, outputStream* st) {
@@ -599,10 +594,9 @@ void BytecodePrinter::bytecode_epilog(int bci, outputStream* st) {
   MethodData* mdo = method()->method_data();
   if (mdo != nullptr) {
 
-    //// Lock to read ProfileData, and ensure lock is not broken by a safepoint
-    //MutexLocker ml(mdo->extra_data_lock(), Mutex::_no_safepoint_check_flag);
-    //NoSafepointVerifier no_safepoint;
-    mdo->check_extra_data_locked();
+    // Lock to read ProfileData, and ensure lock is not broken by a safepoint
+    MutexLocker ml(mdo->extra_data_lock(), Mutex::_no_safepoint_check_flag);
+    NoSafepointVerifier no_safepoint;
 
     ProfileData* data = mdo->bci_to_data(bci);
     if (data != nullptr) {
