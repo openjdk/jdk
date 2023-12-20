@@ -738,7 +738,7 @@ AlignmentSolution* AlignmentSolver::solve() const {
   // main_stride: increment per main-loop iteration (= pre_stride * unroll_factor)
   // main_iter:   number of main-loop iterations (main_iter >= 0)
   //
-  // In the following, we restate the simple form of the address expression, by first
+  // In the following, we restate the Simple form of the address expression, by first
   // expanding the iv variable. In a second step, we reshape the expression again, and
   // state it as a linear expression, consisting of 6 terms.
   //
@@ -755,7 +755,7 @@ AlignmentSolution* AlignmentSolver::solve() const {
   //   1) The "base" of the address is the address of a Java object (e.g. array),
   //      and hence can be assumed to already be aw-aligned (base % aw = 0).
   //   2) The "C_const" term is the sum of all constant terms. This is "offset",
-  //      plus "init" if it is constant.
+  //      plus "scale * init" if it is constant.
   //   3) The "C_invar * var_invar" is the factorization of "invar" into a constant
   //      and variable term. If there is no invariant, then "C_invar" is zero.
   //
@@ -766,7 +766,7 @@ AlignmentSolution* AlignmentSolver::solve() const {
   //      zero, and "C_const" accounts for "init" instead.
   //
   //        scale * init = C_init * var_init + scale * C_const_init                                              (FAC_INIT)
-  //        C_init       = (init is constant) ? 0    : (scale * init / var_init)
+  //        C_init       = (init is constant) ? 0    : scale
   //        C_const_init = (init is constant) ? init : 0
   //
   //   5) The "C_pre * pre_iter" term represents how much the iv is incremented
@@ -822,9 +822,9 @@ AlignmentSolution* AlignmentSolver::solve() const {
   //   (C_invar * var_invar + C_pre * pre_iter_C_invar) % aw = 0                 (4b)
   //   (C_init  * var_init  + C_pre * pre_iter_C_init ) % aw = 0                 (4c)
   //
-  // We now prove that (4a, b, c) are sufficient as well as necessary go guarantee (3)
+  // We now prove that (4a, b, c) are sufficient as well as necessary to guarantee (3)
   // for any runtime value of var_invar and var_init (i.e. for any invar and init).
-  // This tells us that the "strengthening" did not restrict the algorithm more than
+  // This tells us that the "strengthening" does not restrict the algorithm more than
   // necessary.
   //
   // Sufficient (i.e (4a, b, c) imply (3)):
@@ -982,7 +982,7 @@ AlignmentSolution* AlignmentSolver::solve() const {
   //   C_invar = Y * abs(C_pre)   ==>   Y = C_invar / abs(C_pre)                 (6b)
   //   C_init  = Z * abs(C_pre)   ==>   Z = C_init  / abs(C_pre)                 (6c)
   //
-  // Futher, we define:
+  // Further, we define:
   //
   //   sign(C_pre) = C_pre / abs(C_pre) = (C_pre > 0) ? 1 : -1,                  (7)
   //
@@ -1022,7 +1022,7 @@ AlignmentSolution* AlignmentSolver::solve() const {
   //
   //
   // Having solved the equations using the division, we can re-substitute X, Y, and Z, and apply (FAC_INVAR) as
-  // well as (FAC_INIT):
+  // well as (FAC_INIT). We use the fact that sign(x) == 1 / sign(x) and sign(x) * abs(x) == x:
   //
   //   pre_iter_C_const = mx2 * q - sign(C_pre) * X
   //                    = mx2 * q - sign(C_pre) * C_const             / abs(C_pre)
@@ -1041,16 +1041,16 @@ AlignmentSolution* AlignmentSolver::solve() const {
   //
   //   pre_iter_C_invar = my2 * q                                                                   (11b, no invar)
   //
-  // If init is variable (i.e. C_init = scale * init / var_init):
+  // If init is variable (i.e. C_init = scale, init = var_init):
   //
   //   pre_iter_C_init  = mz2 * q - sign(C_pre) * Z       * var_init
   //                    = mz2 * q - sign(C_pre) * C_init  * var_init  / abs(C_pre)
-  //                    = mz2 * q - sign(C_pre) * scale * init        / abs(C_pre)
+  //                    = mz2 * q - sign(C_pre) * scale   * init      / abs(C_pre)
   //                    = mz2 * q - scale * init / C_pre
   //                    = mz2 * q - scale * init / (scale * pre_stride)
   //                    = mz2 * q - init / pre_stride                                               (11c, variable init)
   //
-  // If init is variable (i.e. C_init = 0 ==> Z = 0):
+  // If init is constant (i.e. C_init = 0 ==> Z = 0):
   //
   //   pre_iter_C_init  = mz2 * q                                                                   (11c, constant init)
   //
@@ -1130,7 +1130,7 @@ AlignmentSolution* AlignmentSolver::solve() const {
   //   -> merge the two init terms (variable or constant)
   //   -> apply (8): q = aw / (abs(C_pre)) = aw / abs(scale * pre_stride)
   //   -> and hence: (scale * pre_stride * q) % aw = 0
-  //   -> all terms are cancled out
+  //   -> all terms are canceled out
   //   (offset + invar + scale * init
   //           + scale * pre_stride * m * q                             -> aw aligned
   //           - scale * pre_stride * offset / (scale * pre_stride)     -> = offset
