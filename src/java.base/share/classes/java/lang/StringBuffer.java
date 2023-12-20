@@ -716,6 +716,7 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
     @Override
     public synchronized StringBuffer repeat(int codePoint, int count) {
         super.repeat(codePoint, count);
+        toStringCache = null;
         return this;
     }
 
@@ -727,6 +728,7 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
     @Override
     public synchronized StringBuffer repeat(CharSequence cs, int count) {
         super.repeat(cs, count);
+        toStringCache = null;
         return this;
     }
 
