@@ -51,20 +51,6 @@ struct WithEmbeddedCHeapArray {
 // Test fixture to work with TEST_VM_F
 class GrowableArrayTest : public ::testing::Test {
 protected:
-  // friend -> private accessors
-  template <typename E>
-  static bool elements_on_C_heap(const GrowableArray<E>* array) {
-    return array->on_C_heap();
-  }
-  template <typename E>
-  static bool elements_on_resource_area(const GrowableArray<E>* array) {
-    return array->on_resource_area();
-  }
-  template <typename E>
-  static bool elements_on_arena(const GrowableArray<E>* array) {
-    return array->on_arena();
-  }
-
   template <typename ArrayClass>
   static void test_append(ArrayClass* a) {
     // Add elements
@@ -477,7 +463,7 @@ TEST_VM_F(GrowableArrayTest, where) {
     ResourceMark rm;
     GrowableArray<int>* a = new GrowableArray<int>();
     ASSERT_TRUE(a->allocated_on_res_area());
-    ASSERT_TRUE(elements_on_resource_area(a));
+    ASSERT_TRUE(a->on_resource_area());
   }
 
   // Resource/CHeap allocated
@@ -504,7 +490,7 @@ TEST_VM_F(GrowableArrayTest, where) {
     ResourceMark rm;
     GrowableArray<int> a(0);
     ASSERT_TRUE(a.allocated_on_stack_or_embedded());
-    ASSERT_TRUE(elements_on_resource_area(&a));
+    ASSERT_TRUE(a.on_resource_area());
   }
 
   // Stack/CHeap allocated
@@ -518,7 +504,7 @@ TEST_VM_F(GrowableArrayTest, where) {
     Arena arena(mtTest);
     GrowableArray<int> a(&arena, 0, 0, 0);
     ASSERT_TRUE(a.allocated_on_stack_or_embedded());
-    ASSERT_TRUE(elements_on_arena(&a));
+    ASSERT_TRUE(!a.on_resource_area());
   }
 
   // Embedded/Resource allocated
@@ -526,7 +512,7 @@ TEST_VM_F(GrowableArrayTest, where) {
     ResourceMark rm;
     WithEmbeddedArray w(0);
     ASSERT_TRUE(w._a.allocated_on_stack_or_embedded());
-    ASSERT_TRUE(elements_on_resource_area(&w._a));
+    ASSERT_TRUE(w._a.on_resource_area());
   }
 
   // Embedded/CHeap allocated
@@ -540,7 +526,7 @@ TEST_VM_F(GrowableArrayTest, where) {
     Arena arena(mtTest);
     WithEmbeddedArray w(&arena, 0);
     ASSERT_TRUE(w._a.allocated_on_stack_or_embedded());
-    ASSERT_TRUE(elements_on_arena(&w._a));
+    ASSERT_TRUE(!w._a.on_resource_area());
   }
 }
 #endif
