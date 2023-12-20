@@ -75,8 +75,6 @@ class PSAdaptiveSizePolicy : public AdaptiveSizePolicy {
   // Statistical data gathered for GC
   GCStats _gc_stats;
 
-  const double _collection_cost_margin_fraction;
-
   // Variable for estimating the major and minor pause times.
   // These variables represent linear least-squares fits of
   // the data.
@@ -118,16 +116,12 @@ class PSAdaptiveSizePolicy : public AdaptiveSizePolicy {
   // Accessors
   double gc_minor_pause_goal_sec() const { return _gc_minor_pause_goal_sec; }
 
-  void adjust_eden_for_minor_pause_time(bool is_full_gc,
-                                   size_t* desired_eden_size_ptr);
+  void adjust_eden_for_minor_pause_time(size_t* desired_eden_size_ptr);
   // Change the generation sizes to achieve a GC pause time goal
   // Returned sizes are not necessarily aligned.
-  void adjust_promo_for_pause_time(bool is_full_gc,
-                         size_t* desired_promo_size_ptr,
-                         size_t* desired_eden_size_ptr);
-  void adjust_eden_for_pause_time(bool is_full_gc,
-                         size_t* desired_promo_size_ptr,
-                         size_t* desired_eden_size_ptr);
+  void adjust_promo_for_pause_time(size_t* desired_promo_size_ptr,
+                                   size_t* desired_eden_size_ptr);
+  void adjust_eden_for_pause_time(size_t* desired_promo_size_ptr, size_t* desired_eden_size_ptr);
   // Change the generation sizes to achieve an application throughput goal
   // Returned sizes are not necessarily aligned.
   void adjust_promo_for_throughput(bool is_full_gc,
@@ -172,9 +166,6 @@ class PSAdaptiveSizePolicy : public AdaptiveSizePolicy {
 
   void set_promo_size(size_t new_size) {
     _promo_size = new_size;
-  }
-  void set_survivor_size(size_t new_size) {
-    _survivor_size = new_size;
   }
 
   // Update estimators

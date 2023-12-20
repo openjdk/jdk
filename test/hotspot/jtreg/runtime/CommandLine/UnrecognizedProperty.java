@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,18 +23,23 @@
 
 /*
  * @test
- * @bug 8217447
- * @summary Test running with log:inlinecache=trace enabled.
- * @run main/othervm -Xlog:inlinecache=trace
- *                   compiler.arguments.TestTraceICs
+ * @bug 8321479
+ * @summary VM should not crash with property "-D-D"
+ * @requires vm.flagless
+ * @library /test/lib
+ * @run driver UnrecognizedProperty
  */
 
-package compiler.arguments;
+import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.process.OutputAnalyzer;
 
-public class TestTraceICs {
+public class UnrecognizedProperty {
+    public static void main(String[] args) throws Exception {
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+            "-D-D");
 
-    static public void main(String[] args) {
-        System.out.println("Passed");
+        OutputAnalyzer output = new OutputAnalyzer(pb.start());
+        output.shouldContain("Usage: java");
+        output.shouldHaveExitValue(1);
     }
 }
-
