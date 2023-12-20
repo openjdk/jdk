@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, SAP SE. All rights reserved.
+ * Copyright (c) 2019, 2023, SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,8 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.GroupPrincipal;
@@ -37,11 +39,7 @@ import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
-import java.util.Collections;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
@@ -723,5 +721,73 @@ public class TestPosix {
         // the run method catches IOExceptions, we need to expose them
         int rc = JAR_TOOL.run(System.out, System.err, "xvf", JAR_FILE.toString());
         assertEquals(rc, 0, "Return code of jar call is " + rc + " but expected 0");
+    }
+
+    /**
+     * Verify that Files.setPosixPermissions does not alter the
+     * 7 first non-permission bits of the 'external file attributes' field.
+     * @throws IOException if an unexpected IOException occurs
+     */
+    @Test
+    public void preserveRemainingBits() throws IOException {
+        /*
+         * The ZIP test vector used here is created using:
+         * % touch hello.txt
+         * % chmod u+s hello.txt     # setuid
+         * % chmod g+s hello.txt     # setgid
+         * % chmod +t hello.txt      # sticky
+         * % zip hello.zip hello.txt
+         * % cat hello.zip | xxd -ps
+         */
+        byte[] zip = HexFormat.of().parseHex("""
+                504b03040a0000000000d994945700000000000000000000000009001c00
+                68656c6c6f2e7478745554090003aa268365aa26836575780b000104f501
+                00000414000000504b01021e030a0000000000d994945700000000000000
+                0000000000090018000000000000000000a48f0000000068656c6c6f2e74
+                78745554050003aa26836575780b000104f50100000414000000504b0506
+                00000000010001004f000000430000000000
+                """.replaceAll("\n",""));
+
+        // Expected bit values of the 'external file attributes' CEN field in the ZIP above
+        String expectedBits = "1000111110100100";
+                            // ^^^^             file type: 1000 (regular file)
+                            //     ^            setuid: ON
+                            //      ^           setgid: ON
+                            //       ^          sticky: ON
+                            //        ^^^^^^^^^ rwxr--r--  (9 bits)
+
+        // Sanity check that 'external file attributes' has the expected value
+        verifyExternalFileAttribute(zip, expectedBits);
+
+        // Exercise Files.setPosixFilePermissions without changing permissions
+        Path zipFile = Path.of("preserve-symlink.zip");
+        Files.write(zipFile, zip);
+        try (FileSystem fs = FileSystems.newFileSystem(zipFile, ENV_POSIX)) {
+            Path source = fs.getPath("hello.txt");
+            // Set permissions to their current value
+            Files.setPosixFilePermissions(source, Files.getPosixFilePermissions(source));
+        }
+
+        // Verify that the 'external file attributes' field did not change
+        verifyExternalFileAttribute(Files.readAllBytes(zipFile), expectedBits);
+    }
+
+    /**
+     * Verify that the first 16 bits of the CEN field 'external file attributes' matches
+     * a given bit string
+     * @param zip the ZIP file to parse
+     * @param expectedBits a string of '0' or '1' representing the expected bits
+     */
+    private void verifyExternalFileAttribute(byte[] zip, String expectedBits) {
+        // Buffer to help parse the ZIP
+        ByteBuffer buffer = ByteBuffer.wrap(zip).order(ByteOrder.LITTLE_ENDIAN);
+        // Look up offset of first CEN header from the END header
+        int cenOff = buffer.getInt(buffer.capacity() - ZipFile.ENDHDR + ZipFile.ENDOFF);
+        // We're interested in the first 16 'unix' bits of the 32-bit 'external file attributes' field
+        int externalFileAttr = (buffer.getInt(cenOff + ZipFile.CENATX) >> 16) & 0xFFFF;
+
+        // Verify that the expected bits are set
+        assertEquals(Integer.toBinaryString(externalFileAttr), expectedBits,
+                "The 'external file attributes' field does not match the expected value:");
     }
 }

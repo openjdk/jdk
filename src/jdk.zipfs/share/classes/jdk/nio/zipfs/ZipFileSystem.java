@@ -644,7 +644,12 @@ class ZipFileSystem extends FileSystem {
             if (e.type == Entry.CEN) {
                 e.type = Entry.COPY;     // copy e
             }
-            e.posixPerms = perms == null ? -1 : ZipUtils.permsToFlags(perms);
+            if (perms == null) {
+                e.posixPerms = -1;
+            } else {
+                e.posixPerms = ZipUtils.permsToFlags(perms) |
+                        (e.posixPerms & 0xFE00); // Preserve unrelated bits
+            }
             update(e);
         } finally {
             endWrite();
@@ -3005,7 +3010,7 @@ class ZipFileSystem extends FileSystem {
             attrsEx     = CENATX(cen, pos);
             */
             if (CENVEM_FA(cen, pos) == FILE_ATTRIBUTES_UNIX) {
-                posixPerms = CENATX_PERMS(cen, pos) & 0xFFF; // 12 bits for setuid, setgid, sticky + perms
+                posixPerms = (CENATX_PERMS(cen, pos) & 0xFFFF); // 16 bits for file type, setuid, setgid, sticky + perms
             }
             locoff      = CENOFF(cen, pos);
             pos += CENHDR;
