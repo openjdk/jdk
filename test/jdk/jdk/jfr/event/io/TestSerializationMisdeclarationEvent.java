@@ -139,11 +139,11 @@ public class TestSerializationMisdeclarationEvent {
         ObjectStreamClass.lookup(C.class);
     }
 
-    private static void singleClassEvent(Class<?> cls, String... keywords) {
+    private static void singleClassEvent(Class<?> cls, String[] keywords) {
         assertEquals(1, getEventsFor(cls, keywords).size(), cls.getName());
     }
 
-    private static List<RecordedEvent> getEventsFor(Class<?> cls, String... keywords) {
+    private static List<RecordedEvent> getEventsFor(Class<?> cls, String[] keywords) {
         return events.stream()
                 .filter(e -> e.getClass("cls").getName().equals(cls.getName())
                         && matchesAllKeywords(e.getString("message"), keywords))

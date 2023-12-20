@@ -260,14 +260,6 @@ final class SerializationMisdeclarationChecker {
         return null;
     }
 
-    private static Long longFromStatic(Field f) {
-        try {
-            return f.getLong(null);
-        } catch (IllegalArgumentException | IllegalAccessException ignored) {
-        }
-        return null;
-    }
-
     private void commitEvent(String msg, Object... args) {
         commitEvent(cl, msg);
     }
