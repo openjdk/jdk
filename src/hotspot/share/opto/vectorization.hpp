@@ -557,6 +557,11 @@ private:
 
   DEBUG_ONLY( const bool _is_trace; );
 
+  static const MemNode* mem_ref_not_null(const MemNode* mem_ref) {
+    assert(mem_ref != nullptr, "not nullptr");
+    return mem_ref;
+  }
+
 public:
   AlignmentSolver(const MemNode* mem_ref,
                   const uint vector_length,
@@ -570,9 +575,9 @@ public:
                   const int main_stride
                   DEBUG_ONLY( COMMA const bool is_trace)
                   ) :
-      _mem_ref(           mem_ref),
+      _mem_ref(           mem_ref_not_null(mem_ref)),
       _vector_length(     vector_length),
-      _element_size(      mem_ref->memory_size()),
+      _element_size(      _mem_ref->memory_size()),
       _vector_width(      _vector_length * _element_size),
       _aw(                MIN2(_vector_width, ObjectAlignmentInBytes)),
       _base(              base),
