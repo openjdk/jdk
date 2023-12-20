@@ -121,7 +121,7 @@ VPointer::VPointer(VPointer* p) :
 {}
 
 // Biggest detectable factor of the invariant.
-int VPointer::invar_factor() {
+int VPointer::invar_factor() const {
   Node* n = invar();
   if (n == nullptr) {
     return 0;

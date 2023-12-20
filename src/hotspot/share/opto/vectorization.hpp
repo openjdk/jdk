@@ -87,20 +87,20 @@ class VPointer : public ArenaObj {
   // the pattern match of an address expression.
   VPointer(VPointer* p);
 
-  bool valid()  { return _adr != nullptr; }
-  bool has_iv() { return _scale != 0; }
+  bool valid()             const { return _adr != nullptr; }
+  bool has_iv()            const { return _scale != 0; }
 
-  Node* base()             { return _base; }
-  Node* adr()              { return _adr; }
-  const MemNode* mem()     { return _mem; }
-  int   scale_in_bytes()   { return _scale; }
-  Node* invar()            { return _invar; }
-  int   offset_in_bytes()  { return _offset; }
-  int   memory_size()      { return _mem->memory_size(); }
-  Node_Stack* node_stack() { return _nstack; }
+  Node* base()             const { return _base; }
+  Node* adr()              const { return _adr; }
+  const MemNode* mem()     const { return _mem; }
+  int   scale_in_bytes()   const { return _scale; }
+  Node* invar()            const { return _invar; }
+  int   offset_in_bytes()  const { return _offset; }
+  int   memory_size()      const { return _mem->memory_size(); }
+  Node_Stack* node_stack() const { return _nstack; }
 
   // Biggest detectable factor of the invariant.
-  int   invar_factor();
+  int   invar_factor() const;
 
   // Comparable?
   bool invar_equals(VPointer& q) {
