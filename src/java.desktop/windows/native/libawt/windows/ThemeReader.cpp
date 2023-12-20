@@ -180,9 +180,11 @@ BOOL InitThemes() {
               DTRACE_PRINTLN("Loaded function pointers.\n");
               // We need to make sure we can load the Theme.
               // Use the default DPI value of 96 on windows.
-              HTHEME hTheme = OpenThemeDataForDpiFunc ? OpenThemeDataForDpiFunc(AwtToolkit::GetInstance().GetHWnd(),
-                                                                         L"Button", defaultDPI) :
-                                                 OpenThemeDataFunc(AwtToolkit::GetInstance().GetHWnd(), L"Button");
+              HTHEME hTheme = OpenThemeDataForDpiFunc
+                              ? OpenThemeDataForDpiFunc(AwtToolkit::GetInstance().GetHWnd(),
+                                                        L"Button", defaultDPI)
+                              : OpenThemeDataFunc(AwtToolkit::GetInstance().GetHWnd(),
+                                                  L"Button");
 
               if(hTheme) {
                   DTRACE_PRINTLN("Loaded Theme data.\n");
@@ -254,12 +256,11 @@ JNIEXPORT jlong JNICALL Java_sun_awt_windows_ThemeReader_openTheme
         return 0;
     }
 
-     HTHEME htheme = NULL;
     // We need to open the Theme on a Window that will stick around.
     // The best one for that purpose is the Toolkit window.
-
-     htheme = OpenThemeDataForDpiFunc ? OpenThemeDataForDpiFunc(AwtToolkit::GetInstance().GetHWnd(), str, dpi) :
-                                        OpenThemeDataFunc(AwtToolkit::GetInstance().GetHWnd(), str);
+    HTHEME htheme = OpenThemeDataForDpiFunc
+                    ? OpenThemeDataForDpiFunc(AwtToolkit::GetInstance().GetHWnd(), str, dpi)
+                    : OpenThemeDataFunc(AwtToolkit::GetInstance().GetHWnd(), str);
 
     JNU_ReleaseStringPlatformChars(env, widget, str);
     return (jlong) htheme;
