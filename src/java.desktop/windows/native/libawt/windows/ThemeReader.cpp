@@ -113,6 +113,7 @@ static PFNGETTHEMETRANSITIONDURATION GetThemeTransitionDurationFunc = NULL;
 
 constexpr unsigned int defaultDPI = 96;
 
+
 static BOOL InitThemes() {
     static HMODULE hModThemes = NULL;
     hModThemes = JDK_LoadSystemLibrary("UXTHEME.DLL");
@@ -190,8 +191,8 @@ static BOOL InitThemes() {
                   return TRUE;
               }
             } else {
-                FreeLibrary(hModThemes);
-                hModThemes = NULL;
+               FreeLibrary(hModThemes);
+               hModThemes = NULL;
             }
     }
     return FALSE;
@@ -440,13 +441,12 @@ JNIEXPORT void JNICALL Java_sun_awt_windows_ThemeReader_paintBackground
     rect.left = 0;
     rect.top = 0;
 
-    if(!OpenThemeDataForDpiFunc) {
-        rect.bottom = h;
-        rect.right = w;
-    }
-    else {
+    if (OpenThemeDataForDpiFunc) {
         rect.bottom = rectBottom;
         rect.right = rectRight;
+    } else {
+        rect.bottom = h;
+        rect.right = w;
     }
     ZeroMemory(pSrcBits,(BITS_PER_PIXEL>>3)*w*h);
 
@@ -483,11 +483,11 @@ static void rescale(SIZE *size) {
     }
 
     if (dpiX !=0 && dpiX != defaultDPI) {
-        float invScaleX = (float)defaultDPI / dpiX;
+        float invScaleX = (float) defaultDPI / dpiX;
         size->cx = (int) round(size->cx * invScaleX);
     }
     if (dpiY != 0 && dpiY != defaultDPI) {
-        float invScaleY = (float)defaultDPI / dpiY;
+        float invScaleY = (float) defaultDPI / dpiY;
         size->cy = (int) round(size->cy * invScaleY);
     }
 }
@@ -783,7 +783,7 @@ JNIEXPORT jobject JNICALL Java_sun_awt_windows_ThemeReader_getPartSize
                 CHECK_NULL_RETURN(dimMID, NULL);
             }
 
-            if(!OpenThemeDataForDpiFunc) {
+            if (!OpenThemeDataForDpiFunc) {
                 rescale(&size);
             }
 
