@@ -3878,15 +3878,11 @@ class StubGenerator: public StubCodeGenerator {
       Register state = c_rarg1;
       Register ofs   = c_rarg2;
       Register limit = c_rarg3;
-      Register consts = t2;
-
-      RegSet saved_regs(t2);
+      Register consts = t2; // caller saved
 
       Label multi_block_loop;
 
       __ enter();
-
-      __ push_reg(saved_regs, sp);
 
       address constant_table = vset_sew == Assembler::e32 ? (address)round_consts_256 : (address)round_consts_512;
       la(consts, ExternalAddress(constant_table));
@@ -4047,7 +4043,6 @@ class StubGenerator: public StubCodeGenerator {
       __ addi(state, state, const_add);
       __ vseXX_v(vset_sew, v17, state);
 
-      __ pop_reg(saved_regs, sp);
       __ leave();
       __ ret();
 
