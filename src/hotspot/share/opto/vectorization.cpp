@@ -753,19 +753,24 @@ AlignmentSolution* AlignmentSolver::solve() const {
   //
   // We describe the 6 terms:
   //   1) The "base" of the address is the address of a Java object (e.g. array),
-  //      and hence can be assumed to already be aw-aligned (base % aw = 0).
+  //      and as such  ObjectAlignmentInBytes (a power of 2) aligned. We have
+  //      defined aw = MIN(vector_width, ObjectAlignmentInBytes), which is also
+  //      a power of 2. And hence we know that "base" is thus also aw-aligned:
+  //
+  //        base % ObjectAlignmentInBytes = 0     ==>    base % aw = 0
+  //
   //   2) The "C_const" term is the sum of all constant terms. This is "offset",
   //      plus "scale * init" if it is constant.
   //   3) The "C_invar * var_invar" is the factorization of "invar" into a constant
   //      and variable term. If there is no invariant, then "C_invar" is zero.
   //
-  //        invar = C_invar * var_invar                                                                          (FAC_INVAR)
+  //        invar = C_invar * var_invar                                             (FAC_INVAR)
   //
   //   4) The "C_init * var_init" is the factorization of "scale * init" into a
   //      constant and a variable term. If "init" is constant, then "C_init" is
   //      zero, and "C_const" accounts for "init" instead.
   //
-  //        scale * init = C_init * var_init + scale * C_const_init                                              (FAC_INIT)
+  //        scale * init = C_init * var_init + scale * C_const_init                 (FAC_INIT)
   //        C_init       = (init is constant) ? 0    : scale
   //        C_const_init = (init is constant) ? init : 0
   //
