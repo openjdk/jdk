@@ -73,6 +73,7 @@ protected:
   };
 
   static const CardWord clean_card_word = (CardWord)(-1);
+  static_assert(clean_card_word == (CardWord)-1, "inv");
 
   // CardTable entry size
   static uint _card_shift;
@@ -199,7 +200,7 @@ public:
 
   static constexpr CardValue clean_card_val()          { return clean_card; }
   static constexpr CardValue dirty_card_val()          { return dirty_card; }
-  static constexpr CardWord clean_card_word_val()   { return clean_card_word; }
+  static constexpr CardWord clean_card_word_val()      { return clean_card_word; }
 
   // Initialize card size
   static void initialize_card_size();

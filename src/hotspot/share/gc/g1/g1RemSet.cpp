@@ -611,9 +611,9 @@ class G1ScanHRForRegionClosure : public HeapRegionClosure {
     ChunkScanner(CardValue* const start_card, CardValue* const end_card) :
       _start_card(start_card),
       _end_card(end_card) {
-        assert(CardTable::is_word_aligned(start_card), "precondition");
-        assert(CardTable::is_word_aligned(end_card), "precondition");
-      }
+      assert(CardTable::is_word_aligned(start_card), "precondition");
+      assert(CardTable::is_word_aligned(end_card), "precondition");
+    }
 
     template<typename Func>
     void on_dirty_cards(Func&& f) {
