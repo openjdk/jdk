@@ -957,6 +957,8 @@
     <Field type="string" name="name" label="Name" />
     <Field type="boolean" name="success" label="Success" description="Success or failure of the load operation" />
     <Field type="string" name="errorMessage" label="Error Message" description="In case of a load error, error description" />
+    <Field type="boolean" name="fpEnvCorrectionAttempt" label="FPU Environment correction" description="In case of IEEE conformance issues we might reset the FP environment" />
+    <Field type="boolean" name="fpEnvCorrectionSuccess" label="FPU Environment correction result" description="Stores the result in the case of an FP environment correction" />
   </Event>
 
   <Event name="NativeLibraryUnload" category="Java Virtual Machine, Runtime" label="Native Library Unload" thread="true" stackTrace="true" startTime="true"
