@@ -524,14 +524,14 @@ extern "C" {
     int64_t off = VM_Version::spin_wait_desc().inst() * instructions_per_case * Assembler::instruction_size;
 
     assert(VM_Version::spin_wait_desc().inst() >= SpinWait::NONE &&
-           VM_Version::spin_wait_desc().inst() <= SpinWait::YIELD, "should be");
-    assert(-1 == SpinWait::NONE,  "should be");
-    assert( 0 == SpinWait::NOP,   "should be");
-    assert( 1 == SpinWait::ISB,   "should be");
-    assert( 2 == SpinWait::YIELD, "should be");
+           VM_Version::spin_wait_desc().inst() <= SpinWait::YIELD, "must be");
+    assert(-1 == SpinWait::NONE,  "must be");
+    assert( 0 == SpinWait::NOP,   "must be");
+    assert( 1 == SpinWait::ISB,   "must be");
+    assert( 2 == SpinWait::YIELD, "must be");
 
     asm volatile(
-        "  adr  %[d], 20          \n" // 20 == PC here + 5 instructions => adress
+        "  adr  %[d], 20          \n" // 20 == PC here + 5 instructions => address
                                       // to entry for case SpinWait::NOP
         "  add  %[d], %[d], %[o]  \n"
         "  br   %[d]              \n"
