@@ -4634,7 +4634,7 @@ static const int64_t right_3_bits = right_n_bits(3);
    *   c_rarg2   - int length
    *
    * Output:
-   *       rax   - int crc result
+   *   c_rarg0   - int crc result
    */
   address generate_updateBytesCRC32() {
     assert(UseCRC32Intrinsics, "what are we doing here?");
