@@ -35,6 +35,7 @@ import java.lang.foreign.FunctionDescriptor;
 import java.lang.foreign.Linker;
 import java.lang.foreign.MemorySegment;
 import java.lang.invoke.MethodHandle;
+import java.util.List;
 
 import static org.testng.Assert.fail;
 
@@ -43,7 +44,7 @@ public class TestCriticalUpcall extends UpcallTestHelper {
     @Test
     public void testUpcallFailure() throws IOException, InterruptedException {
         // test to see if we catch a trivial downcall doing an upcall
-        runInNewProcess(Runner.class, true)
+        runInNewProcess(Runner.class, true, List.of("-XX:-CreateCoredumpOnCrash"), List.of())
             .shouldNotHaveExitValue(0)
             .stdoutShouldContain("wrong thread state for upcall");
     }
