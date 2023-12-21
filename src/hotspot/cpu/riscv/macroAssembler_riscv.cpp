@@ -3684,7 +3684,7 @@ void MacroAssembler::update_byte_crc32(Register crc, Register val, Register tabl
   andi(val, val, bits8);
   slli(val, val, 2);
   add(val, table, val);
-  Assembler::lwu(val, val, 0);
+  lwu(val, Address(val));
   srli(crc, crc, 8);
   xorr(crc, val, crc);
 }
@@ -3714,7 +3714,7 @@ void MacroAssembler::update_word_crc32(Register crc, Register v, Register tmp1, 
 
   andi(tmp1, v, bits8);
   shadd(tmp1, tmp1, table3, tmp2, 2);
-  Assembler::lwu(crc, tmp1, 0);
+  lwu(crc, Address(tmp1));
 
   // In order to access table elements according to initial algorithm
   // the following actions should be performed (with no Zba enabled):
@@ -3730,21 +3730,21 @@ void MacroAssembler::update_word_crc32(Register crc, Register v, Register tmp1, 
   srli(tmp1, v, 6);
   andi(tmp1, tmp1, (bits8 << 2));
   add(tmp1, tmp1, table2);
-  Assembler::lwu(tmp2, tmp1, 0);
+  lwu(tmp2, Address(tmp1));
 
   srli(tmp1, v, 14);
   xorr(crc, crc, tmp2);
 
   andi(tmp1, tmp1, (bits8 << 2));
   add(tmp1, tmp1, table1);
-  Assembler::lwu(tmp2, tmp1, 0);
+  lwu(tmp2, Address(tmp1));
 
   srli(tmp1, v, 22);
   xorr(crc, crc, tmp2);
 
   andi(tmp1, tmp1, (bits8 << 2));
   add(tmp1, tmp1, table0);
-  Assembler::lwu(tmp2, tmp1, 0);
+  lwu(tmp2, Address(tmp1));
   xorr(crc, crc, tmp2);
 }
 
@@ -3779,7 +3779,7 @@ void MacroAssembler::kernel_crc32(Register crc, Register buf, Register len,
   j(L_exit);
 
   bind(L_by4_loop);
-    Assembler::lwu(tmp, buf, 0);
+    lwu(tmp, Address(buf));
     update_word_crc32(crc, tmp, tmp2, tmp4, table0, table1, table2, table3, false);
     subw(len, len, 4);
     addi(buf, buf, 4);
@@ -3789,7 +3789,7 @@ void MacroAssembler::kernel_crc32(Register crc, Register buf, Register len,
 
   bind(L_by1_loop);
     subw(len, len, 1);
-    Assembler::lbu(tmp, buf, 0);
+    lbu(tmp, Address(buf));
     update_byte_crc32(crc, tmp, table0);
     addi(buf, buf, 1);
     bgt(len, zr, L_by1_loop);
