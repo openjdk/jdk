@@ -64,7 +64,7 @@ public class bug5049549 {
         g.setColor(Color.RED);
         Font font = new Font(Font.SANS_SERIF, Font.BOLD, 22);
         g.setFont(font);
-        g.drawString(str,5,25);
+        g.drawString(str, 5, 25);
         g.dispose();
         return new ImageIcon(img);
     }
@@ -225,7 +225,7 @@ public class bug5049549 {
         button.setRolloverIcon(RO);
         button.setPressedIcon(PR);
         panel.add(button);
-        
+
         /* selected: default, selected, rollover, rollover-selected icons */
         button = new KButton("SE, RS, SE");
         button.setSelected(true);
