@@ -3462,7 +3462,7 @@ LoadNode::ControlDependency SuperWord::control_dependency(Node_List* p) {
   return dep;
 }
 
-// Ensure that the main loop vectors are aligned by adjusting the pre loop limit. We memory align
+// Ensure that the main loop vectors are aligned by adjusting the pre loop limit. We memory-align
 // the address of "align_to_ref" to the maximal possible vector width. We adjust the pre-loop
 // iteration count by adjusting the pre-loop limit.
 void SuperWord::adjust_pre_loop_limit_to_align_main_loop_vectors() {
@@ -3488,7 +3488,7 @@ void SuperWord::adjust_pre_loop_limit_to_align_main_loop_vectors() {
 
   // For the main-loop, we want the address of align_to_ref to be memory aligned
   // with some alignment width (aw, a power of 2). When we enter the main-loop,
-  // we know that iv is equals to the pre-loop limit. If we adjust the pre-loop
+  // we know that iv is equal to the pre-loop limit. If we adjust the pre-loop
   // limit by executing adjust_pre_iter many extra iterations, we can change the
   // alignment of the address.
   //
@@ -3537,7 +3537,7 @@ void SuperWord::adjust_pre_loop_limit_to_align_main_loop_vectors() {
   // Moreover, for alignment to be achievable, boi must be a multiple of scale. If strict
   // alignment is required (i.e. -XX:+AlignVector), this is guaranteed by the filtering
   // done with the AlignmentSolver / AlignmentSolution. If strict alignment is not
-  // required, then alignment is still preferrable for performance, but not necessary.
+  // required, then alignment is still preferable for performance, but not necessary.
   // In many cases boi will be a multiple of scale, but if it is not, then the adjustment
   // does not guarantee alignment, but the code is still correct.
   //
@@ -3554,7 +3554,7 @@ void SuperWord::adjust_pre_loop_limit_to_align_main_loop_vectors() {
   //
   //   where: sign(scale) = scale / abs(scale) = (scale > 0 ? 1 : -1)
   //
-  // Note, (9) allows for periodic solutons of adjust_pre_iter, with periodicity AW.
+  // Note, (9) allows for periodic solutions of adjust_pre_iter, with periodicity AW.
   // But we would like to spend as few iterations in the pre-loop as possible,
   // hence we want the smallest adjust_pre_iter, and so:
   //
