@@ -52,86 +52,77 @@ final class SerializationMisdeclarationChecker {
     private static final Class<?>[] WRITE_REPLACE_PARAM_TYPES = {};
     private static final Class<?>[] READ_RESOLVE_PARAM_TYPES = {};
 
-    private final Class<?> cl;
-
-    SerializationMisdeclarationChecker(Class<?> cl) {
-        this.cl = cl;
-    }
-
     @SuppressWarnings("removal")
-    void checkMisdeclarations() {
+    static void checkMisdeclarations(Class<?> cl) {
         AccessController.doPrivileged((PrivilegedAction<Object>) () -> {
-            privilegedCheckSerialVersionUID();
-            privilegedCheckSerialPersistentFields();
+            privilegedCheckSerialVersionUID(cl);
+            privilegedCheckSerialPersistentFields(cl);
 
-            privilegedCheckPrivateMethod(WRITE_OBJECT_NAME, WRITE_OBJECT_PARAM_TYPES, Void.TYPE);
-            privilegedCheckPrivateMethod(READ_OBJECT_NAME, READ_OBJECT_PARAM_TYPES, Void.TYPE);
-            privilegedCheckPrivateMethod(READ_OBJECT_NO_DATA_NAME, READ_OBJECT_NO_DATA_PARAM_TYPES, Void.TYPE);
+            privilegedCheckPrivateMethod(cl, WRITE_OBJECT_NAME,
+                    WRITE_OBJECT_PARAM_TYPES, Void.TYPE);
+            privilegedCheckPrivateMethod(cl, READ_OBJECT_NAME,
+                    READ_OBJECT_PARAM_TYPES, Void.TYPE);
+            privilegedCheckPrivateMethod(cl, READ_OBJECT_NO_DATA_NAME,
+                    READ_OBJECT_NO_DATA_PARAM_TYPES, Void.TYPE);
 
-            privilegedCheckAccessibleMethod(WRITE_REPLACE_NAME, WRITE_REPLACE_PARAM_TYPES, Object.class);
-            privilegedCheckAccessibleMethod(READ_RESOLVE_NAME, READ_RESOLVE_PARAM_TYPES, Object.class);
+            privilegedCheckAccessibleMethod(cl, WRITE_REPLACE_NAME,
+                    WRITE_REPLACE_PARAM_TYPES, Object.class);
+            privilegedCheckAccessibleMethod(cl, READ_RESOLVE_NAME,
+                    READ_RESOLVE_PARAM_TYPES, Object.class);
 
             return null;
         });
     }
 
-    private void privilegedCheckSerialVersionUID() {
+    private static void privilegedCheckSerialVersionUID(Class<?> cl) {
         Field f = declaredField(cl, SUID_NAME);
         if (f == null) {
-            if (isOrdinaryClass()) {
-                commitEvent(SUID_NAME +
-                        " should be declared explicitly as a private static final long field");
+            if (isOrdinaryClass(cl)) {
+                commitEvent(cl, SUID_NAME + " should be declared explicitly" +
+                        " as a private static final long field");
             }
             return;
         }
         if (cl.isEnum()) {
-            commitEvent(SUID_NAME +
-                    " in an enum class is not effective");
+            commitEvent(cl, SUID_NAME + " in an enum class is not effective");
         }
         if (!isPrivate(f)) {
-            commitEvent(SUID_NAME +
-                    " should be private");
+            commitEvent(cl, SUID_NAME + " should be private");
         }
         if (!isStatic(f)) {
-            commitEvent(SUID_NAME +
-                    " must be static to be effective");
+            commitEvent(cl, SUID_NAME + " must be static");
         }
         if (!isFinal(f)) {
-            commitEvent(SUID_NAME +
-                    " must be final to be effective");
+            commitEvent(cl, SUID_NAME + " must be final");
         }
         if (f.getType() != Long.TYPE) {
-            commitEvent(SUID_NAME +
-                    " must be of type long to be effective");
+            commitEvent(cl, SUID_NAME + " must be of type long");
         }
     }
 
-    private void privilegedCheckSerialPersistentFields() {
+    private static void privilegedCheckSerialPersistentFields(Class<?> cl) {
         Field f = declaredField(cl, SERIAL_PERSISTENT_FIELDS_NAME);
         if (f == null) {
             return;
         }
         if (cl.isRecord()) {
-            commitEvent(SERIAL_PERSISTENT_FIELDS_NAME +
+            commitEvent(cl, SERIAL_PERSISTENT_FIELDS_NAME +
                     " in a record class is not effective");
         } else if (cl.isEnum()) {
-            commitEvent(SERIAL_PERSISTENT_FIELDS_NAME +
+            commitEvent(cl, SERIAL_PERSISTENT_FIELDS_NAME +
                     " in an enum class is not effective");
         }
         if (!isPrivate(f)) {
-            commitEvent(SERIAL_PERSISTENT_FIELDS_NAME +
-                    " must be private to be effective");
+            commitEvent(cl, SERIAL_PERSISTENT_FIELDS_NAME + " must be private");
         }
         if (!isStatic(f)) {
-            commitEvent(SERIAL_PERSISTENT_FIELDS_NAME +
-                    " must be static to be effective");
+            commitEvent(cl, SERIAL_PERSISTENT_FIELDS_NAME + " must be static");
         }
         if (!isFinal(f)) {
-            commitEvent(SERIAL_PERSISTENT_FIELDS_NAME +
-                    " must be final to be effective");
+            commitEvent(cl, SERIAL_PERSISTENT_FIELDS_NAME + " must be final");
         }
         if (f.getType() != ObjectStreamField[].class) {
-            commitEvent(SERIAL_PERSISTENT_FIELDS_NAME +
+            commitEvent(cl, SERIAL_PERSISTENT_FIELDS_NAME +
                     " should be of type ObjectStreamField[]");
         }
         if (!isStatic(f)) {
@@ -140,75 +131,76 @@ final class SerializationMisdeclarationChecker {
         f.setAccessible(true);
         Object spf = objectFromStatic(f);
         if (spf == null) {
-            commitEvent(SERIAL_PERSISTENT_FIELDS_NAME +
-                    " must be non-null to be effective");
+            commitEvent(cl, SERIAL_PERSISTENT_FIELDS_NAME + " must be non-null");
             return;
         }
         if (!(spf instanceof ObjectStreamField[])) {
-            commitEvent(SERIAL_PERSISTENT_FIELDS_NAME +
-                    " must be an instance of ObjectStreamField[] to be effective");
+            commitEvent(cl, SERIAL_PERSISTENT_FIELDS_NAME +
+                    " must be an instance of ObjectStreamField[]");
         }
     }
 
-    private void privilegedCheckPrivateMethod(String name, Class<?>[] paramTypes, Class<?> retType) {
+    private static void privilegedCheckPrivateMethod(Class<?> cl,
+            String name, Class<?>[] paramTypes, Class<?> retType) {
         for (Method m : cl.getDeclaredMethods()) {
             if (m.getName().equals(name)) {
-                privilegedCheckPrivateMethod(m, paramTypes, retType);
+                privilegedCheckPrivateMethod(cl,m, paramTypes, retType);
             }
         }
     }
 
-    private void privilegedCheckPrivateMethod(Method m, Class<?>[] paramTypes, Class<?> retType) {
+    private static void privilegedCheckPrivateMethod(Class<?> cl,
+            Method m, Class<?>[] paramTypes, Class<?> retType) {
         if (cl.isEnum()) {
-            commitEvent("method " + m + " on an enum class is not effective");
+            commitEvent(cl, "method " + m + " on an enum class is not effective");
         } else if (cl.isRecord()) {
-            commitEvent("method " + m + " on an record class is not effective");
+            commitEvent(cl, "method " + m + " on a record class is not effective");
         }
         if (!isPrivate(m)) {
-            commitEvent("method " + m + " must be private to be effective");
+            commitEvent(cl, "method " + m + " must be private");
         }
         if (isStatic(m)) {
-            commitEvent("method " + m + " must be non-static to be effective");
+            commitEvent(cl, "method " + m + " must be non-static");
         }
         if (m.getReturnType() != retType) {
-            commitEvent("method " + m + " must have return type " + retType + " to be effective");
+            commitEvent(cl, "method " + m + " must have return type " + retType);
         }
         if (!Arrays.equals(m.getParameterTypes(), paramTypes)) {
-            commitEvent("method " + m + " must have parameter types " + Arrays.toString(paramTypes) + " to be effective");
+            commitEvent(cl, "method " + m + " must have parameter types " + Arrays.toString(paramTypes));
         }
     }
 
-    private void privilegedCheckAccessibleMethod(String name,
-            Class<?>[] paramTypes, Class<?> retType) {
-        for (Class<?> cls = cl; cls != null; cls = cls.getSuperclass()) {
-            for (Method m : cls.getDeclaredMethods()) {
+    private static void privilegedCheckAccessibleMethod(Class<?> cl,
+            String name, Class<?>[] paramTypes, Class<?> retType) {
+        for (Class<?> superCl = cl; superCl != null; superCl = superCl.getSuperclass()) {
+            for (Method m : superCl.getDeclaredMethods()) {
                 if (m.getName().equals(name)) {
-                    privilegedCheckAccessibleMethod(cls, m, paramTypes, retType);
+                    privilegedCheckAccessibleMethod(cl, superCl, m, paramTypes, retType);
                 }
             }
         }
     }
 
-    private void privilegedCheckAccessibleMethod(Class<?> cls, Method m,
-            Class<?>[] paramTypes, Class<?> retType) {
-        if (cls.isEnum()) {
-            commitEvent("method " + m + " on an enum class is not effective");
+    private static void privilegedCheckAccessibleMethod(Class<?> cl,
+            Class<?> superCl, Method m, Class<?>[] paramTypes, Class<?> retType) {
+        if (superCl.isEnum()) {
+            commitEvent(cl, "method " + m + " on an enum class is not effective");
         }
         if (isAbstract(m)) {
-            commitEvent("method " + m + " must be non-abstract to be effective");
+            commitEvent(cl, "method " + m + " must be non-abstract");
         }
         if (isStatic(m)) {
-            commitEvent("method " + m + " must be non-static to be effective");
+            commitEvent(cl, "method " + m + " must be non-static");
         }
         if (m.getReturnType() != retType) {
-            commitEvent("method " + m + " must have return type " + retType + " to be effective");
+            commitEvent(cl, "method " + m + " must have return type " + retType);
         }
         if (!Arrays.equals(m.getParameterTypes(), paramTypes)) {
-            commitEvent("method " + m + " must have parameter types " + Arrays.toString(paramTypes) + " to be effective");
+            commitEvent(cl, "method " + m + " must have parameter types " + Arrays.toString(paramTypes));
         }
-        if (isPrivate(m) && cl != cls
-                || isPackageProtected(m) && !isSamePackage(cl, cls)) {
-            commitEvent("method " + m + " is not accessible");
+        if (isPrivate(m) && cl != superCl
+                || isPackageProtected(m) && !isSamePackage(cl, superCl)) {
+            commitEvent(cl, "method " + m + " is not accessible");
         }
     }
 
@@ -217,7 +209,7 @@ final class SerializationMisdeclarationChecker {
                 && cl0.getPackageName().equals(cl1.getPackageName());
     }
 
-    private boolean isOrdinaryClass() {
+    private static boolean isOrdinaryClass(Class<?> cl) {
         /* class Enum and class Record are not considered ordinary classes */
         return !(cl.isRecord() || cl.isEnum() || cl.isArray()
                 || Enum.class == cl || Record.class == cl
@@ -260,12 +252,8 @@ final class SerializationMisdeclarationChecker {
         return null;
     }
 
-    private void commitEvent(String msg, Object... args) {
-        commitEvent(cl, msg);
-    }
-
-    private static void commitEvent(Class<?> cls, String msg) {
-        commit(timestamp(), cls, msg);
+    private static void commitEvent(Class<?> cl, String msg) {
+        commit(timestamp(), cl, msg);
     }
 
 }

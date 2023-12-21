@@ -463,7 +463,7 @@ public final class ObjectStreamClass implements Serializable {
         initialized = true;
 
         if (SerializationMisdeclarationEvent.enabled() && serializable) {
-            new SerializationMisdeclarationChecker(cl).checkMisdeclarations();
+            SerializationMisdeclarationChecker.checkMisdeclarations(cl);
         }
     }
 
