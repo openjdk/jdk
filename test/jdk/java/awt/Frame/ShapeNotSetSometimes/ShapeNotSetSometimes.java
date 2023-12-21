@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
   @key headful
   @bug 6988428
   @summary Tests whether shape is always set
-  @author anthony.petrov@oracle.com: area=awt.toplevel
   @run main ShapeNotSetSometimes
 */
 
