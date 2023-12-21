@@ -60,6 +60,7 @@ public class ShapeNotSetSometimes {
     public ShapeNotSetSometimes() throws Exception {
         EventQueue.invokeAndWait(this::initializeGUI);
         robot.waitForIdle();
+        robot.delay(1000);
     }
 
     private void initializeGUI() {
@@ -133,11 +134,11 @@ public class ShapeNotSetSometimes {
     private void doTest() throws Exception {
         EventQueue.invokeAndWait(backgroundFrame::toFront);
         robot.waitForIdle();
+        robot.delay(200);
 
         EventQueue.invokeAndWait(window::toFront);
         robot.waitForIdle();
-
-        robot.delay(500);
+        robot.delay(200);
 
         try {
             colorCheck(innerPoint.x, innerPoint.y, SHAPE_COLOR, true);
