@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
- * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
+ * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -194,7 +194,7 @@ void InterpreterMacroAssembler::get_dispatch() {
   ExternalAddress target((address)Interpreter::dispatch_table());
   relocate(target.rspec(), [&] {
     int32_t offset;
-    la_patchable(xdispatch, target, offset);
+    la(xdispatch, target.target(), offset);
     addi(xdispatch, xdispatch, offset);
   });
 }
@@ -777,7 +777,7 @@ void InterpreterMacroAssembler::lock_object(Register lock_reg)
       assert(lock_offset == 0,
              "displached header must be first word in BasicObjectLock");
 
-      cmpxchg_obj_header(swap_reg, lock_reg, obj_reg, t0, count, /*fallthrough*/nullptr);
+      cmpxchg_obj_header(swap_reg, lock_reg, obj_reg, tmp, count, /*fallthrough*/nullptr);
 
       // Test if the oopMark is an obvious stack pointer, i.e.,
       //  1) (mark & 7) == 0, and
@@ -891,7 +891,7 @@ void InterpreterMacroAssembler::unlock_object(Register lock_reg)
       beqz(header_reg, count);
 
       // Atomic swap back the old header
-      cmpxchg_obj_header(swap_reg, header_reg, obj_reg, t0, count, /*fallthrough*/nullptr);
+      cmpxchg_obj_header(swap_reg, header_reg, obj_reg, tmp_reg, count, /*fallthrough*/nullptr);
     }
 
     // Call the runtime routine for slow case.
@@ -1627,8 +1627,8 @@ void InterpreterMacroAssembler::profile_obj_type(Register obj, const Address& md
   bind(update);
   load_klass(obj, obj);
 
-  ld(t0, mdo_addr);
-  xorr(obj, obj, t0);
+  ld(tmp, mdo_addr);
+  xorr(obj, obj, tmp);
   andi(t0, obj, TypeEntries::type_klass_mask);
   beqz(t0, next); // klass seen before, nothing to
                   // do. The unknown bit may have been
@@ -1638,15 +1638,15 @@ void InterpreterMacroAssembler::profile_obj_type(Register obj, const Address& md
   bnez(t0, next);
   // already unknown. Nothing to do anymore.
 
-  ld(t0, mdo_addr);
-  beqz(t0, none);
-  mv(tmp, (u1)TypeEntries::null_seen);
-  beq(t0, tmp, none);
-  // There is a chance that the checks above (re-reading profiling
-  // data from memory) fail if another thread has just set the
+  beqz(tmp, none);
+  mv(t0, (u1)TypeEntries::null_seen);
+  beq(tmp, t0, none);
+  // There is a chance that the checks above
+  // fail if another thread has just set the
   // profiling to this obj's klass
-  ld(t0, mdo_addr);
-  xorr(obj, obj, t0);
+  xorr(obj, obj, tmp); // get back original value before XOR
+  ld(tmp, mdo_addr);
+  xorr(obj, obj, tmp);
   andi(t0, obj, TypeEntries::type_klass_mask);
   beqz(t0, next);
 
@@ -1657,6 +1657,10 @@ void InterpreterMacroAssembler::profile_obj_type(Register obj, const Address& md
   bind(none);
   // first time here. Set profile type.
   sd(obj, mdo_addr);
+#ifdef ASSERT
+  andi(obj, obj, TypeEntries::type_mask);
+  verify_klass_ptr(obj);
+#endif
 
   bind(next);
 }

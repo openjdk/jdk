@@ -816,7 +816,6 @@ void VM_Version::get_processor_features() {
     _L1_data_cache_line_size = L1_line_size();
   }
 
-  _supports_cx8 = supports_cmpxchg8();
   // xchg and xadd instructions
   _supports_atomic_getset4 = true;
   _supports_atomic_getadd4 = true;
@@ -859,7 +858,7 @@ void VM_Version::get_processor_features() {
 
   // Check if processor has Intel Ecore
   if (FLAG_IS_DEFAULT(EnableX86ECoreOpts) && is_intel() && cpu_family() == 6 &&
-    (_model == 0x97 || _model == 0xAC || _model == 0xAF)) {
+    (_model == 0x97 || _model == 0xAA || _model == 0xAC || _model == 0xAF)) {
     FLAG_SET_DEFAULT(EnableX86ECoreOpts, true);
   }
 
@@ -1131,6 +1130,7 @@ void VM_Version::get_processor_features() {
     FLAG_SET_DEFAULT(UseGHASHIntrinsics, false);
   }
 
+#ifdef _LP64
   // ChaCha20 Intrinsics
   // As long as the system supports AVX as a baseline we can do a
   // SIMD-enabled block function.  StubGenerator makes the determination
@@ -1146,6 +1146,13 @@ void VM_Version::get_processor_features() {
       }
       FLAG_SET_DEFAULT(UseChaCha20Intrinsics, false);
   }
+#else
+  // No support currently for ChaCha20 intrinsics on 32-bit platforms
+  if (UseChaCha20Intrinsics) {
+      warning("ChaCha20 intrinsics are not available on this CPU.");
+      FLAG_SET_DEFAULT(UseChaCha20Intrinsics, false);
+  }
+#endif // _LP64
 
   // Base64 Intrinsics (Check the condition for which the intrinsic will be active)
   if (UseAVX >= 2) {
@@ -3236,4 +3243,3 @@ bool VM_Version::is_intrinsic_supported(vmIntrinsicID id) {
   }
   return true;
 }
-

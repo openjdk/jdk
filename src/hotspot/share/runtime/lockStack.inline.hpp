@@ -68,19 +68,6 @@ inline void LockStack::push(oop o) {
   verify("post-push");
 }
 
-inline oop LockStack::pop() {
-  verify("pre-pop");
-  assert(to_index(_top) > 0, "underflow, probably unbalanced push/pop");
-  _top -= oopSize;
-  oop o = _base[to_index(_top)];
-#ifdef ASSERT
-  _base[to_index(_top)] = nullptr;
-#endif
-  assert(!contains(o), "entries must be unique: " PTR_FORMAT, p2i(o));
-  verify("post-pop");
-  return o;
-}
-
 inline void LockStack::remove(oop o) {
   verify("pre-remove");
   assert(contains(o), "entry must be present: " PTR_FORMAT, p2i(o));

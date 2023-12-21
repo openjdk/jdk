@@ -130,6 +130,8 @@ address CompilerToVM::Data::symbol_clinit;
 
 int CompilerToVM::Data::data_section_item_alignment;
 
+int* CompilerToVM::Data::_should_notify_object_alloc;
+
 void CompilerToVM::Data::initialize(JVMCI_TRAPS) {
   Klass_vtable_start_offset = in_bytes(Klass::vtable_start_offset());
   Klass_vtable_length_offset = in_bytes(Klass::vtable_length_offset());
@@ -146,8 +148,7 @@ void CompilerToVM::Data::initialize(JVMCI_TRAPS) {
   BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
   if (bs_nm != nullptr) {
     thread_disarmed_guard_value_offset = in_bytes(bs_nm->thread_disarmed_guard_value_offset());
-    AMD64_ONLY(nmethod_entry_barrier = StubRoutines::x86::method_entry_barrier());
-    AARCH64_ONLY(nmethod_entry_barrier = StubRoutines::aarch64::method_entry_barrier());
+    nmethod_entry_barrier = StubRoutines::method_entry_barrier();
     BarrierSetAssembler* bs_asm = BarrierSet::barrier_set()->barrier_set_assembler();
     AARCH64_ONLY(BarrierSetAssembler_nmethod_patching_type = (int) bs_asm->nmethod_patching_type());
     AARCH64_ONLY(BarrierSetAssembler_patching_epoch_addr = bs_asm->patching_epoch_addr());
@@ -196,6 +197,8 @@ void CompilerToVM::Data::initialize(JVMCI_TRAPS) {
   _fields_annotations_base_offset = Array<AnnotationArray*>::base_offset_in_bytes();
 
   data_section_item_alignment = relocInfo::addr_unit();
+
+  _should_notify_object_alloc = &JvmtiExport::_should_notify_object_alloc;
 
   BarrierSet* bs = BarrierSet::barrier_set();
   if (bs->is_a(BarrierSet::CardTableBarrierSet)) {

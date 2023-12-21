@@ -77,6 +77,10 @@ class ResolvedMethodEntry {
   u1 _tos_state;                     // TOS state
   u1 _flags;                         // Flags: [00|has_resolved_ref_index|has_local_signature|has_appendix|forced_virtual|final|virtual_final]
   u1 _bytecode1, _bytecode2;         // Resolved invoke codes
+#ifdef ASSERT
+  bool _has_interface_klass;
+  bool _has_table_index;
+#endif
 
   // Constructors
   public:
@@ -87,7 +91,11 @@ class ResolvedMethodEntry {
       _tos_state(0),
       _flags(0),
       _bytecode1(0),
-      _bytecode2(0) { _entry_specific._interface_klass = nullptr; }
+      _bytecode2(0) {
+        _entry_specific._interface_klass = nullptr;
+        DEBUG_ONLY(_has_interface_klass = false;)
+        DEBUG_ONLY(_has_table_index = false;)
+      }
     ResolvedMethodEntry() :
       ResolvedMethodEntry(0) {}
 
@@ -101,18 +109,29 @@ class ResolvedMethodEntry {
       has_resolved_ref_shift    = 5
   };
 
+  // Flags
+  bool is_vfinal()                     const { return (_flags & (1 << is_vfinal_shift))           != 0; }
+  bool is_final()                      const { return (_flags & (1 << is_final_shift))            != 0; }
+  bool is_forced_virtual()             const { return (_flags & (1 << is_forced_virtual_shift))   != 0; }
+  bool has_appendix()                  const { return (_flags & (1 << has_appendix_shift))        != 0; }
+  bool has_local_signature()           const { return (_flags & (1 << has_local_signature_shift)) != 0; }
+  bool has_resolved_references_index() const { return (_flags & (1 << has_resolved_ref_shift))    != 0; }
+
   // Getters
   Method* method() const { return Atomic::load_acquire(&_method); }
   InstanceKlass* interface_klass() const {
     assert(_bytecode1 == Bytecodes::_invokeinterface, "Only invokeinterface has a klass %d", _bytecode1);
+    assert(_has_interface_klass, "sanity");
     return _entry_specific._interface_klass;
   }
   u2 resolved_references_index() const {
     // This index may be read before resolution completes
+    assert(has_resolved_references_index(), "sanity");
     return _entry_specific._resolved_references_index;
   }
   u2 table_index() const {
     assert(_bytecode2 == Bytecodes::_invokevirtual, "Only invokevirtual has a vtable/itable index %d", _bytecode2);
+    assert(_has_table_index, "sanity");
     return _entry_specific._table_index;
   }
   u2 constant_pool_index() const { return _cpool_index; }
@@ -120,14 +139,6 @@ class ResolvedMethodEntry {
   u2 number_of_parameters() const { return _number_of_parameters; }
   u1 bytecode1() const { return Atomic::load_acquire(&_bytecode1); }
   u1 bytecode2() const { return Atomic::load_acquire(&_bytecode2); }
-
-  // Flags
-  bool is_vfinal()              const { return (_flags & (1 << is_vfinal_shift))           != 0; }
-  bool is_final()               const { return (_flags & (1 << is_final_shift))            != 0; }
-  bool is_forced_virtual()      const { return (_flags & (1 << is_forced_virtual_shift))   != 0; }
-  bool has_appendix()           const { return (_flags & (1 << has_appendix_shift))        != 0; }
-  bool has_local_signature()    const { return (_flags & (1 << has_local_signature_shift)) != 0; }
-  bool has_resolved_ref_index() const { return (_flags & (1 << has_resolved_ref_shift))    != 0; }
 
   bool is_resolved(Bytecodes::Code code) const {
     switch(code) {
@@ -178,15 +189,26 @@ class ResolvedMethodEntry {
   }
 
   void set_klass(InstanceKlass* klass) {
+    assert(!has_resolved_references_index() &&
+           !_has_table_index,
+           "Mutually exclusive fields %d %d %d", has_resolved_references_index(), _has_interface_klass, _has_table_index);
+    DEBUG_ONLY(_has_interface_klass = true;)
     _entry_specific._interface_klass = klass;
   }
 
   void set_resolved_references_index(u2 ref_index) {
+    assert(!_has_interface_klass &&
+           !_has_table_index,
+           "Mutually exclusive fields %d %d %d", has_resolved_references_index(), _has_interface_klass, _has_table_index);
     set_flags(1 << has_resolved_ref_shift);
     _entry_specific._resolved_references_index = ref_index;
   }
 
   void set_table_index(u2 table_index) {
+    assert(!has_resolved_references_index() &&
+           !_has_interface_klass,
+           "Mutually exclusive fields %d %d %d", has_resolved_references_index(), _has_interface_klass, _has_table_index);
+    DEBUG_ONLY(_has_table_index = true;)
     _entry_specific._table_index = table_index;
   }
 

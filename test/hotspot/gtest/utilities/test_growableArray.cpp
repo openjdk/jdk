@@ -601,3 +601,65 @@ TEST(GrowableArrayCHeap, sanity) {
     delete a;
   }
 }
+
+TEST(GrowableArrayCHeap, find_if) {
+  struct Element {
+    int value;
+  };
+  GrowableArrayCHeap<Element, mtTest> array;
+  array.push({1});
+  array.push({2});
+  array.push({3});
+
+  {
+    int index = array.find_if([&](const Element& elem) {
+      return elem.value == 1;
+    });
+    ASSERT_EQ(index, 0);
+  }
+
+  {
+    int index = array.find_if([&](const Element& elem) {
+      return elem.value > 1;
+    });
+    ASSERT_EQ(index, 1);
+  }
+
+  {
+    int index = array.find_if([&](const Element& elem) {
+      return elem.value == 4;
+    });
+    ASSERT_EQ(index, -1);
+  }
+}
+
+TEST(GrowableArrayCHeap, find_from_end_if) {
+  struct Element {
+    int value;
+  };
+  GrowableArrayCHeap<Element, mtTest> array;
+  array.push({1});
+  array.push({2});
+  array.push({3});
+
+  {
+    int index = array.find_from_end_if([&](const Element& elem) {
+      return elem.value == 1;
+    });
+    ASSERT_EQ(index, 0);
+  }
+
+  {
+    int index = array.find_from_end_if([&](const Element& elem) {
+      return elem.value > 1;
+    });
+    ASSERT_EQ(index, 2);
+  }
+
+  {
+    int index = array.find_from_end_if([&](const Element& elem) {
+      return elem.value == 4;
+    });
+    ASSERT_EQ(index, -1);
+  }
+}
