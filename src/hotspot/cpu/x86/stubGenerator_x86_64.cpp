@@ -2540,12 +2540,10 @@ address StubGenerator::generate_base64_decodeBlock() {
     // output_size in r13
 
     // Strip pad characters, if any, and adjust length and mask
-    __ addq(length, start_offset);
     __ cmpb(Address(source, length, Address::times_1, -1), '=');
     __ jcc(Assembler::equal, L_padding);
 
     __ BIND(L_donePadding);
-    __ subq(length, start_offset);
 
     // Output size is (64 - output_size), output mask is (all 1s >> output_size).
     __ kmovql(input_mask, rax);

@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2023, Intel Corporation. All rights reserved.
- * Intel Math Library (LIBM) Source Code
  *
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -40,6 +39,7 @@
 // 2. Broadcast the last byte of the needle to a different ymm register
 // 3. Compare the first-byte ymm register to the first 32 bytes of the haystack
 // 4. Compare the last-byte register to the 32 bytes of the haystack at the (k-1)st position
+//    where k is the length of the needle
 // 5. Logically AND the results of the comparison
 //
 // The result of the AND yields the position within the haystack where both the first
@@ -114,7 +114,7 @@
 // }
 /******************************************************************************/
 
-void StubGenerator::loop_helper(int size, Label& bailout, Label& loop_top) {
+void StubGenerator::string_indexof_loop_helper(int size, Label& bailout, Label& loop_top) {
   Label temp;
 
   __ movq(r13, -1);
@@ -760,7 +760,7 @@ address StubGenerator::generate_string_indexof() {
     large_hs_jmp_table[2] = __ pc();
     {
       Label L_top, L_inner;
-      loop_helper(3, L_exit, L_top);
+      string_indexof_loop_helper(3, L_exit, L_top);
       __ movzbl(rsi, Address(r10, 0x1));
       __ bind(L_inner);
       __ tzcntl(rdi, rdx);
@@ -775,7 +775,7 @@ address StubGenerator::generate_string_indexof() {
     large_hs_jmp_table[3] = __ pc();
     {
       Label L_top, L_inner;
-      loop_helper(4, L_exit, L_top);
+      string_indexof_loop_helper(4, L_exit, L_top);
       __ movzwl(rsi, Address(r10, 0x1));
       __ bind(L_inner);
       __ tzcntl(rdi, rdx);
@@ -790,7 +790,7 @@ address StubGenerator::generate_string_indexof() {
     large_hs_jmp_table[4] = __ pc();
     {
       Label L_top, L_inner;
-      loop_helper(5, L_exit, L_top);
+      string_indexof_loop_helper(5, L_exit, L_top);
       __ movl(rsi, Address(r10, 0x1));
       __ bind(L_inner);
       __ tzcntl(rdi, rdx);
@@ -805,7 +805,7 @@ address StubGenerator::generate_string_indexof() {
     large_hs_jmp_table[5] = __ pc();
     {
       Label L_top, L_inner;
-      loop_helper(6, L_exit, L_top);
+      string_indexof_loop_helper(6, L_exit, L_top);
       __ movl(rsi, Address(r10, 0x1));
       __ bind(L_inner);
       __ tzcntl(rdi, rdx);
@@ -820,7 +820,7 @@ address StubGenerator::generate_string_indexof() {
     large_hs_jmp_table[6] = __ pc();
     {
       Label L_top, L_inner, L_tmp;
-      loop_helper(7, L_exit, L_top);
+      string_indexof_loop_helper(7, L_exit, L_top);
       __ movl(rsi, Address(r10, 0x1));
       __ jmpb(L_tmp);
       __ bind(L_inner);
@@ -840,7 +840,7 @@ address StubGenerator::generate_string_indexof() {
     large_hs_jmp_table[7] = __ pc();
     {
       Label L_top, L_inner, L_tmp;
-      loop_helper(8, L_exit, L_top);
+      string_indexof_loop_helper(8, L_exit, L_top);
       __ movl(rsi, Address(r10, 0x1));
       __ jmpb(L_tmp);
       __ bind(L_inner);
@@ -860,7 +860,7 @@ address StubGenerator::generate_string_indexof() {
     large_hs_jmp_table[8] = __ pc();
     {
       Label L_top, L_inner;
-      loop_helper(9, L_exit, L_top);
+      string_indexof_loop_helper(9, L_exit, L_top);
       __ movq(rsi, Address(r10, 0x1));
       __ bind(L_inner);
       __ tzcntl(rdi, rdx);
@@ -875,7 +875,7 @@ address StubGenerator::generate_string_indexof() {
     large_hs_jmp_table[9] = __ pc();
     {
       Label L_top, L_inner;
-      loop_helper(10, L_exit, L_top);
+      string_indexof_loop_helper(10, L_exit, L_top);
       __ movq(rsi, Address(r10, 0x1));
       __ bind(L_inner);
       __ tzcntl(rdi, rdx);
@@ -890,7 +890,7 @@ address StubGenerator::generate_string_indexof() {
     large_hs_jmp_table[10] = __ pc();
     {
       Label L_top, L_inner, L_tmp;
-      loop_helper(11, L_exit, L_top);
+      string_indexof_loop_helper(11, L_exit, L_top);
       __ movq(rsi, Address(r10, 0x1));
       __ movzbl(rdi, Address(r10, 0x9));
       __ jmpb(L_tmp);
@@ -910,7 +910,7 @@ address StubGenerator::generate_string_indexof() {
     large_hs_jmp_table[11] = __ pc();
     {
       Label L_top, L_inner, L_tmp;
-      loop_helper(12, L_exit, L_top);
+      string_indexof_loop_helper(12, L_exit, L_top);
       __ movq(rsi, Address(r10, 0x1));
       __ movzwl(rdi, Address(r10, 0x9));
       __ jmpb(L_tmp);
@@ -930,7 +930,7 @@ address StubGenerator::generate_string_indexof() {
     large_hs_jmp_table[12] = __ pc();
     {
       Label L_top, L_inner, L_tmp;
-      loop_helper(13, L_exit, L_top);
+      string_indexof_loop_helper(13, L_exit, L_top);
       __ movq(rsi, Address(r10, 0x1));
       __ jmpb(L_tmp);
       __ align(8);
@@ -957,7 +957,7 @@ address StubGenerator::generate_string_indexof() {
     large_hs_jmp_table[13] = __ pc();
     {
       Label L_top, L_inner, L_tmp;
-      loop_helper(14, L_exit, L_top);
+      string_indexof_loop_helper(14, L_exit, L_top);
       __ movq(rsi, Address(r10, 0x1));
       __ movl(rdi, Address(r10, 0x9));
       __ jmpb(L_tmp);
@@ -977,7 +977,7 @@ address StubGenerator::generate_string_indexof() {
     large_hs_jmp_table[14] = __ pc();
     {
       Label L_top, L_inner, L_tmp;
-      loop_helper(15, L_exit, L_top);
+      string_indexof_loop_helper(15, L_exit, L_top);
       __ movq(rsi, Address(r10, 0x1));
       __ movl(rdi, Address(r10, 0x9));
       __ movzbl(r8, Address(r10, 0xd));
@@ -1000,7 +1000,7 @@ address StubGenerator::generate_string_indexof() {
     large_hs_jmp_table[15] = __ pc();
     {
       Label L_top, L_inner, L_tmp;
-      loop_helper(16, L_exit, L_top);
+      string_indexof_loop_helper(16, L_exit, L_top);
       __ movq(rsi, Address(r10, 0x1));
       __ movl(rdi, Address(r10, 0x9));
       __ movzwl(r8, Address(r10, 0xd));
@@ -1024,7 +1024,7 @@ address StubGenerator::generate_string_indexof() {
     {
       Label L_top, L_inner, L_tmp;
       __ movq(r14, r10);
-      loop_helper(17, L_exit, L_top);
+      string_indexof_loop_helper(17, L_exit, L_top);
       __ movq(r9, r14);
       __ movq(rsi, Address(r14, 0x1));
       __ movl(rdi, Address(r14, 0x9));
@@ -1052,7 +1052,7 @@ address StubGenerator::generate_string_indexof() {
     large_hs_jmp_table[17] = __ pc();
     {
       Label L_top, L_inner, L_tmp;
-      loop_helper(18, L_exit, L_top);
+      string_indexof_loop_helper(18, L_exit, L_top);
       __ movq(rsi, Address(r10, 0x1));
       __ movq(rdi, Address(r10, 0x9));
       __ jmpb(L_tmp);
@@ -1072,7 +1072,7 @@ address StubGenerator::generate_string_indexof() {
     large_hs_jmp_table[18] = __ pc();
     {
       Label L_top, L_inner, L_tmp;
-      loop_helper(19, L_exit, L_top);
+      string_indexof_loop_helper(19, L_exit, L_top);
       __ movdqu(xmm2, Address(r10, 0x1));
       __ movzbl(rsi, Address(r10, 0x11));
       __ jmpb(L_tmp);
@@ -1094,7 +1094,7 @@ address StubGenerator::generate_string_indexof() {
     large_hs_jmp_table[19] = __ pc();
     {
       Label L_top, L_inner, L_tmp;
-      loop_helper(20, L_exit, L_top);
+      string_indexof_loop_helper(20, L_exit, L_top);
       __ movdqu(xmm2, Address(r10, 0x1));
       __ movzwl(rsi, Address(r10, 0x11));
       __ jmpb(L_tmp);
@@ -1116,7 +1116,7 @@ address StubGenerator::generate_string_indexof() {
     large_hs_jmp_table[20] = __ pc();
     {
       Label L_top, L_inner, L_tmp;
-      loop_helper(21, L_exit, L_top);
+      string_indexof_loop_helper(21, L_exit, L_top);
       __ movdqu(xmm2, Address(r10, 0x1));
       __ movzwl(rsi, Address(r10, 0x11));
       __ movzbl(rdi, Address(r10, 0x13));
@@ -1141,7 +1141,7 @@ address StubGenerator::generate_string_indexof() {
     large_hs_jmp_table[21] = __ pc();
     {
       Label L_top, L_inner, L_tmp;
-      loop_helper(22, L_exit, L_top);
+      string_indexof_loop_helper(22, L_exit, L_top);
       __ movdqu(xmm2, Address(r10, 0x1));
       __ movl(rsi, Address(r10, 0x11));
       __ jmpb(L_tmp);
@@ -1163,7 +1163,7 @@ address StubGenerator::generate_string_indexof() {
     large_hs_jmp_table[22] = __ pc();
     {
       Label L_top, L_inner, L_tmp;
-      loop_helper(23, L_exit, L_top);
+      string_indexof_loop_helper(23, L_exit, L_top);
       __ movdqu(xmm2, Address(r10, 0x1));
       __ movl(rsi, Address(r10, 0x11));
       __ movzbl(rdi, Address(r10, 0x15));
@@ -1188,7 +1188,7 @@ address StubGenerator::generate_string_indexof() {
     large_hs_jmp_table[23] = __ pc();
     {
       Label L_top, L_inner, L_tmp;
-      loop_helper(24, L_exit, L_top);
+      string_indexof_loop_helper(24, L_exit, L_top);
       __ movdqu(xmm2, Address(r10, 0x1));
       __ movl(rsi, Address(r10, 0x11));
       __ movzwl(rdi, Address(r10, 0x15));
@@ -1213,7 +1213,7 @@ address StubGenerator::generate_string_indexof() {
     large_hs_jmp_table[24] = __ pc();
     {
       Label L_top, L_inner, L_tmp;
-      loop_helper(25, L_exit, L_top);
+      string_indexof_loop_helper(25, L_exit, L_top);
       __ movdqu(xmm2, Address(r10, 0x1));
       __ movl(rsi, Address(r10, 0x11));
       __ movzwl(rdi, Address(r10, 0x15));
@@ -1241,7 +1241,7 @@ address StubGenerator::generate_string_indexof() {
     large_hs_jmp_table[25] = __ pc();
     {
       Label L_top, L_inner, L_tmp;
-      loop_helper(26, L_exit, L_top);
+      string_indexof_loop_helper(26, L_exit, L_top);
       __ movdqu(xmm2, Address(r10, 0x1));
       __ movq(rsi, Address(r10, 0x11));
       __ jmpb(L_tmp);
@@ -1265,7 +1265,7 @@ address StubGenerator::generate_string_indexof() {
     large_hs_jmp_table[26] = __ pc();
     {
       Label L_top, L_inner, L_tmp;
-      loop_helper(27, L_exit, L_top);
+      string_indexof_loop_helper(27, L_exit, L_top);
       __ movdqu(xmm2, Address(r10, 0x1));
       __ movq(rsi, Address(r10, 0x11));
       __ movzbl(rdi, Address(r10, 0x19));
@@ -1290,7 +1290,7 @@ address StubGenerator::generate_string_indexof() {
     large_hs_jmp_table[27] = __ pc();
     {
       Label L_top, L_inner, L_tmp;
-      loop_helper(28, L_exit, L_top);
+      string_indexof_loop_helper(28, L_exit, L_top);
       __ movdqu(xmm2, Address(r10, 0x1));
       __ movq(rsi, Address(r10, 0x11));
       __ movzwl(rdi, Address(r10, 0x19));
@@ -1315,7 +1315,7 @@ address StubGenerator::generate_string_indexof() {
     large_hs_jmp_table[28] = __ pc();
     {
       Label L_top, L_inner, L_tmp;
-      loop_helper(29, L_exit, L_top);
+      string_indexof_loop_helper(29, L_exit, L_top);
       __ movdqu(xmm2, Address(r10, 0x1));
       __ movq(rsi, Address(r10, 0x11));
       __ movzwl(rdi, Address(r10, 0x19));
@@ -1343,7 +1343,7 @@ address StubGenerator::generate_string_indexof() {
     large_hs_jmp_table[29] = __ pc();
     {
       Label L_top, L_inner, L_tmp;
-      loop_helper(30, L_exit, L_top);
+      string_indexof_loop_helper(30, L_exit, L_top);
       __ movdqu(xmm2, Address(r10, 0x1));
       __ movq(rsi, Address(r10, 0x11));
       __ movl(rdi, Address(r10, 0x19));
@@ -1370,7 +1370,7 @@ address StubGenerator::generate_string_indexof() {
     large_hs_jmp_table[30] = __ pc();
     {
       Label L_top, L_inner, L_tmp;
-      loop_helper(31, L_exit, L_top);
+      string_indexof_loop_helper(31, L_exit, L_top);
       __ movdqu(xmm2, Address(r10, 0x1));
       __ movq(rsi, Address(r10, 0x11));
       __ movl(rdi, Address(r10, 0x19));

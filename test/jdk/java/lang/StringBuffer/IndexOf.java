@@ -36,13 +36,6 @@ public class IndexOf {
 
   public static void main(String[] args) throws Exception {
     String testName = "IndexOf";
-    if (false) {
-    String xx = "0#.!,))\"7-0#:02/62;+-\"\"0$25-5$#)1263'.&&(127+'*$%\"1+9,45'-/&,0;97*/, ,$':'8+#3%5:6+#  '3-:.!";
-    String yy = "0#:02/62;+-\"\"0$25-5$#)1263";
-    int gg = xx.indexOf(yy, 50);
-    System.err.println(gg);
-
-    } else {
 
     for (int i = 0; i < 20000; i++) {
       int foo = testName.indexOf("dex");
@@ -56,7 +49,6 @@ public class IndexOf {
     compareStringStringBuffer();
     generator.setSeed(1999);
     compareExhaustive();
-    }
 
     if (failure)
       throw new RuntimeException("One or more BitSet failures.");
