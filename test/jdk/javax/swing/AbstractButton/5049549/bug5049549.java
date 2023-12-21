@@ -118,6 +118,7 @@ public class bug5049549 {
         panel.add(label);
 
         KButton button;
+
         /* disabled: default icon */
         button = new KButton("DE");
         button.setEnabled(false);
@@ -222,7 +223,9 @@ public class bug5049549 {
         button.setRolloverSelectedIcon(RS);
         button.setSelectedIcon(SE);
         button.setRolloverIcon(RO);
-
+        button.setPressedIcon(PR);
+        panel.add(button);
+        
         /* selected: default, selected, rollover, rollover-selected icons */
         button = new KButton("SE, RS, SE");
         button.setSelected(true);
