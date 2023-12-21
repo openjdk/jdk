@@ -113,22 +113,6 @@ bool JfrCheckpointManager::initialize_early() {
     _global_mspace->add_to_live_list(buffer, i % 2 == 0);
   }
   assert(_global_mspace->free_list_is_empty(), "invariant");
-
-  assert(_thread_local_mspace == nullptr, "invariant");
-  _thread_local_mspace = new JfrThreadLocalCheckpointMspace();
-  if (_thread_local_mspace == nullptr || !_thread_local_mspace->initialize(thread_local_buffer_size,
-                                                                        thread_local_buffer_prealloc_count,
-                                                                        thread_local_buffer_prealloc_count)) {
-    return false;
-  }
-
-  assert(_virtual_thread_local_mspace == nullptr, "invariant");
-  _virtual_thread_local_mspace = new JfrThreadLocalCheckpointMspace();
-  if (_virtual_thread_local_mspace == nullptr || !_virtual_thread_local_mspace->initialize(virtual_thread_local_buffer_size,
-                                                                                        JFR_MSPACE_UNLIMITED_CACHE_SIZE,
-                                                                                        virtual_thread_local_buffer_prealloc_count)) {
-    return false;
-  }
   return true;
 }
 
@@ -136,6 +120,25 @@ bool JfrCheckpointManager::initialize_early() {
 bool JfrCheckpointManager::initialize(JfrChunkWriter* cw) {
   assert(cw != nullptr, "invariant");
   _chunkwriter = cw;
+
+  assert(_global_mspace != nullptr, "invariant");
+
+  assert(_thread_local_mspace == nullptr, "invariant");
+  _thread_local_mspace = new JfrThreadLocalCheckpointMspace();
+  if (_thread_local_mspace == nullptr || !_thread_local_mspace->initialize(thread_local_buffer_size,
+                                                                           thread_local_buffer_prealloc_count,
+                                                                           thread_local_buffer_prealloc_count)) {
+    return false;
+  }
+
+  assert(_virtual_thread_local_mspace == nullptr, "invariant");
+  _virtual_thread_local_mspace = new JfrThreadLocalCheckpointMspace();
+  if (_virtual_thread_local_mspace == nullptr || !_virtual_thread_local_mspace->initialize(virtual_thread_local_buffer_size,
+                                                                                           JFR_MSPACE_UNLIMITED_CACHE_SIZE,
+                                                                                           virtual_thread_local_buffer_prealloc_count)) {
+    return false;
+  }
+
   return JfrTypeManager::initialize() && JfrTraceIdLoadBarrier::initialize();
 }
 
