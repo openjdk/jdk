@@ -91,12 +91,6 @@ public class RMIAltAuthTest {
             //
             System.out.println("Create the MBean server");
             MBeanServer mbs = MBeanServerFactory.createMBeanServer();
-            // Register the ClassPathClassLoaderMBean
-            //
-            System.out.println("Create ClassPathClassLoader MBean");
-            ObjectName cpcl =
-                new ObjectName("ClassLoader:name=ClassPathClassLoader");
-            mbs.createMBean("javax.management.loading.MLet", cpcl);
             // Register the SimpleStandardMBean
             //
             System.out.println("Create SimpleStandard MBean");
