@@ -113,15 +113,6 @@ bool JfrCheckpointManager::initialize_early() {
     _global_mspace->add_to_live_list(buffer, i % 2 == 0);
   }
   assert(_global_mspace->free_list_is_empty(), "invariant");
-  return true;
-}
-
-// The instance is already created and so we only complete the setup of additional subsystems.
-bool JfrCheckpointManager::initialize(JfrChunkWriter* cw) {
-  assert(cw != nullptr, "invariant");
-  _chunkwriter = cw;
-
-  assert(_global_mspace != nullptr, "invariant");
 
   assert(_thread_local_mspace == nullptr, "invariant");
   _thread_local_mspace = new JfrThreadLocalCheckpointMspace();
@@ -138,7 +129,13 @@ bool JfrCheckpointManager::initialize(JfrChunkWriter* cw) {
                                                                                            virtual_thread_local_buffer_prealloc_count)) {
     return false;
   }
+  return true;
+}
 
+// The instance is already created and so we only complete the setup of additional subsystems.
+bool JfrCheckpointManager::initialize(JfrChunkWriter* cw) {
+  assert(cw != nullptr, "invariant");
+  _chunkwriter = cw;
   return JfrTypeManager::initialize() && JfrTraceIdLoadBarrier::initialize();
 }
 
