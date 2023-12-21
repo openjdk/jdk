@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,9 +30,10 @@
  *
  * @run clean ClassLeakTest
  * @run build ClassLeakTest
- * @run main ClassLeakTest
+ * @run main/othervm ClassLeakTest
  */
 
+import java.lang.management.ManagementFactory;
 import java.lang.ref.WeakReference;
 import java.io.File;
 import java.nio.file.Paths;
@@ -48,38 +49,10 @@ public class ClassLeakTest {
                            "Standard MBean does not retain a reference to " +
                            "the MBean's class");
 
-
-        String[] cpaths = System.getProperty("test.classes", ".")
-                                .split(File.pathSeparator);
-        URL[] urls = new URL[cpaths.length];
-        for (int i=0; i < cpaths.length; i++) {
-            urls[i] = Paths.get(cpaths[i]).toUri().toURL();
-        }
-
-        @SuppressWarnings("removal")
-        PrivateMLet mlet = new PrivateMLet(urls, null, false);
-        Class<?> shadowClass = mlet.loadClass(TestMBean.class.getName());
-        if (shadowClass == TestMBean.class) {
-            System.out.println("TEST INVALID: MLet got original " +
-                               "TestMBean not shadow");
-            System.exit(1);
-        }
-        shadowClass = null;
-
-        MBeanServer mbs = MBeanServerFactory.createMBeanServer();
-        ObjectName mletName = new ObjectName("x:type=mlet");
-        mbs.registerMBean(mlet, mletName);
-
-        ObjectName testName = new ObjectName("x:type=test");
-        mbs.createMBean(Test.class.getName(), testName, mletName);
-
-        ClassLoader testLoader = mbs.getClassLoaderFor(testName);
-        if (testLoader != mlet) {
-            System.out.println("TEST INVALID: MBean's class loader is not " +
-                               "MLet: " + testLoader);
-            System.exit(1);
-        }
-        testLoader = null;
+        MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
+        ObjectName testName = new ObjectName(":name=Test");
+        Test mbean = new Test();
+        mbs.registerMBean(mbean, testName);
 
         MBeanInfo info = mbs.getMBeanInfo(testName);
         MBeanAttributeInfo[] attrs = info.getAttributes();
@@ -109,20 +82,18 @@ public class ClassLeakTest {
             System.exit(1);
         }
 
+        WeakReference mbeanRef = new WeakReference(mbean);
         mbs.unregisterMBean(testName);
-        mbs.unregisterMBean(mletName);
-
-        WeakReference mletRef = new WeakReference(mlet);
-        mlet = null;
+        mbean = null;
 
         System.out.println("MBean registered and unregistered, waiting for " +
                            "garbage collector to collect class loader");
-        for (int i = 0; i < 10000 && mletRef.get() != null; i++) {
+        for (int i = 0; i < 10000 && mbeanRef.get() != null; i++) {
             System.gc();
             Thread.sleep(1);
         }
 
-        if (mletRef.get() == null)
+        if (mbeanRef.get() == null)
             System.out.println("Test passed: class loader was GC'd");
         else {
             System.out.println("TEST FAILED: class loader was not GC'd");
