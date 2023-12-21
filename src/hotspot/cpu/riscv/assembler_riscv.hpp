@@ -1816,6 +1816,7 @@ enum Nf {
   INSN(vluxei32_v, 0b0000111, 0b110, 0b01, 0b0);
 
   // Vector unordered indexed store instructions
+  INSN( vsuxei8_v, 0b0100111, 0b000, 0b01, 0b0);
   INSN(vsuxei32_v, 0b0100111, 0b110, 0b01, 0b0);
 
 #undef INSN

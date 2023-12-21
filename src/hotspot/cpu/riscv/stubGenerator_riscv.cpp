@@ -3878,7 +3878,9 @@ class StubGenerator: public StubCodeGenerator {
       Register state = c_rarg1;
       Register ofs   = c_rarg2;
       Register limit = c_rarg3;
-      Register consts = t2; // caller saved
+      Register consts =  t2; // caller saved
+      Register state_c = x28; // caller saved
+      VectorRegister vindex = v1;
 
       Label multi_block_loop;
 
@@ -3931,16 +3933,18 @@ class StubGenerator: public StubCodeGenerator {
       // x0 is not written, we known the number of vector elements.
 
       __ vsetivli(x0, 4, vset_sew, Assembler::m1, Assembler::ma, Assembler::ta);
-      // Splat indexes in v26 if SEW = e64, but don't hurt anything.
+      // Splat indexes in vindex if SEW = e64, but don't hurt anything.
       int64_t indexes = vset_sew == Assembler::e32 ? 0x00041014ul : 0x00082028ul;
       __ li(t0, indexes);
-      __ vmv_s_x(v26, t0);
+      __ vmv_s_x(vindex, t0);
+
+      // Step-over a,b, so we are pointing to c.
+      // const_add is equal to 4x state variable, div by 2 is thus 2, a,b
+      __ addi(state_c, state, const_add/2);
 
       // Use index-load to get {f,e,b,a},{h,g,d,c}
-      __ vluxei8_v(v16, state, v26);
-      // Step-over a,b, so we are pointing to c.
-      __ addi(t0, state, const_add/2);
-      __ vluxei8_v(v17, t0, v26);
+      __ vluxei8_v(v16, state, vindex);
+      __ vluxei8_v(v17, state_c, vindex);
 
       __ bind(multi_block_loop);
 
@@ -4024,24 +4028,8 @@ class StubGenerator: public StubCodeGenerator {
       // Store H[0..8] = {a,b,c,d,e,f,g,h} from
       //  v16 = {f,e,b,a}
       //  v17 = {h,g,d,c}
-      __ vid_v(v30);                                   // v30 = {3,2,1,0}
-      __ vxor_vi(v30, v30, 0x3);                       // v30 = {0,1,2,3}
-      __ vrgather_vv(v26, v16, v30);                   // v26 = {f,e,b,a}
-      __ vrgather_vv(v27, v17, v30);                   // v27 = {h,g,d,c}
-      __ vmsgeu_vi(v0, v30, 2);                        // v0  = {f,f,t,t}
-      // Copy elements [3..2] of v26 ({f,e}) into elements [1..0] of v17.
-      __ vslidedown_vi(v17, v26, 2);                   // v17 = {_,_,f,e}
-      // Merge elements [3..2] of v27 ({g,h}) into elements [3..2] of v17
-      __ vmerge_vvm(v17, v27, v17);                    // v17 = {h,g,f,e}
-      // Copy elements [1..0] of v27 ({c,d}) into elements [3..2] of v16.
-      __ vslideup_vi(v16, v27, 2);                     // v16 = {d,c,_,_}
-      // Merge elements [1..0] of v26 ({a,b}) into elements [1..0] of v16
-      __ vmerge_vvm(v16, v16, v26);                    // v16 = {d,c,b,a}
-
-      // Save the hash
-      __ vseXX_v(vset_sew, v16, state);
-      __ addi(state, state, const_add);
-      __ vseXX_v(vset_sew, v17, state);
+      __ vsuxei8_v(v16, state,   vindex);
+      __ vsuxei8_v(v17, state_c, vindex);
 
       __ leave();
       __ ret();
