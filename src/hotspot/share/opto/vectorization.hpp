@@ -319,7 +319,7 @@ public:
 
 class EmptyAlignmentSolution : public AlignmentSolution {
 private:
-  const char* _reason = nullptr;
+  const char* _reason;
 public:
   EmptyAlignmentSolution(const char* reason) :  _reason(reason) {}
   virtual bool is_empty() const override final       { return true; }
@@ -363,11 +363,11 @@ public:
 
 class ConstrainedAlignmentSolution : public AlignmentSolution {
 private:
-  const MemNode* _mem_ref = nullptr;
-  const int _q = 1;
-  const int _r = 0;
-  const Node* _invar = nullptr;
-  const int _scale = 0;
+  const MemNode* _mem_ref;
+  const int _q;
+  const int _r;
+  const Node* _invar;
+  const int _scale;
 public:
   ConstrainedAlignmentSolution(const MemNode* mem_ref,
                                const int q,
@@ -513,7 +513,7 @@ public:
 //   main_iter++
 //
 // For each vector memory access, we can find the set of pre_iter (number of pre-loop
-// iterations) which would align its address. The AlignmentSolver finds such a
+// iterations) which would align its address. The AlignmentSolver finds such an
 // AlignmentSolution. We can then check which solutions are compatible, and thus
 // decide if we have to (partially) reject vectorization if not all vectors have
 // a compatible solutions.

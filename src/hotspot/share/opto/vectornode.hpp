@@ -1039,7 +1039,7 @@ class StoreVectorScatterMaskedNode : public StoreVectorNode {
                                                     idx == MemNode::ValueIn + 2; }
 };
 
-// Verify that memory address (adr) is alignemd. The mask specifies the
+// Verify that memory address (adr) is aligned. The mask specifies the
 // least significant bits which have to be zero in the address.
 //
 // if (adr & mask == 0) {
@@ -1053,7 +1053,6 @@ class VerifyVectorAlignmentNode : public Node {
   virtual uint hash() const { return NO_HASH; };
 public:
   VerifyVectorAlignmentNode(Node* adr, Node* mask) : Node(nullptr, adr, mask) {}
-public:
   virtual int Opcode() const;
   virtual uint size_of() const { return sizeof(*this); }
   virtual const Type *bottom_type() const { return in(1)->bottom_type(); }
