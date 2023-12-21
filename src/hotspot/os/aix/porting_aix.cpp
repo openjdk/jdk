@@ -22,7 +22,7 @@
  *
  */
 // needs to be defined first, so that the implicit loaded xcoff.h header defines
-// the right structures to analyze the loader header of 32 and 64 Bit executable files
+// the right structures to analyze the loader header of 64 Bit executable files
 // this is needed for rtv_linkedin_libpath() to get the linked (burned) in library
 // search path of an XCOFF executable
 #define __XCOFF64__
@@ -918,20 +918,21 @@ static struct handletableentry g_handletable[max_handletable] = {{0, 0, 0, 0}};
 // get the library search path burned in to the executable file during linking
 // If the libpath cannot be retrieved return an empty path
 static const char* rtv_linkedin_libpath() {
-  static char buffer[4096];
+  constexpr int bufsize = 4096;
+  static char buffer[bufsize];
   static const char* libpath = 0;
 
   // we only try to retrieve the libpath once. After that try we
   // let libpath point to buffer, which then contains a valid libpath
   // or an empty string
-  if (libpath) {
+  if (libpath != nullptr) {
     return libpath;
   }
 
   // retrieve the path to the currently running executable binary
   // to open it
   snprintf(buffer, 100, "/proc/%ld/object/a.out", (long)getpid());
-  FILE* f = 0;
+  FILE* f = nullptr;
   struct xcoffhdr the_xcoff;
   struct scnhdr the_scn;
   struct ldhdr the_ldr;
@@ -950,7 +951,7 @@ static const char* rtv_linkedin_libpath() {
       0 != fseek(f, the_scn.s_scnptr, SEEK_SET) ||
       LDHDRSZ != fread(&the_ldr, 1, LDHDRSZ, f) ||
       0 != fseek(f, the_scn.s_scnptr + the_ldr.l_impoff, SEEK_SET) ||
-      0 == fread(buffer, 1, 4096, f)) {
+      0 == fread(buffer, 1, bufsize, f)) {
     buffer[0] = 0;
     assert(false, "could not retrieve burned in library path from executables loader section");
   }
@@ -987,7 +988,7 @@ static bool search_file_in_LIBPATH(const char* path, struct stat64x* stat) {
       combined.print("./%s", path2);
     }
     ret = (0 == stat64x(combined.base(), stat));
-    os::free (path2);
+    os::free(path2);
     return ret;
   }
 
@@ -1022,8 +1023,8 @@ static bool search_file_in_LIBPATH(const char* path, struct stat64x* stat) {
       break;
   }
 
-  os::free (libpath);
-  os::free (path2);
+  os::free(libpath);
+  os::free(path2);
   return ret;
 }
 
@@ -1031,6 +1032,7 @@ static bool search_file_in_LIBPATH(const char* path, struct stat64x* stat) {
 // filled by os::dll_load(). This way we mimic dl handle equality for a library
 // opened a second time, as it is implemented on other platforms.
 void* Aix_dlopen(const char* filename, int Flags, const char** error_report) {
+  assert(error_report != nullptr, "error_report is nullptr");
   void* result;
   struct stat64x libstat;
 
