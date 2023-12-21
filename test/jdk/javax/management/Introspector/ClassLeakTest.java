@@ -49,7 +49,8 @@ public class ClassLeakTest {
                            "Standard MBean does not retain a reference to " +
                            "the MBean's class");
 
-        MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
+        //MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
+        MBeanServer mbs = MBeanServerFactory.createMBeanServer();
         ObjectName testName = new ObjectName(":name=Test");
         Test mbean = new Test();
         mbs.registerMBean(mbean, testName);

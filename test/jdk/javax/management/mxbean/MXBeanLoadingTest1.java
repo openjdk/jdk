@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,8 +45,8 @@ import javax.management.MBeanOperationInfo;
 import javax.management.MBeanServer;
 import javax.management.MBeanServerFactory;
 import javax.management.MXBean;
+import javax.management.ObjectInstance;
 import javax.management.ObjectName;
-import javax.management.loading.PrivateMLet;
 import javax.management.openmbean.CompositeData;
 import javax.management.openmbean.CompositeDataSupport;
 import javax.management.openmbean.CompositeType;
@@ -80,38 +80,9 @@ public class MXBeanLoadingTest1 {
                     replaceAll(MXBeanLoadingTest1.class.getSimpleName()
                             + ".class", "");
 
-            URL[] urls = new URL[]{new URL(clsLoadPath)};
-            @SuppressWarnings("removal")
-            PrivateMLet mlet = new PrivateMLet(urls, null, false);
-            Class<?> shadowClass = mlet.loadClass(TestMXBean.class.getName());
-
-            if (shadowClass == TestMXBean.class) {
-                String message = "(ERROR) MLet got original TestMXBean, not shadow";
-                System.out.println(message);
-                throw new RuntimeException(message);
-            }
-            shadowClass = null;
-
             MBeanServer mbs = MBeanServerFactory.createMBeanServer();
-            ObjectName mletName = new ObjectName("x:type=mlet");
-            mbs.registerMBean(mlet, mletName);
-
             ObjectName testName = new ObjectName("x:type=test");
-            mbs.createMBean(Test.class.getName(), testName, mletName);
-
-            // That test fails because the MXBean instance is accessed via
-            // a delegate OpenMBean which has
-            ClassLoader testLoader = mbs.getClassLoaderFor(testName);
-
-            if (testLoader != mlet) {
-                System.out.println("MLet " + mlet);
-                String message = "(ERROR) MXBean's class loader is not MLet: "
-                        + testLoader;
-                System.out.println(message);
-                throw new RuntimeException(message);
-            }
-            testLoader = null;
-
+            ObjectInstance mb = mbs.createMBean(Test.class.getName(), testName);
 
             // Cycle get/set/get of the attribute of type Luis.
             // We check the set is effective.
@@ -264,23 +235,19 @@ public class MXBeanLoadingTest1 {
                 throw new RuntimeException(message);
             }
 
+            WeakReference<ObjectInstance> mbRef = new WeakReference<>(mb);
             mbs.unregisterMBean(testName);
-            mbs.unregisterMBean(mletName);
-
-            @SuppressWarnings("removal")
-            WeakReference<PrivateMLet> mletRef =
-                    new WeakReference<PrivateMLet>(mlet);
-            mlet = null;
+            mb = null;
 
             System.out.println("MXBean registered and unregistered, waiting for " +
                     "garbage collector to collect class loader");
 
-            for (int i = 0; i < 10000 && mletRef.get() != null; i++) {
+            for (int i = 0; i < 10000 && mbRef.get() != null; i++) {
                 System.gc();
                 Thread.sleep(1);
             }
 
-            if (mletRef.get() == null)
+            if (mbRef.get() == null)
                 System.out.println("(OK) class loader was GC'd");
             else {
                 String message = "(ERROR) Class loader was not GC'd";
