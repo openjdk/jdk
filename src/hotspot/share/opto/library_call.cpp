@@ -872,8 +872,7 @@ inline Node* LibraryCallKit::generate_negative_guard(Node* index, RegionNode* re
   Node* is_neg = generate_guard(bol_lt, region, PROB_MIN);
   if (is_neg != nullptr && pos_index != nullptr) {
     // Emulate effect of Parse::adjust_map_after_if.
-    Node* ccast = new CastIINode(index, TypeInt::POS);
-    ccast->set_req(0, control());
+    Node* ccast = new CastIINode(control(), index, TypeInt::POS);
     (*pos_index) = _gvn.transform(ccast);
   }
   return is_neg;
