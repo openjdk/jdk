@@ -3716,6 +3716,17 @@ void MacroAssembler::update_word_crc32(Register crc, Register v, Register tmp1, 
   shadd(tmp1, tmp1, table3, tmp2, 2);
   Assembler::lwu(crc, tmp1, 0);
 
+  // In order to access table elements according to initial algorithm
+  // the following actions should be performed (with no Zba enabled):
+  //  tmp1 = v >> 8
+  //  tmp1 = tmp1 & bits8
+  //  tmp1 = tmp1 << 2
+  //  tmp1 += table2
+  // Which is the same as:
+  //  tmp1 = v >> 6
+  //  tmp1 = tmp1 & (bits8 << 2)
+  //  tmp1 += table2
+
   srli(tmp1, v, 6);
   andi(tmp1, tmp1, (bits8 << 2));
   add(tmp1, tmp1, table2);
