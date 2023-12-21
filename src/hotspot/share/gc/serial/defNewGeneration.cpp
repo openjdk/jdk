@@ -40,7 +40,6 @@
 #include "gc/shared/gcTimer.hpp"
 #include "gc/shared/gcTrace.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
-#include "gc/shared/generationSpec.hpp"
 #include "gc/shared/preservedMarks.inline.hpp"
 #include "gc/shared/referencePolicy.hpp"
 #include "gc/shared/referenceProcessorPhaseTimes.hpp"
@@ -337,7 +336,7 @@ DefNewGeneration::DefNewGeneration(ReservedSpace rs,
 {
   MemRegion cmr((HeapWord*)_virtual_space.low(),
                 (HeapWord*)_virtual_space.high());
-  GenCollectedHeap* gch = GenCollectedHeap::heap();
+  SerialHeap* gch = SerialHeap::heap();
 
   gch->rem_set()->resize_covered_region(cmr);
 
@@ -556,11 +555,11 @@ void DefNewGeneration::compute_new_size() {
     return;
   }
 
-  GenCollectedHeap* gch = GenCollectedHeap::heap();
+  SerialHeap* gch = SerialHeap::heap();
 
   size_t old_size = gch->old_gen()->capacity();
   size_t new_size_before = _virtual_space.committed_size();
-  size_t min_new_size = initial_size();
+  size_t min_new_size = NewSize;
   size_t max_new_size = reserved().byte_size();
   assert(min_new_size <= new_size_before &&
          new_size_before <= max_new_size,
@@ -692,7 +691,7 @@ HeapWord* DefNewGeneration::allocate_from_space(size_t size) {
 
   log_trace(gc, alloc)("DefNewGeneration::allocate_from_space(" SIZE_FORMAT "):  will_fail: %s  heap_lock: %s  free: " SIZE_FORMAT "%s%s returns %s",
                         size,
-                        GenCollectedHeap::heap()->incremental_collection_will_fail(false /* don't consult_young */) ?
+                        SerialHeap::heap()->incremental_collection_will_fail(false /* don't consult_young */) ?
                           "true" : "false",
                         Heap_lock->is_locked() ? "locked" : "unlocked",
                         from()->free(),
@@ -716,7 +715,7 @@ void DefNewGeneration::adjust_desired_tenuring_threshold() {
   _tenuring_threshold = age_table()->compute_tenuring_threshold(desired_survivor_size);
 
   if (UsePerfData) {
-    GCPolicyCounters* gc_counters = GenCollectedHeap::heap()->counters();
+    GCPolicyCounters* gc_counters = SerialHeap::heap()->counters();
     gc_counters->tenuring_threshold()->set_value(_tenuring_threshold);
     gc_counters->desired_survivor_size()->set_value(desired_survivor_size * oopSize);
   }
@@ -1009,8 +1008,7 @@ bool DefNewGeneration::collection_attempt_is_safe() {
     return false;
   }
   if (_old_gen == nullptr) {
-    GenCollectedHeap* gch = GenCollectedHeap::heap();
-    _old_gen = gch->old_gen();
+    _old_gen = SerialHeap::heap()->old_gen();
   }
   return _old_gen->promotion_attempt_is_safe(used());
 }
@@ -1023,7 +1021,7 @@ void DefNewGeneration::gc_epilogue(bool full) {
   // been done.  Generally the young generation is empty at
   // a minimum at the end of a collection.  If it is not, then
   // the heap is approaching full.
-  GenCollectedHeap* gch = GenCollectedHeap::heap();
+  SerialHeap* gch = SerialHeap::heap();
   if (full) {
     DEBUG_ONLY(seen_incremental_collection_failed = false;)
     if (!collection_attempt_is_safe() && !_eden_space->is_empty()) {

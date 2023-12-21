@@ -30,6 +30,7 @@
 #include "runtime/perfDataTypes.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/zipLibrary.hpp"
 
 // The VM class loader.
 #include <sys/stat.h>
@@ -83,19 +84,6 @@ class ClassPathDirEntry: public ClassPathEntry {
   virtual ~ClassPathDirEntry();
   ClassFileStream* open_stream(JavaThread* current, const char* name);
 };
-
-// Type definitions for zip file and zip file entry
-typedef void* jzfile;
-typedef struct {
-  char *name;                   /* entry name */
-  jlong time;                   /* modification time */
-  jlong size;                   /* size of uncompressed data */
-  jlong csize;                  /* size of compressed data (zero if uncompressed) */
-  jint crc;                     /* crc of uncompressed data */
-  char *comment;                /* optional zip file comment */
-  jbyte *extra;                 /* optional extra data */
-  jlong pos;                    /* position of LOC header (if negative) or data */
-} jzentry;
 
 class ClassPathZipEntry: public ClassPathEntry {
  private:
@@ -168,7 +156,6 @@ class ClassLoader: AllStatic {
   static PerfCounter* _perf_classes_linked;
   static PerfCounter* _perf_class_link_time;
   static PerfCounter* _perf_class_link_selftime;
-  static PerfCounter* _perf_sys_class_lookup_time;
   static PerfCounter* _perf_shared_classload_time;
   static PerfCounter* _perf_sys_classload_time;
   static PerfCounter* _perf_app_classload_time;
@@ -228,8 +215,6 @@ class ClassLoader: AllStatic {
   CDS_ONLY(static void add_to_module_path_entries(const char* path,
                                            ClassPathEntry* entry);)
 
-  // cache the zip library handle
-  static void* _zip_handle;
  public:
   CDS_ONLY(static ClassPathEntry* app_classpath_entries() {return _app_classpath_entries;})
   CDS_ONLY(static ClassPathEntry* module_path_entries() {return _module_path_entries;})
@@ -248,16 +233,10 @@ class ClassLoader: AllStatic {
 
   static void* dll_lookup(void* lib, const char* name, const char* path);
   static void load_java_library();
-  static void load_zip_library();
   static void load_jimage_library();
 
- private:
-  static int  _libzip_loaded; // used to sync loading zip.
-  static void release_load_zip_library();
-
  public:
-  static inline void load_zip_library_if_needed();
-  static void* zip_library_handle() { return _zip_handle; }
+  static void* zip_library_handle();
   static jzfile* open_zip_file(const char* canonical_path, char** error_msg, JavaThread* thread);
   static ClassPathEntry* create_class_path_entry(JavaThread* current,
                                                  const char *path, const struct stat* st,
@@ -289,7 +268,6 @@ class ClassLoader: AllStatic {
   static PerfCounter* perf_classes_linked()           { return _perf_classes_linked; }
   static PerfCounter* perf_class_link_time()          { return _perf_class_link_time; }
   static PerfCounter* perf_class_link_selftime()      { return _perf_class_link_selftime; }
-  static PerfCounter* perf_sys_class_lookup_time()    { return _perf_sys_class_lookup_time; }
   static PerfCounter* perf_shared_classload_time()    { return _perf_shared_classload_time; }
   static PerfCounter* perf_sys_classload_time()       { return _perf_sys_classload_time; }
   static PerfCounter* perf_app_classload_time()       { return _perf_app_classload_time; }

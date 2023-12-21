@@ -403,14 +403,13 @@ inline bool ZBarrierSet::AccessBarrier<decorators, BarrierSetT>::oop_arraycopy_i
   return oop_arraycopy_in_heap_no_check_cast(dst, src, length);
 }
 
-class ZStoreBarrierOopClosure : public BasicOopIterateClosure {
+class ZColorStoreGoodOopClosure : public BasicOopIterateClosure {
 public:
   virtual void do_oop(oop* p_) {
     volatile zpointer* const p = (volatile zpointer*)p_;
     const zpointer ptr = ZBarrier::load_atomic(p);
     const zaddress addr = ZPointer::uncolor(ptr);
-    ZBarrier::store_barrier_on_heap_oop_field(p, false /* heal */);
-    *p = ZAddress::store_good(addr);
+    Atomic::store(p, ZAddress::store_good(addr));
   }
 
   virtual void do_oop(narrowOop* p) {
@@ -433,6 +432,17 @@ template <DecoratorSet decorators, typename BarrierSetT>
 inline void ZBarrierSet::AccessBarrier<decorators, BarrierSetT>::clone_in_heap(oop src, oop dst, size_t size) {
   assert_is_valid(to_zaddress(src));
 
+  if (dst->is_objArray()) {
+    // Cloning an object array is similar to performing array copy.
+    // If an array is large enough to have its allocation segmented,
+    // this operation might require GC barriers. However, the intrinsics
+    // for cloning arrays transform the clone to an optimized allocation
+    // and arraycopy sequence, so the performance of this runtime call
+    // does not matter for object arrays.
+    clone_obj_array(objArrayOop(src), objArrayOop(dst), size);
+    return;
+  }
+
   // Fix the oops
   ZLoadBarrierOopClosure cl;
   ZIterator::oop_iterate(src, &cl);
@@ -440,10 +450,10 @@ inline void ZBarrierSet::AccessBarrier<decorators, BarrierSetT>::clone_in_heap(o
   // Clone the object
   Raw::clone_in_heap(src, dst, size);
 
-  assert(ZHeap::heap()->is_young(to_zaddress(dst)), "ZColorStoreGoodOopClosure is only valid for young objects");
+  assert(dst->is_typeArray() || ZHeap::heap()->is_young(to_zaddress(dst)), "ZColorStoreGoodOopClosure is only valid for young objects");
 
   // Color store good before handing out
-  ZStoreBarrierOopClosure cl_sg;
+  ZColorStoreGoodOopClosure cl_sg;
   ZIterator::oop_iterate(dst, &cl_sg);
 }
 

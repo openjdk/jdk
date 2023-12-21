@@ -38,18 +38,16 @@ bool G1RemSetTrackingPolicy::needs_scan_for_rebuild(HeapRegion* r) const {
 }
 
 void G1RemSetTrackingPolicy::update_at_allocate(HeapRegion* r) {
-  if (r->is_young()) {
-    // Always collect remembered set for young regions.
-    r->rem_set()->set_state_complete();
-  } else if (r->is_humongous()) {
-    // Collect remembered sets for humongous regions by default to allow eager reclaim.
-    r->rem_set()->set_state_complete();
-  } else if (r->is_old()) {
+  assert(r->is_young() || r->is_humongous() || r->is_old(),
+        "Region %u with unexpected heap region type %s", r->hrm_index(), r->get_type_str());
+  if (r->is_old()) {
     // By default, do not create remembered set for new old regions.
     r->rem_set()->set_state_untracked();
-  } else {
-    guarantee(false, "Unhandled region %u with heap region type %s", r->hrm_index(), r->get_type_str());
+    return;
   }
+  // Always collect remembered set for young regions and for humongous regions.
+  // Humongous regions need that for eager reclaim.
+  r->rem_set()->set_state_complete();
 }
 
 void G1RemSetTrackingPolicy::update_at_free(HeapRegion* r) {
@@ -142,7 +140,7 @@ void G1RemSetTrackingPolicy::update_after_rebuild(HeapRegion* r) {
                                          [&] (HeapRegion* r) {
                                            assert(!r->is_continues_humongous() || r->rem_set()->is_empty(),
                                                   "Continues humongous region %u remset should be empty", r->hrm_index());
-                                           r->rem_set()->clear_locked(true /* only_cardset */);
+                                           r->rem_set()->clear(true /* only_cardset */);
                                          });
     }
     G1ConcurrentMark* cm = G1CollectedHeap::heap()->concurrent_mark();

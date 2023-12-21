@@ -46,18 +46,18 @@
         }
     ]]></style>
 
-    <rect x="8" y="8"
+    <rect x="8.5" y="8.5"
           width="144" height="144"/>
     <text x="16" y="24" class="left">P1</text>
     <g id="leftBox">
-        <rect x="16" y="28"
+        <rect x="16.5" y="28.5"
               width="56" height="116"/>
 
-        <rect x="24" y="36"
+        <rect x="24.5" y="36.5"
               width="40" height="28"/>
-        <rect x="24" y="72"
+        <rect x="24.5" y="72.5"
               width="40" height="28"/>
-        <rect x="24" y="108"
+        <rect x="24.5" y="108.5"
               width="40" height="28"/>
     </g>
 

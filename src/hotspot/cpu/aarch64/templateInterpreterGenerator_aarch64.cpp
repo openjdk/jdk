@@ -42,6 +42,7 @@
 #include "oops/methodData.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/resolvedIndyEntry.hpp"
+#include "oops/resolvedMethodEntry.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiThreadState.hpp"
 #include "runtime/arguments.hpp"
@@ -369,6 +370,7 @@ address TemplateInterpreterGenerator::generate_StackOverflowError_handler() {
     __ ldr(rscratch1, Address(rfp,
                        frame::interpreter_frame_monitor_block_top_offset *
                        wordSize));
+    __ lea(rscratch1, Address(rfp, rscratch1, Address::lsl(Interpreter::logStackElementSize)));
     __ mov(rscratch2, sp);
     __ cmp(rscratch1, rscratch2); // maximal rsp for current rfp (stack
                            // grows negative)
@@ -492,10 +494,9 @@ address TemplateInterpreterGenerator::generate_return_entry_for(TosState state, 
     __ add(esp, esp, cache, Assembler::LSL, 3);
   } else {
     // Pop N words from the stack
-    __ get_cache_and_index_at_bcp(cache, index, 1, index_size);
-    __ ldr(cache, Address(cache, ConstantPoolCache::base_offset() + ConstantPoolCacheEntry::flags_offset()));
-    __ andr(cache, cache, ConstantPoolCacheEntry::parameter_size_mask);
-
+    assert(index_size == sizeof(u2), "Can only be u2");
+    __ load_method_entry(cache, index);
+    __ load_unsigned_short(cache, Address(cache, in_bytes(ResolvedMethodEntry::num_parameters_offset())));
     __ add(esp, esp, cache, Assembler::LSL, 3);
   }
 
@@ -816,7 +817,10 @@ void TemplateInterpreterGenerator::lock_method() {
   __ sub(rscratch1, sp, rfp);
   __ asr(rscratch1, rscratch1, Interpreter::logStackElementSize);
   __ str(rscratch1, Address(rfp, frame::interpreter_frame_extended_sp_offset * wordSize));
-  __ str(esp, monitor_block_top);  // set new monitor block top
+  __ sub(rscratch1, esp, rfp);
+  __ asr(rscratch1, rscratch1, Interpreter::logStackElementSize);
+  __ str(rscratch1, monitor_block_top);  // set new monitor block top
+
   // store object
   __ str(r0, Address(esp, BasicObjectLock::obj_offset()));
   __ mov(c_rarg1, esp); // object address
@@ -837,14 +841,16 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
   if (native_call) {
     __ sub(esp, sp, 14 *  wordSize);
     __ mov(rbcp, zr);
-    __ stp(esp, zr, Address(__ pre(sp, -14 * wordSize)));
+    __ mov(rscratch1, frame::interpreter_frame_initial_sp_offset);
+    __ stp(rscratch1, zr, Address(__ pre(sp, -14 * wordSize)));
     // add 2 zero-initialized slots for native calls
     __ stp(zr, zr, Address(sp, 12 * wordSize));
   } else {
     __ sub(esp, sp, 12 *  wordSize);
     __ ldr(rscratch1, Address(rmethod, Method::const_offset()));    // get ConstMethod
     __ add(rbcp, rscratch1, in_bytes(ConstMethod::codes_offset())); // get codebase
-    __ stp(esp, rbcp, Address(__ pre(sp, -12 * wordSize)));
+    __ mov(rscratch1, frame::interpreter_frame_initial_sp_offset);
+    __ stp(rscratch1, rbcp, Address(__ pre(sp, -12 * wordSize)));
   }
 
   if (ProfileInterpreter) {
@@ -1258,6 +1264,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
     const Address monitor_block_top(rfp,
                  frame::interpreter_frame_monitor_block_top_offset * wordSize);
     __ ldr(rscratch1, monitor_block_top);
+    __ lea(rscratch1, Address(rfp, rscratch1, Address::lsl(Interpreter::logStackElementSize)));
     __ cmp(esp, rscratch1);
     __ br(Assembler::EQ, L);
     __ stop("broken stack frame setup in interpreter 1");
@@ -1375,6 +1382,9 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   __ bind(native_return);
   __ get_method(rmethod);
   // result potentially in r0 or v0
+
+  // Restore cpu control state after JNI call
+  __ restore_cpu_control_state_after_jni(rscratch1, rscratch2);
 
   // make room for the pushes we're about to do
   __ sub(rscratch1, esp, 4 * wordSize);
@@ -1710,6 +1720,7 @@ address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized) {
      const Address monitor_block_top (rfp,
                  frame::interpreter_frame_monitor_block_top_offset * wordSize);
     __ ldr(rscratch1, monitor_block_top);
+    __ lea(rscratch1, Address(rfp, rscratch1, Address::lsl(Interpreter::logStackElementSize)));
     __ cmp(esp, rscratch1);
     __ br(Assembler::EQ, L);
     __ stop("broken stack frame setup in interpreter 2");
@@ -1833,7 +1844,7 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
     Label caller_not_deoptimized;
     __ ldr(c_rarg1, Address(rfp, frame::return_addr_offset * wordSize));
     // This is a return address, so requires authenticating for PAC.
-    __ authenticate_return_address(c_rarg1, rscratch1);
+    __ authenticate_return_address(c_rarg1);
     __ super_call_VM_leaf(CAST_FROM_FN_PTR(address,
                                InterpreterRuntime::interpreter_contains), c_rarg1);
     __ cbnz(r0, caller_not_deoptimized);

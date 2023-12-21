@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,12 @@
  * @test
  * @bug     6467152 6716076 6829503 8132550
  * @summary deadlock occurs in LogManager initialization and JVM termination
+ * @key randomness
+ * @library /test/lib
  * @author  Serguei Spitsyn / Hitachi / Martin Buchholz
  *
  * @build    LoggingDeadlock2
  * @run  main LoggingDeadlock2
- * @key randomness
  */
 
 /*
@@ -50,7 +51,6 @@
  * This is a regression test for this bug.
  */
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.CyclicBarrier;
@@ -63,6 +63,8 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.util.concurrent.TimeUnit;
 
+import jdk.test.lib.process.ProcessTools;
+
 public class LoggingDeadlock2 {
 
     // ask child process to dumpstack after 60secs
@@ -74,7 +76,9 @@ public class LoggingDeadlock2 {
     public static void realMain(String arg[]) throws Throwable {
         try {
             System.out.println(javaChildArgs);
-            ProcessBuilder pb = new ProcessBuilder(javaChildArgs);
+            // Build process (with VM flags)
+            ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
+                    javaChildArgs);
             ProcessResults r = run(pb.start());
             equal(r.exitValue(), 99);
 
@@ -151,9 +155,6 @@ public class LoggingDeadlock2 {
     //----------------------------------------------------------------
     // The rest of this test is copied from ProcessBuilder/Basic.java
     //----------------------------------------------------------------
-    private static final String javaExe =
-        System.getProperty("java.home") +
-        File.separator + "bin" + File.separator + "java";
     private static final String jstackExe =
         System.getProperty("java.home") +
         File.separator + "bin" + File.separator + "jstack";
@@ -161,10 +162,8 @@ public class LoggingDeadlock2 {
     private static final String classpath =
         System.getProperty("java.class.path");
 
-    private static final List<String> javaChildArgs =
-        Arrays.asList(new String[]
-            { javaExe, "-classpath", classpath,
-              "LoggingDeadlock2$JavaChild"});
+   private static final List<String> javaChildArgs = List.of(
+       "-classpath", classpath, "LoggingDeadlock2$JavaChild");
 
     private static class ProcessResults {
         private final String out;

@@ -124,6 +124,7 @@ class ShenandoahHeap : public CollectedHeap, public ShenandoahSpaceInfo {
   friend class ShenandoahGCStateResetter;
   friend class ShenandoahParallelObjectIterator;
   friend class ShenandoahSafepoint;
+
   // Supported GC
   friend class ShenandoahConcurrentGC;
   friend class ShenandoahDegenGC;
@@ -283,19 +284,21 @@ public:
   };
 
 private:
+  bool _gc_state_changed;
   ShenandoahSharedBitmap _gc_state;
   ShenandoahSharedFlag   _degenerated_gc_in_progress;
   ShenandoahSharedFlag   _full_gc_in_progress;
   ShenandoahSharedFlag   _full_gc_move_in_progress;
-  ShenandoahSharedFlag   _progress_last_gc;
   ShenandoahSharedFlag   _concurrent_strong_root_in_progress;
 
-  void set_gc_state_all_threads(char state);
+  size_t _gc_no_progress_count;
+
   void set_gc_state_mask(uint mask, bool value);
 
 public:
   char gc_state() const;
-  static address gc_state_addr();
+  void set_gc_state_all_threads();
+  bool has_gc_state_changed() { return _gc_state_changed; }
 
   void set_concurrent_mark_in_progress(bool in_progress);
   void set_evacuation_in_progress(bool in_progress);
@@ -316,7 +319,7 @@ public:
   inline bool is_full_gc_in_progress() const;
   inline bool is_full_gc_move_in_progress() const;
   inline bool has_forwarded_objects() const;
-  inline bool is_gc_in_progress_mask(uint mask) const;
+
   inline bool is_stw_gc_in_progress() const;
   inline bool is_concurrent_strong_root_in_progress() const;
   inline bool is_concurrent_weak_root_in_progress() const;
@@ -336,7 +339,6 @@ private:
   bool try_cancel_gc();
 
 public:
-  static address cancelled_gc_addr();
 
   inline bool cancelled_gc() const;
   inline bool check_cancelled_gc_and_yield(bool sts_active = true);
@@ -356,7 +358,6 @@ private:
   void prepare_gc();
   void prepare_regions_and_collection_set(bool concurrent);
   // Evacuation
-  void prepare_evacuation(bool concurrent);
   void evacuate_collection_set(bool concurrent);
   // Concurrent root processing
   void prepare_concurrent_roots();
@@ -373,8 +374,9 @@ private:
   void rendezvous_threads();
   void recycle_trash();
 public:
-  void notify_gc_progress()    { _progress_last_gc.set();   }
-  void notify_gc_no_progress() { _progress_last_gc.unset(); }
+  void notify_gc_progress();
+  void notify_gc_no_progress();
+  size_t get_gc_no_progress_count() const;
 
 //
 // Mark support

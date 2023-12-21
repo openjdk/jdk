@@ -758,6 +758,8 @@ enum Aqrl {relaxed = 0b00, rl = 0b01, aq = 0b10, aqrl = 0b11};
   INSN(amomax_d , 0b0101111, 0b011, 0b10100);
   INSN(amominu_d, 0b0101111, 0b011, 0b11000);
   INSN(amomaxu_d, 0b0101111, 0b011, 0b11100);
+  INSN(amocas_w,  0b0101111, 0b010, 0b00101);
+  INSN(amocas_d,  0b0101111, 0b011, 0b00101);
 #undef INSN
 
 enum operand_size { int8, int16, int32, uint32, int64 };
@@ -1074,7 +1076,26 @@ enum operand_size { int8, int16, int32, uint32, int64 };
 
 #undef INSN
 
-// Float and Double Conversion Instruction
+enum fclass_mask {
+  minf       = 1 << 0,   // negative infinite
+  mnorm      = 1 << 1,   // negative normal number
+  msubnorm   = 1 << 2,   // negative subnormal number
+  mzero      = 1 << 3,   // negative zero
+  pzero      = 1 << 4,   // positive zero
+  psubnorm   = 1 << 5,   // positive subnormal number
+  pnorm      = 1 << 6,   // positive normal number
+  pinf       = 1 << 7,   // positive infinite
+  snan       = 1 << 8,   // signaling NaN
+  qnan       = 1 << 9,   // quiet NaN
+  zero       = mzero    | pzero,
+  subnorm    = msubnorm | psubnorm,
+  norm       = mnorm    | pnorm,
+  inf        = minf     | pinf,
+  nan        = snan     | qnan,
+  finite     = zero     | subnorm   | norm,
+};
+
+// Float and Double Conversion/Classify Instruction
 #define INSN(NAME, op, funct3, funct5, funct7)            \
   void NAME(Register Rd, FloatRegister Rs1) {             \
     unsigned insn = 0;                                    \
@@ -1398,6 +1419,7 @@ enum VectorMask {
   INSN(vmfeq_vv, 0b1010111, 0b001, 0b011000);
 
   // Vector Floating-Point Sign-Injection Instructions
+  INSN(vfsgnj_vv, 0b1010111, 0b001, 0b001000);
   INSN(vfsgnjx_vv, 0b1010111, 0b001, 0b001010);
   INSN(vfsgnjn_vv, 0b1010111, 0b001, 0b001001);
 
@@ -1789,6 +1811,11 @@ enum Nf {
   INSN(vlse16_v, 0b0000111, 0b101, 0b10, 0b0);
   INSN(vlse32_v, 0b0000111, 0b110, 0b10, 0b0);
   INSN(vlse64_v, 0b0000111, 0b111, 0b10, 0b0);
+
+  INSN(vsse8_v,  0b0100111, 0b000, 0b10, 0b0);
+  INSN(vsse16_v, 0b0100111, 0b101, 0b10, 0b0);
+  INSN(vsse32_v, 0b0100111, 0b110, 0b10, 0b0);
+  INSN(vsse64_v, 0b0100111, 0b111, 0b10, 0b0);
 
 #undef INSN
 #undef patch_VLdSt
@@ -2913,6 +2940,17 @@ public:
 
   static bool reachable_from_branch_at(address branch, address target) {
     return uabs(target - branch) < branch_range;
+  }
+
+  // Decode the given instruction, checking if it's a 16-bit compressed
+  // instruction and return the address of the next instruction.
+  static address locate_next_instruction(address inst) {
+    // Instruction wider than 16 bits has the two least-significant bits set.
+    if ((0x3 & *inst) == 0x3) {
+      return inst + instruction_size;
+    } else {
+      return inst + compressed_instruction_size;
+    }
   }
 
   Assembler(CodeBuffer* code) : AbstractAssembler(code), _in_compressible_region(true) {}

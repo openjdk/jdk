@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,12 +30,14 @@ import jdk.jfr.Description;
 import jdk.jfr.Label;
 import jdk.jfr.Name;
 import jdk.jfr.internal.MirrorEvent;
+import jdk.jfr.internal.RemoveFields;
 
 @Category({"Java Development Kit", "Serialization"})
 @Label("Deserialization")
 @Name("jdk.Deserialization")
 @Description("Results of deserialization and ObjectInputFilter checks")
 @MirrorEvent(className = "jdk.internal.event.DeserializationEvent")
+@RemoveFields("duration")
 public final class DeserializationEvent extends AbstractJDKEvent {
 
     @Label("Filter Configured")

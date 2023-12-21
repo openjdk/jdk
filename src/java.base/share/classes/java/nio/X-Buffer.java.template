@@ -279,6 +279,9 @@ import jdk.internal.util.ArraysSupport;
  *
  * @author Mark Reinhold
  * @author JSR-51 Expert Group
+#if[byte]
+ * @sealedGraph
+#end[byte]
  * @since 1.4
  */
 

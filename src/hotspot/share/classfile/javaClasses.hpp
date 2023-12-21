@@ -523,15 +523,16 @@ class java_lang_VirtualThread : AllStatic {
   enum {
     NEW           = 0,
     STARTED       = 1,
-    RUNNABLE      = 2,
-    RUNNING       = 3,
-    PARKING       = 4,
-    PARKED        = 5,
-    PINNED        = 6,
-    TIMED_PARKING = 7,
-    TIMED_PARKED  = 8,
-    TIMED_PINNED  = 9,
+    RUNNING       = 2,
+    PARKING       = 3,
+    PARKED        = 4,
+    PINNED        = 5,
+    TIMED_PARKING = 6,
+    TIMED_PARKED  = 7,
+    TIMED_PINNED  = 8,
+    UNPARKED      = 9,
     YIELDING      = 10,
+    YIELDED       = 11,
     TERMINATED    = 99,
 
     // additional state bits
@@ -851,6 +852,9 @@ class java_lang_Module {
     // Accessors
     static oop loader(oop module);
     static void set_loader(oop module, oop value);
+
+    // CDS
+    static int module_entry_offset() { return _module_entry_offset; }
 
     static oop name(oop module);
     static void set_name(oop module, oop value);
@@ -1465,7 +1469,9 @@ class java_lang_ClassLoader : AllStatic {
   static void compute_offsets();
 
  public:
+  // Support for CDS
   static void serialize_offsets(SerializeClosure* f) NOT_CDS_RETURN;
+  static int loader_data_offset() { return  _loader_data_offset; }
 
   static ClassLoaderData* loader_data_acquire(oop loader);
   static ClassLoaderData* loader_data(oop loader);
