@@ -895,20 +895,63 @@ AlignmentSolution* AlignmentSolver::solve() const {
   //
   // We look at (4a):
   //
-  //   abs(C_pre) >= aw  AND  C_const % aw == 0
-  //   -> Adjustment has no effect, C_const aw aligned    -> trivial
+  //   abs(C_pre) >= aw
+  //   -> Since abs(C_pre) is a power of two, we have C_pre % aw = 0. Therefore:
   //
-  //   abs(C_pre) >= aw  AND  C_const % aw != 0
-  //   -> Adjustment has no effect, C_const not aligned   -> empty
+  //        For any pre_iter_C_const: (C_pre * pre_iter_C_const) % aw = 0
   //
-  //   abs(C_pre) <  aw  AND  C_const % abs(C_pre) == 0
-  //   -> alignment has effect
-  //   -> C_const can be aligned with C_pre
-  //   -> Not trivial, because abs(C_pre) < aw            -> constrained
+  //        (C_const + C_pre * pre_iter_C_const) % aw = 0
+  //         C_const                             % aw = 0
   //
-  //   abs(C_pre) <  aw  AND  C_const % abs(C_pre) != 0
-  //   -> alignment has effect
-  //   -> But C_const cannot be aligned with C_pre        -> empty
+  //      Hence, we can only satisfy (4a) if C_Const is aw aligned:
+  //
+  //      C_const % aw == 0:
+  //      -> (4a) has a trivial solution since we can choose any value for pre_iter_C_Const.
+  //
+  //      C_const % aw != 0:
+  //      -> (4a) has an empty solution since no pre_iter_C_Const can achieve aw alignment.
+  //
+  //   abs(C_pre) < aw:
+  //   -> Since both abs(C_pre) and aw are powers of two, we know:
+  //
+  //        There exists integer x > 1: aw = abs(C_pre) * x
+  //
+  //      C_const % abs(C_pre) == 0:
+  //      -> Exists integer z: C_const = C_pre * z
+  //
+  //          (C_const   + C_pre * pre_iter_C_const) % aw               = 0
+  //          ==>
+  //          (C_pre * z + C_pre * pre_iter_C_const) % aw               = 0
+  //          ==>
+  //          (C_pre * z + C_pre * pre_iter_C_const) % (abs(C_pre) * x) = 0
+  //          ==>
+  //          (        z +         pre_iter_C_const) %               x  = 0
+  //          ==>
+  //          for any m: pre_iter_C_const = m * x - z
+  //
+  //        Hence, pre_iter_C_const has a non-trivial (because x > 1) periodic (periodicity x)
+  //        solution, i.e it has a constrained solution.
+  //
+  //      C_const % abs(C_pre) != 0:
+  //        There exists integer x > 1: aw = abs(C_pre) * x
+  //
+  //           C_const                             %  abs(C_pre)      != 0
+  //          ==>
+  //          (C_const + C_pre * pre_iter_C_const) %  abs(C_pre)      != 0
+  //          ==>
+  //          (C_const + C_pre * pre_iter_C_const) % (abs(C_pre) * x) != 0
+  //          ==>
+  //          (C_const + C_pre * pre_iter_C_const) % aw               != 0
+  //
+  //        This is in constradiction with (4a), and therefore there cannot be any solution,
+  //        i.e. we have an empty solution.
+  //
+  // In summary, for (4a):
+  //
+  //   abs(C_pre) >= aw  AND  C_const % aw == 0          -> trivial
+  //   abs(C_pre) >= aw  AND  C_const % aw != 0          -> empty
+  //   abs(C_pre) <  aw  AND  C_const % abs(C_pre) == 0  -> constrained
+  //   abs(C_pre) <  aw  AND  C_const % abs(C_pre) != 0  -> empty
   //
   // With analogue argumentation for (4b):
   //
