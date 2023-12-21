@@ -78,10 +78,8 @@ public final class StackCounter {
     }
 
     private boolean next() {
-        var it = targets.iterator();
-        while (it.hasNext()) {
-            var en = it.next();
-            it.remove();
+        Target en;
+        while ((en = targets.poll()) != null) {
             if (!visited.get(en.bci)) {
                 bcs.nextBci = en.bci;
                 stack = en.stack;
