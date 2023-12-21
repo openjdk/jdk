@@ -3768,7 +3768,7 @@ void MacroAssembler::kernel_crc32(Register crc, Register buf, Register len,
   la(table0, table_addr);
   add(table1, table0, 1*256*sizeof(juint), tmp);
   add(table2, table0, 2*256*sizeof(juint), tmp);
-  add(table3, table0, 3*256*sizeof(juint), tmp);
+  add(table3, table2, 1*256*sizeof(juint), tmp);
 
   subw(len, len, 16);
   bge(len, zr, L_by16_loop);
