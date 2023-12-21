@@ -927,7 +927,7 @@ void set_serialized<Method>(MethodPtr method) {
   if (current_epoch()) {
     CLEAR_THIS_EPOCH_METHOD_CLEARED_BIT(method);
   }
-  assert(METHOD_IS_NOT_SERIALIZED(method), "invariant");
+  assert(unloading() ? true : METHOD_IS_NOT_SERIALIZED(method), "invariant");
   SET_METHOD_SERIALIZED(method);
   assert(METHOD_IS_SERIALIZED(method), "invariant");
 }
