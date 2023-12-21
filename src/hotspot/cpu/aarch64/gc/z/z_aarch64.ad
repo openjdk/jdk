@@ -48,7 +48,7 @@ static void z_keep_alive_load_barrier(MacroAssembler& _masm, const MachNode* nod
   __ relocate(barrier_Relocation::spec(), ZBarrierRelocationFormatMarkBadBeforeMov);
   __ movzw(tmp, barrier_Relocation::unpatched);
   __ tst(ref, tmp);
-  ZLoadBarrierStubC2* const stub = ZLoadBarrierStubC2::create(node, ref_addr, ref);
+  ZLoadBarrierStubC2Aarch64* const stub = ZLoadBarrierStubC2Aarch64::create(node, ref_addr, ref);
   __ br(Assembler::NE, *stub->entry());
   z_uncolor(_masm, node, ref);
   __ bind(*stub->continuation());

@@ -193,7 +193,7 @@ void GraphKit::gen_stub(address C_function,
     call->init_req(cnt++, returnadr());
   }
 
-  _gvn.transform_no_reclaim(call);
+  _gvn.transform(call);
 
   //-----------------------------
   // Now set up the return results
