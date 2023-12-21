@@ -34,7 +34,7 @@ import jdk.jfr.internal.RemoveFields;
 import jdk.jfr.internal.Type;
 
 @Name(Type.EVENT_NAME_PREFIX + "SerializationMisdeclaration")
-@Label("Serialization Deserialization")
+@Label("Serialization Misdeclaration")
 @Category({"Java Development Kit", "Serialization"})
 @Description("Methods and fields misdeclarations." +
         " The checks are usually performed just once per serializable class," +
@@ -44,7 +44,7 @@ import jdk.jfr.internal.Type;
 @RemoveFields({"duration", "stackTrace", "eventThread"})
 public final class SerializationMisdeclarationEvent extends AbstractJDKEvent {
 
-    @Label("MisdeclaredClass")
+    @Label("Misdeclared Class")
     public Class<?> misdeclaredClass;
 
     @Label("Message")

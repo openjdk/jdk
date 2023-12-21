@@ -51,7 +51,7 @@ import static org.junit.jupiter.params.provider.Arguments.arguments;
  */
 public class TestSerializationMisdeclarationEvent {
 
-    private static final List<RecordedEvent> events = new ArrayList<>();;
+    private static final List<RecordedEvent> events = new ArrayList<>();
 
     @BeforeAll
     static void recordEvents() {
