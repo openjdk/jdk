@@ -114,10 +114,13 @@ public:
     GrowableArrayCHeap<RegionStorage, mtNMT> committed_regions;
     // Mappings from virtual memory space to committed memory, per PhysicalMemorySpace.
     GrowableArrayCHeap<OffsetRegionStorage, mtNMT> mapped_regions;
+    // Summary tracking per PhysicalMemorySpace
+    GrowableArrayCHeap<VirtualMemorySnapshot, mtNMT> summary;
     VirtualMemory()
      : reserved_regions(),
        committed_regions(),
-       mapped_regions() {
+       mapped_regions(),
+       summary() {
     }
     VirtualMemory(const VirtualMemory& other) {
       *this = other;
@@ -130,6 +133,8 @@ public:
             GrowableArrayCHeap<OffsetRegionStorage, mtNMT>{other.mapped_regions.length()};
         this->committed_regions =
             GrowableArrayCHeap<RegionStorage, mtNMT>{other.committed_regions.length()};
+        this->summary = GrowableArrayCHeap<VirtualMemorySnapshot, mtNMT>(other.summary.length());
+
         for (int i = 0; i < other.reserved_regions.length(); i++) {
           this->reserved_regions.push(other.reserved_regions.at(i));
         }
@@ -148,6 +153,9 @@ public:
           for (int j = 0; j < ith.length(); j++) {
             vith.push(ith.at(j));
           }
+        }
+        for (int i = 0; i < other.summary.length(); i++) {
+          summary.push(other.summary.at(i));
         }
       }
       return *this;
@@ -265,7 +273,15 @@ public:
   }
 
   static VirtualMemorySnapshot summary_snapshot(PhysicalMemorySpace space) {
-    VirtualMemorySnapshot snap;
+    VirtualMemorySnapshot& snap = _virt_mem->summary.at(space.id);
+    // Reset all memory, keeping peak values
+    for (int i = 0; i < mt_number_of_types; i++) {
+      MEMFLAGS flag = NMTUtil::index_to_flag(i);
+      ::VirtualMemory* mem = snap.by_type(flag);
+      mem->release_memory(mem->reserved());
+      mem->uncommit_memory(mem->committed());
+    }
+    // Fill out summary
     const RegionStorage& reserved_ranges = virtual_memory().reserved_regions;
     for (int i = 0; i < virtual_memory().reserved_regions.length(); i++) {
       const TrackedRange& range = reserved_ranges.at(i);

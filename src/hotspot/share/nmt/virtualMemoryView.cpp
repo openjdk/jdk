@@ -555,8 +555,10 @@ VirtualMemoryView::PhysicalMemorySpace VirtualMemoryView::register_space(const c
   // These are allocated just to be copied for at_put_grow.
   OffsetRegionStorage to_copy_res{};
   RegionStorage to_copy_comm{};
+  VirtualMemorySnapshot to_copy_snapshot{};
   _virt_mem->mapped_regions.at_put_grow(next_space.id, to_copy_res);
   _virt_mem->committed_regions.at_put_grow(next_space.id, to_copy_comm);
+  _virt_mem->summary.at_put_grow(next_space.id, to_copy_snapshot);
   _names->at_put_grow(next_space.id, descriptive_name, "");
   return next_space;
 }
