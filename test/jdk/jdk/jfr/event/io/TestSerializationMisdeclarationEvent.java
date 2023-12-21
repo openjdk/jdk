@@ -34,7 +34,6 @@ import java.io.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Stream;
 
 import static jdk.test.lib.jfr.EventNames.SerializationMisdeclaration;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -47,7 +46,6 @@ import static org.junit.jupiter.params.provider.Arguments.arguments;
  *          relevant to serialization
  * @key jfr
  * @requires vm.hasJFR
- * @modules java.base/jdk.internal.event
  * @library /test/lib
  * @run junit/othervm jdk.jfr.event.io.TestSerializationMisdeclarationEvent
  */
@@ -81,17 +79,17 @@ public class TestSerializationMisdeclarationEvent {
                 arguments(BadClass.class, new String[] {"serialPersistentFields", "must", "static"}),
                 arguments(BadClass.class, new String[] {"serialPersistentFields", "must", "final"}),
                 arguments(BadClass.class, new String[] {"serialPersistentFields", "should", "type", "ObjectStreamField[]"}),
-                arguments(BadClass.class, new String[] {"method", "writeObject(", "must", "private"}),
-                arguments(BadClass.class, new String[] {"method", "writeObject(", "must", "non-static"}),
-                arguments(BadClass.class, new String[] {"method", "writeObject(", "must", "return"}),
-                arguments(BadClass.class, new String[] {"method", "writeObject(", "must", "parameter"}),
+                arguments(BadClass.class, new String[] {"method", "writeObject", "must", "private"}),
+                arguments(BadClass.class, new String[] {"method", "writeObject", "must", "non-static"}),
+                arguments(BadClass.class, new String[] {"method", "writeObject", "must", "return"}),
+                arguments(BadClass.class, new String[] {"method", "writeObject", "must", "parameter"}),
                 arguments(BadClass.class, new String[] {"method", "readObject(", "must", "parameter"}),
-                arguments(BadClass.class, new String[] {"method", "readObjectNoData(", "must", "parameter"}),
+                arguments(BadClass.class, new String[] {"method", "readObjectNoData", "must", "parameter"}),
 
                 arguments(EnumClass.class, new String[] {"serialVersionUID", "enum"}),
                 arguments(EnumClass.class, new String[] {"serialPersistentFields", "enum"}),
-                arguments(EnumClass.class, new String[] {"method", "writeObject(", "enum"}),
-                arguments(EnumClass.class, new String[] {"method", "readResolve(", "enum"}),
+                arguments(EnumClass.class, new String[] {"method", "writeObject", "enum"}),
+                arguments(EnumClass.class, new String[] {"method", "readResolve", "enum"}),
 
                 arguments(RecordClass.class, new String[] {"serialPersistentFields", "record"}),
                 arguments(RecordClass.class, new String[] {"method", "record"}),
@@ -100,10 +98,10 @@ public class TestSerializationMisdeclarationEvent {
 
                 arguments(Acc.class, new String[] {"serialPersistentFields", "should", "type", "ObjectStreamField[]"}),
                 arguments(Acc.class, new String[] {"serialPersistentFields", "must", "instance", "ObjectStreamField[]"}),
-                arguments(Acc.class, new String[] {"method", "readResolve(", "must", "non-abstract"}),
-                arguments(Acc.class, new String[] {"method", "writeReplace(", "must", "non-static"}),
-                arguments(Acc.class, new String[] {"method", "writeReplace(", "must", "return"}),
-                arguments(Acc.class, new String[] {"method", "writeReplace(", "must", "parameter"}),
+                arguments(Acc.class, new String[] {"method", "readResolve", "must", "non-abstract"}),
+                arguments(Acc.class, new String[] {"method", "writeReplace", "must", "non-static"}),
+                arguments(Acc.class, new String[] {"method", "writeReplace", "must", "return"}),
+                arguments(Acc.class, new String[] {"method", "writeReplace", "must", "parameter"}),
         };
     }
 
@@ -117,7 +115,7 @@ public class TestSerializationMisdeclarationEvent {
 
     @ParameterizedTest
     @MethodSource
-    public void testSingleClassMisdeclarations(Class<?> cls, String... keywords) {
+    public void testSingleClassMisdeclarations(Class<?> cls, String[] keywords) {
         singleClassEvent(cls, keywords);
     }
 
