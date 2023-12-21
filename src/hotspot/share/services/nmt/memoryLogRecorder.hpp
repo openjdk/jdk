@@ -26,7 +26,7 @@
 #define SHARE_SERVICES_NMT_MEMORYLOGRECORDER_HPP
 
 #include "memory/allocation.hpp"
-#include "services/nmtCommon.hpp"
+#include "nmt/nmtCommon.hpp"
 
 #ifdef ASSERT
 

@@ -24,13 +24,13 @@
 
 #include "precompiled.hpp"
 #include "jvm.h"
+#include "nmt/nmtCommon.hpp"
+#include "nmt/mallocHeader.hpp"
+#include "nmt/memTracker.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/os.hpp"
 #include "runtime/thread.hpp"
-#include "services/nmtCommon.hpp"
 #include "services/nmt/memoryLogRecorder.hpp"
-#include "services/mallocHeader.hpp"
-#include "services/memTracker.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/nativeCallStack.hpp"
 
