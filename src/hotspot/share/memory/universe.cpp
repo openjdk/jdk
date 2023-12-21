@@ -338,7 +338,7 @@ void Universe::genesis(TRAPS) {
       // Initialization of the fillerArrayKlass must come before regular
       // int-TypeArrayKlass so that the int-Array mirror points to the
       // int-TypeArrayKlass.
-      _fillerArrayKlassObj = TypeArrayKlass::create_klass(T_INT, "Ljdk/internal/vm/FillerArray;", CHECK);
+      _fillerArrayKlassObj = TypeArrayKlass::create_klass(T_INT, "[Ljdk/internal/vm/FillerElement;", CHECK);
       for (int i = T_BOOLEAN; i < T_LONG+1; i++) {
         _typeArrayKlassObjs[i] = TypeArrayKlass::create_klass((BasicType)i, CHECK);
       }
