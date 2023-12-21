@@ -838,16 +838,15 @@ AlignmentSolution* AlignmentSolver::solve() const {
   //
   // Adding up (4a, b, c):
   //
-  //   0
-  //   = (  C_const             + C_pre * pre_iter_C_const
-  //      + C_invar * var_invar + C_pre * pre_iter_C_invar
-  //      + C_init  * var_init  + C_pre * pre_iter_C_init  ) % aw
+  //   0 = (  C_const             + C_pre * pre_iter_C_const
+  //        + C_invar * var_invar + C_pre * pre_iter_C_invar
+  //        + C_init  * var_init  + C_pre * pre_iter_C_init  ) % aw
   //
-  //   = (  C_const + C_invar * var_invar + C_init * var_init
-  //      + C_pre * (pre_iter_C_const + pre_iter_C_invar + pre_iter_C_init)) % aw
+  //     = (  C_const + C_invar * var_invar + C_init * var_init
+  //        + C_pre * (pre_iter_C_const + pre_iter_C_invar + pre_iter_C_init)) % aw
   //
-  //   = (  C_const + C_invar * var_invar + C_init * var_init
-  //      + C_pre * pre_iter) % aw
+  //     = (  C_const + C_invar * var_invar + C_init * var_init
+  //        + C_pre * pre_iter) % aw
   //
   // Necessary (i.e. (3) implies (4a, b, c)):
   //  (4a): Set var_invar = var_init = 0 at runtime. Applying this to (3), we get:
@@ -1115,7 +1114,7 @@ AlignmentSolution* AlignmentSolver::solve() const {
   //             [- invar / (scale * pre_stride)   ]      (align invariant term, if present)
   //             [- init / pre_stride              ]      (align variable init term, if present)    (12)
   //
-  // We can still simply simplifiy this solution, with:
+  // We can further simplify this solution by introducing integer 0 <= r < q:
   //
   //   r = (-C_const / (scale * pre_stride)) % q                                                    (13)
   //
@@ -1190,7 +1189,7 @@ AlignmentSolution* AlignmentSolver::solve() const {
 }
 
 #ifdef ASSERT
-void print_icon_or_idx(const Node* n) {
+void print_con_or_idx(const Node* n) {
   if (n == nullptr) {
     tty->print("(0)");
   } else if (n->is_ConI()) {
@@ -1224,15 +1223,15 @@ void AlignmentSolver::trace_start_solve() const {
 
     // iv = init + pre_iter * pre_stride + main_iter * main_stride
     tty->print("  iv = init");
-    print_icon_or_idx(_init_node);
+    print_con_or_idx(_init_node);
     tty->print_cr(" + pre_iter * pre_stride(%d) + main_iter * main_stride(%d)",
                   _pre_stride, _main_stride);
 
     // adr = base + offset + invar + scale * iv
     tty->print("  adr = base");
-    print_icon_or_idx(_base);
+    print_con_or_idx(_base);
     tty->print(" + offset(%d) + invar", _offset);
-    print_icon_or_idx(_invar);
+    print_con_or_idx(_invar);
     tty->print_cr(" + scale(%d) * iv", _scale);
   }
 }
@@ -1297,11 +1296,11 @@ void AlignmentSolver::EQ4::trace() const {
                 _C_const, _C_pre, _aw);
   tty->print_cr("          -> %s", state_to_str(eq4a_state()));
 
-  tty->print_cr("  EQ(4a): (C_invar(%3d) * var_invar + C_pre(%d) * pre_iter_C_invar) %% aw(%d) = 0  (align invar term individually)",
+  tty->print_cr("  EQ(4b): (C_invar(%3d) * var_invar + C_pre(%d) * pre_iter_C_invar) %% aw(%d) = 0  (align invar term individually)",
                 _C_invar, _C_pre, _aw);
   tty->print_cr("          -> %s", state_to_str(eq4b_state()));
 
-  tty->print_cr("  EQ(4a): (C_init( %3d) * var_init  + C_pre(%d) * pre_iter_C_init ) %% aw(%d) = 0  (align init term individually)",
+  tty->print_cr("  EQ(4c): (C_init( %3d) * var_init  + C_pre(%d) * pre_iter_C_init ) %% aw(%d) = 0  (align init term individually)",
                 _C_init, _C_pre, _aw);
   tty->print_cr("          -> %s", state_to_str(eq4c_state()));
 }

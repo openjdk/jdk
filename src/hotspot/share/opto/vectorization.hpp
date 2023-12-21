@@ -419,10 +419,10 @@ public:
     //                     [- invar2 / (scale2 * pre_stride)  ]
     //                     [- init / pre_stride               ]
     //
-    // Note: pre_stride and init are idential for all mem_refs in the loop.
+    // Note: pre_stride and init are identical for all mem_refs in the loop.
     //
     // The init alignment term either does not exist for both mem_refs, or exists identically
-    // for both. The init alignment term is thus triviall identical.
+    // for both. The init alignment term is thus trivially identical.
     //
     // The invar alignment term is identical if either:
     //   - both mem_refs have no invariant.
@@ -456,7 +456,7 @@ public:
     //                                          (m2 * a + b) * q1 + r1
     //
     // Since q1 and q2 are both powers of 2, and q1 <= q2, we know there
-    // is an integer a: a * q1 = q1. Thus, it remains to check if there
+    // is an integer a: a * q1 = q2. Thus, it remains to check if there
     // is an integer b: b * q1 + r1 = r2. This is equivalent to checking:
     //
     //   r1 = r1 % q1 = r2 % q1
@@ -481,7 +481,7 @@ public:
 };
 
 // When strict alignment is required (e.g. -XX:+AlignVector), then we must ensure
-// that all vector memory accesses can be aligned. We acheive this alignment by
+// that all vector memory accesses can be aligned. We achieve this alignment by
 // adjusting the pre-loop limit, which adjusts the number of iterations executed
 // in the pre-loop.
 //
