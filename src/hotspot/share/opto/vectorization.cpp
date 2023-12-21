@@ -907,10 +907,10 @@ AlignmentSolution* AlignmentSolver::solve() const {
   //      Hence, we can only satisfy (4a) if C_Const is aw aligned:
   //
   //      C_const % aw == 0:
-  //      -> (4a) has a trivial solution since we can choose any value for pre_iter_C_Const.
+  //      -> (4a) has a trivial solution since we can choose any value for pre_iter_C_const.
   //
   //      C_const % aw != 0:
-  //      -> (4a) has an empty solution since no pre_iter_C_Const can achieve aw alignment.
+  //      -> (4a) has an empty solution since no pre_iter_C_const can achieve aw alignment.
   //
   //   abs(C_pre) < aw:
   //   -> Since both abs(C_pre) and aw are powers of two, we know:
@@ -918,7 +918,7 @@ AlignmentSolution* AlignmentSolver::solve() const {
   //        There exists integer x > 1: aw = abs(C_pre) * x
   //
   //      C_const % abs(C_pre) == 0:
-  //      -> Exists integer z: C_const = C_pre * z
+  //      -> There exists integer z: C_const = C_pre * z
   //
   //          (C_const   + C_pre * pre_iter_C_const) % aw               = 0
   //          ==>
