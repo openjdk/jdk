@@ -23,18 +23,18 @@
 
 /*
  * @test
- * @summary Testing Classfile builder blocks.
+ * @summary Testing ClassFile builder blocks.
  * @run junit BuilderTryCatchTest
  */
 
-import jdk.internal.classfile.AccessFlags;
-import jdk.internal.classfile.Classfile;
-import jdk.internal.classfile.CodeBuilder;
-import jdk.internal.classfile.CompoundElement;
-import jdk.internal.classfile.Opcode;
-import jdk.internal.classfile.TypeKind;
-import jdk.internal.classfile.instruction.BranchInstruction;
-import jdk.internal.classfile.instruction.ExceptionCatch;
+import java.lang.classfile.AccessFlags;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.CodeBuilder;
+import java.lang.classfile.CompoundElement;
+import java.lang.classfile.Opcode;
+import java.lang.classfile.TypeKind;
+import java.lang.classfile.instruction.BranchInstruction;
+import java.lang.classfile.instruction.ExceptionCatch;
 import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Test;
 
@@ -171,7 +171,7 @@ class BuilderTryCatchTest {
     void testTryEmptyCatch() {
         byte[] bytes = generateTryCatchMethod(catchBuilder -> {});
 
-        boolean anyGotos = Classfile.of().parse(bytes).methods().stream()
+        boolean anyGotos = ClassFile.of().parse(bytes).methods().stream()
                 .flatMap(mm -> mm.code().stream())
                 .flatMap(CompoundElement::elementStream)
                 .anyMatch(codeElement ->
@@ -182,7 +182,7 @@ class BuilderTryCatchTest {
 
     @Test
     void testEmptyTry() {
-        byte[] bytes = Classfile.of().build(ClassDesc.of("C"), cb -> {
+        byte[] bytes = ClassFile.of().build(ClassDesc.of("C"), cb -> {
             cb.withMethod("main", MethodTypeDesc.of(CD_String, CD_String.arrayType()),
                     AccessFlags.ofMethod(AccessFlag.PUBLIC, AccessFlag.STATIC).flagsMask(), mb -> {
                         mb.withCode(xb -> {
@@ -213,7 +213,7 @@ class BuilderTryCatchTest {
 
     @Test
     void testLocalAllocation() throws Throwable {
-        byte[] bytes = Classfile.of().build(ClassDesc.of("C"), cb -> {
+        byte[] bytes = ClassFile.of().build(ClassDesc.of("C"), cb -> {
             cb.withMethod("main", MethodTypeDesc.of(CD_String, CD_String.arrayType()),
                     AccessFlags.ofMethod(AccessFlag.PUBLIC, AccessFlag.STATIC).flagsMask(), mb -> {
                         mb.withCode(xb -> {
@@ -276,7 +276,7 @@ class BuilderTryCatchTest {
     }
 
     static byte[] generateTryCatchMethod(Consumer<CodeBuilder.CatchBuilder> c) {
-        byte[] bytes = Classfile.of().build(ClassDesc.of("C"), cb -> {
+        byte[] bytes = ClassFile.of().build(ClassDesc.of("C"), cb -> {
             cb.withMethod("main", MethodTypeDesc.of(CD_String, CD_String.arrayType()),
                     AccessFlags.ofMethod(AccessFlag.PUBLIC, AccessFlag.STATIC).flagsMask(), mb -> {
                         mb.withCode(xb -> {

@@ -663,9 +663,6 @@ MethodData* MethodData::allocate(ClassLoaderData* loader_data, const methodHandl
 }
 
 int MethodData::bytecode_cell_count(Bytecodes::Code code) {
-  if (CompilerConfig::is_c1_simple_only() && !ProfileInterpreter) {
-    return no_profile_data;
-  }
   switch (code) {
   case Bytecodes::_checkcast:
   case Bytecodes::_instanceof:
@@ -986,9 +983,6 @@ int MethodData::compute_allocation_size_in_words(const methodHandle& method) {
 // the segment in bytes.
 int MethodData::initialize_data(BytecodeStream* stream,
                                        int data_index) {
-  if (CompilerConfig::is_c1_simple_only() && !ProfileInterpreter) {
-    return 0;
-  }
   int cell_count = -1;
   u1 tag = DataLayout::no_tag;
   DataLayout* data_layout = data_layout_at(data_index);
