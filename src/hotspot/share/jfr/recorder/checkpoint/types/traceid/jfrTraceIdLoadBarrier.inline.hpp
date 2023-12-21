@@ -67,9 +67,9 @@ inline traceid set_used_and_get(const T* type) {
 }
 
 inline void JfrTraceIdLoadBarrier::load_barrier(const Klass* klass) {
-    SET_USED_THIS_EPOCH(klass);
-    enqueue(klass);
-    JfrTraceIdEpoch::set_changed_tag_state();
+  SET_USED_THIS_EPOCH(klass);
+  enqueue(klass);
+  JfrTraceIdEpoch::set_changed_tag_state();
 }
 
 inline traceid JfrTraceIdLoadBarrier::load(const Klass* klass) {
@@ -113,24 +113,34 @@ inline traceid JfrTraceIdLoadBarrier::load_no_enqueue(const Klass* klass, const 
   return (METHOD_ID(klass, method));
 }
 
-inline traceid JfrTraceIdLoadBarrier::load(const ModuleEntry* module) {
-  return set_used_and_get(module);
-}
-
-inline traceid JfrTraceIdLoadBarrier::load(const PackageEntry* package) {
-  return set_used_and_get(package);
-}
-
 inline traceid JfrTraceIdLoadBarrier::load(const ClassLoaderData* cld) {
   assert(cld != nullptr, "invariant");
   if (cld->has_class_mirror_holder()) {
     return 0;
   }
   const Klass* const class_loader_klass = cld->class_loader_klass();
-  if (class_loader_klass != nullptr && should_tag(class_loader_klass)) {
-    load_barrier(class_loader_klass);
+  if (class_loader_klass != nullptr) {
+    load(class_loader_klass);
   }
   return set_used_and_get(cld);
+}
+
+inline traceid JfrTraceIdLoadBarrier::load(const ModuleEntry* module) {
+  assert(module != nullptr, "invariant");
+  const ClassLoaderData* cld = module->loader_data();
+  if (cld != nullptr) {
+    load(cld);
+  }
+  return set_used_and_get(module);
+}
+
+inline traceid JfrTraceIdLoadBarrier::load(const PackageEntry* package) {
+  assert(package != nullptr, "invariant");
+  const ModuleEntry* const module_entry = package->module();
+  if (module_entry != nullptr) {
+    load(module_entry);
+  }
+  return set_used_and_get(package);
 }
 
 inline traceid JfrTraceIdLoadBarrier::load_leakp(const Klass* klass, const Method* method) {
