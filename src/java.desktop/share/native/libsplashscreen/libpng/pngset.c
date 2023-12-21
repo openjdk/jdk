@@ -29,7 +29,7 @@
  * However, the following notice accompanied the original version of this
  * file and, per its terms, should not be removed:
  *
- * Copyright (c) 2018-2022 Cosmin Truta
+ * Copyright (c) 2018-2023 Cosmin Truta
  * Copyright (c) 1998-2018 Glenn Randers-Pehrson
  * Copyright (c) 1996-1997 Andreas Dilger
  * Copyright (c) 1995-1996 Guy Eric Schalnat, Group 42, Inc.
@@ -165,46 +165,40 @@ png_set_cHRM_XYZ(png_const_structrp png_ptr, png_inforp info_ptr, double red_X,
 #ifdef PNG_eXIf_SUPPORTED
 void PNGAPI
 png_set_eXIf(png_const_structrp png_ptr, png_inforp info_ptr,
-    png_bytep eXIf_buf)
+    png_bytep exif)
 {
   png_warning(png_ptr, "png_set_eXIf does not work; use png_set_eXIf_1");
   PNG_UNUSED(info_ptr)
-  PNG_UNUSED(eXIf_buf)
+  PNG_UNUSED(exif)
 }
 
 void PNGAPI
 png_set_eXIf_1(png_const_structrp png_ptr, png_inforp info_ptr,
-    png_uint_32 num_exif, png_bytep eXIf_buf)
+    png_uint_32 num_exif, png_bytep exif)
 {
-   int i;
+   png_bytep new_exif;
 
    png_debug1(1, "in %s storage function", "eXIf");
 
-   if (png_ptr == NULL || info_ptr == NULL)
+   if (png_ptr == NULL || info_ptr == NULL ||
+       (png_ptr->mode & PNG_WROTE_eXIf) != 0)
       return;
 
-   if (info_ptr->exif)
-   {
-      png_free(png_ptr, info_ptr->exif);
-      info_ptr->exif = NULL;
-   }
+   new_exif = png_voidcast(png_bytep, png_malloc_warn(png_ptr, num_exif));
 
-   info_ptr->num_exif = num_exif;
-
-   info_ptr->exif = png_voidcast(png_bytep, png_malloc_warn(png_ptr,
-       info_ptr->num_exif));
-
-   if (info_ptr->exif == NULL)
+   if (new_exif == NULL)
    {
       png_warning(png_ptr, "Insufficient memory for eXIf chunk data");
       return;
    }
 
+   memcpy(new_exif, exif, (size_t)num_exif);
+
+   png_free_data(png_ptr, info_ptr, PNG_FREE_EXIF, 0);
+
+   info_ptr->num_exif = num_exif;
+   info_ptr->exif = new_exif;
    info_ptr->free_me |= PNG_FREE_EXIF;
-
-   for (i = 0; i < (int) info_ptr->num_exif; i++)
-      info_ptr->exif[i] = eXIf_buf[i];
-
    info_ptr->valid |= PNG_INFO_eXIf;
 }
 #endif /* eXIf */
@@ -265,15 +259,13 @@ png_set_hIST(png_const_structrp png_ptr, png_inforp info_ptr,
    if (info_ptr->hist == NULL)
    {
       png_warning(png_ptr, "Insufficient memory for hIST chunk data");
-
       return;
    }
-
-   info_ptr->free_me |= PNG_FREE_HIST;
 
    for (i = 0; i < info_ptr->num_palette; i++)
       info_ptr->hist[i] = hist[i];
 
+   info_ptr->free_me |= PNG_FREE_HIST;
    info_ptr->valid |= PNG_INFO_hIST;
 }
 #endif
@@ -395,6 +387,8 @@ png_set_pCAL(png_const_structrp png_ptr, png_inforp info_ptr,
 
    memcpy(info_ptr->pcal_purpose, purpose, length);
 
+   info_ptr->free_me |= PNG_FREE_PCAL;
+
    png_debug(3, "storing X0, X1, type, and nparams in info");
    info_ptr->pcal_X0 = X0;
    info_ptr->pcal_X1 = X1;
@@ -411,7 +405,6 @@ png_set_pCAL(png_const_structrp png_ptr, png_inforp info_ptr,
    if (info_ptr->pcal_units == NULL)
    {
       png_warning(png_ptr, "Insufficient memory for pCAL units");
-
       return;
    }
 
@@ -423,7 +416,6 @@ png_set_pCAL(png_const_structrp png_ptr, png_inforp info_ptr,
    if (info_ptr->pcal_params == NULL)
    {
       png_warning(png_ptr, "Insufficient memory for pCAL params");
-
       return;
    }
 
@@ -441,7 +433,6 @@ png_set_pCAL(png_const_structrp png_ptr, png_inforp info_ptr,
       if (info_ptr->pcal_params[i] == NULL)
       {
          png_warning(png_ptr, "Insufficient memory for pCAL parameter");
-
          return;
       }
 
@@ -449,7 +440,6 @@ png_set_pCAL(png_const_structrp png_ptr, png_inforp info_ptr,
    }
 
    info_ptr->valid |= PNG_INFO_pCAL;
-   info_ptr->free_me |= PNG_FREE_PCAL;
 }
 #endif
 
@@ -506,18 +496,17 @@ png_set_sCAL_s(png_const_structrp png_ptr, png_inforp info_ptr,
 
    if (info_ptr->scal_s_height == NULL)
    {
-      png_free (png_ptr, info_ptr->scal_s_width);
+      png_free(png_ptr, info_ptr->scal_s_width);
       info_ptr->scal_s_width = NULL;
 
       png_warning(png_ptr, "Memory allocation failed while processing sCAL");
-
       return;
    }
 
    memcpy(info_ptr->scal_s_height, sheight, lengthh);
 
-   info_ptr->valid |= PNG_INFO_sCAL;
    info_ptr->free_me |= PNG_FREE_SCAL;
+   info_ptr->valid |= PNG_INFO_sCAL;
 }
 
 #  ifdef PNG_FLOATING_POINT_SUPPORTED
@@ -653,11 +642,10 @@ png_set_PLTE(png_structrp png_ptr, png_inforp info_ptr,
    if (num_palette > 0)
       memcpy(png_ptr->palette, palette, (unsigned int)num_palette *
           (sizeof (png_color)));
+
    info_ptr->palette = png_ptr->palette;
    info_ptr->num_palette = png_ptr->num_palette = (png_uint_16)num_palette;
-
    info_ptr->free_me |= PNG_FREE_PLTE;
-
    info_ptr->valid |= PNG_INFO_PLTE;
 }
 
@@ -1048,8 +1036,8 @@ png_set_tRNS(png_structrp png_ptr, png_inforp info_ptr,
               png_malloc(png_ptr, PNG_MAX_PALETTE_LENGTH));
           memcpy(info_ptr->trans_alpha, trans_alpha, (size_t)num_trans);
 
-          info_ptr->valid |= PNG_INFO_tRNS;
           info_ptr->free_me |= PNG_FREE_TRNS;
+          info_ptr->valid |= PNG_INFO_tRNS;
        }
        png_ptr->trans_alpha = info_ptr->trans_alpha;
    }
@@ -1082,8 +1070,8 @@ png_set_tRNS(png_structrp png_ptr, png_inforp info_ptr,
 
    if (num_trans != 0)
    {
-      info_ptr->valid |= PNG_INFO_tRNS;
       info_ptr->free_me |= PNG_FREE_TRNS;
+      info_ptr->valid |= PNG_INFO_tRNS;
    }
 }
 #endif
@@ -1117,11 +1105,11 @@ png_set_sPLT(png_const_structrp png_ptr,
    {
       /* Out of memory or too many chunks */
       png_chunk_report(png_ptr, "too many sPLT chunks", PNG_CHUNK_WRITE_ERROR);
-
       return;
    }
 
    png_free(png_ptr, info_ptr->splt_palettes);
+
    info_ptr->splt_palettes = np;
    info_ptr->free_me |= PNG_FREE_SPLT;
 
@@ -1275,11 +1263,11 @@ png_set_unknown_chunks(png_const_structrp png_ptr,
    {
       png_chunk_report(png_ptr, "too many unknown chunks",
           PNG_CHUNK_WRITE_ERROR);
-
       return;
    }
 
    png_free(png_ptr, info_ptr->unknown_chunks);
+
    info_ptr->unknown_chunks = np; /* safe because it is initialized */
    info_ptr->free_me |= PNG_FREE_UNKN;
 

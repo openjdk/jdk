@@ -407,6 +407,8 @@ var getJibProfilesCommon = function (input, data) {
  * @returns {{}} Profiles part of the configuration
  */
 var getJibProfilesProfiles = function (input, common, data) {
+    var cross_compiling = input.build_platform != input.target_platform;
+
     // Main SE profiles
     var profiles = {
 
@@ -426,9 +428,14 @@ var getJibProfilesProfiles = function (input, common, data) {
             target_os: "linux",
             target_cpu: "x86",
             build_cpu: "x64",
-            dependencies: ["devkit", "gtest"],
-            configure_args: concat(common.configure_args_32bit,
-                "--with-jvm-variants=minimal,server", "--with-zlib=system"),
+            dependencies: ["devkit", "gtest", "libffi"],
+            configure_args: concat(common.configure_args_32bit, [
+                "--with-jvm-variants=minimal,server",
+                "--with-zlib=system",
+                "--with-libffi=" + input.get("libffi", "home_path"),
+                "--enable-libffi-bundling",
+                "--enable-fallback-linker"
+            ])
         },
 
         "macosx-x64": {
@@ -436,7 +443,7 @@ var getJibProfilesProfiles = function (input, common, data) {
             target_cpu: "x64",
             dependencies: ["devkit", "gtest", "pandoc"],
             configure_args: concat(common.configure_args_64bit, "--with-zlib=system",
-                "--with-macosx-version-max=10.12.00",
+                "--with-macosx-version-max=11.00.00",
                 "--enable-compatible-cds-alignment",
                 // Use system SetFile instead of the one in the devkit as the
                 // devkit one may not work on Catalina.
@@ -479,14 +486,12 @@ var getJibProfilesProfiles = function (input, common, data) {
         "linux-aarch64": {
             target_os: "linux",
             target_cpu: "aarch64",
-            build_cpu: "x64",
             dependencies: ["devkit", "gtest", "build_devkit", "pandoc"],
             configure_args: [
-                "--openjdk-target=aarch64-linux-gnu",
                 "--with-zlib=system",
                 "--disable-dtrace",
 		"--enable-compatible-cds-alignment",
-            ],
+	    ].concat(cross_compiling ? ["--openjdk-target=aarch64-linux-gnu"] : []),
         },
 
         "linux-arm32": {
@@ -1080,10 +1085,10 @@ var getJibProfilesProfiles = function (input, common, data) {
 var getJibProfilesDependencies = function (input, common) {
 
     var devkit_platform_revisions = {
-        linux_x64: "gcc11.2.0-OL6.4+1.0",
-        macosx: "Xcode12.4+1.1",
-        windows_x64: "VS2022-17.1.0+1.1",
-        linux_aarch64: input.build_cpu == "x64" ? "gcc11.2.0-OL7.6+1.1" : "gcc11.2.0-OL7.6+1.0",
+        linux_x64: "gcc13.2.0-OL6.4+1.0",
+        macosx: "Xcode14.3.1+1.0",
+        windows_x64: "VS2022-17.6.5+1.0",
+        linux_aarch64: "gcc13.2.0-OL7.6+1.0",
         linux_arm: "gcc8.2.0-Fedora27+1.0",
         linux_ppc64le: "gcc8.2.0-Fedora27+1.0",
         linux_s390x: "gcc8.2.0-Fedora27+1.0",
@@ -1201,7 +1206,7 @@ var getJibProfilesDependencies = function (input, common) {
 
         jcov: {
             organization: common.organization,
-            revision: "3.0-15-jdk-asm+1.0",
+            revision: "3.0-16-jdk-asm+1.0",
             ext: "zip",
             environment_name: "JCOV_HOME",
         },

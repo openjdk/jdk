@@ -31,6 +31,7 @@
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "code/codeCache.hpp"
+#include "compiler/compilationMemoryStatistic.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/compilerOracle.hpp"
 #include "gc/shared/collectedHeap.hpp"
@@ -45,6 +46,7 @@
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
+#include "nmt/memTracker.hpp"
 #include "oops/constantPool.hpp"
 #include "oops/generateOopMap.hpp"
 #include "oops/instanceKlass.hpp"
@@ -75,8 +77,6 @@
 #include "runtime/vmThread.hpp"
 #include "runtime/vm_version.hpp"
 #include "sanitizers/leak.hpp"
-#include "services/memTracker.hpp"
-#include "services/nmt/memoryLogRecorder.hpp"
 #include "utilities/dtrace.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
@@ -226,6 +226,13 @@ void print_bytecode_count() {
   }
 }
 
+#else
+
+void print_method_invocation_histogram() {}
+void print_bytecode_count() {}
+
+#endif // PRODUCT
+
 
 // General statistics printing (profiling ...)
 void print_statistics() {
@@ -338,6 +345,7 @@ void print_statistics() {
     MetaspaceUtils::print_basic_report(tty, 0);
   }
 
+<<<<<<< HEAD
   ThreadsSMRSupport::log_statistics();
 }
 
@@ -387,12 +395,14 @@ void print_statistics() {
 
   if (PrintMetaspaceStatisticsAtExit) {
     MetaspaceUtils::print_basic_report(tty, 0);
+=======
+  if (CompilerOracle::should_print_final_memstat_report()) {
+    CompilationMemoryStatistic::print_all_by_size(tty, false, 0);
+>>>>>>> 1802601a12c72bcc44496ba2eb2c8a40a0603345
   }
 
   ThreadsSMRSupport::log_statistics();
 }
-
-#endif
 
 // Note: before_exit() can be executed only once, if more than one threads
 //       are trying to shutdown the VM at the same time, only one thread

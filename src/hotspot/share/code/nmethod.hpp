@@ -196,7 +196,7 @@ class nmethod : public CompiledMethod {
   address _verified_entry_point;             // entry point without class check
   address _osr_entry_point;                  // entry point for on stack replacement
 
-  nmethod* _unlinked_next;
+  bool _is_unlinked;
 
   // Shared fields for all nmethod's
   int _entry_bci;      // != InvocationEntryBci if this nmethod is an on-stack replacement method
@@ -441,8 +441,8 @@ class nmethod : public CompiledMethod {
   virtual bool is_unloading();
   virtual void do_unloading(bool unloading_occurred);
 
-  nmethod* unlinked_next() const                  { return _unlinked_next; }
-  void set_unlinked_next(nmethod* next)           { _unlinked_next = next; }
+  bool is_unlinked() const                        { return _is_unlinked; }
+  void set_is_unlinked()                          { assert(!_is_unlinked, "already unlinked"); _is_unlinked = true; }
 
 #if INCLUDE_RTM_OPT
   // rtm state accessing and manipulating
@@ -522,7 +522,7 @@ public:
   void unlink();
 
   // Deallocate this nmethod - called by the GC
-  void flush();
+  void purge(bool free_code_cache_data, bool unregister_nmethod);
 
   // See comment at definition of _last_seen_on_stack
   void mark_as_maybe_on_stack();
@@ -676,10 +676,6 @@ public:
   // CICountNative is true.
   virtual int compile_id() const { return _compile_id; }
   const char* compile_kind() const;
-
-  // tells if any of this method's dependencies have been invalidated
-  // (this is expensive!)
-  static void check_all_dependencies(DepChange& changes);
 
   // tells if this compiled method is dependent on the given changes,
   // and the changes have invalidated it
