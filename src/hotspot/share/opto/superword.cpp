@@ -3462,6 +3462,15 @@ LoadNode::ControlDependency SuperWord::control_dependency(Node_List* p) {
   return dep;
 }
 
+#define TRACE_ALIGN_VECTOR_NODE(node) { \
+  DEBUG_ONLY(                           \
+    if (is_trace_align_vector()) {      \
+      tty->print("  " #node ": ");      \
+      node->dump();                     \
+    }                                   \
+  )                                     \
+}                                       \
+
 // Ensure that the main loop vectors are aligned by adjusting the pre loop limit. We memory-align
 // the address of "align_to_ref" to the maximal possible vector width. We adjust the pre-loop
 // iteration count by adjusting the pre-loop limit.
@@ -3622,30 +3631,34 @@ void SuperWord::adjust_pre_loop_limit_to_align_main_loop_vectors() {
   Node* base         = align_to_ref_p.adr();
   Node* invar        = align_to_ref_p.invar();
 
-#ifndef PRODUCT
+#ifdef ASSERT
   if (is_trace_align_vector()) {
     tty->print_cr("\nadjust_pre_loop_limit_to_align_main_loop_vectors:");
-    tty->print(" align_to_ref:");
+    tty->print("  align_to_ref:");
     align_to_ref->dump();
-    tty->print_cr(" aw:       %d", aw);
-    tty->print_cr(" stride:   %d", stride);
-    tty->print_cr(" scale:    %d", scale);
-    tty->print(" base:");
+    tty->print_cr("  aw:       %d", aw);
+    tty->print_cr("  stride:   %d", stride);
+    tty->print_cr("  scale:    %d", scale);
+    tty->print_cr("  offset:   %d", offset);
+    tty->print("  base:");
     base->dump();
-    tty->print_cr(" offset:   %d", offset);
     if (invar == nullptr) {
-      tty->print_cr(" invar:     null");
+      tty->print_cr("  invar:     null");
     } else {
-      tty->print(" invar:");
+      tty->print("  invar:");
       invar->dump();
     }
+    tty->print("  old_limit: ");
+    old_limit->dump();
+    tty->print("  orig_limit: ");
+    orig_limit->dump();
   }
 #endif
 
   if (stride == 0 || !is_power_of_2(abs(stride)) ||
       scale  == 0 || !is_power_of_2(abs(scale))  ||
       abs(scale) >= aw) {
-#ifndef PRODUCT
+#ifdef ASSERT
     if (is_trace_align_vector()) {
       tty->print_cr(" Alignment cannot be affected by changing pre-loop limit because");
       tty->print_cr(" stride or scale are not power of 2, or abs(scale) >= aw.");
@@ -3661,9 +3674,9 @@ void SuperWord::adjust_pre_loop_limit_to_align_main_loop_vectors() {
 
   const int AW = aw / abs(scale);
 
-#ifndef PRODUCT
+#ifdef ASSERT
   if (is_trace_align_vector()) {
-    tty->print_cr(" AW:        %d", AW);
+    tty->print_cr("  AW = aw(%d) / abs(scale(%d)) = %d", aw, scale, AW);
   }
 #endif
 
@@ -3674,6 +3687,7 @@ void SuperWord::adjust_pre_loop_limit_to_align_main_loop_vectors() {
 
   // 1.1: offset
   Node* xboi = _igvn.intcon(is_sub ? -offset : offset);
+  TRACE_ALIGN_VECTOR_NODE(xboi);
 
   // 1.2: invar (if it exists)
   if (invar != nullptr) {
@@ -3683,7 +3697,8 @@ void SuperWord::adjust_pre_loop_limit_to_align_main_loop_vectors() {
       // bit half.
       invar = new ConvL2INode(invar);
       _igvn.register_new_node_with_optimizer(invar);
-    }
+      TRACE_ALIGN_VECTOR_NODE(invar);
+   }
     if (is_sub) {
       xboi = new SubINode(xboi, invar);
     } else {
@@ -3691,6 +3706,7 @@ void SuperWord::adjust_pre_loop_limit_to_align_main_loop_vectors() {
     }
     _igvn.register_new_node_with_optimizer(xboi);
     _phase->set_ctrl(xboi, pre_ctrl);
+    TRACE_ALIGN_VECTOR_NODE(xboi);
   }
 
   // 1.3: base (unless base is guaranteed aw aligned)
@@ -3700,9 +3716,11 @@ void SuperWord::adjust_pre_loop_limit_to_align_main_loop_vectors() {
     // Hence, we must now take the base into account for the calculation.
     Node* xbase = new CastP2XNode(nullptr, base);
     _igvn.register_new_node_with_optimizer(xbase);
+    TRACE_ALIGN_VECTOR_NODE(xbase);
 #ifdef _LP64
     xbase  = new ConvL2INode(xbase);
     _igvn.register_new_node_with_optimizer(xbase);
+    TRACE_ALIGN_VECTOR_NODE(xbase);
 #endif
     if (is_sub) {
       xboi = new SubINode(xboi, xbase);
@@ -3711,6 +3729,7 @@ void SuperWord::adjust_pre_loop_limit_to_align_main_loop_vectors() {
     }
     _igvn.register_new_node_with_optimizer(xboi);
     _phase->set_ctrl(xboi, pre_ctrl);
+    TRACE_ALIGN_VECTOR_NODE(xboi);
   }
 
   // 2: Compute (14):
@@ -3720,6 +3739,8 @@ void SuperWord::adjust_pre_loop_limit_to_align_main_loop_vectors() {
   Node* XBOI = new URShiftINode(xboi, log2_abs_scale);
   _igvn.register_new_node_with_optimizer(XBOI);
   _phase->set_ctrl(XBOI, pre_ctrl);
+  TRACE_ALIGN_VECTOR_NODE(log2_abs_scale);
+  TRACE_ALIGN_VECTOR_NODE(XBOI);
 
   // 3: Compute (12):
   //    adjust_pre_iter = (XBOI OP old_limit) % AW
@@ -3733,6 +3754,7 @@ void SuperWord::adjust_pre_loop_limit_to_align_main_loop_vectors() {
   }
   _igvn.register_new_node_with_optimizer(XBOI_OP_old_limit);
   _phase->set_ctrl(XBOI_OP_old_limit, pre_ctrl);
+  TRACE_ALIGN_VECTOR_NODE(XBOI_OP_old_limit);
 
   // 3.2: Compute:
   //    adjust_pre_iter = (XBOI OP old_limit) % AW
@@ -3744,6 +3766,8 @@ void SuperWord::adjust_pre_loop_limit_to_align_main_loop_vectors() {
   Node* adjust_pre_iter = new AndINode(XBOI_OP_old_limit, mask_AW);
   _igvn.register_new_node_with_optimizer(adjust_pre_iter);
   _phase->set_ctrl(adjust_pre_iter, pre_ctrl);
+  TRACE_ALIGN_VECTOR_NODE(mask_AW);
+  TRACE_ALIGN_VECTOR_NODE(adjust_pre_iter);
 
   // 4: Compute (3a, b):
   //    new_limit = old_limit + adjust_pre_iter     (stride > 0)
@@ -3756,6 +3780,7 @@ void SuperWord::adjust_pre_loop_limit_to_align_main_loop_vectors() {
   }
   _igvn.register_new_node_with_optimizer(new_limit);
   _phase->set_ctrl(new_limit, pre_ctrl);
+  TRACE_ALIGN_VECTOR_NODE(new_limit);
 
   // 5: Compute (15a, b):
   //    Prevent pre-loop from going past the original limit of the loop.
@@ -3764,6 +3789,9 @@ void SuperWord::adjust_pre_loop_limit_to_align_main_loop_vectors() {
                  : (Node*) new MaxINode(new_limit, orig_limit);
   _igvn.register_new_node_with_optimizer(constrained_limit);
   _phase->set_ctrl(constrained_limit, pre_ctrl);
+  TRACE_ALIGN_VECTOR_NODE(constrained_limit);
+
+  // 6: Hack the pre-loop limit
   _igvn.replace_input_of(pre_opaq, 1, constrained_limit);
 }
 
