@@ -30,6 +30,8 @@ import java.security.cert.X509Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.Extension;
+import java.time.temporal.ChronoUnit;
+import java.time.Instant;
 import javax.security.auth.x500.X500Principal;
 import java.math.BigInteger;
 
@@ -43,6 +45,7 @@ import sun.security.x509.AuthorityInfoAccessExtension;
 import sun.security.x509.AuthorityKeyIdentifierExtension;
 import sun.security.x509.SubjectKeyIdentifierExtension;
 import sun.security.x509.BasicConstraintsExtension;
+import sun.security.x509.CertificateSerialNumber;
 import sun.security.x509.ExtendedKeyUsageExtension;
 import sun.security.x509.DNSName;
 import sun.security.x509.GeneralName;
@@ -499,7 +502,9 @@ public class CertificateBuilder {
         }
 
         // Serial Number
-        SerialNumber sn = new SerialNumber(serialNumber);
+        CertificateSerialNumber sn = (serialNumber != null) ?
+            new CertificateSerialNumber(serialNumber) :
+            CertificateSerialNumber.newRandom64bit(new SecureRandom());
         sn.encode(tbsCertItems);
 
         // Algorithm ID
@@ -516,8 +521,12 @@ public class CertificateBuilder {
 
         // Validity period (set as UTCTime)
         DerOutputStream valSeq = new DerOutputStream();
-        valSeq.putUTCTime(notBefore);
-        valSeq.putUTCTime(notAfter);
+        Instant now = Instant.now();
+        Date startDate = (notBefore != null) ? notBefore : Date.from(now);
+        valSeq.putUTCTime(startDate);
+        Date endDate = (notAfter != null) ? notAfter :
+            Date.from(now.plus(90, ChronoUnit.DAYS));
+        valSeq.putUTCTime(endDate);
         tbsCertItems.write(DerValue.tag_Sequence, valSeq);
 
         // Subject Name
@@ -527,7 +536,9 @@ public class CertificateBuilder {
         tbsCertItems.write(publicKey.getEncoded());
 
         // Encode any extensions in the builder
-        encodeExtensions(tbsCertItems);
+        if (!extensions.isEmpty()) {
+            encodeExtensions(tbsCertItems);
+        }
 
         // Wrap it all up in a SEQUENCE and return the bytes
         tbsCertSeq.write(DerValue.tag_Sequence, tbsCertItems);
