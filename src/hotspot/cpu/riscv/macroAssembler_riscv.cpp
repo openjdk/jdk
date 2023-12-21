@@ -4290,7 +4290,7 @@ void MacroAssembler::java_round_double(Register dst, FloatRegister src, FloatReg
   mv(dst, zr);
   beqz(t0, done);
 
-  // dst = (src + 0.5) rounded down towards negative infinity
+  /* dst = (src + 0.5) rounded down towards negative infinity */
   fadd_d(ftmp, src, ftmp, RoundingMode::rdn); /* RDN is required here otherwise some inputs produce incorrect results */
   fcvt_l_d(dst, ftmp, RoundingMode::rdn);
 
