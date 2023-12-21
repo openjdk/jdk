@@ -71,28 +71,28 @@ public class bug5049549 {
 
     private static class KButton extends JButton {
 
-        KButton(String ex) {
-            super(ex);
-        }
+            KButton(String ex) {
+                super(ex);
+            }
 
-        private Icon disabledIcon;
-        private Icon disabledSelectedIcon;
+            private Icon disabledIcon;
+            private Icon disabledSelectedIcon;
 
-        public Icon getDisabledIcon() {
-            return disabledIcon;
-        }
+            public Icon getDisabledIcon() {
+                return disabledIcon;
+            }
 
-        public Icon getDisabledSelectedIcon() {
-            return disabledSelectedIcon;
-        }
+            public Icon getDisabledSelectedIcon() {
+                return disabledSelectedIcon;
+            }
 
-        public void setDisabledIcon(Icon icon) {
-            disabledIcon = icon;
-        }
+            public void setDisabledIcon(Icon icon) {
+                disabledIcon = icon;
+            }
 
-        public void setDisabledSelectedIcon(Icon icon) {
-            disabledSelectedIcon = icon;
-        }
+            public void setDisabledSelectedIcon(Icon icon) {
+                disabledSelectedIcon = icon;
+            }
     }
 
     public static void main(String[] args) throws Throwable {
