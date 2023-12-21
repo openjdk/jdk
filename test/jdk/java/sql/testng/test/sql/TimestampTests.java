@@ -642,6 +642,35 @@ public class TimestampTests extends BaseTest {
         assertEquals(ts1.toString(), ts, "ts1.toString() != ts");
     }
 
+    @Test
+    public void test53() {
+        // The latest Instant that can be converted to a Timestamp.
+        Instant instant1 = Instant.ofEpochSecond(Long.MAX_VALUE / 1000, 999_999_999);
+        assertEquals(instant1, Timestamp.from(instant1).toInstant());
+
+        // One nanosecond more, and converting it gets an overflow.
+        Instant instant2 = instant1.plusNanos(1);
+        try {
+            Timestamp unused = Timestamp.from(instant2);
+            fail();
+        } catch (IllegalArgumentException expected) {
+        }
+
+        // The latest possible Instant will certainly overflow.
+        try {
+            Timestamp unused = Timestamp.from(Instant.MAX);
+            fail();
+        } catch (IllegalArgumentException expected) {
+        }
+
+        // The earliest possible Instant will certainly overflow.
+        try {
+            Timestamp unused = Timestamp.from(Instant.MIN);
+            fail();
+        } catch (IllegalArgumentException expected) {
+        }
+    }
+
     /*
      * DataProvider used to provide Timestamps which are not valid and are used
      * to validate that an IllegalArgumentException will be thrown from the

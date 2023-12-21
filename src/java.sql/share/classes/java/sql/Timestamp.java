@@ -542,7 +542,7 @@ public class Timestamp extends java.util.Date {
      */
     public static Timestamp from(Instant instant) {
         try {
-            Timestamp stamp = new Timestamp(instant.getEpochSecond() * MILLIS_PER_SECOND);
+            Timestamp stamp = new Timestamp(Math.multiplyExact(instant.getEpochSecond(), MILLIS_PER_SECOND));
             stamp.nanos = instant.getNano();
             return stamp;
         } catch (ArithmeticException ex) {
