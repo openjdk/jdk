@@ -310,8 +310,14 @@ public:
   // Compute modulo and ensure that we get a positive remainder
   static int mod(int i, int q) {
     assert(q >= 1, "modulo value must be large enough");
+
+    // Modulo operator: Get positive 0 <= r < q  for positive i, but
+    //                  get negative 0 >= r > -q for negative i.
     int r = i % q;
+
+    // Make negative r into positive ones:
     r = (r >= 0) ? r : r + q;
+
     assert(0 <= r && r < q, "remainder must fit in modulo space");
     return r;
   }

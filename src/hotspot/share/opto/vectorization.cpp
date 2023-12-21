@@ -795,7 +795,9 @@ AlignmentSolution* AlignmentSolver::solve() const {
 
   DEBUG_ONLY( trace_reshaped_form(C_const, C_const_init, C_invar, C_init, C_pre, C_main); )
 
-  // We must find a pre_iter, such that adr is aw aligned: adr % aw = 0.
+  // We must find a pre_iter, such that adr is aw aligned: adr % aw = 0. Note, that we are defining the
+  // modulo operator "%" such that the remainder is always positive, see AlignmentSolution::mod(i, q).
+  //
   // Since "base % aw = 0", we only need to ensure alignment of the other 5 terms:
   //
   //   (C_const + C_invar * var_invar + C_init * var_init + C_pre * pre_iter + C_main * main_iter) % aw = 0      (1)

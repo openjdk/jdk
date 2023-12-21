@@ -3495,6 +3495,11 @@ void SuperWord::adjust_pre_loop_limit_to_align_main_loop_vectors() {
   //   adr = base + offset + invar + scale * iv                               (1)
   //   adr % aw = 0                                                           (2)
   //
+  // Note, that we are defining the modulo operator "%" such that the remainder is
+  // always positive, see AlignmentSolution::mod(i, q). Since we are only computing
+  // modulo with powers of 2, we can instead simply use the last log2(q) bits of
+  // a number i, to get "i % q". This is performed with a bitmask.
+  //
   // The limit of the pre-loop needs to be adjusted:
   //
   //   old_limit:       current pre-loop limit
@@ -3734,7 +3739,7 @@ void SuperWord::adjust_pre_loop_limit_to_align_main_loop_vectors() {
   //                    = XBOI_OP_old_limit % AW
   //                    = XBOI_OP_old_limit AND (AW - 1)
   //    Since AW is a power of 2, the modulo operation can be replaced with
-  //    a bit mask operation.
+  //    a bitmask operation.
   Node* mask_AW = _igvn.intcon(AW-1);
   Node* adjust_pre_iter = new AndINode(XBOI_OP_old_limit, mask_AW);
   _igvn.register_new_node_with_optimizer(adjust_pre_iter);
