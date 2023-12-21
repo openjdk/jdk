@@ -21,14 +21,10 @@
  * questions.
  */
 
-/* @test
-   @bug 5049549 7132413
-   @summary Tests that the proper icon is used for different states.
-   @library ../../regtesthelpers
-   @build Blocker
-   @run main/manual bug5049549
-*/
-
+import java.awt.Color;
+import java.awt.Font;
+import java.awt.Graphics;
+import java.awt.image.BufferedImage;
 import javax.swing.BoxLayout;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
@@ -38,25 +34,35 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
-import java.awt.Color;
-import java.awt.Font;
-import java.awt.Graphics;
-import java.awt.image.BufferedImage;
+
+/* @test
+   @bug 5049549 7132413
+   @summary Tests that the proper icon is used for different states.
+   @library ../../regtesthelpers
+   @build Blocker
+   @run main/manual bug5049549
+*/
 
 public class bug5049549 {
 
+    private static Icon DE = generateImage("DE");
+    private static Icon DI = generateImage("DI");
+    private static Icon DS = generateImage("DS");
+    private static Icon RO = generateImage("RO");
+    private static Icon RS = generateImage("RS");
+    private static Icon SE = generateImage("SE");
+    private static Icon PR = generateImage("PR");
+
     private static Blocker blocker = new Blocker();
 
-
     private static Icon generateImage(String str) {
-
         BufferedImage img = new BufferedImage(40, 30,
                 BufferedImage.TYPE_INT_RGB);
         Graphics g = img.createGraphics();
         g.setColor(Color.WHITE);
         g.fillRect(0, 0, img.getWidth(), img.getHeight());
         g.setColor(Color.RED);
-        Font font = new Font("SANS_SERIF", Font.BOLD, 22);
+        Font font = new Font(Font.SANS_SERIF, Font.BOLD, 22);
         g.setFont(font);
         g.drawString(str,5,25);
         g.dispose();
@@ -65,28 +71,28 @@ public class bug5049549 {
 
     private static class KButton extends JButton {
 
-            KButton(String ex) {
-                super(ex);
-            }
+        KButton(String ex) {
+            super(ex);
+        }
 
-            private Icon disabledIcon;
-            private Icon disabledSelectedIcon;
+        private Icon disabledIcon;
+        private Icon disabledSelectedIcon;
 
-            public Icon getDisabledIcon() {
-                return disabledIcon;
-            }
+        public Icon getDisabledIcon() {
+            return disabledIcon;
+        }
 
-            public Icon getDisabledSelectedIcon() {
-                return disabledSelectedIcon;
-            }
+        public Icon getDisabledSelectedIcon() {
+            return disabledSelectedIcon;
+        }
 
-            public void setDisabledIcon(Icon icon) {
-                disabledIcon = icon;
-            }
+        public void setDisabledIcon(Icon icon) {
+            disabledIcon = icon;
+        }
 
-            public void setDisabledSelectedIcon(Icon icon) {
-                disabledSelectedIcon = icon;
-            }
+        public void setDisabledSelectedIcon(Icon icon) {
+            disabledSelectedIcon = icon;
+        }
     }
 
     public static void main(String[] args) throws Throwable {
@@ -112,15 +118,6 @@ public class bug5049549 {
         panel.add(label);
 
         KButton button;
-
-        Icon DE = generateImage("DE");
-        Icon DI = generateImage("DI");
-        Icon DS = generateImage("DS");
-        Icon RO = generateImage("RO");
-        Icon RS = generateImage("DI");
-        Icon SE = generateImage("DS");
-        Icon PR = generateImage("RO");
-
         /* disabled: default icon */
         button = new KButton("DE");
         button.setEnabled(false);
@@ -225,8 +222,6 @@ public class bug5049549 {
         button.setRolloverSelectedIcon(RS);
         button.setSelectedIcon(SE);
         button.setRolloverIcon(RO);
-        button.setPressedIcon(PR);
-        panel.add(button);
 
         /* selected: default, selected, rollover, rollover-selected icons */
         button = new KButton("SE, RS, SE");
