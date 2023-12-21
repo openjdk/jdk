@@ -1020,7 +1020,7 @@ void nmethod::print_nmethod(bool printmethod) {
       tty->print_cr("- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - ");
       print_metadata(tty);
       tty->print_cr("- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - ");
-      print_pcs();
+      print_pcs_on(tty);
       tty->print_cr("- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - ");
       if (oop_maps() != nullptr) {
         tty->print("oop maps:"); // oop_maps()->print_on(tty) outputs a cr() at the beginning

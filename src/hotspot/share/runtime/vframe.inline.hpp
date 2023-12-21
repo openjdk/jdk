@@ -159,14 +159,16 @@ inline void vframeStreamCommon::fill_from_compiled_frame(int decode_offset) {
     // as it were a native compiled frame (no Java-level assumptions).
 #ifdef ASSERT
     if (WizardMode) {
-      ttyLocker ttyl;
-      tty->print_cr("Error in fill_from_frame: pc_desc for "
-                    INTPTR_FORMAT " not found or invalid at %d",
-                    p2i(_frame.pc()), decode_offset);
-      nm()->print();
-      nm()->method()->print_codes();
-      nm()->print_code();
-      nm()->print_pcs();
+      // Keep tty output consistent. To avoid ttyLocker, we buffer in stream, and print all at once.
+      stringStream ss;
+      ss.print_cr("Error in fill_from_frame: pc_desc for "
+                  INTPTR_FORMAT " not found or invalid at %d",
+                  p2i(_frame.pc()), decode_offset);
+      nm()->print_on(&ss);
+      nm()->method()->print_codes_on(&ss);
+      nm()->print_code_on(&ss);
+      nm()->print_pcs_on(&ss);
+      tty->print("%s", ss.as_string()); // print all at once
     }
     found_bad_method_frame();
 #endif
