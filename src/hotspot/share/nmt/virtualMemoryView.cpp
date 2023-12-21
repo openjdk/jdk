@@ -428,6 +428,13 @@ void VirtualMemoryView::release_memory(address base_addr, size_t size) {
   unregister_memory(_virt_mem->reserved_regions, base_addr, size);
 }
 
+void VirtualMemoryView::commit_memory(address base_addr, size_t size, const NativeCallStack& stack) {
+  commit_memory_into_space(heap, base_addr, size, stack);
+}
+void VirtualMemoryView::uncommit_memory(address base_addr, size_t size) {
+  uncommit_memory_into_space(heap, base_addr, size);
+}
+
 void VirtualMemoryView::uncommit_memory_into_space(const PhysicalMemorySpace& space,
                                                          address offset, size_t size) {
   RegionStorage& committed_ranges = _virt_mem->committed_regions.at(space.id);
