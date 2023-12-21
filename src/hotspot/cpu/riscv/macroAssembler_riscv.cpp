@@ -3748,7 +3748,7 @@ void MacroAssembler::kernel_crc32(Register crc, Register buf, Register len,
         Register table0, Register table1, Register table2, Register table3,
         Register tmp, Register tmp2, Register tmp3, Register tmp4, Register tmp5) {
   assert_different_registers(crc, buf, table0, table1, table2, table3, tmp, tmp2, tmp3, tmp4, tmp5);
-  Label L_by16, L_by16_loop, L_by16_loop_entry, L_by4, L_by4_loop, L_by1, L_by1_loop, L_exit;
+  Label L_by16_loop, L_by16_loop_entry, L_by4, L_by4_loop, L_by1, L_by1_loop, L_exit;
 
   mv(tmp5, bits32);
   andn(crc, tmp5, crc);
@@ -3759,14 +3759,13 @@ void MacroAssembler::kernel_crc32(Register crc, Register buf, Register len,
   add(table2, table0, 2*256*sizeof(juint), tmp);
   add(table3, table0, 3*256*sizeof(juint), tmp);
 
-  bind(L_by16);
-    subw(len, len, 16);
-    bge(len, zr, L_by16_loop);
-    addiw(len, len, 16-4);
-    bge(len, zr, L_by4_loop);
-    addiw(len, len, 4);
-    bgt(len, zr, L_by1_loop);
-    j(L_exit);
+  subw(len, len, 16);
+  bge(len, zr, L_by16_loop);
+  addiw(len, len, 16-4);
+  bge(len, zr, L_by4_loop);
+  addiw(len, len, 4);
+  bgt(len, zr, L_by1_loop);
+  j(L_exit);
 
   bind(L_by4_loop);
     Assembler::lwu(tmp, buf, 0);
