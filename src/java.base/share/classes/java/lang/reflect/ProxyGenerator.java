@@ -295,6 +295,17 @@ final class ProxyGenerator {
     }
 
     /**
+     * {@return the entries of the given type}
+     * @param type the {@code Class} objects, no primitives nor arrays
+     */
+    private static ClassEntry[] toClassEntries(ConstantPoolBuilder cp, List<Class<?>> types) {
+        var ces = new ClassEntry[types.size()];
+        for (int i = 0; i< ces.length; i++)
+            ces[i] = cp.classEntry(cp.utf8Entry(types.get(i).getName().replace('.', '/')));
+        return ces;
+    }
+
+    /**
      * {@return the {@code ClassDesc} of the given type}
      * @param type the {@code Class} object
      */
@@ -417,7 +428,7 @@ final class ProxyGenerator {
      * given list of declared exceptions, indicating that no exceptions
      * need to be caught.
      */
-    private static List<ClassDesc> computeUniqueCatchList(Class<?>[] exceptions) {
+    private static List<Class<?>> computeUniqueCatchList(Class<?>[] exceptions) {
         List<Class<?>> uniqueList = new ArrayList<>();
         // unique exceptions to catch
 
@@ -465,7 +476,7 @@ final class ProxyGenerator {
             // This exception is unique (so far): add it to the list to catch.
             uniqueList.add(ex);
         }
-        return uniqueList.stream().map(ProxyGenerator::toClassDesc).toList();
+        return uniqueList;
     }
 
     /**
@@ -530,7 +541,7 @@ final class ProxyGenerator {
         return classfileContext.build(classEntry, cp, clb -> {
             TEMPLATE.forEach(clb);
             clb.withFlags(accessFlags);
-            clb.withInterfaceSymbols(interfaces.stream().map(ProxyGenerator::toClassDesc).toList());
+            clb.withInterfaces(toClassEntries(cp, interfaces));
 
             for (List<ProxyMethod> sigmethods : proxyMethods.values()) {
                 for (ProxyMethod pm : sigmethods) {
@@ -730,60 +741,54 @@ final class ProxyGenerator {
             int accessFlags = (method.isVarArgs()) ? ACC_VARARGS | ACC_PUBLIC | ACC_FINAL
                                                    : ACC_PUBLIC | ACC_FINAL;
             var catchList = computeUniqueCatchList(exceptionTypes);
-            clb.withMethod(cp.utf8Entry(method.getName()), cp.utf8Entry(desc.toString()), accessFlags, mb -> {
-                List<ClassEntry> exceptionClassEntries = Arrays.asList(exceptionTypes)
-                        .stream()
-                        .map(ProxyGenerator::toClassDesc)
-                        .map(cp::classEntry)
-                        .toList();
-                mb.with(ExceptionsAttribute.of(exceptionClassEntries));
-                mb.withCode(cob -> {
-                    cob.aload(cob.receiverSlot())
-                       .getfield(FRE_Proxy_h)
-                       .aload(cob.receiverSlot())
-                       .getstatic(cp.fieldRefEntry(className, cp.nameAndTypeEntry(methodFieldName, UE_Method)));
+            clb.withMethod(cp.utf8Entry(method.getName()), cp.utf8Entry(desc.toString()), accessFlags, mb ->
+                  mb.with(ExceptionsAttribute.of(toClassEntries(cp, List.of(exceptionTypes))))
+                    .withCode(cob -> {
+                        cob.aload(cob.receiverSlot())
+                           .getfield(FRE_Proxy_h)
+                           .aload(cob.receiverSlot())
+                           .getstatic(cp.fieldRefEntry(className, cp.nameAndTypeEntry(methodFieldName, UE_Method)));
 
-                    if (parameterTypes.length > 0) {
-                        // Create an array and fill with the parameters converting primitives to wrappers
-                        cob.constantInstruction(parameterTypes.length)
-                           .anewarray(CE_Object);
-                        for (int i = 0; i < parameterTypes.length; i++) {
-                            cob.dup()
-                               .constantInstruction(i);
-                            codeWrapArgument(cob, parameterTypes[i], cob.parameterSlot(i));
-                            cob.aastore();
+                        if (parameterTypes.length > 0) {
+                            // Create an array and fill with the parameters converting primitives to wrappers
+                            cob.constantInstruction(parameterTypes.length)
+                               .anewarray(CE_Object);
+                            for (int i = 0; i < parameterTypes.length; i++) {
+                                cob.dup()
+                                   .constantInstruction(i);
+                                codeWrapArgument(cob, parameterTypes[i], cob.parameterSlot(i));
+                                cob.aastore();
+                            }
+                        } else {
+                            cob.aconst_null();
                         }
-                    } else {
-                        cob.aconst_null();
-                    }
 
-                    cob.invokeinterface(IMRE_InvocationHandler_invoke);
+                        cob.invokeinterface(IMRE_InvocationHandler_invoke);
 
-                    if (returnType == void.class) {
-                        cob.pop()
-                           .return_();
-                    } else {
-                        codeUnwrapReturnValue(cob, returnType);
-                    }
-                    if (!catchList.isEmpty()) {
-                        var c1 = cob.newBoundLabel();
-                        for (var exc : catchList) {
-                            cob.exceptionCatch(cob.startLabel(), c1, c1, exc);
+                        if (returnType == void.class) {
+                            cob.pop()
+                               .return_();
+                        } else {
+                            codeUnwrapReturnValue(cob, returnType);
                         }
-                        cob.athrow();   // just rethrow the exception
-                        var c2 = cob.newBoundLabel();
-                        cob.exceptionCatchAll(cob.startLabel(), c1, c2)
-                           .new_(CE_UndeclaredThrowableException)
-                           .dup_x1()
-                           .swap()
-                           .invokespecial(MRE_UndeclaredThrowableException_init)
-                           .athrow()
-                           .with(StackMapTableAttribute.of(List.of(
-                                StackMapFrameInfo.of(c1, List.of(), THROWABLE_STACK),
-                                StackMapFrameInfo.of(c2, List.of(), THROWABLE_STACK))));
-                    }
-                });
-            });
+                        if (!catchList.isEmpty()) {
+                            var c1 = cob.newBoundLabel();
+                            for (var exc : catchList) {
+                                cob.exceptionCatch(cob.startLabel(), c1, c1, toClassDesc(exc));
+                            }
+                            cob.athrow();   // just rethrow the exception
+                            var c2 = cob.newBoundLabel();
+                            cob.exceptionCatchAll(cob.startLabel(), c1, c2)
+                               .new_(CE_UndeclaredThrowableException)
+                               .dup_x1()
+                               .swap()
+                               .invokespecial(MRE_UndeclaredThrowableException_init)
+                               .athrow()
+                               .with(StackMapTableAttribute.of(List.of(
+                                    StackMapFrameInfo.of(c1, List.of(), THROWABLE_STACK),
+                                    StackMapFrameInfo.of(c2, List.of(), THROWABLE_STACK))));
+                        }
+                    }));
         }
 
         /**
