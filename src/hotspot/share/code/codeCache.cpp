@@ -1403,23 +1403,36 @@ void CodeCache::recompile_marked_directives_matches() {
   Thread *thread = Thread::current();
   HandleMark hm(thread);
 
+  // Try the max level and let the directives be applied during the compilation.
+  int comp_level = CompilationPolicy::highest_compile_level();
   RelaxedCompiledMethodIterator iter(RelaxedCompiledMethodIterator::only_not_unloading);
   while(iter.next()) {
     CompiledMethod* nm = iter.method();
     methodHandle mh(thread, nm->method());
     if (mh->has_matching_directives()) {
       ResourceMark rm;
-      // Try the max level and let the directives be applied during the compilation.
-      int complevel = CompLevel::CompLevel_full_optimization;
+      mh->clear_directive_flags();
+      bool deopt = false;
 
-      mh->clear_method_flags();
-      log_trace(codecache)("Recompile to level %d because of matching directives %s", complevel, mh->external_name());
-      nmethod * comp_nm = CompileBroker::compile_method(mh, InvocationEntryBci, complevel,
-                                      methodHandle(), 0, CompileTask::Reason_DirectivesChanged, (JavaThread *)thread);
+      if (!nm->is_osr_method()) {
+        log_trace(codecache)("Recompile to level %d because of matching directives %s",
+                             comp_level, mh->external_name());
+        nmethod * comp_nm = CompileBroker::compile_method(mh, InvocationEntryBci, comp_level,
+                                                          methodHandle(), 0,
+                                                          CompileTask::Reason_DirectivesChanged,
+                                                          (JavaThread*)thread);
+        if (comp_nm == nullptr) {
+          log_trace(codecache)("Recompilation to level %d failed, deoptimize %s",
+                               comp_level, mh->external_name());
+          deopt = true;
+        }
+      } else {
+        log_trace(codecache)("Deoptimize OSR %s", mh->external_name());
+        deopt = true;
+      }
       // For some reason the method cannot be compiled by C2, e.g. the new directives forbid it.
       // Deoptimize the method and let the usual hotspot logic do the rest.
-      if (comp_nm == nullptr) {
-        log_trace(codecache)("Recompilation to level %d failed, go deopt %s", complevel, mh->external_name());
+      if (deopt) {
         if (!nm->has_been_deoptimized() && nm->can_be_deoptimized()) {
           nm->make_not_entrant();
           nm->make_deoptimized();

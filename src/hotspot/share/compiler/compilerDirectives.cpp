@@ -737,25 +737,21 @@ void DirectivesStack::release(CompilerDirectives* dir) {
 
 bool DirectivesStack::hasMatchingDirectives(const methodHandle& method, bool top_only) {
   assert(_depth > 0, "Must never be empty");
-  bool match_found = false;
-  {
-    MutexLocker locker(DirectivesStack_lock, Mutex::_no_safepoint_check_flag);
+  MutexLocker locker(DirectivesStack_lock, Mutex::_no_safepoint_check_flag);
 
-    CompilerDirectives* dir = _top;
-    assert(dir != nullptr, "Must be initialized");
+  CompilerDirectives* dir = _top;
+  assert(dir != nullptr, "Must be initialized");
 
-    while (dir != nullptr) {
-      if (!dir->is_default_directive() && dir->match(method)) {
-        match_found = true;
-        break;
-      }
-      if (top_only) {
-        break;
-      }
-      dir = dir->next();
+  while (dir != nullptr) {
+    if (!dir->is_default_directive() && dir->match(method)) {
+      return true;
     }
+    if (top_only) {
+      break;
+    }
+    dir = dir->next();
   }
-  return match_found;
+  return false;
 }
 
 DirectiveSet* DirectivesStack::getMatchingDirective(const methodHandle& method, AbstractCompiler *comp) {

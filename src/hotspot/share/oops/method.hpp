@@ -817,7 +817,7 @@ public:
 
   // Clear the flags related to compiler directives that were set by the compilerBroker,
   // because the directives can be updated.
-  void clear_method_flags() {
+  void clear_directive_flags() {
     set_has_matching_directives(false);
     clear_is_not_c1_compilable();
     clear_is_not_c2_compilable();
