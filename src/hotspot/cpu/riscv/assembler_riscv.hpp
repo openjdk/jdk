@@ -758,6 +758,8 @@ enum Aqrl {relaxed = 0b00, rl = 0b01, aq = 0b10, aqrl = 0b11};
   INSN(amomax_d , 0b0101111, 0b011, 0b10100);
   INSN(amominu_d, 0b0101111, 0b011, 0b11000);
   INSN(amomaxu_d, 0b0101111, 0b011, 0b11100);
+  INSN(amocas_w,  0b0101111, 0b010, 0b00101);
+  INSN(amocas_d,  0b0101111, 0b011, 0b00101);
 #undef INSN
 
 enum operand_size { int8, int16, int32, uint32, int64 };
@@ -2938,6 +2940,17 @@ public:
 
   static bool reachable_from_branch_at(address branch, address target) {
     return uabs(target - branch) < branch_range;
+  }
+
+  // Decode the given instruction, checking if it's a 16-bit compressed
+  // instruction and return the address of the next instruction.
+  static address locate_next_instruction(address inst) {
+    // Instruction wider than 16 bits has the two least-significant bits set.
+    if ((0x3 & *inst) == 0x3) {
+      return inst + instruction_size;
+    } else {
+      return inst + compressed_instruction_size;
+    }
   }
 
   Assembler(CodeBuffer* code) : AbstractAssembler(code), _in_compressible_region(true) {}

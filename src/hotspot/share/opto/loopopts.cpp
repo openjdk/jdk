@@ -786,25 +786,18 @@ Node *PhaseIdealLoop::conditional_move( Node *region ) {
   // Avoid duplicated float compare.
   if (phis > 1 && (cmp_op == Op_CmpF || cmp_op == Op_CmpD)) return nullptr;
 
-  float infrequent_prob = PROB_UNLIKELY_MAG(3);
-  // Ignore cost and blocks frequency if CMOVE can be moved outside the loop.
-  if (used_inside_loop) {
-    if (cost >= ConditionalMoveLimit) return nullptr; // Too much goo
-
-    // BlockLayoutByFrequency optimization moves infrequent branch
-    // from hot path. No point in CMOV'ing in such case (110 is used
-    // instead of 100 to take into account not exactness of float value).
-    if (BlockLayoutByFrequency) {
-      infrequent_prob = MAX2(infrequent_prob, (float)BlockLayoutMinDiamondPercentage/110.0f);
-    }
+  // Ignore cost if CMOVE can be moved outside the loop.
+  if (used_inside_loop && cost >= ConditionalMoveLimit) {
+    return nullptr;
   }
   // Check for highly predictable branch.  No point in CMOV'ing if
   // we are going to predict accurately all the time.
+  constexpr float infrequent_prob = PROB_UNLIKELY_MAG(2);
   if (C->use_cmove() && (cmp_op == Op_CmpF || cmp_op == Op_CmpD)) {
     //keep going
-  } else if (iff->_prob < infrequent_prob ||
-      iff->_prob > (1.0f - infrequent_prob))
+  } else if (iff->_prob < infrequent_prob || iff->_prob > (1.0f - infrequent_prob)) {
     return nullptr;
+  }
 
   // --------------
   // Now replace all Phis with CMOV's
