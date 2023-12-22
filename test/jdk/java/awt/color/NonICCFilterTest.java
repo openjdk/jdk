@@ -21,7 +21,10 @@
  * questions.
  */
 
-import java.awt.*;
+import java.awt.Color;
+import java.awt.GradientPaint;
+import java.awt.Graphics2D;
+import java.awt.Transparency;
 import java.awt.color.ColorSpace;
 import java.awt.image.BufferedImage;
 import java.awt.image.ColorConvertOp;
@@ -29,12 +32,11 @@ import java.awt.image.ComponentColorModel;
 import java.awt.image.DataBuffer;
 import java.awt.image.WritableRaster;
 
-/**
+/*
  * @test
  * @bug 8316497
  * @summary Verifies Color filter on Non ICC profile
  */
-
 public class NonICCFilterTest {
 
     private static class TestColorSpace extends ColorSpace {
@@ -65,10 +67,9 @@ public class NonICCFilterTest {
     }
 
     private static BufferedImage createTestImage(boolean isSrc) {
-
         ColorSpace cs = new TestColorSpace(isSrc);
         ComponentColorModel cm = new ComponentColorModel(cs, false, false,
-                        Transparency.OPAQUE, DataBuffer.TYPE_FLOAT);
+                Transparency.OPAQUE, DataBuffer.TYPE_FLOAT);
         WritableRaster raster = cm.createCompatibleWritableRaster(50, 50);
         BufferedImage img = new BufferedImage(cm, raster, false, null);
 
@@ -76,7 +77,7 @@ public class NonICCFilterTest {
         GradientPaint gp = new GradientPaint(0, 0, Color.GREEN,
                 raster.getWidth(), raster.getHeight(), Color.BLUE);
         g.setPaint(gp);
-        g.fillRect(0,0,raster.getWidth(), raster.getHeight());
+        g.fillRect(0, 0, raster.getWidth(), raster.getHeight());
         g.dispose();
 
         return img;
