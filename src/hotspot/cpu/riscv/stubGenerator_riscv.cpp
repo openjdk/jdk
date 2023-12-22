@@ -3787,19 +3787,17 @@ class StubGenerator: public StubCodeGenerator {
     //  initial configuration every 4 quad-rounds. We could avoid those changes at
     //  the cost of moving those vectors at the end of each quad-rounds.
     void sha2_quad_round(Assembler::SEW vset_sew, VectorRegister rot1, VectorRegister rot2, VectorRegister rot3, VectorRegister rot4,
-                         Register scalarconst, VectorRegister vtemp, VectorRegister vtemp2, VectorRegister vtemp3, VectorRegister vtemp4,
+                         Register scalarconst, VectorRegister vtemp, VectorRegister vtemp2, VectorRegister v_abef, VectorRegister v_cdgh,
                          bool gen_words = true, bool step_const = true) {
       __ vl1reXX_v(vset_sew, vtemp, scalarconst);
       if (step_const) {
         __ addi(scalarconst, scalarconst, vset_sew == Assembler::e32 ? 16 : 32);
       }
       __ vadd_vv(vtemp2, vtemp, rot1);
-      __ vsha2cl_vv(vtemp4, vtemp3, vtemp2);
-      __ vsha2ch_vv(vtemp3, vtemp4, vtemp2);
-      if ((vset_sew == Assembler::e64 && step_const) || gen_words) {
-        __ vmerge_vvm(vtemp2, rot3, rot2);
-      }
+      __ vsha2cl_vv(v_cdgh, v_abef, vtemp2);
+      __ vsha2ch_vv(v_abef, v_cdgh, vtemp2);
       if (gen_words) {
+        __ vmerge_vvm(vtemp2, rot3, rot2);
         __ vsha2ms_vv(rot1, vtemp2, rot4);
       }
     }
