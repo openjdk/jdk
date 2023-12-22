@@ -737,7 +737,7 @@ public final class LWCToolkit extends LWToolkit {
         SunToolkit.postEvent(appContext, invocationEvent);
         // 3746956 - flush events from PostEventQueue to prevent them from getting stuck and causing a deadlock
         SunToolkit.flushPendingEvents(appContext);
-        doAWTRunLoop(mediator, false);
+        doAWTRunLoop(mediator, true);
 
         checkException(invocationEvent);
     }
