@@ -123,7 +123,7 @@ uint ConstraintCastNode::size_of() const {
   return sizeof(*this);
 }
 
-Node* ConstraintCastNode::make_cast_for_basic_type(Node* c, Node *n, const Type *t, DependencyType dependency, BasicType bt) {
+Node* ConstraintCastNode::make_cast_for_basic_type(Node* c, Node* n, const Type* t, DependencyType dependency, BasicType bt) {
   switch(bt) {
   case T_INT:
     return new CastIINode(c, n, t, dependency);

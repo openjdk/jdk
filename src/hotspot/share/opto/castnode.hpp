@@ -69,7 +69,7 @@ public:
   virtual bool depends_only_on_test() const { return _dependency == RegularDependency; }
   bool carry_dependency() const { return _dependency != RegularDependency; }
   TypeNode* dominating_cast(PhaseGVN* gvn, PhaseTransform* pt) const;
-  static Node* make_cast_for_basic_type(Node* c, Node *n, const Type *t, DependencyType dependency, BasicType bt);
+  static Node* make_cast_for_basic_type(Node* c, Node* n, const Type* t, DependencyType dependency, BasicType bt);
 
 #ifndef PRODUCT
   virtual void dump_spec(outputStream *st) const;
