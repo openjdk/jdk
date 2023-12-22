@@ -36,7 +36,6 @@ import java.util.Random;
  */
 public class TransferToTrusted {
 
-    private static final int LENGTH = 128;
     private static final Random RND = new Random(System.nanoTime());
 
     private static final class UntrustedOutputStream extends OutputStream {
@@ -60,50 +59,37 @@ public class TransferToTrusted {
     }
 
     public static void main(String[] args) throws IOException {
-        byte[] buf = new byte[LENGTH];
+        final int length = 128;
+        byte[] buf = new byte[length];
         RND.nextBytes(buf);
         byte[] dup = Arrays.copyOf(buf, buf.length);
 
         var bis = new BufferedInputStream(new ByteArrayInputStream(dup));
         bis.mark(dup.length);
 
-        byteArrayOutputStream(bis, buf);
-        fileOutputStream(bis, buf);
-        pipedOutputStream(bis, buf);
+        var tempFile = File.createTempFile(TransferToTrusted.class.getName(), null);
+        try {
+            var outputStreams = new OutputStream[]{
+                    new ByteArrayOutputStream(),
+                    new FileOutputStream(tempFile),
+                    new PipedOutputStream(new PipedInputStream(length)),
+                    new UntrustedOutputStream()
+            };
 
-        bis.reset();
-        var out = new UntrustedOutputStream();
-        bis.transferTo(out);
-        bis.reset();
-        if (!Arrays.equals(buf, bis.readAllBytes())) {
-            throw new RuntimeException("Internal buffer has been modified");
-        }
-    }
+            for (var out : outputStreams) {
+                System.err.println("out: " + out.getClass().getName());
 
-    private static void byteArrayOutputStream(BufferedInputStream bis, byte[] buf) throws IOException {
-        var baos = new ByteArrayOutputStream();
-        bis.transferTo(baos);
-        bis.reset();
-        if (!Arrays.equals(buf, bis.readAllBytes())) {
-            throw new RuntimeException("Internal buffer has been modified");
-        }
-    }
-
-    private static void fileOutputStream(BufferedInputStream bis, byte[] buf) throws IOException {
-        var fos = new FileOutputStream(File.createTempFile(TransferToTrusted.class.getName(), null));
-        bis.transferTo(fos);
-        bis.reset();
-        if (!Arrays.equals(buf, bis.readAllBytes())) {
-            throw new RuntimeException("Internal buffer has been modified");
-        }
-    }
-
-    private static void pipedOutputStream(BufferedInputStream bis, byte[] buf) throws IOException {
-        var pos = new PipedOutputStream(new PipedInputStream(LENGTH));
-        bis.transferTo(pos);
-        bis.reset();
-        if (!Arrays.equals(buf, bis.readAllBytes())) {
-            throw new RuntimeException("Internal buffer has been modified");
+                bis.transferTo(out);
+                bis.reset();
+                try (out) {
+                    if (!Arrays.equals(buf, bis.readAllBytes())) {
+                        throw new RuntimeException("Internal buffer was modified");
+                    }
+                }
+                bis.reset();
+            }
+        } finally {
+            tempFile.delete();
         }
     }
 }
