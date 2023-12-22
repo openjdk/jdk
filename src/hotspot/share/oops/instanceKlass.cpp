@@ -3956,6 +3956,23 @@ bool InstanceKlass::has_previous_versions_and_reset() {
   return ret;
 }
 
+// This nulls out jmethodIDs for all methods in 'klass'
+// It needs to be called explicitly for all previous versions of a class because these may not be cleaned up
+// during class unloading.
+// We can not use the jmethodID cache associated with klass directly because the 'previous' versions
+// do not have the jmethodID cache filled in. Instead, we need to lookup jmethodID for each method and this
+// is expensive - O(n) for one jmethodID lookup. For all contained methods it is O(n^2).
+// The reason for expensive jmethodID lookup for each method is that there is no direct link between method and jmethodID.
+void InstanceKlass::clear_jmethod_ids(InstanceKlass* klass) {
+  Array<Method*>* method_refs = klass->methods();
+  for (int k = 0; k < method_refs->length(); k++) {
+    Method* method = method_refs->at(k);
+    if (method != nullptr && method->is_obsolete()) {
+      method->clear_jmethod_id();
+    }
+  }
+}
+
 // Purge previous versions before adding new previous versions of the class and
 // during class unloading.
 void InstanceKlass::purge_previous_version_list() {
@@ -3999,6 +4016,7 @@ void InstanceKlass::purge_previous_version_list() {
       // Unlink from previous version list.
       assert(pv_node->class_loader_data() == loader_data, "wrong loader_data");
       InstanceKlass* next = pv_node->previous_versions();
+      clear_jmethod_ids(pv_node); // jmethodID maintenance for the unloaded class
       pv_node->link_previous_versions(NULL);   // point next to NULL
       last->link_previous_versions(next);
       // Delete this node directly. Nothing is referring to it and we don't

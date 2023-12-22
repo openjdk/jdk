@@ -399,6 +399,8 @@ public class WhiteBox {
   public native long metaspaceCapacityUntilGC();
   public native long metaspaceSharedRegionAlignment();
 
+  public native void cleanMetaspaces();
+
   // Metaspace Arena Tests
   public native long createMetaspaceTestContext(long commit_limit, long reserve_limit);
   public native void destroyMetaspaceTestContext(long context);
