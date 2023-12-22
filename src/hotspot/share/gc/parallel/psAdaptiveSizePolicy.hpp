@@ -135,14 +135,10 @@ class PSAdaptiveSizePolicy : public AdaptiveSizePolicy {
                                    size_t desired_total);
 
   // Size in bytes for an increment or decrement of eden.
-  virtual size_t eden_increment(size_t cur_eden, uint percent_change);
-  virtual size_t eden_decrement(size_t cur_eden);
   size_t eden_decrement_aligned_down(size_t cur_eden);
   size_t eden_increment_with_supplement_aligned_up(size_t cur_eden);
 
   // Size in bytes for an increment or decrement of the promotion area
-  virtual size_t promo_increment(size_t cur_promo, uint percent_change);
-  virtual size_t promo_decrement(size_t cur_promo);
   size_t promo_decrement_aligned_down(size_t cur_promo);
   size_t promo_increment_with_supplement_aligned_up(size_t cur_promo);
 
@@ -173,9 +169,6 @@ class PSAdaptiveSizePolicy : public AdaptiveSizePolicy {
   virtual GCPolicyKind kind() const { return _gc_ps_adaptive_size_policy; }
 
  public:
-  virtual size_t eden_increment(size_t cur_eden);
-  virtual size_t promo_increment(size_t cur_promo);
-
   // Accessors for use by performance counters
   AdaptivePaddedNoZeroDevAverage*  avg_promoted() const {
     return _gc_stats.avg_promoted();

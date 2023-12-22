@@ -263,12 +263,12 @@ class AdaptiveSizePolicy : public CHeapObj<mtGC> {
     // to use minor_collection_end() in its current form.
   }
 
-  virtual size_t eden_increment(size_t cur_eden);
-  virtual size_t eden_increment(size_t cur_eden, uint percent_change);
-  virtual size_t eden_decrement(size_t cur_eden);
-  virtual size_t promo_increment(size_t cur_eden);
-  virtual size_t promo_increment(size_t cur_eden, uint percent_change);
-  virtual size_t promo_decrement(size_t cur_eden);
+  size_t eden_increment(size_t cur_eden);
+  size_t eden_increment(size_t cur_eden, uint percent_change);
+  size_t eden_decrement(size_t cur_eden);
+  size_t promo_increment(size_t cur_eden);
+  size_t promo_increment(size_t cur_eden, uint percent_change);
+  size_t promo_decrement(size_t cur_eden);
 
   virtual void clear_generation_free_space_flags();
 

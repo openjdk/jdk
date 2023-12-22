@@ -873,17 +873,6 @@ size_t PSAdaptiveSizePolicy::scale_down(size_t change,
   return reduced_change;
 }
 
-size_t PSAdaptiveSizePolicy::eden_increment(size_t cur_eden,
-                                            uint percent_change) {
-  size_t eden_heap_delta;
-  eden_heap_delta = cur_eden / 100 * percent_change;
-  return eden_heap_delta;
-}
-
-size_t PSAdaptiveSizePolicy::eden_increment(size_t cur_eden) {
-  return eden_increment(cur_eden, YoungGenerationSizeIncrement);
-}
-
 size_t PSAdaptiveSizePolicy::eden_increment_with_supplement_aligned_up(
   size_t cur_eden) {
   size_t result = eden_increment(cur_eden,
@@ -896,23 +885,6 @@ size_t PSAdaptiveSizePolicy::eden_decrement_aligned_down(size_t cur_eden) {
   return align_down(eden_heap_delta, _space_alignment);
 }
 
-size_t PSAdaptiveSizePolicy::eden_decrement(size_t cur_eden) {
-  size_t eden_heap_delta = eden_increment(cur_eden) /
-    AdaptiveSizeDecrementScaleFactor;
-  return eden_heap_delta;
-}
-
-size_t PSAdaptiveSizePolicy::promo_increment(size_t cur_promo,
-                                             uint percent_change) {
-  size_t promo_heap_delta;
-  promo_heap_delta = cur_promo / 100 * percent_change;
-  return promo_heap_delta;
-}
-
-size_t PSAdaptiveSizePolicy::promo_increment(size_t cur_promo) {
-  return promo_increment(cur_promo, TenuredGenerationSizeIncrement);
-}
-
 size_t PSAdaptiveSizePolicy::promo_increment_with_supplement_aligned_up(
   size_t cur_promo) {
   size_t result =  promo_increment(cur_promo,
@@ -923,12 +895,6 @@ size_t PSAdaptiveSizePolicy::promo_increment_with_supplement_aligned_up(
 size_t PSAdaptiveSizePolicy::promo_decrement_aligned_down(size_t cur_promo) {
   size_t promo_heap_delta = promo_decrement(cur_promo);
   return align_down(promo_heap_delta, _space_alignment);
-}
-
-size_t PSAdaptiveSizePolicy::promo_decrement(size_t cur_promo) {
-  size_t promo_heap_delta = promo_increment(cur_promo);
-  promo_heap_delta = promo_heap_delta / AdaptiveSizeDecrementScaleFactor;
-  return promo_heap_delta;
 }
 
 uint PSAdaptiveSizePolicy::compute_survivor_space_size_and_threshold(
