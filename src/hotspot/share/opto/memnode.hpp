@@ -126,6 +126,9 @@ public:
 #endif
   }
 
+  // Return the barrier data of n, if available, or 0 otherwise.
+  static uint8_t barrier_data(const Node* n);
+
   // Map a load or store opcode to its corresponding store opcode.
   // (Return -1 if unknown.)
   virtual int store_Opcode() const { return -1; }
