@@ -366,7 +366,7 @@ class RangeWithPageSize {
         }
 
         // When the THP policy is 'always' instead of 'madvise, the vmFlagHG property is false,
-        // therefore also check thpEligible. If this is still cauing problems in the future,
+        // therefore also check thpEligible. If this is still causing problems in the future,
         // we might have to check the AnonHugePages field.
 
         isTHP = vmFlagHG || this.thpEligible;
