@@ -190,6 +190,8 @@ public class ReplaceCriticalClasses {
                 if (checkSubgraph) {
                     if (expectShared) {
                         if (!out.getOutput().contains("Unable to map at required address in java heap")) {
+                            out.shouldContain("initialize_from_archived_subgraph java.lang.module.Configuration");
+                            out.shouldContain("initialize_from_archived_subgraph java.lang.ModuleLayer");
                             // If the subgraph is successfully initialized, the specified shared class must not be rewritten.
                             out.shouldNotContain("Rewriting done.");
                         }

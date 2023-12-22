@@ -345,5 +345,20 @@ public class OptimizeModuleHandlingTest {
                    .shouldNotContain(OPTIMIZE_ENABLED)
                    .shouldContain(MAP_FAILED);
             });
+        // Dump an archive with only -Xbootclasspath/a
+        output = TestCommon.createArchive(
+                                null,
+                                appClasses,
+                                "-Xbootclasspath/a:" + mainJar.toString());
+        TestCommon.checkDump(output);
+        tty("13. run with CDS on,  with the same -Xbootclasspath/a as dump time and adding a -cp with test.jar:  should pass");
+        TestCommon.run("-Xlog:cds,class+load",
+                       "-cp", testJar.toString(),
+                       "-Xbootclasspath/a:" + mainJar.toString(),
+                       MAIN_CLASS)
+            .assertNormalExit(out -> {
+                out.shouldMatch(MAIN_FROM_CDS)
+                   .shouldContain(OPTIMIZE_ENABLED);
+            });
     }
 }
