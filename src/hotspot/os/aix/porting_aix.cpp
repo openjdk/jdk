@@ -911,8 +911,9 @@ struct handletableentry{
     dev64_t devid;
     uint    refcount;
 };
-static int max_handletable = 0;
-static int g_handletable_used = 0;
+constexpr unsigned init_num_handles = 128;
+static unsigned max_handletable = 0;
+static unsigned g_handletable_used = 0;
 // We start with an empty array. At first use we will dynamically allocate memory for 128 entries.
 // If this table is full we dynamically reallocate a memory reagion of double size, and so on.
 static struct handletableentry* p_handletable = nullptr;
@@ -1048,7 +1049,7 @@ void* Aix_dlopen(const char* filename, int Flags, const char** error_report) {
     return nullptr;
   }
   else {
-    int i = 0;
+    unsigned i = 0;
     TableLocker lock;
     // check if library belonging to filename is already loaded.
     // If yes use stored handle from previous ::dlopen() and increase refcount
@@ -1065,28 +1066,16 @@ void* Aix_dlopen(const char* filename, int Flags, const char** error_report) {
       // library not yet loaded. Check if there is space left in array
       // to store new ::dlopen() handle
       if (g_handletable_used == max_handletable) {
-        // No place in array anymore.
-        if (max_handletable == 0) {
-          // First time we allocate memory for 128 Entries
-          char* ptmp = (char*)::malloc(128 * sizeof(struct handletableentry));
-          assert(ptmp != 0, "no more memory for handletable");
-          if (ptmp == nullptr) {
-            *error_report = "dlopen: no more memory for handletable";
-            return nullptr;
-          }
-          max_handletable = 128;
-          p_handletable = (struct handletableentry*)ptmp;
-        } else {
-          // we already use malloced memory, just double the size
-          char* ptmp = (char*)::realloc(p_handletable, 2 * max_handletable * sizeof(struct handletableentry));
-          assert(ptmp != 0, "no more memory for handletable");
-          if (ptmp == nullptr) {
-            *error_report = "dlopen: no more memory for handletable";
-            return nullptr;
-          }
-          max_handletable *= 2;
-          p_handletable = (struct handletableentry*)ptmp;
+        // No place in array anymore; increase array.
+        unsigned new_max = MAX2(max_handletable * 2, init_num_handles);
+        struct handletableentry* new_tab = (struct handletableentry*)::realloc(p_handletable, new_max * sizeof(struct handletableentry));
+        assert(new_tab != nullptr, "no more memory for handletable");
+        if (new_tab == nullptr) {
+          *error_report = "dlopen: no more memory for handletable";
+          return nullptr;
         }
+        max_handletable = new_max;
+        p_handletable = new_tab;
       }
       // Library not yet loaded; load it, then store its handle in handle table
       result = ::dlopen(filename, Flags);
@@ -1110,7 +1099,7 @@ void* Aix_dlopen(const char* filename, int Flags, const char** error_report) {
 }
 
 bool os::pd_dll_unload(void* libhandle, char* ebuf, int ebuflen) {
-  int i = 0;
+  unsigned i = 0;
   bool res = false;
 
   if (ebuf && ebuflen > 0) {
