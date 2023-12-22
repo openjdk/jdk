@@ -3702,7 +3702,7 @@ class StubGenerator: public StubCodeGenerator {
     //    //   v15 = {K[t+3], K[t+2], K[t+1], K[t+0]}
     //    vl1reXX.v v15, ofs
     //
-    //    // Increment word contant address by stride (16/32 bytes, 4*4B/8B, 128b/256b)
+    //    // Increment word constant address by stride (16/32 bytes, 4*4B/8B, 128b/256b)
     //    addi ofs, ofs, 16/32
     //
     //    // Add constants to message schedule words:
@@ -3809,6 +3809,7 @@ class StubGenerator: public StubCodeGenerator {
       if (vset_sew == Assembler::e32 &&  multi_block) return "sha256_implCompressMB";
       if (vset_sew == Assembler::e64 && !multi_block) return "sha512_implCompress";
       if (vset_sew == Assembler::e64 &&  multi_block) return "sha512_implCompressMB";
+      ShouldNotReachHere();
       return "bad name lookup";
     }
 
