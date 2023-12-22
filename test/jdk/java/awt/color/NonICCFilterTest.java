@@ -83,9 +83,7 @@ public class NonICCFilterTest {
         return img;
     }
 
-    private static boolean compareImages(BufferedImage src,
-                                         BufferedImage dest) {
-
+    private static boolean compareImages(BufferedImage src, BufferedImage dest) {
         for (int x = 0; x < src.getWidth(); x++) {
             for (int y = 0; y < src.getHeight(); y++) {
                 if (src.getRGB(x, y) != dest.getRGB(x, y)) {
