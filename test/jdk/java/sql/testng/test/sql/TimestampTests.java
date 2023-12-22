@@ -646,29 +646,25 @@ public class TimestampTests extends BaseTest {
     public void test53() {
         // The latest Instant that can be converted to a Timestamp.
         Instant instant1 = Instant.ofEpochSecond(Long.MAX_VALUE / 1000, 999_999_999);
-        assertEquals(instant1, Timestamp.from(instant1).toInstant());
+        assertEquals(Timestamp.from(instant1).toInstant(), instant1);
 
         // One nanosecond more, and converting it gets an overflow.
         Instant instant2 = instant1.plusNanos(1);
-        try {
-            Timestamp unused = Timestamp.from(instant2);
-            fail();
-        } catch (IllegalArgumentException expected) {
-        }
+        expectThrows(IllegalArgumentException.class, () -> Timestamp.from(instant2));
+
+        // The earliest Instant that can be converted to a Timestamp.
+        Instant instant3 = Instant.ofEpochSecond(Long.MIN_VALUE / 1000, 0);
+        assertEquals(Timestamp.from(instant3).toInstant(), instant3);
+
+        // One nanosecond less, and converting it gets an overflow.
+        Instant instant4 = instant3.minusNanos(1);
+        expectThrows(IllegalArgumentException.class, () -> Timestamp.from(instant4));
 
         // The latest possible Instant will certainly overflow.
-        try {
-            Timestamp unused = Timestamp.from(Instant.MAX);
-            fail();
-        } catch (IllegalArgumentException expected) {
-        }
+        expectThrows(IllegalArgumentException.class, () -> Timestamp.from(Instant.MAX));
 
         // The earliest possible Instant will certainly overflow.
-        try {
-            Timestamp unused = Timestamp.from(Instant.MIN);
-            fail();
-        } catch (IllegalArgumentException expected) {
-        }
+        expectThrows(IllegalArgumentException.class, () -> Timestamp.from(Instant.MIN));
     }
 
     /*
