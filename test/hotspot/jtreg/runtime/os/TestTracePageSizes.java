@@ -350,7 +350,7 @@ class RangeWithPageSize {
         this.start = Long.parseUnsignedLong(start, 16);
         this.end = Long.parseUnsignedLong(end, 16);
         this.pageSize = Long.parseLong(pageSize);
-        this.thpEligible = Integer.parseInt(thpEligible) == 1;
+        this.thpEligible = thpEligible == null ? false : (Integer.parseInt(thpEligible) == 1);
 
         vmFlagHG = false;
         vmFlagHT = false;
