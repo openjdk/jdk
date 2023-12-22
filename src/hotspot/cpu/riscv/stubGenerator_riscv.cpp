@@ -3699,90 +3699,90 @@ class StubGenerator: public StubCodeGenerator {
     //
     //    // Load four word (u32/64) constants (K[t+3], K[t+2], K[t+1], K[t+0])
     //    // Output:
-    //    //   v15 = {K[t+3], K[t+2], K[t+1], K[t+0]}
-    //    vl1reXX.v v15, ofs
+    //    //   vTmp1 = {K[t+3], K[t+2], K[t+1], K[t+0]}
+    //    vl1reXX.v vTmp1, ofs
     //
     //    // Increment word constant address by stride (16/32 bytes, 4*4B/8B, 128b/256b)
     //    addi ofs, ofs, 16/32
     //
     //    // Add constants to message schedule words:
     //    //  Input
-    //    //    v15 = {K[t+3], K[t+2], K[t+1], K[t+0]}
-    //    //    v10 = {W[t+3], W[t+2], W[t+1], W[t+0]}; // Vt0 = W[3:0];
+    //    //    vTmp1 = {K[t+3], K[t+2], K[t+1], K[t+0]}
+    //    //    vW0 = {W[t+3], W[t+2], W[t+1], W[t+0]}; // Vt0 = W[3:0];
     //    //  Output
-    //    //    v14 = {W[t+3]+K[t+3], W[t+2]+K[t+2], W[t+1]+K[t+1], W[t+0]+K[t+0]}
-    //    vadd.vv v14, v15, v10
+    //    //    vTmp0 = {W[t+3]+K[t+3], W[t+2]+K[t+2], W[t+1]+K[t+1], W[t+0]+K[t+0]}
+    //    vadd.vv vTmp0, vTmp1, vW0
     //
     //    //  2 rounds of working variables updates.
-    //    //     v17[t+4] <- v17[t], v16[t], v14[t]
+    //    //     vState1[t+4] <- vState1[t], vState0[t], vTmp0[t]
     //    //  Input:
-    //    //    v17 = {c[t],d[t],g[t],h[t]}   " = v17[t] "
-    //    //    v16 = {a[t],b[t],e[t],f[t]}
-    //    //    v14 = {W[t+3]+K[t+3], W[t+2]+K[t+2], W[t+1]+K[t+1], W[t+0]+K[t+0]}
+    //    //    vState1 = {c[t],d[t],g[t],h[t]}   " = vState1[t] "
+    //    //    vState0 = {a[t],b[t],e[t],f[t]}
+    //    //    vTmp0 = {W[t+3]+K[t+3], W[t+2]+K[t+2], W[t+1]+K[t+1], W[t+0]+K[t+0]}
     //    //  Output:
-    //    //    v17 = {f[t+2],e[t+2],b[t+2],a[t+2]}  " = v16[t+2] "
-    //    //        = {h[t+4],g[t+4],d[t+4],c[t+4]}  " = v17[t+4] "
-    //    vsha2cl.vv v17, v16, v14
+    //    //    vState1 = {f[t+2],e[t+2],b[t+2],a[t+2]}  " = vState0[t+2] "
+    //    //        = {h[t+4],g[t+4],d[t+4],c[t+4]}  " = vState1[t+4] "
+    //    vsha2cl.vv vState1, vState0, vTmp0
     //
     //    //  2 rounds of working variables updates.
-    //    //     v16[t+4] <- v16[t], v16[t+2], v14[t]
+    //    //     vState0[t+4] <- vState0[t], vState0[t+2], vTmp0[t]
     //    //  Input
-    //    //   v16 = {a[t],b[t],e[t],f[t]}       " = v16[t] "
-    //    //       = {h[t+2],g[t+2],d[t+2],c[t+2]}   " = v17[t+2] "
-    //    //   v17 = {f[t+2],e[t+2],b[t+2],a[t+2]}   " = v16[t+2] "
-    //    //   v14 = {W[t+3]+K[t+3], W[t+2]+K[t+2], W[t+1]+K[t+1], W[t+0]+K[t+0]}
+    //    //   vState0 = {a[t],b[t],e[t],f[t]}       " = vState0[t] "
+    //    //       = {h[t+2],g[t+2],d[t+2],c[t+2]}   " = vState1[t+2] "
+    //    //   vState1 = {f[t+2],e[t+2],b[t+2],a[t+2]}   " = vState0[t+2] "
+    //    //   vTmp0 = {W[t+3]+K[t+3], W[t+2]+K[t+2], W[t+1]+K[t+1], W[t+0]+K[t+0]}
     //    //  Output:
-    //    //   v16 = {f[t+4],e[t+4],b[t+4],a[t+4]}   " = v16[t+4] "
-    //    vsha2ch.vv v16, v17, v14
+    //    //   vState0 = {f[t+4],e[t+4],b[t+4],a[t+4]}   " = vState0[t+4] "
+    //    vsha2ch.vv vState0, vState1, vTmp0
     //
     //    // Combine 2QW into 1QW
     //    //
-    //    // To generate the next 4 words, "new_v10"/"v14" from v10-v13, vsha2ms needs
-    //    //     v10[0..3], v11[0], v12[1..3], v13[0, 2..3]
+    //    // To generate the next 4 words, "new_vW0"/"vTmp0" from vW0-vW3, vsha2ms needs
+    //    //     vW0[0..3], vW1[0], vW2[1..3], vW3[0, 2..3]
     //    // and it can only take 3 vectors as inputs. Hence we need to combine
-    //    // v11[0] and v12[1..3] in a single vector.
+    //    // vW1[0] and vW2[1..3] in a single vector.
     //    //
     //    // vmerge Vt4, Vt1, Vt2, V0
     //    // Input
-    //    //  V0 = mask // first word from v12, 1..3 words from v11
-    //    //  V12 = {Wt-8, Wt-7, Wt-6, Wt-5}
-    //    //  V11 = {Wt-12, Wt-11, Wt-10, Wt-9}
+    //    //  V0 = mask // first word from vW2, 1..3 words from vW1
+    //    //  vW2 = {Wt-8, Wt-7, Wt-6, Wt-5}
+    //    //  vW1 = {Wt-12, Wt-11, Wt-10, Wt-9}
     //    // Output
     //    //  Vt4 = {Wt-12, Wt-7, Wt-6, Wt-5}
-    //    vmerge.vvm v14, v12, v11, v0
+    //    vmerge.vvm vTmp0, vW2, vW1, v0
     //
     //    // Generate next Four Message Schedule Words (hence allowing for 4 more rounds)
     //    // Input
-    //    //  V10 = {W[t+ 3], W[t+ 2], W[t+ 1], W[t+ 0]}     W[ 3: 0]
-    //    //  V13 = {W[t+15], W[t+14], W[t+13], W[t+12]}     W[15:12]
-    //    //  V14 = {W[t+11], W[t+10], W[t+ 9], W[t+ 4]}     W[11: 9,4]
+    //    //  vW0 = {W[t+ 3], W[t+ 2], W[t+ 1], W[t+ 0]}     W[ 3: 0]
+    //    //  vW3 = {W[t+15], W[t+14], W[t+13], W[t+12]}     W[15:12]
+    //    //  vTmp0 = {W[t+11], W[t+10], W[t+ 9], W[t+ 4]}     W[11: 9,4]
     //    // Output (next four message schedule words)
-    //    //  v10 = {W[t+19],  W[t+18],  W[t+17],  W[t+16]}  W[19:16]
-    //    vsha2ms.vv v10, v14, v13
+    //    //  vW0 = {W[t+19],  W[t+18],  W[t+17],  W[t+16]}  W[19:16]
+    //    vsha2ms.vv vW0, vTmp0, vW3
     //
     // BEFORE
-    //  v10 - v13 hold the message schedule words (initially the block words)
-    //    v10 = W[ 3: 0]   "oldest"
-    //    v11 = W[ 7: 4]
-    //    v12 = W[11: 8]
-    //    v13 = W[15:12]   "newest"
+    //  vW0 - vW3 hold the message schedule words (initially the block words)
+    //    vW0 = W[ 3: 0]   "oldest"
+    //    vW1 = W[ 7: 4]
+    //    vW2 = W[11: 8]
+    //    vW3 = W[15:12]   "newest"
     //
     //  vt6 - vt7 hold the working state variables
-    //    v16 = {a[t],b[t],e[t],f[t]}   // initially {H5,H4,H1,H0}
-    //    v17 = {c[t],d[t],g[t],h[t]}   // initially {H7,H6,H3,H2}
+    //    vState0 = {a[t],b[t],e[t],f[t]}   // initially {H5,H4,H1,H0}
+    //    vState1 = {c[t],d[t],g[t],h[t]}   // initially {H7,H6,H3,H2}
     //
     // AFTER
-    //  v10 - v13 hold the message schedule words (initially the block words)
-    //    v11 = W[ 7: 4]   "oldest"
-    //    v12 = W[11: 8]
-    //    v13 = W[15:12]
-    //    v10 = W[19:16]   "newest"
+    //  vW0 - vW3 hold the message schedule words (initially the block words)
+    //    vW1 = W[ 7: 4]   "oldest"
+    //    vW2 = W[11: 8]
+    //    vW3 = W[15:12]
+    //    vW0 = W[19:16]   "newest"
     //
-    //  v16 and v17 hold the working state variables
-    //    v16 = {a[t+4],b[t+4],e[t+4],f[t+4]}
-    //    v17 = {c[t+4],d[t+4],g[t+4],h[t+4]}
+    //  vState0 and vState1 hold the working state variables
+    //    vState0 = {a[t+4],b[t+4],e[t+4],f[t+4]}
+    //    vState1 = {c[t+4],d[t+4],g[t+4],h[t+4]}
     //
-    //  The group of vectors v10,v11,v12,v13 is "rotated" by one in each quad-round,
+    //  The group of vectors vW0,vW1,vW2,vW3 is "rotated" by one in each quad-round,
     //  hence the uses of those vectors rotate in each round, and we get back to the
     //  initial configuration every 4 quad-rounds. We could avoid those changes at
     //  the cost of moving those vectors at the end of each quad-rounds.
@@ -3882,6 +3882,16 @@ class StubGenerator: public StubCodeGenerator {
       Register consts =  t2; // caller saved
       Register state_c = x28; // caller saved
       VectorRegister vindex = v1;
+      VectorRegister vW0 = v2;
+      VectorRegister vW1 = v4;
+      VectorRegister vW2 = v6;
+      VectorRegister vW3 = v8;
+      VectorRegister vState0 = v10;
+      VectorRegister vState1 = v12;
+      VectorRegister vHash0  = v14;
+      VectorRegister vHash1  = v16;
+      VectorRegister vTmp0   = v18;
+      VectorRegister vTmp1   = v20;
 
       Label multi_block_loop;
 
@@ -3893,34 +3903,29 @@ class StubGenerator: public StubCodeGenerator {
       // Register use in this function:
       //
       // VECTORS
-      //  v10 - v13 (512/1024-bits / 4*128/256 bits / 4*4*32/65 bits), hold the message
+      //  vW0 - vW3 (512/1024-bits / 4*128/256 bits / 4*4*32/65 bits), hold the message
       //             schedule words (Wt). They start with the message block
       //             content (W0 to W15), then further words in the message
       //             schedule generated via vsha2ms from previous Wt.
       //   Initially:
-      //     v10 = W[  3:0] = { W3,  W2,  W1,  W0}
-      //     v11 = W[  7:4] = { W7,  W6,  W5,  W4}
-      //     v12 = W[ 11:8] = {W11, W10,  W9,  W8}
-      //     v13 = W[15:12] = {W15, W14, W13, W12}
+      //     vW0 = W[  3:0] = { W3,  W2,  W1,  W0}
+      //     vW1 = W[  7:4] = { W7,  W6,  W5,  W4}
+      //     vW2 = W[ 11:8] = {W11, W10,  W9,  W8}
+      //     vW3 = W[15:12] = {W15, W14, W13, W12}
       //
-      //  v16 - v17 hold the working state variables (a, b, ..., h)
-      //    v16 = {f[t],e[t],b[t],a[t]}
-      //    v17 = {h[t],g[t],d[t],c[t]}
+      //  vState0 - vState1 hold the working state variables (a, b, ..., h)
+      //    vState0 = {f[t],e[t],b[t],a[t]}
+      //    vState1 = {h[t],g[t],d[t],c[t]}
       //   Initially:
-      //    v16 = {H5i-1, H4i-1, H1i-1 , H0i-1}
-      //    v17 = {H7i-i, H6i-1, H3i-1 , H2i-1}
+      //    vState0 = {H5i-1, H4i-1, H1i-1 , H0i-1}
+      //    vState1 = {H7i-i, H6i-1, H3i-1 , H2i-1}
       //
       //  v0 = masks for vrgather/vmerge. Single value during the 16 rounds.
       //
-      //  v14 = temporary, Wt+Kt
-      //  v15 = temporary, Kt
+      //  vTmp0 = temporary, Wt+Kt
+      //  vTmp1 = temporary, Kt
       //
-      //  v18/v19 = temporaries, in the epilogue, to re-arrange
-      //            and byte-swap v16/v17
-      //
-      //  v26/v27 = hold the initial values of the hash, byte-swapped.
-      //
-      //  v30/v31 = used to generate masks, vrgather indices.
+      //  vHash0/vHash1 = hold the initial values of the hash, byte-swapped.
       //
       // During most of the function the vector state is configured so that each
       // vector is interpreted as containing four 32/64 bits (e32/e64) elements (128/256 bits).
@@ -3933,7 +3938,11 @@ class StubGenerator: public StubCodeGenerator {
       // ma: mask agnostic (don't care about those lanes)
       // x0 is not written, we known the number of vector elements.
 
-      __ vsetivli(x0, 4, vset_sew, Assembler::m1, Assembler::ma, Assembler::ta);
+      if (vset_sew == Assembler::e32 && MaxVectorSize == 16) {
+        __ vsetivli(x0, 4, vset_sew, Assembler::m2, Assembler::ma, Assembler::ta);
+      } else {
+        __ vsetivli(x0, 4, vset_sew, Assembler::m1, Assembler::ma, Assembler::ta);
+      }
       // Splat indexes in vindex if SEW = e64, but don't hurt anything.
       int64_t indexes = vset_sew == Assembler::e32 ? 0x00041014ul : 0x00082028ul;
       __ li(t0, indexes);
@@ -3944,17 +3953,17 @@ class StubGenerator: public StubCodeGenerator {
       __ addi(state_c, state, const_add/2);
 
       // Use index-load to get {f,e,b,a},{h,g,d,c}
-      __ vluxei8_v(v16, state, vindex);
-      __ vluxei8_v(v17, state_c, vindex);
+      __ vluxei8_v(vState0, state, vindex);
+      __ vluxei8_v(vState1, state_c, vindex);
 
       __ bind(multi_block_loop);
 
-      // Capture the initial H values in v26 and v27 to allow for computing
+      // Capture the initial H values in vHash0 and vHash1 to allow for computing
       // the resulting H', since H' = H+{a',b',c',...,h'}.
-      __ vmv_v_v(v26, v16);
-      __ vmv_v_v(v27, v17);
+      __ vmv_v_v(vHash0, vState0);
+      __ vmv_v_v(vHash1, vState1);
 
-      // Load the 512/1024-bits of the message block in v10-v13 and perform
+      // Load the 512/1024-bits of the message block in vW0-vW3 and perform
       // an endian swap on each 4/8 bytes element.
       //
       // If Zvkb is not implemented one can use vrgather
@@ -3962,26 +3971,26 @@ class StubGenerator: public StubCodeGenerator {
       //  sequence = [3 2 1 0   7 6 5 4  11 10 9 8   15 14 13 12]
       //   <https://oeis.org/A004444> gives us "N ^ 3" as a nice formula to generate
       //  this sequence. 'vid' gives us the N.
-      __ vleXX_v(vset_sew, v10, buf);
-      __ vrev8_v(v10, v10);
+      __ vleXX_v(vset_sew, vW0, buf);
+      __ vrev8_v(vW0, vW0);
       __ addi(buf, buf, const_add);
-      __ vleXX_v(vset_sew, v11, buf);
-      __ vrev8_v(v11, v11);
+      __ vleXX_v(vset_sew, vW1, buf);
+      __ vrev8_v(vW1, vW1);
       __ addi(buf, buf, const_add);
-      __ vleXX_v(vset_sew, v12, buf);
-      __ vrev8_v(v12, v12);
+      __ vleXX_v(vset_sew, vW2, buf);
+      __ vrev8_v(vW2, vW2);
       __ addi(buf, buf, const_add);
-      __ vleXX_v(vset_sew, v13, buf);
-      __ vrev8_v(v13, v13);
+      __ vleXX_v(vset_sew, vW3, buf);
+      __ vrev8_v(vW3, vW3);
       __ addi(buf, buf, const_add);
 
       // Set v0 up for the vmerge that replaces the first word (idx==0)
       __ vid_v(v0);
       __ vmseq_vi(v0, v0, 0x0);  // v0.mask[i] = (i == 0 ? 1 : 0)
 
-      VectorRegister rotation_regs[] = {v10, v11, v12, v13};
+      VectorRegister rotation_regs[] = {vW0, vW1, vW2, vW3};
       int rot_pos = 0;
-      // Quad-round #0 (+0, v10->v11->v12->v13) ... #11 (+3, v13->v10->v11->v12)
+      // Quad-round #0 (+0, vW0->vW1->vW2->vW3) ... #11 (+3, vW3->vW0->vW1->vW2)
       const int qr_end = vset_sew == Assembler::e32 ? 12 : 16;
       for (int i = 0; i < qr_end; i++) {
         sha2_quad_round(vset_sew,
@@ -3990,11 +3999,11 @@ class StubGenerator: public StubCodeGenerator {
                    rotation_regs[(rot_pos + 2) & 0x3],
                    rotation_regs[(rot_pos + 3) & 0x3],
                    consts,
-                   v15, v14, v16, v17);
+                   vTmp1, vTmp0, vState0, vState1);
         ++rot_pos;
       }
-      // Quad-round #12 (+0, v10->v11->v12->v13) ... #15 (+3, v13->v10->v11->v12)
-      // Note that we stop generating new message schedule words (Wt, v10-13)
+      // Quad-round #12 (+0, vW0->vW1->vW2->vW3) ... #15 (+3, vW3->vW0->vW1->vW2)
+      // Note that we stop generating new message schedule words (Wt, vW0-13)
       // as we already generated all the words we end up consuming (i.e., W[63:60]).
       const int qr_c_end = qr_end + 4;
       for (int i = qr_end; i < qr_c_end; i++) {
@@ -4004,7 +4013,7 @@ class StubGenerator: public StubCodeGenerator {
                    rotation_regs[(rot_pos + 2) & 0x3],
                    rotation_regs[(rot_pos + 3) & 0x3],
                    consts,
-                   v15, v14, v16, v17, false, i < (qr_c_end-1));
+                   vTmp1, vTmp0, vState0, vState1, false, i < (qr_c_end-1));
         ++rot_pos;
       }
 
@@ -4015,8 +4024,8 @@ class StubGenerator: public StubCodeGenerator {
       //      = {h+h',g+g',...,b+b',a+a'}
 
       // H' = H+{a',b',c',...,h'}
-      __ vadd_vv(v16, v26, v16);
-      __ vadd_vv(v17, v27, v17);
+      __ vadd_vv(vState0, vHash0, vState0);
+      __ vadd_vv(vState1, vHash1, vState1);
 
       if (multi_block) {
         int total_adds = vset_sew == Assembler::e32 ? 240 : 608;
@@ -4027,10 +4036,10 @@ class StubGenerator: public StubCodeGenerator {
       }
 
       // Store H[0..8] = {a,b,c,d,e,f,g,h} from
-      //  v16 = {f,e,b,a}
-      //  v17 = {h,g,d,c}
-      __ vsuxei8_v(v16, state,   vindex);
-      __ vsuxei8_v(v17, state_c, vindex);
+      //  vState0 = {f,e,b,a}
+      //  vState1 = {h,g,d,c}
+      __ vsuxei8_v(vState0, state,   vindex);
+      __ vsuxei8_v(vState1, state_c, vindex);
 
       __ leave();
       __ ret();
