@@ -33,6 +33,7 @@ import java.util.Random;
  *          BufferedInputStream.implTransferTo() only when its OutputStream
  *          parameter is trusted
  * @key randomness
+ * @run main/othervm --add-opens=java.base/java.io=ALL-UNNAMED TransferToTrusted
  */
 public class TransferToTrusted {
 
@@ -58,38 +59,31 @@ public class TransferToTrusted {
         }
     }
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) throws Exception {
         final int length = 128;
         byte[] buf = new byte[length];
         RND.nextBytes(buf);
-        byte[] dup = Arrays.copyOf(buf, buf.length);
 
-        var bis = new BufferedInputStream(new ByteArrayInputStream(dup));
-        bis.mark(dup.length);
+        var outputStreams = new OutputStream[]{
+                new ByteArrayOutputStream(),
+                new FileOutputStream(File.createTempFile(TransferToTrusted.class.getName(), null)),
+                new PipedOutputStream(new PipedInputStream(length)),
+                new UntrustedOutputStream()
+        };
 
-        var tempFile = File.createTempFile(TransferToTrusted.class.getName(), null);
-        try {
-            var outputStreams = new OutputStream[]{
-                    new ByteArrayOutputStream(),
-                    new FileOutputStream(tempFile),
-                    new PipedOutputStream(new PipedInputStream(length)),
-                    new UntrustedOutputStream()
-            };
+        for (var out : outputStreams) {
+            System.err.println("out: " + out.getClass().getName());
 
-            for (var out : outputStreams) {
-                System.err.println("out: " + out.getClass().getName());
-
+            var bis = new BufferedInputStream(new ByteArrayInputStream(buf.clone()));
+            try (out; bis) {
+                bis.read();//need this to fill the BIS.buf in
                 bis.transferTo(out);
-                bis.reset();
-                try (out) {
-                    if (!Arrays.equals(buf, bis.readAllBytes())) {
-                        throw new RuntimeException("Internal buffer was modified");
-                    }
+                var internalBuffer = bis.getClass().getDeclaredField("buf");
+                internalBuffer.setAccessible(true);
+                if (!Arrays.equals(buf, Arrays.copyOf((byte[]) internalBuffer.get(bis), length))) {
+                    throw new RuntimeException("Internal buffer was modified");
                 }
-                bis.reset();
             }
-        } finally {
-            tempFile.delete();
         }
     }
 }
