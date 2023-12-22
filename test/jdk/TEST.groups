@@ -583,3 +583,8 @@ jdk_core_manual_requires_human_input = \
     java/util/TimeZone/DefaultTimeZoneTest.java
 
 
+# Test sets for running inside container environment
+jdk_containers_extended = \
+    :jdk_io \
+    :jdk_nio \
+    :jdk_svc
