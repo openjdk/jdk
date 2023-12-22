@@ -146,7 +146,13 @@ static inline KlassPtr get_cld_klass(CldPtr cld, bool leakp) {
   assert(leakp ? IS_LEAKP(cld) : used(cld), "invariant");
   KlassPtr cld_klass = cld->class_loader_klass();
   if (should_do_cld_klass(cld_klass, leakp)) {
-    artifact_tag(cld_klass, leakp);
+    if (current_epoch()) {
+      // This will enqueue the klass, which is important for
+      // reachability when doing clear and reset at rotation.
+      JfrTraceId::load(cld_klass);
+    } else {
+      artifact_tag(cld_klass, leakp);
+    }
     return cld_klass;
   }
   return nullptr;
@@ -596,7 +602,7 @@ typedef JfrPredicatedTypeWriterImplHost<PkgPtr, PackagePredicate, write__package
 typedef JfrTypeWriterHost<PackageWriterImpl, TYPE_PACKAGE> PackageWriter;
 typedef JfrArtifactCallbackHost<PkgPtr, PackageWriter> PackageCallback;
 
-// PackageWriter used during unloading.
+// PackageWriter used during flush or unloading i.e. the current epoch.
 typedef KlassToFieldEnvelope<PackageFieldSelector, PackageWriter> KlassPackageWriter;
 
 // PackageWriter with clear. Only used during start or rotation, i.e. the previous epoch.
@@ -626,7 +632,7 @@ static void do_all_packages(PackageWriter& pw) {
   _artifacts->tally(pw);
 }
 
-static void do_unloading_packages(PackageWriter& pw) {
+static void do_packages(PackageWriter& pw) {
   KlassPackageWriter kpw(&pw);
   _artifacts->iterate_klasses(kpw);
   _artifacts->tally(pw);
@@ -647,13 +653,8 @@ static void write_packages_with_leakp(PackageWriter& pw) {
 static void write_packages() {
   assert(_writer != nullptr, "invariant");
   PackageWriter pw(_writer, unloading());
-  if (unloading()) {
-    do_unloading_packages(pw);
-    return;
-  }
-  if (flushpoint()) {
-    PackageCallback callback(&_subsystem_callback, &pw);
-    do_all_packages(pw);
+  if (current_epoch()) {
+    do_packages(pw);
     return;
   }
   assert(previous_epoch(), "invariant");
@@ -708,7 +709,7 @@ typedef JfrPredicatedTypeWriterImplHost<ModPtr, ModulePredicate, write__module> 
 typedef JfrTypeWriterHost<ModuleWriterImpl, TYPE_MODULE> ModuleWriter;
 typedef JfrArtifactCallbackHost<ModPtr, ModuleWriter> ModuleCallback;
 
-// ModuleWriter used during unloading.
+// ModuleWriter used during flush or unloading i.e. the current epoch.
 typedef KlassToFieldEnvelope<ModuleFieldSelector, ModuleWriter> KlassModuleWriter;
 
 // ModuleWriter with clear. Only used during start or rotation, i.e. the previous epoch.
@@ -738,8 +739,7 @@ static void do_all_modules(ModuleWriter& mw) {
   _artifacts->tally(mw);
 }
 
-static void do_unloading_modules(ModuleWriter& mw) {
-  assert(unloading(), "invariant");
+static void do_modules(ModuleWriter& mw) {
   KlassModuleWriter kmw(&mw);
   _artifacts->iterate_klasses(kmw);
   _artifacts->tally(mw);
@@ -760,13 +760,8 @@ static void write_modules_with_leakp(ModuleWriter& mw) {
 static void write_modules() {
   assert(_writer != nullptr, "invariant");
   ModuleWriter mw(_writer, unloading());
-  if (unloading()) {
-    do_unloading_modules(mw);
-    return;
-  }
-  if (flushpoint()) {
-    ModuleCallback callback(&_subsystem_callback, &mw);
-    do_all_modules(mw);
+  if (current_epoch()) {
+    do_modules(mw);
     return;
   }
   assert(previous_epoch(), "invariant");
@@ -828,7 +823,7 @@ typedef JfrPredicatedTypeWriterImplHost<CldPtr, CldPredicate, write__cld> CldWri
 typedef JfrTypeWriterHost<CldWriterImpl, TYPE_CLASSLOADER> CldWriter;
 typedef JfrArtifactCallbackHost<CldPtr, CldWriter> CldCallback;
 
-// CldWriter used during unloading.
+// CldWriter used during flush or unloading i.e. the current epoch.
 typedef KlassToFieldEnvelope<KlassCldFieldSelector, CldWriter> KlassCldWriter;
 typedef KlassToFieldEnvelope<ModuleCldFieldSelector, CldWriter> ModuleCldWriter;
 typedef CompositeFunctor<KlassPtr, KlassCldWriter, ModuleCldWriter> KlassAndModuleCldWriter;
@@ -867,8 +862,7 @@ static void do_all_clds(CldWriter& cldw) {
   _artifacts->tally(cldw);
 }
 
-static void do_unloading_clds(CldWriter& cldw) {
-  assert(unloading(), "invariant");
+static void do_clds(CldWriter& cldw) {
   KlassCldWriter kcw(&cldw);
   ModuleCldWriter mcw(&cldw);
   KlassAndModuleCldWriter kmcw(&kcw, &mcw);
@@ -891,13 +885,8 @@ static void write_clds_with_leakp(CldWriter& cldw) {
 static void write_clds() {
   assert(_writer != nullptr, "invariant");
   CldWriter cldw(_writer, unloading());
-  if (unloading()) {
-    do_unloading_clds(cldw);
-    return;
-  }
-  if (flushpoint()) {
-    CldCallback callback(&_subsystem_callback, &cldw);
-    do_all_clds(cldw);
+  if (current_epoch()) {
+    do_clds(cldw);
     return;
   }
   assert(previous_epoch(), "invariant");
