@@ -209,9 +209,6 @@ public class HotSpotSpeculationLog implements SpeculationLog {
 
     @Override
     public boolean maySpeculate(SpeculationReason reason) {
-        if (failedSpeculations == null) {
-            collectFailedSpeculations();
-        }
         if (failedSpeculations != null && failedSpeculations.length != 0) {
             byte[] encoding = encode(reason);
             return !contains(failedSpeculations, 0, encoding);
