@@ -44,7 +44,6 @@
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/typeArrayOop.inline.hpp"
-#include "prims/jvmtiEnvBase.hpp"
 #include "runtime/continuationWrapper.inline.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
@@ -1643,7 +1642,16 @@ public:
   }
 
   static bool is_vthread_mounted(oop vt) {
-    return JvmtiEnvBase::get_JavaThread_or_null(vt) != nullptr;
+    // The code should be consistent with the "mounted virtual thread" case
+    // (VM_HeapDumper::dump_stack_traces(), ThreadDumper::get_top_frame()).
+    // I.e. virtual thread is mounted if its carrierThread is not null
+    // and is_vthread_mounted() for the carrier thread returns true.
+    oop carrier_thread = java_lang_VirtualThread::carrier_thread(vt);
+    if (carrier_thread == nullptr) {
+      return false;
+    }
+    JavaThread* java_thread = java_lang_Thread::thread(carrier_thread);
+    return java_thread->is_vthread_mounted();
   }
 
   ThreadDumper(ThreadType thread_type, JavaThread* java_thread, oop thread_oop);
