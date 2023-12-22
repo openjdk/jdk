@@ -35,14 +35,14 @@ import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 
-/* @test
-   @bug 5049549 7132413
-   @summary Tests that the proper icon is used for different states.
-   @library ../../regtesthelpers
-   @build Blocker
-   @run main/manual bug5049549
-*/
-
+/*
+ * @test
+ * @bug 5049549 7132413
+ * @summary Tests that the proper icon is used for different states.
+ * @library ../../regtesthelpers
+ * @build Blocker
+ * @run main/manual bug5049549
+ */
 public class bug5049549 {
 
     private static Icon DE = generateImage("DE");
