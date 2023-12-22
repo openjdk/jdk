@@ -357,7 +357,11 @@ public final class PassFailJFrame {
 
         frame.addWindowListener(windowClosingHandler);
 
-        frame.add(createInstructionUIPanel(instructions, testTimeOut, rows, columns, enableScreenCapture), BorderLayout.CENTER);
+        frame.add(createInstructionUIPanel(instructions,
+                                           testTimeOut,
+                                           rows, columns,
+                                           enableScreenCapture),
+                  BorderLayout.CENTER);
         frame.pack();
         frame.setLocationRelativeTo(null);
         addTestWindow(frame);
