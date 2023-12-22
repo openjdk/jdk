@@ -1139,7 +1139,9 @@ bool LibraryCallKit::inline_preconditions_checkIndex(BasicType bt) {
 
   // length is now known positive, add a cast node to make this explicit
   jlong upper_bound = _gvn.type(length)->is_integer(bt)->hi_as_long();
-  Node* casted_length = ConstraintCastNode::make(control(), length, TypeInteger::make(0, upper_bound, Type::WidenMax, bt), ConstraintCastNode::RegularDependency, bt);
+  Node *casted_length = ConstraintCastNode::make_cast_for_basic_type(
+      control(), length, TypeInteger::make(0, upper_bound, Type::WidenMax, bt),
+      ConstraintCastNode::RegularDependency, bt);
   casted_length = _gvn.transform(casted_length);
   replace_in_map(length, casted_length);
   length = casted_length;
@@ -1167,7 +1169,9 @@ bool LibraryCallKit::inline_preconditions_checkIndex(BasicType bt) {
   }
 
   // index is now known to be >= 0 and < length, cast it
-  Node* result = ConstraintCastNode::make(control(), index, TypeInteger::make(0, upper_bound, Type::WidenMax, bt), ConstraintCastNode::RegularDependency, bt);
+  Node *result = ConstraintCastNode::make_cast_for_basic_type(
+      control(), index, TypeInteger::make(0, upper_bound, Type::WidenMax, bt),
+      ConstraintCastNode::RegularDependency, bt);
   result = _gvn.transform(result);
   set_result(result);
   replace_in_map(index, result);
