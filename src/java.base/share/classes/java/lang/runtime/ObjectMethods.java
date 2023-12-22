@@ -220,10 +220,10 @@ public class ObjectMethods {
         Arrays.sort(equalsGetters, (mh1, mh2) -> {
             var rt1 = mh1.type().returnType();
             var rt2 = mh2.type().returnType();
-            if (rt1.isPrimitive() == rt2.isPrimitive() || rt1.isEnum() == rt2.isEnum()) {
-                return 0;
-            }
-            return rt1.isPrimitive() || rt1.isEnum() || rt1.isArray() ? 1 : Iterable.class.isAssignableFrom(rt1) ? -1 : 0;
+            return Integer.compare(
+                rt1.isPrimitive() || rt1.isEnum() || rt1.isArray() ? 1 : Iterable.class.isAssignableFrom(rt1) ? -1 : 0,
+                rt2.isPrimitive() || rt2.isEnum() || rt2.isArray() ? 1 : Iterable.class.isAssignableFrom(rt2) ? -1 : 0
+            );
         });
 
         for (MethodHandle getter : equalsGetters) {
