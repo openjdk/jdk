@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,6 +45,10 @@ public class Setup {
         }
         String workDir = args[0];
         String premainClass = args[1];
+        boolean isCygwin = false;
+        if (args.length==3 && args[2].equals("CYGWIN")) {
+            isCygwin = true;
+        }
 
         String manifestFile = workDir + fileSeparator + "MANIFEST.MF";
         String bootClassPath = "boot" + suffix();
@@ -94,7 +98,12 @@ public class Setup {
          */
         f = new File(workDir + fileSeparator + "boot.dir");
         try (FileOutputStream out = new FileOutputStream(f)) {
-            out.write(bootDir.getBytes(defaultEncoding));
+            if (osName.startsWith("Windows") && isCygwin) {
+                out.write(bootDir.getBytes("UTF-8"));
+            }
+            else {
+                out.write(bootDir.getBytes(defaultEncoding));
+            }
         }
     }
 
