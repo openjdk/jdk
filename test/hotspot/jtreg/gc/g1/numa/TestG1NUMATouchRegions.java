@@ -181,7 +181,7 @@ public class TestG1NUMATouchRegions {
             return;
         }
 
-        OutputAnalyzer output =  ProcessTools.executeLimitedTestJava(
+        OutputAnalyzer output = ProcessTools.executeLimitedTestJava(
                                               "-Xbootclasspath/a:.",
                                               "-Xlog:pagesize,gc+heap+region=trace",
                                               "-XX:+UseG1GC",

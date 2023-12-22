@@ -98,5 +98,4 @@ public final class GCArguments {
     static public OutputAnalyzer executeTestJava(String... arguments) throws Exception {
         return ProcessTools.executeTestJava(withDefaults(arguments));
     }
-
 }
