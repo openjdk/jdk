@@ -24,10 +24,8 @@
 /**
  * @test
  * @bug 8142968 8158456 8298875
+ * @enablePreview
  * @modules java.base/jdk.internal.access
- *          java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.constantpool
  *          java.base/jdk.internal.module
  * @library /test/lib
  * @build jdk.test.lib.util.ModuleInfoWriter
@@ -62,8 +60,8 @@ import static java.lang.module.ModuleDescriptor.Requires.Modifier.*;
 
 import jdk.internal.access.JavaLangModuleAccess;
 import jdk.internal.access.SharedSecrets;
-import jdk.internal.classfile.Classfile;
-import jdk.internal.classfile.attribute.ModuleAttribute;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.attribute.ModuleAttribute;
 import java.lang.constant.PackageDesc;
 import java.lang.constant.ModuleDesc;
 import jdk.test.lib.util.ModuleInfoWriter;
@@ -1371,7 +1369,7 @@ public class ModuleDescriptorTest {
      * complete set of packages.
      */
     public void testReadsWithBadPackageFinder() throws Exception {
-        ByteBuffer bb = ByteBuffer.wrap(Classfile.of().buildModule(
+        ByteBuffer bb = ByteBuffer.wrap(ClassFile.of().buildModule(
                 ModuleAttribute.of(
                         ModuleDesc.of("foo"),
                         mb -> mb.requires(ModuleDesc.of("java.base"), 0, null)

@@ -220,6 +220,7 @@
   nonstatic_field(JavaThread,                  _lock_stack,                                   LockStack)                             \
   JVMTI_ONLY(nonstatic_field(JavaThread,       _is_in_VTMS_transition,                        bool))                                 \
   JVMTI_ONLY(nonstatic_field(JavaThread,       _is_in_tmp_VTMS_transition,                    bool))                                 \
+  JVMTI_ONLY(nonstatic_field(JavaThread,       _is_disable_suspend,                           bool))                                 \
                                                                                                                                      \
   nonstatic_field(LockStack,                   _top,                                          uint32_t)                              \
                                                                                                                                      \
@@ -612,7 +613,6 @@
   declare_constant(vmIntrinsics::_invokeGeneric)                          \
   declare_constant(vmIntrinsics::_compiledLambdaForm)                     \
                                                                           \
-  declare_constant(ConstantPool::CPCACHE_INDEX_TAG)                       \
   declare_constant(ConstantPool::_has_dynamic_constant)                   \
                                                                           \
   declare_constant(ConstMethodFlags::_misc_has_linenumber_table)          \

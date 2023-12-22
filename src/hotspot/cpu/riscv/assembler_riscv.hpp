@@ -758,6 +758,8 @@ enum Aqrl {relaxed = 0b00, rl = 0b01, aq = 0b10, aqrl = 0b11};
   INSN(amomax_d , 0b0101111, 0b011, 0b10100);
   INSN(amominu_d, 0b0101111, 0b011, 0b11000);
   INSN(amomaxu_d, 0b0101111, 0b011, 0b11100);
+  INSN(amocas_w,  0b0101111, 0b010, 0b00101);
+  INSN(amocas_d,  0b0101111, 0b011, 0b00101);
 #undef INSN
 
 enum operand_size { int8, int16, int32, uint32, int64 };
@@ -1417,6 +1419,7 @@ enum VectorMask {
   INSN(vmfeq_vv, 0b1010111, 0b001, 0b011000);
 
   // Vector Floating-Point Sign-Injection Instructions
+  INSN(vfsgnj_vv, 0b1010111, 0b001, 0b001000);
   INSN(vfsgnjx_vv, 0b1010111, 0b001, 0b001010);
   INSN(vfsgnjn_vv, 0b1010111, 0b001, 0b001001);
 

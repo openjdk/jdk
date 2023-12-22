@@ -70,12 +70,34 @@
   ( arrayOopDesc::header_size(T_DOUBLE) * HeapWordSize \
     + ((julong)max_jint * sizeof(double)) )
 
-
 #define UNSAFE_ENTRY(result_type, header) \
   JVM_ENTRY(static result_type, header)
 
 #define UNSAFE_LEAF(result_type, header) \
   JVM_LEAF(static result_type, header)
+
+// Note that scoped accesses (cf. scopedMemoryAccess.cpp) can install
+// an async handshake on the entry to an Unsafe method. When that happens,
+// it is expected that we are not allowed to touch the underlying memory
+// that might have gotten unmapped. Therefore, we check at the entry
+// to unsafe functions, if we have such async exception conditions,
+// and return immediately if that is the case.
+//
+// We can't have safepoints in this code.
+// It would be problematic if an async exception handshake were installed later on
+// during another safepoint in the function, but before the memory access happens,
+// as the memory will be freed after the handshake is installed. We must notice
+// the installed handshake and return early before doing the memory access to prevent
+// accesses to freed memory.
+//
+// Note also that we MUST do a scoped memory access in the VM (or Java) thread
+// state. Since we rely on a handshake to check for threads that are accessing
+// scoped memory, and we need the handshaking thread to wait until we get to a
+// safepoint, in order to make sure we are not in the middle of accessing memory
+// that is about to be freed. (i.e. there can be no UNSAFE_LEAF_SCOPED)
+#define UNSAFE_ENTRY_SCOPED(result_type, header) \
+  JVM_ENTRY(static result_type, header) \
+  if (thread->has_async_exception_condition()) {return (result_type)0;}
 
 #define UNSAFE_END JVM_END
 
@@ -279,11 +301,11 @@ UNSAFE_ENTRY(jobject, Unsafe_GetUncompressedObject(JNIEnv *env, jobject unsafe, 
 
 #define DEFINE_GETSETOOP(java_type, Type) \
  \
-UNSAFE_ENTRY(java_type, Unsafe_Get##Type(JNIEnv *env, jobject unsafe, jobject obj, jlong offset)) { \
+UNSAFE_ENTRY_SCOPED(java_type, Unsafe_Get##Type(JNIEnv *env, jobject unsafe, jobject obj, jlong offset)) { \
   return MemoryAccess<java_type>(thread, obj, offset).get(); \
 } UNSAFE_END \
  \
-UNSAFE_ENTRY(void, Unsafe_Put##Type(JNIEnv *env, jobject unsafe, jobject obj, jlong offset, java_type x)) { \
+UNSAFE_ENTRY_SCOPED(void, Unsafe_Put##Type(JNIEnv *env, jobject unsafe, jobject obj, jlong offset, java_type x)) { \
   MemoryAccess<java_type>(thread, obj, offset).put(x); \
 } UNSAFE_END \
  \
@@ -302,11 +324,11 @@ DEFINE_GETSETOOP(jdouble, Double);
 
 #define DEFINE_GETSETOOP_VOLATILE(java_type, Type) \
  \
-UNSAFE_ENTRY(java_type, Unsafe_Get##Type##Volatile(JNIEnv *env, jobject unsafe, jobject obj, jlong offset)) { \
+UNSAFE_ENTRY_SCOPED(java_type, Unsafe_Get##Type##Volatile(JNIEnv *env, jobject unsafe, jobject obj, jlong offset)) { \
   return MemoryAccess<java_type>(thread, obj, offset).get_volatile(); \
 } UNSAFE_END \
  \
-UNSAFE_ENTRY(void, Unsafe_Put##Type##Volatile(JNIEnv *env, jobject unsafe, jobject obj, jlong offset, java_type x)) { \
+UNSAFE_ENTRY_SCOPED(void, Unsafe_Put##Type##Volatile(JNIEnv *env, jobject unsafe, jobject obj, jlong offset, java_type x)) { \
   MemoryAccess<java_type>(thread, obj, offset).put_volatile(x); \
 } UNSAFE_END \
  \
@@ -362,16 +384,19 @@ UNSAFE_LEAF(void, Unsafe_FreeMemory0(JNIEnv *env, jobject unsafe, jlong addr)) {
   os::free(p);
 } UNSAFE_END
 
-UNSAFE_ENTRY(void, Unsafe_SetMemory0(JNIEnv *env, jobject unsafe, jobject obj, jlong offset, jlong size, jbyte value)) {
+UNSAFE_ENTRY_SCOPED(void, Unsafe_SetMemory0(JNIEnv *env, jobject unsafe, jobject obj, jlong offset, jlong size, jbyte value)) {
   size_t sz = (size_t)size;
 
   oop base = JNIHandles::resolve(obj);
   void* p = index_oop_from_field_offset_long(base, offset);
 
-  Copy::fill_to_memory_atomic(p, sz, value);
+  {
+    GuardUnsafeAccess guard(thread);
+    Copy::fill_to_memory_atomic(p, sz, value);
+  }
 } UNSAFE_END
 
-UNSAFE_ENTRY(void, Unsafe_CopyMemory0(JNIEnv *env, jobject unsafe, jobject srcObj, jlong srcOffset, jobject dstObj, jlong dstOffset, jlong size)) {
+UNSAFE_ENTRY_SCOPED(void, Unsafe_CopyMemory0(JNIEnv *env, jobject unsafe, jobject srcObj, jlong srcOffset, jobject dstObj, jlong dstOffset, jlong size)) {
   size_t sz = (size_t)size;
 
   oop srcp = JNIHandles::resolve(srcObj);
@@ -390,39 +415,19 @@ UNSAFE_ENTRY(void, Unsafe_CopyMemory0(JNIEnv *env, jobject unsafe, jobject srcOb
   }
 } UNSAFE_END
 
-// This function is a leaf since if the source and destination are both in native memory
-// the copy may potentially be very large, and we don't want to disable GC if we can avoid it.
-// If either source or destination (or both) are on the heap, the function will enter VM using
-// JVM_ENTRY_FROM_LEAF
-UNSAFE_LEAF(void, Unsafe_CopySwapMemory0(JNIEnv *env, jobject unsafe, jobject srcObj, jlong srcOffset, jobject dstObj, jlong dstOffset, jlong size, jlong elemSize)) {
+UNSAFE_ENTRY_SCOPED(void, Unsafe_CopySwapMemory0(JNIEnv *env, jobject unsafe, jobject srcObj, jlong srcOffset, jobject dstObj, jlong dstOffset, jlong size, jlong elemSize)) {
   size_t sz = (size_t)size;
   size_t esz = (size_t)elemSize;
 
-  if (srcObj == nullptr && dstObj == nullptr) {
-    // Both src & dst are in native memory
-    address src = (address)srcOffset;
-    address dst = (address)dstOffset;
+  oop srcp = JNIHandles::resolve(srcObj);
+  oop dstp = JNIHandles::resolve(dstObj);
 
-    {
-      JavaThread* thread = JavaThread::thread_from_jni_environment(env);
-      GuardUnsafeAccess guard(thread);
-      Copy::conjoint_swap(src, dst, sz, esz);
-    }
-  } else {
-    // At least one of src/dst are on heap, transition to VM to access raw pointers
+  address src = (address)index_oop_from_field_offset_long(srcp, srcOffset);
+  address dst = (address)index_oop_from_field_offset_long(dstp, dstOffset);
 
-    JVM_ENTRY_FROM_LEAF(env, void, Unsafe_CopySwapMemory0) {
-      oop srcp = JNIHandles::resolve(srcObj);
-      oop dstp = JNIHandles::resolve(dstObj);
-
-      address src = (address)index_oop_from_field_offset_long(srcp, srcOffset);
-      address dst = (address)index_oop_from_field_offset_long(dstp, dstOffset);
-
-      {
-        GuardUnsafeAccess guard(thread);
-        Copy::conjoint_swap(src, dst, sz, esz);
-      }
-    } JVM_END
+  {
+    GuardUnsafeAccess guard(thread);
+    Copy::conjoint_swap(src, dst, sz, esz);
   }
 } UNSAFE_END
 
@@ -718,13 +723,13 @@ UNSAFE_ENTRY(jobject, Unsafe_CompareAndExchangeReference(JNIEnv *env, jobject un
   return JNIHandles::make_local(THREAD, res);
 } UNSAFE_END
 
-UNSAFE_ENTRY(jint, Unsafe_CompareAndExchangeInt(JNIEnv *env, jobject unsafe, jobject obj, jlong offset, jint e, jint x)) {
+UNSAFE_ENTRY_SCOPED(jint, Unsafe_CompareAndExchangeInt(JNIEnv *env, jobject unsafe, jobject obj, jlong offset, jint e, jint x)) {
   oop p = JNIHandles::resolve(obj);
   volatile jint* addr = (volatile jint*)index_oop_from_field_offset_long(p, offset);
   return Atomic::cmpxchg(addr, e, x);
 } UNSAFE_END
 
-UNSAFE_ENTRY(jlong, Unsafe_CompareAndExchangeLong(JNIEnv *env, jobject unsafe, jobject obj, jlong offset, jlong e, jlong x)) {
+UNSAFE_ENTRY_SCOPED(jlong, Unsafe_CompareAndExchangeLong(JNIEnv *env, jobject unsafe, jobject obj, jlong offset, jlong e, jlong x)) {
   oop p = JNIHandles::resolve(obj);
   volatile jlong* addr = (volatile jlong*)index_oop_from_field_offset_long(p, offset);
   return Atomic::cmpxchg(addr, e, x);
@@ -739,13 +744,13 @@ UNSAFE_ENTRY(jboolean, Unsafe_CompareAndSetReference(JNIEnv *env, jobject unsafe
   return ret == e;
 } UNSAFE_END
 
-UNSAFE_ENTRY(jboolean, Unsafe_CompareAndSetInt(JNIEnv *env, jobject unsafe, jobject obj, jlong offset, jint e, jint x)) {
+UNSAFE_ENTRY_SCOPED(jboolean, Unsafe_CompareAndSetInt(JNIEnv *env, jobject unsafe, jobject obj, jlong offset, jint e, jint x)) {
   oop p = JNIHandles::resolve(obj);
   volatile jint* addr = (volatile jint*)index_oop_from_field_offset_long(p, offset);
   return Atomic::cmpxchg(addr, e, x) == e;
 } UNSAFE_END
 
-UNSAFE_ENTRY(jboolean, Unsafe_CompareAndSetLong(JNIEnv *env, jobject unsafe, jobject obj, jlong offset, jlong e, jlong x)) {
+UNSAFE_ENTRY_SCOPED(jboolean, Unsafe_CompareAndSetLong(JNIEnv *env, jobject unsafe, jobject obj, jlong offset, jlong e, jlong x)) {
   oop p = JNIHandles::resolve(obj);
   volatile jlong* addr = (volatile jlong*)index_oop_from_field_offset_long(p, offset);
   return Atomic::cmpxchg(addr, e, x) == e;

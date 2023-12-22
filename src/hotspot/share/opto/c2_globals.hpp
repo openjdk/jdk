@@ -53,6 +53,9 @@
   product(bool, StressCCP, false, DIAGNOSTIC,                               \
           "Randomize worklist traversal in CCP")                            \
                                                                             \
+  product(bool, StressIncrementalInlining, false, DIAGNOSTIC,               \
+          "Randomize the incremental inlining decision")                    \
+                                                                            \
   product(uint, StressSeed, 0, DIAGNOSTIC,                                  \
           "Seed for randomized stress testing (if unset, a random one is "  \
           "generated). The seed is recorded in the compilation log, if "    \
@@ -362,10 +365,10 @@
           "Level of detail of the ideal graph printout. "                   \
           "System-wide value, -1=printing is disabled, "                    \
           "0=print nothing except IGVPrintLevel directives, "               \
-          "5=all details printed. "                                         \
+          "6=all details printed. "                                         \
           "Level of detail of printouts can be set on a per-method level "  \
           "as well by using CompileCommand=option.")                        \
-          range(-1, 5)                                                      \
+          range(-1, 6)                                                      \
                                                                             \
   notproduct(intx, PrintIdealGraphPort, 4444,                               \
           "Ideal graph printer to network port")                            \
@@ -468,7 +471,10 @@
           "Try to simplify allocation merges before Scalar Replacement")    \
                                                                             \
   notproduct(bool, TraceReduceAllocationMerges, false,                      \
-          "Trace decision for simplifying allocation merges.")              \
+             "Trace decision for simplifying allocation merges.")           \
+                                                                            \
+  develop(bool, VerifyReduceAllocationMerges, true,                         \
+          "Verify reduce allocation merges in escape analysis")             \
                                                                             \
   product(bool, DoEscapeAnalysis, true,                                     \
           "Perform escape analysis")                                        \
@@ -777,6 +783,8 @@
           "more than this threshold")                                       \
           range(0, 100)                                                     \
                                                                             \
+  develop(bool, StressPrunedExceptionHandlers, false,                       \
+          "Always prune exception handlers")                                \
 
 // end of C2_FLAGS
 
