@@ -911,9 +911,11 @@ struct handletableentry{
     dev64_t devid;
     uint    refcount;
 };
-constexpr int max_handletable = 1024;
+static int max_handletable = 0;
 static int g_handletable_used = 0;
-static struct handletableentry g_handletable[max_handletable] = {{0, 0, 0, 0}};
+// We start with an empty array. At first use we will dynamically allocate memory for 128 entries.
+// If this table is full we dynamically reallocate a memory reagion of double size, and so on.
+static struct handletableentry* p_handletable = nullptr;
 
 // get the library search path burned in to the executable file during linking
 // If the libpath cannot be retrieved return an empty path
@@ -1029,7 +1031,7 @@ static bool search_file_in_LIBPATH(const char* path, struct stat64x* stat) {
 }
 
 // specific AIX versions for ::dlopen() and ::dlclose(), which handles the struct g_handletable
-// filled by os::dll_load(). This way we mimic dl handle equality for a library
+// This way we mimic dl handle equality for a library
 // opened a second time, as it is implemented on other platforms.
 void* Aix_dlopen(const char* filename, int Flags, const char** error_report) {
   assert(error_report != nullptr, "error_report is nullptr");
@@ -1042,6 +1044,8 @@ void* Aix_dlopen(const char* filename, int Flags, const char** error_report) {
     result = ::dlopen(filename, Flags);
     assert(result == nullptr, "dll_load: Could not stat() file %s, but dlopen() worked; Have to improve stat()", filename);
   #endif
+    *error_report = "Could not load module .\nSystem error: No such file or directory";
+    return nullptr;
   }
   else {
     int i = 0;
@@ -1049,11 +1053,11 @@ void* Aix_dlopen(const char* filename, int Flags, const char** error_report) {
     // check if library belonging to filename is already loaded.
     // If yes use stored handle from previous ::dlopen() and increase refcount
     for (i = 0; i < g_handletable_used; i++) {
-      if (g_handletable[i].handle &&
-          g_handletable[i].inode == libstat.st_ino &&
-          g_handletable[i].devid == libstat.st_dev) {
-        g_handletable[i].refcount++;
-        result = g_handletable[i].handle;
+      if ((p_handletable + i)->handle &&
+          (p_handletable + i)->inode == libstat.st_ino &&
+          (p_handletable + i)->devid == libstat.st_dev) {
+        (p_handletable + i)->refcount++;
+        result = (p_handletable + i)->handle;
         break;
       }
     }
@@ -1061,19 +1065,37 @@ void* Aix_dlopen(const char* filename, int Flags, const char** error_report) {
       // library not yet loaded. Check if there is space left in array
       // to store new ::dlopen() handle
       if (g_handletable_used == max_handletable) {
-        // Array is already full. No place for new handle. Cry and give up.
-        *error_report = "dlopen: too many libraries loaded";
-        assert(false, "max_handletable reached");
-        return nullptr;
+        // No place in array anymore.
+        if (max_handletable == 0) {
+          // First time we allocate memory for 128 Entries
+          char* ptmp = (char*)::malloc(128 * sizeof(struct handletableentry));
+          assert(ptmp != 0, "no more memory for handletable");
+          if (ptmp == nullptr) {
+            *error_report = "dlopen: no more memory for handletable";
+            return nullptr;
+          }
+          max_handletable = 128;
+          p_handletable = (struct handletableentry*)ptmp;
+        } else {
+          // we already use malloced memory, just double the size
+          char* ptmp = (char*)::realloc(p_handletable, 2 * max_handletable * sizeof(struct handletableentry));
+          assert(ptmp != 0, "no more memory for handletable");
+          if (ptmp == nullptr) {
+            *error_report = "dlopen: no more memory for handletable";
+            return nullptr;
+          }
+          max_handletable *= 2;
+          p_handletable = (struct handletableentry*)ptmp;
+        }
       }
       // Library not yet loaded; load it, then store its handle in handle table
       result = ::dlopen(filename, Flags);
       if (result != nullptr) {
         g_handletable_used++;
-        g_handletable[i].handle = result;
-        g_handletable[i].inode = libstat.st_ino;
-        g_handletable[i].devid = libstat.st_dev;
-        g_handletable[i].refcount = 1;
+        (p_handletable + i)->handle = result;
+        (p_handletable + i)->inode = libstat.st_ino;
+        (p_handletable + i)->devid = libstat.st_dev;
+        (p_handletable + i)->refcount = 1;
       }
       else {
         // error analysis when dlopen fails
@@ -1100,11 +1122,11 @@ bool os::pd_dll_unload(void* libhandle, char* ebuf, int ebuflen) {
     TableLocker lock;
     // try to find handle in array, which means library was loaded by os::dll_load() call
     for (i = 0; i < g_handletable_used; i++) {
-      if (g_handletable[i].handle == libhandle) {
+      if ((p_handletable + i)->handle == libhandle) {
         // handle found, decrease refcount
-        assert(g_handletable[i].refcount > 0, "Sanity");
-        g_handletable[i].refcount--;
-        if (g_handletable[i].refcount > 0) {
+        assert((p_handletable + i)->refcount > 0, "Sanity");
+        (p_handletable + i)->refcount--;
+        if ((p_handletable + i)->refcount > 0) {
           // if refcount is still >0 then we have to keep library and just return true
           return true;
         }
@@ -1140,8 +1162,8 @@ bool os::pd_dll_unload(void* libhandle, char* ebuf, int ebuflen) {
         // is sufficient to remove the entry from the array, otherwise we move the last
         // entry of the array to the place of the entry we want to remove and overwrite it
         if (i < g_handletable_used) {
-          g_handletable[i] = g_handletable[g_handletable_used];
-          g_handletable[g_handletable_used].handle = nullptr;
+          *(p_handletable + i) = *(p_handletable + g_handletable_used);
+          (p_handletable + g_handletable_used)->handle = nullptr;
         }
       }
     }
