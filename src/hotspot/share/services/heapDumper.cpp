@@ -1931,6 +1931,7 @@ void HeapObjectDumper::do_object(oop o) {
   if (o->is_instance()) {
     // create a HPROF_GC_INSTANCE record for each object
     DumperSupport::dump_instance(writer(), o, &_class_cache);
+    // If we encounter an unmounted virtual thread it needs to be dumped explicitly.
     if (java_lang_VirtualThread::is_instance(o)
         && ThreadDumper::should_dump_vthread(o) && !ThreadDumper::is_vthread_mounted(o)) {
       _vthread_dumper->dump_vthread(o, writer());
