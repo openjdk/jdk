@@ -52,6 +52,7 @@ requires.extraPropDefns.vmOpts = -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
 requires.properties= \
     sun.arch.data.model \
     java.runtime.name \
+    vm.flagless \
     vm.gc.G1 \
     vm.gc.Serial \
     vm.gc.Parallel \
