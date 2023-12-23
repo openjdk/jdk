@@ -25,7 +25,7 @@
 #include "precompiled.hpp"
 #include "ci/ciUtilities.hpp"
 #include "gc/g1/g1CardSetMemory.inline.hpp"
-#include "gc/g1/g1CollectedHeap.hpp"
+#include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1MonotonicArenaFreeMemoryTask.hpp"
 #include "gc/g1/g1MonotonicArenaFreePool.hpp"
 #include "gc/g1/g1_globals.hpp"
