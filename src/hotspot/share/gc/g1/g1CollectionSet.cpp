@@ -69,7 +69,7 @@ G1CollectionSet::~G1CollectionSet() {
 
 void G1CollectionSet::init_region_lengths(uint eden_cset_region_length,
                                           uint survivor_cset_region_length) {
-  assert_at_safepoint_on_vm_thread();
+  G1CollectedHeap::assert_at_safepoint_on_vm_thread();
 
   _eden_region_length     = eden_cset_region_length;
   _survivor_region_length = survivor_cset_region_length;
@@ -96,7 +96,7 @@ void G1CollectionSet::abandon_all_candidates() {
 }
 
 void G1CollectionSet::add_old_region(HeapRegion* hr) {
-  assert_at_safepoint_on_vm_thread();
+  G1CollectedHeap::assert_at_safepoint_on_vm_thread();
 
   assert(_inc_build_state == Active,
          "Precondition, actively building cset or adding optional later on");
@@ -125,7 +125,7 @@ void G1CollectionSet::finalize_incremental_building() {
 }
 
 void G1CollectionSet::clear() {
-  assert_at_safepoint_on_vm_thread();
+  G1CollectedHeap::assert_at_safepoint_on_vm_thread();
   _collection_set_cur_length = 0;
 }
 
@@ -233,7 +233,7 @@ public:
 };
 
 bool G1CollectionSet::verify_young_ages() {
-  assert_at_safepoint_on_vm_thread();
+  G1CollectedHeap::assert_at_safepoint_on_vm_thread();
 
   G1VerifyYoungAgesClosure cl;
   iterate(&cl);
@@ -502,7 +502,7 @@ public:
 };
 
 void G1CollectionSet::verify_young_cset_indices() const {
-  assert_at_safepoint_on_vm_thread();
+  G1CollectedHeap::assert_at_safepoint_on_vm_thread();
 
   G1VerifyYoungCSetIndicesClosure cl(_collection_set_cur_length);
   iterate(&cl);

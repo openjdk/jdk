@@ -329,7 +329,7 @@ bool G1HeapVerifier::should_verify(G1VerifyType type) {
 }
 
 void G1HeapVerifier::verify(VerifyOption vo) {
-  assert_at_safepoint_on_vm_thread();
+  G1CollectedHeap::assert_at_safepoint_on_vm_thread();
   assert(Heap_lock->is_locked(), "heap must be locked");
 
   log_debug(gc, verify)("Roots");
@@ -422,7 +422,7 @@ public:
 };
 
 void G1HeapVerifier::verify_region_sets() {
-  assert_heap_locked_or_at_safepoint(true /* should_be_vm_thread */);
+  G1CollectedHeap::assert_heap_locked_or_at_safepoint(true /* should_be_vm_thread */);
 
   // First, check the explicit lists.
   _g1h->_hrm.verify();

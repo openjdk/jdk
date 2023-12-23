@@ -625,7 +625,7 @@ void G1ConcurrentMark::set_concurrency_and_phase(uint active_tasks, bool concurr
 
   if (!concurrent) {
     // At this point we should be in a STW phase, and completed marking.
-    assert_at_safepoint_on_vm_thread();
+    G1CollectedHeap::assert_at_safepoint_on_vm_thread();
     assert(out_of_regions(),
            "only way to get here: _finger: " PTR_FORMAT ", _heap_end: " PTR_FORMAT,
            p2i(_finger), p2i(_heap.end()));
@@ -791,7 +791,7 @@ void G1ConcurrentMark::cleanup_for_next_mark() {
 }
 
 void G1ConcurrentMark::clear_bitmap(WorkerThreads* workers) {
-  assert_at_safepoint_on_vm_thread();
+  G1CollectedHeap::assert_at_safepoint_on_vm_thread();
   // To avoid fragmentation the full collection requesting to clear the bitmap
   // might use fewer workers than available. To ensure the bitmap is cleared
   // as efficiently as possible the number of active workers are temporarily
@@ -864,7 +864,7 @@ G1PreConcurrentStartTask::G1PreConcurrentStartTask(GCCause::Cause cause, G1Concu
 };
 
 void G1ConcurrentMark::pre_concurrent_start(GCCause::Cause cause) {
-  assert_at_safepoint_on_vm_thread();
+  G1CollectedHeap::assert_at_safepoint_on_vm_thread();
 
   G1CollectedHeap::start_codecache_marking_cycle_if_inactive(true /* concurrent_mark_start */);
 
@@ -1303,7 +1303,7 @@ public:
 };
 
 void G1ConcurrentMark::remark() {
-  assert_at_safepoint_on_vm_thread();
+  G1CollectedHeap::assert_at_safepoint_on_vm_thread();
 
   // If a full collection has happened, we should not continue. However we might
   // have ended up here as the Remark VM operation has been scheduled already.
@@ -1522,7 +1522,7 @@ void G1ConcurrentMark::compute_new_sizes() {
 }
 
 void G1ConcurrentMark::cleanup() {
-  assert_at_safepoint_on_vm_thread();
+  G1CollectedHeap::assert_at_safepoint_on_vm_thread();
 
   // If a full collection has happened, we shouldn't do this.
   if (has_aborted()) {

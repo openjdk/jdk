@@ -124,7 +124,7 @@ void G1Allocator::reuse_retained_old_region(G1EvacInfo* evacuation_info,
 }
 
 void G1Allocator::init_gc_alloc_regions(G1EvacInfo* evacuation_info) {
-  assert_at_safepoint_on_vm_thread();
+  G1CollectedHeap::assert_at_safepoint_on_vm_thread();
 
   _survivor_is_full = false;
   _old_is_full = false;

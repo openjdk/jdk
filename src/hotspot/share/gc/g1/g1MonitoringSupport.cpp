@@ -231,7 +231,7 @@ GrowableArray<MemoryPool*> G1MonitoringSupport::memory_pools() {
 }
 
 void G1MonitoringSupport::recalculate_sizes() {
-  assert_heap_locked_or_at_safepoint(true);
+  G1CollectedHeap::assert_heap_locked_or_at_safepoint(true);
 
   MutexLocker x(MonitoringSupport_lock, Mutex::_no_safepoint_check_flag);
   // Recalculate all the sizes from scratch.

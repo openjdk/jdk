@@ -55,7 +55,7 @@ G1UncommitRegionTask* G1UncommitRegionTask::instance() {
 }
 
 void G1UncommitRegionTask::enqueue() {
-  assert_at_safepoint_on_vm_thread();
+  G1CollectedHeap::assert_at_safepoint_on_vm_thread();
 
   G1UncommitRegionTask* uncommit_task = instance();
   if (!uncommit_task->is_active()) {

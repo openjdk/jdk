@@ -86,7 +86,7 @@ inline bool G1ConcurrentMark::mark_in_bitmap(uint const worker_id, oop const obj
 #ifndef PRODUCT
 template<typename Fn>
 inline void G1CMMarkStack::iterate(Fn fn) const {
-  assert_at_safepoint_on_vm_thread();
+  G1CollectedHeap::assert_at_safepoint_on_vm_thread();
 
   size_t num_chunks = 0;
 
