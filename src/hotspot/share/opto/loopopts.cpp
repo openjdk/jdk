@@ -1934,17 +1934,6 @@ CmpNode *PhaseIdealLoop::clone_bool( PhiNode *phi, IdealLoopTree *loop ) {
   return (CmpNode*)cmp;
 }
 
-//------------------------------sink_use---------------------------------------
-// If 'use' was in the loop-exit block, it now needs to be sunk
-// below the post-loop merge point.
-void PhaseIdealLoop::sink_use( Node *use, Node *post_loop ) {
-  if (!use->is_CFG() && get_ctrl(use) == post_loop->in(2)) {
-    set_ctrl(use, post_loop);
-    for (DUIterator j = use->outs(); use->has_out(j); j++)
-      sink_use(use->out(j), post_loop);
-  }
-}
-
 void PhaseIdealLoop::clone_loop_handle_data_uses(Node* old, Node_List &old_new,
                                                  IdealLoopTree* loop, IdealLoopTree* outer_loop,
                                                  Node_List*& split_if_set, Node_List*& split_bool_set,
@@ -2011,7 +2000,7 @@ void PhaseIdealLoop::clone_loop_handle_data_uses(Node* old, Node_List &old_new,
       while( use->in(idx) != old ) idx++;
       Node *prev = use->is_CFG() ? use : get_ctrl(use);
       assert(!loop->is_member(get_loop(prev)) && !outer_loop->is_member(get_loop(prev)), "" );
-      Node *cfg = prev->_idx >= new_counter
+      Node* cfg = (prev->_idx >= new_counter && prev->is_Region())
         ? prev->in(2)
         : idom(prev);
       if( use->is_Phi() )     // Phi use is in prior block
@@ -2035,7 +2024,7 @@ void PhaseIdealLoop::clone_loop_handle_data_uses(Node* old, Node_List &old_new,
 
       while(!outer_loop->is_member(get_loop(cfg))) {
         prev = cfg;
-        cfg = cfg->_idx >= new_counter ? cfg->in(2) : idom(cfg);
+        cfg = (cfg->_idx >= new_counter && cfg->is_Region()) ? cfg->in(2) : idom(cfg);
       }
       // If the use occurs after merging several exits from the loop, then
       // old value must have dominated all those exits.  Since the same old
@@ -2089,10 +2078,6 @@ void PhaseIdealLoop::clone_loop_handle_data_uses(Node* old, Node_List &old_new,
         if( hit )             // Go ahead and re-hash for hits.
           _igvn.replace_node( use, hit );
       }
-
-      // If 'use' was in the loop-exit block, it now needs to be sunk
-      // below the post-loop merge point.
-      sink_use( use, prev );
     }
   }
 }
@@ -2423,8 +2408,6 @@ void PhaseIdealLoop::clone_loop( IdealLoopTree *loop, Node_List &old_new, int dd
         // We need a Region to merge the exit from the peeled body and the
         // exit from the old loop body.
         RegionNode *r = new RegionNode(3);
-        // Map the old use to the new merge point
-        old_new.map( use->_idx, r );
         uint dd_r = MIN2(dom_depth(newuse),dom_depth(use));
         assert( dd_r >= dom_depth(dom_lca(newuse,use)), "" );
 
@@ -2460,12 +2443,24 @@ void PhaseIdealLoop::clone_loop( IdealLoopTree *loop, Node_List &old_new, int dd
           l -= uses_found;    // we deleted 1 or more copies of this edge
         }
 
+        assert(use->is_Proj(), "loop exit should be projection");
+        // lazy_replace() below moves all nodes that are:
+        // - control dependent on the loop exit or
+        // - have control set to the loop exit
+        // below the post-loop merge point. lazy_replace() takes a dead control as first input. To make it
+        // possible to use it, the loop exit projection is cloned and becomes the new exit projection. The initial one
+        // becomes dead and is "replaced" by the region.
+        Node* use_clone = use->clone();
+        register_control(use_clone, use_loop, idom(use), dom_depth(use));
         // Now finish up 'r'
         r->set_req( 1, newuse );
-        r->set_req( 2,    use );
+        r->set_req( 2, use_clone );
         _igvn.register_new_node_with_optimizer(r);
         set_loop(r, use_loop);
         set_idom(r, !side_by_side_idom ? newuse->in(0) : side_by_side_idom, dd_r);
+        lazy_replace(use, r);
+        // Map the (cloned) old use to the new merge point
+        old_new.map(use_clone->_idx, r);
       } // End of if a loop-exit test
     }
   }
