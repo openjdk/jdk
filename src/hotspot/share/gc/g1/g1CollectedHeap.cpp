@@ -761,7 +761,7 @@ void G1CollectedHeap::prepare_heap_for_full_collection() {
 }
 
 void G1CollectedHeap::verify_before_full_collection() {
-  assert_used_and_recalculate_used_equal(this);
+  assert_used_and_recalculate_used_equal();
   if (!VerifyBeforeGC) {
     return;
   }
@@ -2845,7 +2845,7 @@ void G1CollectedHeap::rebuild_region_sets(bool free_list_only) {
   if (!free_list_only) {
     set_used(cl.total_used());
   }
-  assert_used_and_recalculate_used_equal(this);
+  assert_used_and_recalculate_used_equal();
 }
 
 // Methods for the mutator alloc region

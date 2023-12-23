@@ -682,7 +682,7 @@ void G1Policy::record_young_collection_start() {
   assert(max_survivor_regions() + _g1h->num_used_regions() <= _g1h->max_regions(),
          "Maximum survivor regions %u plus used regions %u exceeds max regions %u",
          max_survivor_regions(), _g1h->num_used_regions(), _g1h->max_regions());
-  G1CollectedHeap::assert_used_and_recalculate_used_equal(_g1h);
+  G1CollectedHeap::heap()->assert_used_and_recalculate_used_equal();
 
   phase_times()->record_cur_collection_start_sec(now.seconds());
 

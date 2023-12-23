@@ -1012,7 +1012,7 @@ void G1YoungCollector::post_evacuate_collection_set(G1EvacInfo* evacuation_info,
 
   _evac_failure_regions.post_collection();
 
-  G1CollectedHeap::assert_used_and_recalculate_used_equal(_g1h);
+  G1CollectedHeap::heap()->assert_used_and_recalculate_used_equal();
 
   _g1h->rebuild_free_region_list();
 
