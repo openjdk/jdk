@@ -20,25 +20,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<calendar type="gregorian">
 				<months>
 					<monthContext type="format">
-						<monthWidth type="abbreviated">
-							<month type="4">أبريل</month>
-							<month type="5">ماي</month>
-							<month type="7">يوليوز</month>
-							<month type="8">غشت</month>
-							<month type="9">شتنبر</month>
-							<month type="11">نونبر</month>
-							<month type="12">دجنبر</month>
-						</monthWidth>
-						<monthWidth type="narrow">
-							<month type="4">أ</month>
-							<month type="5">م</month>
-							<month type="6">ن</month>
-							<month type="7">ل</month>
-							<month type="9">ش</month>
-							<month type="10">ك</month>
-							<month type="11">ب</month>
-							<month type="12">د</month>
-						</monthWidth>
 						<monthWidth type="wide">
 							<month type="4">أبريل</month>
 							<month type="5">ماي</month>
@@ -50,14 +31,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</monthWidth>
 					</monthContext>
 					<monthContext type="stand-alone">
-						<monthWidth type="abbreviated">
-							<month type="5">ماي</month>
-							<month type="7">يوليوز</month>
-							<month type="8">غشت</month>
-							<month type="9">شتنبر</month>
-							<month type="11">نونبر</month>
-							<month type="12">دجنبر</month>
-						</monthWidth>
 						<monthWidth type="narrow">
 							<month type="4">أ</month>
 							<month type="5">م</month>
@@ -67,15 +40,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<month type="10">ك</month>
 							<month type="11">ب</month>
 							<month type="12">د</month>
-						</monthWidth>
-						<monthWidth type="wide">
-							<month type="4">أبريل</month>
-							<month type="5">ماي</month>
-							<month type="7">يوليوز</month>
-							<month type="8">غشت</month>
-							<month type="9">شتنبر</month>
-							<month type="11">نونبر</month>
-							<month type="12">دجنبر</month>
 						</monthWidth>
 					</monthContext>
 				</months>
@@ -110,6 +74,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	</dates>
 	<numbers>
 		<defaultNumberingSystem>latn</defaultNumberingSystem>
+		<defaultNumberingSystem alt="latn">latn</defaultNumberingSystem>
 		<symbols numberSystem="latn">
 			<decimal>,</decimal>
 			<group>.</group>

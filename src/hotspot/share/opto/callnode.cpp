@@ -1232,7 +1232,7 @@ bool CallLeafVectorNode::cmp( const Node &n ) const {
 
 //------------------------------calling_convention-----------------------------
 void CallRuntimeNode::calling_convention(BasicType* sig_bt, VMRegPair *parm_regs, uint argcnt) const {
-  SharedRuntime::c_calling_convention(sig_bt, parm_regs, /*regs2=*/nullptr, argcnt);
+  SharedRuntime::c_calling_convention(sig_bt, parm_regs, argcnt);
 }
 
 void CallLeafVectorNode::calling_convention( BasicType* sig_bt, VMRegPair *parm_regs, uint argcnt ) const {
@@ -1652,8 +1652,7 @@ Node *AllocateArrayNode::make_ideal_length(const TypeOopPtr* oop_type, PhaseValu
       // propagate the fact that the array length must be positive.
       InitializeNode* init = initialization();
       if (init != nullptr) {
-        length = new CastIINode(length, narrow_length_type);
-        length->set_req(TypeFunc::Control, init->proj_out_or_null(TypeFunc::Control));
+        length = new CastIINode(init->proj_out_or_null(TypeFunc::Control), length, narrow_length_type);
       }
     }
   }

@@ -124,6 +124,7 @@ class ShenandoahHeap : public CollectedHeap, public ShenandoahSpaceInfo {
   friend class ShenandoahGCStateResetter;
   friend class ShenandoahParallelObjectIterator;
   friend class ShenandoahSafepoint;
+
   // Supported GC
   friend class ShenandoahConcurrentGC;
   friend class ShenandoahDegenGC;
@@ -283,18 +284,21 @@ public:
   };
 
 private:
+  bool _gc_state_changed;
   ShenandoahSharedBitmap _gc_state;
   ShenandoahSharedFlag   _degenerated_gc_in_progress;
   ShenandoahSharedFlag   _full_gc_in_progress;
   ShenandoahSharedFlag   _full_gc_move_in_progress;
-  ShenandoahSharedFlag   _progress_last_gc;
   ShenandoahSharedFlag   _concurrent_strong_root_in_progress;
 
-  void set_gc_state_all_threads(char state);
+  size_t _gc_no_progress_count;
+
   void set_gc_state_mask(uint mask, bool value);
 
 public:
   char gc_state() const;
+  void set_gc_state_all_threads();
+  bool has_gc_state_changed() { return _gc_state_changed; }
 
   void set_concurrent_mark_in_progress(bool in_progress);
   void set_evacuation_in_progress(bool in_progress);
@@ -370,8 +374,9 @@ private:
   void rendezvous_threads();
   void recycle_trash();
 public:
-  void notify_gc_progress()    { _progress_last_gc.set();   }
-  void notify_gc_no_progress() { _progress_last_gc.unset(); }
+  void notify_gc_progress();
+  void notify_gc_no_progress();
+  size_t get_gc_no_progress_count() const;
 
 //
 // Mark support

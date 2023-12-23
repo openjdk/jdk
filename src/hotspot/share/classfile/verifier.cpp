@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "cds/cdsConfig.hpp"
 #include "classfile/classFileStream.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/javaClasses.hpp"
@@ -198,12 +199,12 @@ bool Verifier::verify(InstanceKlass* klass, bool should_verify_class, TRAPS) {
     split_verifier.verify_class(THREAD);
     exception_name = split_verifier.result();
 
-    // If DumpSharedSpaces is set then don't fall back to the old verifier on
+    // If dumping static archive then don't fall back to the old verifier on
     // verification failure. If a class fails verification with the split verifier,
     // it might fail the CDS runtime verifier constraint check. In that case, we
     // don't want to share the class. We only archive classes that pass the split
     // verifier.
-    bool can_failover = !DumpSharedSpaces &&
+    bool can_failover = !CDSConfig::is_dumping_static_archive() &&
       klass->major_version() < NOFAILOVER_MAJOR_VERSION;
 
     if (can_failover && !HAS_PENDING_EXCEPTION &&  // Split verifier doesn't set PENDING_EXCEPTION for failure
