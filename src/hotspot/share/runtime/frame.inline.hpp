@@ -106,6 +106,7 @@ inline CodeBlob* frame::get_cb() const {
 
 inline const ImmutableOopMap* frame::get_oop_map() const {
   if (_cb == nullptr || _cb->oop_maps() == nullptr) return nullptr;
+
   NativePostCallNop* nop = nativePostCallNop_at(_pc);
   int oopmap_slot;
   int cb_offset;
