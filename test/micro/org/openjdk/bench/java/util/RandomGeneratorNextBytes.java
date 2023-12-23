@@ -35,10 +35,10 @@ import org.openjdk.jmh.annotations.*;
 @Fork(value = 3)
 public class RandomGeneratorNextBytes {
 
-    @Param({"Random", "L32X64MixRandom"})
+    @Param({"Random", "L32X64MixRandom", "Xoshiro256PlusPlus"})
     private String algo;
 
-    @Param({"1", "2", "3", "4", "6", "8", "16", "24", "36", "48", "64", "128", "256", "1024", "4096"})
+    @Param({"1", "2", "4", "8", "16", "32", "64", "128", "256", "1024", "4096"})
     private int length;
 
     private RandomGenerator generator;
