@@ -30,9 +30,9 @@ import org.openjdk.jmh.annotations.*;
 @BenchmarkMode(Mode.Throughput)
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
 @State(Scope.Thread)
-@Warmup(iterations = 5, time = 3)
-@Measurement(iterations = 4, time = 2)
-@Fork(value = 3)
+@Warmup(iterations = 7, time = 3)
+@Measurement(iterations = 5, time = 3)
+@Fork(value = 1)
 public class RandomGeneratorNextBytes {
 
     @Param({"Random", "L32X64MixRandom", "Xoshiro256PlusPlus"})
