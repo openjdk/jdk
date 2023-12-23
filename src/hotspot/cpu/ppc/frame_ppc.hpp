@@ -396,7 +396,7 @@
   enum class kind {
     native,           // The frame's pc is not necessarily in the CodeCache.
                       // CodeCache::find_blob_fast(void* pc) can yield wrong results in this case and must not be used.
-    code_blob,        // The frames pc is known to be in the CodeCache but it is likely not an nmethod.
+    code_blob,        // The frame's pc is known to be in the CodeCache but it is likely not in an nmethod.
                       // CodeCache::find_blob_fast() will be correct but not faster in this case.
     nmethod           // This is likely the frame of a nmethod.
                       // The code cache lookup is optimized based on NativePostCallNops.
