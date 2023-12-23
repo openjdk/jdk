@@ -399,7 +399,7 @@ public:
 
 public:
   ParallelCompactData();
-  bool initialize(MemRegion covered_region);
+  bool initialize(MemRegion reserved_heap);
 
   size_t region_count() const { return _region_count; }
   size_t reserved_byte_size() const { return _reserved_byte_size; }
@@ -481,13 +481,12 @@ public:
 
 private:
   bool initialize_block_data();
-  bool initialize_region_data(size_t region_size);
+  bool initialize_region_data(size_t heap_size);
   PSVirtualSpace* create_vspace(size_t count, size_t element_size);
 
-private:
-  HeapWord*       _region_start;
+  HeapWord*       _heap_start;
 #ifdef  ASSERT
-  HeapWord*       _region_end;
+  HeapWord*       _heap_end;
 #endif  // #ifdef ASSERT
 
   PSVirtualSpace* _region_vspace;
@@ -662,18 +661,18 @@ ParallelCompactData::block(size_t n) const {
 inline size_t
 ParallelCompactData::region_offset(const HeapWord* addr) const
 {
-  assert(addr >= _region_start, "bad addr");
+  assert(addr >= _heap_start, "bad addr");
   // would mistakenly return 0 for _region_end
-  assert(addr < _region_end, "bad addr");
+  assert(addr < _heap_end, "bad addr");
   return (size_t(addr) & RegionAddrOffsetMask) >> LogHeapWordSize;
 }
 
 inline size_t
 ParallelCompactData::addr_to_region_idx(const HeapWord* addr) const
 {
-  assert(addr >= _region_start, "bad addr " PTR_FORMAT " _region_start " PTR_FORMAT, p2i(addr), p2i(_region_start));
-  assert(addr <= _region_end, "bad addr " PTR_FORMAT " _region_end " PTR_FORMAT, p2i(addr), p2i(_region_end));
-  return pointer_delta(addr, _region_start) >> Log2RegionSize;
+  assert(addr >= _heap_start, "bad addr " PTR_FORMAT " _region_start " PTR_FORMAT, p2i(addr), p2i(_heap_start));
+  assert(addr <= _heap_end, "bad addr " PTR_FORMAT " _region_end " PTR_FORMAT, p2i(addr), p2i(_heap_end));
+  return pointer_delta(addr, _heap_start) >> Log2RegionSize;
 }
 
 inline ParallelCompactData::RegionData*
@@ -686,7 +685,7 @@ inline HeapWord*
 ParallelCompactData::region_to_addr(size_t region) const
 {
   assert(region <= _region_count, "region out of range");
-  return _region_start + (region << Log2RegionSize);
+  return _heap_start + (region << Log2RegionSize);
 }
 
 inline HeapWord*
@@ -707,16 +706,16 @@ ParallelCompactData::region_to_addr(size_t region, size_t offset) const
 inline HeapWord*
 ParallelCompactData::region_align_down(HeapWord* addr) const
 {
-  assert(addr >= _region_start, "bad addr");
-  assert(addr < _region_end + RegionSize, "bad addr");
+  assert(addr >= _heap_start, "bad addr");
+  assert(addr < _heap_end + RegionSize, "bad addr");
   return (HeapWord*)(size_t(addr) & RegionAddrMask);
 }
 
 inline HeapWord*
 ParallelCompactData::region_align_up(HeapWord* addr) const
 {
-  assert(addr >= _region_start, "bad addr");
-  assert(addr <= _region_end, "bad addr");
+  assert(addr >= _heap_start, "bad addr");
+  assert(addr <= _heap_end, "bad addr");
   return region_align_down(addr + RegionSizeOffsetMask);
 }
 
@@ -729,17 +728,17 @@ ParallelCompactData::is_region_aligned(HeapWord* addr) const
 inline size_t
 ParallelCompactData::block_offset(const HeapWord* addr) const
 {
-  assert(addr >= _region_start, "bad addr");
-  assert(addr <= _region_end, "bad addr");
+  assert(addr >= _heap_start, "bad addr");
+  assert(addr <= _heap_end, "bad addr");
   return (size_t(addr) & BlockAddrOffsetMask) >> LogHeapWordSize;
 }
 
 inline size_t
 ParallelCompactData::addr_to_block_idx(const HeapWord* addr) const
 {
-  assert(addr >= _region_start, "bad addr");
-  assert(addr <= _region_end, "bad addr");
-  return pointer_delta(addr, _region_start) >> Log2BlockSize;
+  assert(addr >= _heap_start, "bad addr");
+  assert(addr <= _heap_end, "bad addr");
+  return pointer_delta(addr, _heap_start) >> Log2BlockSize;
 }
 
 inline ParallelCompactData::BlockData*
@@ -752,7 +751,7 @@ inline HeapWord*
 ParallelCompactData::block_to_addr(size_t block) const
 {
   assert(block < _block_count, "block out of range");
-  return _region_start + (block << Log2BlockSize);
+  return _heap_start + (block << Log2BlockSize);
 }
 
 inline size_t
@@ -764,16 +763,16 @@ ParallelCompactData::region_to_block_idx(size_t region) const
 inline HeapWord*
 ParallelCompactData::block_align_down(HeapWord* addr) const
 {
-  assert(addr >= _region_start, "bad addr");
-  assert(addr < _region_end + RegionSize, "bad addr");
+  assert(addr >= _heap_start, "bad addr");
+  assert(addr < _heap_end + RegionSize, "bad addr");
   return (HeapWord*)(size_t(addr) & BlockAddrMask);
 }
 
 inline HeapWord*
 ParallelCompactData::block_align_up(HeapWord* addr) const
 {
-  assert(addr >= _region_start, "bad addr");
-  assert(addr <= _region_end, "bad addr");
+  assert(addr >= _heap_start, "bad addr");
+  assert(addr <= _heap_end, "bad addr");
   return block_align_down(addr + BlockSizeOffsetMask);
 }
 

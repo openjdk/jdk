@@ -415,8 +415,8 @@ print_initial_summary_data(ParallelCompactData& summary_data,
 #endif  // #ifndef PRODUCT
 
 ParallelCompactData::ParallelCompactData() :
-  _region_start(nullptr),
-  DEBUG_ONLY(_region_end(nullptr) COMMA)
+  _heap_start(nullptr),
+  DEBUG_ONLY(_heap_end(nullptr) COMMA)
   _region_vspace(nullptr),
   _reserved_byte_size(0),
   _region_data(nullptr),
@@ -425,16 +425,16 @@ ParallelCompactData::ParallelCompactData() :
   _block_data(nullptr),
   _block_count(0) {}
 
-bool ParallelCompactData::initialize(MemRegion covered_region)
+bool ParallelCompactData::initialize(MemRegion reserved_heap)
 {
-  _region_start = covered_region.start();
-  const size_t region_size = covered_region.word_size();
-  DEBUG_ONLY(_region_end = _region_start + region_size;)
+  _heap_start = reserved_heap.start();
+  const size_t heap_size = reserved_heap.word_size();
+  DEBUG_ONLY(_heap_end = _heap_start + heap_size;)
 
-  assert(region_align_down(_region_start) == _region_start,
+  assert(region_align_down(_heap_start) == _heap_start,
          "region start not aligned");
 
-  bool result = initialize_region_data(region_size) && initialize_block_data();
+  bool result = initialize_region_data(heap_size) && initialize_block_data();
   return result;
 }
 
@@ -467,12 +467,11 @@ ParallelCompactData::create_vspace(size_t count, size_t element_size)
   return 0;
 }
 
-bool ParallelCompactData::initialize_region_data(size_t region_size)
+bool ParallelCompactData::initialize_region_data(size_t heap_size)
 {
-  assert((region_size & RegionSizeOffsetMask) == 0,
-         "region size not a multiple of RegionSize");
+  assert(is_aligned(heap_size, RegionSize), "precondition");
 
-  const size_t count = region_size >> Log2RegionSize;
+  const size_t count = heap_size >> Log2RegionSize;
   _region_vspace = create_vspace(count, sizeof(RegionData));
   if (_region_vspace != 0) {
     _region_data = (RegionData*)_region_vspace->reserved_low_addr();
@@ -530,7 +529,7 @@ HeapWord* ParallelCompactData::partial_obj_end(size_t region_idx) const
 
 void ParallelCompactData::add_obj(HeapWord* addr, size_t len)
 {
-  const size_t obj_ofs = pointer_delta(addr, _region_start);
+  const size_t obj_ofs = pointer_delta(addr, _heap_start);
   const size_t beg_region = obj_ofs >> Log2RegionSize;
   // end_region is inclusive
   const size_t end_region = (obj_ofs + len - 1) >> Log2RegionSize;
