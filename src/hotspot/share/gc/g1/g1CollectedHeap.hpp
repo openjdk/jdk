@@ -306,72 +306,16 @@ private:
 
   void trace_heap(GCWhen::Type when, const GCTracer* tracer) override;
 
-  // These are macros so that, if the assert fires, we get the correct
+  // These are assert functions so that, if the assert fires, we get the correct
   // line number, file, etc.
 
-#define heap_locking_asserts_params(_extra_message_)                          \
-  "%s : Heap_lock locked: %s, at safepoint: %s, is VM thread: %s",            \
-  (_extra_message_),                                                          \
-  BOOL_TO_STR(Heap_lock->owned_by_self()),                                    \
-  BOOL_TO_STR(SafepointSynchronize::is_at_safepoint()),                       \
-  BOOL_TO_STR(Thread::current()->is_VM_thread())
-
-#define assert_heap_locked()                                                  \
-  do {                                                                        \
-    assert(Heap_lock->owned_by_self(),                                        \
-           heap_locking_asserts_params("should be holding the Heap_lock"));   \
-  } while (0)
-
-#define assert_heap_locked_or_at_safepoint(_should_be_vm_thread_)             \
-  do {                                                                        \
-    assert(Heap_lock->owned_by_self() ||                                      \
-           (SafepointSynchronize::is_at_safepoint() &&                        \
-             ((_should_be_vm_thread_) == Thread::current()->is_VM_thread())), \
-           heap_locking_asserts_params("should be holding the Heap_lock or "  \
-                                        "should be at a safepoint"));         \
-  } while (0)
-
-#define assert_heap_locked_and_not_at_safepoint()                             \
-  do {                                                                        \
-    assert(Heap_lock->owned_by_self() &&                                      \
-                                    !SafepointSynchronize::is_at_safepoint(), \
-          heap_locking_asserts_params("should be holding the Heap_lock and "  \
-                                       "should not be at a safepoint"));      \
-  } while (0)
-
-#define assert_heap_not_locked()                                              \
-  do {                                                                        \
-    assert(!Heap_lock->owned_by_self(),                                       \
-        heap_locking_asserts_params("should not be holding the Heap_lock"));  \
-  } while (0)
-
-#define assert_heap_not_locked_and_not_at_safepoint()                         \
-  do {                                                                        \
-    assert(!Heap_lock->owned_by_self() &&                                     \
-                                    !SafepointSynchronize::is_at_safepoint(), \
-      heap_locking_asserts_params("should not be holding the Heap_lock and "  \
-                                   "should not be at a safepoint"));          \
-  } while (0)
-
-#define assert_at_safepoint_on_vm_thread()                                        \
-  do {                                                                            \
-    assert_at_safepoint();                                                        \
-    assert(Thread::current_or_null() != nullptr, "no current thread");            \
-    assert(Thread::current()->is_VM_thread(), "current thread is not VM thread"); \
-  } while (0)
-
-#ifdef ASSERT
-#define assert_used_and_recalculate_used_equal(g1h)                           \
-  do {                                                                        \
-    size_t cur_used_bytes = g1h->used();                                      \
-    size_t recal_used_bytes = g1h->recalculate_used();                        \
-    assert(cur_used_bytes == recal_used_bytes, "Used(" SIZE_FORMAT ") is not" \
-           " same as recalculated used(" SIZE_FORMAT ").",                    \
-           cur_used_bytes, recal_used_bytes);                                 \
-  } while (0)
-#else
-#define assert_used_and_recalculate_used_equal(g1h) do {} while(0)
-#endif
+  void assert_heap_locked() const NOT_DEBUG_RETURN;
+  void assert_heap_locked_or_at_safepoint(bool should_be_vm_thread) const NOT_DEBUG_RETURN;
+  void assert_heap_locked_and_not_at_safepoint() const NOT_DEBUG_RETURN;
+  void assert_heap_not_locked() const NOT_DEBUG_RETURN;
+  void assert_heap_not_locked_and_not_at_safepoint() const NOT_DEBUG_RETURN;
+  void assert_at_safepoint_on_vm_thread() const NOT_DEBUG_RETURN;
+  void assert_used_and_recalculate_used_equal() const NOT_DEBUG_RETURN;
 
   // The young region list.
   G1EdenRegions _eden;
