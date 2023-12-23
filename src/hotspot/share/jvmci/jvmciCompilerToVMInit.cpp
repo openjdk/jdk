@@ -45,6 +45,7 @@
 #include "memory/universe.hpp"
 #include "oops/compressedOops.hpp"
 #include "oops/klass.inline.hpp"
+#include "prims/jvmtiExport.hpp"
 #ifdef COMPILER2
 #include "opto/c2compiler.hpp"
 #endif
