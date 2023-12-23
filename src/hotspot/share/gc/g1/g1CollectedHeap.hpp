@@ -309,13 +309,13 @@ private:
   // These are assert functions so that, if the assert fires, we get the correct
   // line number, file, etc.
 public:
-  static void assert_heap_locked() NOT_DEBUG_RETURN;
-  static void assert_heap_locked_or_at_safepoint(bool should_be_vm_thread) NOT_DEBUG_RETURN;
-  static void assert_heap_locked_and_not_at_safepoint() NOT_DEBUG_RETURN;
-  static void assert_heap_not_locked() NOT_DEBUG_RETURN;
-  static void assert_heap_not_locked_and_not_at_safepoint() NOT_DEBUG_RETURN;
-  static void assert_at_safepoint_on_vm_thread() NOT_DEBUG_RETURN;
-  static void assert_used_and_recalculate_used_equal(G1CollectedHeap* g1h) NOT_DEBUG_RETURN;
+  inline static void assert_heap_locked() NOT_DEBUG_RETURN;
+  inline static void assert_heap_locked_or_at_safepoint(bool should_be_vm_thread) NOT_DEBUG_RETURN;
+  inline static void assert_heap_locked_and_not_at_safepoint() NOT_DEBUG_RETURN;
+  inline static void assert_heap_not_locked() NOT_DEBUG_RETURN;
+  inline static void assert_heap_not_locked_and_not_at_safepoint() NOT_DEBUG_RETURN;
+  inline static void assert_at_safepoint_on_vm_thread() NOT_DEBUG_RETURN;
+  inline static void assert_used_and_recalculate_used_equal(G1CollectedHeap* g1h) NOT_DEBUG_RETURN;
 
 private:
   // The young region list.

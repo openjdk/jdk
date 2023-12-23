@@ -361,7 +361,7 @@ inline void G1CollectedHeap::assert_at_safepoint_on_vm_thread() {
 
 inline void G1CollectedHeap::
 assert_used_and_recalculate_used_equal(G1CollectedHeap* g1h) {
-#if ASSERT
+#ifdef ASSERT
   size_t cur_used_bytes = g1h->used();
   size_t recal_used_bytes = g1h->recalculate_used();
   assert(cur_used_bytes == recal_used_bytes, "Used(" SIZE_FORMAT ") is not"
