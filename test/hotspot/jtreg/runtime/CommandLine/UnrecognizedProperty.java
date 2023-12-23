@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,33 +19,27 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef SHARE_GC_G1_G1YOUNGGCEVACUATIONFAILUREINJECTOR_INLINE_HPP
-#define SHARE_GC_G1_G1YOUNGGCEVACUATIONFAILUREINJECTOR_INLINE_HPP
+/*
+ * @test
+ * @bug 8321479
+ * @summary VM should not crash with property "-D-D"
+ * @requires vm.flagless
+ * @library /test/lib
+ * @run driver UnrecognizedProperty
+ */
 
-#include "gc/g1/g1YoungGCEvacFailureInjector.hpp"
+import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.process.OutputAnalyzer;
 
-#include "gc/g1/g1_globals.hpp"
-#include "gc/g1/g1CollectedHeap.inline.hpp"
+public class UnrecognizedProperty {
+    public static void main(String[] args) throws Exception {
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+            "-D-D");
 
-#if EVAC_FAILURE_INJECTOR
-
-inline bool G1YoungGCEvacFailureInjector::evacuation_should_fail(size_t& counter, uint region_idx) {
-  if (!_inject_evacuation_failure_for_current_gc) {
-    return false;
-  }
-  if (!_evac_failure_regions.at(region_idx)) {
-    return false;
-  }
-  if (++counter < G1EvacuationFailureALotCount) {
-    return false;
-  }
-  counter = 0;
-  return true;
+        OutputAnalyzer output = new OutputAnalyzer(pb.start());
+        output.shouldContain("Usage: java");
+        output.shouldHaveExitValue(1);
+    }
 }
-
-#endif  // #if EVAC_FAILURE_INJECTOR
-
-#endif /* SHARE_GC_G1_G1YOUNGGCEVACUATIONFAILUREINJECTOR_INLINE_HPP */
