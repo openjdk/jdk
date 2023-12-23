@@ -320,11 +320,13 @@ inline bool G1CollectedHeap::is_collection_set_candidate(const HeapRegion* r) co
   BOOL_TO_STR(SafepointSynchronize::is_at_safepoint()),                       \
   BOOL_TO_STR(Thread::current()->is_VM_thread())
 
+DEBUG_ONLY(
 inline void G1CollectedHeap::assert_heap_locked() {
   assert(Heap_lock->owned_by_self(),
           heap_locking_asserts_params("should be holding the Heap_lock"));
-}
+})
 
+DEBUG_ONLY(
 inline void G1CollectedHeap::
 assert_heap_locked_or_at_safepoint(bool should_be_vm_thread) {
   assert(Heap_lock->owned_by_self() ||
@@ -332,33 +334,38 @@ assert_heap_locked_or_at_safepoint(bool should_be_vm_thread) {
             ((should_be_vm_thread) == Thread::current()->is_VM_thread())),
           heap_locking_asserts_params("should be holding the Heap_lock or "
                                       "should be at a safepoint"));
-}
+})
 
+DEBUG_ONLY(
 inline void G1CollectedHeap::assert_heap_locked_and_not_at_safepoint() {
   assert(Heap_lock->owned_by_self() &&
                                   !SafepointSynchronize::is_at_safepoint(),
         heap_locking_asserts_params("should be holding the Heap_lock and "
                                       "should not be at a safepoint"));
-}
+})
 
+DEBUG_ONLY(
 inline void G1CollectedHeap::assert_heap_not_locked() {
   assert(!Heap_lock->owned_by_self(),
       heap_locking_asserts_params("should not be holding the Heap_lock"));
-}
+})
 
+DEBUG_ONLY(
 inline void G1CollectedHeap::assert_heap_not_locked_and_not_at_safepoint() {
   assert(!Heap_lock->owned_by_self() &&
                                   !SafepointSynchronize::is_at_safepoint(),
     heap_locking_asserts_params("should not be holding the Heap_lock and "
                                   "should not be at a safepoint"));
-}
+})
 
+DEBUG_ONLY(
 inline void G1CollectedHeap::assert_at_safepoint_on_vm_thread() {
   assert_at_safepoint();
   assert(Thread::current_or_null() != nullptr, "no current thread");
   assert(Thread::current()->is_VM_thread(), "current thread is not VM thread");
-}
+})
 
+DEBUG_ONLY(
 inline void G1CollectedHeap::
 assert_used_and_recalculate_used_equal(G1CollectedHeap* g1h) {
 #ifdef ASSERT
@@ -368,6 +375,6 @@ assert_used_and_recalculate_used_equal(G1CollectedHeap* g1h) {
           " same as recalculated used(" SIZE_FORMAT ").",
           cur_used_bytes, recal_used_bytes);
 #endif
-}
+})
 
 #endif // SHARE_GC_G1_G1COLLECTEDHEAP_INLINE_HPP
