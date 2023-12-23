@@ -658,8 +658,8 @@ class NativePostCallNop: public NativeInstruction {
 public:
   bool check() const { Unimplemented(); return false; }
   bool decode(int32_t& oopmap_slot, int32_t& cb_offset) const { return false; }
-  bool patch(int32_t oopmap_slot, int32_t cb_offset) { Unimplemented() ; return false; }
-  void make_deopt();
+  bool patch(int32_t oopmap_slot, int32_t cb_offset) { Unimplemented(); return false; }
+  void make_deopt() { Unimplemented(); }
 };
 
 inline NativePostCallNop* nativePostCallNop_at(address address) {

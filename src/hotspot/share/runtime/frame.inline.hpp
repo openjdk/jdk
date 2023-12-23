@@ -105,18 +105,15 @@ inline CodeBlob* frame::get_cb() const {
 }
 
 inline const ImmutableOopMap* frame::get_oop_map() const {
-  if (_cb == nullptr) return nullptr;
-  if (_cb->oop_maps() != nullptr) {
-    NativePostCallNop* nop = nativePostCallNop_at(_pc);
-    int oopmap_slot;
-    int cb_offset;
-    if (nop != nullptr && nop->decode(oopmap_slot, cb_offset)) {
-      return _cb->oop_map_for_slot(oopmap_slot, _pc);
-    }
-    const ImmutableOopMap* oop_map = OopMapSet::find_map(this);
-    return oop_map;
+  if (_cb == nullptr || _cb->oop_maps() == nullptr) return nullptr;
+  NativePostCallNop* nop = nativePostCallNop_at(_pc);
+  int oopmap_slot;
+  int cb_offset;
+  if (nop != nullptr && nop->decode(oopmap_slot, cb_offset)) {
+    return _cb->oop_map_for_slot(oopmap_slot, _pc);
   }
-  return nullptr;
+  const ImmutableOopMap* oop_map = OopMapSet::find_map(this);
+  return oop_map;
 }
 
 inline int frame::interpreter_frame_monitor_size_in_bytes() {
