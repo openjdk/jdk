@@ -32,13 +32,6 @@
 
 // Portions of code courtesy of Clifford Click
 
-//-----------------------------------------------------------------------------
-// Provide methods to calculate the magic constants in transforming divisions
-// by constants into series of multiplications and shifts.
-template <class T>
-void magic_divide_constants(T d, T N_neg, T N_pos, juint min_s, T& c, bool& c_ovf, juint& s);
-void magic_divide_constants_round_down(juint d, juint& c, juint& s);
-
 // Optimization - Graph Style
 //------------------------------DivINode---------------------------------------
 // Integer division

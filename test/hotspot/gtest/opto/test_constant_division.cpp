@@ -23,14 +23,17 @@
  */
 
 #include "precompiled.hpp"
+#include "opto/divconstants.hpp"
 #include "runtime/os.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/growableArray.hpp"
 #include <type_traits>
 #include "unittest.hpp"
 
+// Generate a random positive integer of type T in a way that biases
+// towards smaller values
 template <class T, class UT>
-UT random();
+static UT random();
 
 template <>
 juint random<jint, juint>() {
@@ -61,9 +64,6 @@ julong random<julong, julong>() {
   julong full = (julong(os::random()) << 32) | os::random();
   return full & mask;
 }
-
-template <class T>
-void magic_divide_constants(T d, T N_neg, T N_pos, juint min_s, T& c, bool& c_ovf, juint& s);
 
 template <class T, class U>
 static void test_division(T d, T N_neg, T N_pos, juint min_s) {

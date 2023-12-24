@@ -29,6 +29,7 @@
 #include "opto/addnode.hpp"
 #include "opto/connode.hpp"
 #include "opto/convertnode.hpp"
+#include "opto/divconstants.hpp"
 #include "opto/divnode.hpp"
 #include "opto/machnode.hpp"
 #include "opto/movenode.hpp"
