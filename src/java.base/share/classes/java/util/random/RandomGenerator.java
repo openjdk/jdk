@@ -30,8 +30,8 @@ import java.security.SecureRandom;
 import java.util.Objects;
 import java.util.concurrent.ThreadLocalRandom;
 
-import jdk.internal.misc.Unsafe;
 import jdk.internal.util.random.RandomSupport;
+import jdk.internal.util.ByteArrayLittleEndian;
 
 import java.util.stream.DoubleStream;
 import java.util.stream.IntStream;
@@ -652,12 +652,9 @@ public interface RandomGenerator {
     default void nextBytes(byte[] bytes) {
         int i = 0;
         int len = bytes.length;
-        Unsafe unsafe = Unsafe.getUnsafe();
         for (int words = len >> 3; words--> 0; ) {
             long rnd = nextLong();
-            if (unsafe.isBigEndian())
-                rnd = Long.reverseBytes(rnd);
-            unsafe.putLong(bytes, (long)Unsafe.ARRAY_BYTE_BASE_OFFSET + i, rnd);
+            ByteArrayLittleEndian.setLong(bytes, i, rnd);
             i += Long.BYTES;
         }
         if (i < len)
