@@ -5603,6 +5603,14 @@ void Assembler::testb(Address dst, int imm8) {
   emit_int8(imm8);
 }
 
+void Assembler::testl(Address dst, int32_t imm32) {
+  InstructionMark im(this);
+  prefix(dst);
+  emit_int8((unsigned char)0xF7);
+  emit_operand(as_Register(0), dst, 4);
+  emit_int32(imm32);
+}
+
 void Assembler::testl(Register dst, int32_t imm32) {
   // not using emit_arith because test
   // doesn't support sign-extension of

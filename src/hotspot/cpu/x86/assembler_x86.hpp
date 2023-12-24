@@ -2063,6 +2063,7 @@ private:
   void testb(Register dst, int imm8);
   void testb(Address dst, int imm8);
 
+  void testl(Address dst, int32_t imm32);
   void testl(Register dst, int32_t imm32);
   void testl(Register dst, Register src);
   void testl(Register dst, Address src);

@@ -1649,10 +1649,11 @@ void LIR_Assembler::check_conflict(ciKlass* exact_klass, intptr_t current_klass,
       __ beqz(t1, none);
       __ mv(t0, (u1)TypeEntries::null_seen);
       __ beq(t0, t1, none);
-      // There is a chance that the checks above (re-reading profiling
-      // data from memory) fail if another thread has just set the
+      // There is a chance that the checks above
+      // fail if another thread has just set the
       // profiling to this obj's klass
       __ membar(MacroAssembler::LoadLoad);
+      __ xorr(tmp, tmp, t1); // get back original value before XOR
       __ ld(t1, mdo_addr);
       __ xorr(tmp, tmp, t1);
       __ andi(t0, tmp, TypeEntries::type_klass_mask);
@@ -1679,6 +1680,10 @@ void LIR_Assembler::check_conflict(ciKlass* exact_klass, intptr_t current_klass,
     __ bind(none);
     // first time here. Set profile type.
     __ sd(tmp, mdo_addr);
+#ifdef ASSERT
+    __ andi(tmp, tmp, TypeEntries::type_mask);
+    __ verify_klass_ptr(tmp);
+#endif
   }
 }
 
@@ -1713,6 +1718,10 @@ void LIR_Assembler::check_no_conflict(ciKlass* exact_klass, intptr_t current_kla
 #endif
     // first time here. Set profile type.
     __ sd(tmp, mdo_addr);
+#ifdef ASSERT
+    __ andi(tmp, tmp, TypeEntries::type_mask);
+    __ verify_klass_ptr(tmp);
+#endif
   } else {
     assert(ciTypeEntries::valid_ciklass(current_klass) != NULL &&
            ciTypeEntries::valid_ciklass(current_klass) != exact_klass, "inconsistent");
