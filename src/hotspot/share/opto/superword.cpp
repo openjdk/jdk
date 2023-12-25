@@ -3515,8 +3515,8 @@ void SuperWord::remove_pack_at(int pos) {
 
 void SuperWord::packset_sort(int n) {
   // simple bubble sort so that we capitalize with O(n) when its already sorted
-  while (n != 0) {
-    bool swapped = false;
+  do {
+    int newN = 0;
     for (int i = 1; i < n; i++) {
       Node_List* q_low = _packset.at(i-1);
       Node_List* q_i = _packset.at(i);
@@ -3526,12 +3526,11 @@ void SuperWord::packset_sort(int n) {
         Node_List* t = q_i;
         *(_packset.adr_at(i)) = q_low;
         *(_packset.adr_at(i-1)) = q_i;
-        swapped = true;
+        newN = i;
       }
     }
-    if (swapped == false) break;
-    n--;
-  }
+    n = newN;
+  } while (n > 1);
 }
 
 LoadNode::ControlDependency SuperWord::control_dependency(Node_List* p) {
