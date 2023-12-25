@@ -171,6 +171,9 @@ static void test_division_round_down() {
   for (int i = 0; i < iter_num;) {
     constexpr juint W = 32;
     juint d = random<juint, juint>();
+    if ((d & (d - 1)) == 0) {
+      continue;
+    }
     juint s = log2i_graceful(d) + W;
     julong t = (julong(1) << s) / julong(d);
     julong r = ((t + 1) * julong(d)) & julong(max_juint);
