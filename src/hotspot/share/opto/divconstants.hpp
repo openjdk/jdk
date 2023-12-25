@@ -22,9 +22,16 @@
  *
  */
 
+#ifndef SHARE_OPTO_DIVCONSTANTS_HPP
+#define SHARE_OPTO_DIVCONSTANTS_HPP
+
+#include "utilities/globalDefinitions.hpp"
+
 //-----------------------------------------------------------------------------
 // Provide methods to calculate the magic constants in transforming divisions
 // by constants into series of multiplications and shifts.
 template <class T>
 void magic_divide_constants(T d, T N_neg, T N_pos, juint min_s, T& c, bool& c_ovf, juint& s);
 void magic_divide_constants_round_down(juint d, juint& c, juint& s);
+
+#endif // SHARE_OPTO_DIVCONSTANTS_HPP

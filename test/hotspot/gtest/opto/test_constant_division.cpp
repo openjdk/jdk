@@ -25,7 +25,6 @@
 #include "precompiled.hpp"
 #include "opto/divconstants.hpp"
 #include "runtime/os.hpp"
-#include "utilities/globalDefinitions.hpp"
 #include "utilities/growableArray.hpp"
 #include <type_traits>
 #include "unittest.hpp"
@@ -49,9 +48,10 @@ juint random<juint, juint>() {
   return os::random() & mask;
 }
 
+#ifdef __SIZEOF_INT128__
 template <>
 julong random<jlong, julong>() {
-  juint bits = juint(os::random()) & 63 + 1;
+  juint bits = juint(os::random()) % 63 + 1;
   julong mask = (julong(1) << bits) - 1;
   julong full = (julong(os::random()) << 32) | os::random();
   return full & mask;
@@ -59,29 +59,18 @@ julong random<jlong, julong>() {
 
 template <>
 julong random<julong, julong>() {
-  juint bits = juint(os::random()) & 64 + 1;
+  juint bits = juint(os::random()) % 64 + 1;
   julong mask = bits == 64 ? std::numeric_limits<julong>::max() : (julong(1) << bits) - 1;
   julong full = (julong(os::random()) << 32) | os::random();
   return full & mask;
 }
+#endif // __SIZEOF_INT128__
 
-template <class T, class U>
-static void test_division(T d, T N_neg, T N_pos, juint min_s) {
-  constexpr juint W = sizeof(T) * 8;
-
-  if ((N_neg < d && N_pos < d) || (d & (d - 1)) == 0) {
-    return;
-  }
-
-  T c;
-  bool c_ovf;
-  juint s;
-  magic_divide_constants(d, N_neg, N_pos, min_s, c, c_ovf, s);
-
+template <class UT, class U, class F>
+static void test_op(UT d, UT N_neg, UT N_pos, F op) {
   U lo = -U(N_neg);
   U hi = N_pos;
   U d_long = d;
-  U c_long = c;
 
   auto test = [&](U l) {
     if (l < lo || l > hi) {
@@ -89,19 +78,7 @@ static void test_division(T d, T N_neg, T N_pos, juint min_s) {
     }
 
     U expected = l / d;
-    U actual;
-    if (!c_ovf) {
-      actual = ((l * U(c)) >> s) + (l < 0 ? U(1) : U(0));
-    } else {
-      ASSERT_EQ(N_neg, T(0));
-      if (sizeof(U) > sizeof(T) * 2) {
-        constexpr U wrap_amount = U(T(-1)) + 1;
-        actual = (l * (U(c) + wrap_amount)) >> s;
-      } else {
-        U mul_hi = (l * U(c)) >> W;
-        actual = (((l - mul_hi) >> 1) + mul_hi) >> (s - 1 - W);
-      }
-    }
+    U actual = op(l);
     ASSERT_EQ(expected, actual);
   };
 
@@ -116,16 +93,56 @@ static void test_division(T d, T N_neg, T N_pos, juint min_s) {
   }
 }
 
+template <class UT, class U>
+static void test_division(UT d, UT N_neg, UT N_pos, juint min_s) {
+  constexpr juint W = sizeof(UT) * 8;
+
+  if ((N_neg < d && N_pos < d) || (d & (d - 1)) == 0) {
+    return;
+  }
+
+  UT c;
+  bool c_ovf;
+  juint s;
+  magic_divide_constants(d, N_neg, N_pos, min_s, c, c_ovf, s);
+
+  auto op = [&](U l) -> U {
+    if (!c_ovf) {
+      return ((l * U(c)) >> s) + (l < 0 ? U(1) : U(0));
+    } else {
+      if (sizeof(U) > sizeof(UT) * 2) {
+        constexpr U wrap_amount = U(UT(-1)) + 1;
+        return (l * (U(c) + wrap_amount)) >> s;
+      } else {
+        U mul_hi = (l * U(c)) >> W;
+        return (((l - mul_hi) >> 1) + mul_hi) >> (s - 1 - W);
+      }
+    }
+  };
+
+  test_op<UT, U>(d, N_neg, N_pos, op);
+}
+
 template <class T, class U>
 static void test_division_random() {
-  constexpr int ITER = 10000;
+  constexpr int iter_num = 10000;
   using UT = std::conditional_t<std::is_same<T, jlong>::value, julong, std::make_unsigned_t<T>>;
-  for (int i = 0; i < ITER; i++) {
+  for (int i = 0; i < iter_num;) {
     UT d = random<T, UT>();
+    if ((d & (d - 1)) == 0) {
+      continue;
+    }
+
     UT N_neg = std::is_signed<T>::value ? random<T, UT>() + 1 : 0;
     UT N_pos = random<T, UT>();
+    if (N_neg < d && N_pos < d) {
+      continue;
+    }
+
     juint min_s = juint(os::random()) % (sizeof(T) * 8 + 1);
+
     test_division<UT, U>(d, N_neg, N_pos, min_s);
+    i++;
   }
 }
 
@@ -146,6 +163,30 @@ static void test_division_fixed(const GrowableArrayView<const julong>& values) {
         }
       }
     }
+  }
+}
+
+static void test_division_round_down() {
+  constexpr int iter_num = 10000;
+  for (int i = 0; i < iter_num;) {
+    constexpr juint W = 32;
+    juint d = random<juint, juint>();
+    juint s = log2i_graceful(d) + W;
+    julong t = (julong(1) << s) / julong(d);
+    julong r = ((t + 1) * julong(d)) & julong(max_juint);
+    if (r <= (julong(1) << (s - W))) {
+      continue;
+    }
+
+    juint c;
+    s = -1;
+    magic_divide_constants_round_down(d, c, s);
+    auto op = [&](julong l) -> julong {
+      return ((l + 1) * c) >> s;
+    };
+
+    test_op<juint, julong>(d, 0, std::numeric_limits<juint>::max(), op);
+    i++;
   }
 }
 
@@ -173,4 +214,6 @@ TEST(opto, divide_by_constants) {
   test_division_random<jint, jlong>();
   test_division_random<juint, julong>();
 #endif // __SIZEOF_INT128__
+
+  test_division_round_down();
 }
