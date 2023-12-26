@@ -201,8 +201,8 @@ final class DCmdDump extends AbstractDCmd {
 
                Options:
 
-                 begin            (Optional) Specify the time from which recording data will be included
-                                  in the dump file. The format is specified as local time.
+                 begin            (Optional) Specify the time from which recording data will be
+                                  included in the dump file. The format is specified as local time.
                                   (STRING, no default value)
 
                  end              (Optional) Specify the time to which recording data will be included
