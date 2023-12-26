@@ -564,7 +564,7 @@ bool NativePostCallNop::patch(int32_t oopmap_slot, int32_t cb_offset) {
   if (((oopmap_slot & 0xff) != oopmap_slot) || ((cb_offset & 0xffffff) != cb_offset)) {
     return false; // cannot encode
   }
-  uint32_t data = (oopmap_slot << 24) | cb_offset;
+  uint32_t data = ((uint32_t)oopmap_slot << 24) | cb_offset;
 #ifdef ASSERT
   assert(data != 0, "must be");
   uint32_t insn1 = uint_at(4);
