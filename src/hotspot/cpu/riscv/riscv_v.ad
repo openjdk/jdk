@@ -73,6 +73,9 @@ source %{
           return false;
         }
         break;
+      case Op_PopCountVL:
+      case Op_PopCountVI:
+        return UseZvbb;
       default:
         break;
     }
@@ -3673,6 +3676,28 @@ instruct vsignum_reg(vReg dst, vReg zero, vReg one, vRegMask_V0 v0) %{
     BasicType bt = Matcher::vector_element_basic_type(this);
     __ signum_fp_v(as_VectorRegister($dst$$reg), as_VectorRegister($one$$reg),
                    bt, Matcher::vector_length(this));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+// ------------------------------ Popcount vector ------------------------------
+
+instruct vpopcount_mask(vReg dst, vReg src, vRegMask_V0 v0) %{
+  match(Set dst (PopCountVI src v0));
+  match(Set dst (PopCountVL src v0));
+  format %{ "vcpop_v $dst, $src, $v0\t# vcpop_v with mask" %}
+  ins_encode %{
+    __ vcpop_v(as_VectorRegister($dst$$reg), as_VectorRegister($src$$reg), __ VectorMask::v0_t);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vpopcount(vReg dst, vReg src) %{
+  match(Set dst (PopCountVI src));
+  match(Set dst (PopCountVL src));
+  format %{ "vcpop_v $dst, $src\t# vcpop_v without mask" %}
+  ins_encode %{
+    __ vcpop_v(as_VectorRegister($dst$$reg), as_VectorRegister($src$$reg));
   %}
   ins_pipe(pipe_slow);
 %}

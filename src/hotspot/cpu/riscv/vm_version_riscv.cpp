@@ -98,6 +98,10 @@ void VM_Version::initialize() {
     }
   }
 
+  if (FLAG_IS_DEFAULT(UseZvbb)) {
+    FLAG_SET_DEFAULT(UseZvbb, true);
+  }
+
   // Enable vendor specific features
 
   if (mvendorid.enabled()) {
