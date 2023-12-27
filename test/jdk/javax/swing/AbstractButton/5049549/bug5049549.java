@@ -45,15 +45,15 @@ import javax.swing.UIManager;
  */
 public class bug5049549 {
 
-    private static Icon DE = generateImage("DE");
-    private static Icon DI = generateImage("DI");
-    private static Icon DS = generateImage("DS");
-    private static Icon RO = generateImage("RO");
-    private static Icon RS = generateImage("RS");
-    private static Icon SE = generateImage("SE");
-    private static Icon PR = generateImage("PR");
+    private static final Icon DE = generateImage("DE");
+    private static final Icon DI = generateImage("DI");
+    private static final Icon DS = generateImage("DS");
+    private static final Icon RO = generateImage("RO");
+    private static final Icon RS = generateImage("RS");
+    private static final Icon SE = generateImage("SE");
+    private static final Icon PR = generateImage("PR");
 
-    private static Blocker blocker = new Blocker();
+    private static final Blocker blocker = new Blocker();
 
     private static Icon generateImage(String str) {
         BufferedImage img = new BufferedImage(40, 30,
