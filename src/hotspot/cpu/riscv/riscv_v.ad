@@ -73,6 +73,9 @@ source %{
           return false;
         }
         break;
+      case Op_ReverseV:
+      case Op_ReverseBytesV:
+        return UseZvbb;
       default:
         break;
     }
@@ -3675,6 +3678,46 @@ instruct vsignum_reg(vReg dst, vReg zero, vReg one, vRegMask_V0 v0) %{
                    bt, Matcher::vector_length(this));
   %}
   ins_pipe(pipe_slow);
+%}
+
+// -------------------------------- Reverse Bits Vector Operations ------------------------
+
+instruct vreverse_bits_mask(vReg dst, vReg src, vRegMask_V0 v0) %{
+  match(Set dst (ReverseV src v0));
+  format %{ "vreverse_bits_mask $dst, $src, v0.t" %}
+  ins_encode %{
+    __ vbrev_v(as_VectorRegister($dst$$reg), as_VectorRegister($src$$reg), __ VectorMask::v0_t);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vreverse_bits(vReg dst, vReg src) %{
+  match(Set dst (ReverseV src));
+  format %{ "vreverse_bits $dst, $src" %}
+  ins_encode %{
+    __ vbrev_v(as_VectorRegister($dst$$reg), as_VectorRegister($src$$reg));
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+// -------------------------------- Reverse Bytes Vector Operations ------------------------
+
+instruct vreverse_bytes_mask(vReg dst, vReg src, vRegMask_V0 v0) %{
+  match(Set dst (ReverseBytesV src v0));
+  format %{ "vector_reverse_byte $dst, $src, v0.t" %}
+  ins_encode %{
+    __ vrev8_v(as_VectorRegister($dst$$reg), as_VectorRegister($src$$reg), __ VectorMask::v0_t);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vreverse_bytes(vReg dst, vReg src) %{
+  match(Set dst (ReverseBytesV src));
+  format %{ "vreverse_bytes $dst, $src" %}
+  ins_encode %{
+    __ vrev8_v(as_VectorRegister($dst$$reg), as_VectorRegister($src$$reg));
+  %}
+  ins_pipe( pipe_slow );
 %}
 
 // ------------------------------ Vector Load Gather ---------------------------
