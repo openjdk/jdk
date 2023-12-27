@@ -29,7 +29,9 @@ import java.awt.print.PageFormat;
 import java.awt.print.Pageable;
 import java.awt.print.Paper;
 import java.awt.print.Printable;
+import java.awt.print.PrinterException;
 import java.awt.print.PrinterJob;
+
 import jtreg.SkippedException;
 
 /*
@@ -58,30 +60,6 @@ import jtreg.SkippedException;
  * @run main/manual CustomPaper 4385157
  */
 public class CustomPaper implements Pageable, Printable {
-    private static final String TOP = """
-             You must have a printer that supports custom paper size of
-             at least 12 x 14 inches to perform this test. It requires
-             user interaction and you must have a 12 x 14 inch paper available.
-             
-            """;
-
-    private static final String BOTTOM = """
-             
-             Visual inspection of the one-page printout is needed. A passing
-             test will print a rectangle of the imageable area which is
-             approximately 10 x 12 inches.
-            """;
-
-    private static final String INSTRUCTIONS_4355514 = """
-             Select the printer in the Print Setup dialog and add a custom
-             paper size under 'Printer properties' Paper selection menu.
-             Set the dimension to width=12 inches and height=14 inches.
-             Select this custom paper size before proceeding to print.
-            """;
-
-    private static final String INSTRUCTIONS_4385157 = """
-             Click OK on print dialog box to print.
-            """;
 
     private static final double PIXELS_PER_INCH = 72.0;
 
@@ -120,14 +98,10 @@ public class CustomPaper implements Pageable, Printable {
         return 1;
     }
 
-    public void print() throws RuntimeException {
+    private void print() throws PrinterException {
         if (printerJob.printDialog()) {
-            try {
-                printerJob.setPageable(this);
-                printerJob.print();
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+            printerJob.setPageable(this);
+            printerJob.print();
         } else {
             PassFailJFrame.forceFail("Printing canceled by user");
         }
@@ -149,10 +123,35 @@ public class CustomPaper implements Pageable, Printable {
         }
     }
 
+    private static final String TOP = """
+         You must have a printer that supports custom paper size of
+         at least 12 x 14 inches to perform this test. It requires
+         user interaction and you must have a 12 x 14 inch paper available.
+             
+        """;
+
+    private static final String BOTTOM = """
+             
+         Visual inspection of the one-page printout is needed. A passing
+         test will print a rectangle of the imageable area which is
+         approximately 10 x 12 inches.
+        """;
+
+    private static final String INSTRUCTIONS_4355514 = """
+         Select the printer in the Print Setup dialog and add a custom
+         paper size under 'Printer properties' Paper selection menu.
+         Set the dimension to width=12 inches and height=14 inches.
+         Select this custom paper size before proceeding to print.
+        """;
+
+    private static final String INSTRUCTIONS_4385157 = """
+         Click OK on print dialog box to print.
+        """;
+
     public static void main(String[] args) throws Exception {
         String instructions;
 
-       if (PrinterJob.lookupPrintServices().length == 0) {
+        if (PrinterJob.lookupPrintServices().length == 0) {
             throw new SkippedException("Printer not configured or available."
                     + " Test cannot continue.");
         }
