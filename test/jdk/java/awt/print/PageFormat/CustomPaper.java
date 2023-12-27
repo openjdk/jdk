@@ -127,11 +127,11 @@ public class CustomPaper implements Pageable, Printable {
          You must have a printer that supports custom paper size of
          at least 12 x 14 inches to perform this test. It requires
          user interaction and you must have a 12 x 14 inch paper available.
-             
+        
         """;
 
     private static final String BOTTOM = """
-             
+        
          Visual inspection of the one-page printout is needed. A passing
          test will print a rectangle of the imageable area which is
          approximately 10 x 12 inches.
