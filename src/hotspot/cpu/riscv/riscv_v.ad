@@ -73,6 +73,9 @@ source %{
           return false;
         }
         break;
+      case Op_ReverseV:
+      case Op_ReverseBytesV:
+        return UseZvbb;
       default:
         break;
     }
@@ -3676,6 +3679,113 @@ instruct vsignum_reg(vReg dst, vReg zero, vReg one, vRegMask_V0 v0) %{
   %}
   ins_pipe(pipe_slow);
 %}
+
+// --------------------------------- Vector Rotation ----------------------------------
+
+// Rotate right with mask
+
+instruct vrotate_right_immI8_mask(vReg dst, vReg src, immI shift, vRegMask_V0 v0) %{
+  match(Set dst (RotateRightV src shift));
+  effect(TEMP_DEF dst, TEMP v0);
+  format %{ "vrotate_right_immI8 $dst, $src, $shift, v0.t\t" %}
+  ins_encode %{
+    __ vror_vi(as_VectorRegister($dst$$reg), as_VectorRegister($src$$reg), ($shift$$constant), Assembler::v0_t);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vrotate_right_reg_mask(vReg dst, vReg src, iRegINoSp shift, vRegMask_V0 v0) %{
+  match(Set dst (RotateRightV src shift));
+  effect(TEMP_DEF dst, TEMP v0);
+  format %{ "vrotate_right_reg $dst, $src, $shift, v0.t\t" %}
+  ins_encode %{
+    __ vror_vx(as_VectorRegister($dst$$reg), as_VectorRegister($src$$reg), as_Register($shift$$reg), Assembler::v0_t);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vrorate_right_v_mask(vReg dst, vReg src, vReg shift, vRegMask_V0 v0) %{
+  match(Set dst (RotateRightV src shift));
+  effect(TEMP_DEF dst, TEMP v0);
+  format %{ "vrorate_right_v $dst, $src, $shift, v0.t\t" %}
+  ins_encode %{
+    __ vror_vv(as_VectorRegister($dst$$reg), as_VectorRegister($src$$reg), as_VectorRegister($shift$$reg), Assembler::v0_t);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+// Rotate right without mask
+
+instruct vrotate_right_immI8(vReg dst, vReg src, immI shift) %{
+  match(Set dst (RotateRightV src shift));
+  format %{ "vrotate_right_immI8 $dst, $src, $shift\t" %}
+  ins_encode %{
+    __ vror_vi(as_VectorRegister($dst$$reg), as_VectorRegister($src$$reg), ($shift$$constant));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vrotate_right_reg(vReg dst, vReg src, iRegINoSp shift) %{
+  match(Set dst (RotateRightV src shift));
+  format %{ "vrotate_right_reg $dst, $src, $shift\t" %}
+  ins_encode %{
+    __ vror_vx(as_VectorRegister($dst$$reg), as_VectorRegister($src$$reg), as_Register($shift$$reg));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vrorate_right_v(vReg dst, vReg src, vReg shift) %{
+  match(Set dst (RotateRightV src shift));
+  format %{ "vrorate_right_v $dst, $src, $shift\t" %}
+  ins_encode %{
+    __ vror_vv(as_VectorRegister($dst$$reg), as_VectorRegister($src$$reg), as_VectorRegister($shift$$reg));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+
+// Rotate left with mask
+
+instruct vrotate_left_reg_mask(vReg dst, vReg src, iRegINoSp shift, vRegMask_V0 v0) %{
+  match(Set dst (RotateLeftV src shift));
+  effect(TEMP_DEF dst, TEMP v0);
+  format %{ "vrotate_left_reg $dst, $src, $shift, v0.t\t" %}
+  ins_encode %{
+    __ vror_vx(as_VectorRegister($dst$$reg), as_VectorRegister($src$$reg), as_Register($shift$$reg), Assembler::v0_t);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vrorate_left_v_mask(vReg dst, vReg src, vReg shift, vRegMask_V0 v0) %{
+  match(Set dst (RotateLeftV src shift));
+  effect(TEMP_DEF dst, TEMP v0);
+  format %{ "vrorate_left_v $dst, $src, $shift, v0.t\t" %}
+  ins_encode %{
+    __ vror_vv(as_VectorRegister($dst$$reg), as_VectorRegister($src$$reg), as_VectorRegister($shift$$reg), Assembler::v0_t);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+// Rotate left without mask
+
+instruct vrotate_left_reg(vReg dst, vReg src, iRegINoSp shift) %{
+  match(Set dst (RotateLeftV src shift));
+  format %{ "vrotate_left_reg $dst, $src, $shift\t" %}
+  ins_encode %{
+    __ vror_vx(as_VectorRegister($dst$$reg), as_VectorRegister($src$$reg), as_Register($shift$$reg));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vrorate_left_v(vReg dst, vReg src, vReg shift) %{
+  match(Set dst (RotateLeftV src shift));
+  format %{ "vrorate_left_v $dst, $src, $shift\t" %}
+  ins_encode %{
+    __ vror_vv(as_VectorRegister($dst$$reg), as_VectorRegister($src$$reg), as_VectorRegister($shift$$reg));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
 
 // ------------------------------ Vector Load Gather ---------------------------
 
