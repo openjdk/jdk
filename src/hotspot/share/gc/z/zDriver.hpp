@@ -110,7 +110,7 @@ private:
 
   void collect_young(const ZDriverRequest& request);
 
-  void collect_old();
+  void collect_old(const ZDriverRequest& request);
   void gc(const ZDriverRequest& request);
   void handle_alloc_stalls(bool cleared_soft_refs) const;
 
