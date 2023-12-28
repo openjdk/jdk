@@ -30,7 +30,7 @@
  * Expert Group and released to the public domain, as explained at
  * http://creativecommons.org/publicdomain/zero/1.0/
  * Other contributors include Andrew Wright, Jeffrey Hayes,
- * Pat Fisher, Mike Judd.
+ * Pat Fisher, Mike Judd, Valeh Hajiyev.
  */
 
 import java.util.Arrays;
@@ -166,6 +166,37 @@ public class PriorityQueueTest extends JSR166TestCase {
         q.addAll(Arrays.asList(items));
         for (int i = SIZE - 1; i >= 0; --i)
             mustEqual(items[i], q.poll());
+    }
+
+    /**
+     * Queue contains all elements of collection used to initialize and
+     * uses the custom comparator provided to order its elements
+     */
+    public void testConstructor8() {
+        Item[] items = seqItems(SIZE);
+        MyReverseComparator cmp = new MyReverseComparator();
+        @SuppressWarnings("unchecked")
+        PriorityQueue<Item> q = new PriorityQueue<>(Arrays.asList(items), cmp);
+        assertEquals(cmp, q.comparator());
+        for (int i = SIZE - 1; i >= 0; --i)
+            mustEqual(items[i], q.poll());
+    }
+
+    /**
+     * Initializing from Collection with a comparator has the order
+     * of its elements the same as the queue initialized with a comparator 
+     * and populated with Collection after initialization
+     */
+    public void testConstructor9() {
+        Item[] items = seqItems(SIZE);
+        MyReverseComparator cmp = new MyReverseComparator();
+        @SuppressWarnings("unchecked")
+        PriorityQueue<Item> q1 = new PriorityQueue<>(Arrays.asList(items), cmp);
+        @SuppressWarnings("unchecked")
+        PriorityQueue<Item> q2 = new PriorityQueue<>(SIZE, cmp);
+        q2.addAll(Arrays.asList(items));
+        for (int i = 0; i < SIZE; ++i)
+            mustEqual(q1.poll(), q2.poll());
     }
 
     /**
