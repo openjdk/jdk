@@ -98,6 +98,10 @@ void VM_Version::initialize() {
     }
   }
 
+  if (FLAG_IS_DEFAULT(UseZvfh)) {
+    FLAG_SET_DEFAULT(UseZvfh, true);
+  }
+
   // Enable vendor specific features
 
   if (mvendorid.enabled()) {

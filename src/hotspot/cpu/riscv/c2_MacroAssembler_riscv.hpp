@@ -183,6 +183,8 @@
   void expand_bits_i_v(Register dst, Register src, Register mask);
   void expand_bits_l_v(Register dst, Register src, Register mask);
 
+  void float16_to_float_v(VectorRegister dst, VectorRegister src, BasicType bt, uint length);
+
   void string_equals_v(Register r1, Register r2,
                        Register result, Register cnt1,
                        int elem_size);
