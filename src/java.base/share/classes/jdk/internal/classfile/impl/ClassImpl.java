@@ -31,25 +31,25 @@ import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
-import jdk.internal.classfile.ClassBuilder;
-import jdk.internal.classfile.constantpool.ClassEntry;
+import java.lang.classfile.ClassBuilder;
+import java.lang.classfile.constantpool.ClassEntry;
 import java.lang.reflect.AccessFlag;
-import jdk.internal.classfile.AccessFlags;
-import jdk.internal.classfile.Attribute;
-import jdk.internal.classfile.AttributeMapper;
-import jdk.internal.classfile.Attributes;
-import jdk.internal.classfile.ClassElement;
-import jdk.internal.classfile.ClassModel;
-import jdk.internal.classfile.ClassReader;
-import jdk.internal.classfile.ClassTransform;
-import jdk.internal.classfile.Classfile;
-import jdk.internal.classfile.ClassfileVersion;
-import jdk.internal.classfile.constantpool.ConstantPool;
-import jdk.internal.classfile.constantpool.ConstantPoolBuilder;
-import jdk.internal.classfile.FieldModel;
-import jdk.internal.classfile.Interfaces;
-import jdk.internal.classfile.MethodModel;
-import jdk.internal.classfile.Superclass;
+import java.lang.classfile.AccessFlags;
+import java.lang.classfile.Attribute;
+import java.lang.classfile.AttributeMapper;
+import java.lang.classfile.Attributes;
+import java.lang.classfile.ClassElement;
+import java.lang.classfile.ClassModel;
+import java.lang.classfile.ClassReader;
+import java.lang.classfile.ClassTransform;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.ClassFileVersion;
+import java.lang.classfile.constantpool.ConstantPool;
+import java.lang.classfile.constantpool.ConstantPoolBuilder;
+import java.lang.classfile.FieldModel;
+import java.lang.classfile.Interfaces;
+import java.lang.classfile.MethodModel;
+import java.lang.classfile.Superclass;
 import jdk.internal.access.SharedSecrets;
 
 public final class ClassImpl
@@ -63,9 +63,8 @@ public final class ClassImpl
     private List<Attribute<?>> attributes;
     private List<ClassEntry> interfaces;
 
-    public ClassImpl(byte[] cfbytes,
-                     Collection<Classfile.Option> options) {
-        this.reader = new ClassReaderImpl(cfbytes, options);
+    public ClassImpl(byte[] cfbytes, ClassFileImpl context) {
+        this.reader = new ClassReaderImpl(cfbytes, context);
         ClassReaderImpl reader = (ClassReaderImpl) this.reader;
         int p = reader.interfacesPos;
         int icnt = reader.readU2(p);
@@ -92,6 +91,10 @@ public final class ClassImpl
         this.methods = List.of(methods);
         this.attributesPos = p;
         reader.setContainedClass(this);
+    }
+
+    public int classfileLength() {
+        return reader.classfileLength();
     }
 
     @Override
@@ -135,7 +138,7 @@ public final class ClassImpl
                 arr[i] = reader.readClassEntry(pos);
                 pos += 2;
             }
-            this.interfaces = SharedSecrets.getJavaUtilCollectionAccess().listFromTrustedArrayNullsAllowed(arr);
+            this.interfaces = SharedSecrets.getJavaUtilCollectionAccess().listFromTrustedArray(arr);
         }
         return interfaces;
     }
@@ -153,7 +156,7 @@ public final class ClassImpl
     @Override
     public void forEachElement(Consumer<ClassElement> consumer) {
         consumer.accept(flags());
-        consumer.accept(ClassfileVersion.of(majorVersion(), minorVersion()));
+        consumer.accept(ClassFileVersion.of(majorVersion(), minorVersion()));
         superclass().ifPresent(new Consumer<ClassEntry>() {
             @Override
             public void accept(ClassEntry entry) {
@@ -167,20 +170,6 @@ public final class ClassImpl
             if (attr instanceof ClassElement e)
                 consumer.accept(e);
         }
-    }
-
-    @Override
-    public byte[] transform(ClassTransform transform) {
-        ConstantPoolBuilder constantPool = ConstantPoolBuilder.of(this);
-        return Classfile.build(thisClass(), constantPool,
-                               new Consumer<ClassBuilder>() {
-                                   @Override
-                                   public void accept(ClassBuilder builder) {
-                                       ((DirectClassBuilder) builder).setOriginal(ClassImpl.this);
-                                       ((DirectClassBuilder) builder).setSizeHint(reader.classfileLength());
-                                       builder.transform(ClassImpl.this, transform);
-                                   }
-                               });
     }
 
     @Override
@@ -198,7 +187,7 @@ public final class ClassImpl
         AccessFlags flags = flags();
         // move to where?
         return flags.has(AccessFlag.MODULE)
-               && majorVersion() >= Classfile.JAVA_9_VERSION
+               && majorVersion() >= ClassFile.JAVA_9_VERSION
                && thisClass().asInternalName().equals("module-info")
                && (superclass().isEmpty())
                && interfaces().isEmpty()

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -109,9 +109,9 @@ public final class PosixFilePermissions {
      * Suppose we require the set of permissions that indicate the owner has read,
      * write, and execute permissions, the group has read and execute permissions
      * and others have none.
-     * <pre>
-     *   Set&lt;PosixFilePermission&gt; perms = PosixFilePermissions.fromString("rwxr-x---");
-     * </pre>
+     * {@snippet lang=java :
+     *     Set<PosixFilePermission> perms = PosixFilePermissions.fromString("rwxr-x---");
+     * }
      *
      * @param   perms
      *          string representing a set of permissions

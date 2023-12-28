@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,204 +26,288 @@
  * @summary Tests that a Content-length header is not sent for GET requests
  *          that do not have a body. Also checks that the header is sent when
  *          a body is present on the GET request.
- * @library /test/lib
+ * @library /test/lib /test/jdk/java/net/httpclient/lib
+ * @build jdk.test.lib.net.SimpleSSLContext
+ *        jdk.httpclient.test.lib.common.HttpServerAdapters
  * @bug 8283544
  * @run testng/othervm ContentLengthHeaderTest
  */
 
 
-import com.sun.net.httpserver.HttpExchange;
-import com.sun.net.httpserver.HttpHandler;
-import com.sun.net.httpserver.HttpServer;
+import jdk.httpclient.test.lib.common.HttpServerAdapters;
+import jdk.test.lib.net.SimpleSSLContext;
 import org.testng.annotations.AfterTest;
 import org.testng.annotations.BeforeTest;
+import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintStream;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.ProxySelector;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.http.HttpClient;
+import java.net.http.HttpClient.Version;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.util.Optional;
+import javax.net.ssl.SSLContext;
 import jdk.test.lib.net.URIBuilder;
 
 
 import static java.net.http.HttpClient.Version.HTTP_1_1;
+import static java.net.http.HttpClient.Version.HTTP_2;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.testng.Assert.assertEquals;
 
 
-public class ContentLengthHeaderTest {
+public class ContentLengthHeaderTest implements HttpServerAdapters {
 
     final String NO_BODY_PATH = "/no_body";
     final String BODY_PATH = "/body";
 
-    static HttpServer testContentLengthServer;
+    static HttpTestServer testContentLengthServerH1;
+    static HttpTestServer testContentLengthServerH2;
     static PrintStream testLog = System.err;
+    static SSLContext sslContext;
 
     HttpClient hc;
-    URI testContentLengthURI;
+    URI testContentLengthURIH1;
+    URI testContentLengthURIH2;
 
     @BeforeTest
     public void setup() throws IOException, URISyntaxException {
-        InetSocketAddress sa = new InetSocketAddress(InetAddress.getLoopbackAddress(), 0);
-        testContentLengthServer = HttpServer.create(sa, 0);
+        sslContext = new SimpleSSLContext().get();
+        testContentLengthServerH1 = HttpTestServer.create(HTTP_1_1);
+        testContentLengthServerH2 = HttpTestServer.create(HTTP_2, sslContext);
 
         // Create handlers for tests that check for the presence of a Content-length header
-        testContentLengthServer.createContext(NO_BODY_PATH, new NoContentLengthHandler());
-        testContentLengthServer.createContext(BODY_PATH, new ContentLengthHandler());
-        testContentLengthURI = URIBuilder.newBuilder()
+        testContentLengthServerH1.addHandler(new NoContentLengthHandler(), NO_BODY_PATH);
+        testContentLengthServerH2.addHandler(new NoContentLengthHandler(), NO_BODY_PATH);
+        testContentLengthServerH1.addHandler(new ContentLengthHandler(), BODY_PATH);
+        testContentLengthServerH2.addHandler(new OptionalContentLengthHandler(), BODY_PATH);
+        testContentLengthURIH1 = URIBuilder.newBuilder()
                 .scheme("http")
                 .loopback()
-                .port(testContentLengthServer.getAddress().getPort())
+                .port(testContentLengthServerH1.getAddress().getPort())
+                .build();
+        testContentLengthURIH2 = URIBuilder.newBuilder()
+                .scheme("https")
+                .loopback()
+                .port(testContentLengthServerH2.getAddress().getPort())
                 .build();
 
-        testContentLengthServer.start();
-        testLog.println("Server up at address: " + testContentLengthServer.getAddress());
-        testLog.println("Request URI for Client: " + testContentLengthURI);
+        testContentLengthServerH1.start();
+        testLog.println("HTTP/1.1 Server up at address: " + testContentLengthServerH1.getAddress());
+        testLog.println("Request URI for Client: " + testContentLengthURIH1);
+
+        testContentLengthServerH2.start();
+        testLog.println("HTTP/2 Server up at address: " + testContentLengthServerH2.getAddress());
+        testLog.println("Request URI for Client: " + testContentLengthURIH2);
 
         hc = HttpClient.newBuilder()
                 .proxy(HttpClient.Builder.NO_PROXY)
-                .version(HTTP_1_1)
+                .sslContext(sslContext)
                 .build();
     }
 
     @AfterTest
     public void teardown() {
-        if (testContentLengthServer != null)
-            testContentLengthServer.stop(0);
+        if (testContentLengthServerH1 != null)
+            testContentLengthServerH1.stop();
+        if (testContentLengthServerH2 != null)
+            testContentLengthServerH2.stop();
     }
 
-    @Test
+    @DataProvider(name = "bodies")
+    Object[][] bodies() {
+        return new Object[][]{
+                {HTTP_1_1, URI.create(testContentLengthURIH1 + BODY_PATH)},
+                {HTTP_2, URI.create(testContentLengthURIH2 + BODY_PATH)}
+        };
+    }
+
+    @DataProvider(name = "nobodies")
+    Object[][] nobodies() {
+        return new Object[][]{
+                {HTTP_1_1, URI.create(testContentLengthURIH1 + NO_BODY_PATH)},
+                {HTTP_2, URI.create(testContentLengthURIH2 + NO_BODY_PATH)}
+        };
+    }
+
+    @Test(dataProvider = "nobodies")
     // A GET request with no request body should have no Content-length header
-    public void getWithNoBody() throws IOException, InterruptedException {
-        testLog.println("Checking GET with no request body");
+    public void getWithNoBody(Version version, URI uri) throws IOException, InterruptedException {
+        testLog.println(version + " Checking GET with no request body");
         HttpRequest req = HttpRequest.newBuilder()
-                .version(HTTP_1_1)
+                .version(version)
                 .GET()
-                .uri(URI.create(testContentLengthURI + NO_BODY_PATH))
+                .uri(uri)
                 .build();
         HttpResponse<String> resp = hc.send(req, HttpResponse.BodyHandlers.ofString(UTF_8));
         assertEquals(resp.statusCode(), 200, resp.body());
+        assertEquals(resp.version(), version);
     }
 
-    @Test
+    @Test(dataProvider = "bodies")
     // A GET request with a request body should have a Content-length header
-    public void getWithBody() throws IOException, InterruptedException {
-        testLog.println("Checking GET with request body");
+    // in HTTP/1.1
+    public void getWithBody(Version version, URI uri) throws IOException, InterruptedException {
+        testLog.println(version + " Checking GET with request body");
         HttpRequest req = HttpRequest.newBuilder()
-                .version(HTTP_1_1)
+                .version(version)
                 .method("GET", HttpRequest.BodyPublishers.ofString("GET Body"))
-                .uri(URI.create(testContentLengthURI + BODY_PATH))
+                .uri(uri)
                 .build();
         HttpResponse<String> resp = hc.send(req, HttpResponse.BodyHandlers.ofString(UTF_8));
         assertEquals(resp.statusCode(), 200, resp.body());
+        assertEquals(resp.version(), version);
     }
 
-    @Test
+    @Test(dataProvider = "nobodies")
     // A DELETE request with no request body should have no Content-length header
-    public void deleteWithNoBody() throws IOException, InterruptedException {
-        testLog.println("Checking DELETE with no request body");
+    public void deleteWithNoBody(Version version, URI uri) throws IOException, InterruptedException {
+        testLog.println(version + " Checking DELETE with no request body");
         HttpRequest req = HttpRequest.newBuilder()
-                .version(HTTP_1_1)
+                .version(version)
                 .DELETE()
-                .uri(URI.create(testContentLengthURI + NO_BODY_PATH))
+                .uri(uri)
                 .build();
         HttpResponse<String> resp = hc.send(req, HttpResponse.BodyHandlers.ofString(UTF_8));
         assertEquals(resp.statusCode(), 200, resp.body());
+        assertEquals(resp.version(), version);
     }
 
-    @Test
+    @Test(dataProvider = "bodies")
     // A DELETE request with a request body should have a Content-length header
-    public void deleteWithBody() throws IOException, InterruptedException {
-        testLog.println("Checking DELETE with request body");
+    //   in HTTP/1.1
+    public void deleteWithBody(Version version, URI uri) throws IOException, InterruptedException {
+        testLog.println(version + " Checking DELETE with request body");
         HttpRequest req = HttpRequest.newBuilder()
-                .version(HTTP_1_1)
+                .version(version)
                 .method("DELETE", HttpRequest.BodyPublishers.ofString("DELETE Body"))
-                .uri(URI.create(testContentLengthURI + BODY_PATH))
+                .uri(uri)
                 .build();
         HttpResponse<String> resp = hc.send(req, HttpResponse.BodyHandlers.ofString(UTF_8));
         assertEquals(resp.statusCode(), 200, resp.body());
+        assertEquals(resp.version(), version);
     }
 
-    @Test
+    @Test(dataProvider = "nobodies")
     // A HEAD request with no request body should have no Content-length header
-    public void headWithNoBody() throws IOException, InterruptedException {
-        testLog.println("Checking HEAD with no request body");
+    public void headWithNoBody(Version version, URI uri) throws IOException, InterruptedException {
+        testLog.println(version + " Checking HEAD with no request body");
         HttpRequest req = HttpRequest.newBuilder()
-                .version(HTTP_1_1)
+                .version(version)
                 .HEAD()
-                .uri(URI.create(testContentLengthURI + NO_BODY_PATH))
+                .uri(uri)
                 .build();
         HttpResponse<String> resp = hc.send(req, HttpResponse.BodyHandlers.ofString(UTF_8));
         assertEquals(resp.statusCode(), 200, resp.body());
+        assertEquals(resp.version(), version);
     }
 
-    @Test
+    @Test(dataProvider = "bodies")
     // A HEAD request with a request body should have a Content-length header
-    public void headWithBody() throws IOException, InterruptedException {
-        testLog.println("Checking HEAD with request body");
+    // in HTTP/1.1
+    public void headWithBody(Version version, URI uri) throws IOException, InterruptedException {
+        testLog.println(version + " Checking HEAD with request body");
         HttpRequest req = HttpRequest.newBuilder()
-                .version(HTTP_1_1)
+                .version(version)
                 .method("HEAD", HttpRequest.BodyPublishers.ofString("HEAD Body"))
-                .uri(URI.create(testContentLengthURI + BODY_PATH))
+                .uri(uri)
                 .build();
         // Sending this request invokes sendResponseHeaders which emits a warning about including
         // a Content-length header with a HEAD request
         HttpResponse<String> resp = hc.send(req, HttpResponse.BodyHandlers.ofString(UTF_8));
         assertEquals(resp.statusCode(), 200, resp.body());
+        assertEquals(resp.version(), version);
     }
 
-    public static void handleResponse(HttpExchange ex, String body, int rCode) throws IOException {
-        try (InputStream is = ex.getRequestBody();
-             OutputStream os = ex.getResponseBody()) {
-            is.readAllBytes();
+    public static void handleResponse(long expected, HttpTestExchange ex, String body, int rCode) throws IOException {
+        try (InputStream is = ex.getRequestBody()) {
+            byte[] reqBody = is.readAllBytes();
+            if (expected == -1 || expected == reqBody.length || rCode != 200) {
+                sendResponse(ex, body, rCode);
+            } else {
+                body = body + ", but Content-Length:%s doesn't match body size %s"
+                        .formatted(expected, reqBody.length);
+                testLog.println("Unexpected content length value: " + body);
+                sendResponse(ex, body, 400);
+            }
+        }
+    }
+
+    public static void sendResponse(HttpTestExchange ex, String body, int rCode) throws IOException {
+        try (OutputStream os = ex.getResponseBody()) {
             byte[] bytes = body.getBytes(UTF_8);
             ex.sendResponseHeaders(rCode, bytes.length);
             os.write(bytes);
         }
     }
 
-    static class NoContentLengthHandler implements HttpHandler {
+    static class NoContentLengthHandler implements HttpTestHandler {
 
         @Override
-        public void handle(HttpExchange exchange) throws IOException {
-            testLog.println("NoContentLengthHandler: Received Headers " + exchange.getRequestHeaders().entrySet() +
+        public void handle(HttpTestExchange exchange) throws IOException {
+            testLog.println("NoContentLengthHandler: Received Headers " +
+                    exchange.getRequestHeaders().entrySet() +
                             " from " + exchange.getRequestMethod() + " request.");
-            String contentLength = exchange.getRequestHeaders().getFirst("Content-length");
+            Optional<String> contentLength = exchange.getRequestHeaders()
+                    .firstValue("Content-length");
 
             // Check Content-length header was not set
-            if (contentLength == null) {
-                handleResponse(exchange, "Request completed",200);
-            } else {
+            if (contentLength.isPresent()) {
                 String responseBody = exchange.getRequestMethod() + " request contained an unexpected " +
-                        "Content-length header of value: " + exchange.getRequestHeaders().getFirst("Content-length");
-                handleResponse(exchange, responseBody, 400);
+                        "Content-length header of value: " +
+                        exchange.getRequestHeaders().firstValue("Content-length").get();
+                handleResponse(-1, exchange, responseBody, 400);
+            } else {
+                handleResponse(0, exchange, "Request completed",200);
             }
         }
     }
 
-    static class ContentLengthHandler implements HttpHandler {
+    static class ContentLengthHandler implements HttpTestHandler {
 
         @Override
-        public void handle(HttpExchange exchange) throws IOException {
+        public void handle(HttpTestExchange exchange) throws IOException {
             testLog.println("ContentLengthHandler: Received Headers " + exchange.getRequestHeaders().entrySet() +
                             " from " + exchange.getRequestMethod() + " request.");
-            String contentLength = exchange.getRequestHeaders().getFirst("Content-length");
+            Optional<String> contentLength = exchange.getRequestHeaders()
+                    .firstValue("Content-length");
 
             // Check Content-length header was set
-            if (contentLength != null) {
-                handleResponse(exchange, "Request completed",200);
+            if (contentLength.isPresent()) {
+                handleResponse(Long.parseLong(contentLength.get()), exchange, "Request completed", 200);
             } else {
                 String responseBody = "Expected a Content-length header in " +
                         exchange.getRequestMethod() + " request but was not present.";
-                handleResponse(exchange, responseBody, 400);
+                handleResponse(-1, exchange, responseBody, 400);
+            }
+        }
+    }
+
+    /**
+     * A handler used for cases where the presence of a Content-Length
+     * header is optional. If present, its value must match the number of
+     * bytes sent in the request body.
+     */
+    static class OptionalContentLengthHandler implements HttpTestHandler {
+
+        @Override
+        public void handle(HttpTestExchange exchange) throws IOException {
+            testLog.println("OptionalContentLengthHandler: Received Headers "
+                    + exchange.getRequestHeaders().entrySet() +
+                    " from " + exchange.getRequestMethod() + " request.");
+            Optional<String> contentLength = exchange.getRequestHeaders().firstValue("Content-Length");
+
+            // Check Content-length header was set
+            if (contentLength.isPresent()) {
+                handleResponse(Long.parseLong(contentLength.get()), exchange, "Request completed", 200);
+            } else {
+                handleResponse(-1, exchange, "Request completed, no content length", 200);
             }
         }
     }

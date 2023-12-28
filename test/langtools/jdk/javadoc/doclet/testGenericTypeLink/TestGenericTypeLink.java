@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug     8177280 8262992 8259499
+ * @bug     8177280 8262992 8259499 8307377
  * @summary see and link tag syntax should allow generic types
  * @library ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -112,8 +112,8 @@ public class TestGenericTypeLink extends JavadocTester {
                     " class="external-link">String</a>,<wbr><a href="A.SomeException.html" title="class\
                      in pkg1">A.SomeException</a>&gt;</code></li>
                     <li><a href="http://example.com/docs/api/java.base/java/util/List.html" title="clas\
-                    s or interface in java.util" class="external-link"><code>Link to generic type with \
-                    label</code></a></li>
+                    s or interface in java.util" class="external-link">Link to generic type with label<\
+                    /a></li>
                     </ul>
                     </dd>
                     </dl>"""
@@ -168,19 +168,19 @@ public class TestGenericTypeLink extends JavadocTester {
                 """
                     <div class="block">
                     <details class="invalid-tag">
-                    <summary>invalid @link</summary>
+                    <summary>invalid reference</summary>
                     <pre><code>java.util.Foo&lt;String&gt;</code></pre>
                     </details>
 
                     \s
                     <details class="invalid-tag">
-                    <summary>invalid @linkplain</summary>
+                    <summary>invalid reference</summary>
                     <pre>Baz&lt;Object&gt;</pre>
                     </details>
 
                     \s
                     <details class="invalid-tag">
-                    <summary>invalid @link</summary>
+                    <summary>invalid reference</summary>
                     <pre><code>#b(List&lt;Integer&gt;)</code></pre>
                     </details>
                     </div>""",
@@ -192,19 +192,19 @@ public class TestGenericTypeLink extends JavadocTester {
                     <ul class="tag-list-long">
                     <li>
                     <details class="invalid-tag">
-                    <summary>invalid @see</summary>
+                    <summary>invalid reference</summary>
                     <pre><code>java.util.List&lt;Bar&gt;</code></pre>
                     </details>
                     </li>
                     <li>
                     <details class="invalid-tag">
-                    <summary>invalid @see</summary>
+                    <summary>invalid reference</summary>
                     <pre><code>Baz&lt;Object, String&gt;</code></pre>
                     </details>
                     </li>
                     <li>
                     <details class="invalid-tag">
-                    <summary>invalid @see</summary>
+                    <summary>invalid reference</summary>
                     <pre><code>B#b(List&lt;Baz&gt;)</code></pre>
                     </details>
                     </li>

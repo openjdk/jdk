@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,7 +61,7 @@ FileBuff::FileBuff( BufferedFile *fptr, ArchDesc& archDesc) : _fp(fptr), _AD(arc
     exit(1);                     // Exit on read error
   }
   *_bufmax = '\n';               // End with a sentinel new-line
-  *(_bufmax+1) = '\0';           // Then end with a sentinel NULL
+  *(_bufmax+1) = '\0';           // Then end with a sentinel null
 }
 
 //------------------------------~FileBuff--------------------------------------
@@ -74,12 +74,12 @@ FileBuff::~FileBuff() {
 char *FileBuff::get_line(void) {
   char *retval;
 
-  // Check for end of file & return NULL
-  if (_bufeol >= _bufmax) return NULL;
+  // Check for end of file & return null
+  if (_bufeol >= _bufmax) return nullptr;
 
   _linenum++;
   retval = ++_bufeol;      // return character following end of previous line
-  if (*retval == '\0') return NULL; // Check for EOF sentinel
+  if (*retval == '\0') return nullptr; // Check for EOF sentinel
   // Search for newline character which must end each line
   for(_filepos++; *_bufeol != '\n'; _bufeol++)
     _filepos++;                    // keep filepos in sync with _bufeol

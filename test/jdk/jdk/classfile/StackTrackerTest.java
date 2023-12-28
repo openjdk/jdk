@@ -4,9 +4,7 @@
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -32,9 +30,9 @@ import java.util.List;
 import java.lang.constant.ClassDesc;
 import java.lang.constant.MethodTypeDesc;
 import java.lang.constant.ConstantDescs;
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.components.CodeStackTracker;
-import static jdk.internal.classfile.TypeKind.*;
+import java.lang.classfile.*;
+import java.lang.classfile.components.CodeStackTracker;
+import static java.lang.classfile.TypeKind.*;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -45,7 +43,7 @@ class StackTrackerTest {
 
     @Test
     void testStackTracker() {
-        Classfile.build(ClassDesc.of("Foo"), clb ->
+        ClassFile.of().build(ClassDesc.of("Foo"), clb ->
             clb.withMethodBody("m", MethodTypeDesc.of(ConstantDescs.CD_Void), 0, cob -> {
                 var stackTracker = CodeStackTracker.of(DoubleType, FloatType); //initial stack tracker pre-set
                 cob.transforming(stackTracker, stcb -> {
@@ -81,7 +79,7 @@ class StackTrackerTest {
 
     @Test
     void testTrackingLost() {
-        Classfile.build(ClassDesc.of("Foo"), clb ->
+        ClassFile.of().build(ClassDesc.of("Foo"), clb ->
             clb.withMethodBody("m", MethodTypeDesc.of(ConstantDescs.CD_Void), 0, cob -> {
                 var stackTracker = CodeStackTracker.of();
                 cob.transforming(stackTracker, stcb -> {

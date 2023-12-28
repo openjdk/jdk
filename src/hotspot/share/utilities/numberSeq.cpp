@@ -206,8 +206,15 @@ double TruncatedSeq::oldest() const {
 }
 
 double TruncatedSeq::predict_next() const {
-  if (_num == 0)
+  if (_num == 0) {
+    // No data points, pick function: y = 0 + 0*x
     return 0.0;
+  }
+
+  if (_num == 1) {
+    // Only one point P, pick function: y = P_y + 0*x
+    return _sequence[0];
+  }
 
   double num           = (double) _num;
   double x_squared_sum = 0.0;

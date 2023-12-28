@@ -37,19 +37,19 @@ import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlId;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
-import jdk.javadoc.internal.doclets.toolkit.Content;
+import jdk.javadoc.internal.doclets.toolkit.PropertyUtils;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 
 /**
  * This abstract class exists to provide functionality needed in the
- * the formatting of member information.  Since AbstractSubWriter and its
+ * the formatting of member information.  Since AbstractMemberWriter and its
  * subclasses control this, they would be the logical place to put this.
  * However, because each member type has its own subclass, subclassing
  * can not be used effectively to change formatting.  The concrete
  * class subclass of this class can be subclassed to change formatting.
  *
  * @see AbstractMemberWriter
- * @see ClassWriterImpl
+ * @see ClassWriter
  */
 public abstract class SubWriterHolderWriter extends HtmlDocletWriter {
 
@@ -60,6 +60,14 @@ public abstract class SubWriterHolderWriter extends HtmlDocletWriter {
 
     public SubWriterHolderWriter(HtmlConfiguration configuration, DocPath filename) {
         super(configuration, filename);
+    }
+
+    public SubWriterHolderWriter(HtmlConfiguration configuration, DocPath filename, boolean generating) {
+        super(configuration, filename, generating);
+    }
+
+    public PropertyUtils.PropertyHelper getPropertyHelper() {
+        throw new UnsupportedOperationException();
     }
 
     /**
@@ -105,6 +113,7 @@ public abstract class SubWriterHolderWriter extends HtmlDocletWriter {
     protected void addIndexComment(Element member, List<? extends DocTree> firstSentenceTags,
             Content tdSummaryContent) {
         addPreviewSummary(member, tdSummaryContent);
+        addRestrictedSummary(member, tdSummaryContent);
         List<? extends DeprecatedTree> deprs = utils.getDeprecatedTrees(member);
         Content div;
         if (utils.isDeprecated(member)) {
@@ -185,22 +194,6 @@ public abstract class SubWriterHolderWriter extends HtmlDocletWriter {
     }
 
     /**
-     * Add the annotation content.
-     *
-     * @param source annotation content which will be added to the documentation
-     */
-    public void addAnnotationContent(Content source) {
-        addClassContent(source);
-    }
-
-    /**
-     * {@return the member header}
-     */
-    public Content getMemberHeader() {
-        return HtmlTree.UL(HtmlStyle.blockList);
-    }
-
-    /**
      * Returns a list to be used for the list of summaries for members of a given kind.
      *
      * @return a list to be used for the list of summaries for members of a given kind
@@ -218,7 +211,6 @@ public abstract class SubWriterHolderWriter extends HtmlDocletWriter {
     public Content getSummariesListItem(Content content) {
         return HtmlTree.LI(content);
     }
-
 
     /**
      * Returns a list to be used for the list of details for members of a given kind.
@@ -289,15 +281,6 @@ public abstract class SubWriterHolderWriter extends HtmlDocletWriter {
      */
     public Content getMemberSummary(Content memberContent) {
         return HtmlTree.SECTION(HtmlStyle.summary, memberContent);
-    }
-
-    /**
-     * {@return the member details}
-     *
-     * @param content the content used to generate the member details
-     */
-    public Content getMemberDetailsContent(Content content) {
-        return HtmlTree.SECTION(HtmlStyle.details, content);
     }
 
     /**

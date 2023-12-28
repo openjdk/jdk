@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,12 +30,14 @@
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/barrierSetStackChunk.hpp"
+#include "gc/shared/gc_globals.hpp"
 #include "memory/memRegion.hpp"
 #include "memory/universe.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/instanceStackChunkKlass.inline.hpp"
 #include "runtime/continuationJavaClasses.inline.hpp"
 #include "runtime/frame.inline.hpp"
+#include "runtime/globals.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/registerMap.hpp"
 #include "runtime/smallRegisterMap.inline.hpp"
@@ -86,17 +88,19 @@ inline void stackChunkOopDesc::set_max_thawing_size(int value)  {
   jdk_internal_vm_StackChunk::set_maxThawingSize(this, (jint)value);
 }
 
-inline oop stackChunkOopDesc::cont() const                { return UseCompressedOops ? cont<narrowOop>() : cont<oop>(); /* jdk_internal_vm_StackChunk::cont(as_oop()); */ }
-template<typename P>
 inline oop stackChunkOopDesc::cont() const                {
-  // The state of the cont oop is used by ZCollectedHeap::requires_barriers,
-  // to determine the age of the stackChunkOopDesc. For that to work, it is
-  // only the GC that is allowed to perform a load barrier on the oop.
-  // This function is used by non-GC code and therfore create a stack-local
-  // copy on the oop and perform the load barrier on that copy instead.
-  oop obj = jdk_internal_vm_StackChunk::cont_raw<P>(as_oop());
-  obj = (oop)NativeAccess<>::oop_load(&obj);
-  return obj;
+  if (UseZGC && !ZGenerational) {
+    assert(!UseCompressedOops, "Non-generational ZGC does not support compressed oops");
+    // The state of the cont oop is used by XCollectedHeap::requires_barriers,
+    // to determine the age of the stackChunkOopDesc. For that to work, it is
+    // only the GC that is allowed to perform a load barrier on the oop.
+    // This function is used by non-GC code and therfore create a stack-local
+    // copy on the oop and perform the load barrier on that copy instead.
+    oop obj = jdk_internal_vm_StackChunk::cont_raw<oop>(as_oop());
+    obj = (oop)NativeAccess<>::oop_load(&obj);
+    return obj;
+  }
+  return jdk_internal_vm_StackChunk::cont(as_oop());
 }
 inline void stackChunkOopDesc::set_cont(oop value)        { jdk_internal_vm_StackChunk::set_cont(this, value); }
 template<typename P>
@@ -119,7 +123,7 @@ inline int stackChunkOopDesc::to_offset(intptr_t* p) const {
   assert(is_in_chunk(p)
     || (p >= start_address() && (p - start_address()) <= stack_size() + frame::metadata_words),
     "p: " PTR_FORMAT " start: " PTR_FORMAT " end: " PTR_FORMAT, p2i(p), p2i(start_address()), p2i(bottom_address()));
-  return p - start_address();
+  return (int)(p - start_address());
 }
 
 inline intptr_t* stackChunkOopDesc::from_offset(int offset) const {
@@ -383,7 +387,7 @@ inline int stackChunkOopDesc::relativize_address(intptr_t* p) const {
   assert(start_address() <= p && p <= base, "start_address: " PTR_FORMAT " p: " PTR_FORMAT " base: " PTR_FORMAT,
          p2i(start_address()), p2i(p), p2i(base));
   assert(0 <= offset && offset <= std::numeric_limits<int>::max(), "offset: " PTR_FORMAT, offset);
-  return offset;
+  return (int)offset;
 }
 
 inline void stackChunkOopDesc::relativize_frame(frame& fr) const {

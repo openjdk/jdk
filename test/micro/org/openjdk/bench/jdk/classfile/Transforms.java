@@ -4,9 +4,7 @@
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -35,17 +33,17 @@ import java.util.function.UnaryOperator;
 import java.lang.constant.ConstantDescs;
 import java.util.stream.Stream;
 
-import jdk.internal.classfile.ClassBuilder;
-import jdk.internal.classfile.ClassElement;
-import jdk.internal.classfile.ClassModel;
-import jdk.internal.classfile.ClassTransform;
-import jdk.internal.classfile.Classfile;
-import jdk.internal.classfile.CodeElement;
-import jdk.internal.classfile.CodeModel;
-import jdk.internal.classfile.CodeTransform;
-import jdk.internal.classfile.MethodModel;
-import jdk.internal.classfile.MethodTransform;
-import jdk.internal.classfile.components.ClassRemapper;
+import java.lang.classfile.ClassBuilder;
+import java.lang.classfile.ClassElement;
+import java.lang.classfile.ClassModel;
+import java.lang.classfile.ClassTransform;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.CodeElement;
+import java.lang.classfile.CodeModel;
+import java.lang.classfile.CodeTransform;
+import java.lang.classfile.MethodModel;
+import java.lang.classfile.MethodTransform;
+import java.lang.classfile.components.ClassRemapper;
 import jdk.internal.org.objectweb.asm.AnnotationVisitor;
 import jdk.internal.org.objectweb.asm.Attribute;
 import jdk.internal.org.objectweb.asm.ClassReader;
@@ -126,8 +124,8 @@ public class Transforms {
         UNSHARED_1(false, oneLevelNoop),
         UNSHARED_2(false, twoLevelNoop),
         UNSHARED_3(false, threeLevelNoop),
-        SHARED_3_NO_STACKMAP(true, threeLevelNoop, Classfile.Option.generateStackmap(false)),
-        SHARED_3_NO_DEBUG(true, threeLevelNoop, Classfile.Option.processDebug(false), Classfile.Option.processLineNumbers(false)),
+        SHARED_3_NO_STACKMAP(true, threeLevelNoop, ClassFile.StackMapsOption.DROP_STACK_MAPS),
+        SHARED_3_NO_DEBUG(true, threeLevelNoop, ClassFile.DebugElementsOption.DROP_DEBUG, ClassFile.LineNumbersOption.DROP_LINE_NUMBERS),
         ASM_1(bytes -> {
             ClassReader cr = new ClassReader(bytes);
             jdk.internal.org.objectweb.asm.ClassWriter cw = new jdk.internal.org.objectweb.asm.ClassWriter(cr, jdk.internal.org.objectweb.asm.ClassWriter.COMPUTE_FRAMES);
@@ -161,31 +159,32 @@ public class Transforms {
             return cw.toByteArray();
         }),
         CLASS_REMAPPER(bytes ->
-                ClassRemapper.of(Map.of()).remapClass(Classfile.parse(bytes)));
+                ClassRemapper.of(Map.of()).remapClass(ClassFile.of(), ClassFile.of().parse(bytes)));
 
         // Need ASM, LOW_UNSHARED
 
         public final UnaryOperator<byte[]> transform;
         public final boolean shared;
         public final ClassTransform classTransform;
-        public final Classfile.Option[] options;
+        public final ClassFile cc;
 
         NoOpTransform(UnaryOperator<byte[]> transform) {
             this.transform = transform;
             classTransform = null;
             shared = false;
-            options = new Classfile.Option[0];
+            cc = ClassFile.of();
         }
 
         NoOpTransform(boolean shared,
                       ClassTransform classTransform,
-                      Classfile.Option... options) {
+                      ClassFile.Option... options) {
             this.shared = shared;
             this.classTransform = classTransform;
-            this.options = shared
-                           ? options
-                           : Stream.concat(Stream.of(options), Stream.of(Classfile.Option.constantPoolSharing(false))).toArray(Classfile.Option[]::new);
-            this.transform = bytes -> Classfile.parse(bytes, this.options).transform(classTransform);
+            this.cc = ClassFile.of(
+                    shared
+                    ? options
+                    : Stream.concat(Stream.of(options), Stream.of(ClassFile.ConstantPoolSharingOption.NEW_POOL)).toArray(ClassFile.Option[]::new));
+            this.transform = bytes -> cc.transform(cc.parse(bytes), classTransform);
         }
     }
 
@@ -197,8 +196,9 @@ public class Transforms {
             return cw.toByteArray();
         }),
         NOP_SHARED(bytes -> {
-            ClassModel cm = Classfile.parse(bytes);
-            return cm.transform((cb, ce) -> {
+            var cc = ClassFile.of();
+            ClassModel cm = cc.parse(bytes);
+            return cc.transform(cm, (cb, ce) -> {
                 if (ce instanceof MethodModel mm) {
                     cb.transformMethod(mm, (mb, me) -> {
                         if (me instanceof CodeModel xm) {
@@ -237,8 +237,9 @@ public class Transforms {
             return cw.toByteArray();
         }),
         HIGH_SHARED_ADD_FIELD(bytes -> {
-            ClassModel cm = Classfile.parse(bytes);
-            return cm.transform(new ClassTransform() {
+            var cc = ClassFile.of();
+            ClassModel cm = cc.parse(bytes);
+            return cc.transform(cm, new ClassTransform() {
                 @Override
                 public void accept(ClassBuilder builder, ClassElement element) {
                     builder.with(element);
@@ -251,8 +252,9 @@ public class Transforms {
             });
         }),
         HIGH_UNSHARED_ADD_FIELD(bytes -> {
-            ClassModel cm = Classfile.parse(bytes);
-            return Classfile.build(cm.thisClass().asSymbol(),
+            var cc = ClassFile.of();
+            ClassModel cm = cc.parse(bytes);
+            return cc.build(cm.thisClass().asSymbol(),
                                    cb -> {
                                        cm.forEachElement(cb);
                                        cb.withField("argleBargleWoogaWooga", ConstantDescs.CD_int, b -> { });
@@ -273,15 +275,17 @@ public class Transforms {
             return cw.toByteArray();
         }),
         HIGH_SHARED_DEL_METHOD(bytes -> {
-            ClassModel cm = Classfile.parse(bytes);
-            return cm.transform((builder, element) -> {
+            var cc = ClassFile.of();
+            ClassModel cm = cc.parse(bytes);
+            return cc.transform(cm, (builder, element) -> {
                 if (!(element instanceof MethodModel mm))
                     builder.with(element);
             });
         }),
         HIGH_UNSHARED_DEL_METHOD(bytes -> {
-            ClassModel cm = Classfile.parse(bytes);
-            return Classfile.build(cm.thisClass().asSymbol(),
+            var cc = ClassFile.of();
+            ClassModel cm = cc.parse(bytes);
+            return cc.build(cm.thisClass().asSymbol(),
                                    cb -> {
                                        cm.forEachElement(element -> {
                                            if (element instanceof MethodModel mm

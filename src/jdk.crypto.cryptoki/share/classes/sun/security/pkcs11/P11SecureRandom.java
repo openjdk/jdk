@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -88,9 +88,6 @@ final class P11SecureRandom extends SecureRandomSpi {
     // see JCA spec
     @Override
     protected synchronized void engineSetSeed(byte[] seed) {
-        if (seed == null) {
-            throw new NullPointerException("seed must not be null");
-        }
         Session session = null;
         try {
             session = token.getOpSession();
@@ -120,7 +117,7 @@ final class P11SecureRandom extends SecureRandomSpi {
     // see JCA spec
     @Override
     protected void engineNextBytes(byte[] bytes) {
-        if ((bytes == null) || (bytes.length == 0)) {
+        if (bytes.length == 0) {
             return;
         }
         if (bytes.length <= IBUFFER_SIZE)  {

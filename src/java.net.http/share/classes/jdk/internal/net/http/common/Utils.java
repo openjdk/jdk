@@ -45,6 +45,8 @@ import java.net.http.HttpHeaders;
 import java.net.http.HttpTimeoutException;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
+import java.nio.channels.CancelledKeyException;
+import java.nio.channels.SelectionKey;
 import java.nio.charset.CharacterCodingException;
 import java.nio.charset.Charset;
 import java.nio.charset.CodingErrorAction;
@@ -61,6 +63,7 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.function.BiPredicate;
 import java.util.function.Function;
@@ -322,6 +325,55 @@ public final class Utils {
         request.setSystemHeader(HEADER_CONNECTION, "Upgrade");
     }
 
+    private static final ConcurrentHashMap<Integer, String> opsMap = new ConcurrentHashMap<>();
+    static {
+        opsMap.put(0, "None");
+    }
+
+    public static String interestOps(SelectionKey key) {
+        try {
+            return describeOps(key.interestOps());
+        } catch (CancelledKeyException x) {
+            return "cancelled-key";
+        }
+    }
+
+    public static String readyOps(SelectionKey key) {
+        try {
+            return describeOps(key.readyOps());
+        } catch (CancelledKeyException x) {
+            return "cancelled-key";
+        }
+    }
+
+    public static String describeOps(int interestOps) {
+        String ops = opsMap.get(interestOps);
+        if (ops != null) return ops;
+        StringBuilder opsb = new StringBuilder();
+        int mask = SelectionKey.OP_READ
+                | SelectionKey.OP_WRITE
+                | SelectionKey.OP_CONNECT
+                | SelectionKey.OP_ACCEPT;
+        if ((interestOps & SelectionKey.OP_READ) == SelectionKey.OP_READ) {
+            opsb.append("R");
+        }
+        if ((interestOps & SelectionKey.OP_WRITE) == SelectionKey.OP_WRITE) {
+            opsb.append("W");
+        }
+        if ((interestOps & SelectionKey.OP_ACCEPT) == SelectionKey.OP_ACCEPT) {
+            opsb.append("A");
+        }
+        if ((interestOps & SelectionKey.OP_CONNECT) == SelectionKey.OP_CONNECT) {
+            opsb.append("C");
+        }
+        if ((interestOps | mask) != mask) {
+            opsb.append("("+interestOps+")");
+        }
+        ops = opsb.toString();
+        opsMap.put(interestOps, ops);
+        return ops;
+    }
+
     public static IllegalArgumentException newIAE(String message, Object... args) {
         return new IllegalArgumentException(format(message, args));
     }
@@ -431,22 +483,37 @@ public final class Utils {
         return new URLPermission(urlString, actionStringBuilder.toString());
     }
 
+    private static final boolean[] LOWER_CASE_CHARS = new boolean[128];
+
     // ABNF primitives defined in RFC 7230
     private static final boolean[] tchar      = new boolean[256];
     private static final boolean[] fieldvchar = new boolean[256];
 
     static {
-        char[] allowedTokenChars =
-                ("!#$%&'*+-.^_`|~0123456789" +
-                 "abcdefghijklmnopqrstuvwxyz" +
-                 "ABCDEFGHIJKLMNOPQRSTUVWXYZ").toCharArray();
-        for (char c : allowedTokenChars) {
+        char[] lcase = ("!#$%&'*+-.^_`|~0123456789" +
+                "abcdefghijklmnopqrstuvwxyz").toCharArray();
+        for (char c : lcase) {
+            tchar[c] = true;
+            LOWER_CASE_CHARS[c] = true;
+        }
+        char[] ucase = ("ABCDEFGHIJKLMNOPQRSTUVWXYZ").toCharArray();
+        for (char c : ucase) {
             tchar[c] = true;
         }
         for (char c = 0x21; c <= 0xFF; c++) {
             fieldvchar[c] = true;
         }
         fieldvchar[0x7F] = false; // a little hole (DEL) in the range
+    }
+
+    public static boolean isValidLowerCaseName(String token) {
+        for (int i = 0; i < token.length(); i++) {
+            char c = token.charAt(i);
+            if (c > 255 || !LOWER_CASE_CHARS[c]) {
+                return false;
+            }
+        }
+        return !token.isEmpty();
     }
 
     /*
@@ -462,22 +529,7 @@ public final class Utils {
         return !token.isEmpty();
     }
 
-    public static class ServerName {
-        ServerName(String name, boolean isLiteral) {
-            this.name = name;
-            this.isLiteral = isLiteral;
-        }
-
-        final String name;
-        final boolean isLiteral;
-
-        public String getName() {
-            return name;
-        }
-
-        public boolean isLiteral() {
-            return isLiteral;
-        }
+    public record ServerName (String name, boolean isLiteral) {
     }
 
     /**

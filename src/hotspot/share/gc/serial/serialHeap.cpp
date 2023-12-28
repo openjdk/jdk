@@ -28,6 +28,7 @@
 #include "gc/serial/tenuredGeneration.inline.hpp"
 #include "gc/shared/gcLocker.inline.hpp"
 #include "gc/shared/genMemoryPools.hpp"
+#include "gc/shared/scavengableNMethods.hpp"
 #include "gc/shared/strongRootsScope.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
 #include "memory/universe.hpp"
@@ -45,8 +46,8 @@ SerialHeap::SerialHeap() :
     _eden_pool(nullptr),
     _survivor_pool(nullptr),
     _old_pool(nullptr) {
-  _young_manager = new GCMemoryManager("Copy", "end of minor GC");
-  _old_manager = new GCMemoryManager("MarkSweepCompact", "end of major GC");
+  _young_manager = new GCMemoryManager("Copy");
+  _old_manager = new GCMemoryManager("MarkSweepCompact");
 }
 
 void SerialHeap::initialize_serviceability() {

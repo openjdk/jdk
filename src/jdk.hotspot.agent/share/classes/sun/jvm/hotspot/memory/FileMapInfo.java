@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -83,6 +83,8 @@ public class FileMapInfo {
   }
 
   private static void initialize(TypeDataBase db) {
+    vTableTypeMap = null; // force vTableTypeMap to get re-initialized later
+
     Type FileMapInfo_type = db.lookupType("FileMapInfo");
     Type FileMapHeader_type = db.lookupType("FileMapHeader");
     Type CDSFileMapRegion_type = db.lookupType("CDSFileMapRegion");

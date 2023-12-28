@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -37,13 +37,15 @@ import org.xml.sax.XMLReader;
  * Creates XMLReader objects and caches them for re-use.
  * This class follows the singleton pattern.
  *
- * @LastModified: Jan 2022
+ * @LastModified: July 2023
  */
 public class XMLReaderManager {
 
     private static final XMLReaderManager m_singletonManager =
                                                      new XMLReaderManager();
     private static final String property = "org.xml.sax.driver";
+    private final static String LEXICAL_HANDLER_PROPERTY =
+        "http://xml.org/sax/properties/lexical-handler";
 
     /**
      * Cache of XMLReader objects
@@ -121,8 +123,11 @@ public class XMLReaderManager {
                 (rw.overrideDefaultParser == m_overrideDefaultParser) &&
                 ( factory == null || reader.getClass().getName().equals(factory))) {
             m_inUse.put(reader, Boolean.TRUE);
+            JdkXmlUtils.setReaderProperty(reader, _xmlSecurityManager, _useCatalog,
+                    _catalogFeatures);
         } else {
-            reader = JdkXmlUtils.getXMLReader(m_overrideDefaultParser, _secureProcessing);
+            reader = JdkXmlUtils.getXMLReader(_xmlSecurityManager, m_overrideDefaultParser,
+                    _secureProcessing, _useCatalog, _catalogFeatures);
 
             // Cache the XMLReader if this is the first time we've created
             // a reader for this thread.
@@ -139,42 +144,6 @@ public class XMLReaderManager {
         JdkXmlUtils.setXMLReaderPropertyIfSupport(reader, JdkConstants.CDATA_CHUNK_SIZE,
                 _cdataChunkSize, false);
 
-        String lastProperty = "";
-        try {
-            if (_xmlSecurityManager != null) {
-                for (XMLSecurityManager.Limit limit : XMLSecurityManager.Limit.values()) {
-                    if (limit.isSupported(XMLSecurityManager.Processor.PARSER)) {
-                        lastProperty = limit.apiProperty();
-                        reader.setProperty(lastProperty,
-                                _xmlSecurityManager.getLimitValueAsString(limit));
-                    }
-                }
-                if (_xmlSecurityManager.printEntityCountInfo()) {
-                    lastProperty = JdkConstants.JDK_DEBUG_LIMIT;
-                    reader.setProperty(lastProperty, JdkConstants.JDK_YES);
-                }
-            }
-        } catch (SAXException se) {
-            XMLSecurityManager.printWarning(reader.getClass().getName(), lastProperty, se);
-        }
-
-        boolean supportCatalog = true;
-        try {
-            reader.setFeature(JdkXmlUtils.USE_CATALOG, _useCatalog);
-        }
-        catch (SAXNotRecognizedException | SAXNotSupportedException e) {
-            supportCatalog = false;
-        }
-
-        if (supportCatalog && _useCatalog && _catalogFeatures != null) {
-            try {
-                for (CatalogFeatures.Feature f : CatalogFeatures.Feature.values()) {
-                    reader.setProperty(f.getPropertyName(), _catalogFeatures.get(f));
-                }
-            } catch (SAXNotRecognizedException e) {
-                //shall not happen for internal settings
-            }
-        }
         return reader;
     }
 
@@ -186,12 +155,22 @@ public class XMLReaderManager {
      */
     public synchronized void releaseXMLReader(XMLReader reader) {
         // If the reader that's being released is the cached reader
-        // for this thread, remove it from the m_isUse list.
+        // for this thread, remove it from the m_inUse list.
         ReaderWrapper rw = m_readers.get();
-        if (rw.reader == reader && reader != null) {
+        if (rw != null && rw.reader == reader && reader != null) {
+            // reset the reader for reuse
+            reader.setContentHandler(null);
+            reader.setDTDHandler(null);
+            reader.setEntityResolver(null);
+            try {
+                reader.setProperty(LEXICAL_HANDLER_PROPERTY, null);
+            } catch (SAXNotRecognizedException | SAXNotSupportedException ex) {
+                // shouldn't happen as the property is supported.
+            }
             m_inUse.remove(reader);
         }
     }
+
     /**
      * Return the state of the services mechanism feature.
      */

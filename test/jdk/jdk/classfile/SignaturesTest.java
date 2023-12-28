@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -28,22 +26,24 @@
  * @summary Testing Signatures.
  * @run junit SignaturesTest
  */
+import java.io.IOException;
 import java.lang.constant.ClassDesc;
 import java.net.URI;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
-import jdk.internal.classfile.ClassSignature;
-import jdk.internal.classfile.Classfile;
-import jdk.internal.classfile.MethodSignature;
-import jdk.internal.classfile.Signature;
-import jdk.internal.classfile.Signature.*;
-import jdk.internal.classfile.Attributes;
+import java.lang.classfile.ClassSignature;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.MethodSignature;
+import java.lang.classfile.Signature;
+import java.lang.classfile.Signature.*;
+import java.lang.classfile.Attributes;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static helpers.ClassRecord.assertEqualsDeep;
@@ -128,7 +128,7 @@ class SignaturesTest {
                 .flatMap(p -> p)
                 .filter(p -> Files.isRegularFile(p) && p.toString().endsWith(".class")).forEach(path -> {
             try {
-                var cm = Classfile.parse(path);
+                var cm = ClassFile.of().parse(path);
                 cm.findAttribute(Attributes.SIGNATURE).ifPresent(csig -> {
                     assertEquals(
                             ClassSignature.parseFrom(csig.signature().stringValue()).signatureString(),
@@ -167,5 +167,23 @@ class SignaturesTest {
             }
         });
         System.out.println("SignaturesTest - tested signatures of " + csc + " classes, " + msc + " methods, " + fsc + " fields and " + rsc + " record components");
+    }
+
+    static class Outer<T1> {
+        class Inner<T2> {}
+    }
+
+    static class Observer extends ArrayList<Outer<String>.Inner<Long>>{}
+
+    @Test
+    void testClassSignatureClassDesc() throws IOException {
+        var observerCf = ClassFile.of().parse(Path.of(System.getProperty("test.classes"), "SignaturesTest$Observer.class"));
+        var sig = observerCf.findAttribute(Attributes.SIGNATURE).orElseThrow().asClassSignature();
+        var innerSig = (ClassTypeSig) ((ClassTypeSig) sig.superclassSignature()) // ArrayList
+                .typeArgs().getFirst() // Outer<String>.Inner<Long>
+                .boundType().orElseThrow(); // assert it's exact bound
+        assertEquals("Inner", innerSig.className(), "simple name in signature");
+        assertEquals(Outer.Inner.class.describeConstable().orElseThrow(), innerSig.classDesc(),
+                "ClassDesc derived from signature");
     }
 }

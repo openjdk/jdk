@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -141,11 +141,11 @@ public class TestTerminology extends JavadocTester {
                 "p");
         checkExit(Exit.OK);
 
-        checkOutput("search.js", sv.compareTo(SourceVersion.RELEASE_16) < 0,
+        checkOutput("script-files/search.js", sv.compareTo(SourceVersion.RELEASE_16) < 0,
                 """
                         types: "Types","""
         );
-        checkOutput("search.js", sv.compareTo(SourceVersion.RELEASE_16) >= 0,
+        checkOutput("script-files/search.js", sv.compareTo(SourceVersion.RELEASE_16) >= 0,
                 """
                         types: "Classes and Interfaces","""
         );

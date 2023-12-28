@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@ import java.io.Reader;
 import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import jdk.internal.org.xml.sax.InputSource;
 import jdk.internal.org.xml.sax.SAXException;
@@ -1601,7 +1602,7 @@ public abstract class Parser {
                             //          PI target name may not be empty string [#2.6]
                             //          PI target name 'XML' is reserved [#2.6]
                             if ((str.isEmpty())
-                                    || (mXml.name.equals(str.toLowerCase()) == true)) {
+                                    || (mXml.name.equals(str.toLowerCase(Locale.ROOT)) == true)) {
                                 panic(FAULT);
                             }
                             //          This is processing instruction
@@ -2858,7 +2859,7 @@ public abstract class Parser {
             String expenc;
             if (is.getEncoding() != null) {
                 //              Ignore encoding in the xml text decl.
-                expenc = is.getEncoding().toUpperCase();
+                expenc = is.getEncoding().toUpperCase(Locale.ROOT);
                 if (expenc.equals("UTF-16")) {
                     reader = bom(is.getByteStream(), 'U');  // UTF-16 [#4.3.3]
                 } else {
@@ -3156,7 +3157,7 @@ public abstract class Parser {
                         case 'A':
                         case '_':
                             bkch();
-                            str = name(false).toLowerCase();
+                            str = name(false).toLowerCase(Locale.ROOT);
                             if ("version".equals(str) == true) {
                                 if (st != 1) {
                                     panic(FAULT);
@@ -3170,7 +3171,7 @@ public abstract class Parser {
                                 if (st != 2) {
                                     panic(FAULT);
                                 }
-                                mInp.xmlenc = eqstr('=').toUpperCase();
+                                mInp.xmlenc = eqstr('=').toUpperCase(Locale.ROOT);
                                 enc = mInp.xmlenc;
                                 st = 3;
                             } else if ("standalone".equals(str) == true) {
@@ -3178,7 +3179,7 @@ public abstract class Parser {
                                 {
                                     panic(FAULT);
                                 }
-                                str = eqstr('=').toLowerCase();
+                                str = eqstr('=').toLowerCase(Locale.ROOT);
                                 //              Check the 'standalone' value and use it [#5.1]
                                 if (str.equals("yes") == true) {
                                     mIsSAlone = true;

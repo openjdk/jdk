@@ -30,8 +30,8 @@
 
 #define HAVE_PLATFORM_PRINT_NATIVE_STACK 1
 inline bool os::platform_print_native_stack(outputStream* st, const void* context,
-                                            char *buf, int buf_size) {
-  return os::Aix::platform_print_native_stack(st, context, buf, buf_size);
+                                            char *buf, int buf_size, address& lastpc) {
+  return os::Aix::platform_print_native_stack(st, context, buf, buf_size, lastpc);
 }
 
 #define HAVE_FUNCTION_DESCRIPTORS 1

@@ -109,10 +109,13 @@ final class DebugLogger implements Logger {
         public static final LoggerConfig OFF = new LoggerConfig(Level.OFF, Level.OFF, Level.OFF);
         /** logs on both System.err and System.Logger **/
         public static final LoggerConfig ERRLOG = new LoggerConfig(Level.OFF, Level.ALL, Level.ALL);
+        /** logs on both System.err and System.out **/
+        public static final LoggerConfig ERROUT = new LoggerConfig(Level.ALL, Level.ALL, Level.OFF);
 
         public static LoggerConfig of(LoggerConfig config) {
             if (config.equals(OFF)) return OFF;
             if (config.equals(ERRLOG)) return ERRLOG;
+            if (config.equals(ERROUT)) return ERROUT;
             if (config.equals(STDERR)) return STDERR;
             if (config.equals(STDOUT)) return STDOUT;
             if (config.equals(LOG)) return LOG;
@@ -247,7 +250,7 @@ final class DebugLogger implements Logger {
                 && logLevel.getSeverity() <= severity
                 && logger.isLoggable(level)) {
             logger.log(level, unused,
-                    getFormat(new StringBuilder(), format, params).toString(),
+                    format(new StringBuilder(), format, params).toString(),
                     params);
         }
     }
@@ -276,7 +279,7 @@ final class DebugLogger implements Logger {
                 && logLevel.getSeverity() <= severity
                 && logger.isLoggable(level)) {
             logger.log(level, unused,
-                    getFormat(new StringBuilder(), msg, null).toString(),
+                    format(new StringBuilder(), msg, null).toString(),
                     thrown);
         }
     }
@@ -317,20 +320,14 @@ final class DebugLogger implements Logger {
         return sb;
     }
 
-    private StringBuilder getFormat(StringBuilder sb, String format, Object[] params) {
-        if (format == null || params == null || params.length == 0) {
-            return decorate(sb, format);
-        } else if (format.contains("{0}") || format.contains("{1}")) {
-            return decorate(sb, format);
-        } else if (format.contains("%s") || format.contains("%d")) {
-            try {
-                return decorate(sb, String.format(format, params));
-            } catch (Throwable t) {
-                return decorate(sb, format);
-            }
-        } else {
-            return decorate(sb, format);
-        }
+    // Only called when params[] is not empty.
+    // Simplified detection of String.format: if the format
+    // string contains at least one % and if that percent
+    // is not the last character in the string we assume
+    // that we have a formatted string.
+    private boolean useStringFormat(String format) {
+        var percent = format.indexOf("%");
+        return percent >= 0 && percent < format.length() - 1;
     }
 
     private StringBuilder format(StringBuilder sb, String format, Object[] params) {
@@ -338,7 +335,7 @@ final class DebugLogger implements Logger {
             return decorate(sb, format);
         } else if (format.contains("{0}") || format.contains("{1}")) {
             return decorate(sb, java.text.MessageFormat.format(format, params));
-        } else if (format.contains("%s") || format.contains("%d")) {
+        } else if (useStringFormat(format)) {
             try {
                 return decorate(sb, String.format(format, params));
             } catch (Throwable t) {

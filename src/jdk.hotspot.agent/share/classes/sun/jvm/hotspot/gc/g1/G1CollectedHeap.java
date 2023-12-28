@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,8 +57,6 @@ public class G1CollectedHeap extends CollectedHeap {
     private static AddressField monitoringSupportField;
     // HeapRegionSet _old_set;
     private static long oldSetFieldOffset;
-    // HeapRegionSet _archive_set;
-    private static long archiveSetFieldOffset;
     // HeapRegionSet _humongous_set;
     private static long humongousSetFieldOffset;
 
@@ -77,7 +75,6 @@ public class G1CollectedHeap extends CollectedHeap {
         summaryBytesUsedField = type.getCIntegerField("_summary_bytes_used");
         monitoringSupportField = type.getAddressField("_monitoring_support");
         oldSetFieldOffset = type.getField("_old_set").getOffset();
-        archiveSetFieldOffset = type.getField("_archive_set").getOffset();
         humongousSetFieldOffset = type.getField("_humongous_set").getOffset();
     }
 
@@ -106,11 +103,6 @@ public class G1CollectedHeap extends CollectedHeap {
     public HeapRegionSetBase oldSet() {
         Address oldSetAddr = addr.addOffsetTo(oldSetFieldOffset);
         return VMObjectFactory.newObject(HeapRegionSetBase.class, oldSetAddr);
-    }
-
-    public HeapRegionSetBase archiveSet() {
-        Address archiveSetAddr = addr.addOffsetTo(archiveSetFieldOffset);
-        return VMObjectFactory.newObject(HeapRegionSetBase.class, archiveSetAddr);
     }
 
     public HeapRegionSetBase humongousSet() {

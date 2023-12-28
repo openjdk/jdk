@@ -50,20 +50,18 @@ bool ShenandoahBarrierC2Support::expand(Compile* C, PhaseIterGVN& igvn) {
        state->load_reference_barriers_count()) > 0) {
     assert(C->post_loop_opts_phase(), "no loop opts allowed");
     C->reset_post_loop_opts_phase(); // ... but we know what we are doing
-    bool attempt_more_loopopts = ShenandoahLoopOptsAfterExpansion;
     C->clear_major_progress();
     PhaseIdealLoop::optimize(igvn, LoopOptsShenandoahExpand);
     if (C->failing()) return false;
-    PhaseIdealLoop::verify(igvn);
-    if (attempt_more_loopopts) {
-      C->set_major_progress();
-      if (!C->optimize_loops(igvn, LoopOptsShenandoahPostExpand)) {
-        return false;
-      }
-      C->clear_major_progress();
 
-      C->process_for_post_loop_opts_igvn(igvn);
+    C->set_major_progress();
+    if (!C->optimize_loops(igvn, LoopOptsShenandoahPostExpand)) {
+      return false;
     }
+    C->clear_major_progress();
+    C->process_for_post_loop_opts_igvn(igvn);
+    if (C->failing()) return false;
+
     C->set_post_loop_opts_phase(); // now for real!
   }
   return true;
@@ -387,6 +385,12 @@ void ShenandoahBarrierC2Support::verify(RootNode* root) {
           verify_type t;
         } args[6];
       } calls[] = {
+        "array_partition_stub",
+        { { TypeFunc::Parms, ShenandoahStore }, { TypeFunc::Parms+4, ShenandoahStore },   { -1, ShenandoahNone },
+          { -1, ShenandoahNone },                { -1, ShenandoahNone },                  { -1, ShenandoahNone } },
+        "arraysort_stub",
+        { { TypeFunc::Parms, ShenandoahStore },  { -1, ShenandoahNone },                  { -1, ShenandoahNone },
+          { -1,  ShenandoahNone},                 { -1,  ShenandoahNone},                 { -1,  ShenandoahNone} },
         "aescrypt_encryptBlock",
         { { TypeFunc::Parms, ShenandoahLoad },   { TypeFunc::Parms+1, ShenandoahStore },  { TypeFunc::Parms+2, ShenandoahLoad },
           { -1,  ShenandoahNone},                 { -1,  ShenandoahNone},                 { -1,  ShenandoahNone} },
@@ -734,7 +738,7 @@ Node* ShenandoahBarrierC2Support::no_branches(Node* c, Node* dom, bool allow_one
           for (DUIterator_Fast jmax, j = n->fast_outs(jmax); j < jmax; j++) {
             Node* u = n->fast_out(j);
             if (u->is_CFG()) {
-              if (!wq.member(u) && !u->as_Proj()->is_uncommon_trap_proj(Deoptimization::Reason_none)) {
+              if (!wq.member(u) && !u->as_Proj()->is_uncommon_trap_proj()) {
                 return NodeSentinel;
               }
             }
@@ -743,7 +747,7 @@ Node* ShenandoahBarrierC2Support::no_branches(Node* c, Node* dom, bool allow_one
       }
     } else  if (c->is_Proj()) {
       if (c->is_IfProj()) {
-        if (c->as_Proj()->is_uncommon_trap_if_pattern(Deoptimization::Reason_none) != nullptr) {
+        if (c->as_Proj()->is_uncommon_trap_if_pattern() != nullptr) {
           // continue;
         } else {
           if (!allow_one_proj) {
@@ -1138,7 +1142,7 @@ void ShenandoahBarrierC2Support::pin_and_expand(PhaseIdealLoop* phase) {
 
         if (u_t->meet(TypePtr::NULL_PTR) != u_t &&
             u->in(0)->Opcode() == Op_IfTrue &&
-            u->in(0)->as_Proj()->is_uncommon_trap_if_pattern(Deoptimization::Reason_none) &&
+            u->in(0)->as_Proj()->is_uncommon_trap_if_pattern() &&
             u->in(0)->in(0)->is_If() &&
             u->in(0)->in(0)->in(1)->Opcode() == Op_Bool &&
             u->in(0)->in(0)->in(1)->as_Bool()->_test._test == BoolTest::ne &&
@@ -1385,11 +1389,9 @@ void ShenandoahBarrierC2Support::pin_and_expand(PhaseIdealLoop* phase) {
     Node* result_mem = nullptr;
 
     Node* addr;
-    if (ShenandoahSelfFixing) {
+    {
       VectorSet visited;
       addr = get_load_addr(phase, visited, lrb);
-    } else {
-      addr = phase->igvn().zerocon(T_OBJECT);
     }
     if (addr->Opcode() == Op_AddP) {
       Node* orig_base = addr->in(AddPNode::Base);

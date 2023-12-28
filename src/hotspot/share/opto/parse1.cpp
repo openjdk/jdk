@@ -49,16 +49,16 @@
 // and eventually should be encapsulated in a proper class (gri 8/18/98).
 
 #ifndef PRODUCT
-int nodes_created              = 0;
-int methods_parsed             = 0;
-int methods_seen               = 0;
-int blocks_parsed              = 0;
-int blocks_seen                = 0;
+uint nodes_created             = 0;
+uint methods_parsed            = 0;
+uint methods_seen              = 0;
+uint blocks_parsed             = 0;
+uint blocks_seen               = 0;
 
-int explicit_null_checks_inserted = 0;
-int explicit_null_checks_elided   = 0;
-int all_null_checks_found         = 0;
-int implicit_null_checks          = 0;
+uint explicit_null_checks_inserted = 0;
+uint explicit_null_checks_elided   = 0;
+uint all_null_checks_found         = 0;
+uint implicit_null_checks          = 0;
 
 bool Parse::BytecodeParseHistogram::_initialized = false;
 uint Parse::BytecodeParseHistogram::_bytecodes_parsed [Bytecodes::number_of_codes];
@@ -69,26 +69,26 @@ uint Parse::BytecodeParseHistogram::_new_values       [Bytecodes::number_of_code
 //------------------------------print_statistics-------------------------------
 void Parse::print_statistics() {
   tty->print_cr("--- Compiler Statistics ---");
-  tty->print("Methods seen: %d  Methods parsed: %d", methods_seen, methods_parsed);
-  tty->print("  Nodes created: %d", nodes_created);
+  tty->print("Methods seen: %u  Methods parsed: %u", methods_seen, methods_parsed);
+  tty->print("  Nodes created: %u", nodes_created);
   tty->cr();
   if (methods_seen != methods_parsed) {
     tty->print_cr("Reasons for parse failures (NOT cumulative):");
   }
-  tty->print_cr("Blocks parsed: %d  Blocks seen: %d", blocks_parsed, blocks_seen);
+  tty->print_cr("Blocks parsed: %u  Blocks seen: %u", blocks_parsed, blocks_seen);
 
   if (explicit_null_checks_inserted) {
-    tty->print_cr("%d original null checks - %d elided (%2d%%); optimizer leaves %d,",
+    tty->print_cr("%u original null checks - %u elided (%2u%%); optimizer leaves %u,",
                   explicit_null_checks_inserted, explicit_null_checks_elided,
                   (100*explicit_null_checks_elided)/explicit_null_checks_inserted,
                   all_null_checks_found);
   }
   if (all_null_checks_found) {
-    tty->print_cr("%d made implicit (%2d%%)", implicit_null_checks,
+    tty->print_cr("%u made implicit (%2u%%)", implicit_null_checks,
                   (100*implicit_null_checks)/all_null_checks_found);
   }
   if (SharedRuntime::_implicit_null_throws) {
-    tty->print_cr("%d implicit null exceptions at runtime",
+    tty->print_cr("%u implicit null exceptions at runtime",
                   SharedRuntime::_implicit_null_throws);
   }
 
@@ -213,6 +213,7 @@ void Parse::load_interpreter_state(Node* osr_buf) {
   }
   // Do not OSR inside finally clauses:
   if (osr_block->has_trap_at(osr_block->start())) {
+    assert(false, "OSR starts with an immediate trap");
     C->record_method_not_compilable("OSR starts with an immediate trap");
     return;
   }
@@ -253,6 +254,7 @@ void Parse::load_interpreter_state(Node* osr_buf) {
   MethodLivenessResult live_locals = method()->liveness_at_bci(osr_bci());
   if (!live_locals.is_valid()) {
     // Degenerate or breakpointed method.
+    assert(false, "OSR in empty or breakpointed method");
     C->record_method_not_compilable("OSR in empty or breakpointed method");
     return;
   }
@@ -429,6 +431,7 @@ Parse::Parse(JVMState* caller, ciMethod* parse_method, float expected_uses)
   _iter.reset_to_method(method());
   _flow = method()->get_flow_analysis();
   if (_flow->failing()) {
+    assert(false, "type flow failed during parsing");
     C->record_method_not_compilable(_flow->failure_reason());
   }
 
@@ -507,6 +510,7 @@ Parse::Parse(JVMState* caller, ciMethod* parse_method, float expected_uses)
     _entry_bci = C->entry_bci();
     _flow = method()->get_osr_flow_analysis(osr_bci());
     if (_flow->failing()) {
+      assert(false, "type flow analysis failed for OSR compilation");
       C->record_method_not_compilable(_flow->failure_reason());
 #ifndef PRODUCT
       if (PrintOpto && (Verbose || WizardMode)) {
@@ -671,7 +675,7 @@ void Parse::do_all_blocks() {
             // Need correct bci for predicate.
             // It is fine to set it here since do_one_block() will set it anyway.
             set_parse_bci(block->start());
-            add_empty_predicates();
+            add_parse_predicates();
           }
           // Add new region for back branches.
           int edges = block->pred_count() - block->preds_parsed() + 1; // +1 for original region
@@ -696,7 +700,7 @@ void Parse::do_all_blocks() {
         // that any path which was supposed to reach here has already
         // been parsed or must be dead.
         Node* c = control();
-        Node* result = _gvn.transform_no_reclaim(control());
+        Node* result = _gvn.transform(control());
         if (c != result && TraceOptoParse) {
           tty->print_cr("Block #%d replace %d with %d", block->rpo(), c->_idx, result->_idx);
         }
@@ -878,7 +882,7 @@ void Compile::return_values(JVMState* jvms) {
   // bind it to root
   root()->add_req(ret);
   record_for_igvn(ret);
-  initial_gvn()->transform_no_reclaim(ret);
+  initial_gvn()->transform(ret);
 }
 
 //------------------------rethrow_exceptions-----------------------------------
@@ -897,7 +901,7 @@ void Compile::rethrow_exceptions(JVMState* jvms) {
   // bind to root
   root()->add_req(exit);
   record_for_igvn(exit);
-  initial_gvn()->transform_no_reclaim(exit);
+  initial_gvn()->transform(exit);
 }
 
 //---------------------------do_exceptions-------------------------------------
@@ -1007,7 +1011,7 @@ void Parse::do_exits() {
     // and allocation node does not escape the initialize method,
     // then barrier introduced by allocation node can be removed.
     if (DoEscapeAnalysis && alloc_with_final()) {
-      AllocateNode *alloc = AllocateNode::Ideal_allocation(alloc_with_final(), &_gvn);
+      AllocateNode* alloc = AllocateNode::Ideal_allocation(alloc_with_final());
       alloc->compute_MemBar_redundancy(method());
     }
     if (PrintOpto && (Verbose || WizardMode)) {
@@ -1044,6 +1048,16 @@ void Parse::do_exits() {
       // loading.  It could also be due to an error, so mark this method as not compilable because
       // otherwise this could lead to an infinite compile loop.
       // In any case, this code path is rarely (and never in my testing) reached.
+#ifdef ASSERT
+      tty->print_cr("# Can't determine return type.");
+      tty->print_cr("# exit control");
+      _exits.control()->dump(2);
+      tty->print_cr("# ret phi type");
+      _gvn.type(ret_phi)->dump();
+      tty->print_cr("# ret phi");
+      ret_phi->dump(2);
+#endif // ASSERT
+      assert(false, "Can't determine return type.");
       C->record_method_not_compilable("Can't determine return type.");
       return;
     }
@@ -1119,6 +1133,7 @@ SafePointNode* Parse::create_entry_map() {
   // Check for really stupid bail-out cases.
   uint len = TypeFunc::Parms + method()->max_locals() + method()->max_stack();
   if (len >= 32760) {
+    // Bailout expected, this is a very rare edge case.
     C->record_method_not_compilable("too many local variables");
     return nullptr;
   }
@@ -1517,6 +1532,22 @@ void Parse::do_one_block() {
   // Set iterator to start of block.
   iter().reset_to_bci(block()->start());
 
+  if (ProfileExceptionHandlers && block()->is_handler()) {
+    ciMethodData* methodData = method()->method_data();
+    if (methodData->is_mature()) {
+      ciBitData data = methodData->exception_handler_bci_to_data(block()->start());
+      if (!data.exception_handler_entered() || StressPrunedExceptionHandlers) {
+        // dead catch block
+        // Emit an uncommon trap instead of processing the block.
+        set_parse_bci(block()->start());
+        uncommon_trap(Deoptimization::Reason_unreached,
+                      Deoptimization::Action_reinterpret,
+                      nullptr, "dead catch block");
+        return;
+      }
+    }
+  }
+
   CompileLog* log = C->log();
 
   // Parse bytecodes
@@ -1560,6 +1591,7 @@ void Parse::do_one_block() {
 #endif //ASSERT
 
     do_one_bytecode();
+    if (failing()) return;
 
     assert(!have_se || stopped() || failing() || (sp() - pre_bc_sp) == depth,
            "incorrect depth prediction: sp=%d, pre_bc_sp=%d, depth=%d", sp(), pre_bc_sp, depth);
@@ -1680,9 +1712,9 @@ void Parse::merge_common(Parse::Block* target, int pnum) {
       if (target->is_SEL_head()) {
         DEBUG_ONLY( target->mark_merged_backedge(block()); )
         if (target->start() == 0) {
-          // Add loop predicate for the special case when
+          // Add Parse Predicates for the special case when
           // there are backbranches to the method entry.
-          add_empty_predicates();
+          add_parse_predicates();
         }
       }
       // Add a Region to start the new basic block.  Phis will be added
@@ -1735,7 +1767,7 @@ void Parse::merge_common(Parse::Block* target, int pnum) {
 
     if (pnum == 1) {            // Last merge for this Region?
       if (!block()->flow()->is_irreducible_loop_secondary_entry()) {
-        Node* result = _gvn.transform_no_reclaim(r);
+        Node* result = _gvn.transform(r);
         if (r != result && TraceOptoParse) {
           tty->print_cr("Block #%d replace %d with %d", block()->rpo(), r->_idx, result->_idx);
         }
@@ -1799,7 +1831,7 @@ void Parse::merge_common(Parse::Block* target, int pnum) {
           // Phis of pointers cannot lose the basic pointer type.
           debug_only(const Type* bt1 = phi->bottom_type());
           assert(bt1 != Type::BOTTOM, "should not be building conflict phis");
-          map()->set_req(j, _gvn.transform_no_reclaim(phi));
+          map()->set_req(j, _gvn.transform(phi));
           debug_only(const Type* bt2 = phi->bottom_type());
           assert(bt2->higher_equal_speculative(bt1), "must be consistent with type-flow");
           record_for_igvn(phi);
@@ -1878,7 +1910,7 @@ void Parse::merge_memory_edges(MergeMemNode* n, int pnum, bool nophi) {
         base = phi;  // delay transforming it
       } else if (pnum == 1) {
         record_for_igvn(phi);
-        p = _gvn.transform_no_reclaim(phi);
+        p = _gvn.transform(phi);
       }
       mms.set_memory(p);// store back through the iterator
     }
@@ -1886,7 +1918,7 @@ void Parse::merge_memory_edges(MergeMemNode* n, int pnum, bool nophi) {
   // Transform base last, in case we must fiddle with remerging.
   if (base != nullptr && pnum == 1) {
     record_for_igvn(base);
-    m->set_base_memory( _gvn.transform_no_reclaim(base) );
+    m->set_base_memory(_gvn.transform(base));
   }
 }
 
@@ -2156,7 +2188,7 @@ void Parse::rtm_deopt() {
     // Load the rtm_state from the MethodData.
     const TypePtr* adr_type = TypeMetadataPtr::make(C->method()->method_data());
     Node* mdo = makecon(adr_type);
-    int offset = MethodData::rtm_state_offset_in_bytes();
+    int offset = in_bytes(MethodData::rtm_state_offset());
     Node* adr_node = basic_plus_adr(mdo, mdo, offset);
     Node* rtm_state = make_load(control(), adr_node, TypeInt::INT, T_INT, adr_type, MemNode::unordered);
 

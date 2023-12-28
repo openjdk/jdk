@@ -32,6 +32,7 @@
 #include "gc/shared/gc_globals.hpp"
 #include "memory/universe.hpp"
 #include "prims/jvmtiExport.hpp"
+#include "prims/upcallLinker.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/sharedRuntime.hpp"
@@ -43,9 +44,6 @@
 #endif
 #if INCLUDE_JVMCI
 #include "jvmci/jvmci_globals.hpp"
-#endif
-#if INCLUDE_ZGC
-#include "gc/z/zThreadLocalData.hpp"
 #endif
 #if INCLUDE_JFR
 #include "jfr/support/jfrIntrinsics.hpp"
@@ -109,10 +107,8 @@
 //     [ return_from_Java     ] <--- rsp
 //     [ argument word n      ]
 //      ...
-// -60 [ argument word 1      ]
-// -59 [ saved xmm31          ] <--- rsp after_call
-//     [ saved xmm16-xmm30    ] (EVEX enabled, else the space is blank)
-// -27 [ saved xmm15          ]
+// -28 [ argument word 1      ]
+// -27 [ saved xmm15          ] <--- rsp after_call
 //     [ saved xmm7-xmm14     ]
 //  -9 [ saved xmm6           ] (each xmm register takes 2 slots)
 //  -7 [ saved r15            ]
@@ -140,7 +136,7 @@
 #ifdef _WIN64
 enum call_stub_layout {
   xmm_save_first     = 6,  // save from xmm6
-  xmm_save_last      = 31, // to xmm31
+  xmm_save_last      = 15, // to xmm15
   xmm_save_base      = -9,
   rsp_after_call_off = xmm_save_base - 2 * (xmm_save_last - xmm_save_first), // -27
   r15_off            = -7,
@@ -240,17 +236,8 @@ address StubGenerator::generate_call_stub(address& return_address) {
 
 #ifdef _WIN64
   int last_reg = 15;
-  if (UseAVX > 2) {
-    last_reg = 31;
-  }
-  if (VM_Version::supports_evex()) {
-    for (int i = xmm_save_first; i <= last_reg; i++) {
-      __ vextractf32x4(xmm_save(i), as_XMMRegister(i), 0);
-    }
-  } else {
-    for (int i = xmm_save_first; i <= last_reg; i++) {
-      __ movdqu(xmm_save(i), as_XMMRegister(i));
-    }
+  for (int i = xmm_save_first; i <= last_reg; i++) {
+    __ movdqu(xmm_save(i), as_XMMRegister(i));
   }
 
   const Address rdi_save(rbp, rdi_off * wordSize);
@@ -329,6 +316,16 @@ address StubGenerator::generate_call_stub(address& return_address) {
   __ jcc(Assembler::equal, is_float);
   __ cmpl(c_rarg1, T_DOUBLE);
   __ jcc(Assembler::equal, is_double);
+#ifdef ASSERT
+  // make sure the type is INT
+  {
+    Label L;
+    __ cmpl(c_rarg1, T_INT);
+    __ jcc(Assembler::equal, L);
+    __ stop("StubRoutines::call_stub: unexpected result type");
+    __ bind(L);
+  }
+#endif
 
   // handle T_INT case
   __ movl(Address(c_rarg0, 0), rax);
@@ -363,14 +360,8 @@ address StubGenerator::generate_call_stub(address& return_address) {
   // restore regs belonging to calling function
 #ifdef _WIN64
   // emit the restores for xmm regs
-  if (VM_Version::supports_evex()) {
-    for (int i = xmm_save_first; i <= last_reg; i++) {
-      __ vinsertf32x4(as_XMMRegister(i), as_XMMRegister(i), xmm_save(i), 0);
-    }
-  } else {
-    for (int i = xmm_save_first; i <= last_reg; i++) {
-      __ movdqu(as_XMMRegister(i), xmm_save(i));
-    }
+  for (int i = xmm_save_first; i <= last_reg; i++) {
+    __ movdqu(as_XMMRegister(i), xmm_save(i));
   }
 #endif
   __ movptr(r15, r15_save);
@@ -459,7 +450,7 @@ address StubGenerator::generate_catch_exception() {
   __ movl(Address(r15_thread, Thread::exception_line_offset()), (int)  __LINE__);
 
   // complete return to VM
-  assert(StubRoutines::_call_stub_return_address != NULL,
+  assert(StubRoutines::_call_stub_return_address != nullptr,
          "_call_stub_return_address must have been generated before");
   __ jump(RuntimeAddress(StubRoutines::_call_stub_return_address));
 
@@ -1091,7 +1082,7 @@ address StubGenerator::generate_verify_oop() {
 
   // make sure object is 'reasonable'
   __ testptr(rax, rax);
-  __ jcc(Assembler::zero, exit); // if obj is NULL it is OK
+  __ jcc(Assembler::zero, exit); // if obj is null it is OK
 
    BarrierSetAssembler* bs_asm = BarrierSet::barrier_set()->barrier_set_assembler();
    bs_asm->check_oop(_masm, rax, c_rarg2, c_rarg3, error);
@@ -3753,6 +3744,47 @@ RuntimeStub* StubGenerator::generate_jfr_write_checkpoint() {
   return stub;
 }
 
+// For c2: call to return a leased buffer.
+RuntimeStub* StubGenerator::generate_jfr_return_lease() {
+  enum layout {
+    rbp_off,
+    rbpH_off,
+    return_off,
+    return_off2,
+    framesize // inclusive of return address
+  };
+
+  CodeBuffer code("jfr_return_lease", 1024, 64);
+  MacroAssembler* _masm = new MacroAssembler(&code);
+  address start = __ pc();
+
+  __ enter();
+  address the_pc = __ pc();
+
+  int frame_complete = the_pc - start;
+
+  __ set_last_Java_frame(rsp, rbp, the_pc, rscratch2);
+  __ movptr(c_rarg0, r15_thread);
+  __ call_VM_leaf(CAST_FROM_FN_PTR(address, JfrIntrinsicSupport::return_lease), 1);
+  __ reset_last_Java_frame(true);
+
+  __ leave();
+  __ ret(0);
+
+  OopMapSet* oop_maps = new OopMapSet();
+  OopMap* map = new OopMap(framesize, 1);
+  oop_maps->add_gc_map(frame_complete, map);
+
+  RuntimeStub* stub =
+    RuntimeStub::new_runtime_stub(code.name(),
+                                  &code,
+                                  frame_complete,
+                                  (framesize >> (LogBytesPerWord - LogBytesPerInt)),
+                                  oop_maps,
+                                  false);
+  return stub;
+}
+
 #endif // INCLUDE_JFR
 
 // Continuation point for throwing of implicit exceptions that are
@@ -3856,17 +3888,42 @@ address StubGenerator::generate_throw_exception(const char* name,
   return stub->entry_point();
 }
 
+// exception handler for upcall stubs
+address StubGenerator::generate_upcall_stub_exception_handler() {
+  StubCodeMark mark(this, "StubRoutines", "upcall stub exception handler");
+  address start = __ pc();
+
+  // native caller has no idea how to handle exceptions
+  // we just crash here. Up to callee to catch exceptions.
+  __ verify_oop(rax);
+  __ vzeroupper();
+  __ mov(c_rarg0, rax);
+  __ andptr(rsp, -StackAlignmentInBytes); // align stack as required by ABI
+  __ subptr(rsp, frame::arg_reg_save_area_bytes); // windows
+  __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, UpcallLinker::handle_uncaught_exception)));
+  __ should_not_reach_here();
+
+  return start;
+}
+
 void StubGenerator::create_control_words() {
-  // Round to nearest, 64-bit mode, exceptions masked
-  StubRoutines::x86::_mxcsr_std = 0x1F80;
+  // Round to nearest, 64-bit mode, exceptions masked, flags specialized
+  StubRoutines::x86::_mxcsr_std = EnableX86ECoreOpts ? 0x1FBF : 0x1F80;
+  // Round to zero, 64-bit mode, exceptions masked, flags specialized
+  StubRoutines::x86::_mxcsr_rz = EnableX86ECoreOpts ? 0x7FBF : 0x7F80;
 }
 
 // Initialization
-void StubGenerator::generate_initial() {
+void StubGenerator::generate_initial_stubs() {
   // Generates all stubs and initializes the entry points
 
   // This platform-specific settings are needed by generate_call_stub()
   create_control_words();
+
+  // Initialize table for unsafe copy memeory check.
+  if (UnsafeCopyMemory::_table == nullptr) {
+    UnsafeCopyMemory::create_table(16);
+  }
 
   // entry points that exist in all platforms Note: This is code
   // that could be shared among different platforms - however the
@@ -3917,19 +3974,11 @@ void StubGenerator::generate_initial() {
     StubRoutines::_updateBytesCRC32 = generate_updateBytesCRC32();
   }
 
-  if (UsePoly1305Intrinsics) {
-    StubRoutines::_poly1305_processBlocks = generate_poly1305_processBlocks();
-  }
-
   if (UseCRC32CIntrinsics) {
     bool supports_clmul = VM_Version::supports_clmul();
     StubRoutines::x86::generate_CRC32C_table(supports_clmul);
     StubRoutines::_crc32c_table_addr = (address)StubRoutines::x86::_crc32c_table;
     StubRoutines::_updateBytesCRC32C = generate_updateBytesCRC32C(supports_clmul);
-  }
-
-  if (UseAdler32Intrinsics) {
-     StubRoutines::_updateBytesAdler32 = generate_updateBytesAdler32();
   }
 
   if (VM_Version::supports_float16()) {
@@ -3943,20 +3992,30 @@ void StubGenerator::generate_initial() {
   }
 
   generate_libm_stubs();
+
+  StubRoutines::_fmod = generate_libmFmod(); // from stubGenerator_x86_64_fmod.cpp
 }
 
-void StubGenerator::generate_phase1() {
+void StubGenerator::generate_continuation_stubs() {
   // Continuation stubs:
   StubRoutines::_cont_thaw          = generate_cont_thaw();
   StubRoutines::_cont_returnBarrier = generate_cont_returnBarrier();
   StubRoutines::_cont_returnBarrierExc = generate_cont_returnBarrier_exception();
 
-  JFR_ONLY(StubRoutines::_jfr_write_checkpoint_stub = generate_jfr_write_checkpoint();)
-  JFR_ONLY(StubRoutines::_jfr_write_checkpoint = StubRoutines::_jfr_write_checkpoint_stub->entry_point();)
+  JFR_ONLY(generate_jfr_stubs();)
 }
 
-void StubGenerator::generate_all() {
-  // Generates all stubs and initializes the entry points
+#if INCLUDE_JFR
+void StubGenerator::generate_jfr_stubs() {
+  StubRoutines::_jfr_write_checkpoint_stub = generate_jfr_write_checkpoint();
+  StubRoutines::_jfr_write_checkpoint = StubRoutines::_jfr_write_checkpoint_stub->entry_point();
+  StubRoutines::_jfr_return_lease_stub = generate_jfr_return_lease();
+  StubRoutines::_jfr_return_lease = StubRoutines::_jfr_return_lease_stub->entry_point();
+}
+#endif
+
+void StubGenerator::generate_final_stubs() {
+  // Generates the rest of stubs and initializes the entry points
 
   // These entry points require SharedInfo::stack0 to be set up in
   // non-core builds and need to be relocatable, so they each
@@ -3979,7 +4038,35 @@ void StubGenerator::generate_all() {
                                               SharedRuntime::
                                               throw_NullPointerException_at_call));
 
-  // entry points that are platform specific
+  // support for verify_oop (must happen after universe_init)
+  if (VerifyOops) {
+    StubRoutines::_verify_oop_subroutine_entry = generate_verify_oop();
+  }
+
+  // data cache line writeback
+  StubRoutines::_data_cache_writeback = generate_data_cache_writeback();
+  StubRoutines::_data_cache_writeback_sync = generate_data_cache_writeback_sync();
+
+  // arraycopy stubs used by compilers
+  generate_arraycopy_stubs();
+
+  BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
+  if (bs_nm != nullptr) {
+    StubRoutines::_method_entry_barrier = generate_method_entry_barrier();
+  }
+
+  if (UseVectorizedMismatchIntrinsic) {
+    StubRoutines::_vectorizedMismatch = generate_vectorizedMismatch();
+  }
+
+  StubRoutines::_upcall_stub_exception_handler = generate_upcall_stub_exception_handler();
+}
+
+void StubGenerator::generate_compiler_stubs() {
+#if COMPILER2_OR_JVMCI
+
+  // Entry points that are C2 compiler specific.
+
   StubRoutines::x86::_vector_float_sign_mask = generate_vector_mask("vector_float_sign_mask", 0x7FFFFFFF7FFFFFFF);
   StubRoutines::x86::_vector_float_sign_flip = generate_vector_mask("vector_float_sign_flip", 0x8000000080000000);
   StubRoutines::x86::_vector_double_sign_mask = generate_vector_mask("vector_double_sign_mask", 0x7FFFFFFFFFFFFFFF);
@@ -4011,34 +4098,32 @@ void StubGenerator::generate_all() {
     StubRoutines::x86::_vector_popcount_lut = generate_popcount_avx_lut("popcount_lut");
   }
 
-  // support for verify_oop (must happen after universe_init)
-  if (VerifyOops) {
-    StubRoutines::_verify_oop_subroutine_entry = generate_verify_oop();
-  }
-
-  // data cache line writeback
-  StubRoutines::_data_cache_writeback = generate_data_cache_writeback();
-  StubRoutines::_data_cache_writeback_sync = generate_data_cache_writeback_sync();
-
-  // arraycopy stubs used by compilers
-  generate_arraycopy_stubs();
-
   generate_aes_stubs();
 
   generate_ghash_stubs();
 
   generate_chacha_stubs();
 
+  if (UseAdler32Intrinsics) {
+     StubRoutines::_updateBytesAdler32 = generate_updateBytesAdler32();
+  }
+
+  if (UsePoly1305Intrinsics) {
+    StubRoutines::_poly1305_processBlocks = generate_poly1305_processBlocks();
+  }
+
   if (UseMD5Intrinsics) {
     StubRoutines::_md5_implCompress = generate_md5_implCompress(false, "md5_implCompress");
     StubRoutines::_md5_implCompressMB = generate_md5_implCompress(true, "md5_implCompressMB");
   }
+
   if (UseSHA1Intrinsics) {
     StubRoutines::x86::_upper_word_mask_addr = generate_upper_word_mask();
     StubRoutines::x86::_shuffle_byte_flip_mask_addr = generate_shuffle_byte_flip_mask();
     StubRoutines::_sha1_implCompress = generate_sha1_implCompress(false, "sha1_implCompress");
     StubRoutines::_sha1_implCompressMB = generate_sha1_implCompress(true, "sha1_implCompressMB");
   }
+
   if (UseSHA256Intrinsics) {
     StubRoutines::x86::_k256_adr = (address)StubRoutines::x86::_k256;
     char* dst = (char*)StubRoutines::x86::_k256_W;
@@ -4052,6 +4137,7 @@ void StubGenerator::generate_all() {
     StubRoutines::_sha256_implCompress = generate_sha256_implCompress(false, "sha256_implCompress");
     StubRoutines::_sha256_implCompressMB = generate_sha256_implCompress(true, "sha256_implCompressMB");
   }
+
   if (UseSHA512Intrinsics) {
     StubRoutines::x86::_k512_W_addr = (address)StubRoutines::x86::_k512_W;
     StubRoutines::x86::_pshuffle_byte_flip_mask_addr_sha512 = generate_pshuffle_byte_flip_mask_sha512();
@@ -4084,10 +4170,6 @@ void StubGenerator::generate_all() {
     StubRoutines::_base64_decodeBlock = generate_base64_decodeBlock();
   }
 
-  BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
-  if (bs_nm != NULL) {
-    StubRoutines::x86::_method_entry_barrier = generate_method_entry_barrier();
-  }
 #ifdef COMPILER2
   if (UseMultiplyToLenIntrinsic) {
     StubRoutines::_multiplyToLen = generate_multiplyToLen();
@@ -4111,14 +4193,35 @@ void StubGenerator::generate_all() {
       = CAST_FROM_FN_PTR(address, SharedRuntime::montgomery_square);
   }
 
+  // Load x86_64_sort library on supported hardware to enable SIMD sort and partition intrinsics
+
+  if (VM_Version::is_intel() && (VM_Version::supports_avx512dq() || VM_Version::supports_avx2())) {
+    void *libsimdsort = nullptr;
+    char ebuf_[1024];
+    char dll_name_simd_sort[JVM_MAXPATHLEN];
+    if (os::dll_locate_lib(dll_name_simd_sort, sizeof(dll_name_simd_sort), Arguments::get_dll_dir(), "simdsort")) {
+      libsimdsort = os::dll_load(dll_name_simd_sort, ebuf_, sizeof ebuf_);
+    }
+    // Get addresses for SIMD sort and partition routines
+    if (libsimdsort != nullptr) {
+      log_info(library)("Loaded library %s, handle " INTPTR_FORMAT, JNI_LIB_PREFIX "simdsort" JNI_LIB_SUFFIX, p2i(libsimdsort));
+
+      snprintf(ebuf_, sizeof(ebuf_), VM_Version::supports_avx512dq() ? "avx512_sort" : "avx2_sort");
+      StubRoutines::_array_sort = (address)os::dll_lookup(libsimdsort, ebuf_);
+
+      snprintf(ebuf_, sizeof(ebuf_), VM_Version::supports_avx512dq() ? "avx512_partition" : "avx2_partition");
+      StubRoutines::_array_partition = (address)os::dll_lookup(libsimdsort, ebuf_);
+    }
+  }
+
   // Get svml stub routine addresses
-  void *libjsvml = NULL;
+  void *libjsvml = nullptr;
   char ebuf[1024];
   char dll_name[JVM_MAXPATHLEN];
   if (os::dll_locate_lib(dll_name, sizeof(dll_name), Arguments::get_dll_dir(), "jsvml")) {
     libjsvml = os::dll_load(dll_name, ebuf, sizeof ebuf);
   }
-  if (libjsvml != NULL) {
+  if (libjsvml != nullptr) {
     // SVML method naming convention
     //   All the methods are named as __jsvml_op<T><N>_ha_<VV>
     //   Where:
@@ -4175,17 +4278,32 @@ void StubGenerator::generate_all() {
     }
   }
 #endif // COMPILER2
-
-  if (UseVectorizedMismatchIntrinsic) {
-    StubRoutines::_vectorizedMismatch = generate_vectorizedMismatch();
-  }
+#endif // COMPILER2_OR_JVMCI
 }
 
-void StubGenerator_generate(CodeBuffer* code, int phase) {
-  if (UnsafeCopyMemory::_table == NULL) {
-    UnsafeCopyMemory::create_table(16);
-  }
-  StubGenerator g(code, phase);
+StubGenerator::StubGenerator(CodeBuffer* code, StubsKind kind) : StubCodeGenerator(code) {
+    DEBUG_ONLY( _regs_in_thread = false; )
+    switch(kind) {
+    case Initial_stubs:
+      generate_initial_stubs();
+      break;
+     case Continuation_stubs:
+      generate_continuation_stubs();
+      break;
+    case Compiler_stubs:
+      generate_compiler_stubs();
+      break;
+    case Final_stubs:
+      generate_final_stubs();
+      break;
+    default:
+      fatal("unexpected stubs kind: %d", kind);
+      break;
+    };
+}
+
+void StubGenerator_generate(CodeBuffer* code, StubCodeGenerator::StubsKind kind) {
+  StubGenerator g(code, kind);
 }
 
 #undef __

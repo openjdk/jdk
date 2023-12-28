@@ -42,6 +42,7 @@ typedef enum {
 } VirtualizationType;
 
 class outputStream;
+enum class vmIntrinsicID;
 
 // Abstract_VM_Version provides information about the VM.
 
@@ -58,7 +59,9 @@ class Abstract_VM_Version: AllStatic {
   static const char* _features_string;
 
   // These are set by machine-dependent initializations
+#ifndef SUPPORTS_NATIVE_CX8
   static bool         _supports_cx8;
+#endif
   static bool         _supports_atomic_getset4;
   static bool         _supports_atomic_getset8;
   static bool         _supports_atomic_getadd4;
@@ -132,6 +135,8 @@ class Abstract_VM_Version: AllStatic {
   static void print_platform_virtualization_info(outputStream*) { }
 
   // does HW support an 8-byte compare-exchange operation?
+  // Required to be true but still dynamically checked at runtime
+  // for platforms that don't set SUPPORTS_NATIVE_CX8
   static bool supports_cx8()  {
 #ifdef SUPPORTS_NATIVE_CX8
     return true;
@@ -181,6 +186,12 @@ class Abstract_VM_Version: AllStatic {
 
   // Does platform support float16 instructions?
   static bool supports_float16() { return false; }
+
+  // Does this CPU support this intrinsic?
+  static bool is_intrinsic_supported(vmIntrinsicID id) { return true; }
+
+  static bool profile_all_receivers_at_type_check() { return true; }
+
   static bool print_matching_lines_from_file(const char* filename, outputStream* st, const char* keywords_to_match[]);
 
  protected:

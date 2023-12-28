@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,11 +34,11 @@ import java.util.Set;
 
 import jdk.jfr.internal.SecuritySupport.SafePath;
 import jdk.jfr.internal.management.ChunkFilename;
+import jdk.jfr.internal.util.ValueFormatter;
 
 public final class Repository {
 
     private static final int MAX_REPO_CREATION_RETRIES = 1000;
-    private static final JVM jvm = JVM.getJVM();
     private static final Repository instance = new Repository();
 
     private static final String JFR_REPOSITORY_LOCATION_PROPERTY = "jdk.jfr.repository";
@@ -85,7 +85,7 @@ public final class Repository {
         try {
             if (!SecuritySupport.existDirectory(repository)) {
                 this.repository = createRepository(baseLocation);
-                jvm.setRepositoryLocation(repository.toString());
+                JVM.setRepositoryLocation(repository.toString());
                 SecuritySupport.setProperty(JFR_REPOSITORY_LOCATION_PROPERTY, repository.toString());
                 cleanupDirectories.add(repository);
                 chunkFilename = null;
@@ -98,7 +98,7 @@ public final class Repository {
         } catch (Exception e) {
             String errorMsg = String.format("Could not create chunk in repository %s, %s: %s", repository, e.getClass(), e.getMessage());
             Logger.log(LogTag.JFR, LogLevel.ERROR, errorMsg);
-            jvm.abort(errorMsg);
+            JVM.abort(errorMsg);
             throw new InternalError("Could not abort after JFR disk creation error");
         }
     }
@@ -107,7 +107,7 @@ public final class Repository {
         SafePath canonicalBaseRepositoryPath = createRealBasePath(basePath);
         SafePath f = null;
 
-        String basename = Utils.formatDateTime(LocalDateTime.now()) + "_" + JVM.getJVM().getPid();
+        String basename = ValueFormatter.formatDateTime(LocalDateTime.now()) + "_" + JVM.getPid();
         String name = basename;
 
         int i = 0;
@@ -160,6 +160,10 @@ public final class Repository {
     }
 
     synchronized void clear() {
+        if (Options.getPreserveRepository()) {
+            return;
+        }
+
         for (SafePath p : cleanupDirectories) {
             try {
                 SecuritySupport.clearDirectory(p);

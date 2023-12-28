@@ -520,7 +520,7 @@ public:
                                   _options);
 
     while (true) {
-      size_t v = Atomic::fetch_and_add(&_claimed, 1u, memory_order_relaxed);
+      size_t v = Atomic::fetch_then_add(&_claimed, 1u, memory_order_relaxed);
       if (v < _heap->num_regions()) {
         ShenandoahHeapRegion* r = _heap->get_region(v);
         if (!r->is_humongous() && !r->is_trash()) {
@@ -619,6 +619,8 @@ void ShenandoahVerifier::verify_at_safepoint(const char *label,
                                              VerifyGCState gcstate) {
   guarantee(ShenandoahSafepoint::is_at_shenandoah_safepoint(), "only when nothing else happens");
   guarantee(ShenandoahVerify, "only when enabled, and bitmap is initialized in ShenandoahHeap::initialize");
+
+  ShenandoahHeap::heap()->set_gc_state_all_threads();
 
   // Avoid side-effect of changing workers' active thread count, but bypass concurrent/parallel protocol check
   ShenandoahPushWorkerScope verify_worker_scope(_heap->workers(), _heap->max_workers(), false /*bypass check*/);

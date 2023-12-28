@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,9 @@ package sun.util.locale;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.IllformedLocaleException;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.StringJoiner;
@@ -59,7 +61,6 @@ public class LanguageTag {
     private List<String> extlangs = Collections.emptyList();   // extlang subtags
     private List<String> variants = Collections.emptyList();   // variant subtags
     private List<String> extensions = Collections.emptyList(); // extensions
-
     // Map contains legacy language tags and its preferred mappings from
     // http://www.ietf.org/rfc/rfc5646.txt
     // Keys are lower-case strings.
@@ -208,7 +209,6 @@ public class LanguageTag {
             tag.parseExtensions(itr, sts);
         }
         tag.parsePrivateuse(itr, sts);
-
         if (!itr.isDone() && !sts.isError()) {
             String s = itr.current();
             sts.errorIndex = itr.currentStart();
@@ -218,7 +218,6 @@ public class LanguageTag {
                 sts.errorMsg = "Invalid subtag: " + s;
             }
         }
-
         return tag;
     }
 
@@ -412,6 +411,54 @@ public class LanguageTag {
         }
 
         return found;
+    }
+
+    public static String caseFoldTag(String tag) {
+        ParseStatus sts = new ParseStatus();
+        parse(tag, sts);
+        // Illegal tags
+        if (sts.errorMsg != null) {
+            throw new IllformedLocaleException(String.format("Ill formed tag:" +
+                    " %s", sts.errorMsg));
+        }
+        // Legacy tags
+        String potentialLegacy = tag.toLowerCase(Locale.ROOT);
+        if (LEGACY.containsKey(potentialLegacy)) {
+            return LEGACY.get(potentialLegacy)[0];
+        }
+        // Non-legacy tags
+        StringBuilder bldr = new StringBuilder(tag.length());
+        String[] subtags = tag.split("-");
+        boolean privateFound = false;
+        boolean singletonFound = false;
+        boolean privUseVarFound = false;
+        for (int i = 0; i < subtags.length; i++) {
+            String subtag = subtags[i];
+            if (privUseVarFound) {
+                bldr.append(subtag);
+            } else if (i > 0 && isVariant(subtag) && !singletonFound && !privateFound) {
+                bldr.append(subtag);
+            } else if (i > 0 && isRegion(subtag) && !singletonFound && !privateFound) {
+                bldr.append(canonicalizeRegion(subtag));
+            } else if (i > 0 && isScript(subtag) && !singletonFound && !privateFound) {
+                bldr.append(canonicalizeScript(subtag));
+            // If subtag is not 2 letter, 4 letter, or variant
+            // under the right conditions, then it should be lower-case
+            } else {
+                if (isPrivateusePrefix(subtag)) {
+                    privateFound = true;
+                } else if (isExtensionSingleton(subtag)) {
+                    singletonFound = true;
+                } else if (subtag.equals(PRIVUSE_VARIANT_PREFIX)) {
+                    privUseVarFound = true;
+                }
+                bldr.append(subtag.toLowerCase(Locale.ROOT));
+            }
+            if (i != subtags.length-1) {
+                bldr.append("-");
+            }
+        }
+        return bldr.substring(0);
     }
 
     public static LanguageTag parseLocale(BaseLocale baseLocale, LocaleExtensions localeExtensions) {

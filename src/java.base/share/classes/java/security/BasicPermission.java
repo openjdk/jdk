@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -217,12 +217,10 @@ public abstract class BasicPermission extends Permission
 
 
     /**
-     * Returns the hash code value for this object.
+     * {@return the hash code value for this object}
      * The hash code used is the hash code of the name, that is,
      * {@code getName().hashCode()}, where {@code getName} is
      * from the {@code Permission} superclass.
-     *
-     * @return a hash code value for this object.
      */
     @Override
     public int hashCode() {

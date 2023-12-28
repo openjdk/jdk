@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -35,7 +35,6 @@ import com.sun.org.apache.xerces.internal.impl.validation.ValidationManager;
 import com.sun.org.apache.xerces.internal.impl.xs.XMLSchemaValidator;
 import com.sun.org.apache.xerces.internal.jaxp.validation.XSGrammarPoolContainer;
 import com.sun.org.apache.xerces.internal.parsers.DOMParser;
-import com.sun.org.apache.xerces.internal.utils.XMLSecurityManager;
 import com.sun.org.apache.xerces.internal.utils.XMLSecurityPropertyManager;
 import com.sun.org.apache.xerces.internal.utils.XMLSecurityPropertyManager.Property;
 import com.sun.org.apache.xerces.internal.utils.XMLSecurityPropertyManager.State;
@@ -47,6 +46,7 @@ import com.sun.org.apache.xerces.internal.xni.parser.XMLDocumentSource;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLParserConfiguration;
 import jdk.xml.internal.JdkConstants;
 import jdk.xml.internal.JdkProperty;
+import jdk.xml.internal.XMLSecurityManager;
 import org.w3c.dom.DOMImplementation;
 import org.w3c.dom.Document;
 import org.xml.sax.EntityResolver;
@@ -59,7 +59,7 @@ import org.xml.sax.SAXNotSupportedException;
 /**
  * @author Rajiv Mordani
  * @author Edwin Goei
- * @LastModified: May 2021
+ * @LastModified: July 2023
  */
 public class DocumentBuilderImpl extends DocumentBuilder
         implements JAXPConstants
@@ -140,6 +140,12 @@ public class DocumentBuilderImpl extends DocumentBuilder
     {
         domParser = new DOMParser();
 
+        fSecurityPropertyMgr = new XMLSecurityPropertyManager();
+        domParser.setProperty(XML_SECURITY_PROPERTY_MANAGER, fSecurityPropertyMgr);
+
+        fSecurityManager = dbf.fSecurityManager;
+        domParser.setProperty(SECURITY_MANAGER, fSecurityManager);
+
         // If validating, provide a default ErrorHandler that prints
         // validation errors with a warning telling the user to set an
         // ErrorHandler
@@ -172,12 +178,6 @@ public class DocumentBuilderImpl extends DocumentBuilder
         if (dbf.isXIncludeAware()) {
             domParser.setFeature(XINCLUDE_FEATURE, true);
         }
-
-        fSecurityPropertyMgr = new XMLSecurityPropertyManager();
-        domParser.setProperty(XML_SECURITY_PROPERTY_MANAGER, fSecurityPropertyMgr);
-
-        fSecurityManager = new XMLSecurityManager(secureProcessing);
-        domParser.setProperty(SECURITY_MANAGER, fSecurityManager);
 
         if (secureProcessing) {
             /**

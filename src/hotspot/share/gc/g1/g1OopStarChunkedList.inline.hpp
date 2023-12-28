@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@
 template <typename T>
 inline void G1OopStarChunkedList::push(ChunkedList<T*, mtGC>** field, T* p) {
   ChunkedList<T*, mtGC>* list = *field;
-  if (list == NULL) {
+  if (list == nullptr) {
     *field = new ChunkedList<T*, mtGC>();
     _used_memory += sizeof(ChunkedList<T*, mtGC>);
   } else if (list->is_full()) {
@@ -65,7 +65,7 @@ inline void G1OopStarChunkedList::push_oop(oop* p) {
 
 template <typename T>
 void G1OopStarChunkedList::delete_list(ChunkedList<T*, mtGC>* c) {
-  while (c != NULL) {
+  while (c != nullptr) {
     ChunkedList<T*, mtGC>* next = c->next_used();
     delete c;
     c = next;
@@ -75,7 +75,7 @@ void G1OopStarChunkedList::delete_list(ChunkedList<T*, mtGC>* c) {
 template <typename T>
 size_t G1OopStarChunkedList::chunks_do(ChunkedList<T*, mtGC>* head, OopClosure* cl) {
   size_t result = 0;
-  for (ChunkedList<T*, mtGC>* c = head; c != NULL; c = c->next_used()) {
+  for (ChunkedList<T*, mtGC>* c = head; c != nullptr; c = c->next_used()) {
     result += c->size();
     for (size_t i = 0; i < c->size(); i++) {
       T* p = c->at(i);

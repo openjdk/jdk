@@ -37,6 +37,7 @@
 #include "compiler/compilerDefinitions.inline.hpp"
 #include "compiler/oopMap.hpp"
 #include "gc/shared/barrierSetNMethod.hpp"
+#include "gc/shared/classUnloadingContext.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "jvm_io.h"
@@ -200,8 +201,9 @@ void CodeCache::initialize_heaps() {
   bool non_nmethod_set      = FLAG_IS_CMDLINE(NonNMethodCodeHeapSize);
   bool profiled_set         = FLAG_IS_CMDLINE(ProfiledCodeHeapSize);
   bool non_profiled_set     = FLAG_IS_CMDLINE(NonProfiledCodeHeapSize);
-  size_t min_size           = os::vm_page_size();
-  size_t cache_size         = ReservedCodeCacheSize;
+  const size_t ps           = page_size(false, 8);
+  const size_t min_size     = MAX2(os::vm_allocation_granularity(), ps);
+  const size_t cache_size   = ReservedCodeCacheSize;
   size_t non_nmethod_size   = NonNMethodCodeHeapSize;
   size_t profiled_size      = ProfiledCodeHeapSize;
   size_t non_profiled_size  = NonProfiledCodeHeapSize;
@@ -232,8 +234,10 @@ void CodeCache::initialize_heaps() {
   }
   // Calculate default CodeHeap sizes if not set by user
   if (!non_nmethod_set && !profiled_set && !non_profiled_set) {
+    // Leave room for the other two parts of the code cache
+    const size_t max_non_nmethod_size = cache_size - 2 * min_size;
     // Check if we have enough space for the non-nmethod code heap
-    if (cache_size > non_nmethod_size) {
+    if (max_non_nmethod_size >= non_nmethod_size) {
       // Use the default value for non_nmethod_size and one half of the
       // remaining size for non-profiled and one half for profiled methods
       size_t remaining_size = cache_size - non_nmethod_size;
@@ -241,7 +245,7 @@ void CodeCache::initialize_heaps() {
       non_profiled_size = remaining_size - profiled_size;
     } else {
       // Use all space for the non-nmethod heap and set other heaps to minimal size
-      non_nmethod_size = cache_size - 2 * min_size;
+      non_nmethod_size = max_non_nmethod_size;
       profiled_size = min_size;
       non_profiled_size = min_size;
     }
@@ -310,12 +314,21 @@ void CodeCache::initialize_heaps() {
   FLAG_SET_ERGO(ProfiledCodeHeapSize, profiled_size);
   FLAG_SET_ERGO(NonProfiledCodeHeapSize, non_profiled_size);
 
-  // If large page support is enabled, align code heaps according to large
-  // page size to make sure that code cache is covered by large pages.
-  const size_t alignment = MAX2(page_size(false, 8), os::vm_allocation_granularity());
-  non_nmethod_size = align_up(non_nmethod_size, alignment);
-  profiled_size    = align_down(profiled_size, alignment);
-  non_profiled_size = align_down(non_profiled_size, alignment);
+  // Print warning if using large pages but not able to use the size given
+  if (UseLargePages) {
+    const size_t lg_ps = page_size(false, 1);
+    if (ps < lg_ps) {
+      log_warning(codecache)("Code cache size too small for " PROPERFMT " pages. "
+                             "Reverting to smaller page size (" PROPERFMT ").",
+                             PROPERFMTARGS(lg_ps), PROPERFMTARGS(ps));
+    }
+  }
+
+  // Note: if large page support is enabled, min_size is at least the large
+  // page size. This ensures that the code cache is covered by large pages.
+  non_nmethod_size = align_up(non_nmethod_size, min_size);
+  profiled_size    = align_down(profiled_size, min_size);
+  non_profiled_size = align_down(non_profiled_size, min_size);
 
   // Reserve one continuous chunk of memory for CodeHeaps and split it into
   // parts for the individual heaps. The memory layout looks like this:
@@ -324,7 +337,7 @@ void CodeCache::initialize_heaps() {
   //         Non-nmethods
   //      Profiled nmethods
   // ---------- low ------------
-  ReservedCodeSpace rs = reserve_heap_memory(cache_size);
+  ReservedCodeSpace rs = reserve_heap_memory(cache_size, ps);
   ReservedSpace profiled_space      = rs.first_part(profiled_size);
   ReservedSpace rest                = rs.last_part(profiled_size);
   ReservedSpace non_method_space    = rest.first_part(non_nmethod_size);
@@ -354,9 +367,8 @@ size_t CodeCache::page_size(bool aligned, size_t min_pages) {
   }
 }
 
-ReservedCodeSpace CodeCache::reserve_heap_memory(size_t size) {
+ReservedCodeSpace CodeCache::reserve_heap_memory(size_t size, size_t rs_ps) {
   // Align and reserve space for code cache
-  const size_t rs_ps = page_size();
   const size_t rs_align = MAX2(rs_ps, os::vm_allocation_granularity());
   const size_t rs_size = align_up(size, rs_align);
   ReservedCodeSpace rs(rs_size, rs_align, rs_ps);
@@ -462,10 +474,10 @@ CodeHeap* CodeCache::get_code_heap_containing(void* start) {
   return nullptr;
 }
 
-CodeHeap* CodeCache::get_code_heap(const CodeBlob* cb) {
+CodeHeap* CodeCache::get_code_heap(const void* cb) {
   assert(cb != nullptr, "CodeBlob is null");
   FOR_ALL_HEAPS(heap) {
-    if ((*heap)->contains_blob(cb)) {
+    if ((*heap)->contains(cb)) {
       return *heap;
     }
   }
@@ -509,10 +521,10 @@ CodeBlob* CodeCache::next_blob(CodeHeap* heap, CodeBlob* cb) {
  * run the constructor for the CodeBlob subclass he is busy
  * instantiating.
  */
-CodeBlob* CodeCache::allocate(int size, CodeBlobType code_blob_type, bool handle_alloc_failure, CodeBlobType orig_code_blob_type) {
+CodeBlob* CodeCache::allocate(uint size, CodeBlobType code_blob_type, bool handle_alloc_failure, CodeBlobType orig_code_blob_type) {
   assert_locked_or_safepoint(CodeCache_lock);
-  assert(size > 0, "Code cache allocation request must be > 0 but is %d", size);
-  if (size <= 0) {
+  assert(size > 0, "Code cache allocation request must be > 0");
+  if (size == 0) {
     return nullptr;
   }
   CodeBlob* cb = nullptr;
@@ -563,6 +575,8 @@ CodeBlob* CodeCache::allocate(int size, CodeBlobType code_blob_type, bool handle
         CompileBroker::handle_full_code_cache(orig_code_blob_type);
       }
       return nullptr;
+    } else {
+      OrderAccess::release(); // ensure heap expansion is visible to an asynchronous observer (e.g. CodeHeapPool::get_memory_usage())
     }
     if (PrintCodeCacheExtension) {
       ResourceMark rm;
@@ -594,8 +608,9 @@ void CodeCache::free(CodeBlob* cb) {
     heap->set_adapter_count(heap->adapter_count() - 1);
   }
 
+  cb->~CodeBlob();
   // Get heap for given CodeBlob and deallocate
-  get_code_heap(cb)->deallocate(cb);
+  heap->deallocate(cb);
 
   assert(heap->blob_count() >= 0, "sanity check");
 }
@@ -628,9 +643,6 @@ void CodeCache::commit(CodeBlob* cb) {
   if (cb->is_adapter_blob()) {
     heap->set_adapter_count(heap->adapter_count() + 1);
   }
-
-  // flush the hardware I-cache
-  ICache::invalidate_range(cb->content_begin(), cb->content_size());
 }
 
 bool CodeCache::contains(void *p) {
@@ -692,14 +704,6 @@ void CodeCache::metadata_do(MetadataClosure* f) {
   while(iter.next()) {
     iter.method()->metadata_do(f);
   }
-}
-
-int CodeCache::alignment_unit() {
-  return (int)_heaps->first()->alignment_unit();
-}
-
-int CodeCache::alignment_offset() {
-  return (int)_heaps->first()->alignment_offset();
 }
 
 // Calculate the number of GCs after which an nmethod is expected to have been
@@ -962,36 +966,8 @@ void CodeCache::purge_exception_caches() {
   _exception_cache_purge_list = nullptr;
 }
 
-// Register an is_unloading nmethod to be flushed after unlinking
-void CodeCache::register_unlinked(nmethod* nm) {
-  assert(nm->unlinked_next() == nullptr, "Only register for unloading once");
-  for (;;) {
-    // Only need acquire when reading the head, when the next
-    // pointer is walked, which it is not here.
-    nmethod* head = Atomic::load(&_unlinked_head);
-    nmethod* next = head != nullptr ? head : nm; // Self looped means end of list
-    nm->set_unlinked_next(next);
-    if (Atomic::cmpxchg(&_unlinked_head, head, nm) == head) {
-      break;
-    }
-  }
-}
-
-// Flush all the nmethods the GC unlinked
-void CodeCache::flush_unlinked_nmethods() {
-  nmethod* nm = _unlinked_head;
-  _unlinked_head = nullptr;
-  size_t freed_memory = 0;
-  while (nm != nullptr) {
-    nmethod* next = nm->unlinked_next();
-    freed_memory += nm->total_size();
-    nm->flush();
-    if (next == nm) {
-      // Self looped means end of list
-      break;
-    }
-    nm = next;
-  }
+// Restart compiler if possible and required..
+void CodeCache::maybe_restart_compiler(size_t freed_memory) {
 
   // Try to start the compiler again if we freed any memory
   if (!CompileBroker::should_compile_new_jobs() && freed_memory != 0) {
@@ -1005,7 +981,6 @@ void CodeCache::flush_unlinked_nmethods() {
 }
 
 uint8_t CodeCache::_unloading_cycle = 1;
-nmethod* volatile CodeCache::_unlinked_head = nullptr;
 
 void CodeCache::increment_unloading_cycle() {
   // 2-bit value (see IsUnloadingState in nmethod.cpp for details)
@@ -1016,7 +991,7 @@ void CodeCache::increment_unloading_cycle() {
   }
 }
 
-CodeCache::UnloadingScope::UnloadingScope(BoolObjectClosure* is_alive)
+CodeCache::UnlinkingScope::UnlinkingScope(BoolObjectClosure* is_alive)
   : _is_unloading_behaviour(is_alive)
 {
   _saved_behaviour = IsUnloadingBehaviour::current();
@@ -1025,10 +1000,9 @@ CodeCache::UnloadingScope::UnloadingScope(BoolObjectClosure* is_alive)
   DependencyContext::cleaning_start();
 }
 
-CodeCache::UnloadingScope::~UnloadingScope() {
+CodeCache::UnlinkingScope::~UnlinkingScope() {
   IsUnloadingBehaviour::set_current(_saved_behaviour);
   DependencyContext::cleaning_end();
-  CodeCache::flush_unlinked_nmethods();
 }
 
 void CodeCache::verify_oops() {
@@ -1197,7 +1171,7 @@ void CodeCache::initialize() {
     FLAG_SET_ERGO(NonNMethodCodeHeapSize, (uintx)os::vm_page_size());
     FLAG_SET_ERGO(ProfiledCodeHeapSize, 0);
     FLAG_SET_ERGO(NonProfiledCodeHeapSize, 0);
-    ReservedCodeSpace rs = reserve_heap_memory(ReservedCodeCacheSize);
+    ReservedCodeSpace rs = reserve_heap_memory(ReservedCodeCacheSize, page_size(false, 8));
     // Register CodeHeaps with LSan as we sometimes embed pointers to malloc memory.
     LSAN_REGISTER_ROOT_REGION(rs.base(), rs.size());
     add_heap(rs, "CodeCache", CodeBlobType::All);
@@ -1243,9 +1217,56 @@ void CodeCache::cleanup_inline_caches_whitebox() {
 // Keeps track of time spent for checking dependencies
 NOT_PRODUCT(static elapsedTimer dependentCheckTime;)
 
-int CodeCache::mark_for_deoptimization(KlassDepChange& changes) {
+#ifndef PRODUCT
+// Check if any of live methods dependencies have been invalidated.
+// (this is expensive!)
+static void check_live_nmethods_dependencies(DepChange& changes) {
+  // Checked dependencies are allocated into this ResourceMark
+  ResourceMark rm;
+
+  // Turn off dependency tracing while actually testing dependencies.
+  FlagSetting fs(Dependencies::_verify_in_progress, true);
+
+  typedef ResourceHashtable<DependencySignature, int, 11027,
+                            AnyObj::RESOURCE_AREA, mtInternal,
+                            &DependencySignature::hash,
+                            &DependencySignature::equals> DepTable;
+
+  DepTable* table = new DepTable();
+
+  // Iterate over live nmethods and check dependencies of all nmethods that are not
+  // marked for deoptimization. A particular dependency is only checked once.
+  NMethodIterator iter(NMethodIterator::only_not_unloading);
+  while(iter.next()) {
+    nmethod* nm = iter.method();
+    // Only notify for live nmethods
+    if (!nm->is_marked_for_deoptimization()) {
+      for (Dependencies::DepStream deps(nm); deps.next(); ) {
+        // Construct abstraction of a dependency.
+        DependencySignature* current_sig = new DependencySignature(deps);
+
+        // Determine if dependency is already checked. table->put(...) returns
+        // 'true' if the dependency is added (i.e., was not in the hashtable).
+        if (table->put(*current_sig, 1)) {
+          if (deps.check_dependency() != nullptr) {
+            // Dependency checking failed. Print out information about the failed
+            // dependency and finally fail with an assert. We can fail here, since
+            // dependency checking is never done in a product build.
+            tty->print_cr("Failed dependency:");
+            changes.print();
+            nm->print();
+            nm->print_dependencies_on(tty);
+            assert(false, "Should have been marked for deoptimization");
+          }
+        }
+      }
+    }
+  }
+}
+#endif
+
+void CodeCache::mark_for_deoptimization(DeoptimizationScope* deopt_scope, KlassDepChange& changes) {
   MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
-  int number_of_marked_CodeBlobs = 0;
 
   // search the hierarchy looking for nmethods which are affected by the loading of this class
 
@@ -1256,8 +1277,8 @@ int CodeCache::mark_for_deoptimization(KlassDepChange& changes) {
   // can happen
   NoSafepointVerifier nsv;
   for (DepChange::ContextStream str(changes, nsv); str.next(); ) {
-    Klass* d = str.klass();
-    number_of_marked_CodeBlobs += InstanceKlass::cast(d)->mark_dependent_nmethods(changes);
+    InstanceKlass* d = str.klass();
+    d->mark_dependent_nmethods(deopt_scope, changes);
   }
 
 #ifndef PRODUCT
@@ -1265,12 +1286,10 @@ int CodeCache::mark_for_deoptimization(KlassDepChange& changes) {
     // Object pointers are used as unique identifiers for dependency arguments. This
     // is only possible if no safepoint, i.e., GC occurs during the verification code.
     dependentCheckTime.start();
-    nmethod::check_all_dependencies(changes);
+    check_live_nmethods_dependencies(changes);
     dependentCheckTime.stop();
   }
 #endif
-
-  return number_of_marked_CodeBlobs;
 }
 
 CompiledMethod* CodeCache::find_compiled(void* start) {
@@ -1325,13 +1344,12 @@ void CodeCache::old_nmethods_do(MetadataClosure* f) {
 }
 
 // Walk compiled methods and mark dependent methods for deoptimization.
-int CodeCache::mark_dependents_for_evol_deoptimization() {
+void CodeCache::mark_dependents_for_evol_deoptimization(DeoptimizationScope* deopt_scope) {
   assert(SafepointSynchronize::is_at_safepoint(), "Can only do this at a safepoint!");
   // Each redefinition creates a new set of nmethods that have references to "old" Methods
   // So delete old method table and create a new one.
   reset_old_method_table();
 
-  int number_of_marked_CodeBlobs = 0;
   CompiledMethodIterator iter(CompiledMethodIterator::all_blobs);
   while(iter.next()) {
     CompiledMethod* nm = iter.method();
@@ -1339,25 +1357,20 @@ int CodeCache::mark_dependents_for_evol_deoptimization() {
     // This includes methods whose inline caches point to old methods, so
     // inline cache clearing is unnecessary.
     if (nm->has_evol_metadata()) {
-      nm->mark_for_deoptimization();
+      deopt_scope->mark(nm);
       add_to_old_table(nm);
-      number_of_marked_CodeBlobs++;
     }
   }
-
-  // return total count of nmethods marked for deoptimization, if zero the caller
-  // can skip deoptimization
-  return number_of_marked_CodeBlobs;
 }
 
-void CodeCache::mark_all_nmethods_for_evol_deoptimization() {
+void CodeCache::mark_all_nmethods_for_evol_deoptimization(DeoptimizationScope* deopt_scope) {
   assert(SafepointSynchronize::is_at_safepoint(), "Can only do this at a safepoint!");
   CompiledMethodIterator iter(CompiledMethodIterator::all_blobs);
   while(iter.next()) {
     CompiledMethod* nm = iter.method();
     if (!nm->method()->is_method_handle_intrinsic()) {
       if (nm->can_be_deoptimized()) {
-        nm->mark_for_deoptimization();
+        deopt_scope->mark(nm);
       }
       if (nm->has_evol_metadata()) {
         add_to_old_table(nm);
@@ -1366,48 +1379,30 @@ void CodeCache::mark_all_nmethods_for_evol_deoptimization() {
   }
 }
 
-// Flushes compiled methods dependent on redefined classes, that have already been
-// marked for deoptimization.
-void CodeCache::flush_evol_dependents() {
-  assert(SafepointSynchronize::is_at_safepoint(), "Can only do this at a safepoint!");
-
-  // CodeCache can only be updated by a thread_in_VM and they will all be
-  // stopped during the safepoint so CodeCache will be safe to update without
-  // holding the CodeCache_lock.
-
-  // At least one nmethod has been marked for deoptimization
-
-  Deoptimization::deoptimize_all_marked();
-}
 #endif // INCLUDE_JVMTI
 
 // Mark methods for deopt (if safe or possible).
-void CodeCache::mark_all_nmethods_for_deoptimization() {
+void CodeCache::mark_all_nmethods_for_deoptimization(DeoptimizationScope* deopt_scope) {
   MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
   CompiledMethodIterator iter(CompiledMethodIterator::only_not_unloading);
   while(iter.next()) {
     CompiledMethod* nm = iter.method();
     if (!nm->is_native_method()) {
-      nm->mark_for_deoptimization();
+      deopt_scope->mark(nm);
     }
   }
 }
 
-int CodeCache::mark_for_deoptimization(Method* dependee) {
+void CodeCache::mark_for_deoptimization(DeoptimizationScope* deopt_scope, Method* dependee) {
   MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
-  int number_of_marked_CodeBlobs = 0;
 
   CompiledMethodIterator iter(CompiledMethodIterator::only_not_unloading);
   while(iter.next()) {
     CompiledMethod* nm = iter.method();
     if (nm->is_dependent_on_method(dependee)) {
-      ResourceMark rm;
-      nm->mark_for_deoptimization();
-      number_of_marked_CodeBlobs++;
+      deopt_scope->mark(nm);
     }
   }
-
-  return number_of_marked_CodeBlobs;
 }
 
 void CodeCache::make_marked_nmethods_deoptimized() {
@@ -1416,51 +1411,38 @@ void CodeCache::make_marked_nmethods_deoptimized() {
     CompiledMethod* nm = iter.method();
     if (nm->is_marked_for_deoptimization() && !nm->has_been_deoptimized() && nm->can_be_deoptimized()) {
       nm->make_not_entrant();
-      make_nmethod_deoptimized(nm);
+      nm->make_deoptimized();
     }
   }
 }
 
-void CodeCache::make_nmethod_deoptimized(CompiledMethod* nm) {
-  if (nm->is_marked_for_deoptimization() && nm->can_be_deoptimized()) {
-    nm->make_deoptimized();
-  }
-}
-
-// Flushes compiled methods dependent on dependee.
-void CodeCache::flush_dependents_on(InstanceKlass* dependee) {
+// Marks compiled methods dependent on dependee.
+void CodeCache::mark_dependents_on(DeoptimizationScope* deopt_scope, InstanceKlass* dependee) {
   assert_lock_strong(Compile_lock);
 
   if (!has_nmethods_with_dependencies()) {
     return;
   }
 
-  int marked = 0;
   if (dependee->is_linked()) {
     // Class initialization state change.
     KlassInitDepChange changes(dependee);
-    marked = mark_for_deoptimization(changes);
+    mark_for_deoptimization(deopt_scope, changes);
   } else {
     // New class is loaded.
     NewKlassDepChange changes(dependee);
-    marked = mark_for_deoptimization(changes);
-  }
-
-  if (marked > 0) {
-    // At least one nmethod has been marked for deoptimization
-    Deoptimization::deoptimize_all_marked();
+    mark_for_deoptimization(deopt_scope, changes);
   }
 }
 
-// Flushes compiled methods dependent on dependee
-void CodeCache::flush_dependents_on_method(const methodHandle& m_h) {
-  // --- Compile_lock is not held. However we are at a safepoint.
-  assert_locked_or_safepoint(Compile_lock);
+// Marks compiled methods dependent on dependee
+void CodeCache::mark_dependents_on_method_for_breakpoint(const methodHandle& m_h) {
+  assert(SafepointSynchronize::is_at_safepoint(), "invariant");
 
+  DeoptimizationScope deopt_scope;
   // Compute the dependent nmethods
-  if (mark_for_deoptimization(m_h()) > 0) {
-    Deoptimization::deoptimize_all_marked();
-  }
+  mark_for_deoptimization(&deopt_scope, m_h());
+  deopt_scope.deoptimize_marked();
 }
 
 void CodeCache::verify() {
@@ -1565,10 +1547,14 @@ void CodeCache::print_memory_overhead() {
 
 #ifndef PRODUCT
 
-void CodeCache::print_trace(const char* event, CodeBlob* cb, int size) {
+void CodeCache::print_trace(const char* event, CodeBlob* cb, uint size) {
   if (PrintCodeCache2) {  // Need to add a new flag
     ResourceMark rm;
-    if (size == 0)  size = cb->size();
+    if (size == 0) {
+      int s = cb->size();
+      assert(s >= 0, "CodeBlob size is negative: %d", s);
+      size = (uint) s;
+    }
     tty->print_cr("CodeCache %s:  addr: " INTPTR_FORMAT ", size: 0x%x", event, p2i(cb), size);
   }
 }
@@ -1833,16 +1819,20 @@ void CodeCache::log_state(outputStream* st) {
 }
 
 #ifdef LINUX
-void CodeCache::write_perf_map() {
+void CodeCache::write_perf_map(const char* filename) {
   MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
 
-  // Perf expects to find the map file at /tmp/perf-<pid>.map.
+  // Perf expects to find the map file at /tmp/perf-<pid>.map
+  // if the file name is not specified.
   char fname[32];
-  jio_snprintf(fname, sizeof(fname), "/tmp/perf-%d.map", os::current_process_id());
+  if (filename == nullptr) {
+    jio_snprintf(fname, sizeof(fname), "/tmp/perf-%d.map", os::current_process_id());
+    filename = fname;
+  }
 
-  fileStream fs(fname, "w");
+  fileStream fs(filename, "w");
   if (!fs.is_open()) {
-    log_warning(codecache)("Failed to create %s for perf map", fname);
+    log_warning(codecache)("Failed to create %s for perf map", filename);
     return;
   }
 

@@ -4,9 +4,7 @@
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -25,13 +23,13 @@
 
 /*
  * @test
- * @summary Testing Classfile local variable table.
+ * @summary Testing ClassFile local variable table.
  * @compile -g testdata/Lvt.java
  * @run junit LvtTest
  */
 import helpers.ClassRecord;
 import helpers.Transforms;
-import jdk.internal.classfile.*;
+import java.lang.classfile.*;
 
 import java.io.*;
 import java.lang.constant.ClassDesc;
@@ -43,13 +41,13 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import jdk.internal.classfile.AccessFlags;
-import jdk.internal.classfile.Attributes;
-import jdk.internal.classfile.attribute.SourceFileAttribute;
-import jdk.internal.classfile.constantpool.ConstantPoolBuilder;
-import jdk.internal.classfile.constantpool.Utf8Entry;
-import jdk.internal.classfile.instruction.LocalVariable;
-import jdk.internal.classfile.instruction.LocalVariableType;
+import java.lang.classfile.AccessFlags;
+import java.lang.classfile.Attributes;
+import java.lang.classfile.attribute.SourceFileAttribute;
+import java.lang.classfile.constantpool.ConstantPoolBuilder;
+import java.lang.classfile.constantpool.Utf8Entry;
+import java.lang.classfile.instruction.LocalVariable;
+import java.lang.classfile.instruction.LocalVariableType;
 import java.lang.reflect.AccessFlag;
 import org.junit.jupiter.api.Test;
 
@@ -62,9 +60,9 @@ import static helpers.TestUtil.ExpectedLvRecord;
 import static helpers.TestUtil.ExpectedLvtRecord;
 import static java.lang.constant.ConstantDescs.*;
 import java.lang.constant.MethodTypeDesc;
-import static jdk.internal.classfile.Opcode.*;
-import static jdk.internal.classfile.Opcode.INVOKEVIRTUAL;
-import static jdk.internal.classfile.TypeKind.VoidType;
+import static java.lang.classfile.Opcode.*;
+import static java.lang.classfile.Opcode.INVOKEVIRTUAL;
+import static java.lang.classfile.TypeKind.VoidType;
 import static org.junit.jupiter.api.Assertions.*;
 
 class LvtTest {
@@ -81,7 +79,7 @@ class LvtTest {
 
     @Test
     void getLVTEntries() {
-        ClassModel c = Classfile.parse(fileBytes);
+        ClassModel c = ClassFile.of().parse(fileBytes);
         CodeModel co = c.methods().stream()
                         .filter(mm -> mm.methodName().stringValue().equals("m"))
                         .map(MethodModel::code)
@@ -106,18 +104,20 @@ class LvtTest {
 
     @Test
     void buildLVTEntries() throws Exception {
-        ClassModel c = Classfile.parse(fileBytes);
+        var cc = ClassFile.of();
+        ClassModel c = cc.parse(fileBytes);
 
         // Compare transformed model and original with CodeBuilder filter
-        byte[] newClass = c.transform(Transforms.threeLevelNoop);
-        ClassRecord orig = ClassRecord.ofClassModel(Classfile.parse(fileBytes), ClassRecord.CompatibilityFilter.By_ClassBuilder);
-        ClassRecord transformed = ClassRecord.ofClassModel(Classfile.parse(newClass), ClassRecord.CompatibilityFilter.By_ClassBuilder);
+        byte[] newClass = cc.transform(c, Transforms.threeLevelNoop);
+        ClassRecord orig = ClassRecord.ofClassModel(cc.parse(fileBytes), ClassRecord.CompatibilityFilter.By_ClassBuilder);
+        ClassRecord transformed = ClassRecord.ofClassModel(cc.parse(newClass), ClassRecord.CompatibilityFilter.By_ClassBuilder);
         ClassRecord.assertEqualsDeep(transformed, orig);
     }
 
     @Test
     void testCreateLoadLVT() throws Exception {
-        byte[] bytes = Classfile.build(ClassDesc.of("MyClass"), cb -> {
+        var cc = ClassFile.of();
+        byte[] bytes = cc.build(ClassDesc.of("MyClass"), cb -> {
             cb.withFlags(AccessFlag.PUBLIC);
             cb.withVersion(52, 0);
             cb.with(SourceFileAttribute.of(cb.constantPool().utf8Entry(("MyClass.java"))))
@@ -172,7 +172,7 @@ class LvtTest {
                               }));
         });
 
-        var c = Classfile.parse(bytes);
+        var c = cc.parse(bytes);
         var main = c.methods().get(1);
         var lvt = main.code().get().findAttribute(Attributes.LOCAL_VARIABLE_TABLE).get();
         var lvs = lvt.localVariables();
@@ -189,7 +189,7 @@ class LvtTest {
 
     @Test
     void getLVTTEntries() {
-        ClassModel c = Classfile.parse(fileBytes);
+        ClassModel c = ClassFile.of().parse(fileBytes);
         CodeModel co = c.methods().stream()
                         .filter(mm -> mm.methodName().stringValue().equals("n"))
                         .map(MethodModel::code)
@@ -229,7 +229,8 @@ class LvtTest {
 
     @Test
     void testCreateLoadLVTT() throws Exception {
-        byte[] bytes = Classfile.build(ClassDesc.of("MyClass"), cb -> {
+        var cc = ClassFile.of();
+        byte[] bytes = cc.build(ClassDesc.of("MyClass"), cb -> {
             cb.withFlags(AccessFlag.PUBLIC);
             cb.withVersion(52, 0);
             cb.with(SourceFileAttribute.of(cb.constantPool().utf8Entry(("MyClass.java"))))
@@ -242,7 +243,7 @@ class LvtTest {
               )
 
               .withMethod("m", MethodTypeDesc.of(CD_Object, CD_Object.arrayType()),
-                          Classfile.ACC_PUBLIC,
+                          ClassFile.ACC_PUBLIC,
                           mb -> mb.withFlags(AccessFlag.PUBLIC)
                                   .withCode(c0 -> {
                                       ConstantPoolBuilder cpb = cb.constantPool();
@@ -275,7 +276,7 @@ class LvtTest {
                                         .localVariable(1, u, jlObject, start, end);
                                   }));
         });
-        var c = Classfile.parse(bytes);
+        var c = cc.parse(bytes);
         var main = c.methods().get(1);
         var lvtt = main.code().get().findAttribute(Attributes.LOCAL_VARIABLE_TYPE_TABLE).get();
         var lvts = lvtt.localVariableTypes();
@@ -301,7 +302,7 @@ class LvtTest {
 
     @Test
     void skipDebugSkipsLVT() {
-        ClassModel c = Classfile.parse(fileBytes, Classfile.Option.processDebug(false));
+        ClassModel c = ClassFile.of(ClassFile.DebugElementsOption.DROP_DEBUG).parse(fileBytes);
 
         c.forEachElement(e -> {
             if (e instanceof MethodModel m) {

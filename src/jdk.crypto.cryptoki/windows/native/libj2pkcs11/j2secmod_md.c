@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,16 +31,16 @@
 
 #include "j2secmod.h"
 
-extern void throwNullPointerException(JNIEnv *env, const char *message);
-extern void throwIOException(JNIEnv *env, const char *message);
+extern void p11ThrowNullPointerException(JNIEnv *env, const char *message);
+extern void p11ThrowIOException(JNIEnv *env, const char *message);
 
-void *findFunction(JNIEnv *env, jlong jHandle, const char *functionName) {
+void *p11FindFunction(JNIEnv *env, jlong jHandle, const char *functionName) {
     HINSTANCE hModule = (HINSTANCE)jHandle;
     void *fAddress = GetProcAddress(hModule, functionName);
     if (fAddress == NULL) {
         char errorMessage[256];
         _snprintf(errorMessage, sizeof(errorMessage), "Symbol not found: %s", functionName);
-        throwNullPointerException(env, errorMessage);
+        p11ThrowNullPointerException(env, errorMessage);
         return NULL;
     }
     return fAddress;
@@ -81,7 +81,7 @@ JNIEXPORT jlong JNICALL Java_sun_security_pkcs11_Secmod_nssLoadLibrary
             NULL
         );
         dprintf1("-error: %s\n", lpMsgBuf);
-        throwIOException(env, (char*)lpMsgBuf);
+        p11ThrowIOException(env, (char*)lpMsgBuf);
         LocalFree(lpMsgBuf);
         return 0;
     }

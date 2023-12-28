@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,15 +24,8 @@
  */
 package java.util.stream;
 
-import java.nio.charset.Charset;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.Collection;
 import java.util.Iterator;
 import java.util.Spliterator;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.IntConsumer;
-import java.util.function.Predicate;
 
 /**
  * Base interface for streams, which are sequences of elements supporting
@@ -69,6 +62,11 @@ public interface BaseStream<T, S extends BaseStream<T, S>>
      * <p>This is a <a href="package-summary.html#StreamOps">terminal
      * operation</a>.
      *
+     * @apiNote
+     * This operation is provided as an "escape hatch" to enable
+     * arbitrary client-controlled pipeline traversals in the event that the
+     * existing operations are not sufficient to the task.
+     *
      * @return the element iterator for this stream
      */
     Iterator<T> iterator();
@@ -78,6 +76,11 @@ public interface BaseStream<T, S extends BaseStream<T, S>>
      *
      * <p>This is a <a href="package-summary.html#StreamOps">terminal
      * operation</a>.
+     *
+     * @apiNote
+     * This operation is provided as an "escape hatch" to enable
+     * arbitrary client-controlled pipeline traversals in the event that the
+     * existing operations are not sufficient to the task.
      *
      * <p>
      * The returned spliterator should report the set of characteristics derived

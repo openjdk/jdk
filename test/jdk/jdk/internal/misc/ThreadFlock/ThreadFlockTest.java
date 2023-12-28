@@ -25,14 +25,12 @@
  * @test id=platform
  * @summary Basic tests for ThreadFlock
  * @modules java.base/jdk.internal.misc
- * @enablePreview
  * @run junit/othervm -DthreadFactory=platform ThreadFlockTest
  */
 
 /*
  * @test id=virtual
  * @modules java.base/jdk.internal.misc
- * @enablePreview
  * @run junit/othervm -DthreadFactory=virtual ThreadFlockTest
  */
 
@@ -1044,7 +1042,7 @@ class ThreadFlockTest {
     @Test
     void testToString() {
         try (var flock = ThreadFlock.open("xxxx")) {
-            assertTrue(flock.toString().contains("xxx"));
+            assertTrue(flock.toString().contains("xxxx"));
         }
     }
 

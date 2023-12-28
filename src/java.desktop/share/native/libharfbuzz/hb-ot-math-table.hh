@@ -73,15 +73,14 @@ struct MathConstants
   {
     TRACE_SERIALIZE (this);
     auto *out = c->start_embed (this);
-    if (unlikely (!out)) return_trace (nullptr);
 
     HBINT16 *p = c->allocate_size<HBINT16> (HBINT16::static_size * 2);
     if (unlikely (!p)) return_trace (nullptr);
-    memcpy (p, percentScaleDown, HBINT16::static_size * 2);
+    hb_memcpy (p, percentScaleDown, HBINT16::static_size * 2);
 
     HBUINT16 *m = c->allocate_size<HBUINT16> (HBUINT16::static_size * 2);
     if (unlikely (!m)) return_trace (nullptr);
-    memcpy (m, minHeight, HBUINT16::static_size * 2);
+    hb_memcpy (m, minHeight, HBUINT16::static_size * 2);
 
     unsigned count = ARRAY_LENGTH (mathValueRecords);
     for (unsigned i = 0; i < count; i++)
@@ -201,7 +200,7 @@ struct MathItalicsCorrectionInfo
   bool subset (hb_subset_context_t *c) const
   {
     TRACE_SUBSET (this);
-    const hb_set_t &glyphset = *c->plan->_glyphset_mathed;
+    const hb_set_t &glyphset = c->plan->_glyphset_mathed;
     const hb_map_t &glyph_map = *c->plan->glyph_map;
 
     auto *out = c->serializer->start_embed (*this);
@@ -254,7 +253,7 @@ struct MathTopAccentAttachment
   bool subset (hb_subset_context_t *c) const
   {
     TRACE_SUBSET (this);
-    const hb_set_t &glyphset = *c->plan->_glyphset_mathed;
+    const hb_set_t &glyphset = c->plan->_glyphset_mathed;
     const hb_map_t &glyph_map = *c->plan->glyph_map;
 
     auto *out = c->serializer->start_embed (*this);
@@ -310,7 +309,6 @@ struct MathKern
   {
     TRACE_SERIALIZE (this);
     auto *out = c->start_embed (this);
-    if (unlikely (!out)) return_trace (nullptr);
 
     if (unlikely (!c->embed (heightCount))) return_trace (nullptr);
 
@@ -486,7 +484,7 @@ struct MathKernInfo
   bool subset (hb_subset_context_t *c) const
   {
     TRACE_SUBSET (this);
-    const hb_set_t &glyphset = *c->plan->_glyphset_mathed;
+    const hb_set_t &glyphset = c->plan->_glyphset_mathed;
     const hb_map_t &glyph_map = *c->plan->glyph_map;
 
     auto *out = c->serializer->start_embed (*this);
@@ -567,11 +565,12 @@ struct MathGlyphInfo
     out->mathItalicsCorrectionInfo.serialize_subset (c, mathItalicsCorrectionInfo, this);
     out->mathTopAccentAttachment.serialize_subset (c, mathTopAccentAttachment, this);
 
-    const hb_set_t &glyphset = *c->plan->_glyphset_mathed;
+    const hb_set_t &glyphset = c->plan->_glyphset_mathed;
     const hb_map_t &glyph_map = *c->plan->glyph_map;
 
     auto it =
     + hb_iter (this+extendedShapeCoverage)
+    | hb_take (c->plan->source->get_num_glyphs ())
     | hb_filter (glyphset)
     | hb_map_retains_sorting (glyph_map)
     ;
@@ -757,8 +756,6 @@ struct MathGlyphAssembly
   bool subset (hb_subset_context_t *c) const
   {
     TRACE_SUBSET (this);
-    auto *out = c->serializer->start_embed (*this);
-    if (unlikely (!out)) return_trace (false);
 
     if (!c->serializer->copy (italicsCorrection, this)) return_trace (false);
     if (!c->serializer->copy<HBUINT16> (partRecords.len)) return_trace (false);
@@ -786,7 +783,7 @@ struct MathGlyphAssembly
     if (parts_count)
     {
       int64_t mult = font->dir_mult (direction);
-      for (auto _ : hb_zip (partRecords.sub_array (start_offset, parts_count),
+      for (auto _ : hb_zip (partRecords.as_array ().sub_array (start_offset, parts_count),
                             hb_array (parts, *parts_count)))
         _.first.extract (_.second, mult, font);
     }
@@ -855,7 +852,7 @@ struct MathGlyphConstruction
     if (variants_count)
     {
       int64_t mult = font->dir_mult (direction);
-      for (auto _ : hb_zip (mathGlyphVariantRecord.sub_array (start_offset, variants_count),
+      for (auto _ : hb_zip (mathGlyphVariantRecord.as_array ().sub_array (start_offset, variants_count),
                             hb_array (variants, *variants_count)))
         _.second = {_.first.variantGlyph, font->em_mult (_.first.advanceMeasurement, mult)};
     }
@@ -938,7 +935,7 @@ struct MathVariants
   bool subset (hb_subset_context_t *c) const
   {
     TRACE_SUBSET (this);
-    const hb_set_t &glyphset = *c->plan->_glyphset_mathed;
+    const hb_set_t &glyphset = c->plan->_glyphset_mathed;
     const hb_map_t &glyph_map = *c->plan->glyph_map;
 
     auto *out = c->serializer->start_embed (*this);

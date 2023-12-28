@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -371,6 +371,10 @@ public class WindowsFileChooserUI extends BasicFileChooserUI {
 
         viewMenuButton.addMouseListener(new MouseAdapter() {
             public void mousePressed(MouseEvent e) {
+                if (!getFileChooser().isEnabled()) {
+                    return;
+                }
+
                 if (SwingUtilities.isLeftMouseButton(e) && !viewMenuButton.isSelected()) {
                     viewMenuButton.setSelected(true);
 
@@ -380,6 +384,10 @@ public class WindowsFileChooserUI extends BasicFileChooserUI {
         });
         viewMenuButton.addKeyListener(new KeyAdapter() {
             public void keyPressed(KeyEvent e) {
+                if (!getFileChooser().isEnabled()) {
+                    return;
+                }
+
                 // Forbid keyboard actions if the button is not in rollover state
                 if (e.getKeyCode() == KeyEvent.VK_SPACE && viewMenuButton.getModel().isRollover()) {
                     viewMenuButton.setSelected(true);
@@ -1078,7 +1086,7 @@ public class WindowsFileChooserUI extends BasicFileChooserUI {
     }
 
     //
-    // DataModel for DirectoryComboxbox
+    // DataModel for DirectoryCombobox
     //
     protected DirectoryComboBoxModel createDirectoryComboBoxModel(JFileChooser fc) {
         return new DirectoryComboBoxModel();
@@ -1230,7 +1238,7 @@ public class WindowsFileChooserUI extends BasicFileChooserUI {
     }
 
     //
-    // DataModel for Types Comboxbox
+    // DataModel for Types Combobox
     //
     protected FilterComboBoxModel createFilterComboBoxModel() {
         return new FilterComboBoxModel();
@@ -1267,9 +1275,9 @@ public class WindowsFileChooserUI extends BasicFileChooserUI {
 
         public Object getSelectedItem() {
             // Ensure that the current filter is in the list.
-            // NOTE: we shouldnt' have to do this, since JFileChooser adds
+            // NOTE: we shouldn't have to do this, since JFileChooser adds
             // the filter to the choosable filters list when the filter
-            // is set. Lets be paranoid just in case someone overrides
+            // is set. Let's be paranoid just in case someone overrides
             // setFileFilter in JFileChooser.
             FileFilter currentFilter = getFileChooser().getFileFilter();
             boolean found = false;

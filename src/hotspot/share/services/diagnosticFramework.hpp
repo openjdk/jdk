@@ -140,13 +140,12 @@ public:
   : _name(name), _description(description), _impact(impact), _permission(permission),
     _num_arguments(num_arguments), _is_enabled(enabled) {}
   const char* name() const          { return _name; }
+  bool name_equals(const char* cmd_name) const;
   const char* description() const   { return _description; }
   const char* impact() const        { return _impact; }
   const JavaPermission& permission() const { return _permission; }
   int num_arguments() const         { return _num_arguments; }
   bool is_enabled() const           { return _is_enabled; }
-
-  static bool by_name(void* name, DCmdInfo* info);
 };
 
 // A DCmdArgumentInfo instance provides a description of a diagnostic command
@@ -276,9 +275,7 @@ public:
     return p;
   }
   // num_arguments() is used by the DCmdFactoryImpl::get_num_arguments() template functions.
-  // - For subclasses of DCmdWithParser, it's calculated by DCmdParser::num_arguments().
-  // - Other subclasses of DCmd have zero arguments by default. You can change this
-  //   by defining your own version of MyDCmd::num_arguments().
+  // All subclasses should override this to report the actual number of arguments.
   static int num_arguments()        { return 0; }
   outputStream* output() const      { return _output; }
   bool is_heap_allocated() const    { return _is_heap_allocated; }
@@ -439,13 +436,14 @@ public:
   }
 
 private:
+#ifdef ASSERT
   template <typename T, ENABLE_IF(!std::is_base_of<DCmdWithParser, T>::value)>
-  static int get_num_arguments() {
+  static int get_parsed_num_arguments() {
     return T::num_arguments();
   }
 
   template <typename T, ENABLE_IF(std::is_base_of<DCmdWithParser, T>::value)>
-  static int get_num_arguments() {
+  static int get_parsed_num_arguments() {
     ResourceMark rm;
     DCmdClass* dcmd = new DCmdClass(nullptr, false);
     if (dcmd != nullptr) {
@@ -455,6 +453,20 @@ private:
       return 0;
     }
   }
+#endif
+
+  template <typename T, ENABLE_IF(std::is_convertible<T, DCmd>::value)>
+  static int get_num_arguments() {
+    int n_args = T::num_arguments();
+#ifdef ASSERT
+    int n_parsed_args = get_parsed_num_arguments<T>();
+    assert(n_args == n_parsed_args,
+           "static argument count %d does not match parsed argument count %d",
+           n_args, n_parsed_args);
+#endif
+    return n_args;
+  }
+
 };
 
 #endif // SHARE_SERVICES_DIAGNOSTICFRAMEWORK_HPP

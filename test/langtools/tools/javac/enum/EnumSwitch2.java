@@ -3,7 +3,7 @@
  * @bug 4936393 8050021
  * @summary enum switch case labels required to be unqualified.
  * @author gafter
- * @compile/fail/ref=EnumSwitch2.out -XDrawDiagnostics EnumSwitch2.java
+ * @compile/fail/ref=EnumSwitch2.out -XDrawDiagnostics --release 20 EnumSwitch2.java
  */
 
 enum E1 { a, b, c, d, e }

@@ -39,10 +39,10 @@ import java.util.MissingResourceException;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import jdk.internal.classfile.ClassModel;
-import jdk.internal.classfile.Classfile;
-import jdk.internal.classfile.CodeModel;
-import jdk.internal.classfile.MethodModel;
+import java.lang.classfile.ClassModel;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.CodeModel;
+import java.lang.classfile.MethodModel;
 
 import jdk.internal.jimage.BasicImageReader;
 import jdk.internal.jimage.ImageHeader;
@@ -180,7 +180,7 @@ class JImageTask {
             String[] remaining = args;
             try {
                 command = args[0];
-                options.task = Enum.valueOf(Task.class, args[0].toUpperCase(Locale.ENGLISH));
+                options.task = Enum.valueOf(Task.class, args[0].toUpperCase(Locale.ROOT));
                 remaining = args.length > 1 ? Arrays.copyOfRange(args, 1, args.length)
                                             : new String[0];
             } catch (IllegalArgumentException ex) {
@@ -212,7 +212,7 @@ class JImageTask {
                 } else {
                     try {
                         log.println(TASK_HELPER.getMessage("main.usage." +
-                                options.task.toString().toLowerCase()));
+                                options.task.toString().toLowerCase(Locale.ROOT)));
                     } catch (MissingResourceException ex) {
                         throw TASK_HELPER.newBadArgs("err.not.a.task", command);
                     }
@@ -368,7 +368,7 @@ class JImageTask {
         if (name.endsWith(".class") && !name.endsWith("module-info.class")) {
             try {
                 byte[] bytes = reader.getResource(location);
-                Classfile.parse(bytes).forEachElement(cle -> {
+                ClassFile.of().parse(bytes).forEachElement(cle -> {
                     if (cle instanceof MethodModel mm) mm.forEachElement(me -> {
                         if (me instanceof CodeModel com) com.forEachElement(coe -> {
                             //do nothing here, just visit each model element

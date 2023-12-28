@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -271,6 +271,7 @@ public class InternalFrameDemo extends DemoModule {
 
         windowTitleField = new JTextField(getString("InternalFrameDemo.frame_label"));
         windowTitleLabel = new JLabel(getString("InternalFrameDemo.title_text_field_label"));
+        windowTitleLabel.setLabelFor(windowTitleField);
 
         p.setLayout(new BoxLayout(p, BoxLayout.X_AXIS));
         p.add(Box.createRigidArea(HGAP5));

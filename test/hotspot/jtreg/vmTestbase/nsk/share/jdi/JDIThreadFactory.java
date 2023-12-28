@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@ import java.util.concurrent.ThreadFactory;
 
 public class JDIThreadFactory {
 
-    private static ThreadFactory threadFactory = "Virtual".equals(System.getProperty("main.wrapper"))
+    private static ThreadFactory threadFactory = "Virtual".equals(System.getProperty("test.thread.factory"))
             ? virtualThreadFactory() : platformThreadFactory();
 
     public static Thread newThread(NamedTask task) {
@@ -53,15 +53,6 @@ public class JDIThreadFactory {
     }
 
     private static ThreadFactory virtualThreadFactory() {
-        try {
-            Object builder = Thread.class.getMethod("ofVirtual").invoke(null);
-            Class<?> clazz = Class.forName("java.lang.Thread$Builder");
-            java.lang.reflect.Method factory = clazz.getMethod("factory");
-            return (ThreadFactory) factory.invoke(builder);
-        } catch (RuntimeException | Error e) {
-            throw e;
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+        return Thread.ofVirtual().factory();
     }
 }

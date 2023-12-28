@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
+<!-- Copyright © 1991-2023 Unicode, Inc.
+For terms of use, see http://www.unicode.org/copyright.html
+SPDX-License-Identifier: Unicode-DFS-2016
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+-->
+<ldml>
+	<identity>
+		<version number="$Revision$"/>
+		<language type="ken"/>
+	</identity>
+	<localeDisplayNames>
+		<languages>
+			<language type="ken" draft="contributed">Kɛnyaŋ</language>
+		</languages>
+	</localeDisplayNames>
+	<characters>
+		<exemplarCharacters>[aáàǎ b c d eéèě ɛ{ɛ́}{ɛ̀}{ɛ̌} f g {gb} {gh} h i ɨ{ɨ́}{ɨ̀}{ɨ̌} j k {kp} m n {ny} ŋ oóòǒ ɔ{ɔ́}{ɔ̀}{ɔ̌} p r s t uúùǔ ʉ{ʉ́}{ʉ̀}{ʉ̌} w y]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[l q v x z]</exemplarCharacters>
+		<exemplarCharacters type="index">[A bB C D E Ɛ F G h I Ɨ J K M N Ŋ O Ɔ pP R S T U Ʉ W yY]</exemplarCharacters>
+		<exemplarCharacters type="punctuation">[\- ‑ , ; \: ! ? . ‘’ “”]</exemplarCharacters>
+	</characters>
+</ldml>

@@ -193,17 +193,7 @@ for root in $MODULE_ROOTS; do
       root=`wslpath -am $root`
     fi
 
-    VM_CI="jdk.internal.vm.ci/share/classes"
-    VM_COMPILER="src/jdk.internal.vm.compiler/share/classes"
-    if test "${root#*$VM_CI}" != "$root" || test "${root#*$VM_COMPILER}" != "$root"; then
-        for subdir in "$root"/*; do
-            if [ -d "$subdir" ]; then
-                SOURCES=$SOURCES" $SOURCE_PREFIX""$subdir"/src"$SOURCE_POSTFIX"
-            fi
-        done
-    else
-        SOURCES=$SOURCES" $SOURCE_PREFIX""$root""$SOURCE_POSTFIX"
-    fi
+    SOURCES=$SOURCES" $SOURCE_PREFIX""$root""$SOURCE_POSTFIX"
 done
 
 add_replacement "###SOURCE_ROOTS###" "$SOURCES"

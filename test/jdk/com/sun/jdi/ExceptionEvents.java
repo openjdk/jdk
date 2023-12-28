@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,19 +77,6 @@ class StackOverflowCaughtTarg {
 class StackOverflowUncaughtTarg {
     public static void main(String[] args) {
         thrower();
-    }
-    static void thrower()  {
-        throw new StackOverflowError();
-    }
-}
-
-class StackOverflowIndirectTarg {
-    public static void main(String[] args) {
-        try {
-            thrower();
-        } catch (Throwable exc) {
-            System.out.println("Got exception: " + exc);
-        }
     }
     static void thrower()  {
         throw new StackOverflowError();
@@ -394,6 +381,17 @@ public class ExceptionEvents extends TestScaffold {
     }
 
     /********** test core **********/
+
+    @Override
+    protected boolean allowedExitValue(int exitValue) {
+        // If the exception is caught, we expect exitValue == 0. For uncaught we
+        // we expect exitValue == 1.
+        if (target.equals("StackOverflowCaughtTarg")) {
+            return exitValue == 0;
+        } else {
+            return exitValue == 1;
+        }
+    }
 
     protected void runTests() throws Exception {
         /*

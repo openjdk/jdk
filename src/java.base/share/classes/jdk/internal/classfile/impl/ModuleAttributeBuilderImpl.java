@@ -25,13 +25,13 @@
 
 package jdk.internal.classfile.impl;
 
-import jdk.internal.classfile.attribute.*;
-import jdk.internal.classfile.attribute.ModuleAttribute.ModuleAttributeBuilder;
-import jdk.internal.classfile.constantpool.ClassEntry;
-import jdk.internal.classfile.constantpool.ModuleEntry;
-import jdk.internal.classfile.constantpool.Utf8Entry;
-import jdk.internal.classfile.java.lang.constant.ModuleDesc;
-import jdk.internal.classfile.java.lang.constant.PackageDesc;
+import java.lang.classfile.attribute.*;
+import java.lang.classfile.attribute.ModuleAttribute.ModuleAttributeBuilder;
+import java.lang.classfile.constantpool.ClassEntry;
+import java.lang.classfile.constantpool.ModuleEntry;
+import java.lang.classfile.constantpool.Utf8Entry;
+import java.lang.constant.ModuleDesc;
+import java.lang.constant.PackageDesc;
 
 import java.lang.constant.ClassDesc;
 import java.util.*;
@@ -49,9 +49,13 @@ public final class ModuleAttributeBuilderImpl
     private final Set<ClassEntry> uses = new LinkedHashSet<>();
     private final Set<ModuleProvideInfo> provides = new LinkedHashSet<>();
 
-    public ModuleAttributeBuilderImpl(ModuleDesc moduleName) {
-        this.moduleEntry = TemporaryConstantPool.INSTANCE.moduleEntry(TemporaryConstantPool.INSTANCE.utf8Entry(moduleName.moduleName()));
+    public ModuleAttributeBuilderImpl(ModuleEntry moduleName) {
+        this.moduleEntry = moduleName;
         this.moduleFlags = 0;
+    }
+
+    public ModuleAttributeBuilderImpl(ModuleDesc moduleName) {
+        this(TemporaryConstantPool.INSTANCE.moduleEntry(TemporaryConstantPool.INSTANCE.utf8Entry(moduleName.name())));
     }
 
     @Override
@@ -63,7 +67,7 @@ public final class ModuleAttributeBuilderImpl
     @Override
     public ModuleAttributeBuilder moduleName(ModuleDesc moduleName) {
         Objects.requireNonNull(moduleName);
-        moduleEntry = TemporaryConstantPool.INSTANCE.moduleEntry(TemporaryConstantPool.INSTANCE.utf8Entry(moduleName.moduleName()));
+        moduleEntry = TemporaryConstantPool.INSTANCE.moduleEntry(TemporaryConstantPool.INSTANCE.utf8Entry(moduleName.name()));
         return this;
     }
 
@@ -82,7 +86,7 @@ public final class ModuleAttributeBuilderImpl
     @Override
     public ModuleAttributeBuilder requires(ModuleDesc module, int flags, String version) {
         Objects.requireNonNull(module);
-        return requires(ModuleRequireInfo.of(TemporaryConstantPool.INSTANCE.moduleEntry(TemporaryConstantPool.INSTANCE.utf8Entry(module.moduleName())), flags, version == null ? null : TemporaryConstantPool.INSTANCE.utf8Entry(version)));
+        return requires(ModuleRequireInfo.of(TemporaryConstantPool.INSTANCE.moduleEntry(TemporaryConstantPool.INSTANCE.utf8Entry(module.name())), flags, version == null ? null : TemporaryConstantPool.INSTANCE.utf8Entry(version)));
     }
 
     @Override
@@ -97,8 +101,8 @@ public final class ModuleAttributeBuilderImpl
         Objects.requireNonNull(pkge);
         var exportsTo = new ArrayList<ModuleEntry>(exportsToModules.length);
         for (var e : exportsToModules)
-            exportsTo.add(TemporaryConstantPool.INSTANCE.moduleEntry(TemporaryConstantPool.INSTANCE.utf8Entry(e.moduleName())));
-        return exports(ModuleExportInfo.of(TemporaryConstantPool.INSTANCE.packageEntry(TemporaryConstantPool.INSTANCE.utf8Entry(pkge.packageInternalName())), flags, exportsTo));
+            exportsTo.add(TemporaryConstantPool.INSTANCE.moduleEntry(TemporaryConstantPool.INSTANCE.utf8Entry(e.name())));
+        return exports(ModuleExportInfo.of(TemporaryConstantPool.INSTANCE.packageEntry(TemporaryConstantPool.INSTANCE.utf8Entry(pkge.internalName())), flags, exportsTo));
     }
 
     @Override
@@ -113,8 +117,8 @@ public final class ModuleAttributeBuilderImpl
         Objects.requireNonNull(pkge);
         var opensTo = new ArrayList<ModuleEntry>(opensToModules.length);
         for (var e : opensToModules)
-            opensTo.add(TemporaryConstantPool.INSTANCE.moduleEntry(TemporaryConstantPool.INSTANCE.utf8Entry(e.moduleName())));
-        return opens(ModuleOpenInfo.of(TemporaryConstantPool.INSTANCE.packageEntry(TemporaryConstantPool.INSTANCE.utf8Entry(pkge.packageInternalName())), flags, opensTo));
+            opensTo.add(TemporaryConstantPool.INSTANCE.moduleEntry(TemporaryConstantPool.INSTANCE.utf8Entry(e.name())));
+        return opens(ModuleOpenInfo.of(TemporaryConstantPool.INSTANCE.packageEntry(TemporaryConstantPool.INSTANCE.utf8Entry(pkge.internalName())), flags, opensTo));
     }
 
     @Override

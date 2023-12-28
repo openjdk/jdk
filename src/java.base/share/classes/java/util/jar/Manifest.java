@@ -44,6 +44,7 @@ import sun.security.util.SecurityProperties;
  * <a href="{@docRoot}/../specs/jar/jar.html">
  * Manifest format specification</a>.
  *
+ * @spec jar/jar.html JAR File Specification
  * @author  David Connelly
  * @see     Attributes
  * @since   1.2

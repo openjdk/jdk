@@ -57,20 +57,18 @@ class PhaseLive : public Phase {
   IndexSet **_deltas;
   IndexSet *_free_IndexSet;     // Free list of same
 
-  Block_List *_worklist;        // Worklist for iterative solution
-
   const PhaseCFG &_cfg;         // Basic blocks
   const LRG_List &_names;       // Mapping from Nodes to live ranges
   uint _maxlrg;                 // Largest live-range number
   Arena *_arena;
   bool _keep_deltas;            // Retain live in information
 
-  IndexSet *getset( Block *p );
+  IndexSet *getset(Block* p);
   IndexSet *getfreeset( );
   void freeset( Block *p );
-  void add_liveout( Block *p, uint r, VectorSet &first_pass );
-  void add_liveout( Block *p, IndexSet *lo, VectorSet &first_pass );
-  void add_livein( Block *p, IndexSet *lo );
+  void add_liveout(Block_List& worklist, Block* p, uint r, VectorSet& first_pass);
+  void add_liveout(Block_List& worklist, Block* p, IndexSet* lo, VectorSet& first_pass);
+  void add_livein(Block* p, IndexSet* lo);
 
 public:
   PhaseLive(const PhaseCFG &cfg, const LRG_List &names, Arena *arena, bool keep_deltas);

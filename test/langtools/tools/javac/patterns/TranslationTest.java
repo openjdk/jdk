@@ -62,8 +62,6 @@ import toolbox.ToolBox;
 
 public class TranslationTest extends TestRunner {
 
-    private static final String JAVA_VERSION = System.getProperty("java.specification.version");
-
     ToolBox tb;
 
     public static void main(String... args) throws Exception {
@@ -205,8 +203,6 @@ public class TranslationTest extends TestRunner {
             }
 
             new JavacTask(tb)
-                    .options("--enable-preview",
-                             "-source", JAVA_VERSION)
                     .outdir(libClasses)
                     .files(tb.findJavaFiles(libSrc))
                     .run();
@@ -222,9 +218,7 @@ public class TranslationTest extends TestRunner {
         List<String> output = new ArrayList<>();
 
         new JavacTask(tb)
-            .options("--enable-preview",
-                     "-source", JAVA_VERSION,
-                     "-Xlint:-preview",
+            .options("-Xlint:-preview",
                      "--class-path", libClasses.toString(),
                      "-XDshould-stop.at=FLOW")
             .outdir(classes)

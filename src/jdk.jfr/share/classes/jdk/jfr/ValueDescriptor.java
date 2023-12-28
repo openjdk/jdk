@@ -31,8 +31,9 @@ import java.util.List;
 import java.util.Objects;
 
 import jdk.jfr.internal.AnnotationConstruct;
+import jdk.jfr.internal.SecuritySupport;
 import jdk.jfr.internal.Type;
-import jdk.jfr.internal.Utils;
+import jdk.jfr.internal.util.Utils;
 
 /**
  * Describes the event fields and annotation elements.
@@ -149,7 +150,7 @@ public final class ValueDescriptor {
         Objects.requireNonNull(type, "type");
         Objects.requireNonNull(name, "name");
         Objects.requireNonNull(annotations, "annotations");
-        Utils.checkRegisterPermission();
+        SecuritySupport.checkRegisterPermission();
         if (!allowArray) {
             if (type.isArray()) {
                 throw new IllegalArgumentException("Array types are not allowed");
@@ -250,7 +251,7 @@ public final class ValueDescriptor {
      */
     public String getTypeName() {
         if (type.isSimpleType()) {
-            return type.getFields().get(0).getTypeName();
+            return type.getFields().getFirst().getTypeName();
         }
         return type.getName();
     }

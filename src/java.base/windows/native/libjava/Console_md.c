@@ -56,10 +56,10 @@ Java_java_io_Console_encoding(JNIEnv *env, jclass cls)
     char buf[64];
     int cp = GetConsoleCP();
     if (cp >= 874 && cp <= 950)
-        sprintf(buf, "ms%d", cp);
+        snprintf(buf, sizeof(buf), "ms%d", cp);
     else if (cp == 65001)
-        sprintf(buf, "UTF-8");
+        snprintf(buf, sizeof(buf), "UTF-8");
     else
-        sprintf(buf, "cp%d", cp);
+        snprintf(buf, sizeof(buf), "cp%d", cp);
     return JNU_NewStringPlatform(env, buf);
 }

@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -88,11 +86,16 @@ public class EventNames {
     public static final String FinalizerStatistics = PREFIX + "FinalizerStatistics";
     public static final String NativeMemoryUsage = PREFIX + "NativeMemoryUsage";
     public static final String NativeMemoryUsageTotal = PREFIX + "NativeMemoryUsageTotal";
+    public static final String JavaAgent = PREFIX + "JavaAgent";
+    public static final String NativeAgent = PREFIX + "NativeAgent";
+    public static final String DeprecatedInvocation = PREFIX + "DeprecatedInvocation";
 
     // This event is hard to test
     public static final String ReservedStackActivation = PREFIX + "ReservedStackActivation";
 
     // GC
+    public static final String GCHeapMemoryUsage = PREFIX + "GCHeapMemoryUsage";
+    public static final String GCHeapMemoryPoolUsage = PREFIX + "GCHeapMemoryPoolUsage";
     public static final String GCHeapSummary = PREFIX + "GCHeapSummary";
     public static final String MetaspaceSummary = PREFIX + "MetaspaceSummary";
     public static final String MetaspaceGCThreshold = PREFIX + "MetaspaceGCThreshold";
@@ -140,6 +143,9 @@ public class EventNames {
     public static final String GCPhaseParallel = PREFIX + "GCPhaseParallel";
     public static final String GCPhaseConcurrent = PREFIX + "GCPhaseConcurrent";
     public static final String GCPhaseConcurrentLevel1 = PREFIX + "GCPhaseConcurrentLevel1";
+    public static final String GCPhaseConcurrentLevel2 = PREFIX + "GCPhaseConcurrentLevel2";
+    public static final String ZYoungGarbageCollection = PREFIX + "ZYoungGarbageCollection";
+    public static final String ZOldGarbageCollection = PREFIX + "ZOldGarbageCollection";
     public static final String ZAllocationStall = PREFIX + "ZAllocationStall";
     public static final String ZPageAllocation = PREFIX + "ZPageAllocation";
     public static final String ZRelocationSet = PREFIX + "ZRelocationSet";
@@ -155,6 +161,7 @@ public class EventNames {
     public static final String CompilerPhase = PREFIX + "CompilerPhase";
     public static final String CompilationFailure = PREFIX + "CompilationFailure";
     public static final String CompilerInlining = PREFIX + "CompilerInlining";
+    public static final String CompilerQueueUtilization = PREFIX + "CompilerQueueUtilization";
     public static final String CompilerStatistics = PREFIX + "CompilerStatistics";
     public static final String CompilerConfiguration = PREFIX + "CompilerConfiguration";
     public static final String CodeCacheStatistics = PREFIX + "CodeCacheStatistics";
@@ -176,9 +183,12 @@ public class EventNames {
     public static final String ThreadContextSwitchRate = PREFIX + "ThreadContextSwitchRate";
     public static final String InitialEnvironmentVariable = PREFIX + "InitialEnvironmentVariable";
     public static final String NativeLibrary = PREFIX + "NativeLibrary";
+    public static final String NativeLibraryLoad = PREFIX + "NativeLibraryLoad";
+    public static final String NativeLibraryUnload = PREFIX + "NativeLibraryUnload";
     public static final String PhysicalMemory = PREFIX + "PhysicalMemory";
     public static final String NetworkUtilization = PREFIX + "NetworkUtilization";
     public static final String ProcessStart = PREFIX + "ProcessStart";
+    public static final String ResidentSetSize = PREFIX + "ResidentSetSize";
 
     // JDK
     public static final String FileForce  = PREFIX + "FileForce";

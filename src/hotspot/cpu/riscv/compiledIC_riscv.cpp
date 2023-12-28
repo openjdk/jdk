@@ -29,6 +29,7 @@
 #include "code/compiledIC.hpp"
 #include "code/icBuffer.hpp"
 #include "code/nmethod.hpp"
+#include "logging/log.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/safepoint.hpp"
@@ -44,7 +45,7 @@ address CompiledStaticCall::emit_to_interp_stub(CodeBuffer &cbuf, address mark) 
   // mv xmethod, 0
   // jalr -4 # to self
 
-  if (mark == NULL) {
+  if (mark == nullptr) {
     mark = cbuf.insts_mark();  // Get mark within main instrs section.
   }
 
@@ -54,8 +55,8 @@ address CompiledStaticCall::emit_to_interp_stub(CodeBuffer &cbuf, address mark) 
 
   address base = __ start_a_stub(to_interp_stub_size());
   int offset = __ offset();
-  if (base == NULL) {
-    return NULL;  // CodeBuffer::expand failed
+  if (base == nullptr) {
+    return nullptr;  // CodeBuffer::expand failed
   }
   // static stub relocation stores the instruction address of the call
   __ relocate(static_stub_Relocation::spec(mark));
@@ -86,11 +87,11 @@ int CompiledStaticCall::reloc_to_interp_stub() {
 
 void CompiledDirectStaticCall::set_to_interpreted(const methodHandle& callee, address entry) {
   address stub = find_stub();
-  guarantee(stub != NULL, "stub not found");
+  guarantee(stub != nullptr, "stub not found");
 
-  if (TraceICs) {
+  {
     ResourceMark rm;
-    tty->print_cr("CompiledDirectStaticCall@" INTPTR_FORMAT ": set_to_interpreted %s",
+    log_trace(inlinecache)("CompiledDirectStaticCall@" INTPTR_FORMAT ": set_to_interpreted %s",
                   p2i(instruction_address()),
                   callee->name_and_sig_as_C_string());
   }
@@ -114,7 +115,7 @@ void CompiledDirectStaticCall::set_to_interpreted(const methodHandle& callee, ad
 void CompiledDirectStaticCall::set_stub_to_clean(static_stub_Relocation* static_stub) {
   // Reset stub.
   address stub = static_stub->addr();
-  assert(stub != NULL, "stub not found");
+  assert(stub != nullptr, "stub not found");
   assert(CompiledICLocker::is_safe(stub), "mt unsafe call");
   // Creation also verifies the object.
   NativeMovConstReg* method_holder
@@ -135,7 +136,7 @@ void CompiledDirectStaticCall::verify() {
 
   // Verify stub.
   address stub = find_stub();
-  assert(stub != NULL, "no stub found for static call");
+  assert(stub != nullptr, "no stub found for static call");
   // Creation also verifies the object.
   NativeMovConstReg* method_holder
     = nativeMovConstReg_at(stub);

@@ -21,9 +21,9 @@
  * questions.
  */
 
+// key: compiler.err.feature.not.supported.in.source
 // key: compiler.misc.feature.case.null
-// key: compiler.warn.preview.feature.use
-// options: --enable-preview -source ${jdk.version} -Xlint:preview
+// options: -source 20 -Xlint:-options
 
 class CaseNull {
     private void doSwitch(String s) {

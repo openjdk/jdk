@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -201,7 +201,7 @@ public interface StackFrame extends Mirror, Locatable {
      * <p>
      * In the case of virtual threads, the target VM supports setting values
      * of local variables when this frame is the topmost frame and the thread
-     * is suspended at a breakpoint or single step event. The target VM may
+     * is suspended at an event. The target VM may
      * support setting local variables in other cases.
      * <p>
      * Object values must be assignment compatible with the variable type
@@ -224,7 +224,7 @@ public interface StackFrame extends Mirror, Locatable {
      * invalid. Once the frame's thread is resumed, the stack frame is
      * no longer valid.
      * @throws OpaqueFrameException if this frame is on the call stack of a
-     * virtual thread and the target VM does not support setting the value of
+     * suspended virtual thread, and the target VM does not support setting the value of
      * local variables in this frame.
      * @throws VMCannotBeModifiedException if the VirtualMachine is read-only.
      * @see VirtualMachine#canBeModified()

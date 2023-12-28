@@ -28,7 +28,6 @@
  * @requires vm.continuations
  * @modules java.management
  * @library /test/lib
- * @enablePreview
  * @run junit StackTraces
  * @run junit/othervm -XX:+UnlockDiagnosticVMOptions -XX:+ShowCarrierFrames StackTraces
  */

@@ -80,11 +80,13 @@ public class PipedWriter extends Writer {
      * If {@code snk} is an unconnected piped reader and
      * {@code src} is an unconnected piped writer, they may
      * be connected by either the call:
-     * <blockquote><pre>
-     * src.connect(snk)</pre></blockquote>
+     * {@snippet lang=java :
+     *     src.connect(snk)
+     * }
      * or the call:
-     * <blockquote><pre>
-     * snk.connect(src)</pre></blockquote>
+     * {@snippet lang=java :
+     *     snk.connect(src)
+     * }
      * The two calls have the same effect.
      *
      * @param      snk   the piped reader to connect to.

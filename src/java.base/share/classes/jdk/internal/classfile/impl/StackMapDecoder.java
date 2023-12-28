@@ -30,16 +30,16 @@ import java.lang.constant.MethodTypeDesc;
 import java.lang.reflect.AccessFlag;
 import java.util.List;
 import java.util.TreeMap;
-import jdk.internal.classfile.BufWriter;
+import java.lang.classfile.BufWriter;
 
-import jdk.internal.classfile.constantpool.ClassEntry;
-import jdk.internal.classfile.attribute.StackMapFrameInfo;
-import jdk.internal.classfile.attribute.StackMapFrameInfo.*;
-import jdk.internal.classfile.ClassReader;
+import java.lang.classfile.constantpool.ClassEntry;
+import java.lang.classfile.attribute.StackMapFrameInfo;
+import java.lang.classfile.attribute.StackMapFrameInfo.*;
+import java.lang.classfile.ClassReader;
 
-import static jdk.internal.classfile.Classfile.*;
-import jdk.internal.classfile.Label;
-import jdk.internal.classfile.MethodModel;
+import static java.lang.classfile.ClassFile.*;
+import java.lang.classfile.Label;
+import java.lang.classfile.MethodModel;
 
 public class StackMapDecoder {
 
@@ -63,31 +63,30 @@ public class StackMapDecoder {
     static List<VerificationTypeInfo> initFrameLocals(MethodModel method) {
         return initFrameLocals(method.parent().orElseThrow().thisClass(),
                 method.methodName().stringValue(),
-                method.methodType().stringValue(),
+                method.methodTypeSymbol(),
                 method.flags().has(AccessFlag.STATIC));
     }
 
-    public static List<VerificationTypeInfo> initFrameLocals(ClassEntry thisClass, String methodName, String methodType, boolean isStatic) {
-        var mdesc = MethodTypeDesc.ofDescriptor(methodType);
+    public static List<VerificationTypeInfo> initFrameLocals(ClassEntry thisClass, String methodName, MethodTypeDesc methodType, boolean isStatic) {
         VerificationTypeInfo vtis[];
         int i = 0;
         if (!isStatic) {
-            vtis = new VerificationTypeInfo[mdesc.parameterCount() + 1];
+            vtis = new VerificationTypeInfo[methodType.parameterCount() + 1];
             if ("<init>".equals(methodName) && !ConstantDescs.CD_Object.equals(thisClass.asSymbol())) {
                 vtis[i++] = SimpleVerificationTypeInfo.ITEM_UNINITIALIZED_THIS;
             } else {
                 vtis[i++] = new StackMapDecoder.ObjectVerificationTypeInfoImpl(thisClass);
             }
         } else {
-            vtis = new VerificationTypeInfo[mdesc.parameterCount()];
+            vtis = new VerificationTypeInfo[methodType.parameterCount()];
         }
-        for(var arg : mdesc.parameterList()) {
-            vtis[i++] = switch (arg.descriptorString()) {
-                case "I", "S", "C" ,"B", "Z" ->  SimpleVerificationTypeInfo.ITEM_INTEGER;
-                case "J" -> SimpleVerificationTypeInfo.ITEM_LONG;
-                case "F" -> SimpleVerificationTypeInfo.ITEM_FLOAT;
-                case "D" -> SimpleVerificationTypeInfo.ITEM_DOUBLE;
-                case "V" -> throw new IllegalArgumentException("Illegal method argument type: " + arg);
+        for(var arg : methodType.parameterList()) {
+            vtis[i++] = switch (arg.descriptorString().charAt(0)) {
+                case 'I', 'S', 'C' ,'B', 'Z' -> SimpleVerificationTypeInfo.ITEM_INTEGER;
+                case 'J' -> SimpleVerificationTypeInfo.ITEM_LONG;
+                case 'F' -> SimpleVerificationTypeInfo.ITEM_FLOAT;
+                case 'D' -> SimpleVerificationTypeInfo.ITEM_DOUBLE;
+                case 'V' -> throw new IllegalArgumentException("Illegal method argument type: " + arg);
                 default -> new StackMapDecoder.ObjectVerificationTypeInfoImpl(TemporaryConstantPool.INSTANCE.classEntry(arg));
             };
         }
@@ -100,7 +99,7 @@ public class StackMapDecoder {
         var mi = dcb.methodInfo();
         var prevLocals = StackMapDecoder.initFrameLocals(buf.thisClass(),
                 mi.methodName().stringValue(),
-                mi.methodType().stringValue(),
+                mi.methodTypeSymbol(),
                 (mi.methodFlags() & ACC_STATIC) != 0);
         int prevOffset = -1;
         var map = new TreeMap<Integer, StackMapFrameInfo>();

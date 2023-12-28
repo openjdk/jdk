@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,8 +42,8 @@ class CompositeFunctor {
   Func2* _g;
  public:
   CompositeFunctor(Func1* f, Func2* g) : _f(f), _g(g) {
-    assert(f != NULL, "invariant");
-    assert(g != NULL, "invariant");
+    assert(f != nullptr, "invariant");
+    assert(g != nullptr, "invariant");
   }
   bool operator()(T const& value) {
     return (*_f)(value) && (*_g)(value);
@@ -63,11 +63,11 @@ class JfrArtifactCallbackHost : public JfrArtifactClosure {
  public:
   JfrArtifactCallbackHost(JfrArtifactClosure** subsystem_callback_loc, Callback* callback) :
           _subsystem_callback_loc(subsystem_callback_loc), _callback(callback) {
-    assert(*_subsystem_callback_loc == NULL, "Subsystem callback should not be set yet");
+    assert(*_subsystem_callback_loc == nullptr, "Subsystem callback should not be set yet");
     *_subsystem_callback_loc = this;
   }
   ~JfrArtifactCallbackHost() {
-    *_subsystem_callback_loc = NULL;
+    *_subsystem_callback_loc = nullptr;
   }
   void do_artifact(const void* artifact) {
     (*_callback)(reinterpret_cast<T const&>(artifact));
@@ -81,7 +81,7 @@ class KlassToFieldEnvelope {
   KlassToFieldEnvelope(Letter* letter) : _letter(letter) {}
   bool operator()(const Klass* klass) {
     typename FieldSelector::TypePtr t = FieldSelector::select(klass);
-    return t != NULL ? (*_letter)(t) : true;
+    return t != nullptr ? (*_letter)(t) : true;
   }
 };
 
@@ -91,6 +91,8 @@ class ClearArtifact {
   bool operator()(T const& value) {
     CLEAR_SERIALIZED(value);
     assert(IS_NOT_SERIALIZED(value), "invariant");
+    assert(IS_NOT_LEAKP(value), "invariant");
+    assert(IS_NOT_TRANSIENT(value), "invariant");
     SET_PREVIOUS_EPOCH_CLEARED_BIT(value);
     CLEAR_PREVIOUS_EPOCH_METHOD_AND_CLASS(value);
     return true;
@@ -103,7 +105,9 @@ class ClearArtifact<const Method*> {
   bool operator()(const Method* method) {
     assert(METHOD_FLAG_USED_PREVIOUS_EPOCH(method), "invariant");
     CLEAR_SERIALIZED_METHOD(method);
-    assert(METHOD_NOT_SERIALIZED(method), "invariant");
+    assert(METHOD_IS_NOT_SERIALIZED(method), "invariant");
+    assert(METHOD_IS_NOT_LEAKP(method), "invariant");
+    assert(METHOD_IS_NOT_TRANSIENT(method), "invariant");
     SET_PREVIOUS_EPOCH_METHOD_CLEARED_BIT(method);
     CLEAR_PREVIOUS_EPOCH_METHOD_FLAG(method);
     return true;
@@ -116,7 +120,7 @@ class SerializePredicate {
  public:
   SerializePredicate(bool class_unload) : _class_unload(class_unload) {}
   bool operator()(T const& value) {
-    assert(value != NULL, "invariant");
+    assert(value != nullptr, "invariant");
     return _class_unload ? true : IS_NOT_SERIALIZED(value);
   }
 };
@@ -127,8 +131,8 @@ class SerializePredicate<const Method*> {
  public:
   SerializePredicate(bool class_unload) : _class_unload(class_unload) {}
   bool operator()(const Method* method) {
-    assert(method != NULL, "invariant");
-    return _class_unload ? true : METHOD_NOT_SERIALIZED(method);
+    assert(method != nullptr, "invariant");
+    return _class_unload ? true : METHOD_IS_NOT_SERIALIZED(method);
   }
 };
 
@@ -138,7 +142,7 @@ class SymbolPredicate {
  public:
   SymbolPredicate(bool class_unload) : _class_unload(class_unload) {}
   bool operator()(T const& value) {
-    assert(value != NULL, "invariant");
+    assert(value != nullptr, "invariant");
     if (_class_unload) {
       return leakp ? value->is_leakp() : value->is_unloading();
     }
@@ -162,9 +166,9 @@ class MethodFlagPredicate {
   MethodFlagPredicate(bool current_epoch) : _current_epoch(current_epoch) {}
   bool operator()(const Method* method) {
     if (_current_epoch) {
-      return leakp ? IS_METHOD_LEAKP_USED(method) : METHOD_FLAG_USED_THIS_EPOCH(method);
+      return leakp ? METHOD_IS_LEAKP(method) : METHOD_FLAG_USED_THIS_EPOCH(method);
     }
-    return leakp ? IS_METHOD_LEAKP_USED(method) : METHOD_FLAG_USED_PREVIOUS_EPOCH(method);
+    return leakp ? METHOD_IS_LEAKP(method) : METHOD_FLAG_USED_PREVIOUS_EPOCH(method);
   }
 };
 
@@ -182,8 +186,8 @@ class LeakPredicate<const Method*> {
  public:
   LeakPredicate(bool class_unload) {}
   bool operator()(const Method* method) {
-    assert(method != NULL, "invariant");
-    return IS_METHOD_LEAKP_USED(method);
+    assert(method != nullptr, "invariant");
+    return METHOD_IS_LEAKP(method);
   }
 };
 
@@ -266,11 +270,11 @@ class KlassArtifactRegistrator {
  public:
   KlassArtifactRegistrator(JfrArtifactSet* artifacts) :
     _artifacts(artifacts) {
-    assert(_artifacts != NULL, "invariant");
+    assert(_artifacts != nullptr, "invariant");
   }
 
   bool operator()(const Klass* klass) {
-    assert(klass != NULL, "invariant");
+    assert(klass != nullptr, "invariant");
     _artifacts->register_klass(klass);
     return true;
   }

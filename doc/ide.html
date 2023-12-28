@@ -79,6 +79,45 @@ native source. After configuring, the project is generated using:</p>
 <code>ide\hotspot-visualstudio</code> subfolder of the build output
 folder. The file can be opened in Visual Studio via
 <code>File -&gt; Open -&gt; Project/Solution</code>.</p>
+<h4 id="eclipse-cdt">Eclipse CDT</h4>
+<p>The make system can generate an Eclipse CDT Workspace that enables
+Eclipse indexing for the C and C++ sources throughout the entire
+codebase, as well as registering all common make targets to be runnable
+from the Eclipse explorer. This can be done after configuring by
+running:</p>
+<pre><code>make eclipse-native-env</code></pre>
+<p>After this is run, simply open and import the workspace in Eclipse
+through
+<code>File -&gt; Import -&gt; Projects from Folder or Archive</code> and
+at <code>Import source</code> click on the directory
+<code>ide\eclipse</code>, which can be found in the build output
+folder.</p>
+<p>If this doesn't work, you can also try
+<code>File -&gt; Import -&gt; Existing Projects into Workspace</code>
+instead.</p>
+<p>Setting up an Eclipse Workspace is relatively lightweight compared to
+other supported IDEs, but requires that your CDT installation has Cross
+GCC support enabled at the moment, even if you aren't cross compiling.
+The Visual C++ compiler is, at present, not supported as an indexer.</p>
+<p>If desired, you can instead request make to only include indexing
+support for just the Java Virtual Machine instead of the entire native
+codebase, by running:</p>
+<pre><code>make eclipse-hotspot-env</code></pre>
+<p>If you think your particular Eclipse installation can handle the
+strain, the make system also supports generating a combined Java and
+C/C++ Workspace for Eclipse which can then conveniently switch between
+Java and C/C++ natures during development by running:</p>
+<pre><code>make eclipse-mixed-env</code></pre>
+<p>Do note that this generates all features that come with both Java and
+C/C++ natures.</p>
+<p>By default, the Eclipse Workspace is located in the ide subdirectory
+in the build output. To share the JDK's source directory with the
+Eclipse Workspace, you can instead run:</p>
+<pre><code>make eclipse-shared-&lt;ENV&gt;-env</code></pre>
+<p>Eclipse support in the JDK is relatively new, so do keep in mind that
+not everything may work at the moment. As such, the resulting Workspace
+also has compilation database parsing support enabled, so you can pass
+Eclipse the compile commands file (see below) if all else fails.</p>
 <h4 id="compilation-database">Compilation Database</h4>
 <p>The make system can generate generic native code indexing support in
 the form of a <a
@@ -105,5 +144,28 @@ select the folder where you ran the above script.</p>
 <p>In order to run the tests from the IDE, you can use the JTReg plugin.
 Instructions for building and using the plugin can be found <a
 href="https://github.com/openjdk/jtreg/tree/master/plugins/idea">here</a>.</p>
+<h4 id="eclipse">Eclipse</h4>
+<p>Eclipse JDT is a widely used Java IDE and has been for a very long
+time, being a popular choice alongside IntelliJ IDEA for Java
+development. Likewise, the JDK now includes support for developing its
+Java sources with Eclipse, which can be achieved by setting up a Java
+Workspace by running:</p>
+<pre><code>make eclipse-java-env</code></pre>
+<p>After the workspace has been generated you can import it in the same
+way as you would with Eclipse CDT:</p>
+<p>Follow
+<code>File -&gt; Import -&gt; Projects from Folder or Archive</code> and
+select the <code>ide\eclipse</code> directory in the build output folder
+to import the newly created Java Workspace.</p>
+<p>If doing so results in an error, you can also import the JDK via
+<code>File -&gt; Import -&gt; Existing Projects into Workspace</code> as
+a last resort.</p>
+<p>Alternatively, if you want a Java Workspace inside the JDK's source
+directory, you can instead run:</p>
+<pre><code>make eclipse-shared-java-env</code></pre>
+<p>As mentioned above for Eclipse CDT, you can create a combined Java
+and C/C++ Workspace which can conveniently switch between Java and C/C++
+natures during development by running:</p>
+<pre><code>make eclipse-mixed-env</code></pre>
 </body>
 </html>

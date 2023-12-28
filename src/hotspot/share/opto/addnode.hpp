@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,10 +28,12 @@
 #include "opto/node.hpp"
 #include "opto/opcodes.hpp"
 #include "opto/type.hpp"
+#include "utilities/pair.hpp"
 
 // Portions of code courtesy of Clifford Click
 
 class PhaseTransform;
+typedef const Pair<Node*, jint> ConstAddOperands;
 
 //------------------------------AddNode----------------------------------------
 // Classic Add functionality.  This covers all the usual 'add' behaviors for
@@ -166,7 +168,7 @@ public:
   virtual const Type *bottom_type() const;
   virtual uint  ideal_reg() const { return Op_RegP; }
   Node         *base_node() { assert( req() > Base, "Missing base"); return in(Base); }
-  static Node* Ideal_base_and_offset(Node* ptr, PhaseTransform* phase,
+  static Node* Ideal_base_and_offset(Node* ptr, PhaseValues* phase,
                                      // second return value:
                                      intptr_t& offset);
 
@@ -252,12 +254,14 @@ class MaxNode : public AddNode {
 private:
   static Node* build_min_max(Node* a, Node* b, bool is_max, bool is_unsigned, const Type* t, PhaseGVN& gvn);
   static Node* build_min_max_diff_with_zero(Node* a, Node* b, bool is_max, const Type* t, PhaseGVN& gvn);
+  Node* extract_add(PhaseGVN* phase, ConstAddOperands x_operands, ConstAddOperands y_operands);
 
 public:
   MaxNode( Node *in1, Node *in2 ) : AddNode(in1,in2) {}
   virtual int Opcode() const = 0;
   virtual int max_opcode() const = 0;
   virtual int min_opcode() const = 0;
+  Node* IdealI(PhaseGVN* phase, bool can_reshape);
 
   static Node* unsigned_max(Node* a, Node* b, const Type* t, PhaseGVN& gvn) {
     return build_min_max(a, b, true, true, t, gvn);
@@ -322,28 +326,38 @@ public:
 // MAXimum of 2 longs.
 class MaxLNode : public MaxNode {
 public:
-  MaxLNode(Node *in1, Node *in2) : MaxNode(in1, in2) {}
+  MaxLNode(Compile* C, Node* in1, Node* in2) : MaxNode(in1, in2) {
+    init_flags(Flag_is_macro);
+    C->add_macro_node(this);
+  }
   virtual int Opcode() const;
-  virtual const Type *add_ring(const Type*, const Type*) const { return TypeLong::LONG; }
-  virtual const Type *add_id() const { return TypeLong::make(min_jlong); }
-  virtual const Type *bottom_type() const { return TypeLong::LONG; }
+  virtual const Type* add_ring(const Type* t0, const Type* t1) const;
+  virtual const Type* add_id() const { return TypeLong::make(min_jlong); }
+  virtual const Type* bottom_type() const { return TypeLong::LONG; }
   virtual uint ideal_reg() const { return Op_RegL; }
   int max_opcode() const { return Op_MaxL; }
   int min_opcode() const { return Op_MinL; }
+  virtual Node* Identity(PhaseGVN* phase);
+  virtual Node* Ideal(PhaseGVN *phase, bool can_reshape);
 };
 
 //------------------------------MinLNode---------------------------------------
 // MINimum of 2 longs.
 class MinLNode : public MaxNode {
 public:
-  MinLNode(Node *in1, Node *in2) : MaxNode(in1, in2) {}
+  MinLNode(Compile* C, Node* in1, Node* in2) : MaxNode(in1, in2) {
+    init_flags(Flag_is_macro);
+    C->add_macro_node(this);
+  }
   virtual int Opcode() const;
-  virtual const Type *add_ring(const Type*, const Type*) const { return TypeLong::LONG; }
-  virtual const Type *add_id() const { return TypeLong::make(max_jlong); }
-  virtual const Type *bottom_type() const { return TypeLong::LONG; }
+  virtual const Type* add_ring(const Type* t0, const Type* t1) const;
+  virtual const Type* add_id() const { return TypeLong::make(max_jlong); }
+  virtual const Type* bottom_type() const { return TypeLong::LONG; }
   virtual uint ideal_reg() const { return Op_RegL; }
   int max_opcode() const { return Op_MaxL; }
   int min_opcode() const { return Op_MinL; }
+  virtual Node* Identity(PhaseGVN* phase);
+  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
 };
 
 //------------------------------MaxFNode---------------------------------------

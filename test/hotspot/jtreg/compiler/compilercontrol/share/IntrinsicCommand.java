@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,13 +55,15 @@ public class IntrinsicCommand extends AbstractTestBase {
 
     private final Command command;
     private final Scenario.Type type;
+    private final boolean isValid;
     private String intrinsic_ids;
 
-    public IntrinsicCommand(Scenario.Type type, IntrinsicId[] intrinsic_ids) {
+    public IntrinsicCommand(Scenario.Type type, IntrinsicId[] intrinsic_ids, boolean isValid) {
         this.command = Command.INTRINSIC;
         this.type = type;
         this.intrinsic_ids = Arrays.stream(intrinsic_ids).map(id -> id.toString())
                                                          .collect(Collectors.joining(","));
+        this.isValid = isValid;
     }
 
     @Override
@@ -71,8 +73,9 @@ public class IntrinsicCommand extends AbstractTestBase {
         MethodDescriptor md = getValidMethodDescriptor(exec);
         CommandGenerator cmdGen = new CommandGenerator();
 
-        CompileCommand compileCommand = cmdGen.generateCompileCommand(command,
+        CompileCommand compileCommand = cmdGen.generateCompileCommand(command, isValid,
                 md, type, intrinsic_ids);
+
         builder.add(compileCommand);
         Scenario scenario = builder.build();
         scenario.execute();

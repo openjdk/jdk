@@ -1385,7 +1385,6 @@ void LIR_Assembler::emit_compare_and_swap(LIR_OpCompareAndSwap* op) {
     __ mov(dest, 1, eq);
     __ mov(dest, 0, ne);
   } else if (op->code() == lir_cas_long) {
-    assert(VM_Version::supports_cx8(), "wrong machine");
     Register cmp_value_lo = op->cmp_value()->as_register_lo();
     Register cmp_value_hi = op->cmp_value()->as_register_hi();
     Register new_value_lo = op->new_value()->as_register_lo();
@@ -2431,7 +2430,7 @@ void LIR_Assembler::emit_lock(LIR_OpLock* op) {
   Register hdr = op->hdr_opr()->as_pointer_register();
   Register lock = op->lock_opr()->as_pointer_register();
 
-  if (UseHeavyMonitors) {
+  if (LockingMode == LM_MONITOR) {
     if (op->info() != nullptr) {
       add_debug_info_for_null_check_here(op->info());
       __ null_check(obj);

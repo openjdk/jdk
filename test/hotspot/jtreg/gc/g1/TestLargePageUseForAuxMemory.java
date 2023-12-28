@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -101,11 +101,11 @@ public class TestLargePageUseForAuxMemory {
     }
 
     static void checkSmallTables(OutputAnalyzer output, long expectedPageSize) throws Exception {
-        checkSize(output, expectedPageSize, "Block Offset Table: .*page_size=([^ ]+)");
+        checkSize(output, expectedPageSize, "Block Offset Table: .* page_size=(\\d+[BKMG])");
     }
 
     static void checkBitmap(OutputAnalyzer output, long expectedPageSize) throws Exception {
-        checkSize(output, expectedPageSize, "Mark Bitmap: .*page_size=([^ ]+)");
+        checkSize(output, expectedPageSize, "Mark Bitmap: .* page_size=(\\d+[BKMG])");
     }
 
     static List<String> getOpts(long heapsize, boolean largePageEnabled) {
@@ -123,9 +123,10 @@ public class TestLargePageUseForAuxMemory {
         ProcessBuilder pb;
 
         // Test with large page enabled.
-        pb = ProcessTools.createJavaProcessBuilder(getOpts(heapsize, true));
+        pb = ProcessTools.createLimitedTestJavaProcessBuilder(getOpts(heapsize, true));
 
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
+
         // Only expect large page size if large pages are enabled.
         if (largePagesEnabled(output)) {
             checkSmallTables(output, (cardsShouldUseLargePages ? largePageSize : smallPageSize));
@@ -137,7 +138,7 @@ public class TestLargePageUseForAuxMemory {
         output.shouldHaveExitValue(0);
 
         // Test with large page disabled.
-        pb = ProcessTools.createJavaProcessBuilder(getOpts(heapsize, false));
+        pb = ProcessTools.createLimitedTestJavaProcessBuilder(getOpts(heapsize, false));
 
         output = new OutputAnalyzer(pb.start());
         checkSmallTables(output, smallPageSize);

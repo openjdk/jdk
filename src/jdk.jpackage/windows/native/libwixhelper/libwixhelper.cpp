@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,10 +72,10 @@ private:
 
 void findInstalledProducts(const Guid& upgradeCode,
                                             std::vector<ProductInfo>& products) {
-    const LPCTSTR upgradeCodeStr = upgradeCode.toMsiString().c_str();
+    const tstring upgradeCodeStr = upgradeCode.toMsiString();
     for (DWORD productCodeIdx = 0; true; ++productCodeIdx) {
         TCHAR productCode[39 /* http://msdn.microsoft.com/en-us/library/aa370101(v=vs.85).aspx */];
-        const UINT status = MsiEnumRelatedProducts(upgradeCodeStr, 0,
+        const UINT status = MsiEnumRelatedProducts(upgradeCodeStr.c_str(), 0,
                                               productCodeIdx, productCode);
         if (ERROR_NO_MORE_ITEMS == status) {
             break;

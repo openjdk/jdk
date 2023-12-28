@@ -52,13 +52,13 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import jdk.internal.classfile.AccessFlags;
-import jdk.internal.classfile.Attribute;
-import jdk.internal.classfile.ClassModel;
-import jdk.internal.classfile.ClassTransform;
-import jdk.internal.classfile.Classfile;
-import jdk.internal.classfile.attribute.ModuleAttribute;
-import jdk.internal.classfile.attribute.RuntimeVisibleAnnotationsAttribute;
+import java.lang.classfile.AccessFlags;
+import java.lang.classfile.Attribute;
+import java.lang.classfile.ClassModel;
+import java.lang.classfile.ClassTransform;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.attribute.ModuleAttribute;
+import java.lang.classfile.attribute.RuntimeVisibleAnnotationsAttribute;
 
 import jdk.internal.javac.PreviewFeature;
 import jdk.internal.loader.BuiltinClassLoader;
@@ -272,9 +272,8 @@ public final class Module implements AnnotatedElement {
      * <a href="foreign/package-summary.html#restricted"><em>restricted</em></a> methods.
      *
      * @return {@code true} if this module can access <em>restricted</em> methods.
-     * @since 20
+     * @since 22
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.FOREIGN)
     public boolean isNativeAccessEnabled() {
         Module target = moduleForNativeAccess();
         return EnableNativeAccess.isNativeAccessEnabled(target);
@@ -309,7 +308,7 @@ public final class Module implements AnnotatedElement {
     }
 
     // This is invoked from Reflection.ensureNativeAccess
-    void ensureNativeAccess(Class<?> owner, String methodName) {
+    void ensureNativeAccess(Class<?> owner, String methodName, Class<?> currentClass) {
         // The target module whose enableNativeAccess flag is ensured
         Module target = moduleForNativeAccess();
         if (!EnableNativeAccess.isNativeAccessEnabled(target)) {
@@ -320,13 +319,15 @@ public final class Module implements AnnotatedElement {
                 // warn and set flag, so that only one warning is reported per module
                 String cls = owner.getName();
                 String mtd = cls + "::" + methodName;
-                String mod = isNamed() ? "module " + getName() : "the unnamed module";
+                String mod = isNamed() ? "module " + getName() : "an unnamed module";
                 String modflag = isNamed() ? getName() : "ALL-UNNAMED";
+                String caller = currentClass != null ? currentClass.getName() : "code";
                 System.err.printf("""
                         WARNING: A restricted method in %s has been called
-                        WARNING: %s has been called by %s
-                        WARNING: Use --enable-native-access=%s to avoid a warning for this module
-                        %n""", cls, mtd, mod, modflag);
+                        WARNING: %s has been called by %s in %s
+                        WARNING: Use --enable-native-access=%s to avoid a warning for callers in this module
+                        WARNING: Restricted methods will be blocked in a future release unless native access is enabled
+                        %n""", cls, mtd, caller, mod, modflag);
             }
         }
     }
@@ -1590,8 +1591,8 @@ public final class Module implements AnnotatedElement {
      */
     private Class<?> loadModuleInfoClass(InputStream in) throws IOException {
         final String MODULE_INFO = "module-info";
-        byte[] bytes = Classfile.parse(in.readAllBytes(),
-                Classfile.Option.constantPoolSharing(false)).transform((clb, cle) -> {
+        var cc = ClassFile.of(ClassFile.ConstantPoolSharingOption.NEW_POOL);
+        byte[] bytes = cc.transform(cc.parse(in.readAllBytes()), (clb, cle) -> {
             switch (cle) {
                 case AccessFlags af -> clb.withFlags(AccessFlag.INTERFACE,
                         AccessFlag.ABSTRACT, AccessFlag.SYNTHETIC);

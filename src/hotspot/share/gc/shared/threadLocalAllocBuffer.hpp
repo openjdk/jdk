@@ -87,9 +87,6 @@ private:
 
   size_t remaining();
 
-  // Make parsable and release it.
-  void reset();
-
   void invariants() const { assert(top() >= start() && top() <= end(), "invalid tlab"); }
 
   void initialize(HeapWord* start, HeapWord* top, HeapWord* end);

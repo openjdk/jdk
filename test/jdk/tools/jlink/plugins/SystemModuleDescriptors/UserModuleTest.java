@@ -47,7 +47,6 @@ import static org.testng.Assert.*;
  * @library /test/lib
  * @modules jdk.compiler jdk.jlink
  * @modules java.base/jdk.internal.module
- * @modules java.base/jdk.internal.org.objectweb.asm
  * @build jdk.test.lib.compiler.CompilerUtils
  *        jdk.test.lib.util.FileUtils
  *        jdk.test.lib.Platform
@@ -89,8 +88,7 @@ public class UserModuleTest {
             Path msrc = SRC_DIR.resolve(mn);
             assertTrue(CompilerUtils.compile(msrc, MODS_DIR,
                 "--module-source-path", SRC_DIR.toString(),
-                "--add-exports", "java.base/jdk.internal.module=" + mn,
-                "--add-exports", "java.base/jdk.internal.org.objectweb.asm=" + mn));
+                "--add-exports", "java.base/jdk.internal.module=" + mn));
         }
 
         if (Files.exists(IMAGE)) {
@@ -113,7 +111,6 @@ public class UserModuleTest {
         Path java = IMAGE.resolve("bin").resolve("java");
         assertTrue(executeProcess(java.toString(),
                         "--add-exports", "java.base/jdk.internal.module=m1,m4",
-                        "--add-exports", "java.base/jdk.internal.org.objectweb.asm=m1,m4",
                         "-m", MAIN_MID)
                         .outputTo(System.out)
                         .errorTo(System.out)
@@ -145,7 +142,6 @@ public class UserModuleTest {
         Path java = IMAGE.resolve("bin").resolve("java");
         assertTrue(executeProcess(java.toString(),
                                   "--add-exports", "java.base/jdk.internal.module=m1,m4",
-                                  "--add-exports", "java.base/jdk.internal.org.objectweb.asm=m1,m4",
                                   "-Djdk.system.module.finder.disabledFastPath",
                                   "-m", MAIN_MID)
                         .outputTo(System.out)
@@ -166,7 +162,6 @@ public class UserModuleTest {
         Path java = dir.resolve("bin").resolve("java");
         assertTrue(executeProcess(java.toString(),
                          "--add-exports", "java.base/jdk.internal.module=m1,m4",
-                         "--add-exports", "java.base/jdk.internal.org.objectweb.asm=m1,m4",
                          "-m", MAIN_MID)
                         .outputTo(System.out)
                         .errorTo(System.out)
@@ -262,7 +257,6 @@ public class UserModuleTest {
         Path java = dir.resolve("bin").resolve("java");
         assertTrue(executeProcess(java.toString(),
                         "--add-exports", "java.base/jdk.internal.module=m1,m4",
-                        "--add-exports", "java.base/jdk.internal.org.objectweb.asm=m1,m4",
                         "--add-modules=m1", "-m", "m4")
             .outputTo(System.out)
             .errorTo(System.out)
@@ -292,7 +286,6 @@ public class UserModuleTest {
         Path java = dir.resolve("bin").resolve("java");
         assertTrue(executeProcess(java.toString(),
                         "--add-exports", "java.base/jdk.internal.module=m1,m4",
-                        "--add-exports", "java.base/jdk.internal.org.objectweb.asm=m1,m4",
                         "--add-modules=m1", "-m", "m4", "retainModuleTarget")
             .outputTo(System.out)
             .errorTo(System.out)

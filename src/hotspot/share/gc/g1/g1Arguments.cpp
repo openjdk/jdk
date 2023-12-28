@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2017, Red Hat, Inc. and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -24,12 +24,14 @@
  */
 
 #include "precompiled.hpp"
+#include "cds/cdsConfig.hpp"
 #include "gc/g1/g1Arguments.hpp"
 #include "gc/g1/g1CardSet.hpp"
 #include "gc/g1/g1CardSetContainers.inline.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1HeapVerifier.hpp"
 #include "gc/g1/heapRegion.hpp"
+#include "gc/g1/heapRegionBounds.inline.hpp"
 #include "gc/g1/heapRegionRemSet.hpp"
 #include "gc/shared/cardTable.hpp"
 #include "gc/shared/gcArguments.hpp"
@@ -81,9 +83,9 @@ void G1Arguments::initialize_verification_types() {
     char* save_ptr;
 
     char* token = strtok_r(type_list, delimiter, &save_ptr);
-    while (token != NULL) {
+    while (token != nullptr) {
       parse_verification_type(token);
-      token = strtok_r(NULL, delimiter, &save_ptr);
+      token = strtok_r(nullptr, delimiter, &save_ptr);
     }
     FREE_C_HEAP_ARRAY(char, type_list);
   }
@@ -124,18 +126,19 @@ void G1Arguments::initialize_mark_stack_size() {
     FLAG_SET_ERGO(MarkStackSize, mark_stack_size);
   }
 
-  log_trace(gc)("MarkStackSize: %uk  MarkStackSizeMax: %uk", (uint)(MarkStackSize / K), (uint)(MarkStackSizeMax / K));
 }
 
 
 void G1Arguments::initialize_card_set_configuration() {
   assert(HeapRegion::LogOfHRGrainBytes != 0, "not initialized");
   // Array of Cards card set container globals.
-  const int LOG_M = 20;
-  uint region_size_log_mb = (uint)MAX2(HeapRegion::LogOfHRGrainBytes - LOG_M, 0);
+  const uint LOG_M = 20;
+  assert(log2i_exact(HeapRegionBounds::min_size()) == LOG_M, "inv");
+  assert(HeapRegion::LogOfHRGrainBytes >= LOG_M, "from the above");
+  uint region_size_log_mb = HeapRegion::LogOfHRGrainBytes - LOG_M;
 
   if (FLAG_IS_DEFAULT(G1RemSetArrayOfCardsEntries)) {
-    uint max_cards_in_inline_ptr = G1CardSetConfiguration::max_cards_in_inline_ptr(HeapRegion::LogOfHRGrainBytes - CardTable::card_shift());
+    uint max_cards_in_inline_ptr = G1CardSetConfiguration::max_cards_in_inline_ptr(HeapRegion::LogCardsPerRegion);
     FLAG_SET_ERGO(G1RemSetArrayOfCardsEntries, MAX2(max_cards_in_inline_ptr * 2,
                                                     G1RemSetArrayOfCardsEntriesBase << region_size_log_mb));
   }
@@ -167,13 +170,13 @@ void G1Arguments::initialize() {
   FLAG_SET_DEFAULT(ParallelGCThreads, WorkerPolicy::parallel_worker_threads());
   if (ParallelGCThreads == 0) {
     assert(!FLAG_IS_DEFAULT(ParallelGCThreads), "The default value for ParallelGCThreads should not be 0.");
-    vm_exit_during_initialization("The flag -XX:+UseG1GC can not be combined with -XX:ParallelGCThreads=0", NULL);
+    vm_exit_during_initialization("The flag -XX:+UseG1GC can not be combined with -XX:ParallelGCThreads=0", nullptr);
   }
 
-  // When dumping the CDS archive we want to reduce fragmentation by
+  // When dumping the CDS heap we want to reduce fragmentation by
   // triggering a full collection. To get as low fragmentation as
   // possible we only use one worker thread.
-  if (DumpSharedSpaces) {
+  if (CDSConfig::is_dumping_heap()) {
     FLAG_SET_ERGO(ParallelGCThreads, 1);
   }
 
@@ -227,11 +230,6 @@ void G1Arguments::initialize() {
     FLAG_SET_DEFAULT(ParallelRefProcEnabled, true);
   }
 
-  // By default do not let the target stack size to be more than 1/4 of the entries
-  if (FLAG_IS_DEFAULT(GCDrainStackTargetSize)) {
-    FLAG_SET_ERGO(GCDrainStackTargetSize, MIN2(GCDrainStackTargetSize, (uintx)TASKQUEUE_SIZE / 4));
-  }
-
 #ifdef COMPILER2
   // Enable loop strip mining to offer better pause time guarantees
   if (FLAG_IS_DEFAULT(UseCountedLoopSafepoints)) {
@@ -265,4 +263,3 @@ CollectedHeap* G1Arguments::create_heap() {
 size_t G1Arguments::heap_reserved_size_bytes() {
   return MaxHeapSize;
 }
-

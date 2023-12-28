@@ -1,27 +1,27 @@
 /*
- *  Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
- *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
- *  This code is free software; you can redistribute it and/or modify it
- *  under the terms of the GNU General Public License version 2 only, as
- *  published by the Free Software Foundation.
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
  *
- *  This code is distributed in the hope that it will be useful, but WITHOUT
- *  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- *  FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
- *  version 2 for more details (a copy is included in the LICENSE file that
- *  accompanied this code).
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
  *
- *  You should have received a copy of the GNU General Public License version
- *  2 along with this work; if not, write to the Free Software Foundation,
- *  Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- *  Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
- *  or visit www.oracle.com if you need additional information or have any
- *  questions.
- *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
  */
 
+import java.lang.foreign.AddressLayout;
 import java.lang.foreign.Arena;
 import java.lang.foreign.FunctionDescriptor;
 import java.lang.foreign.GroupLayout;
@@ -30,7 +30,6 @@ import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.PaddingLayout;
 import java.lang.foreign.SegmentAllocator;
-import java.lang.foreign.SegmentScope;
 import java.lang.foreign.SequenceLayout;
 import java.lang.foreign.StructLayout;
 import java.lang.foreign.SymbolLookup;
@@ -87,43 +86,63 @@ public class NativeTestHelper {
         return layout instanceof ValueLayout valueLayout && valueLayout.carrier() == MemorySegment.class;
     }
 
+    public static final Linker LINKER = Linker.nativeLinker();
+
     // the constants below are useful aliases for C types. The type/carrier association is only valid for 64-bit platforms.
 
     /**
      * The layout for the {@code bool} C type
      */
-    public static final ValueLayout.OfBoolean C_BOOL = ValueLayout.JAVA_BOOLEAN;
+    public static final ValueLayout.OfBoolean C_BOOL = (ValueLayout.OfBoolean) LINKER.canonicalLayouts().get("bool");
     /**
      * The layout for the {@code char} C type
      */
-    public static final ValueLayout.OfByte C_CHAR = ValueLayout.JAVA_BYTE;
+    public static final ValueLayout.OfByte C_CHAR = (ValueLayout.OfByte) LINKER.canonicalLayouts().get("char");
     /**
      * The layout for the {@code short} C type
      */
-    public static final ValueLayout.OfShort C_SHORT = ValueLayout.JAVA_SHORT.withBitAlignment(16);
+    public static final ValueLayout.OfShort C_SHORT = (ValueLayout.OfShort) LINKER.canonicalLayouts().get("short");
     /**
      * The layout for the {@code int} C type
      */
-    public static final ValueLayout.OfInt C_INT = ValueLayout.JAVA_INT.withBitAlignment(32);
+    public static final ValueLayout.OfInt C_INT = (ValueLayout.OfInt) LINKER.canonicalLayouts().get("int");
 
     /**
      * The layout for the {@code long long} C type.
      */
-    public static final ValueLayout.OfLong C_LONG_LONG = ValueLayout.JAVA_LONG.withBitAlignment(64);
+    public static final ValueLayout.OfLong C_LONG_LONG = (ValueLayout.OfLong) LINKER.canonicalLayouts().get("long long");
     /**
      * The layout for the {@code float} C type
      */
-    public static final ValueLayout.OfFloat C_FLOAT = ValueLayout.JAVA_FLOAT.withBitAlignment(32);
+    public static final ValueLayout.OfFloat C_FLOAT = (ValueLayout.OfFloat) LINKER.canonicalLayouts().get("float");
     /**
      * The layout for the {@code double} C type
      */
-    public static final ValueLayout.OfDouble C_DOUBLE = ValueLayout.JAVA_DOUBLE.withBitAlignment(64);
+    public static final ValueLayout.OfDouble C_DOUBLE = (ValueLayout.OfDouble) LINKER.canonicalLayouts().get("double");
     /**
      * The {@code T*} native type.
      */
-    public static final ValueLayout.OfAddress C_POINTER = ValueLayout.ADDRESS.withBitAlignment(64).asUnbounded();
+    public static final AddressLayout C_POINTER = ((AddressLayout) LINKER.canonicalLayouts().get("void*"))
+            .withTargetLayout(MemoryLayout.sequenceLayout(Long.MAX_VALUE, C_CHAR));
+    /**
+     * The layout for the {@code size_t} C type
+     */
+    public static final ValueLayout C_SIZE_T = (ValueLayout) LINKER.canonicalLayouts().get("size_t");
 
-    public static final Linker LINKER = Linker.nativeLinker();
+    // Common layout shared by some tests
+    // struct S_PDI { void* p0; double p1; int p2; };
+    public static final MemoryLayout S_PDI_LAYOUT = switch ((int) ValueLayout.ADDRESS.byteSize()) {
+        case 8 -> MemoryLayout.structLayout(
+            C_POINTER.withName("p0"),
+            C_DOUBLE.withName("p1"),
+            C_INT.withName("p2"),
+            MemoryLayout.paddingLayout(4));
+        case 4 -> MemoryLayout.structLayout(
+            C_POINTER.withName("p0"),
+            C_DOUBLE.withName("p1"),
+            C_INT.withName("p2"));
+        default -> throw new UnsupportedOperationException("Unsupported address size");
+    };
 
     private static final MethodHandle FREE = LINKER.downcallHandle(
             LINKER.defaultLookup().find("free").get(), FunctionDescriptor.ofVoid(C_POINTER));
@@ -156,9 +175,13 @@ public class NativeTestHelper {
     }
 
     public static MemorySegment upcallStub(Class<?> holder, String name, FunctionDescriptor descriptor) {
+        return upcallStub(holder, name, descriptor, Arena.ofAuto());
+    }
+
+    public static MemorySegment upcallStub(Class<?> holder, String name, FunctionDescriptor descriptor, Arena arena) {
         try {
             MethodHandle target = MethodHandles.lookup().findStatic(holder, name, descriptor.toMethodType());
-            return LINKER.upcallStub(target, descriptor, SegmentScope.auto());
+            return LINKER.upcallStub(target, descriptor, arena);
         } catch (ReflectiveOperationException e) {
             throw new RuntimeException(e);
         }
@@ -176,7 +199,9 @@ public class NativeTestHelper {
         return result;
     }
 
-    public record TestValue (Object value, Consumer<Object> check) {}
+    public record TestValue (Object value, Consumer<Object> check) {
+        public void check(Object actual) { check.accept(actual); }
+    }
 
     public static TestValue genTestValue(MemoryLayout layout, SegmentAllocator allocator) {
         return genTestValue(DEFAULT_RANDOM, layout, allocator);
@@ -209,7 +234,7 @@ public class NativeTestHelper {
                 elementChecks.add(initField(random, segment, array, array.elementLayout(), sequenceElement(i), allocator));
             }
             return new TestValue(segment, actual -> elementChecks.forEach(check -> check.accept(actual)));
-        } else if (layout instanceof ValueLayout.OfAddress) {
+        } else if (layout instanceof AddressLayout) {
             MemorySegment value = MemorySegment.ofAddress(random.nextLong());
             return new TestValue(value, actual -> assertEquals(actual, value));
         }else if (layout instanceof ValueLayout.OfByte) {
@@ -217,6 +242,9 @@ public class NativeTestHelper {
             return new TestValue(value, actual -> assertEquals(actual, value));
         } else if (layout instanceof ValueLayout.OfShort) {
             short value = (short) random.nextInt();
+            return new TestValue(value, actual -> assertEquals(actual, value));
+        } else if (layout instanceof ValueLayout.OfChar) {
+            char value = (char) random.nextInt();
             return new TestValue(value, actual -> assertEquals(actual, value));
         } else if (layout instanceof ValueLayout.OfInt) {
             int value = random.nextInt();
@@ -248,8 +276,8 @@ public class NativeTestHelper {
         } else {
             VarHandle accessor = containerLayout.varHandle(fieldPath);
             //set value
-            accessor.set(container, fieldValue.value());
-            return actual -> fieldCheck.accept(accessor.get((MemorySegment) actual));
+            accessor.set(container, 0L, fieldValue.value());
+            return actual -> fieldCheck.accept(accessor.get((MemorySegment) actual, 0L));
         }
     }
 
@@ -257,7 +285,7 @@ public class NativeTestHelper {
         MethodHandle slicer = containerLayout.sliceHandle(fieldPath);
         return container -> {
               try {
-                return (MemorySegment) slicer.invokeExact(container);
+                return (MemorySegment) slicer.invokeExact(container, 0L);
             } catch (Throwable e) {
                 throw new IllegalStateException(e);
             }
@@ -287,7 +315,7 @@ public class NativeTestHelper {
         MethodHandle target = MethodHandles.insertArguments(MH_SAVER, 1, fd.argumentLayouts(), capturedArgs, arena, retIdx);
         target = target.asCollector(Object[].class, fd.argumentLayouts().size());
         target = target.asType(fd.toMethodType());
-        return LINKER.upcallStub(target, fd, arena.scope());
+        return LINKER.upcallStub(target, fd, arena);
     }
 
     private static Object saver(Object[] o, List<MemoryLayout> argLayouts, AtomicReference<Object[]> ref, SegmentAllocator allocator, int retArg) {

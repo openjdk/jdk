@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,12 +35,13 @@
                         static_field)                                         \
                                                                               \
   static_field(HeapRegion, GrainBytes,        size_t)                         \
-  static_field(HeapRegion, LogOfHRGrainBytes, int)                            \
+  static_field(HeapRegion, LogOfHRGrainBytes, uint)                           \
                                                                               \
   nonstatic_field(HeapRegion, _type,           HeapRegionType)                \
   nonstatic_field(HeapRegion, _bottom,         HeapWord* const)               \
   nonstatic_field(HeapRegion, _top,            HeapWord* volatile)            \
   nonstatic_field(HeapRegion, _end,            HeapWord* const)               \
+  nonstatic_field(HeapRegion, _pinned_object_count, volatile uint)            \
                                                                               \
   nonstatic_field(HeapRegionType, _tag,       HeapRegionType::Tag volatile)   \
                                                                               \
@@ -57,7 +58,6 @@
   nonstatic_field(G1CollectedHeap, _hrm,                HeapRegionManager)    \
   nonstatic_field(G1CollectedHeap, _monitoring_support, G1MonitoringSupport*) \
   nonstatic_field(G1CollectedHeap, _old_set,            HeapRegionSetBase)    \
-  nonstatic_field(G1CollectedHeap, _archive_set,        HeapRegionSetBase)    \
   nonstatic_field(G1CollectedHeap, _humongous_set,      HeapRegionSetBase)    \
                                                                               \
   nonstatic_field(G1MonitoringSupport, _eden_space_committed,     size_t)     \
@@ -79,8 +79,6 @@
   declare_constant(HeapRegionType::EdenTag)                                   \
   declare_constant(HeapRegionType::SurvTag)                                   \
   declare_constant(HeapRegionType::HumongousMask)                             \
-  declare_constant(HeapRegionType::PinnedMask)                                \
-  declare_constant(HeapRegionType::ArchiveMask)                               \
   declare_constant(HeapRegionType::StartsHumongousTag)                        \
   declare_constant(HeapRegionType::ContinuesHumongousTag)                     \
   declare_constant(HeapRegionType::OldMask)                                   \

@@ -1,6 +1,6 @@
 /*
  *
- * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -281,6 +281,7 @@ public class TableDemo extends DemoModule {
         selectionModeComboBox.addItem(getString("TableDemo.one_range"));
         selectionModeComboBox.addItem(getString("TableDemo.multiple_ranges"));
         selectionModeComboBox.setSelectedIndex(tableView.getSelectionModel().getSelectionMode());
+        selectionModeComboBox.getAccessibleContext().setAccessibleName(getString("TableDemo.selection_mode"));
         selectionModeComboBox.addItemListener(new ItemListener() {
             public void itemStateChanged(ItemEvent e) {
                 JComboBox<?> source = (JComboBox<?>)e.getSource();
@@ -310,6 +311,7 @@ public class TableDemo extends DemoModule {
         resizeModeComboBox.addItem(getString("TableDemo.last_column"));
         resizeModeComboBox.addItem(getString("TableDemo.all_columns"));
         resizeModeComboBox.setSelectedIndex(tableView.getAutoResizeMode());
+        resizeModeComboBox.getAccessibleContext().setAccessibleName(getString("TableDemo.autoresize_mode"));
         resizeModeComboBox.addItemListener(new ItemListener() {
             public void itemStateChanged(ItemEvent e) {
                 JComboBox<?> source = (JComboBox<?>)e.getSource();
@@ -330,6 +332,9 @@ public class TableDemo extends DemoModule {
         footerTextField = new JTextField(getString("TableDemo.footerText"), 15);
         fitWidth = new JCheckBox(getString("TableDemo.fitWidth"), true);
         printButton = new JButton(getString("TableDemo.print"));
+
+        headerLabel.setLabelFor(headerTextField);
+        footerLabel.setLabelFor(footerTextField);
         printButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent ae) {
                 printTable();

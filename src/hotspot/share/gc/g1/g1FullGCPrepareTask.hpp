@@ -42,8 +42,7 @@ class G1DetermineCompactionQueueClosure : public HeapRegionClosure {
   G1FullCollector* _collector;
   uint _cur_worker;
 
-  template<bool is_humongous>
-  inline void free_pinned_region(HeapRegion* hr);
+  inline void free_empty_humongous_region(HeapRegion* hr);
 
   inline bool should_compact(HeapRegion* hr) const;
 

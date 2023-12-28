@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
 #include "asm/register.hpp"
 #include "code/vmregTypes.hpp"
 #include "runtime/globals.hpp"
+#include "utilities/checkedCast.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/ostream.hpp"
@@ -88,7 +89,7 @@ public:
       return "STACKED REG";
     }
   }
-  intptr_t value() const { return this - first(); }
+  int value() const { return checked_cast<int>(this - first()); }
   static VMReg Bad() { return BAD_REG+first(); }
   bool is_valid() const { return value() != BAD_REG; }
   bool is_stack() const { return this >= stack_0(); }
@@ -143,9 +144,9 @@ public:
     return stack_0() + idx;
   }
 
-  uintptr_t reg2stack() const {
+  int reg2stack() const {
     assert(is_stack(), "Not a stack-based register");
-    return this - stack_0();
+    return checked_cast<int>(this - stack_0());
   }
 
   static void set_regName();

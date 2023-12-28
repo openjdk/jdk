@@ -49,7 +49,7 @@ class LogDiagnosticCommand : public DCmdWithParser {
   LogDiagnosticCommand(outputStream* output, bool heap_allocated);
   void execute(DCmdSource source, TRAPS);
   static void registerCommand();
-  static int num_arguments();
+  static int num_arguments() { return 7; }
 
   static const char* name() {
     return "VM.log";

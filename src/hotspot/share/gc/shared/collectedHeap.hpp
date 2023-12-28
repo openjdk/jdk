@@ -95,6 +95,7 @@ class CollectedHeap : public CHeapObj<mtGC> {
   friend class VMStructs;
   friend class JVMCIVMStructs;
   friend class IsGCActiveMark; // Block structured external access to _is_gc_active
+  friend class DisableIsGCActiveMark; // Disable current IsGCActiveMark
   friend class MemAllocator;
   friend class ParallelObjectIterator;
 
@@ -164,8 +165,10 @@ class CollectedHeap : public CHeapObj<mtGC> {
 
   // Filler object utilities.
   static inline size_t filler_array_hdr_size();
-  static inline size_t filler_array_min_size();
 
+  static size_t filler_array_min_size();
+
+protected:
   static inline void zap_filler_array_with(HeapWord* start, size_t words, juint value);
   DEBUG_ONLY(static void fill_args_check(HeapWord* start, size_t words);)
   DEBUG_ONLY(static void zap_filler_array(HeapWord* start, size_t words, bool zap = true);)
@@ -180,8 +183,6 @@ class CollectedHeap : public CHeapObj<mtGC> {
   virtual void trace_heap(GCWhen::Type when, const GCTracer* tracer);
 
   // Verification functions
-  virtual void check_for_non_bad_heap_word_value(HeapWord* addr, size_t size)
-    PRODUCT_RETURN;
   debug_only(static void check_for_valid_allocation_state();)
 
  public:
@@ -314,7 +315,7 @@ class CollectedHeap : public CHeapObj<mtGC> {
   }
 
   static size_t lab_alignment_reserve() {
-    assert(_lab_alignment_reserve != ~(size_t)0, "uninitialized");
+    assert(_lab_alignment_reserve != SIZE_MAX, "uninitialized");
     return _lab_alignment_reserve;
   }
 
@@ -329,7 +330,7 @@ class CollectedHeap : public CHeapObj<mtGC> {
   // super::ensure_parsability so that the non-generational
   // part of the work gets done. See implementation of
   // CollectedHeap::ensure_parsability and, for instance,
-  // that of GenCollectedHeap::ensure_parsability().
+  // that of ParallelScavengeHeap::ensure_parsability().
   // The argument "retire_tlabs" controls whether existing TLABs
   // are merely filled or also retired, thus preventing further
   // allocation from them and necessitating allocation of new TLABs.
@@ -512,9 +513,6 @@ class CollectedHeap : public CHeapObj<mtGC> {
   // These functions are potentially safepointing.
   virtual void pin_object(JavaThread* thread, oop obj) = 0;
   virtual void unpin_object(JavaThread* thread, oop obj) = 0;
-
-  // Is the given object inside a CDS archive area?
-  virtual bool is_archived_object(oop object) const;
 
   // Support for loading objects from CDS archive into the heap
   // (usually as a snapshot of the old generation).

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2018 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -39,7 +39,8 @@
     format_width       =  0
 #else
     // Except narrow oops in 64-bits VM.
-    format_width       =  1
+    // Must be at least 2 for ZGC GC barrier patching.
+    format_width       =  2
 #endif
   };
 

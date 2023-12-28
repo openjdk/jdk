@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -106,7 +106,7 @@ public class FigureConnection implements Connection {
         builder.append(" → ");
         builder.append(getInputSlot().getFigure().getProperties().resolveString(shortNodeText));
         builder.append(" [")
-               .append(getInputSlot().getPosition())
+               .append(getInputSlot().getOriginalIndex())
                .append("]");
         return builder.toString();
     }
@@ -154,6 +154,18 @@ public class FigureConnection implements Connection {
     @Override
     public boolean hasSlots() {
         return true;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (!(o instanceof FigureConnection)) {
+            return false;
+        }
+
+        return getInputSlot().getFigure().equals(((FigureConnection)o).getInputSlot().getFigure())
+                && getOutputSlot().getFigure().equals(((FigureConnection)o).getOutputSlot().getFigure())
+                && getInputSlot().getPosition() == ((FigureConnection)o).getInputSlot().getPosition()
+                && getOutputSlot().getPosition() == ((FigureConnection) o).getOutputSlot().getPosition();
     }
 
 }

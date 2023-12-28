@@ -37,126 +37,84 @@
 import javax.net.ssl.*;
 import java.io.*;
 import java.net.*;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
-public class SocketExceptionForSocketIssues implements SSLContextTemplate {
+public class SocketExceptionForSocketIssues extends SSLSocketTemplate {
+
+    private final CountDownLatch waitForClient = new CountDownLatch(1);
 
     public static void main(String[] args) throws Exception {
-        System.err.println("===================================");
-        new SocketExceptionForSocketIssues().test();
+        System.out.println("===================================");
+        new SocketExceptionForSocketIssues().run();
     }
 
-    private void test() throws Exception {
-        SSLServerSocket listenSocket = null;
-        SSLSocket serverSocket = null;
-        ClientSocket clientSocket = null;
+    @Override
+    protected void configureServerSocket(SSLServerSocket socket) {
+        socket.setNeedClientAuth(false);
+        socket.setEnableSessionCreation(true);
+        socket.setUseClientMode(false);
+    }
+
+    @Override
+    protected void runServerApplication(SSLSocket socket) throws Exception {
         try {
-            SSLServerSocketFactory serversocketfactory =
-                    createServerSSLContext().getServerSocketFactory();
-            listenSocket =
-                    (SSLServerSocket)serversocketfactory.createServerSocket(0);
-            listenSocket.setNeedClientAuth(false);
-            listenSocket.setEnableSessionCreation(true);
-            listenSocket.setUseClientMode(false);
-
-            System.err.println("Starting client");
-            clientSocket = new ClientSocket(listenSocket.getLocalPort());
-            clientSocket.start();
-
-            System.err.println("Accepting client requests");
-            serverSocket = (SSLSocket)listenSocket.accept();
-
-            if (!clientSocket.isDone) {
-                System.err.println("Waiting 3 seconds for client ");
-                Thread.sleep(3000);
+            if (!waitForClient.await(5, TimeUnit.SECONDS)) {
+                throw new RuntimeException("Client didn't complete within 5 seconds.");
             }
 
-            System.err.println("Sending data to client ...");
+            System.out.println("Sending data to client ...");
             String serverData = "Hi, I am server";
             BufferedWriter os = new BufferedWriter(
-                    new OutputStreamWriter(serverSocket.getOutputStream()));
+                    new OutputStreamWriter(socket.getOutputStream()));
             os.write(serverData, 0, serverData.length());
             os.newLine();
             os.flush();
-        } catch (SSLProtocolException | SSLHandshakeException sslhe) {
-            throw sslhe;
+            throw new RuntimeException("The expected SocketException was not thrown.");
         } catch (SocketException se) {
             // the expected exception, ignore it
-            System.err.println("server exception: " + se);
-        } finally {
-            if (listenSocket != null) {
-                listenSocket.close();
-            }
-
-            if (serverSocket != null) {
-                serverSocket.close();
-            }
-        }
-
-        if (clientSocket != null && clientSocket.clientException != null) {
-            throw clientSocket.clientException;
+            System.out.println("Caught expected SocketException: " + se);
         }
     }
 
-
-
-    private class ClientSocket extends Thread{
-        boolean isDone = false;
-        int serverPort = 0;
-        Exception clientException;
-
-        public ClientSocket(int serverPort) {
-            this.serverPort = serverPort;
+    @Override
+    protected void configureClientSocket(SSLSocket socket) {
+        try {
+            socket.setSoLinger(true, 3);
+            socket.setSoTimeout(100);
+        } catch (SocketException exc) {
+            throw new RuntimeException("Could not configure client socket.", exc);
         }
+    }
 
-        @Override
-        public void run() {
-            SSLSocket clientSocket = null;
+    @Override
+    protected void runClientApplication(SSLSocket socket) throws Exception {
+        try {
             String clientData = "Hi, I am client";
-            try {
-                System.err.println(
-                        "Connecting to server at port " + serverPort);
-                SSLSocketFactory sslSocketFactory =
-                        createClientSSLContext().getSocketFactory();
-                clientSocket = (SSLSocket)sslSocketFactory.createSocket(
-                        InetAddress.getLocalHost(), serverPort);
-                clientSocket.setSoLinger(true, 3);
-                clientSocket.setSoTimeout(100);
+            BufferedWriter os = new BufferedWriter(
+                    new OutputStreamWriter(socket.getOutputStream()));
+            os.write(clientData, 0, clientData.length());
+            os.newLine();
+            os.flush();
 
+            System.out.println("Reading data from server");
+            BufferedReader is = new BufferedReader(
+                    new InputStreamReader(socket.getInputStream()));
+            String data = is.readLine();
+            System.out.println("Received Data from server: " + data);
 
-                System.err.println("Sending data to server ...");
+            throw new RuntimeException("The expected client exception was not thrown.");
 
-                BufferedWriter os = new BufferedWriter(
-                        new OutputStreamWriter(clientSocket.getOutputStream()));
-                os.write(clientData, 0, clientData.length());
-                os.newLine();
-                os.flush();
+        } catch (SSLProtocolException | SSLHandshakeException sslhe) {
+            System.err.println("Client had unexpected SSL exception: " + sslhe);
+            throw sslhe;
 
-                System.err.println("Reading data from server");
-                BufferedReader is = new BufferedReader(
-                        new InputStreamReader(clientSocket.getInputStream()));
-                String data = is.readLine();
-                System.err.println("Received Data from server: " + data);
-            } catch (SSLProtocolException | SSLHandshakeException sslhe) {
-                clientException = sslhe;
-                System.err.println("unexpected client exception: " + sslhe);
-            } catch (SSLException | SocketTimeoutException ssle) {
-                // the expected exception, ignore it
-                System.err.println("expected client exception: " + ssle);
-            } catch (Exception e) {
-                clientException = e;
-                System.err.println("unexpected client exception: " + e);
-            } finally {
-                if (clientSocket != null) {
-                    try {
-                        clientSocket.close();
-                        System.err.println("client socket closed");
-                    } catch (IOException ioe) {
-                        clientException = ioe;
-                    }
-                }
+        } catch (SSLException | SocketTimeoutException ssle) {
+            // the expected exception, ignore it
+            System.out.println("Caught expected client exception: " + ssle);
 
-                isDone = true;
-            }
+        } finally {
+            waitForClient.countDown();
         }
     }
 }

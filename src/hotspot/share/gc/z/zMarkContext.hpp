@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,8 +34,9 @@ class ZMarkThreadLocalStacks;
 class ZMarkContext : public StackObj {
 private:
   ZMarkCache                    _cache;
-  ZMarkStripe* const            _stripe;
+  ZMarkStripe*                  _stripe;
   ZMarkThreadLocalStacks* const _stacks;
+  size_t                        _nstripes;
   StringDedup::Requests         _string_dedup_requests;
 
 public:
@@ -45,8 +46,12 @@ public:
 
   ZMarkCache* cache();
   ZMarkStripe* stripe();
+  void set_stripe(ZMarkStripe* stripe);
   ZMarkThreadLocalStacks* stacks();
   StringDedup::Requests* string_dedup_requests();
+
+  size_t nstripes();
+  void set_nstripes(size_t nstripes);
 };
 
 #endif // SHARE_GC_Z_ZMARKCONTEXT_HPP

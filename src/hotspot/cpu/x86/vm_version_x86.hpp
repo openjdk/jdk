@@ -633,9 +633,9 @@ public:
 
   static uint cores_per_cpu();
   static uint threads_per_core();
-  static intx L1_line_size();
+  static uint L1_line_size();
 
-  static intx prefetch_data_size()  {
+  static uint prefetch_data_size()  {
     return L1_line_size();
   }
 
@@ -643,7 +643,6 @@ public:
   // Feature identification
   //
   static bool supports_cpuid()        { return _features  != 0; }
-  static bool supports_cmpxchg8()     { return (_features & CPU_CX8) != 0; }
   static bool supports_cmov()         { return (_features & CPU_CMOV) != 0; }
   static bool supports_fxsr()         { return (_features & CPU_FXSR) != 0; }
   static bool supports_ht()           { return (_features & CPU_HT) != 0; }
@@ -711,6 +710,13 @@ public:
   static bool is_intel_skylake() { return is_intel_family_core() &&
                                           extended_cpu_model() == CPU_MODEL_SKYLAKE; }
 
+#ifdef COMPILER2
+  // Determine if it's running on Cascade Lake using default options.
+  static bool is_default_intel_cascade_lake();
+#endif
+
+  static bool is_intel_cascade_lake();
+
   static int avx3_threshold();
 
   static bool is_intel_tsc_synched_at_init();
@@ -743,7 +749,7 @@ public:
 
   static bool supports_compare_and_exchange() { return true; }
 
-  static intx allocate_prefetch_distance(bool use_watermark_prefetch);
+  static int allocate_prefetch_distance(bool use_watermark_prefetch);
 
   // SSE2 and later processors implement a 'pause' instruction
   // that can be used for efficient implementation of
@@ -763,6 +769,9 @@ public:
   static bool supports_float16() {
     return supports_f16c() || supports_avx512vl();
   }
+
+  // Check intrinsic support
+  static bool is_intrinsic_supported(vmIntrinsicID id);
 
   // there are several insns to force cache line sync to memory which
   // we can use to ensure mapped non-volatile memory is up to date with

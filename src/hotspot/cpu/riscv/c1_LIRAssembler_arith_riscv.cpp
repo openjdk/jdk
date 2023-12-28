@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -61,7 +61,7 @@ void LIR_Assembler::arithmetic_idiv(LIR_Code code, LIR_Opr left, LIR_Opr right, 
         __ sraiw(t0, lreg, 0x1f);
         __ srliw(t0, t0, BitsPerInt - shift);
         __ addw(t1, lreg, t0);
-        if (is_imm_in_range(c - 1, 12, 0)) {
+        if (Assembler::is_simm12(c - 1)) {
           __ andi(t1, t1, c - 1);
         } else {
           __ zero_extend(t1, t1, shift);
@@ -75,7 +75,7 @@ void LIR_Assembler::arithmetic_idiv(LIR_Code code, LIR_Opr left, LIR_Opr right, 
       } else {
         unsigned int shift = exact_log2(c);
         __ sraiw(t0, lreg, 0x1f);
-        if (is_imm_in_range(c - 1, 12, 0)) {
+        if (Assembler::is_simm12(c - 1)) {
           __ andi(t0, t0, c - 1);
         } else {
           __ zero_extend(t0, t0, shift);
@@ -86,7 +86,7 @@ void LIR_Assembler::arithmetic_idiv(LIR_Code code, LIR_Opr left, LIR_Opr right, 
     }
   } else {
     Register rreg = right->as_register();
-    __ corrected_idivl(dreg, lreg, rreg, is_irem);
+    __ corrected_idivl(dreg, lreg, rreg, is_irem, /* is_signed */ true);
   }
 }
 
@@ -172,8 +172,12 @@ void LIR_Assembler::arith_op_double_cpu(LIR_Code code, LIR_Opr left, LIR_Opr rig
       case lir_add: __ add(dest->as_register_lo(), lreg_lo, rreg_lo); break;
       case lir_sub: __ sub(dest->as_register_lo(), lreg_lo, rreg_lo); break;
       case lir_mul: __ mul(dest->as_register_lo(), lreg_lo, rreg_lo); break;
-      case lir_div: __ corrected_idivq(dest->as_register_lo(), lreg_lo, rreg_lo, false); break;
-      case lir_rem: __ corrected_idivq(dest->as_register_lo(), lreg_lo, rreg_lo, true); break;
+      case lir_div: __ corrected_idivq(dest->as_register_lo(), lreg_lo, rreg_lo,
+                                       /* want_remainder */ false, /* is_signed */ true);
+                    break;
+      case lir_rem: __ corrected_idivq(dest->as_register_lo(), lreg_lo, rreg_lo,
+                                       /* want_remainder */ true, /* is_signed */ true);
+                    break;
       default:
         ShouldNotReachHere();
     }
@@ -198,7 +202,7 @@ void LIR_Assembler::arith_op_double_cpu(LIR_Code code, LIR_Opr left, LIR_Opr rig
           unsigned int shift = exact_log2_long(c);
           // use t0 as intermediate result register
           __ srai(t0, lreg_lo, 0x3f);
-          if (is_imm_in_range(c - 1, 12, 0)) {
+          if (Assembler::is_simm12(c - 1)) {
             __ andi(t0, t0, c - 1);
           } else {
             __ zero_extend(t0, t0, shift);
@@ -217,7 +221,7 @@ void LIR_Assembler::arith_op_double_cpu(LIR_Code code, LIR_Opr left, LIR_Opr rig
           __ srai(t0, lreg_lo, 0x3f);
           __ srli(t0, t0, BitsPerLong - shift);
           __ add(t1, lreg_lo, t0);
-          if (is_imm_in_range(c - 1, 12, 0)) {
+          if (Assembler::is_simm12(c - 1)) {
             __ andi(t1, t1, c - 1);
           } else {
             __ zero_extend(t1, t1, shift);
@@ -263,7 +267,7 @@ void LIR_Assembler::arith_op_double_fpu(LIR_Code code, LIR_Opr left, LIR_Opr rig
 
 void LIR_Assembler::arith_op(LIR_Code code, LIR_Opr left, LIR_Opr right, LIR_Opr dest,
                              CodeEmitInfo* info, bool pop_fpu_stack) {
-  assert(info == NULL, "should never be used, idiv/irem and ldiv/lrem not handled by this method");
+  assert(info == nullptr, "should never be used, idiv/irem and ldiv/lrem not handled by this method");
 
   if (left->is_single_cpu()) {
     arith_op_single_cpu(code, left, right, dest);

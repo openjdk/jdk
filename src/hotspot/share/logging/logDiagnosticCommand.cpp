@@ -45,17 +45,6 @@ LogDiagnosticCommand::LogDiagnosticCommand(outputStream* output, bool heap_alloc
   _dcmdparser.add_dcmd_option(&_rotate);
 }
 
-int LogDiagnosticCommand::num_arguments() {
-  ResourceMark rm;
-  LogDiagnosticCommand* dcmd = new LogDiagnosticCommand(nullptr, false);
-  if (dcmd != nullptr) {
-    DCmdMark mark(dcmd);
-    return dcmd->_dcmdparser.num_arguments();
-  } else {
-    return 0;
-  }
-}
-
 void LogDiagnosticCommand::registerCommand() {
   uint32_t full_visibility = DCmd_Source_Internal | DCmd_Source_AttachAPI | DCmd_Source_MBean;
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<LogDiagnosticCommand>(full_visibility, true, false));

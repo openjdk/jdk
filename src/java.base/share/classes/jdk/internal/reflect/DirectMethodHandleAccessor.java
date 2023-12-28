@@ -174,12 +174,8 @@ class DirectMethodHandleAccessor extends MethodAccessorImpl {
             // caller-sensitive method is invoked through a per-caller invoker while
             // the target MH is always spreading the args
             var invoker = JLIA.reflectiveInvoker(caller);
-            try {
-                // invoke the target method handle via an invoker
-                return invoker.invokeExact(target, obj, args);
-            } catch (IllegalArgumentException e) {
-                throw new InvocationTargetException(e);
-            }
+            // invoke the target method handle via an invoker
+            return invoker.invokeExact(target, obj, args);
         }
     }
 
@@ -198,7 +194,8 @@ class DirectMethodHandleAccessor extends MethodAccessorImpl {
     private void checkReceiver(Object o) {
         // NOTE: will throw NullPointerException, as specified, if o is null
         if (!declaringClass.isAssignableFrom(o.getClass())) {
-            throw new IllegalArgumentException("object is not an instance of declaring class");
+            throw new IllegalArgumentException("object of type " + o.getClass().getName()
+                    + " is not an instance of " + declaringClass.getName());
         }
     }
 

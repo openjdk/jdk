@@ -104,4 +104,9 @@ inline CodeBlob* frame::get_cb() const {
   return _cb;
 }
 
+inline int frame::interpreter_frame_monitor_size_in_bytes() {
+  // Number of bytes for a monitor.
+  return frame::interpreter_frame_monitor_size() * wordSize;
+}
+
 #endif // SHARE_RUNTIME_FRAME_INLINE_HPP

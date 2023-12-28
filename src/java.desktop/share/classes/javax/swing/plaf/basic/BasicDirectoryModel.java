@@ -360,12 +360,15 @@ public class BasicDirectoryModel extends AbstractListModel<Object> implements Pr
                                 break;
                             }
                         }
-                        if (start >= 0 && end > start
-                            && newFileCache.subList(end, newSize).equals(fileCache.subList(start, oldSize))) {
-                            if (loadThread.isInterrupted()) {
-                                return null;
+
+                        if (start >= 0 && end > start) {
+                            List<File> listStart_OldSize = new Vector<>(fileCache.subList(start, oldSize));
+                            if (newFileCache.subList(end, newSize).equals(listStart_OldSize)) {
+                                if (loadThread.isInterrupted()) {
+                                    return null;
+                                }
+                                return new DoChangeContents(newFileCache.subList(start, end), start, null, 0, fid);
                             }
-                            return new DoChangeContents(newFileCache.subList(start, end), start, null, 0, fid);
                         }
                     } else if (newSize < oldSize) {
                         //see if interval is removed
@@ -378,12 +381,15 @@ public class BasicDirectoryModel extends AbstractListModel<Object> implements Pr
                                 break;
                             }
                         }
-                        if (start >= 0 && end > start
-                            && fileCache.subList(end, oldSize).equals(newFileCache.subList(start, newSize))) {
-                            if (loadThread.isInterrupted()) {
-                                return null;
+
+                        if (start >= 0 && end > start) {
+                            List<File> listEnd_OldSize = new Vector<>(fileCache.subList(end, oldSize));
+                            if (listEnd_OldSize.equals(newFileCache.subList(start, newSize))) {
+                                if (loadThread.isInterrupted()) {
+                                    return null;
+                                }
+                                return new DoChangeContents(null, 0, new Vector<>(fileCache.subList(start, end)), start, fid);
                             }
-                            return new DoChangeContents(null, 0, new Vector<>(fileCache.subList(start, end)), start, fid);
                         }
                     }
                     if (!fileCache.equals(newFileCache)) {

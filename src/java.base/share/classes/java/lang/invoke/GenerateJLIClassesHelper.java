@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,7 @@ import static java.lang.invoke.LambdaForm.Kind.*;
  * generate classes ahead of time.
  */
 class GenerateJLIClassesHelper {
-    // Map from DirectMethodHandle method type name to index to LambdForms
+    // Map from DirectMethodHandle method type name to index to LambdaForms
     static final Map<String, Integer> DMH_METHOD_TYPE_MAP =
             Map.of(
                     DIRECT_INVOKE_VIRTUAL.methodName,     LF_INVVIRTUAL,

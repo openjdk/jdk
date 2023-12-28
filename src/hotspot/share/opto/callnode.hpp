@@ -505,25 +505,22 @@ public:
 //------------------------------SafePointScalarObjectNode----------------------
 // A SafePointScalarObjectNode represents the state of a scalarized object
 // at a safepoint.
-
 class SafePointScalarObjectNode: public TypeNode {
-  uint _first_index; // First input edge relative index of a SafePoint node where
-                     // states of the scalarized object fields are collected.
-                     // It is relative to the last (youngest) jvms->_scloff.
-  uint _n_fields;    // Number of non-static fields of the scalarized object.
-  DEBUG_ONLY(Node* _alloc;)
+  uint _first_index;              // First input edge relative index of a SafePoint node where
+                                  // states of the scalarized object fields are collected.
+                                  // It is relative to the last (youngest) jvms->_scloff.
+  uint _n_fields;                 // Number of non-static fields of the scalarized object.
 
-  virtual uint hash() const ; // { return NO_HASH; }
+  Node* _alloc;                   // Just for debugging purposes.
+
+  virtual uint hash() const;
   virtual bool cmp( const Node &n ) const;
 
   uint first_index() const { return _first_index; }
 
 public:
-  SafePointScalarObjectNode(const TypeOopPtr* tp,
-#ifdef ASSERT
-                            Node* alloc,
-#endif
-                            uint first_index, uint n_fields);
+  SafePointScalarObjectNode(const TypeOopPtr* tp, Node* alloc, uint first_index, uint n_fields);
+
   virtual int Opcode() const;
   virtual uint           ideal_reg() const;
   virtual const RegMask &in_RegMask(uint) const;
@@ -556,6 +553,92 @@ public:
 #endif
 };
 
+//------------------------------SafePointScalarMergeNode----------------------
+//
+// This class represents an allocation merge that is used as debug information
+// and had at least one of its input scalar replaced.
+//
+// The required inputs of this node, except the control, are pointers to
+// SafePointScalarObjectNodes that describe scalarized inputs of the original
+// allocation merge. The other(s) properties of the class are described below.
+//
+// _merge_pointer_idx : index in the SafePointNode's input array where the
+//   description of the _allocation merge_ starts. The index is zero based and
+//   relative to the SafePoint's scloff. The two entries in the SafePointNode's
+//   input array starting at '_merge_pointer_idx` are Phi nodes representing:
+//
+//   1) The original merge Phi. During rematerialization this input will only be
+//   used if the "selector Phi" (see below) indicates that the execution of the
+//   Phi took the path of a non scalarized input.
+//
+//   2) A "selector Phi". The output of this Phi will be '-1' if the execution
+//   of the method exercised a non scalarized input of the original Phi.
+//   Otherwise, the output will be >=0, and it will indicate the index-1 in the
+//   SafePointScalarMergeNode input array where the description of the
+//   scalarized object that should be used is.
+//
+// As an example, consider a Phi merging 3 inputs, of which the last 2 are
+// scalar replaceable.
+//
+//    Phi(Region, NSR, SR, SR)
+//
+// During scalar replacement the SR inputs will be changed to null:
+//
+//    Phi(Region, NSR, nullptr, nullptr)
+//
+// A corresponding selector Phi will be created with a configuration like this:
+//
+//    Phi(Region, -1, 0, 1)
+//
+// During execution of the compiled method, if the execution reaches a Trap, the
+// output of the selector Phi will tell if we need to rematerialize one of the
+// scalar replaced inputs or if we should just use the pointer returned by the
+// original Phi.
+
+class SafePointScalarMergeNode: public TypeNode {
+  int _merge_pointer_idx;         // This is the first input edge relative
+                                  // index of a SafePoint node where metadata information relative
+                                  // to restoring the merge is stored. The corresponding input
+                                  // in the associated SafePoint will point to a Phi representing
+                                  // potential non-scalar replaced objects.
+
+  virtual uint hash() const;
+  virtual bool cmp( const Node &n ) const;
+
+public:
+  SafePointScalarMergeNode(const TypeOopPtr* tp, int merge_pointer_idx);
+
+  virtual int            Opcode() const;
+  virtual uint           ideal_reg() const;
+  virtual const RegMask &in_RegMask(uint) const;
+  virtual const RegMask &out_RegMask() const;
+  virtual uint           match_edge(uint idx) const;
+
+  virtual uint size_of() const { return sizeof(*this); }
+
+  int merge_pointer_idx(JVMState* jvms) const {
+    assert(jvms != nullptr, "JVMS reference is null.");
+    return jvms->scloff() + _merge_pointer_idx;
+  }
+
+  int selector_idx(JVMState* jvms) const {
+    assert(jvms != nullptr, "JVMS reference is null.");
+    return jvms->scloff() + _merge_pointer_idx + 1;
+  }
+
+  // Assumes that "this" is an argument to a safepoint node "s", and that
+  // "new_call" is being created to correspond to "s".  But the difference
+  // between the start index of the jvmstates of "new_call" and "s" is
+  // "jvms_adj".  Produce and return a SafePointScalarObjectNode that
+  // corresponds appropriately to "this" in "new_call".  Assumes that
+  // "sosn_map" is a map, specific to the translation of "s" to "new_call",
+  // mapping old SafePointScalarObjectNodes to new, to avoid multiple copies.
+  SafePointScalarMergeNode* clone(Dict* sosn_map, bool& new_node) const;
+
+#ifndef PRODUCT
+  virtual void              dump_spec(outputStream *st) const;
+#endif
+};
 
 // Simple container for the outgoing projections of a call.  Useful
 // for serious surgery on calls.
@@ -581,7 +664,7 @@ class CallNode : public SafePointNode {
   friend class VMStructs;
 
 protected:
-  bool may_modify_arraycopy_helper(const TypeOopPtr* dest_t, const TypeOopPtr* t_oop, PhaseTransform* phase);
+  bool may_modify_arraycopy_helper(const TypeOopPtr* dest_t, const TypeOopPtr* t_oop, PhaseValues* phase);
 
 public:
   const TypeFunc* _tf;          // Function type
@@ -602,8 +685,8 @@ public:
   }
 
   const TypeFunc* tf()         const { return _tf; }
-  const address  entry_point() const { return _entry_point; }
-  const float    cnt()         const { return _cnt; }
+  address  entry_point()       const { return _entry_point; }
+  float    cnt()               const { return _cnt; }
   CallGenerator* generator()   const { return _generator; }
 
   void set_tf(const TypeFunc* tf)       { _tf = tf; }
@@ -629,7 +712,7 @@ public:
   virtual bool needs_deep_clone_jvms(Compile* C) { return C->needs_deep_clone_jvms(); }
 
   // Returns true if the call may modify n
-  virtual bool        may_modify(const TypeOopPtr* t_oop, PhaseTransform* phase);
+  virtual bool        may_modify(const TypeOopPtr* t_oop, PhaseValues* phase);
   // Does this node have a use of n other than in debug information?
   bool                has_non_debug_use(Node* n);
   // Returns the unique CheckCastPP of a call
@@ -735,6 +818,7 @@ public:
 
   // If this is an uncommon trap, return the request code, else zero.
   int uncommon_trap_request() const;
+  bool is_uncommon_trap() const;
   static int extract_uncommon_trap_request(const Node* call);
 
   bool is_boxing_method() const {
@@ -913,7 +997,7 @@ public:
   virtual bool        guaranteed_safepoint()  { return false; }
 
   // allocations do not modify their arguments
-  virtual bool        may_modify(const TypeOopPtr *t_oop, PhaseTransform *phase) { return false;}
+  virtual bool        may_modify(const TypeOopPtr* t_oop, PhaseValues* phase) { return false;}
 
   // Pattern-match a possible usage of AllocateNode.
   // Return null if no allocation is recognized.
@@ -922,17 +1006,17 @@ public:
   // (Note:  This function is defined in file graphKit.cpp, near
   // GraphKit::new_instance/new_array, whose output it recognizes.)
   // The 'ptr' may not have an offset unless the 'offset' argument is given.
-  static AllocateNode* Ideal_allocation(Node* ptr, PhaseTransform* phase);
+  static AllocateNode* Ideal_allocation(Node* ptr);
 
   // Fancy version which uses AddPNode::Ideal_base_and_offset to strip
   // an offset, which is reported back to the caller.
   // (Note:  AllocateNode::Ideal_allocation is defined in graphKit.cpp.)
-  static AllocateNode* Ideal_allocation(Node* ptr, PhaseTransform* phase,
+  static AllocateNode* Ideal_allocation(Node* ptr, PhaseValues* phase,
                                         intptr_t& offset);
 
   // Dig the klass operand out of a (possible) allocation site.
-  static Node* Ideal_klass(Node* ptr, PhaseTransform* phase) {
-    AllocateNode* allo = Ideal_allocation(ptr, phase);
+  static Node* Ideal_klass(Node* ptr, PhaseValues* phase) {
+    AllocateNode* allo = Ideal_allocation(ptr);
     return (allo == nullptr) ? nullptr : allo->in(KlassNode);
   }
 
@@ -997,12 +1081,12 @@ public:
 
   // Dig the length operand out of a array allocation site and narrow the
   // type with a CastII, if necesssary
-  Node* make_ideal_length(const TypeOopPtr* ary_type, PhaseTransform *phase, bool can_create = true);
+  Node* make_ideal_length(const TypeOopPtr* ary_type, PhaseValues* phase, bool can_create = true);
 
   // Pattern-match a possible usage of AllocateArrayNode.
   // Return null if no allocation is recognized.
-  static AllocateArrayNode* Ideal_array_allocation(Node* ptr, PhaseTransform* phase) {
-    AllocateNode* allo = Ideal_allocation(ptr, phase);
+  static AllocateArrayNode* Ideal_array_allocation(Node* ptr) {
+    AllocateNode* allo = Ideal_allocation(ptr);
     return (allo == nullptr || !allo->is_AllocateArray())
            ? nullptr : allo->as_AllocateArray();
   }
@@ -1071,7 +1155,7 @@ public:
   void set_nested()      { _kind = Nested; set_eliminated_lock_counter(); }
 
   // locking does not modify its arguments
-  virtual bool may_modify(const TypeOopPtr *t_oop, PhaseTransform *phase){ return false;}
+  virtual bool may_modify(const TypeOopPtr* t_oop, PhaseValues* phase){ return false; }
 
 #ifndef PRODUCT
   void create_lock_counter(JVMState* s);

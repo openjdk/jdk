@@ -82,7 +82,7 @@ AC_DEFUN_ONCE([LIB_DETERMINE_DEPENDENCIES],
   fi
 
   # Check if ffi is needed
-  if HOTSPOT_CHECK_JVM_VARIANT(zero); then
+  if HOTSPOT_CHECK_JVM_VARIANT(zero) || test "x$ENABLE_FALLBACK_LINKER" = "xtrue"; then
     NEEDS_LIB_FFI=true
   else
     NEEDS_LIB_FFI=false
@@ -107,12 +107,6 @@ AC_DEFUN([LIB_SETUP_JVM_LIBS],
          test "x$OPENJDK_$1_CPU" = xriscv32); then
       BASIC_JVM_LIBS_$1="$BASIC_JVM_LIBS_$1 -latomic"
     fi
-  fi
-
-  # Because RISC-V only has word-sized atomics, it requires libatomic where
-  # other common architectures do not, so link libatomic by default.
-  if test "x$OPENJDK_$1_OS" = xlinux && test "x$OPENJDK_$1_CPU" = xriscv64; then
-    BASIC_JVM_LIBS_$1="$BASIC_JVM_LIBS_$1 -latomic"
   fi
 ])
 

@@ -32,7 +32,6 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.Text;
 import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
-import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 
 import javax.lang.model.element.Element;
@@ -63,7 +62,7 @@ import static javax.lang.model.element.Modifier.SYNCHRONIZED;
 
 public class Signatures {
 
-    public static Content getModuleSignature(ModuleElement mdle, ModuleWriterImpl moduleWriter) {
+    public static Content getModuleSignature(ModuleElement mdle, ModuleWriter moduleWriter) {
         var signature = HtmlTree.DIV(HtmlStyle.moduleSignature);
         Content annotations = moduleWriter.getAnnotationInfo(mdle, true);
         if (!annotations.isEmpty()) {
@@ -80,7 +79,7 @@ public class Signatures {
         return signature;
     }
 
-    public static Content getPackageSignature(PackageElement pkg, PackageWriterImpl pkgWriter) {
+    public static Content getPackageSignature(PackageElement pkg, PackageWriter pkgWriter) {
         if (pkg.isUnnamed()) {
             return Text.EMPTY;
         }
@@ -135,10 +134,9 @@ public class Signatures {
                 nameSpan.addStyle(HtmlStyle.typeNameLabel).add(className);
             }
             HtmlLinkInfo linkInfo = new HtmlLinkInfo(configuration,
-                    HtmlLinkInfo.Kind.SHOW_TYPE_PARAMS_AND_BOUNDS, typeElement);
-            linkInfo.showTypeParameterAnnotations = true;
-            //Let's not link to ourselves in the signature.
-            linkInfo.linkToSelf = false;
+                    HtmlLinkInfo.Kind.SHOW_TYPE_PARAMS_AND_BOUNDS, typeElement)
+                    .linkToSelf(false)  // Let's not link to ourselves in the signature
+                    .showTypeParameterAnnotations(true);
             nameSpan.add(writer.getTypeParameterLinks(linkInfo));
             content.add(nameSpan);
 

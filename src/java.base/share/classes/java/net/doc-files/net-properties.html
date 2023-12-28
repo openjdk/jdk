@@ -1,6 +1,6 @@
 <!DOCTYPE HTML>
 <!--
- Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
  This code is free software; you can redistribute it and/or modify it
@@ -267,13 +267,22 @@ tuning on how the cache is operating.</P>
 	policy, while a value of 0 (zero) means no caching. The default value
 	is -1 (forever) if a security manager is installed, and implementation-specific
 	when no security manager is installed.</P>
+	<LI><P><B>{@systemProperty networkaddress.cache.stale.ttl}</B> (default: see below)<BR>
+	Value is an integer corresponding to the number of seconds that stale names
+	will be kept in the cache. A name is considered stale if the TTL has expired
+	and an attempt to lookup the host name again was not successful. This
+	property is useful if it is preferable to use a stale name rather than
+	fail due to an unsuccessful lookup.
+	A value of 0 (zero) or if the property is not set means do not use stale
+	names. Negative values are ignored.
+	The default value is implementation-specific.</P>
 	<LI><P><B>{@systemProperty networkaddress.cache.negative.ttl}</B> (default: {@code 10})<BR>
 	Value is an integer corresponding to the number of seconds an
 	unsuccessful name lookup will be kept in the cache. A value of -1,
 	or any negative value, means &ldquo;cache forever&rdquo;, while a
 	value of 0 (zero) means no caching.</P>
 </UL>
-<P>Since these 2 properties are part of the security policy, they are
+<P>Since these 3 properties are part of the security policy, they are
 not set by either the -D option or the {@code System.setProperty()} API,
 instead they are set as security properties.</P>
 <a id="Unixdomain"></a>

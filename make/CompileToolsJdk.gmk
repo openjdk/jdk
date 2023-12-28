@@ -57,7 +57,9 @@ $(eval $(call SetupJavaCompilation, BUILD_TOOLS_JDK, \
     JAVAC_FLAGS := \
         --add-exports java.desktop/sun.awt=ALL-UNNAMED \
         --add-exports java.base/sun.text=ALL-UNNAMED \
-        --add-exports java.base/sun.security.util=ALL-UNNAMED, \
+        --add-exports java.base/sun.security.util=ALL-UNNAMED \
+        --add-exports jdk.internal.opt/jdk.internal.opt=jdk.compiler.interim \
+        --add-exports jdk.internal.opt/jdk.internal.opt=jdk.javadoc.interim, \
 ))
 
 TARGETS += $(BUILD_TOOLS_JDK)
@@ -90,7 +92,9 @@ $(eval $(call SetupJavaCompilation, COMPILE_DEPEND, \
         --add-exports jdk.compiler/com.sun.tools.javac.comp=ALL-UNNAMED \
         --add-exports jdk.compiler/com.sun.tools.javac.main=ALL-UNNAMED \
         --add-exports jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED \
-        --add-exports jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED, \
+        --add-exports jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED \
+        --add-exports jdk.internal.opt/jdk.internal.opt=jdk.compiler.interim \
+        --add-exports jdk.internal.opt/jdk.internal.opt=jdk.javadoc.interim, \
 ))
 
 DEPEND_SERVICE_PROVIDER := $(BUILDTOOLS_OUTPUTDIR)/depend/META-INF/services/com.sun.source.util.Plugin

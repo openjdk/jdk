@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -257,14 +257,6 @@ final class ForwardBuilder extends Builder {
             caSelector.setSubject(currentState.issuerDN);
 
             /*
-             * Match on subjectNamesTraversed (both DNs and AltNames)
-             * (checks that current cert's name constraints permit it
-             * to certify all the DNs and AltNames that have been traversed)
-             */
-            CertPathHelper.setPathToNames
-                (caSelector, currentState.subjectNamesTraversed);
-
-            /*
              * check the validity period
              */
             caSelector.setValidityPeriod(currentState.cert.getNotBefore(),
@@ -287,15 +279,13 @@ final class ForwardBuilder extends Builder {
                     debug.println("ForwardBuilder.getMatchingCACerts: " +
                         "found matching trust anchor." +
                         "\n  SN: " +
-                            Debug.toHexString(trustedCert.getSerialNumber()) +
+                            Debug.toString(trustedCert.getSerialNumber()) +
                         "\n  Subject: " +
                             trustedCert.getSubjectX500Principal() +
                         "\n  Issuer: " +
                             trustedCert.getIssuerX500Principal());
                 }
-                if (caCerts.add(trustedCert) && !searchAllCertStores) {
-                    return;
-                }
+                caCerts.add(trustedCert);
             }
         }
 
@@ -668,8 +658,7 @@ final class ForwardBuilder extends Builder {
      * only be executed in a reverse direction are deferred until the
      * complete path has been built.
      *
-     * Trust anchor certs are not validated, but are used to verify the
-     * signature and revocation status of the previous cert.
+     * Trust anchor certs are not validated.
      *
      * If the last certificate is being verified (the one whose subject
      * matches the target subject) then steps in 6.1.4 of the PKIX
@@ -689,7 +678,7 @@ final class ForwardBuilder extends Builder {
     {
         if (debug != null) {
             debug.println("ForwardBuilder.verifyCert(SN: "
-                + Debug.toHexString(cert.getSerialNumber())
+                + Debug.toString(cert.getSerialNumber())
                 + "\n  Issuer: " + cert.getIssuerX500Principal() + ")"
                 + "\n  Subject: " + cert.getSubjectX500Principal() + ")");
         }
@@ -698,21 +687,6 @@ final class ForwardBuilder extends Builder {
 
         // Don't bother to verify untrusted certificate more.
         currState.untrustedChecker.check(cert, Collections.emptySet());
-
-        /*
-         * check for looping - abort a loop if we encounter the same
-         * certificate twice
-         */
-        if (certPathList != null) {
-            for (X509Certificate cpListCert : certPathList) {
-                if (cert.equals(cpListCert)) {
-                    if (debug != null) {
-                        debug.println("loop detected!!");
-                    }
-                    throw new CertPathValidatorException("loop detected");
-                }
-            }
-        }
 
         /* check if trusted cert */
         boolean isTrustedCert = trustedCerts.contains(cert);
@@ -788,22 +762,6 @@ final class ForwardBuilder extends Builder {
              * Check keyUsage extension
              */
             KeyChecker.verifyCAKeyUsage(cert);
-        }
-
-        /*
-         * the following checks are performed even when the cert
-         * is a trusted cert, since we are only extracting the
-         * subjectDN, and publicKey from the cert
-         * in order to verify a previous cert
-         */
-
-        /*
-         * Check signature only if no key requiring key parameters has been
-         * encountered.
-         */
-        if (!currState.keyParamsNeeded()) {
-            (currState.cert).verify(cert.getPublicKey(),
-                                    buildParams.sigProvider());
         }
     }
 

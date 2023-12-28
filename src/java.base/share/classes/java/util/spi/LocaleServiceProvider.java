@@ -120,18 +120,19 @@ import java.util.Locale;
  * property on the java launcher command line. Setting it at runtime with
  * {@link System#setProperty(String, String)} is discouraged and it may not affect
  * the order.
- * <p>
- * Java Runtime Environment provides the following four locale providers:
+ * JDK Reference Implementation provides the following four
+ * locale providers:
  * <ul>
  * <li> "CLDR": A provider based on Unicode Consortium's
  * <a href="http://cldr.unicode.org/">CLDR Project</a>.
  * <li> "COMPAT": represents the locale sensitive services that is compatible
- * with the prior JDK releases up to JDK8 (same as JDK8's "JRE").
+ * with the prior JDK releases up to JDK 8 (same as JDK 8's "JRE"). This
+ * provider is deprecated and will be removed in the future release of JDK.
  * <li> "SPI": represents the locale sensitive services implementing the subclasses of
  * this {@code LocaleServiceProvider} class.
  * <li> "HOST": A provider that reflects the user's custom settings in the
  * underlying operating system. This provider may not be available, depending
- * on the Java Runtime Environment implementation.
+ * on the JDK Reference Implementation.
  * <li> "JRE": represents a synonym to "COMPAT". This name
  * is deprecated and will be removed in the future release of JDK.
  * </ul>

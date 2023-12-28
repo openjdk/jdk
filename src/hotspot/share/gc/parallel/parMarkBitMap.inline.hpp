@@ -118,7 +118,7 @@ inline size_t ParMarkBitMap::obj_size(HeapWord* beg_addr, HeapWord* end_addr) co
 }
 
 inline size_t ParMarkBitMap::obj_size(idx_t beg_bit) const {
-  const idx_t end_bit = _end_bits.get_next_one_offset(beg_bit, size());
+  const idx_t end_bit = _end_bits.find_first_set_bit(beg_bit, size());
   assert(is_marked(beg_bit), "obj not marked");
   assert(end_bit < size(), "end bit missing");
   return obj_size(beg_bit, end_bit);
@@ -165,11 +165,11 @@ inline ParMarkBitMap::idx_t ParMarkBitMap::align_range_end(idx_t range_end) cons
 }
 
 inline ParMarkBitMap::idx_t ParMarkBitMap::find_obj_beg(idx_t beg, idx_t end) const {
-  return _beg_bits.get_next_one_offset_aligned_right(beg, end);
+  return _beg_bits.find_first_set_bit_aligned_right(beg, end);
 }
 
 inline ParMarkBitMap::idx_t ParMarkBitMap::find_obj_end(idx_t beg, idx_t end) const {
-  return _end_bits.get_next_one_offset_aligned_right(beg, end);
+  return _end_bits.find_first_set_bit_aligned_right(beg, end);
 }
 
 inline HeapWord* ParMarkBitMap::find_obj_beg(HeapWord* beg, HeapWord* end) const {

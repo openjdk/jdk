@@ -139,7 +139,7 @@ public class strace015 extends StraceBase {
         for (int i = 1; i < THRD_COUNT; i++) {
             all = traces.get(threads[i]);
             int k = all.length;
-            if (count - k > 2) {
+            if (count - k > 3) {
                 complain("wrong lengths of stack traces:\n\t"
                         + threads[0].getName() + ": " + count
                         + "\t"

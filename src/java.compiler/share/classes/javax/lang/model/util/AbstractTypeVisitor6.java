@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -105,29 +105,30 @@ public abstract class AbstractTypeVisitor6<R, P> implements TypeVisitor<R, P> {
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritDoc TypeVisitor}
      *
      * @implSpec Visits a {@code UnionType} element by calling {@code
      * visitUnknown}.
      *
-     * @param t  {@inheritDoc}
-     * @param p  {@inheritDoc}
+     * @param t  {@inheritDoc TypeVisitor}
+     * @param p  {@inheritDoc TypeVisitor}
      * @return the result of {@code visitUnknown}
      *
      * @since 1.7
      */
+    @Override
     public R visitUnion(UnionType t, P p) {
         return visitUnknown(t, p);
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritDoc TypeVisitor}
      *
      * @implSpec Visits an {@code IntersectionType} element by calling {@code
      * visitUnknown}.
      *
-     * @param t  {@inheritDoc}
-     * @param p  {@inheritDoc}
+     * @param t  {@inheritDoc TypeVisitor}
+     * @param p  {@inheritDoc TypeVisitor}
      * @return the result of {@code visitUnknown}
      *
      * @since 1.8
@@ -138,18 +139,17 @@ public abstract class AbstractTypeVisitor6<R, P> implements TypeVisitor<R, P> {
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritDoc TypeVisitor}
      *
      * @implSpec The default implementation of this method in {@code
      * AbstractTypeVisitor6} will always throw {@code
      * new UnknownTypeException(t, p)}.  This behavior is not required of a
      * subclass.
      *
-     * @param t  {@inheritDoc}
-     * @param p  {@inheritDoc}
+     * @param t  {@inheritDoc TypeVisitor}
+     * @param p  {@inheritDoc TypeVisitor}
      * @return a visitor-specified result
-     * @throws UnknownTypeException
-     *  a visitor implementation may optionally throw this exception
+     * @throws UnknownTypeException {@inheritDoc TypeVisitor}
      */
     @Override
     public R visitUnknown(TypeMirror t, P p) {

@@ -47,10 +47,9 @@ import jdk.internal.misc.InternalLock;
  * operations may be costly, such as FileReaders and InputStreamReaders.  For
  * example,
  *
- * <pre>
- * BufferedReader in
- *   = new BufferedReader(new FileReader("foo.in"));
- * </pre>
+ * {@snippet lang=java :
+ *     BufferedReader in = new BufferedReader(new FileReader("foo.in"));
+ * }
  *
  * will buffer the input from the specified file.  Without buffering, each
  * invocation of read() or readLine() could cause bytes to be read from the

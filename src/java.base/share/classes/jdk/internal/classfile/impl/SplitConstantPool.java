@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,61 +27,39 @@ package jdk.internal.classfile.impl;
 import java.lang.constant.ConstantDesc;
 import java.lang.constant.MethodTypeDesc;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
-import jdk.internal.classfile.Attribute;
-import jdk.internal.classfile.Attributes;
-import jdk.internal.classfile.ClassReader;
-import jdk.internal.classfile.Classfile;
-import jdk.internal.classfile.constantpool.ClassEntry;
-import jdk.internal.classfile.constantpool.ConstantDynamicEntry;
-import jdk.internal.classfile.constantpool.ConstantPoolBuilder;
-import jdk.internal.classfile.constantpool.ConstantPool;
-import jdk.internal.classfile.BootstrapMethodEntry;
-import jdk.internal.classfile.BufWriter;
-import jdk.internal.classfile.attribute.BootstrapMethodsAttribute;
-import jdk.internal.classfile.constantpool.DoubleEntry;
-import jdk.internal.classfile.constantpool.FieldRefEntry;
-import jdk.internal.classfile.constantpool.FloatEntry;
-import jdk.internal.classfile.constantpool.IntegerEntry;
-import jdk.internal.classfile.constantpool.InterfaceMethodRefEntry;
-import jdk.internal.classfile.constantpool.InvokeDynamicEntry;
-import jdk.internal.classfile.constantpool.LoadableConstantEntry;
-import jdk.internal.classfile.constantpool.LongEntry;
-import jdk.internal.classfile.constantpool.MemberRefEntry;
-import jdk.internal.classfile.constantpool.MethodHandleEntry;
-import jdk.internal.classfile.constantpool.MethodRefEntry;
-import jdk.internal.classfile.constantpool.MethodTypeEntry;
-import jdk.internal.classfile.constantpool.ModuleEntry;
-import jdk.internal.classfile.constantpool.NameAndTypeEntry;
-import jdk.internal.classfile.constantpool.PackageEntry;
-import jdk.internal.classfile.constantpool.PoolEntry;
-import jdk.internal.classfile.constantpool.StringEntry;
-import jdk.internal.classfile.constantpool.Utf8Entry;
+import java.lang.classfile.Attribute;
+import java.lang.classfile.Attributes;
+import java.lang.classfile.ClassReader;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.BootstrapMethodEntry;
+import java.lang.classfile.BufWriter;
+import java.lang.classfile.attribute.BootstrapMethodsAttribute;
+import java.lang.classfile.constantpool.*;
 
-import static jdk.internal.classfile.Classfile.TAG_CLASS;
-import static jdk.internal.classfile.Classfile.TAG_CONSTANTDYNAMIC;
-import static jdk.internal.classfile.Classfile.TAG_DOUBLE;
-import static jdk.internal.classfile.Classfile.TAG_FIELDREF;
-import static jdk.internal.classfile.Classfile.TAG_FLOAT;
-import static jdk.internal.classfile.Classfile.TAG_INTEGER;
-import static jdk.internal.classfile.Classfile.TAG_INTERFACEMETHODREF;
-import static jdk.internal.classfile.Classfile.TAG_INVOKEDYNAMIC;
-import static jdk.internal.classfile.Classfile.TAG_LONG;
-import static jdk.internal.classfile.Classfile.TAG_METHODHANDLE;
-import static jdk.internal.classfile.Classfile.TAG_METHODREF;
-import static jdk.internal.classfile.Classfile.TAG_METHODTYPE;
-import static jdk.internal.classfile.Classfile.TAG_MODULE;
-import static jdk.internal.classfile.Classfile.TAG_NAMEANDTYPE;
-import static jdk.internal.classfile.Classfile.TAG_PACKAGE;
-import static jdk.internal.classfile.Classfile.TAG_STRING;
+import static java.lang.classfile.ClassFile.TAG_CLASS;
+import static java.lang.classfile.ClassFile.TAG_CONSTANTDYNAMIC;
+import static java.lang.classfile.ClassFile.TAG_DOUBLE;
+import static java.lang.classfile.ClassFile.TAG_FIELDREF;
+import static java.lang.classfile.ClassFile.TAG_FLOAT;
+import static java.lang.classfile.ClassFile.TAG_INTEGER;
+import static java.lang.classfile.ClassFile.TAG_INTERFACEMETHODREF;
+import static java.lang.classfile.ClassFile.TAG_INVOKEDYNAMIC;
+import static java.lang.classfile.ClassFile.TAG_LONG;
+import static java.lang.classfile.ClassFile.TAG_METHODHANDLE;
+import static java.lang.classfile.ClassFile.TAG_METHODREF;
+import static java.lang.classfile.ClassFile.TAG_METHODTYPE;
+import static java.lang.classfile.ClassFile.TAG_MODULE;
+import static java.lang.classfile.ClassFile.TAG_NAMEANDTYPE;
+import static java.lang.classfile.ClassFile.TAG_PACKAGE;
+import static java.lang.classfile.ClassFile.TAG_STRING;
 
 public final class SplitConstantPool implements ConstantPoolBuilder {
 
     private final ClassReaderImpl parent;
     private final int parentSize, parentBsmSize;
-    final Options options;
 
     private int size, bsmSize;
     private PoolEntry[] myEntries;
@@ -91,10 +69,6 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
     private EntryMap<BootstrapMethodEntryImpl> bsmMap;
 
     public SplitConstantPool() {
-        this(new Options(Collections.emptyList()));
-    }
-
-    public SplitConstantPool(Options options) {
         this.size = 1;
         this.bsmSize = 0;
         this.myEntries = new PoolEntry[1024];
@@ -102,13 +76,12 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
         this.parent = null;
         this.parentSize = 0;
         this.parentBsmSize = 0;
-        this.options = options;
+        this.doneFullScan = true;
     }
 
     public SplitConstantPool(ClassReader parent) {
-        this.options = ((ClassReaderImpl) parent).options;
         this.parent = (ClassReaderImpl) parent;
-        this.parentSize = parent.entryCount();
+        this.parentSize = parent.size();
         this.parentBsmSize = parent.bootstrapMethodCount();
         this.size = parentSize;
         this.bsmSize = parentBsmSize;
@@ -117,7 +90,7 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
     }
 
     @Override
-    public int entryCount() {
+    public int size() {
         return size;
     }
 
@@ -128,20 +101,26 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
 
     @Override
     public PoolEntry entryByIndex(int index) {
-        return (index < parentSize)
+        if (index <= 0 || index >= size()) {
+            throw new ConstantPoolException("Bad CP index: " + index);
+        }
+        PoolEntry pe = (index < parentSize)
                ? parent.entryByIndex(index)
                : myEntries[index - parentSize];
+        if (pe == null) {
+            throw new ConstantPoolException("Unusable CP index: " + index);
+        }
+        return pe;
     }
 
     @Override
     public BootstrapMethodEntryImpl bootstrapMethodEntry(int index) {
+        if (index < 0 || index >= bootstrapMethodCount()) {
+            throw new ConstantPoolException("Bad BSM index: " + index);
+        }
         return (index < parentBsmSize)
                ? parent.bootstrapMethodEntry(index)
                : myBsmEntries[index - parentBsmSize];
-    }
-
-    public Options options() {
-        return options;
     }
 
     @Override
@@ -181,12 +160,15 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
     @Override
     public void writeTo(BufWriter buf) {
         int writeFrom = 1;
-        buf.writeU2(entryCount());
+        if (size() >= 65536) {
+            throw new IllegalArgumentException(String.format("Constant pool is too large %d", size()));
+        }
+        buf.writeU2(size());
         if (parent != null && buf.constantPool().canWriteDirect(this)) {
             parent.writeConstantPoolEntries(buf);
-            writeFrom = parent.entryCount();
+            writeFrom = parent.size();
         }
-        for (int i = writeFrom; i < entryCount(); ) {
+        for (int i = writeFrom; i < size(); ) {
             PoolEntry info = entryByIndex(i);
             info.writeTo(buf);
             i += info.width();
@@ -337,7 +319,7 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
         for (int token = map.firstToken(hash); token != -1;
              token = map.nextToken(hash, token)) {
             PoolEntry e = map.getElementByToken(token);
-            if (e.tag() == Classfile.TAG_UTF8
+            if (e.tag() == ClassFile.TAG_UTF8
                 && e instanceof AbstractPoolEntry.Utf8EntryImpl ce
                 && ce.hashCode() == hash
                 && target.equals(ce.stringValue()))
@@ -354,7 +336,7 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
         EntryMap<PoolEntry> map = map();
         for (int token = map.firstToken(hash); token != -1; token = map.nextToken(hash, token)) {
             PoolEntry e = map.getElementByToken(token);
-            if (e.tag() == Classfile.TAG_UTF8
+            if (e.tag() == ClassFile.TAG_UTF8
                 && e instanceof AbstractPoolEntry.Utf8EntryImpl ce
                 && target.equalsUtf8(ce))
                 return ce;
@@ -368,8 +350,9 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
 
     @Override
     public AbstractPoolEntry.Utf8EntryImpl utf8Entry(String s) {
-        var ce = tryFindUtf8(AbstractPoolEntry.hashString(s.hashCode()), s);
-        return ce == null ? internalAdd(new AbstractPoolEntry.Utf8EntryImpl(this, size, s)) : ce;
+        int hash = AbstractPoolEntry.hashString(s.hashCode());
+        var ce = tryFindUtf8(hash, s);
+        return ce == null ? internalAdd(new AbstractPoolEntry.Utf8EntryImpl(this, size, s, hash)) : ce;
     }
 
     AbstractPoolEntry.Utf8EntryImpl maybeCloneUtf8Entry(Utf8Entry entry) {
@@ -447,7 +430,9 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
 
     @Override
     public MethodTypeEntry methodTypeEntry(MethodTypeDesc descriptor) {
-        return methodTypeEntry(utf8Entry(descriptor.descriptorString()));
+        var ret = (AbstractPoolEntry.MethodTypeEntryImpl)methodTypeEntry(utf8Entry(descriptor.descriptorString()));
+        ret.sym = descriptor;
+        return ret;
     }
 
     @Override
@@ -464,7 +449,7 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
                 case TAG_FIELDREF -> fieldRefEntry(reference.owner(), reference.nameAndType());
                 case TAG_METHODREF -> methodRefEntry(reference.owner(), reference.nameAndType());
                 case TAG_INTERFACEMETHODREF -> interfaceMethodRefEntry(reference.owner(), reference.nameAndType());
-                default -> throw new IllegalStateException(String.format("Bad tag %d", reference.tag()));
+                default -> throw new IllegalArgumentException(String.format("Bad tag %d", reference.tag()));
             };
         }
 

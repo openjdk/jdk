@@ -25,12 +25,10 @@
 package jdk.internal.vm;
 
 import java.util.concurrent.Callable;
+import java.util.concurrent.StructureViolationException;
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
-import jdk.internal.misc.StructureViolationExceptions;
 import jdk.internal.misc.Unsafe;
-import jdk.internal.vm.annotation.DontInline;
-import jdk.internal.vm.annotation.ReservedStackAccess;
 
 /**
  * A StackableScope to represent scoped-value bindings.
@@ -42,7 +40,7 @@ import jdk.internal.vm.annotation.ReservedStackAccess;
 public class ScopedValueContainer extends StackableScope {
     private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
     static {
-        Unsafe.getUnsafe().ensureClassInitialized(StructureViolationExceptions.class);
+        Unsafe.getUnsafe().ensureClassInitialized(StructureViolationException.class);
     }
 
     private ScopedValueContainer() {
@@ -143,7 +141,7 @@ public class ScopedValueContainer extends StackableScope {
     /**
      * For use by ScopedValue to call a value returning operation in a structured context.
      */
-    public static <V> V call(Callable<V> op) throws Exception {
+    public static <V> V call(Callable<V> op) {
         if (head() == null) {
             // no need to push scope when stack is empty
             return callWithoutScope(op);
@@ -202,7 +200,7 @@ public class ScopedValueContainer extends StackableScope {
     private static void throwIfFailed(Throwable ex, boolean atTop) {
         if (ex != null || !atTop) {
             if (!atTop) {
-                var sve = StructureViolationExceptions.newException();
+                var sve = new StructureViolationException();
                 if (ex == null) {
                     ex = sve;
                 } else {

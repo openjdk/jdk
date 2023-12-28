@@ -210,7 +210,7 @@ public final class ZoneInfoFile {
 
     private static String versionId;
     private static final Map<String, ZoneInfo> zones = new ConcurrentHashMap<>();
-    private static Map<String, String> aliases = new HashMap<>();
+    private static final Map<String, String> aliases = new HashMap<>();
 
     private static byte[][] ruleArray;
     private static String[] regions;
@@ -219,7 +219,7 @@ public final class ZoneInfoFile {
     // Flag for supporting JDK backward compatible IDs, such as "EST".
     private static final boolean USE_OLDMAPPING;
 
-    private static String[][] oldMappings = new String[][] {
+    private static final String[][] oldMappings = new String[][] {
         { "ACT", "Australia/Darwin" },
         { "AET", "Australia/Sydney" },
         { "AGT", "America/Argentina/Buenos_Aires" },
@@ -468,10 +468,9 @@ public final class ZoneInfoFile {
             }
             if (i < savingsInstantTransitions.length) {
                 // javazic writes the last GMT offset into index 0!
-                if (i < savingsInstantTransitions.length) {
-                    offsets[0] = standardOffsets[standardOffsets.length - 1] * 1000;
-                    nOffsets = 1;
-                }
+                offsets[0] = standardOffsets[standardOffsets.length - 1] * 1000;
+                nOffsets = 1;
+
                 // ZoneInfo has a beginning entry for 1900.
                 // Only add it if this is not the only one in table
                 nOffsets = addTrans(transitions, nTrans++,
@@ -617,6 +616,17 @@ public final class ZoneInfoFile {
                 params[8] = endRule.secondOfDay * 1000;
                 params[9] = toSTZTime[endRule.timeDefinition];
                 dstSavings = (startRule.offsetAfter - startRule.offsetBefore) * 1000;
+
+                // Note: known mismatching -> Africa/Cairo
+                // ZoneInfo :      startDayOfWeek=5     <= Thursday
+                //                 startTime=86400000   <= 24:00
+                // This:           startDayOfWeek=6     <= Friday
+                //                 startTime=0          <= 0:00
+                if (zoneId.equals("Africa/Cairo") &&
+                        params[7] == Calendar.FRIDAY && params[8] == 0) {
+                    params[7] = Calendar.THURSDAY;
+                    params[8] = SECONDS_PER_DAY * 1000;
+                }
             } else if (nTrans > 0) {  // only do this if there is something in table already
                 if (lastyear < LASTYEAR) {
                     // ZoneInfo has an ending entry for 2037
@@ -919,7 +929,7 @@ public final class ZoneInfoFile {
         }
 
         static final boolean isLeapYear(int year) {
-            return ((year & 3) == 0) && ((year % 100) != 0 || (year % 400) == 0);
+            return CalendarUtils.isGregorianLeapYear(year);
         }
 
         static final int lengthOfMonth(int year, int month) {

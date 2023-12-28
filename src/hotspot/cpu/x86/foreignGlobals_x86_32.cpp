@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,10 @@
 
 class MacroAssembler;
 
+bool ForeignGlobals::is_foreign_linker_supported() {
+  return false;
+}
+
 const ABIDescriptor ForeignGlobals::parse_abi_descriptor(jobject jabi) {
   Unimplemented();
   return {};
@@ -46,6 +50,6 @@ void RegSpiller::pd_load_reg(MacroAssembler* masm, int offset, VMStorage reg) {
   Unimplemented();
 }
 
-void ArgumentShuffle::pd_generate(MacroAssembler* masm, VMStorage tmp, int in_stk_bias, int out_stk_bias, const StubLocations& locs) const {
+void ArgumentShuffle::pd_generate(MacroAssembler* masm, VMStorage tmp, int in_stk_bias, int out_stk_bias) const {
   Unimplemented();
 }

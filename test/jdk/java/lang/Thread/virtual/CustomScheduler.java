@@ -26,7 +26,6 @@
  * @summary Test virtual threads using a custom scheduler
  * @requires vm.continuations
  * @modules java.base/java.lang:+open
- * @enablePreview
  * @run junit CustomScheduler
  */
 
@@ -46,7 +45,6 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.jupiter.api.Assumptions.*;
 
 class CustomScheduler {
-    private static final Executor DEFAULT_SCHEDULER = defaultScheduler();
     private static ExecutorService scheduler1;
     private static ExecutorService scheduler2;
 
@@ -214,20 +212,6 @@ class CustomScheduler {
             assertFalse(vthread.isInterrupted());
         } finally {
             Thread.interrupted();
-        }
-    }
-
-    /**
-     * Returns the default scheduler.
-     */
-    private static Executor defaultScheduler() {
-        try {
-            Field defaultScheduler = Class.forName("java.lang.VirtualThread")
-                    .getDeclaredField("DEFAULT_SCHEDULER");
-            defaultScheduler.setAccessible(true);
-            return (Executor) defaultScheduler.get(null);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
         }
     }
 

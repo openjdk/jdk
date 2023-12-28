@@ -598,9 +598,16 @@ conventions might appear jarring and reduce readability.</p></li>
 <code>std::nothrow</code>, and <code>std::nothrow_t</code>.</li>
 <li><code>#include &lt;limits&gt;</code> to use
 <code>std::numeric_limits</code>.</li>
-<li><code>#include &lt;type_traits&gt;</code>.</li>
+<li><code>#include &lt;type_traits&gt;</code> with some restrictions,
+listed below.</li>
 <li><code>#include &lt;cstddef&gt;</code> to use
 <code>std::nullptr_t</code> and <code>std::max_align_t</code>.</li>
+</ul>
+<p>Certain restrictions apply to the declarations provided by
+<code>&lt;type_traits&gt;</code>.</p>
+<ul>
+<li>The <code>alignof</code> operator should be used rather than
+<code>std::alignment_of&lt;&gt;</code>.</li>
 </ul>
 <p>TODO: Rather than directly #including (permitted) Standard Library
 headers, use a convention of #including wrapper headers (in some
@@ -1086,6 +1093,8 @@ function name and the parameter list.</li>
 <h3 id="additional-permitted-features">Additional Permitted
 Features</h3>
 <ul>
+<li><p><code>alignof</code> (<a
+href="https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2007/n2341.pdf">n2341</a>)</p></li>
 <li><p><code>constexpr</code> (<a
 href="http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2007/n2235.pdf">n2235</a>)
 (<a

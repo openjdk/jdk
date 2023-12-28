@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug      4682448 4947464 5029946 8025633 8026567 8035473 8139101 8175200
-             8186332 8186703 8182765 8187288 8261976 8303349
+             8186332 8186703 8182765 8187288 8261976 8303349 8319988
  * @summary  Verify that the public modifier does not show up in the
  *           documentation for public methods, as recommended by the JLS.
  *           If A implements I and B extends A, B should be in the list of
@@ -128,6 +128,7 @@ public class TestInterface extends JavadocTester {
                 """
                     <section class="detail" id="f">
                     <h3>f</h3>
+                    <div class="horizontal-scroll">
                     <div class="member-signature"><span class="modifiers">public static</span>&nbsp;\
                     <span class="return-type">int</span>&nbsp;<span class="element-name">f</span></div>
                     <div class="block">A hider field</div>""",
@@ -147,6 +148,18 @@ public class TestInterface extends JavadocTester {
                 """
                     <section class="detail" id="staticMethod()">
                     <h3>staticMethod</h3>
+                    <div class="horizontal-scroll">
+                    <div class="member-signature"><span class="modifiers">public static</span>&nbsp;\
+                    <span class="return-type">void</span>&nbsp;<span class="element-name">staticMethod</span\
+                    >()</div>
+                    """
+        );
+
+        checkOutput("pkg/ClassWithStaticMembers.html", false,
+                """
+                    <section class="detail" id="staticMethod()">
+                    <h3>staticMethod</h3>
+                    <div class="horizontal-scroll">
                     <div class="member-signature"><span class="modifiers">public static</span>&nbsp;\
                     <span class="return-type">void</span>&nbsp;<span class="element-name">staticMethod</span\
                     >()</div>
@@ -191,9 +204,9 @@ public class TestInterface extends JavadocTester {
         checkOutput("pkg2/Spliterator.OfDouble.html", true,
             // Ensure the correct type parameters are displayed correctly
             """
-                <h2 id="nested-classes-inherited-from-class-pkg2.Spliterator">Nested classes/int\
+                <h3 id="nested-classes-inherited-from-class-pkg2.Spliterator">Nested classes/int\
                 erfaces inherited from interface&nbsp;pkg2.<a href="Spliterator.html" title="int\
-                erface in pkg2">Spliterator</a></h2>
+                erface in pkg2">Spliterator</a></h3>
                 <code><a href="Spliterator.OfDouble.html" title="interface in pkg2">Spliterator.\
                 OfDouble</a>, <a href="Spliterator.OfInt.html" title="interface in pkg2">Spliter\
                 ator.OfInt</a>&lt;<a href="Spliterator.OfInt.html" title="type parameter in Spli\
@@ -285,5 +298,68 @@ public class TestInterface extends JavadocTester {
                 terface in pkg2">Spliterator.OfPrimitive&lt;T,<wbr>T_CONS,<wbr>T_SPLITR&gt;</a> \
                 - Interface in <a href="pkg2/package-summary.html">pkg2</a></dt>
                 <dd>&nbsp;</dd>""");
+    }
+
+    @Test
+    public void test3() {
+        javadoc("-d", "out-3",
+                "--no-platform-links", // disable links to simplify output matching
+                "-sourcepath", testSrc,
+                "pkg3");
+
+        checkExit(Exit.OK);
+
+        checkOutput("pkg3/I.html", true,
+                """
+                <li>
+                <section class="detail" id="hashCode()">
+                <h3>hashCode</h3>
+                <div class="horizontal-scroll">
+                <div class="member-signature"><span class="return-type">\
+                int</span>&nbsp;<span class="element-name">hashCode</span>()</div>
+                <dl class="notes">
+                <dt>Overrides:</dt>
+                <dd><code>hashCode</code>&nbsp;in class&nbsp;<code>java.lang.Object</code></dd>
+                </dl>
+                </div>
+                </section>
+                </li>
+                <li>
+                <section class="detail" id="equals(java.lang.Object)">
+                <h3>equals</h3>
+                <div class="horizontal-scroll">
+                <div class="member-signature"><span class="return-type">\
+                boolean</span>&nbsp;<span class="element-name">equals</span>\
+                <wbr><span class="parameters">(java.lang.Object&nbsp;obj)</span></div>
+                <dl class="notes">
+                <dt>Overrides:</dt>
+                <dd><code>equals</code>&nbsp;in class&nbsp;<code>java.lang.Object</code></dd>
+                </dl>
+                </div>
+                </section>
+                </li>
+                <li>
+                <section class="detail" id="toString()">
+                <h3>toString</h3>
+                <div class="horizontal-scroll">
+                <div class="member-signature"><span class="return-type">\
+                java.lang.String</span>&nbsp;<span class="element-name">toString</span>()</div>
+                <dl class="notes">
+                <dt>Overrides:</dt>
+                <dd><code>toString</code>&nbsp;in class&nbsp;<code>java.lang.Object</code></dd>
+                </dl>
+                </div>
+                </section>
+                </li>
+                <li>
+                <section class="detail" id="clone()">
+                <h3>clone</h3>
+                <div class="horizontal-scroll">
+                <div class="member-signature"><span class="return-type">\
+                java.lang.Object</span>&nbsp;<span class="element-name">clone</span>()</div>
+                </div>
+                </section>
+                </li>
+                """);
     }
 }

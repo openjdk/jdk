@@ -33,7 +33,10 @@
 #include "c1/c1_ValueMap.hpp"
 #include "c1/c1_ValueStack.hpp"
 #include "code/debugInfoRec.hpp"
+#include "compiler/compilationMemoryStatistic.hpp"
+#include "compiler/compilerDirectives.hpp"
 #include "compiler/compileLog.hpp"
+#include "compiler/compileTask.hpp"
 #include "compiler/compilerDirectives.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/sharedRuntime.hpp"
@@ -54,7 +57,7 @@ typedef enum {
     _t_codeemit,
     _t_codeinstall,
   max_phase_timers
-} TimerName;
+} TimerId;
 
 static const char * timer_name[] = {
   "compile",
@@ -73,32 +76,34 @@ static const char * timer_name[] = {
 };
 
 static elapsedTimer timers[max_phase_timers];
-static int totalInstructionNodes = 0;
+static uint totalInstructionNodes = 0;
 
 class PhaseTraceTime: public TraceTime {
  private:
   CompileLog* _log;
-  TimerName _timer;
+  TimerId _timer_id;
+  bool _dolog;
 
  public:
-  PhaseTraceTime(TimerName timer)
-  : TraceTime("", &timers[timer], CITime || CITimeEach, Verbose),
-    _log(NULL), _timer(timer)
+  PhaseTraceTime(TimerId timer_id)
+  : TraceTime(timer_name[timer_id], &timers[timer_id], CITime, CITimeVerbose),
+    _log(nullptr), _timer_id(timer_id), _dolog(CITimeVerbose)
   {
-    if (Compilation::current() != NULL) {
+    if (_dolog) {
+      assert(Compilation::current() != nullptr, "sanity check");
       _log = Compilation::current()->log();
     }
 
-    if (_log != NULL) {
-      _log->begin_head("phase name='%s'", timer_name[_timer]);
+    if (_log != nullptr) {
+      _log->begin_head("phase name='%s'", timer_name[_timer_id]);
       _log->stamp();
       _log->end_head();
     }
   }
 
   ~PhaseTraceTime() {
-    if (_log != NULL)
-      _log->done("phase name='%s'", timer_name[_timer]);
+    if (_log != nullptr)
+      _log->done("phase name='%s'", timer_name[_timer_id]);
   }
 };
 
@@ -108,7 +113,7 @@ class PhaseTraceTime: public TraceTime {
 #ifndef PRODUCT
 
 void Compilation::maybe_print_current_instruction() {
-  if (_current_instruction != NULL && _last_instruction_printed != _current_instruction) {
+  if (_current_instruction != nullptr && _last_instruction_printed != _current_instruction) {
     _last_instruction_printed = _current_instruction;
     _current_instruction->print_line();
   }
@@ -142,7 +147,7 @@ void Compilation::build_hir() {
 
   // setup ir
   CompileLog* log = this->log();
-  if (log != NULL) {
+  if (log != nullptr) {
     log->begin_head("parse method='%d' ",
                     log->identify(_method));
     log->stamp();
@@ -212,7 +217,7 @@ void Compilation::build_hir() {
 #endif
 
   if (RangeCheckElimination) {
-    if (_hir->osr_entry() == NULL) {
+    if (_hir->osr_entry() == nullptr) {
       PhaseTraceTime timeit(_t_rangeCheckElimination);
       RangeCheckElimination::eliminate(_hir);
     }
@@ -286,6 +291,11 @@ void Compilation::emit_code_epilog(LIR_Assembler* assembler) {
 
   CodeOffsets* code_offsets = assembler->offsets();
 
+  if (!code()->finalize_stubs()) {
+    bailout("CodeCache is full");
+    return;
+  }
+
   // generate code or slow cases
   assembler->emit_slow_case_stubs();
   CHECK_BAILOUT();
@@ -313,9 +323,6 @@ void Compilation::emit_code_epilog(LIR_Assembler* assembler) {
   // Emit the handler to remove the activation from the stack and
   // dispatch to the caller.
   offsets()->set_value(CodeOffsets::UnwindHandler, assembler->emit_unwind_handler());
-
-  // done
-  masm()->flush();
 }
 
 
@@ -390,6 +397,7 @@ int Compilation::compile_java_method() {
     PhaseTraceTime timeit(_t_buildIR);
     build_hir();
   }
+  CHECK_BAILOUT_(no_frame_size);
   if (BailoutAfterHIR) {
     BAILOUT_("Bailing out because of -XX:+BailoutAfterHIR", no_frame_size);
   }
@@ -438,11 +446,14 @@ void Compilation::install_code(int frame_size) {
 
 
 void Compilation::compile_method() {
+
   {
     PhaseTraceTime timeit(_t_setup);
 
     // setup compilation
     initialize();
+    CHECK_BAILOUT();
+
   }
 
   if (!method()->can_be_compiled()) {
@@ -480,7 +491,7 @@ void Compilation::compile_method() {
     install_code(frame_size);
   }
 
-  if (log() != NULL) // Print code cache state into compiler log
+  if (log() != nullptr) // Print code cache state into compiler log
     log()->code_cache_state();
 
   totalInstructionNodes += Instruction::number_of_instructions();
@@ -559,10 +570,10 @@ Compilation::Compilation(AbstractCompiler* compiler, ciEnv* env, ciMethod* metho
 , _log(env->log())
 , _method(method)
 , _osr_bci(osr_bci)
-, _hir(NULL)
+, _hir(nullptr)
 , _max_spills(-1)
-, _frame_map(NULL)
-, _masm(NULL)
+, _frame_map(nullptr)
+, _masm(nullptr)
 , _has_exception_handlers(false)
 , _has_fpu_code(true)   // pessimistic assumption
 , _has_unsafe_access(false)
@@ -572,29 +583,32 @@ Compilation::Compilation(AbstractCompiler* compiler, ciEnv* env, ciMethod* metho
 , _has_reserved_stack_access(method->has_reserved_stack_access())
 , _has_monitors(false)
 , _install_code(install_code)
-, _bailout_msg(NULL)
-, _exception_info_list(NULL)
-, _allocator(NULL)
+, _bailout_msg(nullptr)
+, _exception_info_list(nullptr)
+, _allocator(nullptr)
 , _code(buffer_blob)
 , _has_access_indexed(false)
 , _interpreter_frame_size(0)
 , _immediate_oops_patched(0)
-, _current_instruction(NULL)
+, _current_instruction(nullptr)
 #ifndef PRODUCT
-, _last_instruction_printed(NULL)
-, _cfg_printer_output(NULL)
+, _last_instruction_printed(nullptr)
+, _cfg_printer_output(nullptr)
 #endif // PRODUCT
 {
-  PhaseTraceTime timeit(_t_compile);
   _arena = Thread::current()->resource_area();
   _env->set_compiler_data(this);
   _exception_info_list = new ExceptionInfoList();
   _implicit_exception_table.set_size(0);
+  PhaseTraceTime timeit(_t_compile);
 #ifndef PRODUCT
   if (PrintCFGToFile) {
     _cfg_printer_output = new CFGPrinterOutput(this);
   }
 #endif
+
+  CompilationMemoryStatisticMark cmsm(directive);
+
   compile_method();
   if (bailed_out()) {
     _env->record_method_not_compilable(bailout_msg());
@@ -605,7 +619,7 @@ Compilation::Compilation(AbstractCompiler* compiler, ciEnv* env, ciMethod* metho
     }
   } else if (is_profiling()) {
     ciMethodData *md = method->method_data_or_null();
-    if (md != NULL) {
+    if (md != nullptr) {
       md->set_would_profile(_would_profile);
     }
   }
@@ -615,7 +629,7 @@ Compilation::~Compilation() {
   // simulate crash during compilation
   assert(CICrashAt < 0 || (uintx)_env->compile_id() != (uintx)CICrashAt, "just as planned");
 
-  _env->set_compiler_data(NULL);
+  _env->set_compiler_data(nullptr);
 }
 
 void Compilation::add_exception_handlers_for_pco(int pco, XHandlers* exception_handlers) {
@@ -635,7 +649,7 @@ void Compilation::notice_inlined_method(ciMethod* method) {
 
 
 void Compilation::bailout(const char* msg) {
-  assert(msg != NULL, "bailout message must exist");
+  assert(msg != nullptr, "bailout message must exist");
   if (!bailed_out()) {
     // keep first bailout message
     if (PrintCompilation || PrintBailouts) tty->print_cr("compilation bailout: %s", msg);
@@ -644,15 +658,15 @@ void Compilation::bailout(const char* msg) {
 }
 
 ciKlass* Compilation::cha_exact_type(ciType* type) {
-  if (type != NULL && type->is_loaded() && type->is_instance_klass()) {
+  if (type != nullptr && type->is_loaded() && type->is_instance_klass()) {
     ciInstanceKlass* ik = type->as_instance_klass();
-    assert(ik->exact_klass() == NULL, "no cha for final klass");
+    assert(ik->exact_klass() == nullptr, "no cha for final klass");
     if (DeoptC1 && UseCHA && !(ik->has_subklass() || ik->is_interface())) {
       dependency_recorder()->assert_leaf_type(ik);
       return ik;
     }
   }
-  return NULL;
+  return nullptr;
 }
 
 void Compilation::print_timers() {

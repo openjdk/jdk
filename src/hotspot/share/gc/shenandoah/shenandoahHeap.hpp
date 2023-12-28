@@ -29,6 +29,7 @@
 #include "gc/shared/markBitMap.hpp"
 #include "gc/shared/softRefPolicy.hpp"
 #include "gc/shared/collectedHeap.hpp"
+#include "gc/shenandoah/heuristics/shenandoahSpaceInfo.hpp"
 #include "gc/shenandoah/shenandoahAsserts.hpp"
 #include "gc/shenandoah/shenandoahAllocRequest.hpp"
 #include "gc/shenandoah/shenandoahLock.hpp"
@@ -116,13 +117,14 @@ typedef Stack<oop, mtGC>  ShenandoahScanObjectStack;
 // to encode forwarding data. See BrooksPointer for details on forwarding data encoding.
 // See ShenandoahControlThread for GC cycle structure.
 //
-class ShenandoahHeap : public CollectedHeap {
+class ShenandoahHeap : public CollectedHeap, public ShenandoahSpaceInfo {
   friend class ShenandoahAsserts;
   friend class VMStructs;
   friend class ShenandoahGCSession;
   friend class ShenandoahGCStateResetter;
   friend class ShenandoahParallelObjectIterator;
   friend class ShenandoahSafepoint;
+
   // Supported GC
   friend class ShenandoahConcurrentGC;
   friend class ShenandoahDegenGC;
@@ -191,16 +193,17 @@ public:
   void decrease_committed(size_t bytes);
   void increase_allocated(size_t bytes);
 
-  size_t bytes_allocated_since_gc_start();
+  size_t bytes_allocated_since_gc_start() const override;
   void reset_bytes_allocated_since_gc_start();
 
   size_t min_capacity()      const;
   size_t max_capacity()      const override;
-  size_t soft_max_capacity() const;
+  size_t soft_max_capacity() const override;
   size_t initial_capacity()  const;
   size_t capacity()          const override;
   size_t used()              const override;
   size_t committed()         const;
+  size_t available()         const override;
 
   void set_soft_max_capacity(size_t v);
 
@@ -236,10 +239,10 @@ public:
   inline size_t num_regions() const { return _num_regions; }
   inline bool is_heap_region_special() { return _heap_region_special; }
 
-  inline ShenandoahHeapRegion* const heap_region_containing(const void* addr) const;
+  inline ShenandoahHeapRegion* heap_region_containing(const void* addr) const;
   inline size_t heap_region_index_containing(const void* addr) const;
 
-  inline ShenandoahHeapRegion* const get_region(size_t region_idx) const;
+  inline ShenandoahHeapRegion* get_region(size_t region_idx) const;
 
   void heap_region_iterate(ShenandoahHeapRegionClosure* blk) const;
   void parallel_heap_region_iterate(ShenandoahHeapRegionClosure* blk) const;
@@ -281,19 +284,21 @@ public:
   };
 
 private:
+  bool _gc_state_changed;
   ShenandoahSharedBitmap _gc_state;
   ShenandoahSharedFlag   _degenerated_gc_in_progress;
   ShenandoahSharedFlag   _full_gc_in_progress;
   ShenandoahSharedFlag   _full_gc_move_in_progress;
-  ShenandoahSharedFlag   _progress_last_gc;
   ShenandoahSharedFlag   _concurrent_strong_root_in_progress;
 
-  void set_gc_state_all_threads(char state);
+  size_t _gc_no_progress_count;
+
   void set_gc_state_mask(uint mask, bool value);
 
 public:
   char gc_state() const;
-  static address gc_state_addr();
+  void set_gc_state_all_threads();
+  bool has_gc_state_changed() { return _gc_state_changed; }
 
   void set_concurrent_mark_in_progress(bool in_progress);
   void set_evacuation_in_progress(bool in_progress);
@@ -314,7 +319,7 @@ public:
   inline bool is_full_gc_in_progress() const;
   inline bool is_full_gc_move_in_progress() const;
   inline bool has_forwarded_objects() const;
-  inline bool is_gc_in_progress_mask(uint mask) const;
+
   inline bool is_stw_gc_in_progress() const;
   inline bool is_concurrent_strong_root_in_progress() const;
   inline bool is_concurrent_weak_root_in_progress() const;
@@ -327,19 +332,13 @@ private:
 
     // GC has been cancelled. Worker threads can not suspend for
     // safepoint but must finish their work as soon as possible.
-    CANCELLED,
-
-    // GC has not been cancelled and must not be cancelled. At least
-    // one worker thread checks for pending safepoint and may suspend
-    // if a safepoint is pending.
-    NOT_CANCELLED
+    CANCELLED
   };
 
   ShenandoahSharedEnumFlag<CancelState> _cancelled_gc;
   bool try_cancel_gc();
 
 public:
-  static address cancelled_gc_addr();
 
   inline bool cancelled_gc() const;
   inline bool check_cancelled_gc_and_yield(bool sts_active = true);
@@ -359,7 +358,6 @@ private:
   void prepare_gc();
   void prepare_regions_and_collection_set(bool concurrent);
   // Evacuation
-  void prepare_evacuation(bool concurrent);
   void evacuate_collection_set(bool concurrent);
   // Concurrent root processing
   void prepare_concurrent_roots();
@@ -376,8 +374,9 @@ private:
   void rendezvous_threads();
   void recycle_trash();
 public:
-  void notify_gc_progress()    { _progress_last_gc.set();   }
-  void notify_gc_no_progress() { _progress_last_gc.unset(); }
+  void notify_gc_progress();
+  void notify_gc_no_progress();
+  size_t get_gc_no_progress_count() const;
 
 //
 // Mark support

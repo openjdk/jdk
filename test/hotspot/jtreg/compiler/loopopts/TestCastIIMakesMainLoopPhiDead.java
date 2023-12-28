@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2022, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -25,7 +26,7 @@
  * @test
  * bug 8280600
  * @summary C2: assert(!had_error) failed: bad dominance
- * @run main/othervm -Xcomp -XX:CompileOnly=TestCastIIMakesMainLoopPhiDead TestCastIIMakesMainLoopPhiDead
+ * @run main/othervm -Xcomp -XX:CompileOnly=TestCastIIMakesMainLoopPhiDead::* TestCastIIMakesMainLoopPhiDead
  */
 
 public class TestCastIIMakesMainLoopPhiDead {

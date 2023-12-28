@@ -124,7 +124,7 @@ inline void frame::interpreter_frame_set_monitors(BasicObjectLock* monitors) {
 // Accessors
 
 // Return unique id for this frame. The id must have a value where we
-// can distinguish identity and younger/older relationship. NULL
+// can distinguish identity and younger/older relationship. null
 // represents an invalid (incomparable) frame.
 inline intptr_t* frame::id(void) const {
   // Use _fp. _sp or _unextended_sp wouldn't be correct due to resizing.
@@ -134,7 +134,7 @@ inline intptr_t* frame::id(void) const {
 // Return true if this frame is older (less recent activation) than
 // the frame represented by id.
 inline bool frame::is_older(intptr_t* id) const {
-  assert(this->id() != NULL && id != NULL, "NULL frame id");
+  assert(this->id() != nullptr && id != nullptr, "null frame id");
   // Stack grows towards smaller addresses on z/Architecture.
   return this->id() > id;
 }
@@ -249,18 +249,7 @@ inline void frame::interpreter_frame_set_monitor_end(BasicObjectLock* monitors) 
 }
 
 inline int frame::interpreter_frame_monitor_size() {
-  // Number of stack slots for a monitor
-  return align_up(BasicObjectLock::size() /* number of stack slots */,
-                  WordsPerLong /* Number of stack slots for a Java long. */);
-}
-
-inline int frame::interpreter_frame_monitor_size_in_bytes() {
-  // Number of bytes for a monitor.
-  return frame::interpreter_frame_monitor_size() * wordSize;
-}
-
-inline int frame::interpreter_frame_interpreterstate_size_in_bytes() {
-  return z_ijava_state_size;
+  return BasicObjectLock::size();
 }
 
 inline Method** frame::interpreter_frame_method_addr() const {
@@ -304,17 +293,17 @@ inline intptr_t* frame::real_fp() const {
 }
 
 inline const ImmutableOopMap* frame::get_oop_map() const {
-  if (_cb == NULL) return NULL;
-  if (_cb->oop_maps() != NULL) {
+  if (_cb == nullptr) return nullptr;
+  if (_cb->oop_maps() != nullptr) {
     NativePostCallNop* nop = nativePostCallNop_at(_pc);
-    if (nop != NULL && nop->displacement() != 0) {
+    if (nop != nullptr && nop->displacement() != 0) {
       int slot = ((nop->displacement() >> 24) & 0xff);
       return _cb->oop_map_for_slot(slot, _pc);
     }
     const ImmutableOopMap* oop_map = OopMapSet::find_map(this);
     return oop_map;
   }
-  return NULL;
+  return nullptr;
 }
 
 inline int frame::compiled_frame_stack_argsize() const {
@@ -352,12 +341,10 @@ inline frame frame::sender(RegisterMap* map) const {
   // update it accordingly.
   map->set_include_argument_oops(false);
 
-  if (is_entry_frame()) {
-    return sender_for_entry_frame(map);
-  }
-  if (is_interpreted_frame()) {
-    return sender_for_interpreter_frame(map);
-  }
+  if (is_entry_frame())       return sender_for_entry_frame(map);
+  if (is_upcall_stub_frame()) return sender_for_upcall_stub_frame(map);
+  if (is_interpreted_frame()) return sender_for_interpreter_frame(map);
+
   assert(_cb == CodeCache::find_blob(pc()),"Must be the same");
   if (_cb != nullptr) return sender_for_compiled_frame(map);
 

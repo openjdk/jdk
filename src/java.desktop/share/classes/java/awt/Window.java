@@ -3221,7 +3221,12 @@ public class Window extends Container implements Accessible {
                     getDefaultScreenDevice().
                     getDefaultConfiguration();
         }
+
         synchronized (getTreeLock()) {
+            WindowPeer peer = (WindowPeer) this.peer;
+            if (peer != null) {
+                gc = peer.getAppropriateGraphicsConfiguration(gc);
+            }
             super.setGraphicsConfiguration(gc);
             if (log.isLoggable(PlatformLogger.Level.FINER)) {
                 log.finer("+ Window.setGraphicsConfiguration(): new GC is \n+ " + getGraphicsConfiguration_NoClientCode() + "\n+ this is " + this);

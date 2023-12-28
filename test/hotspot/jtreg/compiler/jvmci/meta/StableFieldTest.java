@@ -33,7 +33,7 @@
  *          jdk.internal.vm.ci/jdk.vm.ci.runtime
  *
  * @compile StableFieldTest.java
- * @run driver jdk.test.lib.helpers.ClassFileInstaller compiler.jvmci.meta.StableFieldTest
+ * @run main/othervm jdk.test.lib.helpers.ClassFileInstaller compiler.jvmci.meta.StableFieldTest
  * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI -XX:-UseJVMCICompiler -Xbootclasspath/a:. compiler.jvmci.meta.StableFieldTest
  */
 

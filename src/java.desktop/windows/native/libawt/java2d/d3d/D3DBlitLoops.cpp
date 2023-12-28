@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -441,8 +441,8 @@ D3DBlitTextureToSurface(D3DContext *d3dc,
     pSrc = srcOps->pResource->GetTexture();
     RETURN_STATUS_IF_NULL(pSrc, E_FAIL);
 
-    if (FAILED(res = d3dc->BeginScene(STATE_TEXTUREOP)   ||
-        FAILED(res = d3dc->SetTexture(pSrc))))
+    if (FAILED(res = d3dc->BeginScene(STATE_TEXTUREOP))  ||
+        FAILED(res = d3dc->SetTexture(pSrc)))
     {
         J2dRlsTraceLn(J2D_TRACE_ERROR,
                       "D3DBlitTextureToSurface: BeginScene or SetTexture failed");

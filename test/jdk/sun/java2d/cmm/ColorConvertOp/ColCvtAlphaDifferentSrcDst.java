@@ -23,11 +23,18 @@
 
 import java.awt.AlphaComposite;
 import java.awt.Graphics2D;
+import java.awt.Transparency;
 import java.awt.color.ColorSpace;
 import java.awt.color.ICC_ColorSpace;
 import java.awt.color.ICC_Profile;
 import java.awt.image.BufferedImage;
 import java.awt.image.ColorConvertOp;
+import java.awt.image.ColorModel;
+import java.awt.image.ComponentColorModel;
+import java.awt.image.DataBuffer;
+import java.awt.image.DirectColorModel;
+import java.awt.image.Raster;
+import java.awt.image.WritableRaster;
 
 import static java.awt.image.BufferedImage.TYPE_3BYTE_BGR;
 import static java.awt.image.BufferedImage.TYPE_4BYTE_ABGR;
@@ -45,7 +52,7 @@ import static java.awt.image.BufferedImage.TYPE_USHORT_GRAY;
 
 /*
  * @test
- * @bug 8012229 8300725
+ * @bug 8012229 8300725 8279216
  * @summary one more test to check the alpha channel
  */
 public final class ColCvtAlphaDifferentSrcDst {
@@ -53,11 +60,19 @@ public final class ColCvtAlphaDifferentSrcDst {
     private static final int WIDTH = 256;
     private static final int HEIGHT = 256;
 
+    private static final int TYPE_CUSTOM_4BYTE_ABGR_PRE = -1;
+    private static final int TYPE_CUSTOM_4BYTE_ARGB_PRE = -2;
+    private static final int TYPE_CUSTOM_4BYTE_RGBA_PRE = -3;
+    private static final int TYPE_CUSTOM_4BYTE_GABR_PRE = -4;
+    private static final int TYPE_CUSTOM_INT_ARGB_PRE = -5;
+    private static final int TYPE_CUSTOM_INT_GABR_PRE = -6;
+
     public static void main(String[] args) throws Exception {
         differentToOpaqueDst();
         differentToTransparentDst(TYPE_INT_ARGB);
         differentToTransparentDst(TYPE_4BYTE_ABGR);
         differentToTransparentDst(TYPE_INT_ARGB_PRE);
+        differentToTransparentDst(TYPE_4BYTE_ABGR_PRE);
         differentToNullDst();
     }
 
@@ -97,7 +112,16 @@ public final class ColCvtAlphaDifferentSrcDst {
         opaqueDst(TYPE_INT_ARGB, TYPE_INT_BGR);
         opaqueDst(TYPE_4BYTE_ABGR, TYPE_INT_BGR);
 
-        // It is unclear how to hangle pre colors in the opaque DST
+        // compare the "fast" and "slow" paths
+        opaqueDst(TYPE_4BYTE_ABGR_PRE, TYPE_CUSTOM_4BYTE_ABGR_PRE);
+        opaqueDst(TYPE_4BYTE_ABGR_PRE, TYPE_CUSTOM_4BYTE_ARGB_PRE);
+        opaqueDst(TYPE_4BYTE_ABGR_PRE, TYPE_CUSTOM_4BYTE_RGBA_PRE);
+        opaqueDst(TYPE_4BYTE_ABGR_PRE, TYPE_CUSTOM_4BYTE_GABR_PRE);
+
+        opaqueDst(TYPE_INT_ARGB_PRE, TYPE_CUSTOM_INT_ARGB_PRE);
+        opaqueDst(TYPE_INT_ARGB_PRE, TYPE_CUSTOM_INT_GABR_PRE);
+
+        // It is unclear how to handle pre colors in the opaque DST
         //opaqueDst(TYPE_INT_ARGB_PRE, TYPE_4BYTE_ABGR_PRE);
         //opaqueDst(TYPE_4BYTE_ABGR_PRE, TYPE_INT_BGR);
     }
@@ -196,7 +220,15 @@ public final class ColCvtAlphaDifferentSrcDst {
     }
 
     private static BufferedImage createSrc(int type) {
-        BufferedImage img = new BufferedImage(WIDTH, HEIGHT, type);
+        BufferedImage img = switch (type) {
+            case TYPE_CUSTOM_4BYTE_ABGR_PRE -> TYPE_4BYTE_ABGR_PRE();
+            case TYPE_CUSTOM_4BYTE_ARGB_PRE -> TYPE_4BYTE_ARGB_PRE();
+            case TYPE_CUSTOM_4BYTE_RGBA_PRE -> TYPE_4BYTE_RGBA_PRE();
+            case TYPE_CUSTOM_4BYTE_GABR_PRE -> TYPE_4BYTE_GABR_PRE();
+            case TYPE_CUSTOM_INT_ARGB_PRE -> TYPE_INT_ARGB_PRE();
+            case TYPE_CUSTOM_INT_GABR_PRE -> TYPE_INT_GABR_PRE();
+            default -> new BufferedImage(WIDTH, HEIGHT, type);
+        };
         fill(img);
         return img;
     }
@@ -219,5 +251,93 @@ public final class ColCvtAlphaDifferentSrcDst {
                              (i << 24) | (i << 16) | (j << 8) | ((i + j) >> 1));
             }
         }
+    }
+
+    private static BufferedImage TYPE_4BYTE_RGBA_PRE() {
+        ColorSpace cs = ColorSpace.getInstance(ColorSpace.CS_sRGB);
+        int[] nBits = {8, 8, 8, 8};
+        int[] bOffs = {0, 1, 2, 3};
+        ColorModel colorModel = new ComponentColorModel(cs, nBits, true, true,
+                                                        Transparency.TRANSLUCENT,
+                                                        DataBuffer.TYPE_BYTE);
+        WritableRaster raster = Raster.createInterleavedRaster(DataBuffer.TYPE_BYTE,
+                                                               WIDTH, HEIGHT,
+                                                               WIDTH * 4, 4,
+                                                               bOffs, null);
+        return new BufferedImage(colorModel, raster, true, null);
+    }
+
+    private static BufferedImage TYPE_4BYTE_ABGR_PRE() {
+        ColorSpace cs = ColorSpace.getInstance(ColorSpace.CS_sRGB);
+        int[] nBits = {8, 8, 8, 8};
+        int[] bOffs = {3, 2, 1, 0};
+        ColorModel colorModel = new ComponentColorModel(cs, nBits, true, true,
+                                                        Transparency.TRANSLUCENT,
+                                                        DataBuffer.TYPE_BYTE);
+        WritableRaster raster = Raster.createInterleavedRaster(DataBuffer.TYPE_BYTE,
+                                                               WIDTH, HEIGHT,
+                                                               WIDTH * 4, 4,
+                                                               bOffs, null);
+        return new BufferedImage(colorModel, raster, true, null);
+    }
+
+    private static BufferedImage TYPE_4BYTE_ARGB_PRE() {
+        ColorSpace cs = ColorSpace.getInstance(ColorSpace.CS_sRGB);
+        int[] nBits = {8, 8, 8, 8};
+        int[] bOffs = {1, 2, 3, 0};
+        ColorModel colorModel = new ComponentColorModel(cs, nBits, true, true,
+                                                        Transparency.TRANSLUCENT,
+                                                        DataBuffer.TYPE_BYTE);
+        WritableRaster raster = Raster.createInterleavedRaster(DataBuffer.TYPE_BYTE,
+                                                               WIDTH, HEIGHT,
+                                                               WIDTH * 4, 4,
+                                                               bOffs, null);
+        return new BufferedImage(colorModel, raster, true, null);
+    }
+
+    private static BufferedImage TYPE_4BYTE_GABR_PRE() {
+        ColorSpace cs = ColorSpace.getInstance(ColorSpace.CS_sRGB);
+        int[] nBits = {8, 8, 8, 8};
+        int[] bOffs = {3, 0, 2, 1};
+        ColorModel colorModel = new ComponentColorModel(cs, nBits, true, false,
+                                                        Transparency.TRANSLUCENT,
+                                                        DataBuffer.TYPE_BYTE);
+        WritableRaster raster = Raster.createInterleavedRaster(DataBuffer.TYPE_BYTE,
+                                                               WIDTH, HEIGHT,
+                                                               WIDTH * 4, 4,
+                                                               bOffs, null);
+        return new BufferedImage(colorModel, raster, true, null);
+    }
+
+    private static BufferedImage TYPE_INT_ARGB_PRE() {
+        ColorModel colorModel = new DirectColorModel(
+                ColorSpace.getInstance(ColorSpace.CS_sRGB),
+                32,
+                0x00ff0000, // Red
+                0x0000ff00, // Green
+                0x000000ff, // Blue
+                0xff000000, // Alpha
+                true,       // Alpha Premultiplied
+                DataBuffer.TYPE_INT
+        );
+        WritableRaster raster = colorModel.createCompatibleWritableRaster(WIDTH,
+                                                                          HEIGHT);
+        return new BufferedImage(colorModel, raster, true, null);
+    }
+
+    private static BufferedImage TYPE_INT_GABR_PRE() {
+        ColorModel colorModel = new DirectColorModel(
+                ColorSpace.getInstance(ColorSpace.CS_sRGB),
+                32,
+                0x000000ff, // Red
+                0xff000000, // Green
+                0x0000ff00, // Blue
+                0x00ff0000, // Alpha
+                true,       // Alpha Premultiplied
+                DataBuffer.TYPE_INT
+        );
+        WritableRaster raster = colorModel.createCompatibleWritableRaster(WIDTH,
+                                                                          HEIGHT);
+        return new BufferedImage(colorModel, raster, true, null);
     }
 }

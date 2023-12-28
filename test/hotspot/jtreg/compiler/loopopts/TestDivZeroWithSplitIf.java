@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,9 +28,9 @@
  * @bug 8257822
  * @summary Verify that zero check is executed before division/modulo operation.
  * @requires vm.compiler2.enabled
- * @run main/othervm -Xcomp -XX:-TieredCompilation -XX:CompileOnly=compiler/loopopts/TestDivZeroWithSplitIf::test
+ * @run main/othervm -Xcomp -XX:-TieredCompilation -XX:CompileOnly=compiler.loopopts.TestDivZeroWithSplitIf::test
  *                   -XX:+UnlockDiagnosticVMOptions -XX:+StressGCM -XX:StressSeed=873732072 compiler.loopopts.TestDivZeroWithSplitIf
- * @run main/othervm -Xcomp -XX:-TieredCompilation -XX:CompileOnly=compiler/loopopts/TestDivZeroWithSplitIf::test
+ * @run main/othervm -Xcomp -XX:-TieredCompilation -XX:CompileOnly=compiler.loopopts.TestDivZeroWithSplitIf::test
  *                   -XX:+UnlockDiagnosticVMOptions -XX:+StressGCM compiler.loopopts.TestDivZeroWithSplitIf
  */
 
@@ -66,4 +66,3 @@ public class TestDivZeroWithSplitIf {
         }
     }
 }
-

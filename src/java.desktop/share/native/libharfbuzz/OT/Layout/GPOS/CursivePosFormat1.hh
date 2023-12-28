@@ -24,16 +24,17 @@ struct EntryExitRecord
     (src_base+exitAnchor).collect_variation_indices (c);
   }
 
-  EntryExitRecord* subset (hb_subset_context_t *c,
-                           const void *src_base) const
+  bool subset (hb_subset_context_t *c,
+               const void *src_base) const
   {
     TRACE_SERIALIZE (this);
     auto *out = c->serializer->embed (this);
-    if (unlikely (!out)) return_trace (nullptr);
+    if (unlikely (!out)) return_trace (false);
 
-    out->entryAnchor.serialize_subset (c, entryAnchor, src_base);
-    out->exitAnchor.serialize_subset (c, exitAnchor, src_base);
-    return_trace (out);
+    bool ret = false;
+    ret |= out->entryAnchor.serialize_subset (c, entryAnchor, src_base);
+    ret |= out->exitAnchor.serialize_subset (c, exitAnchor, src_base);
+    return_trace (ret);
   }
 
   protected:
@@ -91,7 +92,13 @@ struct CursivePosFormat1
   bool sanitize (hb_sanitize_context_t *c) const
   {
     TRACE_SANITIZE (this);
-    return_trace (coverage.sanitize (c, this) && entryExitRecord.sanitize (c, this));
+    if (unlikely (!coverage.sanitize (c, this)))
+      return_trace (false);
+
+    if (c->lazy_some_gpos)
+      return_trace (entryExitRecord.sanitize_shallow (c));
+    else
+      return_trace (entryExitRecord.sanitize (c, this));
   }
 
   bool intersects (const hb_set_t *glyphs) const
@@ -119,19 +126,21 @@ struct CursivePosFormat1
     hb_buffer_t *buffer = c->buffer;
 
     const EntryExitRecord &this_record = entryExitRecord[(this+coverage).get_coverage  (buffer->cur().codepoint)];
-    if (!this_record.entryAnchor) return_trace (false);
+    if (!this_record.entryAnchor ||
+        unlikely (!this_record.entryAnchor.sanitize (&c->sanitizer, this))) return_trace (false);
 
     hb_ot_apply_context_t::skipping_iterator_t &skippy_iter = c->iter_input;
-    skippy_iter.reset (buffer->idx, 1);
+    skippy_iter.reset_fast (buffer->idx);
     unsigned unsafe_from;
-    if (!skippy_iter.prev (&unsafe_from))
+    if (unlikely (!skippy_iter.prev (&unsafe_from)))
     {
       buffer->unsafe_to_concat_from_outbuffer (unsafe_from, buffer->idx + 1);
       return_trace (false);
     }
 
     const EntryExitRecord &prev_record = entryExitRecord[(this+coverage).get_coverage  (buffer->info[skippy_iter.idx].codepoint)];
-    if (!prev_record.exitAnchor)
+    if (!prev_record.exitAnchor ||
+        unlikely (!prev_record.exitAnchor.sanitize (&c->sanitizer, this)))
     {
       buffer->unsafe_to_concat_from_outbuffer (skippy_iter.idx, buffer->idx + 1);
       return_trace (false);
@@ -140,7 +149,14 @@ struct CursivePosFormat1
     unsigned int i = skippy_iter.idx;
     unsigned int j = buffer->idx;
 
-    buffer->unsafe_to_break (i, j);
+    if (HB_BUFFER_MESSAGE_MORE && c->buffer->messaging ())
+    {
+      c->buffer->message (c->font,
+                          "cursive attaching glyph at %u to glyph at %u",
+                          i, j);
+    }
+
+    buffer->unsafe_to_break (i, j + 1);
     float entry_x, entry_y, exit_x, exit_y;
     (this+prev_record.exitAnchor).get_anchor (c, buffer->info[i].codepoint, &exit_x, &exit_y);
     (this+this_record.entryAnchor).get_anchor (c, buffer->info[j].codepoint, &entry_x, &entry_y);
@@ -193,8 +209,8 @@ struct CursivePosFormat1
      * Arabic. */
     unsigned int child  = i;
     unsigned int parent = j;
-    hb_position_t x_offset = entry_x - exit_x;
-    hb_position_t y_offset = entry_y - exit_y;
+    hb_position_t x_offset = roundf (entry_x - exit_x);
+    hb_position_t y_offset = roundf (entry_y - exit_y);
     if  (!(c->lookup_props & LookupFlag::RightToLeft))
     {
       unsigned int k = child;
@@ -223,7 +239,20 @@ struct CursivePosFormat1
      * https://github.com/harfbuzz/harfbuzz/issues/2469
      */
     if (unlikely (pos[parent].attach_chain() == -pos[child].attach_chain()))
+    {
       pos[parent].attach_chain() = 0;
+      if (likely (HB_DIRECTION_IS_HORIZONTAL (c->direction)))
+        pos[parent].y_offset = 0;
+      else
+        pos[parent].x_offset = 0;
+    }
+
+    if (HB_BUFFER_MESSAGE_MORE && c->buffer->messaging ())
+    {
+      c->buffer->message (c->font,
+                          "cursive attached glyph at %u to glyph at %u",
+                          i, j);
+    }
 
     buffer->idx++;
     return_trace (true);
@@ -258,7 +287,6 @@ struct CursivePosFormat1
     const hb_map_t &glyph_map = *c->plan->glyph_map;
 
     auto *out = c->serializer->start_embed (*this);
-    if (unlikely (!out)) return_trace (false);
 
     auto it =
     + hb_zip (this+coverage, entryExitRecord)

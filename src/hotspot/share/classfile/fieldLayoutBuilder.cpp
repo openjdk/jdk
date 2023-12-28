@@ -80,18 +80,18 @@ FieldGroup::FieldGroup(int contended_group) :
   _contended_group(contended_group),  // -1 means no contended group, 0 means default contended group
   _oop_count(0) {}
 
-void FieldGroup::add_primitive_field(AllFieldStream fs, BasicType type) {
+void FieldGroup::add_primitive_field(int idx, BasicType type) {
   int size = type2aelembytes(type);
-  LayoutRawBlock* block = new LayoutRawBlock(fs.index(), LayoutRawBlock::REGULAR, size, size /* alignment == size for primitive types */, false);
+  LayoutRawBlock* block = new LayoutRawBlock(idx, LayoutRawBlock::REGULAR, size, size /* alignment == size for primitive types */, false);
   if (_primitive_fields == nullptr) {
     _primitive_fields = new GrowableArray<LayoutRawBlock*>(INITIAL_LIST_SIZE);
   }
   _primitive_fields->append(block);
 }
 
-void FieldGroup::add_oop_field(AllFieldStream fs) {
+void FieldGroup::add_oop_field(int idx) {
   int size = type2aelembytes(T_OBJECT);
-  LayoutRawBlock* block = new LayoutRawBlock(fs.index(), LayoutRawBlock::REGULAR, size, size /* alignment == size for oops */, true);
+  LayoutRawBlock* block = new LayoutRawBlock(idx, LayoutRawBlock::REGULAR, size, size /* alignment == size for oops */, true);
   if (_oop_fields == nullptr) {
     _oop_fields = new GrowableArray<LayoutRawBlock*>(INITIAL_LIST_SIZE);
   }
@@ -105,8 +105,8 @@ void FieldGroup::sort_by_size() {
   }
 }
 
-FieldLayout::FieldLayout(Array<u2>* fields, ConstantPool* cp) :
-  _fields(fields),
+FieldLayout::FieldLayout(GrowableArray<FieldInfo>* field_info, ConstantPool* cp) :
+  _field_info(field_info),
   _cp(cp),
   _blocks(nullptr),
   _start(_blocks),
@@ -231,7 +231,7 @@ void FieldLayout::add_field_at_offset(LayoutRawBlock* block, int offset, LayoutR
       if (slot->size() == 0) {
         remove(slot);
       }
-      FieldInfo::from_field_array(_fields, block->field_index())->set_offset(block->offset());
+      _field_info->adr_at(block->field_index())->set_offset(block->offset());
       return;
     }
     slot = slot->next_block();
@@ -290,7 +290,7 @@ LayoutRawBlock* FieldLayout::insert_field_block(LayoutRawBlock* slot, LayoutRawB
   if (slot->size() == 0) {
     remove(slot);
   }
-  FieldInfo::from_field_array(_fields, block->field_index())->set_offset(block->offset());
+  _field_info->adr_at(block->field_index())->set_offset(block->offset());
   return block;
 }
 
@@ -298,7 +298,7 @@ bool FieldLayout::reconstruct_layout(const InstanceKlass* ik) {
   bool has_instance_fields = false;
   GrowableArray<LayoutRawBlock*>* all_fields = new GrowableArray<LayoutRawBlock*>(32);
   while (ik != nullptr) {
-    for (AllFieldStream fs(ik->fields(), ik->constants()); !fs.done(); fs.next()) {
+    for (AllFieldStream fs(ik->fieldinfo_stream(), ik->constants()); !fs.done(); fs.next()) {
       BasicType type = Signature::basic_type(fs.signature());
       // distinction between static and non-static fields is missing
       if (fs.access_flags().is_static()) continue;
@@ -430,7 +430,7 @@ void FieldLayout::print(outputStream* output, bool is_static, const InstanceKlas
   while(b != _last) {
     switch(b->kind()) {
       case LayoutRawBlock::REGULAR: {
-        FieldInfo* fi = FieldInfo::from_field_array(_fields, b->field_index());
+        FieldInfo* fi = _field_info->adr_at(b->field_index());
         output->print_cr(" @%d \"%s\" %s %d/%d %s",
                          b->offset(),
                          fi->name(_cp)->as_C_string(),
@@ -441,7 +441,7 @@ void FieldLayout::print(outputStream* output, bool is_static, const InstanceKlas
         break;
       }
       case LayoutRawBlock::FLATTENED: {
-        FieldInfo* fi = FieldInfo::from_field_array(_fields, b->field_index());
+        FieldInfo* fi = _field_info->adr_at(b->field_index());
         output->print_cr(" @%d \"%s\" %s %d/%d %s",
                          b->offset(),
                          fi->name(_cp)->as_C_string(),
@@ -464,7 +464,7 @@ void FieldLayout::print(outputStream* output, bool is_static, const InstanceKlas
         bool found = false;
         const InstanceKlass* ik = super;
         while (!found && ik != nullptr) {
-          for (AllFieldStream fs(ik->fields(), ik->constants()); !fs.done(); fs.next()) {
+          for (AllFieldStream fs(ik->fieldinfo_stream(), ik->constants()); !fs.done(); fs.next()) {
             if (fs.offset() == b->offset()) {
               output->print_cr(" @%d \"%s\" %s %d/%d %s",
                   b->offset(),
@@ -499,11 +499,11 @@ void FieldLayout::print(outputStream* output, bool is_static, const InstanceKlas
 }
 
 FieldLayoutBuilder::FieldLayoutBuilder(const Symbol* classname, const InstanceKlass* super_klass, ConstantPool* constant_pool,
-      Array<u2>* fields, bool is_contended, FieldLayoutInfo* info) :
+      GrowableArray<FieldInfo>* field_info, bool is_contended, FieldLayoutInfo* info) :
   _classname(classname),
   _super_klass(super_klass),
   _constant_pool(constant_pool),
-  _fields(fields),
+  _field_info(field_info),
   _info(info),
   _root_group(nullptr),
   _contended_groups(GrowableArray<FieldGroup*>(8)),
@@ -529,13 +529,13 @@ FieldGroup* FieldLayoutBuilder::get_or_create_contended_group(int g) {
 }
 
 void FieldLayoutBuilder::prologue() {
-  _layout = new FieldLayout(_fields, _constant_pool);
+  _layout = new FieldLayout(_field_info, _constant_pool);
   const InstanceKlass* super_klass = _super_klass;
   _layout->initialize_instance_layout(super_klass);
   if (super_klass != nullptr) {
     _has_nonstatic_fields = super_klass->has_nonstatic_fields();
   }
-  _static_layout = new FieldLayout(_fields, _constant_pool);
+  _static_layout = new FieldLayout(_field_info, _constant_pool);
   _static_layout->initialize_static_layout();
   _static_fields = new FieldGroup();
   _root_group = new FieldGroup();
@@ -547,14 +547,17 @@ void FieldLayoutBuilder::prologue() {
 //     (support of the @Contended annotation)
 //   - @Contended annotation is ignored for static fields
 void FieldLayoutBuilder::regular_field_sorting() {
-  for (AllFieldStream fs(_fields, _constant_pool); !fs.done(); fs.next()) {
+  int idx = 0;
+  for (GrowableArrayIterator<FieldInfo> it = _field_info->begin(); it != _field_info->end(); ++it, ++idx) {
+    FieldInfo ctrl = _field_info->at(0);
     FieldGroup* group = nullptr;
-    if (fs.access_flags().is_static()) {
+    FieldInfo fieldinfo = *it;
+    if (fieldinfo.access_flags().is_static()) {
       group = _static_fields;
     } else {
       _has_nonstatic_fields = true;
-      if (fs.is_contended()) {
-        int g = fs.contended_group();
+      if (fieldinfo.field_flags().is_contended()) {
+        int g = fieldinfo.contended_group();
         if (g == 0) {
           group = new FieldGroup(true);
           _contended_groups.append(group);
@@ -566,7 +569,7 @@ void FieldLayoutBuilder::regular_field_sorting() {
       }
     }
     assert(group != nullptr, "invariant");
-    BasicType type = Signature::basic_type(fs.signature());
+    BasicType type = Signature::basic_type(fieldinfo.signature(_constant_pool));
     switch(type) {
       case T_BYTE:
       case T_CHAR:
@@ -576,12 +579,12 @@ void FieldLayoutBuilder::regular_field_sorting() {
       case T_LONG:
       case T_SHORT:
       case T_BOOLEAN:
-        group->add_primitive_field(fs, type);
+        group->add_primitive_field(idx, type);
         break;
       case T_OBJECT:
       case T_ARRAY:
         if (group != _static_fields) _nonstatic_oopmap_count++;
-        group->add_oop_field(fs);
+        group->add_oop_field(idx);
         break;
       default:
         fatal("Something wrong?");

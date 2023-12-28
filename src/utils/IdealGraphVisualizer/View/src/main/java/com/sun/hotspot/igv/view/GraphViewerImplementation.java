@@ -62,9 +62,9 @@ public class GraphViewerImplementation implements GraphViewer {
                 return;
             }
         }
-
-        EditorTopComponent tc = new EditorTopComponent(graph);
-        tc.open();
-        tc.requestActive();
+        DiagramViewModel model = new DiagramViewModel(graph);
+        EditorTopComponent etc = new EditorTopComponent(model);
+        etc.open();
+        etc.requestActive();
     }
 }

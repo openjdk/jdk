@@ -345,9 +345,7 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
 
         // End life with a fatal error, message and detail message and the context.
         // Note: no need to do any post-processing here (e.g. signal chaining)
-        va_list va_dummy;
-        VMError::report_and_die(thread, uc, nullptr, 0, msg, detail_msg, va_dummy);
-        va_end(va_dummy);
+        VMError::report_and_die(thread, uc, nullptr, 0, msg, "%s", detail_msg);
 
         ShouldNotReachHere();
 
@@ -477,26 +475,39 @@ void os::print_tos_pc(outputStream *st, const void *context) {
   // point to garbage if entry point in an nmethod is corrupted. Leave
   // this at the end, and hope for the best.
   address pc = os::Posix::ucontext_get_pc(uc);
-  print_instructions(st, pc, /*instrsize=*/4);
+  print_instructions(st, pc);
   st->cr();
 }
 
-void os::print_register_info(outputStream *st, const void *context) {
-  if (context == nullptr) return;
+void os::print_register_info(outputStream *st, const void *context, int& continuation) {
+  const int register_count = 32 /* r0-r32 */ + 3 /* pc, lr, ctr */;
+  int n = continuation;
+  assert(n >= 0 && n <= register_count, "Invalid continuation value");
+  if (context == nullptr || n == register_count) {
+    return;
+  }
 
   const ucontext_t *uc = (const ucontext_t*)context;
-
-  st->print_cr("Register to memory mapping:");
-  st->cr();
-
-  st->print("pc ="); print_location(st, (intptr_t)uc->uc_mcontext.regs->nip);
-  st->print("lr ="); print_location(st, (intptr_t)uc->uc_mcontext.regs->link);
-  st->print("ctr ="); print_location(st, (intptr_t)uc->uc_mcontext.regs->ctr);
-  for (int i = 0; i < 32; i++) {
-    st->print("r%-2d=", i);
-    print_location(st, uc->uc_mcontext.regs->gpr[i]);
+  while (n < register_count) {
+    // Update continuation with next index before printing location
+    continuation = n + 1;
+    switch (n) {
+    case 0:
+      st->print("pc ="); print_location(st, (intptr_t)uc->uc_mcontext.regs->nip);
+      break;
+    case 1:
+      st->print("lr ="); print_location(st, (intptr_t)uc->uc_mcontext.regs->link);
+      break;
+    case 2:
+      st->print("ctr ="); print_location(st, (intptr_t)uc->uc_mcontext.regs->ctr);
+      break;
+    default:
+      st->print("r%-2d=", n-3);
+      print_location(st, (intptr_t)uc->uc_mcontext.regs->gpr[n-3]);
+      break;
+    }
+    ++n;
   }
-  st->cr();
 }
 
 extern "C" {

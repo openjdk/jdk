@@ -137,6 +137,8 @@ class VM_GC_Operation: public VM_GC_Sync_Operation {
   }
   ~VM_GC_Operation();
 
+  virtual const char* cause() const;
+
   // Acquire the Heap_lock and determine if this VM operation should be executed
   // (i.e. not skipped). Return this result, and also store it in _prologue_succeeded.
   virtual bool doit_prologue();
@@ -171,6 +173,7 @@ class VM_GC_HeapInspection: public VM_GC_Operation {
   ~VM_GC_HeapInspection() {}
   virtual VMOp_Type type() const { return VMOp_GC_HeapInspection; }
   virtual bool skip_operation() const;
+  virtual bool doit_prologue();
   virtual void doit();
  protected:
   bool collect();

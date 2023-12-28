@@ -1,0 +1,348 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
+<!-- Copyright © 1991-2023 Unicode, Inc.
+For terms of use, see http://www.unicode.org/copyright.html
+SPDX-License-Identifier: Unicode-DFS-2016
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+-->
+<ldml>
+	<identity>
+		<version number="$Revision$"/>
+		<language type="tn"/>
+	</identity>
+	<localeDisplayNames>
+		<languages>
+			<language type="af" draft="unconfirmed">Seburu</language>
+			<language type="am" draft="unconfirmed">Amhariki</language>
+			<language type="ar" draft="unconfirmed">Arabic</language>
+			<language type="az" draft="unconfirmed">Azerbaijani</language>
+			<language type="be" draft="unconfirmed">Belarusian</language>
+			<language type="bg" draft="unconfirmed">Bulgarian</language>
+			<language type="bn" draft="unconfirmed">Bengali</language>
+			<language type="bs" draft="unconfirmed">SeBosnia</language>
+			<language type="ca" draft="unconfirmed">Catalan</language>
+			<language type="cs" draft="unconfirmed">Se Czeck</language>
+			<language type="cy" draft="unconfirmed">Welsh</language>
+			<language type="da" draft="unconfirmed">Danish</language>
+			<language type="de" draft="unconfirmed">German</language>
+			<language type="el" draft="unconfirmed">SeGerika</language>
+			<language type="en" draft="unconfirmed">Sekgoa</language>
+			<language type="eo" draft="unconfirmed">Esperanto</language>
+			<language type="es" draft="unconfirmed">Spanish</language>
+			<language type="et" draft="unconfirmed">Estonian</language>
+			<language type="eu" draft="unconfirmed">Basque</language>
+			<language type="fa" draft="unconfirmed">Mo/SePerishia</language>
+			<language type="fi" draft="unconfirmed">Se-Finland</language>
+			<language type="fil" draft="unconfirmed">Tagalog</language>
+			<language type="fo" draft="unconfirmed">Faroese</language>
+			<language type="fr" draft="unconfirmed">Se Fora</language>
+			<language type="fy" draft="unconfirmed">Frisian</language>
+			<language type="ga" draft="unconfirmed">Irish</language>
+			<language type="gd" draft="unconfirmed">Scots Gaelic</language>
+			<language type="gl" draft="unconfirmed">Galician</language>
+			<language type="gu" draft="unconfirmed">Gujarati</language>
+			<language type="he" draft="unconfirmed">Se heberu</language>
+			<language type="hi" draft="unconfirmed">Hindi</language>
+			<language type="hr" draft="unconfirmed">Croatian</language>
+			<language type="hu" draft="unconfirmed">Hungarian</language>
+			<language type="ia" draft="unconfirmed">Interlingua</language>
+			<language type="id" draft="unconfirmed">Indonesian</language>
+			<language type="is" draft="unconfirmed">Icelandic</language>
+			<language type="it" draft="unconfirmed">Se Italiano</language>
+			<language type="ja" draft="unconfirmed">Se Japan</language>
+			<language type="jv" draft="unconfirmed">Javanese</language>
+			<language type="ka" draft="unconfirmed">Mo/SeJojia</language>
+			<language type="kn" draft="unconfirmed">Kannada</language>
+			<language type="ko" draft="unconfirmed">Se Korea</language>
+			<language type="la" draft="unconfirmed">Latin</language>
+			<language type="lt" draft="unconfirmed">Lithuanian</language>
+			<language type="lv" draft="unconfirmed">Latvian</language>
+			<language type="mk" draft="unconfirmed">Macedonian</language>
+			<language type="ml" draft="unconfirmed">Malayalam</language>
+			<language type="mr" draft="unconfirmed">Marathi</language>
+			<language type="ms" draft="unconfirmed">Malay</language>
+			<language type="mt" draft="unconfirmed">Maltese</language>
+			<language type="ne" draft="unconfirmed">Nepali</language>
+			<language type="nl" draft="unconfirmed">Se Dutch</language>
+			<language type="no" draft="unconfirmed">Puo ya kwa Norway</language>
+			<language type="oc" draft="unconfirmed">Occitan</language>
+			<language type="pa" draft="unconfirmed">Punjabi</language>
+			<language type="pl" draft="unconfirmed">Se Poland</language>
+			<language type="pt" draft="unconfirmed">Se Potoketsi</language>
+			<language type="ro" draft="unconfirmed">Se Roma</language>
+			<language type="ru" draft="unconfirmed">Russian</language>
+			<language type="sk" draft="unconfirmed">Slovak</language>
+			<language type="sl" draft="unconfirmed">Slovenian</language>
+			<language type="sq" draft="unconfirmed">Albanian</language>
+			<language type="sr" draft="unconfirmed">Serbian</language>
+			<language type="su" draft="unconfirmed">Mo/SeSundane</language>
+			<language type="sv" draft="unconfirmed">Swedish</language>
+			<language type="sw" draft="unconfirmed">Swahili</language>
+			<language type="ta" draft="unconfirmed">Tamil</language>
+			<language type="te" draft="unconfirmed">Telugu</language>
+			<language type="th" draft="unconfirmed">Thai</language>
+			<language type="ti" draft="unconfirmed">Tigrinya</language>
+			<language type="tlh" draft="unconfirmed">Klingon</language>
+			<language type="tn" draft="provisional">Setswana</language>
+			<language type="tr" draft="unconfirmed">Turkish</language>
+			<language type="uk" draft="unconfirmed">Ukrainian</language>
+			<language type="ur" draft="unconfirmed">Urdu</language>
+			<language type="uz" draft="unconfirmed">Uzbek</language>
+			<language type="vi" draft="unconfirmed">Vietnamese</language>
+			<language type="xh" draft="unconfirmed">IsiXhosa</language>
+			<language type="zu" draft="unconfirmed">IsiZulu</language>
+		</languages>
+		<territories>
+			<territory type="ZA">Aforika Borwa</territory>
+		</territories>
+	</localeDisplayNames>
+	<characters>
+		<exemplarCharacters>[a b d e ê f g h i j k l m n o ô p r s t u w y]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[c q v x z]</exemplarCharacters>
+		<exemplarCharacters type="index" draft="unconfirmed">[A B C D E F G H I J K L M N O P Q R S T U V W X Y Z]</exemplarCharacters>
+	</characters>
+	<delimiters>
+		<quotationStart draft="unconfirmed">‘</quotationStart>
+		<quotationEnd draft="unconfirmed">’</quotationEnd>
+		<alternateQuotationStart draft="unconfirmed">“</alternateQuotationStart>
+		<alternateQuotationEnd draft="unconfirmed">”</alternateQuotationEnd>
+	</delimiters>
+	<dates>
+		<calendars>
+			<calendar type="gregorian">
+				<months>
+					<monthContext type="format">
+						<monthWidth type="abbreviated">
+							<month type="1">Fer</month>
+							<month type="2">Tlh</month>
+							<month type="3">Mop</month>
+							<month type="4">Mor</month>
+							<month type="5">Mot</month>
+							<month type="6">See</month>
+							<month type="7">Phu</month>
+							<month type="8">Pha</month>
+							<month type="9">Lwe</month>
+							<month type="10">Dip</month>
+							<month type="11">Ngw</month>
+							<month type="12">Sed</month>
+						</monthWidth>
+						<monthWidth type="wide">
+							<month type="1">Ferikgong</month>
+							<month type="2">Tlhakole</month>
+							<month type="3">Mopitlo</month>
+							<month type="4">Moranang</month>
+							<month type="5">Motsheganang</month>
+							<month type="6">Seetebosigo</month>
+							<month type="7">Phukwi</month>
+							<month type="8">Phatwe</month>
+							<month type="9">Lwetse</month>
+							<month type="10">Diphalane</month>
+							<month type="11">Ngwanatsele</month>
+							<month type="12">Sedimonthole</month>
+						</monthWidth>
+					</monthContext>
+				</months>
+				<days>
+					<dayContext type="format">
+						<dayWidth type="abbreviated">
+							<day type="sun">Tsh</day>
+							<day type="mon">Mos</day>
+							<day type="tue">Labb</day>
+							<day type="wed">Labr</day>
+							<day type="thu">Labn</day>
+							<day type="fri">Labt</day>
+							<day type="sat">Mat</day>
+						</dayWidth>
+						<dayWidth type="wide">
+							<day type="sun">Tshipi</day>
+							<day type="mon">Mosopulogo</day>
+							<day type="tue">Labobedi</day>
+							<day type="wed">Laboraro</day>
+							<day type="thu">Labone</day>
+							<day type="fri">Labotlhano</day>
+							<day type="sat">Matlhatso</day>
+						</dayWidth>
+					</dayContext>
+				</days>
+				<quarters>
+					<quarterContext type="format">
+						<quarterWidth type="abbreviated">
+							<quarter type="1">Q1</quarter>
+							<quarter type="2">Q2</quarter>
+							<quarter type="3">Q3</quarter>
+							<quarter type="4">Q4</quarter>
+						</quarterWidth>
+						<quarterWidth type="wide">
+							<quarter type="1">Sephatlho sa ntlha sa ngwaga</quarter>
+							<quarter type="2">Sephatlho sa bobedi</quarter>
+							<quarter type="3">Sephatlho sa boraro</quarter>
+							<quarter type="4">Sephatlho sa bone</quarter>
+						</quarterWidth>
+					</quarterContext>
+				</quarters>
+				<dayPeriods>
+					<dayPeriodContext type="format">
+						<dayPeriodWidth type="narrow">
+							<dayPeriod type="am">a</dayPeriod>
+							<dayPeriod type="pm">p</dayPeriod>
+						</dayPeriodWidth>
+					</dayPeriodContext>
+				</dayPeriods>
+				<eras>
+					<eraNames>
+						<era type="0">Pele ga tsalo ya Morena Jeso</era>
+						<era type="0" alt="variant">Pele ga Krestie</era>
+						<era type="1">Morago ga Leso la Morena Jeso</era>
+						<era type="1" alt="variant">Morago ga Krestie</era>
+					</eraNames>
+					<eraAbbr>
+						<era type="0">BC</era>
+						<era type="0" alt="variant">BCE</era>
+						<era type="1">AD</era>
+						<era type="1" alt="variant">CE</era>
+					</eraAbbr>
+				</eras>
+				<timeFormats>
+					<timeFormatLength type="full">
+						<timeFormat>
+							<pattern>HH:mm:ss zzzz</pattern>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="long">
+						<timeFormat>
+							<pattern>HH:mm:ss z</pattern>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="medium">
+						<timeFormat>
+							<pattern>HH:mm:ss</pattern>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="short">
+						<timeFormat>
+							<pattern>HH:mm</pattern>
+						</timeFormat>
+					</timeFormatLength>
+				</timeFormats>
+				<dateTimeFormats>
+					<dateTimeFormatLength type="full">
+						<dateTimeFormat>
+							<pattern>{1} 'ka' {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="long">
+						<dateTimeFormat>
+							<pattern>{1} 'ka' {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="medium">
+						<dateTimeFormat>
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="short">
+						<dateTimeFormat>
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<availableFormats>
+						<dateFormatItem id="Ehm">E h:mm a</dateFormatItem>
+						<dateFormatItem id="Ehms">E h:mm:ss a</dateFormatItem>
+						<dateFormatItem id="h">h a</dateFormatItem>
+						<dateFormatItem id="hm">h:mm a</dateFormatItem>
+						<dateFormatItem id="hms">h:mm:ss a</dateFormatItem>
+						<dateFormatItem id="hmsv">h:mm:ss a v</dateFormatItem>
+						<dateFormatItem id="hmv">h:mm a v</dateFormatItem>
+						<dateFormatItem id="MMMMW" count="one">'beke' 'ya' W 'ya' MMM</dateFormatItem>
+						<dateFormatItem id="MMMMW" count="other">'beke' 'ya' W 'ya' MMM</dateFormatItem>
+						<dateFormatItem id="yw" count="one">'beke' w 'ya' Y</dateFormatItem>
+						<dateFormatItem id="yw" count="other">'beke' w 'ya' Y</dateFormatItem>
+					</availableFormats>
+					<intervalFormats>
+						<intervalFormatItem id="h">
+							<greatestDifference id="a">h a – h a</greatestDifference>
+							<greatestDifference id="h">h–h a</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="hm">
+							<greatestDifference id="a">h:mm a – h:mm a</greatestDifference>
+							<greatestDifference id="h">h:mm–h:mm a</greatestDifference>
+							<greatestDifference id="m">h:mm–h:mm a</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="hmv">
+							<greatestDifference id="a">h:mm a – h:mm a v</greatestDifference>
+							<greatestDifference id="h">h:mm–h:mm a v</greatestDifference>
+							<greatestDifference id="m">h:mm–h:mm a v</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="hv">
+							<greatestDifference id="a">h a – h a v</greatestDifference>
+							<greatestDifference id="h">h–h a v</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Md">
+							<greatestDifference id="d">MM-dd – MM-dd</greatestDifference>
+							<greatestDifference id="M">MM-dd – MM-dd</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MEd">
+							<greatestDifference id="d">MM-dd, E – MM-dd, E</greatestDifference>
+							<greatestDifference id="M">MM-dd, E – MM-dd, E</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMMd">
+							<greatestDifference id="M">MMM d – MMM d</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMMEd">
+							<greatestDifference id="d">MMM d, E – MMM d, E</greatestDifference>
+							<greatestDifference id="M">MMM d, E – MMM d, E</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yM">
+							<greatestDifference id="M">y-MM – y-MM</greatestDifference>
+							<greatestDifference id="y">y-MM – y-MM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMd">
+							<greatestDifference id="d">y-MM-dd – y-MM-dd</greatestDifference>
+							<greatestDifference id="M">y-MM-dd – y-MM-dd</greatestDifference>
+							<greatestDifference id="y">y-MM-dd – y-MM-dd</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMEd">
+							<greatestDifference id="d">y-MM-dd, E – y-MM-dd, E</greatestDifference>
+							<greatestDifference id="M">y-MM-dd, E – y-MM-dd, E</greatestDifference>
+							<greatestDifference id="y">y-MM-dd, E – y-MM-dd, E</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMM">
+							<greatestDifference id="y">y MMM – y MMM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMMd">
+							<greatestDifference id="M">y MMM d – MMM d</greatestDifference>
+							<greatestDifference id="y">y MMM d – y MMM d</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMMEd">
+							<greatestDifference id="d">y MMM d, E – MMM d, E</greatestDifference>
+							<greatestDifference id="M">y MMM d, E – MMM d, E</greatestDifference>
+							<greatestDifference id="y">y MMM d, E – y MMM d, E</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMMM">
+							<greatestDifference id="y">y MMMM – y MMMM</greatestDifference>
+						</intervalFormatItem>
+					</intervalFormats>
+				</dateTimeFormats>
+			</calendar>
+		</calendars>
+	</dates>
+	<numbers>
+		<symbols numberSystem="latn">
+			<group> </group>
+		</symbols>
+		<currencyFormats numberSystem="latn">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern>¤#,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<unitPattern count="one">{0} {1}</unitPattern>
+			<unitPattern count="other">{0} {1}</unitPattern>
+		</currencyFormats>
+		<currencies>
+			<currency type="ZAR">
+				<symbol>R</symbol>
+			</currency>
+		</currencies>
+	</numbers>
+</ldml>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,87 +24,102 @@
 /**
  * @test
  * @bug 8087112
- * @modules java.net.http
- *          jdk.httpserver
+ * @library /test/lib /test/jdk/java/net/httpclient/lib
+ * @build jdk.httpclient.test.lib.common.HttpServerAdapters jdk.test.lib.net.SimpleSSLContext
  * @run main/othervm BasicAuthTest
  * @summary Basic Authentication Test
  */
 
 import com.sun.net.httpserver.BasicAuthenticator;
-import com.sun.net.httpserver.HttpContext;
-import com.sun.net.httpserver.HttpExchange;
-import com.sun.net.httpserver.HttpHandler;
-import com.sun.net.httpserver.HttpServer;
+import jdk.httpclient.test.lib.common.HttpServerAdapters;
+import jdk.test.lib.net.SimpleSSLContext;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
 import java.net.PasswordAuthentication;
 import java.net.URI;
 import java.net.http.HttpClient;
+import java.net.http.HttpClient.Version;
 import java.net.http.HttpRequest;
 import java.net.http.HttpRequest.BodyPublishers;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import javax.net.ssl.SSLContext;
+
 import static java.nio.charset.StandardCharsets.US_ASCII;
 
-public class BasicAuthTest {
+public class BasicAuthTest implements HttpServerAdapters {
 
     static volatile boolean ok;
     static final String RESPONSE = "Hello world";
     static final String POST_BODY = "This is the POST body 123909090909090";
 
     public static void main(String[] args) throws Exception {
-        InetSocketAddress addr = new InetSocketAddress(InetAddress.getLoopbackAddress(),0);
-        HttpServer server = HttpServer.create(addr, 10);
+        test(Version.HTTP_1_1, false);
+        test(Version.HTTP_2, false);
+        test(Version.HTTP_1_1, true);
+        test(Version.HTTP_2, true);
+    }
+
+    public static void test(Version version, boolean secure) throws Exception {
+
         ExecutorService e = Executors.newCachedThreadPool();
         Handler h = new Handler();
-        HttpContext serverContext = server.createContext("/test", h);
-        int port = server.getAddress().getPort();
-        System.out.println("Server port = " + port);
-
-        ClientAuth ca = new ClientAuth();
+        SSLContext sslContext = secure ? new SimpleSSLContext().get() : null;
+        HttpTestServer server = HttpTestServer.create(version, sslContext, e);
+        HttpTestContext serverContext = server.addHandler(h,"/test/");
         ServerAuth sa = new ServerAuth("foo realm");
         serverContext.setAuthenticator(sa);
-        server.setExecutor(e);
         server.start();
-        HttpClient client = HttpClient.newBuilder()
-                                      .authenticator(ca)
-                                      .build();
+        System.out.println("Server auth = " + server.serverAuthority());
+
+        ClientAuth ca = new ClientAuth();
+        var clientBuilder = HttpClient.newBuilder();
+        if (sslContext != null) clientBuilder.sslContext(sslContext);
+        HttpClient client = clientBuilder.authenticator(ca).build();
 
         try {
-            URI uri = new URI("http://localhost:" + Integer.toString(port) + "/test/foo");
-            HttpRequest req = HttpRequest.newBuilder(uri).GET().build();
+            String scheme = sslContext == null ? "http" : "https";
+            URI uri = new URI(scheme + "://" + server.serverAuthority() + "/test/foo/"+version);
+            var builder = HttpRequest.newBuilder(uri);
+            HttpRequest req = builder.copy().GET().build();
 
+            System.out.println("\n\nSending request: " + req);
             HttpResponse resp = client.send(req, BodyHandlers.ofString());
             ok = resp.statusCode() == 200 && resp.body().equals(RESPONSE);
 
-            if (!ok || ca.count != 1)
-                throw new RuntimeException("Test failed");
+            var count = ca.count;
+            if (!ok || count != 1)
+                throw new RuntimeException("Test failed: ca.count=" + count);
 
             // repeat same request, should succeed but no additional authenticator calls
 
+            System.out.println("\n\nRepeat request: " + req);
             resp = client.send(req, BodyHandlers.ofString());
             ok = resp.statusCode() == 200 && resp.body().equals(RESPONSE);
 
-            if (!ok || ca.count != 1)
-                throw new RuntimeException("Test failed");
+            count = ca.count;
+            if (!ok || count != 1)
+                throw new RuntimeException("Test failed: ca.count=" + count);
 
             // try a POST
 
-            req = HttpRequest.newBuilder(uri)
-                             .POST(BodyPublishers.ofString(POST_BODY))
+            req = builder.copy().POST(BodyPublishers.ofString(POST_BODY))
                              .build();
+            System.out.println("\n\nSending POST request: " + req);
             resp = client.send(req, BodyHandlers.ofString());
             ok = resp.statusCode() == 200;
 
-            if (!ok || ca.count != 1)
-                throw new RuntimeException("Test failed");
+            count = ca.count;
+            if (!ok || count != 1)
+                throw new RuntimeException("Test failed: ca.count=" + count);
+
+
         } finally {
-            server.stop(0);
+            server.stop();
             e.shutdownNow();
         }
         System.out.println("OK");
@@ -136,20 +151,20 @@ public class BasicAuthTest {
         }
     }
 
-   static class Handler implements HttpHandler {
+   static class Handler implements HttpTestHandler {
         static volatile boolean ok;
 
         @Override
-        public void handle(HttpExchange he) throws IOException {
+        public void handle(HttpTestExchange he) throws IOException {
             String method = he.getRequestMethod();
             InputStream is = he.getRequestBody();
             if (method.equalsIgnoreCase("POST")) {
                 String requestBody = new String(is.readAllBytes(), US_ASCII);
                 if (!requestBody.equals(POST_BODY)) {
-                    he.sendResponseHeaders(500, -1);
+                    he.sendResponseHeaders(500, 0);
                     ok = false;
                 } else {
-                    he.sendResponseHeaders(200, -1);
+                    he.sendResponseHeaders(200, 0);
                     ok = true;
                 }
             } else { // GET
