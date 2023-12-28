@@ -374,6 +374,12 @@ public:
   }
 };
 
+static void *pthread_test_runnable(void *runnable) {
+  TestRunnable* r = reinterpret_cast<TestRunnable*>(runnable);
+  r->runUnitTest();
+  return nullptr;
+}
+
 TEST_VM(os_linux, pretouch_thp_and_use_concurrent) {
   // Explicitly enable thp to test cocurrent system calls.
   bool useThp = UseTransparentHugePages;
@@ -383,27 +389,20 @@ TEST_VM(os_linux, pretouch_thp_and_use_concurrent) {
   EXPECT_TRUE(os::commit_memory(heap, 1 * G, false));
 
   {
-    PretouchMemoryRunnable prunnable(heap, 1 * G);
-    UseMemoryRunnable urunnable(heap, 1 * G);
-    const long testDurationMillis = 1000;
-    const size_t nThreads = os::active_processor_count();
-    Semaphore done(0);
-    UnitTestThread** t = NEW_C_HEAP_ARRAY(UnitTestThread*, nThreads + 1, mtInternal);
-    t[0] = new UnitTestThread(&urunnable, &done, testDurationMillis);
-
-    for (size_t i = 1; i <= nThreads; i++) {
-      t[i] = new UnitTestThread(&prunnable, &done, testDurationMillis);
+    UseMemoryRunnable use(heap, 1 * G);
+    PretouchMemoryRunnable pretouch(heap, 1 * G);
+    pthread_t threads[8];
+    pthread_attr_t attributes[8];
+    for (int i = 0; i < 8; i++) {
+      pthread_attr_init(attributes + i);
+      TestRunnable *runnable = &pretouch;
+      if (i == 0) runnable = &use;
+      pthread_create(threads + i, attributes + i, pthread_test_runnable, runnable);
+      pthread_attr_destroy(attributes + i);
     }
-
-    for (size_t i = 0; i <= nThreads; i++) {
-      t[i]->doit();
+    for (int i = 0; i < 8; i++) {
+      pthread_join(threads[i], 0);
     }
-
-    for (size_t i = 0; i <= nThreads; i++) {
-      done.wait();
-    }
-
-    FREE_C_HEAP_ARRAY(UnitTestThread**, t);
   }
 
   int* iptr = reinterpret_cast<int*>(heap);
