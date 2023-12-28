@@ -137,7 +137,13 @@ HDC AwtWin32GraphicsDevice::MakeDCFromMonitor(HMONITOR hmMonitor) {
             HDC hDC = CreateDC(mieInfo.szDevice, NULL, NULL, NULL);
             if (NULL != hDC) {
                 retCode = hDC;
+            } else {
+                J2dTraceLn1(J2D_TRACE_WARNING,
+                       "CreateDC failed, so we cannot store the DC for later usage, mieInfo.szDevice is %S",
+                       mieInfo.szDevice);
             }
+        } else {
+            J2dTraceLn(J2D_TRACE_WARNING, "GetMonitorInfo failed, so we cannot create the DC as well");
         }
     }
     return retCode;
@@ -179,7 +185,13 @@ void AwtWin32GraphicsDevice::Initialize()
     }
     gpBitmapInfo->bmiHeader.biBitCount = 0;
     HDC hBMDC = this->GetDC();
+    if (hBMDC == NULL) {
+        J2dTraceLn(J2D_TRACE_WARNING, "AwtWin32GraphicsDevice::Initialize GetDC failed");
+    }
     HBITMAP hBM = ::CreateCompatibleBitmap(hBMDC, 1, 1);
+    if (hBM == NULL) {
+        J2dTraceLn(J2D_TRACE_WARNING, "AwtWin32GraphicsDevice::Initialize CreateCompatibleBitmap failed");
+    }
     VERIFY(::GetDIBits(hBMDC, hBM, 0, 1, NULL, gpBitmapInfo, DIB_RGB_COLORS));
 
     if (colorData->bitsperpixel > 8) {
@@ -293,8 +305,8 @@ void AwtWin32GraphicsDevice::Initialize()
         }
         palette->UpdateLogical();
     }
-    VERIFY(::DeleteObject(hBM));
-    VERIFY(::DeleteDC(hBMDC));
+    if (hBM != NULL) VERIFY(::DeleteObject(hBM));
+    if (hBMDC != NULL) VERIFY(::DeleteDC(hBMDC));
 }
 
 /**
