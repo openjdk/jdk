@@ -184,7 +184,7 @@ public class PriorityQueueTest extends JSR166TestCase {
 
     /**
      * Initializing from Collection with a comparator has the order
-     * of its elements the same as the queue initialized with a comparator 
+     * of its elements the same as the queue initialized with a comparator
      * and populated with Collection after initialization
      */
     public void testConstructor9() {
