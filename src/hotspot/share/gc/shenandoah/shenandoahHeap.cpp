@@ -1182,91 +1182,100 @@ void ShenandoahHeap::cancel_old_gc() {
   }
 }
 
-// xfer_limit is the maximum we're able to transfer from young to old
+// Make sure old-generation is large enough, but no larger than is necessary, to hold mixed evacuations
+// and promotions, if we anticipate either. Any deficit is provided by the young generation, subject to
+// xfer_limit, and any excess is transferred to the young generation.
+// xfer_limit is the maximum we're able to transfer from young to old.
 void ShenandoahHeap::adjust_generation_sizes_for_next_cycle(
   size_t xfer_limit, size_t young_cset_regions, size_t old_cset_regions) {
 
-  // Make sure old-generation is large enough, but no larger, than is necessary to hold mixed evacuations
-  // and promotions if we anticipate either.
-  size_t region_size_bytes = ShenandoahHeapRegion::region_size_bytes();
-  size_t promo_load = get_promotion_potential();
+  // We can limit the old reserve to the size of anticipated promotions:
+  // max_old_reserve is an upper bound on memory evacuated from old and promoted to old,
+  // clamped by the old generation space available.
+  //
+  // Here's the algebra.
+  // Let SOEP = ShenandoahOldEvacRatioPercent,
+  //     OE = old evac,
+  //     YE = young evac, and
+  //     TE = total evac = OE + YE
+  // By definition:
+  //            SOEP/100 = OE/TE
+  //                     = OE/(OE+YE)
+  //  => SOEP/(100-SOEP) = OE/((OE+YE)-OE)      // componendo-dividendo: If a/b = c/d, then a/(b-a) = c/(d-c)
+  //                     = OE/YE
+  //  =>              OE = YE*SOEP/(100-SOEP)
+
+  // We have to be careful in the event that SOEP is set to 100 by the user.
+  assert(ShenandoahOldEvacRatioPercent <= 100, "Error");
+  const size_t old_available = old_generation()->available();
   // The free set will reserve this amount of memory to hold young evacuations
-  size_t young_reserve = (young_generation()->max_capacity() * ShenandoahEvacReserve) / 100;
-  size_t old_reserve = 0;
-  size_t mixed_candidates = old_heuristics()->unprocessed_old_collection_candidates();
-  bool doing_mixed = (mixed_candidates > 0);
-  bool doing_promotions = promo_load > 0;
+  const size_t young_reserve = (young_generation()->max_capacity() * ShenandoahEvacReserve) / 100;
+  const size_t max_old_reserve = (ShenandoahOldEvacRatioPercent == 100) ?
+     old_available : MIN2((young_reserve * ShenandoahOldEvacRatioPercent) / (100 - ShenandoahOldEvacRatioPercent),
+                          old_available);
 
-  // round down
-  size_t max_old_region_xfer = xfer_limit / region_size_bytes;
+  const size_t region_size_bytes = ShenandoahHeapRegion::region_size_bytes();
 
-  // We can limit the reserve to the size of anticipated promotions
-  size_t max_old_reserve = young_reserve * ShenandoahOldEvacRatioPercent / (100 - ShenandoahOldEvacRatioPercent);
-  // Here's the algebra:
-  //  TotalEvacuation = OldEvacuation + YoungEvacuation
-  //  OldEvacuation = TotalEvacuation*(ShenandoahOldEvacRatioPercent/100)
-  //  OldEvacuation = YoungEvacuation * (ShenandoahOldEvacRatioPercent/100)/(1 - ShenandoahOldEvacRatioPercent/100)
-  //  OldEvacuation = YoungEvacuation * ShenandoahOldEvacRatioPercent/(100 - ShenandoahOldEvacRatioPercent)
-
-  size_t reserve_for_mixed, reserve_for_promo;
+  // Decide how much old space we should reserve for a mixed collection
+  size_t reserve_for_mixed = 0;
+  const size_t mixed_candidates = old_heuristics()->unprocessed_old_collection_candidates();
+  const bool doing_mixed = (mixed_candidates > 0);
   if (doing_mixed) {
-    assert(old_generation()->available() >= old_generation()->free_unaffiliated_regions() * region_size_bytes,
-           "Unaffiliated available must be less than total available");
-
     // We want this much memory to be unfragmented in order to reliably evacuate old.  This is conservative because we
     // may not evacuate the entirety of unprocessed candidates in a single mixed evacuation.
     size_t max_evac_need = (size_t)
       (old_heuristics()->unprocessed_old_collection_candidates_live_memory() * ShenandoahOldEvacWaste);
+    assert(old_available >= old_generation()->free_unaffiliated_regions() * region_size_bytes,
+           "Unaffiliated available must be less than total available");
     size_t old_fragmented_available =
-      old_generation()->available() - old_generation()->free_unaffiliated_regions() * region_size_bytes;
+      old_available - old_generation()->free_unaffiliated_regions() * region_size_bytes;
     reserve_for_mixed = max_evac_need + old_fragmented_available;
     if (reserve_for_mixed > max_old_reserve) {
       reserve_for_mixed = max_old_reserve;
     }
-  } else {
-    reserve_for_mixed = 0;
   }
 
-  size_t available_for_promotions = max_old_reserve - reserve_for_mixed;
+  // Decide how much space we should reserve for promotions from young
+  size_t reserve_for_promo = 0;
+  const size_t promo_load = get_promotion_potential();
+  const bool doing_promotions = promo_load > 0;
   if (doing_promotions) {
-    // We're only promoting and we have a maximum bound on the amount to be promoted
-    reserve_for_promo = (size_t) (promo_load * ShenandoahPromoEvacWaste);
-    if (reserve_for_promo > available_for_promotions) {
-      reserve_for_promo = available_for_promotions;
-    }
-  } else {
-    reserve_for_promo = 0;
+    // We're promoting and have a bound on the maximum amount that can be promoted
+    const size_t available_for_promotions = max_old_reserve - reserve_for_mixed;
+    reserve_for_promo = MIN2((size_t)(promo_load * ShenandoahPromoEvacWaste), available_for_promotions);
   }
-  old_reserve = reserve_for_mixed + reserve_for_promo;
+
+  // This is the total old we want to ideally reserve
+  const size_t old_reserve = reserve_for_mixed + reserve_for_promo;
   assert(old_reserve <= max_old_reserve, "cannot reserve more than max for old evacuations");
-  size_t old_available = old_generation()->available() + old_cset_regions * region_size_bytes;
-  size_t young_available = young_generation()->available() + young_cset_regions * region_size_bytes;
+
+  // We now check if the old generation is running a surplus or a deficit.
   size_t old_region_deficit = 0;
   size_t old_region_surplus = 0;
-  if (old_available >= old_reserve) {
-    size_t old_excess = old_available - old_reserve;
-    size_t excess_regions = old_excess / region_size_bytes;
-    size_t unaffiliated_old_regions = old_generation()->free_unaffiliated_regions() + old_cset_regions;
-    size_t unaffiliated_old = unaffiliated_old_regions * region_size_bytes;
-    if (unaffiliated_old_regions < excess_regions) {
-      // We'll give only unaffiliated old to young, which is known to be less than the excess.
-      old_region_surplus = unaffiliated_old_regions;
-    } else {
-      // unaffiliated_old_regions > excess_regions, so we only give away the excess.
-      old_region_surplus = excess_regions;
-    }
+
+  const size_t max_old_available = old_generation()->available() + old_cset_regions * region_size_bytes;
+  if (max_old_available >= old_reserve) {
+    // We are running a surplus, so the old region surplus can go to young
+    const size_t old_surplus = max_old_available - old_reserve;
+    old_region_surplus = old_surplus / region_size_bytes;
+    const size_t unaffiliated_old_regions = old_generation()->free_unaffiliated_regions() + old_cset_regions;
+    old_region_surplus = MIN2(old_region_surplus, unaffiliated_old_regions);
   } else {
-    // We need to request transfer from YOUNG.  Ignore that this will directly impact young_generation()->max_capacity(),
+    // We are running a deficit which we'd like to fill from young.
+    // Ignore that this will directly impact young_generation()->max_capacity(),
     // indirectly impacting young_reserve and old_reserve.  These computations are conservative.
-    size_t old_need = old_reserve - old_available;
-    // Round up the number of regions needed from YOUNG
+    const size_t old_need = old_reserve - max_old_available;
+    // The old region deficit (rounded up) will come from young
     old_region_deficit = (old_need + region_size_bytes - 1) / region_size_bytes;
+
+    // Round down the regions we can transfer from young to old. If we're running short
+    // on young-gen memory, we restrict the xfer. Old-gen collection activities will be
+    // curtailed if the budget is restricted.
+    const size_t max_old_region_xfer = xfer_limit / region_size_bytes;
+    old_region_deficit = MIN2(old_region_deficit, max_old_region_xfer);
   }
-  if (old_region_deficit > max_old_region_xfer) {
-    // If we're running short on young-gen memory, limit the xfer.  Old-gen collection activities will be curtailed
-    // if the budget is smaller than desired.
-    old_region_deficit = max_old_region_xfer;
-  }
+  assert(old_region_deficit == 0 || old_region_surplus == 0, "Only surplus or deficit, never both");
+
   set_old_region_surplus(old_region_surplus);
   set_old_region_deficit(old_region_deficit);
 }

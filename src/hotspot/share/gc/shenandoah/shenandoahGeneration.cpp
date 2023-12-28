@@ -234,7 +234,6 @@ void ShenandoahGeneration::compute_evacuation_budgets(ShenandoahHeap* heap, bool
 
   ShenandoahGeneration* old_generation = heap->old_generation();
   ShenandoahYoungGeneration* young_generation = heap->young_generation();
-  size_t old_evacuation_reserve = 0;
   size_t num_regions = heap->num_regions();
 
   // During initialization and phase changes, it is more likely that fewer objects die young and old-gen
@@ -253,45 +252,31 @@ void ShenandoahGeneration::compute_evacuation_budgets(ShenandoahHeap* heap, bool
   // First priority is to reclaim the easy garbage out of young-gen.
 
   // maximum_young_evacuation_reserve is upper bound on memory to be evacuated out of young
-  size_t maximum_young_evacuation_reserve = (young_generation->max_capacity() * ShenandoahEvacReserve) / 100;
-  size_t young_evacuation_reserve = maximum_young_evacuation_reserve;
-  size_t excess_young;
+  const size_t maximum_young_evacuation_reserve = (young_generation->max_capacity() * ShenandoahEvacReserve) / 100;
+  const size_t young_evacuation_reserve = MIN2(maximum_young_evacuation_reserve, young_generation->available_with_reserve());
 
-  size_t total_young_available = young_generation->available_with_reserve();
-  if (total_young_available > young_evacuation_reserve) {
-    excess_young = total_young_available - young_evacuation_reserve;
-  } else {
-    young_evacuation_reserve = total_young_available;
-    excess_young = 0;
-  }
-  size_t unaffiliated_young = young_generation->free_unaffiliated_regions() * region_size_bytes;
-  if (excess_young > unaffiliated_young) {
-    excess_young = unaffiliated_young;
-  } else {
-    // round down to multiple of region size
-    excess_young /= region_size_bytes;
-    excess_young *= region_size_bytes;
-  }
-  // excess_young is available to be transferred to OLD.  Assume that OLD will not request any more than had
-  // already been set aside for its promotion and evacuation needs at the end of previous GC.  No need to
-  // hold back memory for allocation runway.
+  // maximum_old_evacuation_reserve is an upper bound on memory evacuated from old and evacuated to old (promoted),
+  // clamped by the old generation space available.
+  //
+  // Here's the algebra.
+  // Let SOEP = ShenandoahOldEvacRatioPercent,
+  //     OE = old evac,
+  //     YE = young evac, and
+  //     TE = total evac = OE + YE
+  // By definition:
+  //            SOEP/100 = OE/TE
+  //                     = OE/(OE+YE)
+  //  => SOEP/(100-SOEP) = OE/((OE+YE)-OE)         // componendo-dividendo: If a/b = c/d, then a/(b-a) = c/(d-c)
+  //                     = OE/YE
+  //  =>              OE = YE*SOEP/(100-SOEP)
 
-  // TODO: excess_young is unused.  Did we want to add it old_promo_reserve and/or old_evacuation_reserve?
+  // We have to be careful in the event that SOEP is set to 100 by the user.
+  assert(ShenandoahOldEvacRatioPercent <= 100, "Error");
+  const size_t old_available = old_generation->available();
+  const size_t maximum_old_evacuation_reserve = (ShenandoahOldEvacRatioPercent == 100) ?
+    old_available : MIN2((maximum_young_evacuation_reserve * ShenandoahOldEvacRatioPercent) / (100 - ShenandoahOldEvacRatioPercent),
+                          old_available);
 
-  ShenandoahOldHeuristics* old_heuristics = heap->old_heuristics();
-
-  // maximum_old_evacuation_reserve is an upper bound on memory evacuated from old and evacuated to old (promoted).
-  size_t maximum_old_evacuation_reserve =
-    maximum_young_evacuation_reserve * ShenandoahOldEvacRatioPercent / (100 - ShenandoahOldEvacRatioPercent);
-  // Here's the algebra:
-  //  TotalEvacuation = OldEvacuation + YoungEvacuation
-  //  OldEvacuation = TotalEvacuation * (ShenandoahOldEvacRatioPercent/100)
-  //  OldEvacuation = YoungEvacuation * (ShenandoahOldEvacRatioPercent/100)/(1 - ShenandoahOldEvacRatioPercent/100)
-  //  OldEvacuation = YoungEvacuation * ShenandoahOldEvacRatioPercent/(100 - ShenandoahOldEvacRatioPercent)
-
-  if (maximum_old_evacuation_reserve > old_generation->available()) {
-    maximum_old_evacuation_reserve = old_generation->available();
-  }
 
   // Second priority is to reclaim garbage out of old-gen if there are old-gen collection candidates.  Third priority
   // is to promote as much as we have room to promote.  However, if old-gen memory is in short supply, this means young
@@ -300,7 +285,8 @@ void ShenandoahGeneration::compute_evacuation_budgets(ShenandoahHeap* heap, bool
   // through ALL of old-gen).  If there is some memory available in old-gen, we will use this for promotions as promotions
   // do not add to the update-refs burden of GC.
 
-  size_t old_promo_reserve;
+  ShenandoahOldHeuristics* old_heuristics = heap->old_heuristics();
+  size_t old_evacuation_reserve, old_promo_reserve;
   if (is_global()) {
     // Global GC is typically triggered by user invocation of System.gc(), and typically indicates that there is lots
     // of garbage to be reclaimed because we are starting a new phase of execution.  Marking for global GC may take
@@ -328,16 +314,15 @@ void ShenandoahGeneration::compute_evacuation_budgets(ShenandoahHeap* heap, bool
     old_evacuation_reserve = 0;
     old_promo_reserve = maximum_old_evacuation_reserve;
   }
+  assert(old_evacuation_reserve <= old_available, "Error");
 
   // We see too many old-evacuation failures if we force ourselves to evacuate into regions that are not initially empty.
   // So we limit the old-evacuation reserve to unfragmented memory.  Even so, old-evacuation is free to fill in nooks and
   // crannies within existing partially used regions and it generally tries to do so.
-  size_t old_free_regions = old_generation->free_unaffiliated_regions();
-  size_t old_free_unfragmented = old_free_regions * region_size_bytes;
+  const size_t old_free_unfragmented = old_generation->free_unaffiliated_regions() * region_size_bytes;
   if (old_evacuation_reserve > old_free_unfragmented) {
-    size_t delta = old_evacuation_reserve - old_free_unfragmented;
+    const size_t delta = old_evacuation_reserve - old_free_unfragmented;
     old_evacuation_reserve -= delta;
-
     // Let promo consume fragments of old-gen memory if not global
     if (!is_global()) {
       old_promo_reserve += delta;
