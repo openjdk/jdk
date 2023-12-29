@@ -60,7 +60,7 @@ class ValueStack: public CompilationResourceObj {
   Values*  _locks;                               // the monitor stack (holding the locked values)
 
   Value check(ValueTag tag, Value t) {
-    assert(tag == t->type()->tag() || tag == objectTag && t->type()->tag() == addressTag, "types must correspond");
+    assert(tag == t->type()->tag() || (tag == objectTag && t->type()->tag() == addressTag), "types must correspond");
     return t;
   }
 
