@@ -797,7 +797,8 @@ BoolNode* PhaseIdealLoop::rc_predicate(IdealLoopTree* loop, Node* ctrl, int scal
   overflow = false;
   Node* max_idx_expr = nullptr;
   const TypeInt* idx_type = TypeInt::INT;
-  if ((stride > 0) == (scale > 0) == upper) {
+  // same signs and upper, or different signs and not upper.
+  if (((stride > 0) == (scale > 0)) == upper) {
     guarantee(limit != nullptr, "sanity");
     if (TraceLoopPredicate) {
       if (limit->is_Con()) {

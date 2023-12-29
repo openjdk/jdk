@@ -448,7 +448,7 @@ protected:
   }
   // Light version of set_req() to init inputs after node creation.
   void init_req( uint i, Node *n ) {
-    assert( i == 0 && this == n ||
+    assert( (i == 0 && this == n) ||
             is_not_dead(n), "can not use dead node");
     assert( i < _cnt, "oob");
     assert( !VerifyHashTableKeys || _hash_lock == 0,

@@ -163,8 +163,8 @@ public:
   bool is_scalable() {
 #ifdef ASSERT
     if (_is_scalable) {
-      assert(_is_vector && (_num_regs == RegMask::SlotsPerVecA) ||
-             _is_predicate && (_num_regs == RegMask::SlotsPerRegVectMask), "unexpected scalable reg");
+      assert((_is_vector && (_num_regs == RegMask::SlotsPerVecA)) ||
+             (_is_predicate && (_num_regs == RegMask::SlotsPerRegVectMask)), "unexpected scalable reg");
     }
 #endif
     return Matcher::implements_scalable_vector && _is_scalable;

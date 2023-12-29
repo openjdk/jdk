@@ -4955,7 +4955,7 @@ static void verify_memory_slice(const MergeMemNode* m, int alias_idx, Node* n) {
 //-----------------------------memory_at---------------------------------------
 Node* MergeMemNode::memory_at(uint alias_idx) const {
   assert(alias_idx >= Compile::AliasIdxRaw ||
-         alias_idx == Compile::AliasIdxBot && !Compile::current()->do_aliasing(),
+         (alias_idx == Compile::AliasIdxBot && !Compile::current()->do_aliasing()),
          "must avoid base_memory and AliasIdxTop");
 
   // Otherwise, it is a narrow slice.

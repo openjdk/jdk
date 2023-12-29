@@ -150,8 +150,9 @@ void PhaseCFG::implicit_null_check(Block* block, Node *proj, Node *val, int allo
   bool is_decoden = ((intptr_t)val) & 1;
   val = (Node*)(((intptr_t)val) & ~1);
 
-  assert(!is_decoden || (val->in(0) == nullptr) && val->is_Mach() &&
-         (val->as_Mach()->ideal_Opcode() == Op_DecodeN), "sanity");
+  assert(!is_decoden ||
+         ((val->in(0) == nullptr) && val->is_Mach() &&
+          (val->as_Mach()->ideal_Opcode() == Op_DecodeN)), "sanity");
 
   // Search the successor block for a load or store who's base value is also
   // the tested value.  There may be several.
