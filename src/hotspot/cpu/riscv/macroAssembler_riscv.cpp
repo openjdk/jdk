@@ -4249,12 +4249,21 @@ void MacroAssembler::java_round_float(Register dst, FloatRegister src, FloatRegi
   fmv_w_x(ftmp, t0);
 
   // dst = 0 if NaN
-  feq_s(t0, src, src); // replacing fclass with feq as performance optimization for SiFive
+  feq_s(t0, src, src); // replacing fclass with feq as performance optimization
   mv(dst, zr);
   beqz(t0, done);
 
   // dst = (src + 0.5f) rounded down towards negative infinity
-  fadd_s(ftmp, src, ftmp, RoundingMode::rdn); // RDN is required here otherwise some inputs produce incorrect results
+  //   Adding 0.5f to some floats exceeds the precision limits for a float and rounding takes place.
+  //   RDN is required for fadd_s, RNE gives incorrect results:
+  //     --------------------------------------------------------------------
+  //     fadd.s rne (src + 0.5f): src = 8388609.000000  ftmp = 8388610.000000
+  //     fcvt.w.s rdn: ftmp = 8388610.000000 dst = 8388610
+  //     --------------------------------------------------------------------
+  //     fadd.s rdn (src + 0.5f): src = 8388609.000000  ftmp = 8388609.000000
+  //     fcvt.w.s rdn: ftmp = 8388609.000000 dst = 8388609
+  //     --------------------------------------------------------------------
+  fadd_s(ftmp, src, ftmp, RoundingMode::rdn);
   fcvt_w_s(dst, ftmp, RoundingMode::rdn);
 
   bind(done);
@@ -4270,7 +4279,7 @@ void MacroAssembler::java_round_double(Register dst, FloatRegister src, FloatReg
   fmv_d_x(ftmp, t0);
 
   // dst = 0 if NaN
-  feq_d(t0, src, src); // replacing fclass with feq as performance optimization for SiFive
+  feq_d(t0, src, src); // replacing fclass with feq as performance optimization
   mv(dst, zr);
   beqz(t0, done);
 
