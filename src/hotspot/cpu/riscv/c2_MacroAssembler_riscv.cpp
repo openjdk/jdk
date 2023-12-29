@@ -1873,6 +1873,91 @@ void C2_MacroAssembler::expand_bits_l_v(Register dst, Register src, Register mas
   expand_bits_v(dst, src, mask, /* is_long */ true);
 }
 
+// j.l.Math.round(float)
+//  Returns the closest int to the argument, with ties rounding to positive infinity.
+// We need to handle 3 special cases defined by java api spec:
+//    NaN,
+//    float >= Integer.MAX_VALUE,
+//    float <= Integer.MIN_VALUE.
+void C2_MacroAssembler::java_round_float_v(VectorRegister dst, VectorRegister src, FloatRegister ftmp, FloatRegister ftmp2) {
+  Label done;
+  mv(t0, jint_cast(0.5f));
+  fmv_w_x(ftmp, t0);
+  mv(t0, jint_cast(0.0));
+  fmv_w_x(ftmp2, t0); // ??
+
+  // For special case of NaN, the result is 0, we handle it explicitly.
+  // Here, use vmfeq as a perf optimization of vfclass in which case we
+  // need one more instruction to set the mask register v0.
+  vfmv_v_f(dst, ftmp2);
+  vmfne_vv(v0, src, src);
+  vfadd_vf(src, dst, ftmp2, v0_t); // 0.0f -> src when NaN, ??
+
+  // in riscv, there is no corresponding rounding mode to satisfy the behaviour defined in java api spec.
+  //  RNE is the closed one, but it ties to "even", which means 1.5/2.5 both will be converted
+  //    to 2, instead of 2 and 3 respectively.
+  //  RUP does not work either, although java api requires "rounding to positive infinity", but both 1.3/1.8
+  //    will be converted to 2, instead of 1 and 2 respectively.
+  //
+  // so, the optimal solution for scalar version is:
+  //    src+0.5 => dst, with rdn rounding mode,
+  //      vfadd_vf(dst, src, ftmp, RoundingMode::rdn, v0_t);
+  //    convert dst from float to int, with rnd rounding mode.
+  //      fcvt_w_s(dst, dst, RoundingMode::rdn, v0_t);
+  // and, this solution works as expected for float >= Integer.MAX_VALUE and float <= Integer.MIN_VALUE.
+  //
+  // but, for vector instructions, all rounding modes are dynamic, except of rtz.
+  // to avoid the usage of dynamic rounding mode, we use another solution instead:
+  // this solution introduce the more instructions but with static rounding mode(rtz).
+  vmfge_vf(v0, src, ftmp2, v0_t);
+
+  mv(t0, jint_cast(0.499999f));
+  fmv_w_x(ftmp2, t0);
+
+  // convert float when >= 0.0f
+  vfadd_vf(dst, src, ftmp, v0_t); // rtz ??
+  vfcvt_rtz_x_f_v(dst, dst, v0_t);
+
+  // convert float when < 0.0f
+  vmnot_m(v0, v0);
+  vfadd_vf(dst, src, ftmp2, v0_t); // rtz ??
+  vfcvt_rtz_x_f_v(dst, dst, v0_t);
+}
+
+// j.l.Math.round(double)
+//  Similar as j.l.Math.round(float), except of long/double instead of int/float
+void C2_MacroAssembler::java_round_double_v(VectorRegister dst, VectorRegister src, FloatRegister ftmp, FloatRegister ftmp2) {
+  Label done;
+  mv(t0, jlong_cast(0.5));
+  fmv_w_x(ftmp, t0);
+  mv(t0, jlong_cast(0.0));
+  fmv_w_x(ftmp2, t0); // ??
+
+  // For special case of NaN, the result is 0, we handle it explicitly.
+  // Here, use vmfeq as a perf optimization of vfclass in which case we
+  // need one more instruction to set the mask register v0.
+  vfmv_v_f(dst, ftmp2);
+  vmfne_vv(v0, src, src);
+  vfadd_vf(src, dst, ftmp2, v0_t); // 0.0 -> src when NaN, ??
+
+  // for vector instructions, all rounding modes are dynamic, except of rtz.
+  // to avoid the usage of dynamic rounding mode, we prefer to use static rounding
+  // mode instead, the only static rounding mode for vector is rtz.
+  vmfge_vf(v0, src, ftmp2, v0_t);
+
+  mv(t0, jint_cast(0.499999f));
+  fmv_w_x(ftmp2, t0);
+
+  // convert float when >= 0.0f
+  vfadd_vf(dst, src, ftmp, v0_t); // rtz ??
+  vfcvt_rtz_x_f_v(dst, dst, v0_t);
+
+  // convert float when < 0.0f
+  vmnot_m(v0, v0);
+  vfadd_vf(dst, src, ftmp2, v0_t); // rtz ??
+  vfcvt_rtz_x_f_v(dst, dst, v0_t);
+}
+
 void C2_MacroAssembler::element_compare(Register a1, Register a2, Register result, Register cnt, Register tmp1, Register tmp2,
                                         VectorRegister vr1, VectorRegister vr2, VectorRegister vrs, bool islatin, Label &DONE) {
   Label loop;
