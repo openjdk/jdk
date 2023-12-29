@@ -4239,7 +4239,7 @@ void MacroAssembler::zero_dcache_blocks(Register base, Register cnt, Register tm
   bge(cnt, tmp1, loop);
 }
 
-// java.math.round(float a)
+// java.lang.Math.round(float a)
 // Returns the closest int to the argument, with ties rounding to positive infinity.
 void MacroAssembler::java_round_float(Register dst, FloatRegister src, FloatRegister ftmp) {
   // this instructions calling sequence provides performance improvement on all tested devices;
@@ -4269,7 +4269,7 @@ void MacroAssembler::java_round_float(Register dst, FloatRegister src, FloatRegi
   bind(done);
 }
 
-// java.math.round(double a)
+// java.lang.Math.round(double a)
 // Returns the closest long to the argument, with ties rounding to positive infinity.
 void MacroAssembler::java_round_double(Register dst, FloatRegister src, FloatRegister ftmp) {
   // this instructions calling sequence provides performance improvement on all tested devices;
