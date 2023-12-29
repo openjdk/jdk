@@ -1343,7 +1343,7 @@ const char* java_lang_Class::as_external_name(oop java_class) {
 
 Klass* java_lang_Class::array_klass_acquire(oop java_class) {
   Klass* k = ((Klass*)java_class->metadata_field_acquire(_array_klass_offset));
-  assert(k == nullptr || k->is_klass() && k->is_array_klass(), "should be array klass");
+  assert(k == nullptr || (k->is_klass() && k->is_array_klass()), "should be array klass");
   return k;
 }
 
