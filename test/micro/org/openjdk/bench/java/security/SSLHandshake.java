@@ -80,11 +80,12 @@ public class SSLHandshake {
         KeyStore ks = TestCertificates.getKeyStore();
         KeyStore ts = TestCertificates.getTrustStore();
 
-        KeyManagerFactory kmf = KeyManagerFactory.getInstance("PKIX");
+        KeyManagerFactory kmf = KeyManagerFactory.getInstance(
+                KeyManagerFactory.getDefaultAlgorithm());
         kmf.init(ks, new char[0]);
 
-        TrustManagerFactory tmf =
-                TrustManagerFactory.getInstance("PKIX");
+        TrustManagerFactory tmf = TrustManagerFactory.getInstance(
+                TrustManagerFactory.getDefaultAlgorithm());
         tmf.init(ts);
 
         SSLContext sslCtx = SSLContext.getInstance(tlsVersion);

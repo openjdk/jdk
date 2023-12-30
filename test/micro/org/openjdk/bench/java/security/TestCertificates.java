@@ -115,7 +115,7 @@ class TestCertificates {
     private TestCertificates() {}
 
     public static KeyStore getKeyStore() throws GeneralSecurityException, IOException {
-        KeyStore result = KeyStore.getInstance("PKCS12");
+        KeyStore result = KeyStore.getInstance(KeyStore.getDefaultType());
         result.load(null, null);
         CertificateFactory cf = CertificateFactory.getInstance("X.509");
         Certificate serverCert = cf.generateCertificate(
@@ -135,7 +135,7 @@ class TestCertificates {
     }
 
     public static KeyStore getTrustStore() throws GeneralSecurityException, IOException {
-        KeyStore result = KeyStore.getInstance("PKCS12");
+        KeyStore result = KeyStore.getInstance(KeyStore.getDefaultType());
         result.load(null, null);
         CertificateFactory cf = CertificateFactory.getInstance("X.509");
         Certificate rootcaCert = cf.generateCertificate(
