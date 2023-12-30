@@ -668,7 +668,7 @@ public class BufferedInputStream extends FilterInputStream {
      * <li>does not retain a reference to the {@code byte[]}</li>
      * <li>does not leak a reference to the {@code byte[]} to non-trusted classes</li>
      * <li>does not modify the contents of the {@code byte[]}</li>
-     * <li>{@code OutputStream.write(byte[], int, int)} write does not read the contents outside of the offset/length bounds</li>
+     * <li>{@code write()} method does not read the contents outside of the offset/length bounds</li>
      * </ul>
      *
      * @return true if this class is trusted
