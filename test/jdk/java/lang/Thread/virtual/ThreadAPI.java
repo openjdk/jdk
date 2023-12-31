@@ -1080,7 +1080,7 @@ class ThreadAPI {
     }
 
     /**
-     * Test Thread.yield releases thread when not pinned.
+     * Test Thread.yield releases carrier thread.
      */
     @Test
     void testYield1() throws Exception {
@@ -1108,7 +1108,7 @@ class ThreadAPI {
     }
 
     /**
-     * Test Thread.yield when thread is pinned.
+     * Test Thread.yield when thread is pinned by native frame.
      */
     @Test
     void testYield2() throws Exception {
@@ -1136,7 +1136,7 @@ class ThreadAPI {
     }
 
     /**
-     * Test that Thread.yield does not consume the thread's parking permit.
+     * Test Thread.yield does not consume the thread's parking permit.
      */
     @Test
     void testYield3() throws Exception {
@@ -1149,7 +1149,7 @@ class ThreadAPI {
     }
 
     /**
-     * Test that Thread.yield does not make available the thread's parking permit.
+     * Test Thread.yield does not make available the thread's parking permit.
      */
     @Test
     void testYield4() throws Exception {
@@ -2041,10 +2041,76 @@ class ThreadAPI {
     }
 
     /**
-     * Test Thread::getStackTrace on terminated thread.
+     * Test Thread::getStackTrace on timed-parked thread.
      */
     @Test
     void testGetStackTrace6() throws Exception {
+        var thread = Thread.ofVirtual().start(() -> {
+            LockSupport.parkNanos(Long.MAX_VALUE);
+        });
+        await(thread, Thread.State.TIMED_WAITING);
+        try {
+            StackTraceElement[] stack = thread.getStackTrace();
+            assertTrue(contains(stack, "LockSupport.parkNanos"));
+        } finally {
+            LockSupport.unpark(thread);
+            thread.join();
+        }
+    }
+
+    /**
+     * Test Thread::getStackTrace on parked thread that is pinned.
+     */
+    @Test
+    void testGetStackTrace7() throws Exception {
+        AtomicBoolean done = new AtomicBoolean();
+        var thread = Thread.ofVirtual().start(() -> {
+            VThreadPinner.runPinned(() -> {
+                while (!done.get()) {
+                    LockSupport.park();
+                }
+            });
+        });
+        await(thread, Thread.State.WAITING);
+        try {
+            StackTraceElement[] stack = thread.getStackTrace();
+            assertTrue(contains(stack, "LockSupport.park"));
+        } finally {
+            done.set(true);
+            LockSupport.unpark(thread);
+            thread.join();
+        }
+    }
+
+    /**
+     * Test Thread::getStackTrace on timed-parked thread that is pinned.
+     */
+    @Test
+    void testGetStackTrace8() throws Exception {
+        AtomicBoolean done = new AtomicBoolean();
+        var thread = Thread.ofVirtual().start(() -> {
+            VThreadPinner.runPinned(() -> {
+                while (!done.get()) {
+                    LockSupport.parkNanos(Long.MAX_VALUE);
+                }
+            });
+        });
+        await(thread, Thread.State.TIMED_WAITING);
+        try {
+            StackTraceElement[] stack = thread.getStackTrace();
+            assertTrue(contains(stack, "LockSupport.parkNanos"));
+        } finally {
+            done.set(true);
+            LockSupport.unpark(thread);
+            thread.join();
+        }
+    }
+
+    /**
+     * Test Thread::getStackTrace on terminated thread.
+     */
+    @Test
+    void testGetStackTrace9() throws Exception {
         var thread = Thread.ofVirtual().start(() -> { });
         thread.join();
         StackTraceElement[] stack = thread.getStackTrace();

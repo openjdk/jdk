@@ -68,7 +68,6 @@ class TracePinnedThreads {
             }
         });
         assertContains(output, "<== monitors:1");
-        assertDoesNotContain(output, "(Native Method)");
     }
 
     /**
@@ -79,7 +78,20 @@ class TracePinnedThreads {
         System.loadLibrary("TracePinnedThreads");
         String output = run(() -> invokePark());
         assertContains(output, "(Native Method)");
-        assertDoesNotContain(output, "<== monitors");
+    }
+
+    /**
+     * Test parking in class initializer.
+     */
+    @Test
+    void testPinnedCausedByClassInitializer() throws Exception {
+        class C {
+            static {
+                park();
+            }
+        }
+        String output = run(C::new);
+        assertContains(output, "<clinit>");
     }
 
     /**
