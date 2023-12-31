@@ -29,184 +29,167 @@
  * @run junit ZipCoding
  */
 
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.io.*;
 import java.nio.charset.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.*;
+import java.util.stream.Stream;
 import java.util.zip.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 public class ZipCoding {
 
+    // The data to write to ZIP entries in this test
+    private static byte[] ENTRY_DATA = "German Umlaut \u00fc in entry data"
+            .getBytes(StandardCharsets.ISO_8859_1);
+
     /**
-     * Test ZIP file name and comment encoding using the MS code page 932 for the Japanese language
-     *
-     * @throws IOException if an unexpected IOException occurs
+     * Provide arguments used for parameterized tests
+     * @return a stream of argument lists
      */
-    @Test
-    public void MS932() throws IOException {
-        test("MS932",
-                "\u4e00\u4e01", "\uff67\uff68\uff69\uff6a\uff6b\uff6c");
+    public static Stream<Arguments> charsetsAndNames() {
+        // Arguments are: Write charset, read charset, entry name, comment
+        return Stream.of(
+                // MS code page 932 for the Japanese language
+                Arguments.of("MS932", "MS932",
+                        "\u4e00\u4e01",
+                        "\uff67\uff68\uff69\uff6a\uff6b\uff6c"),
+
+                // Code page for the IBM PC
+                Arguments.of("ibm437", "ibm437",
+                        "\u00e4\u00fc",
+                        "German Umlaut \u00fc in comment"),
+
+                // UTF-8 with Japanese characters
+                Arguments.of("utf-8", "utf-8",
+                        "\u4e00\u4e01",
+                        "\uff67\uff68\uff69\uff6a\uff6b\uff6c"),
+
+                // UTF-8 with characters in the Latin1 range
+                Arguments.of("utf-8", "utf-8",
+                        "\u00e4\u00fc",
+                        "German Umlaut \u00fc in comment"),
+
+                // UTF-8 with surrogate pairs
+                Arguments.of("utf-8", "utf-8",
+                        "Surrogate\ud801\udc01",
+                        "Surrogates \ud800\udc00 in comment"),
+
+                // ZipOutputStream sets the 'Language encoding flag' when writing using UTF-8
+                // UTF-8 should be used for decoding, even when opening with a different charset
+                Arguments.of("utf-8", "iso-8859-1",
+                        "\u00e4\u00fc",
+                        "German Umlaut \u00fc in comment")
+        );
     }
 
     /**
-     * Test ZIP file name and comment encoding using the code page for the IBM PC
+     * Verify that ZipInputStream decodes entry names and comments
+     * using the charset provided to its constructor, or that it decodes
+     * using UTF-8 when the 'Language encoding flag' is set
+     *
+     * @param writeCharset the charset to use for ZipOutputStream when producing the ZIP
+     * @param readCharset the charset to use when opening the ZipInputStream
+     * @param name the entry name
+     * @param comment the entry comment (not read by ZipInputStream)
      *
      * @throws IOException if an unexpected IOException occurs
      */
-    @Test
-    public void ibm437() throws IOException {
-        test("ibm437",
-             "\u00e4\u00fc", "German Umlaut \u00fc in comment");
-    }
+    @ParameterizedTest
+    @MethodSource("charsetsAndNames")
+    public void testZipInputStream(String writeCharset,
+                                   String readCharset,
+                                   String name,
+                                   String comment) throws IOException {
 
-    /**
-     * Test ZIP file name and comment encoding using UTF-8 with Japanese characters
-     *
-     * @throws IOException if an unexpected IOException occurs
-     */
-    @Test
-    public void utf8Japanese() throws IOException {
-        test("utf-8",
-                "\u4e00\u4e01", "\uff67\uff68\uff69\uff6a\uff6b\uff6c");
-    }
-
-    /**
-     * Test ZIP file name and comment encoding using UTF-8 with characters in the Latin1 range
-     *
-     * @throws IOException if an unexpected IOException occurs
-     */
-    @Test
-    public void utf8InLat1Range() throws IOException {
-        test("utf-8",
-                "\u00e4\u00fc", "German Umlaut \u00fc in comment");
-    }
-
-    /**
-     * Test ZIP file name and comment encoding using UTF-8 with surrogate pairs
-     *
-     * @throws IOException if an unexpected IOException occurs
-     */
-    @Test
-    public void utf8Surrogate() throws IOException {
-        test("utf-8",
-             "Surrogate\ud801\udc01", "Surrogates \ud800\udc00 in comment");
-    }
-
-    /**
-     * Verify that a ZIP entry with the given name and comment can be found
-     * when opening the given ZIP file using ZipInputStream with the given charset
-     *
-     * @param zip the ZIP file to open
-     * @param openCharset the Charset to pass to the ZipInputStream constructor
-     * @param expectedName the expected name of the ZIP entry
-     * @param expectedComment the expected comment of ZIP entry
-     * @param expectedContent the expected contents of the ZIP entry
-     *
-     * @throws IOException if an unexpected IOException occurs
-     */
-    static void testZipInputStream(byte[] zip,
-                                   Charset openCharset,
-                                   String expectedName,
-                                   String expectedComment,
-                                   byte[] expectedContent) throws IOException
-    {
+        byte[] zip = createZIP(writeCharset, name, comment);
 
         try (InputStream in = new ByteArrayInputStream(zip);
-             ZipInputStream zis = new ZipInputStream(in, openCharset)) {
+             ZipInputStream zis = new ZipInputStream(in, Charset.forName(readCharset))) {
             ZipEntry e = zis.getNextEntry();
             assertNotNull(e);
-            assertEquals(expectedName, e.getName());
-            byte[] content = zis.readAllBytes();
-            assertArrayEquals(expectedContent, content, "ZipIS content doesn't match!");
+            assertEquals(name, e.getName());
+            assertNull(e.getComment()); // No comment in the LOC header
+            assertArrayEquals(ENTRY_DATA, zis.readAllBytes(), "ZipIS content doesn't match!");
         }
     }
 
     /**
-     * Verify that a ZIP entry with the given name and comment can be found
-     * when opening the given ZIP file using ZipFile with the given charset
+     * Verify that ZipFile decodes entry names and comments
+     * using the charset provided to its constructor, or that it decodes
+     * using UTF-8 when the 'Language encoding flag' is set
      *
-     * @param zip the ZIP file to open
-     * @param openCharset the Charset to pass to the ZipInputStream constructor
-     * @param expectedName the expected name of the ZIP entry
-     * @param expectedComment the expected comment of ZIP entry
-     * @param expectedContent the expected contents of the ZIP entry
+     * @param writeCharset the charset to use for ZipOutputStream when producing the ZIP
+     * @param readCharset the charset to use when opening the ZipFile
+     * @param name the name of the entry
+     * @param comment the comment of the entry
      *
      * @throws IOException if an unexpected IOException occurs
      */
-    static void testZipFile(File zip,
-                            Charset openCharset,
-                            String expectedName,
-                            String expectedComment,
-                            byte[] expectedContent)
-        throws IOException
-    {
-        try (ZipFile zf = new ZipFile(zip, openCharset)) {
+    @ParameterizedTest
+    @MethodSource("charsetsAndNames")
+    public void testZipFile(String writeCharset,
+                            String readCharset,
+                            String name,
+                            String comment) throws IOException {
+
+        byte[] zip = createZIP(writeCharset, name, comment);
+
+        Path f = Path.of("zfcoding.zip");
+        Files.write(f, zip);
+
+        try (ZipFile zf = new ZipFile(f.toFile(), Charset.forName(readCharset))) {
             // Test using ZipFile.entries
             Enumeration<? extends ZipEntry> zes = zf.entries();
             ZipEntry e = (ZipEntry)zes.nextElement();
             assertNotNull(e);
-            assertEquals(expectedName, e.getName(), "ZipFile.entries(): name doesn't match!");
-            assertEquals(expectedComment, e.getComment(), "ZipFile.entries(): comment doesn't match!");
+            assertEquals(name, e.getName(), "ZipFile.entries(): name doesn't match!");
+            assertEquals(comment, e.getComment(), "ZipFile.entries(): comment doesn't match!");
 
             // Test using ZipFile.getEntry
-            e = zf.getEntry(expectedName);
-            assertNotNull(e, "ZipFile.getEntry(): Entry not found using charset " + openCharset.name());
-            assertEquals(expectedName, e.getName(), "ZipFile.getEntry(): name doesn't match!");
-            assertEquals(expectedComment, e.getComment(), "ZipFile.getEntry(): comment doesn't match!");
+            e = zf.getEntry(name);
+            assertNotNull(e,
+                    String.format("Entry not found for ZipFile encoded with %s and opened with %s",
+                            writeCharset, readCharset));
+            assertEquals(name, e.getName(), "ZipFile.getEntry(): name doesn't match!");
+            assertEquals(comment, e.getComment(), "ZipFile.getEntry(): comment doesn't match!");
             try (InputStream is = zf.getInputStream(e)) {
                 assertNotNull(is);
-                byte[] actualContent = is.readAllBytes();
-                assertArrayEquals(expectedContent, actualContent, "ZipFile content doesn't match!");
+                assertArrayEquals(ENTRY_DATA, is.readAllBytes(), "ZipFile content doesn't match!");
             }
         }
+
+        Files.deleteIfExists(f);
     }
 
     /**
-     * Verify that a ZIP file with a written using ZipOutputStream with an entry
-     * with the given name and comment can be read back using the same charset
-     * using both the ZipFile and ZipInputStream APIs.
+     * Create a ZIP file containing an entry with the given name
+     * and comment, encoded using the given charset.
+     * Note that if the charset is UTF-8, ZipOutputStream will
+     * set the 'Language encoding flag' for the entry.
      *
-     * If the charset is "utf-8", also test that the entry is read with the expected
-     * name when opened using a non-utf-8 charset.
-     * @param csn the charset used when writing and opening the ZIP file
-     * @param name the name of the entry to write and find
-     * @param comment the comment to add to the entry
+     * @param charset the charset passed to the ZipOutputStream constructor
+     * @param name the name of the entry to add
+     * @param comment the comment of the entry to add
+     * @return a byte array containing the ZIP file
      *
      * @throws IOException if an unexpected IOException occurs
      */
-    static void test(String csn, String name, String comment) throws IOException {
-        byte[] entryData = "This is the content of the zipfile".getBytes("ISO-8859-1");
-        Charset cs = Charset.forName(csn);
+    private byte[] createZIP(String charset, String name, String comment) throws IOException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        try (ZipOutputStream zos = new ZipOutputStream(baos, cs)) {
+        try (ZipOutputStream zos = new ZipOutputStream(baos, Charset.forName(charset))) {
             ZipEntry e = new ZipEntry(name);
             e.setComment(comment);
             zos.putNextEntry(e);
-            zos.write(entryData, 0, entryData.length);
+            zos.write(ENTRY_DATA);
             zos.closeEntry();
         }
-
-        byte[] zip = baos.toByteArray();
-
-        testZipInputStream(zip, cs, name, comment, entryData);
-
-        if ("utf-8".equals(csn)) {
-            // USE_UTF8 should be set
-            testZipInputStream(zip, Charset.forName("MS932"), name, comment, entryData);
-        }
-
-        File f = new File(new File(System.getProperty("test.dir", ".")),
-                          "zfcoding.zip");
-        try (FileOutputStream fos = new FileOutputStream(f)) {
-            baos.writeTo(fos);
-        }
-        testZipFile(f, cs, name, comment, entryData);
-        if ("utf-8".equals(csn)) {
-            testZipFile(f, Charset.forName("MS932"), name, comment, entryData);
-        }
-        f.delete();
+        return baos.toByteArray();
     }
 }
