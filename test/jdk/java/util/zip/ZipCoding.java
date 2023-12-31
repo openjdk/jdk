@@ -151,6 +151,11 @@ public class ZipCoding {
             assertEquals(expectedName, e.getName(), "ZipFile.entries(): name doesn't match!");
             assertEquals(expectedComment, e.getComment(), "ZipFile.entries(): comment doesn't match!");
 
+            // Test using ZipFile.getEntry
+            e = zf.getEntry(expectedName);
+            assertNotNull(e, "ZipFile.getEntry(): Entry not found using charset " + openCharset.name());
+            assertEquals(expectedName, e.getName(), "ZipFile.getEntry(): name doesn't match!");
+            assertEquals(expectedComment, e.getComment(), "ZipFile.getEntry(): comment doesn't match!");
             try (InputStream is = zf.getInputStream(e)) {
                 assertNotNull(is);
                 byte[] actualContent = is.readAllBytes();
