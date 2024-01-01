@@ -38,8 +38,12 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class CloseWrappedStream {
 
+    /**
+     * Verify that closing a ZipOutputStream closes the wrapped output stream,
+     * also when the wrapped stream throws when remaining data is flushed
+     */
     @Test
-    public void shouldCloseWrappedStream() throws IOException {
+    public void closeWrappedStreamAfterFailure()  {
         // A wrapped stream which should be closed even after a write failure
         WrappedOutputStream wrappedStream = new WrappedOutputStream();
 
@@ -54,6 +58,25 @@ public class CloseWrappedStream {
 
         // Sanity check that we failed with the expected message
         assertEquals(WrappedOutputStream.MSG, exception.getMessage());
+        // Verify that the wrapped stream was closed
+        assertTrue(wrappedStream.closed, "Expected wrapped output stream to be closed");
+    }
+
+    /**
+     * Sanity check that the wrapped stream is closed also for the normal case
+     * where the wrapped stream does not throw
+     * @throws IOException if an unexpected IOException occurs
+     */
+    @Test
+    public void closeWrappedStreamNormal() throws IOException {
+
+        WrappedOutputStream wrappedStream = new WrappedOutputStream();
+
+        try (ZipOutputStream zo = new ZipOutputStream(wrappedStream)) {
+            zo.putNextEntry(new ZipEntry("file.txt"));
+            zo.write("hello".getBytes(StandardCharsets.UTF_8));
+        }
+
         // Verify that the wrapped stream was closed
         assertTrue(wrappedStream.closed, "Expected wrapped output stream to be closed");
     }
