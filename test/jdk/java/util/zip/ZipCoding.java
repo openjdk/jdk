@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 4244499 4532049 4700978 4820807 4980042 7009069
+ * @bug 4244499 4532049 4700978 4820807 4980042 7009069 8322802
  * @summary Test ZipInputStream, ZipOutputStream and ZipFile with non-UTF8 encoding
  * @modules jdk.charsets
  * @run junit ZipCoding
