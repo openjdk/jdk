@@ -41,6 +41,9 @@ private:
 
   ZWorkers* const      _workers;
   ReferencePolicy*     _soft_reference_policy;
+  // Judge whether the _soft_reference_policy is AlwaysClearPolicy or not,
+  // use this extra field to avoid using RTTI (runtime type information).
+  bool                 _always_clear_policy;
   ZPerWorker<Counters> _encountered_count;
   ZPerWorker<Counters> _discovered_count;
   ZPerWorker<Counters> _enqueued_count;
