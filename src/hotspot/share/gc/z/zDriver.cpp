@@ -428,13 +428,8 @@ void ZDriverMajor::collect_young(const ZDriverRequest& request) {
   handle_alloc_stalling_for_young();
 }
 
-void ZDriverMajor::collect_old(const ZDriverRequest& request) {
+void ZDriverMajor::collect_old() {
   ZGCIdMajor major_id(gc_id(), 'O');
-
-  // Set up soft reference policy
-  const bool clear_soft_refs = should_clear_soft_references(request.cause());
-  ZGeneration::old()->set_soft_reference_policy(clear_soft_refs);
-
   ZGeneration::old()->collect(&_gc_timer);
 }
 
@@ -447,7 +442,7 @@ void ZDriverMajor::gc(const ZDriverRequest& request) {
   abortpoint();
 
   // Collect the old generation
-  collect_old(request);
+  collect_old();
 }
 
 static void handle_alloc_stalling_for_old(bool cleared_soft_refs) {
@@ -470,6 +465,10 @@ void ZDriverMajor::run_thread() {
 
     abortpoint();
 
+    // Set up soft reference policy
+    const bool clear_soft_refs = should_clear_soft_references(request.cause());
+    ZGeneration::old()->set_soft_reference_policy(clear_soft_refs);
+
     // Run GC
     gc(request);
 
@@ -479,7 +478,7 @@ void ZDriverMajor::run_thread() {
     _port.ack();
 
     // Handle allocation stalls
-    handle_alloc_stalls(should_clear_soft_references(request.cause()));
+    handle_alloc_stalls(clear_soft_refs);
 
     ZBreakpoint::at_after_gc();
   }
