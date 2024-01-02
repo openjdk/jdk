@@ -195,7 +195,7 @@ Prints all compiled methods in code cache that are alive.
 Impact: Medium
 .RE
 .TP
-\f[V]Compiler.directives_add *filename* *arguments*\f[R]
+\f[V]Compiler.directives_add\f[R] \f[I]filename\f[R] \f[I]arguments\f[R]
 Adds compiler directives from a file.
 .RS
 .PP
@@ -877,8 +877,8 @@ false)
 .IP \[bu] 2
 \f[V]-format\f[R]: (Optional) Output format (\[dq]plain\[dq] or
 \[dq]json\[dq]) (STRING, plain)
-.IP \[bu] 2
-arguments*:
+.PP
+\f[I]arguments\f[R]:
 .IP \[bu] 2
 \f[V]filepath\f[R]: The file path to the output file (STRING, no default
 value)
@@ -1052,7 +1052,7 @@ If omitted, all events are printed.
 .RE
 .TP
 \f[V]VM.flags\f[R] [\f[I]options\f[R]]
-Prints the VM flag options and their current values.
+Print the VM flag options and their current values.
 .RS
 .PP
 Impact: Low
