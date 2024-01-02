@@ -71,11 +71,6 @@ class NativeHeapTrimmerThread : public NamedThread {
     return --_suspend_count;
   }
 
-  bool is_stopped() const {
-    assert(_lock->is_locked(), "Must be");
-    return _stop;
-  }
-
   bool at_or_nearing_safepoint() const {
     return SafepointSynchronize::is_at_safepoint() ||
            SafepointSynchronize::is_synchronizing();
