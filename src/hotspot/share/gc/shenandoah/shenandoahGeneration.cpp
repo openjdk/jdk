@@ -224,13 +224,12 @@ void ShenandoahGeneration::prepare_gc() {
 }
 
 void ShenandoahGeneration::compute_evacuation_budgets(ShenandoahHeap* heap, bool* preselected_regions,
-                                                      ShenandoahCollectionSet* collection_set,
-                                                      size_t &consumed_by_advance_promotion) {
+                                                      ShenandoahCollectionSet* collection_set) {
+
   size_t region_size_bytes = ShenandoahHeapRegion::region_size_bytes();
   size_t regions_available_to_loan = 0;
   size_t minimum_evacuation_reserve = ShenandoahOldCompactionReserve * region_size_bytes;
   size_t old_regions_loaned_for_young_evac = 0;
-  consumed_by_advance_promotion = 0;
 
   ShenandoahGeneration* old_generation = heap->old_generation();
   ShenandoahYoungGeneration* young_generation = heap->young_generation();
@@ -329,7 +328,7 @@ void ShenandoahGeneration::compute_evacuation_budgets(ShenandoahHeap* heap, bool
     }
   }
   collection_set->establish_preselected(preselected_regions);
-  consumed_by_advance_promotion = select_aged_regions(old_promo_reserve, num_regions, preselected_regions);
+  size_t consumed_by_advance_promotion = select_aged_regions(old_promo_reserve, num_regions, preselected_regions);
   assert(consumed_by_advance_promotion <= maximum_old_evacuation_reserve, "Cannot promote more than available old-gen memory");
 
   // Note that unused old_promo_reserve might not be entirely consumed_by_advance_promotion.  Do not transfer this
@@ -347,8 +346,7 @@ void ShenandoahGeneration::compute_evacuation_budgets(ShenandoahHeap* heap, bool
 // Having chosen the collection set, adjust the budgets for generational mode based on its composition.  Note
 // that young_generation->available() now knows about recently discovered immediate garbage.
 
-void ShenandoahGeneration::adjust_evacuation_budgets(ShenandoahHeap* heap, ShenandoahCollectionSet* collection_set,
-                                                     size_t consumed_by_advance_promotion) {
+void ShenandoahGeneration::adjust_evacuation_budgets(ShenandoahHeap* heap, ShenandoahCollectionSet* collection_set) {
   // We may find that old_evacuation_reserve and/or loaned_for_young_evacuation are not fully consumed, in which case we may
   //  be able to increase regions_available_to_loan
 
@@ -505,7 +503,7 @@ inline void assert_no_in_place_promotions() {
 //
 // A second benefit of treating aged regions differently than other regions during collection set selection is
 // that this allows us to more accurately budget memory to hold the results of evacuation.  Memory for evacuation
-// of aged regions must be reserved in the old generations.  Memory for evacuation of all other regions must be
+// of aged regions must be reserved in the old generation.  Memory for evacuation of all other regions must be
 // reserved in the young generation.
 size_t ShenandoahGeneration::select_aged_regions(size_t old_available, size_t num_regions,
                                                  bool candidate_regions_for_promotion_by_copy[]) {
@@ -693,7 +691,6 @@ void ShenandoahGeneration::prepare_regions_and_collection_set(bool concurrent) {
     collection_set->clear();
     ShenandoahHeapLocker locker(heap->lock());
     if (is_generational) {
-      size_t consumed_by_advance_promotion;
       bool* preselected_regions = (bool*) alloca(heap->num_regions() * sizeof(bool));
       for (unsigned int i = 0; i < heap->num_regions(); i++) {
         preselected_regions[i] = false;
@@ -708,11 +705,11 @@ void ShenandoahGeneration::prepare_regions_and_collection_set(bool concurrent) {
       // GC is evacuating and updating references.
 
       // Budgeting parameters to compute_evacuation_budgets are passed by reference.
-      compute_evacuation_budgets(heap, preselected_regions, collection_set, consumed_by_advance_promotion);
+      compute_evacuation_budgets(heap, preselected_regions, collection_set);
       _heuristics->choose_collection_set(collection_set);
       if (!collection_set->is_empty()) {
         // only make use of evacuation budgets when we are evacuating
-        adjust_evacuation_budgets(heap, collection_set, consumed_by_advance_promotion);
+        adjust_evacuation_budgets(heap, collection_set);
       }
 
       if (is_global()) {

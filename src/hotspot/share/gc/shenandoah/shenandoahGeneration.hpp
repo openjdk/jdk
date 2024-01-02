@@ -71,15 +71,17 @@ protected:
 
 private:
   // Compute evacuation budgets prior to choosing collection set.
+  // preselected_regions is an array of indicator bits for regions that will
+  // be preselected for inclusion into the collection set by this method.
+  // collection_set is the set of regions to be collected that is maintained
+  // for the heap as a whole.
   void compute_evacuation_budgets(ShenandoahHeap* heap,
                                   bool* preselected_regions,
-                                  ShenandoahCollectionSet* collection_set,
-                                  size_t& consumed_by_advance_promotion);
+                                  ShenandoahCollectionSet* collection_set);
 
   // Adjust evacuation budgets after choosing collection set.
   void adjust_evacuation_budgets(ShenandoahHeap* heap,
-                                 ShenandoahCollectionSet* collection_set,
-                                 size_t consumed_by_advance_promotion);
+                                 ShenandoahCollectionSet* collection_set);
 
   // Preselect for inclusion into the collection set regions whose age is
   // at or above tenure age and which contain more than ShenandoahOldGarbageThreshold
