@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -2532,8 +2532,8 @@ static inline Assembler::ComparisonPredicateFP booltest_pred_to_comparison_pred_
 static void vec_mov_helper(CodeBuffer *cbuf, int src_lo, int dst_lo,
                           int src_hi, int dst_hi, uint ireg, outputStream* st) {
   assert(ireg == Op_VecS || // 32bit vector
-         (src_lo & 1) == 0 && (src_lo + 1) == src_hi &&
-         (dst_lo & 1) == 0 && (dst_lo + 1) == dst_hi,
+         ((src_lo & 1) == 0 && (src_lo + 1) == src_hi &&
+          (dst_lo & 1) == 0 && (dst_lo + 1) == dst_hi),
          "no non-adjacent vector moves" );
   if (cbuf) {
     C2_MacroAssembler _masm(cbuf);
