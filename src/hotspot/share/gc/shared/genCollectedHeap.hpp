@@ -182,6 +182,7 @@ public:
   void verify_nmethod(nmethod* nm) override;
 
   void prune_scavengable_nmethods();
+  void prune_unlinked_nmethods();
 
   // Iteration functions.
   void object_iterate(ObjectClosure* cl) override;

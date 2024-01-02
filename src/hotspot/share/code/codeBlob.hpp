@@ -143,7 +143,7 @@ public:
   static unsigned int align_code_offset(int offset);
 
   // Deletion
-  virtual void purge(bool free_code_cache_data = true);
+  virtual void purge(bool free_code_cache_data, bool unregister_nmethod);
 
   // Typing
   virtual bool is_buffer_blob() const                 { return false; }

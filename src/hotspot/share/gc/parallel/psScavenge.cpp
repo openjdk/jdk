@@ -302,7 +302,7 @@ public:
 
     if (!_is_old_gen_empty) {
       PSCardTable* card_table = ParallelScavengeHeap::heap()->card_table();
-      card_table->pre_scavenge(_old_gen->object_space()->bottom(), active_workers);
+      card_table->pre_scavenge(active_workers);
     }
   }
 

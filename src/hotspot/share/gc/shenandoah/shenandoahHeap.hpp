@@ -149,6 +149,7 @@ class ShenandoahHeap : public CollectedHeap {
   friend class ShenandoahGCStateResetter;
   friend class ShenandoahParallelObjectIterator;
   friend class ShenandoahSafepoint;
+
   // Supported GC
   friend class ShenandoahConcurrentGC;
   friend class ShenandoahOldGC;
@@ -344,6 +345,7 @@ public:
   };
 
 private:
+  bool _gc_state_changed;
   ShenandoahSharedBitmap _gc_state;
   ShenandoahSharedFlag   _degenerated_gc_in_progress;
   ShenandoahSharedFlag   _full_gc_in_progress;
@@ -383,11 +385,12 @@ private:
   // determined by analysis of live data found during the previous GC pass which is one less than the current tenure age.
   bool _has_evacuation_reserve_quantities;
 
-  void set_gc_state_all_threads(char state);
   void set_gc_state_mask(uint mask, bool value);
 
 public:
   char gc_state() const;
+  void set_gc_state_all_threads();
+  bool has_gc_state_changed() { return _gc_state_changed; }
 
   void set_evacuation_reserve_quantities(bool is_valid);
   void set_concurrent_young_mark_in_progress(bool in_progress);
