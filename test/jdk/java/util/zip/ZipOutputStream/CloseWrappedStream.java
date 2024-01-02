@@ -31,6 +31,7 @@ import org.junit.jupiter.api.Test;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -40,10 +41,10 @@ public class CloseWrappedStream {
 
     /**
      * Verify that closing a ZipOutputStream closes the wrapped output stream,
-     * also when the wrapped stream throws when remaining data is flushed
+     * also when the wrapped stream throws while remaining data is flushed
      */
     @Test
-    public void closeWrappedStreamAfterFailure()  {
+    public void exceptionDuringFinish()  {
         // A wrapped stream which should be closed even after a write failure
         WrappedOutputStream wrappedStream = new WrappedOutputStream();
 
@@ -51,24 +52,27 @@ public class CloseWrappedStream {
             try (ZipOutputStream zo = new ZipOutputStream(wrappedStream)) {
                 zo.putNextEntry(new ZipEntry("file.txt"));
                 zo.write("hello".getBytes(StandardCharsets.UTF_8));
-                // Make next write throw IOException
-                wrappedStream.fail = true;
+                // Make finish() throw IOException
+                wrappedStream.failOnWrite = true;
             } // Close throws when deflated data is flushed to wrapped stream
         });
 
-        // Sanity check that we failed with the expected message
-        assertEquals(WrappedOutputStream.MSG, exception.getMessage());
-        // Verify that the wrapped stream was closed
-        assertTrue(wrappedStream.closed, "Expected wrapped output stream to be closed");
+        // Check that we failed with the expected message
+        assertEquals(WrappedOutputStream.WRITE_MSG, exception.getMessage());
+
+        // Verify that the wrapped stream was closed once
+        assertEquals(1, wrappedStream.timesClosed,
+                "Expected wrapped output stream to be closed once");
     }
 
     /**
-     * Sanity check that the wrapped stream is closed also for the normal case
-     * where the wrapped stream does not throw
+     * Sanity check that the wrapped stream is closed also for the
+     * normal case where the wrapped stream does not throw
+     *
      * @throws IOException if an unexpected IOException occurs
      */
     @Test
-    public void closeWrappedStreamNormal() throws IOException {
+    public void noExceptions() throws IOException {
 
         WrappedOutputStream wrappedStream = new WrappedOutputStream();
 
@@ -77,8 +81,114 @@ public class CloseWrappedStream {
             zo.write("hello".getBytes(StandardCharsets.UTF_8));
         }
 
-        // Verify that the wrapped stream was closed
-        assertTrue(wrappedStream.closed, "Expected wrapped output stream to be closed");
+        // Verify that the wrapped stream was closed once
+        assertEquals(1, wrappedStream.timesClosed,
+                "Expected wrapped output stream to be closed once");
+    }
+
+    /**
+     * Check that the exception handling is correct when the
+     * wrapped stream throws while being closed
+     *
+     * @throws IOException if an unexpected IOException occurs
+     */
+    @Test
+    public void exceptionDuringClose() throws IOException {
+
+        WrappedOutputStream wrappedStream = new WrappedOutputStream();
+
+        // Keep a reference so we can double-close
+        AtomicReference<ZipOutputStream> ref = new AtomicReference<>();
+
+        IOException exception = assertThrows(IOException.class, () -> {
+            try (ZipOutputStream zo = new ZipOutputStream(wrappedStream)) {
+                ref.set(zo);
+                zo.putNextEntry(new ZipEntry("file.txt"));
+                zo.write("hello".getBytes(StandardCharsets.UTF_8));
+                wrappedStream.failOnClose = true;
+            }
+        });
+
+        // Double-closing the ZipOutputStream should have no effect
+        ref.get().close();
+
+        // Check that we failed with the expected message
+        assertEquals(WrappedOutputStream.CLOSE_MSG, exception.getMessage());
+
+        // There should be no suppressed exceptions
+        assertEquals(0, exception.getSuppressed().length);
+
+        // Verify that the wrapped stream was closed once
+        assertEquals(1, wrappedStream.timesClosed,
+                "Expected wrapped output stream to be closed once");
+    }
+
+    /**
+     * Check that the exception handling is correct when the wrapped
+     * stream throws while calling finish AND while being closed
+     *
+     * @throws IOException if an unexpected IOException occurs
+     */
+    @Test
+    public void exceptionDuringFinishAndClose() throws IOException {
+
+        WrappedOutputStream wrappedStream = new WrappedOutputStream();
+
+
+        IOException exception = assertThrows(IOException.class, () -> {
+            try (ZipOutputStream zo = new ZipOutputStream(wrappedStream)) {
+
+                zo.putNextEntry(new ZipEntry("file.txt"));
+                zo.write("hello".getBytes(StandardCharsets.UTF_8));
+                // Will cause wrapped stream to throw during finish()
+                wrappedStream.failOnWrite = true;
+                // Will cause wrapped stream to throw during close()
+                wrappedStream.failOnClose = true;
+            }
+        });
+
+        // We expect the top-level exception to be from the close operation
+        assertEquals(WrappedOutputStream.CLOSE_MSG, exception.getMessage());
+
+        // The exception from the finish operation should be suppressed
+        assertEquals(1, exception.getSuppressed().length, "Expected suppressed exception");
+        assertEquals(WrappedOutputStream.WRITE_MSG, exception.getSuppressed()[0].getMessage());
+
+        // Verify that the wrapped stream was closed once
+        assertEquals(1, wrappedStream.timesClosed,
+                "Expected wrapped output stream to be closed once");
+    }
+
+    /**
+     * Check that the exception handling is correct when the wrapped stream throws
+     * the same IOException (identical instance) for write and close operations.
+     *
+     * @throws IOException if an unexpected IOException occurs
+     */
+    @Test
+    public void sameExceptionDuringFinishAndClose() throws IOException {
+
+        WrappedOutputStream wrappedStream = new WrappedOutputStream();
+
+        IOException exception = assertThrows(IOException.class, () -> {
+            try (ZipOutputStream zo = new ZipOutputStream(wrappedStream)) {
+                zo.putNextEntry(new ZipEntry("file.txt"));
+                zo.write("hello".getBytes(StandardCharsets.UTF_8));
+                // Make operations fail with the same exception instance
+                wrappedStream.failException = new IOException("same fail");
+                wrappedStream.failOnWrite = true;
+                wrappedStream.failOnClose = true;
+            }
+        });
+        // We expect the top-level exception to be from the close operation
+        assertSame(wrappedStream.failException, exception);
+
+        // The exception should not suppress itself
+        assertEquals(0, exception.getSuppressed().length, "Expected no suppressed exception");
+
+        // Verify that the wrapped stream was closed once
+        assertEquals(1, wrappedStream.timesClosed,
+                "Expected wrapped output stream to be closed once");
     }
 
     /**
@@ -86,9 +196,12 @@ public class CloseWrappedStream {
      * and tracks its close status.
      */
     static class WrappedOutputStream extends FilterOutputStream {
-        static final String MSG = "injected failure";
-        boolean fail = false;
-        boolean closed = false;
+        static final String WRITE_MSG = "fail during write";
+        static final String CLOSE_MSG = "fail during close";
+        boolean failOnWrite = false;
+        boolean failOnClose = false;
+        IOException failException = null;
+        int timesClosed = 0;
 
         public WrappedOutputStream() {
             super(new ByteArrayOutputStream());
@@ -96,8 +209,8 @@ public class CloseWrappedStream {
 
         @Override
         public synchronized void write(byte[] b, int off, int len) throws IOException{
-            if (fail) {
-                throw new IOException(MSG);
+            if (failOnWrite) {
+                throw failException != null ? failException : new IOException(WRITE_MSG);
             } else {
                 super.write(b, off, len);
             }
@@ -105,8 +218,12 @@ public class CloseWrappedStream {
 
         @Override
         public void close() throws IOException {
-            closed = true;
-            super.close();
+            timesClosed++;
+            if (failOnClose) {
+                throw failException != null ? failException : new IOException(CLOSE_MSG);
+            } else {
+                super.close();
+            }
         }
     }
 }
