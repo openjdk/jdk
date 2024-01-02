@@ -1265,6 +1265,9 @@ public:
   void fcvt_w_d_safe(Register dst, FloatRegister src, Register tmp = t0);
   void fcvt_l_d_safe(Register dst, FloatRegister src, Register tmp = t0);
 
+  void java_round_float(Register dst, FloatRegister src, FloatRegister ftmp);
+  void java_round_double(Register dst, FloatRegister src, FloatRegister ftmp);
+
   // vector load/store unit-stride instructions
   void vlex_v(VectorRegister vd, Register base, Assembler::SEW sew, VectorMask vm = unmasked) {
     switch (sew) {

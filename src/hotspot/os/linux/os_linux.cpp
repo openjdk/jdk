@@ -1856,18 +1856,19 @@ void * os::Linux::dlopen_helper(const char *filename, char *ebuf, int ebuflen) {
     if (! IEEE_subnormal_handling_OK()) {
       // We just dlopen()ed a library that mangled the floating-point flags.
       // Attempt to fix things now.
+      JFR_ONLY(load_event.set_fp_env_correction_attempt(true);)
       int rtn = fesetenv(&default_fenv);
       assert(rtn == 0, "fesetenv must succeed");
-      bool ieee_handling_after_issue = IEEE_subnormal_handling_OK();
 
-      if (ieee_handling_after_issue) {
+      if (IEEE_subnormal_handling_OK()) {
         Events::log_dll_message(nullptr, "IEEE subnormal handling had to be corrected after loading %s", filename);
         log_info(os)("IEEE subnormal handling had to be corrected after loading %s", filename);
+        JFR_ONLY(load_event.set_fp_env_correction_success(true);)
       } else {
         Events::log_dll_message(nullptr, "IEEE subnormal handling could not be corrected after loading %s", filename);
         log_info(os)("IEEE subnormal handling could not be corrected after loading %s", filename);
+        assert(false, "fesetenv didn't work");
       }
-      assert(ieee_handling_after_issue, "fesetenv didn't work");
     }
 #endif // IA32
   }
@@ -4074,10 +4075,6 @@ size_t os::large_page_size() {
 // behavior we can't commit hugetlbfs memory. Instead, we commit that
 // memory at reservation.
 bool os::can_commit_large_page_memory() {
-  return UseTransparentHugePages;
-}
-
-bool os::can_execute_large_page_memory() {
   return UseTransparentHugePages;
 }
 
