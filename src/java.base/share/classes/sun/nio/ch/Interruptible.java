@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,21 @@ package sun.nio.ch;
 
 public interface Interruptible {
 
-    public void interrupt(Thread t);
+    /**
+     * Invoked by Thread.interrupt when the given Thread is interrupted. This method
+     * is invoked while holding the Thread's interrupt lock. It will typically record
+     * that the I/O operation has been interrupted so that it can be coordinated with
+     * {@code postInterrupt} when it called after releasing the Thread's interrupt
+     * lock. This method must not block.
+     */
+    void interrupt(Thread target);
+
+    /**
+     * Invoked by Thread.interrupt after releasing the Thread's interrupt lock. It
+     * may also invoked by AbstractInterruptibleChannel/AbstractSelector begin methods
+     * when the Thread is interrupted. This method closes the channel or wakes up the
+     * Selector. This method is required to be idempotent.
+     */
+    void postInterrupt();
 
 }
