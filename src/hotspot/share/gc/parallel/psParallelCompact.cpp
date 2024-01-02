@@ -1769,6 +1769,7 @@ bool PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
     ref_processor()->start_discovery(maximum_heap_compaction);
 
     ClassUnloadingContext ctx(1 /* num_nmethod_unlink_workers */,
+                              false /* unregister_nmethods_during_purge */,
                               false /* lock_codeblob_free_separately */);
 
     marking_phase(&_gc_tracer);
@@ -2077,6 +2078,10 @@ void PSParallelCompact::marking_phase(ParallelOldTracer *gc_tracer) {
       GCTraceTime(Debug, gc, phases) t("Purge Unlinked NMethods", gc_timer());
       // Release unloaded nmethod's memory.
       ctx->purge_nmethods();
+    }
+    {
+      GCTraceTime(Debug, gc, phases) ur("Unregister NMethods", &_gc_timer);
+      ParallelScavengeHeap::heap()->prune_unlinked_nmethods();
     }
     {
       GCTraceTime(Debug, gc, phases) t("Free Code Blobs", gc_timer());

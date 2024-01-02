@@ -861,7 +861,7 @@ void ZGenerationYoung::mark_start() {
   // Enter mark phase
   set_phase(Phase::Mark);
 
-  // Reset marking information and mark roots
+  // Reset marking information
   _mark.start();
 
   // Flip remembered set bits
@@ -1213,7 +1213,7 @@ void ZGenerationOld::mark_start() {
   // Enter mark phase
   set_phase(Phase::Mark);
 
-  // Reset marking information and mark roots
+  // Reset marking information
   _mark.start();
 
   // Update statistics
@@ -1318,6 +1318,7 @@ void ZGenerationOld::process_non_strong_references() {
   _weak_roots_processor.process_weak_roots();
 
   ClassUnloadingContext ctx(_workers.active_workers(),
+                            true /* unregister_nmethods_during_purge */,
                             true /* lock_codeblob_free_separately */);
 
   // Unlink stale metadata and nmethods
