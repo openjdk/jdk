@@ -92,8 +92,8 @@ public:
   CardTable(MemRegion whole_heap);
   virtual ~CardTable() = default;
 
-  static bool is_word_aligned(const CardValue* const card) {
-    return is_aligned(card, sizeof(CardWord));
+  static bool is_word_aligned(void* p) {
+    return is_aligned(p, sizeof(CardWord));
   }
 
   void initialize(void* region0_start, void* region1_start);
