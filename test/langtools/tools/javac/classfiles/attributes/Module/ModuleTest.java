@@ -25,15 +25,11 @@
  * @test
  * @summary Module attribute tests
  * @bug 8080878 8161906 8162713 8170250
+ * @enablePreview
  * @modules java.compiler
  *          jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
  *          jdk.compiler/com.sun.tools.javac.util
- *          java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.constantpool
- *          java.base/jdk.internal.classfile.instruction
- *          java.base/jdk.internal.classfile.components
  *          java.base/jdk.internal.classfile.impl
  * @library /tools/lib ../lib /tools/javac/lib
  * @build toolbox.ToolBox toolbox.JavacTask toolbox.ToolBox

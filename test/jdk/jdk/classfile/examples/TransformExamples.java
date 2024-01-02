@@ -23,33 +23,33 @@
 
 /*
  * @test
- * @summary Testing Classfile TransformExamples compilation.
+ * @summary Testing ClassFile TransformExamples compilation.
  * @compile TransformExamples.java
  */
-import jdk.internal.classfile.Classfile;
-import jdk.internal.classfile.ClassModel;
-import jdk.internal.classfile.ClassTransform;
-import jdk.internal.classfile.FieldModel;
-import jdk.internal.classfile.MethodModel;
-import jdk.internal.classfile.Attribute;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.ClassModel;
+import java.lang.classfile.ClassTransform;
+import java.lang.classfile.FieldModel;
+import java.lang.classfile.MethodModel;
+import java.lang.classfile.Attribute;
 
 /**
  * TransformExamples
  */
 public class TransformExamples {
     public byte[] noop(ClassModel cm) {
-        return Classfile.of().transform(cm, ClassTransform.ACCEPT_ALL);
+        return ClassFile.of().transform(cm, ClassTransform.ACCEPT_ALL);
     }
 
     public byte[] deleteAllMethods(ClassModel cm) {
-        return Classfile.of().transform(cm, (b, e) -> {
+        return ClassFile.of().transform(cm, (b, e) -> {
             if (!(e instanceof MethodModel))
                 b.with(e);
         });
     }
 
     public byte[] deleteFieldsWithDollarInName(ClassModel cm) {
-        return Classfile.of().transform(cm, (b, e) ->
+        return ClassFile.of().transform(cm, (b, e) ->
                         {
                             if (!(e instanceof FieldModel fm && fm.fieldName().stringValue().contains("$")))
                                 b.with(e);
@@ -57,14 +57,14 @@ public class TransformExamples {
     }
 
     public byte[] deleteAttributes(ClassModel cm) {
-        return Classfile.of().transform(cm, (b, e) -> {
+        return ClassFile.of().transform(cm, (b, e) -> {
             if (!(e instanceof Attribute))
                 b.with(e);
         });
     }
 
     public byte[] keepMethodsAndFields(ClassModel cm) {
-        return Classfile.of().transform(cm, (b, e) -> {
+        return ClassFile.of().transform(cm, (b, e) -> {
             if (e instanceof MethodModel || e instanceof FieldModel)
                 b.with(e);
         });

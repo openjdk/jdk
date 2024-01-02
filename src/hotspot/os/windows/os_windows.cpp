@@ -3331,9 +3331,10 @@ char* os::replace_existing_mapping_with_file_mapping(char* base, size_t size, in
 // virtual space to get requested alignment, like posix-like os's.
 // Windows prevents multiple thread from remapping over each other so this loop is thread-safe.
 static char* map_or_reserve_memory_aligned(size_t size, size_t alignment, int file_desc) {
-  assert((alignment & (os::vm_allocation_granularity() - 1)) == 0,
-         "Alignment must be a multiple of allocation granularity (page size)");
-  assert((size & (alignment -1)) == 0, "size must be 'alignment' aligned");
+  assert(is_aligned(alignment, os::vm_allocation_granularity()),
+      "Alignment must be a multiple of allocation granularity (page size)");
+  assert(is_aligned(size, os::vm_allocation_granularity()),
+      "Size must be a multiple of allocation granularity (page size)");
 
   size_t extra_size = size + alignment;
   assert(extra_size >= size, "overflow, size is too large to allow alignment");
@@ -3433,10 +3434,6 @@ bool os::can_commit_large_page_memory() {
   // and committed in a single VirtualAlloc() call. This may change in the
   // future, but with Windows 2003 it's not possible to commit on demand.
   return false;
-}
-
-bool os::can_execute_large_page_memory() {
-  return true;
 }
 
 static char* reserve_large_pages_individually(size_t size, char* req_addr, bool exec) {

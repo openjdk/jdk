@@ -28,6 +28,7 @@
 #include "code/icBuffer.hpp"
 #include "code/nativeInst.hpp"
 #include "code/nmethod.hpp"
+#include "logging/log.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/safepoint.hpp"
@@ -105,9 +106,9 @@ void CompiledDirectStaticCall::set_to_interpreted(const methodHandle& callee, ad
   address stub = find_stub();
   guarantee(stub != nullptr, "stub not found");
 
-  if (TraceICs) {
+  {
     ResourceMark rm;
-    tty->print_cr("CompiledDirectStaticCall@" INTPTR_FORMAT ": set_to_interpreted %s",
+    log_trace(inlinecache)("CompiledDirectStaticCall@" INTPTR_FORMAT ": set_to_interpreted %s",
                   p2i(instruction_address()),
                   callee->name_and_sig_as_C_string());
   }
