@@ -125,9 +125,9 @@ public class ZipCoding {
              ZipInputStream zis = new ZipInputStream(in, Charset.forName(readCharset))) {
             ZipEntry e = zis.getNextEntry();
             assertNotNull(e);
-            assertEquals(name, e.getName());
+            assertEquals(name, e.getName(), "Entry name does not match");
             assertNull(e.getComment()); // No comment in the LOC header
-            assertArrayEquals(ENTRY_DATA, zis.readAllBytes(), "ZipIS content doesn't match!");
+            assertArrayEquals(ENTRY_DATA, zis.readAllBytes(), "ZIP entry data does not match");
         }
     }
 
@@ -160,19 +160,19 @@ public class ZipCoding {
             Enumeration<? extends ZipEntry> zes = zf.entries();
             ZipEntry e = (ZipEntry)zes.nextElement();
             assertNotNull(e);
-            assertEquals(name, e.getName(), "ZipFile.entries(): name doesn't match!");
-            assertEquals(comment, e.getComment(), "ZipFile.entries(): comment doesn't match!");
+            assertEquals(name, e.getName(), "ZipFile.entries() returned unexpected entry name");
+            assertEquals(comment, e.getComment(), "ZipFile.entries() returned unexpected entry comment");
 
             // Test using ZipFile.getEntry
             e = zf.getEntry(name);
             assertNotNull(e,
-                    String.format("Entry not found for ZipFile encoded with %s and opened with %s",
+                    String.format("Entry lookup failed on ZIP encoded with %s and opened with %s",
                             writeCharset, readCharset));
-            assertEquals(name, e.getName(), "ZipFile.getEntry(): name doesn't match!");
-            assertEquals(comment, e.getComment(), "ZipFile.getEntry(): comment doesn't match!");
+            assertEquals(name, e.getName(), "ZipFile.getEntry() returned unexpected entry name");
+            assertEquals(comment, e.getComment(), "ZipFile.getEntry() returned unexpected entry comment");
             try (InputStream is = zf.getInputStream(e)) {
                 assertNotNull(is);
-                assertArrayEquals(ENTRY_DATA, is.readAllBytes(), "ZipFile content doesn't match!");
+                assertArrayEquals(ENTRY_DATA, is.readAllBytes(), "ZIP entry data does not match");
             }
         }
 
