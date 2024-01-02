@@ -104,6 +104,6 @@ public class NonICCFilterTest {
         ccop.filter(src, dest);
 
         if (compareImages(src, dest)) {
-            throw new RuntimeException("\"Test failed: \" Source equal to Destination");
+            throw new RuntimeException("Test failed: Source equal to Destination");
     }
 }
