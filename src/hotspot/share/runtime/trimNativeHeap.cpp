@@ -48,11 +48,11 @@ class NativeHeapTrimmerThread : public NamedThread {
   static constexpr int64_t safepoint_poll_ms = 250;
 
   Monitor* const _lock;
-  bool _stop;
-  uint16_t _suspend_count;
+  bool volatile _stop;
+  uint16_t volatile _suspend_count;
 
   // Statistics
-  uint64_t _num_trims_performed;
+  uint64_t volatile _num_trims_performed;
 
   bool is_suspended() const {
     assert(_lock->is_locked(), "Must be");
