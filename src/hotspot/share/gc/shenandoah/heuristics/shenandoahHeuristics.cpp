@@ -249,8 +249,7 @@ void ShenandoahHeuristics::record_requested_gc() {
 }
 
 bool ShenandoahHeuristics::can_unload_classes() {
-  if (!ClassUnloading) return false;
-  return true;
+  return ClassUnloading;
 }
 
 bool ShenandoahHeuristics::should_unload_classes() {

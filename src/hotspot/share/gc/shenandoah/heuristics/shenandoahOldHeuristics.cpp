@@ -550,11 +550,11 @@ bool ShenandoahOldHeuristics::should_start_gc() {
   //
   // Future refinement: under certain circumstances, we might be more sophisticated about this choice.
   // For example, we could choose to abandon the previous old collection before it has completed evacuations.
-  if (!_old_generation->can_start_gc()) {
+  ShenandoahHeap* heap = ShenandoahHeap::heap();
+  if (!_old_generation->can_start_gc() || heap->collection_set()->has_old_regions()) {
     return false;
   }
 
-  ShenandoahHeap* heap = ShenandoahHeap::heap();
   if (_cannot_expand_trigger) {
     size_t old_gen_capacity = _old_generation->max_capacity();
     size_t heap_capacity = heap->capacity();

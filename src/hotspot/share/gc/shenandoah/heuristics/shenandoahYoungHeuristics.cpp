@@ -123,6 +123,17 @@ void ShenandoahYoungHeuristics::choose_young_collection_set(ShenandoahCollection
 
 
 bool ShenandoahYoungHeuristics::should_start_gc() {
+  ShenandoahHeap* heap = ShenandoahHeap::heap();
+  ShenandoahOldHeuristics* old_heuristics = heap->old_heuristics();
+
+  // Checks that an old cycle has run for at least ShenandoahMinimumOldMarkTimeMs before allowing a young cycle.
+  if (ShenandoahMinimumOldMarkTimeMs > 0 && ShenandoahHeap::heap()->is_concurrent_old_mark_in_progress()) {
+    size_t old_mark_elapsed = size_t(old_heuristics->elapsed_cycle_time() * 1000);
+    if (old_mark_elapsed < ShenandoahMinimumOldMarkTimeMs) {
+      return false;
+    }
+  }
+
   // inherited triggers have already decided to start a cycle, so no further evaluation is required
   if (ShenandoahAdaptiveHeuristics::should_start_gc()) {
     return true;
@@ -133,8 +144,6 @@ bool ShenandoahYoungHeuristics::should_start_gc() {
   // for the reality that old-gen and young-gen activities are not truly "concurrent".  If there is old-gen work to
   // be done, we start up the young-gen GC threads so they can do some of this old-gen work.  As implemented, promotion
   // gets priority over old-gen marking.
-  ShenandoahHeap* heap = ShenandoahHeap::heap();
-
   size_t promo_expedite_threshold = percent_of(heap->young_generation()->max_capacity(), ShenandoahExpeditePromotionsThreshold);
   size_t promo_potential = heap->get_promotion_potential();
   if (promo_potential > promo_expedite_threshold) {
@@ -147,7 +156,6 @@ bool ShenandoahYoungHeuristics::should_start_gc() {
     return true;
   }
 
-  ShenandoahOldHeuristics* old_heuristics = heap->old_heuristics();
   size_t mixed_candidates = old_heuristics->unprocessed_old_collection_candidates();
   if (mixed_candidates > ShenandoahExpediteMixedThreshold && !heap->is_concurrent_weak_root_in_progress()) {
     // We need to run young GC in order to open up some free heap regions so we can finish mixed evacuations.

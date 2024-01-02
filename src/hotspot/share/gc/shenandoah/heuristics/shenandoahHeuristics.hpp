@@ -154,6 +154,9 @@ public:
   virtual void choose_collection_set(ShenandoahCollectionSet* collection_set);
 
   virtual bool can_unload_classes();
+
+  // This indicates whether or not the current cycle should unload classes.
+  // It does NOT indicate that a cycle should be started.
   virtual bool should_unload_classes();
 
   virtual const char* name() = 0;
