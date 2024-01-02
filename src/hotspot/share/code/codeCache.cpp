@@ -355,16 +355,8 @@ void CodeCache::initialize_heaps() {
 }
 
 size_t CodeCache::page_size(bool aligned, size_t min_pages) {
-  if (os::can_execute_large_page_memory()) {
-    if (InitialCodeCacheSize < ReservedCodeCacheSize) {
-      // Make sure that the page size allows for an incremental commit of the reserved space
-      min_pages = MAX2(min_pages, (size_t)8);
-    }
-    return aligned ? os::page_size_for_region_aligned(ReservedCodeCacheSize, min_pages) :
-                     os::page_size_for_region_unaligned(ReservedCodeCacheSize, min_pages);
-  } else {
-    return os::vm_page_size();
-  }
+  return aligned ? os::page_size_for_region_aligned(ReservedCodeCacheSize, min_pages) :
+                   os::page_size_for_region_unaligned(ReservedCodeCacheSize, min_pages);
 }
 
 ReservedCodeSpace CodeCache::reserve_heap_memory(size_t size, size_t rs_ps) {
@@ -1171,7 +1163,11 @@ void CodeCache::initialize() {
     FLAG_SET_ERGO(NonNMethodCodeHeapSize, (uintx)os::vm_page_size());
     FLAG_SET_ERGO(ProfiledCodeHeapSize, 0);
     FLAG_SET_ERGO(NonProfiledCodeHeapSize, 0);
-    ReservedCodeSpace rs = reserve_heap_memory(ReservedCodeCacheSize, page_size(false, 8));
+
+    // If InitialCodeCacheSize is equal to ReservedCodeCacheSize, then it's more likely
+    // users want to use the largest available page.
+    const size_t min_pages = (InitialCodeCacheSize == ReservedCodeCacheSize) ? 1 : 8;
+    ReservedCodeSpace rs = reserve_heap_memory(ReservedCodeCacheSize, page_size(false, min_pages));
     // Register CodeHeaps with LSan as we sometimes embed pointers to malloc memory.
     LSAN_REGISTER_ROOT_REGION(rs.base(), rs.size());
     add_heap(rs, "CodeCache", CodeBlobType::All);
@@ -1819,16 +1815,20 @@ void CodeCache::log_state(outputStream* st) {
 }
 
 #ifdef LINUX
-void CodeCache::write_perf_map() {
+void CodeCache::write_perf_map(const char* filename) {
   MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
 
-  // Perf expects to find the map file at /tmp/perf-<pid>.map.
+  // Perf expects to find the map file at /tmp/perf-<pid>.map
+  // if the file name is not specified.
   char fname[32];
-  jio_snprintf(fname, sizeof(fname), "/tmp/perf-%d.map", os::current_process_id());
+  if (filename == nullptr) {
+    jio_snprintf(fname, sizeof(fname), "/tmp/perf-%d.map", os::current_process_id());
+    filename = fname;
+  }
 
-  fileStream fs(fname, "w");
+  fileStream fs(filename, "w");
   if (!fs.is_open()) {
-    log_warning(codecache)("Failed to create %s for perf map", fname);
+    log_warning(codecache)("Failed to create %s for perf map", filename);
     return;
   }
 

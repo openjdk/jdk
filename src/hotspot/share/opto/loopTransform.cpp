@@ -1284,8 +1284,7 @@ Node *PhaseIdealLoop::clone_up_backedge_goo(Node *back_ctrl, Node *preheader_ctr
 }
 
 Node* PhaseIdealLoop::cast_incr_before_loop(Node* incr, Node* ctrl, Node* loop) {
-  Node* castii = new CastIINode(incr, TypeInt::INT, ConstraintCastNode::UnconditionalDependency);
-  castii->set_req(0, ctrl);
+  Node* castii = new CastIINode(ctrl, incr, TypeInt::INT, ConstraintCastNode::UnconditionalDependency);
   register_new_node(castii, ctrl);
   for (DUIterator_Fast imax, i = incr->fast_outs(imax); i < imax; i++) {
     Node* n = incr->fast_out(i);
@@ -3161,9 +3160,8 @@ void PhaseIdealLoop::do_range_check(IdealLoopTree *loop, Node_List &old_new) {
   // The new loop limit is <= (for an upward loop) >= (for a downward loop) than the orig limit.
   // The expression that computes the new limit may be too complicated and the computed type of the new limit
   // may be too pessimistic. A CastII here guarantees it's not lost.
-  main_limit = new CastIINode(main_limit, TypeInt::make(upward ? min_jint : orig_limit_t->_lo,
+  main_limit = new CastIINode(pre_ctrl, main_limit, TypeInt::make(upward ? min_jint : orig_limit_t->_lo,
                                                         upward ? orig_limit_t->_hi : max_jint, Type::WidenMax));
-  main_limit->init_req(0, pre_ctrl);
   register_new_node(main_limit, pre_ctrl);
   // Hack the now-private loop bounds
   _igvn.replace_input_of(main_cmp, 2, main_limit);
@@ -3422,7 +3420,10 @@ bool IdealLoopTree::do_remove_empty_loop(PhaseIdealLoop *phase) {
   Node* exact_limit = phase->exact_limit(this);
 
   // We need to pin the exact limit to prevent it from floating above the zero trip guard.
-  Node* cast_ii = ConstraintCastNode::make(cl->in(LoopNode::EntryControl), exact_limit, phase->_igvn.type(exact_limit), ConstraintCastNode::UnconditionalDependency, T_INT);
+  Node* cast_ii = ConstraintCastNode::make_cast_for_basic_type(
+      cl->in(LoopNode::EntryControl), exact_limit,
+      phase->_igvn.type(exact_limit),
+      ConstraintCastNode::UnconditionalDependency, T_INT);
   phase->register_new_node(cast_ii, cl->in(LoopNode::EntryControl));
 
   Node* final_iv = new SubINode(cast_ii, cl->stride());
