@@ -63,7 +63,7 @@ final class BatchManager {
         }
         for (PeriodicTask task : activeSortedTasks(tasks)) {
             if (task.isSchedulable()) {
-                Batch batch = findOrInsertBatch(task.getPeriod(), task.getBatch());
+                Batch batch = findBatch(task.getPeriod(), task.getBatch());
                 batch.add(task);
             }
         }
@@ -85,7 +85,7 @@ final class BatchManager {
         return tasks;
     }
 
-    private Batch findOrInsertBatch(long period, Batch maybeCachedBatch) {
+    private Batch findBatch(long period, Batch oldBatch) {
         // All events with a period less than 1000 ms
         // get their own unique batch. The rationale for
         // this is to avoid a scenario where a user (mistakenly) specifies
@@ -98,7 +98,7 @@ final class BatchManager {
                 return batch;
             }
         }
-        Batch batch = maybeCachedBatch != null ? maybeCachedBatch : new Batch(period);
+        Batch batch = oldBatch != null ? oldBatch : new Batch(period);
         batches.add(batch);
         return batch;
     }
