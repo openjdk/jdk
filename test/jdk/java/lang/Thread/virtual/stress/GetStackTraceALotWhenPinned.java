@@ -25,13 +25,13 @@
  * @test
  * @bug 8322818
  * @summary Stress test Thread.getStackTrace on a virtual thread that is pinned
- * @requires vm.debug != true & vm.continuations
+ * @requires vm.debug != true
  * @run main GetStackTraceALotWhenPinned 100000
  */
 
 /*
  * @test
- * @requires vm.debug == true & vm.continuations
+ * @requires vm.debug == true
  * @run main/timeout=300 GetStackTraceALotWhenPinned 10000
  */
 
