@@ -240,13 +240,24 @@ public class DeflaterOutputStream extends FilterOutputStream {
      */
     public void close() throws IOException {
         if (!closed) {
+            IOException finishException = null;
             try {
                 finish();
+            } catch (IOException ioe){
+                finishException = ioe;
+                throw ioe;
             } finally {
                 if (usesDefaultDeflater) {
                     def.end();
                 }
-                out.close();
+                try {
+                    out.close();
+                } catch (IOException ioe) {
+                    if (finishException != ioe) {
+                        ioe.addSuppressed(finishException);
+                    }
+                    throw ioe;
+                }
                 closed = true;
             }
         }
