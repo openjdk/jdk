@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -111,6 +111,17 @@ public class ArrayClassTest {
             // important that the parent classloader be null!
             // otherwise we can pick up classes from the classpath
             super(urls, null);
+        }
+
+        public Class loadClass(String name) throws ClassNotFoundException {
+            System.out.println("loadClass: " + name);
+            return super.loadClass(name);
+        }
+
+        public Class loadClass(String name, boolean resolve)
+                throws ClassNotFoundException {
+            System.out.println("loadClass: " + name + ", " + resolve);
+            return super.loadClass(name, resolve);
         }
 
         public Class findClass(String name) throws ClassNotFoundException {
