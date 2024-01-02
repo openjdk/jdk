@@ -905,7 +905,7 @@ false)
 .RE
 .TP
 \f[V]VM.cds\f[R] [\f[I]arguments\f[R]]
-Dumps a static or dynamic shared archive that includes all currently
+Dump a static or dynamic shared archive that includes all currently
 loaded classes.
 .RS
 .PP
@@ -932,7 +932,7 @@ with the JVM option \f[V]-XX:+RecordDynamicDumpInfo\f[R].
 .RE
 .TP
 \f[V]VM.class_hierarchy\f[R] [\f[I]options\f[R]] [\f[I]arguments\f[R]]
-Prints a list of all loaded classes, indented to show the class
+Print a list of all loaded classes, indented to show the class
 hierarchy.
 The name of each class is followed by the ClassLoaderData* of its
 ClassLoader, or \[dq]null\[dq] if it is loaded by the bootstrap class
@@ -985,7 +985,7 @@ class (BOOLEAN, false)
 .RE
 .TP
 \f[V]VM.classloader_stats\f[R]
-Prints statistics about all ClassLoaders.
+Print statistics about all ClassLoaders.
 .RS
 .PP
 Impact: Low
@@ -1015,14 +1015,14 @@ one.
 .RE
 .TP
 \f[V]VM.command_line\f[R]
-Prints the command line used to start this VM instance.
+Print the command line used to start this VM instance.
 .RS
 .PP
 Impact: Low
 .RE
 .TP
 \f[V]VM.dynlibs\f[R]
-Prints the loaded dynamic libraries.
+Print loaded dynamic libraries.
 .RS
 .PP
 Impact: Low
@@ -1069,7 +1069,7 @@ The following \f[I]options\f[R] must be specified using either
 .RE
 .TP
 \f[V]VM.info\f[R]
-Prints information about the JVM environment and status.
+Print information about the JVM environment and status.
 .RS
 .PP
 Impact: Low
@@ -1159,7 +1159,7 @@ a dynamically chosen scale.
 .RE
 .TP
 \f[V]VM.native_memory\f[R] [\f[I]options\f[R]]
-Prints native memory usage
+Print native memory usage
 .RS
 .PP
 Impact: Medium
@@ -1202,7 +1202,7 @@ purpose.
 .RE
 .TP
 \f[V]VM.set_flag\f[R] [\f[I]arguments\f[R]]
-Sets the VM flag option by using the provided value.
+Sets VM flag option using the provided value.
 .RS
 .PP
 Impact: Low
@@ -1217,7 +1217,7 @@ no default value)
 .RE
 .TP
 \f[V]VM.stringtable\f[R] [\f[I]options\f[R]]
-Dumps the string table.
+Dump string table.
 .RS
 .PP
 Impact: Medium --- depends on the Java content.
@@ -1234,7 +1234,7 @@ table (BOOLEAN, false)
 .RE
 .TP
 \f[V]VM.symboltable\f[R] [\f[I]options\f[R]]
-Dumps the symbol table.
+Dump symbol table.
 .RS
 .PP
 Impact: Medium --- depends on the Java content.
@@ -1251,7 +1251,7 @@ table (BOOLEAN, false)
 .RE
 .TP
 \f[V]VM.system_properties\f[R]
-Prints the system properties.
+Print system properties.
 .RS
 .PP
 Impact: Low
@@ -1275,7 +1275,7 @@ for all class loaders (BOOLEAN, false) .
 .RE
 .TP
 \f[V]VM.uptime\f[R] [\f[I]options\f[R]]
-Prints the VM uptime.
+Print VM uptime.
 .RS
 .PP
 Impact: Low
@@ -1292,7 +1292,7 @@ The following \f[I]options\f[R] must be specified using either
 .RE
 .TP
 \f[V]VM.version\f[R]
-Prints JVM version information.
+Print JVM version information.
 .RS
 .PP
 Impact: Low
