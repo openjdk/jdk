@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  */
 
 /* @test
-   @bug 4241361 4842702 4985614 6646605 5032358 6923692 6233323 8144977 8186464 4401122
+   @bug 4241361 4842702 4985614 6646605 5032358 6923692 6233323 8144977 8186464 4401122 8322830
    @summary Make sure we can read a zip file.
    @modules jdk.zipfs
    @run junit ReadZip
@@ -38,6 +38,7 @@ import java.io.OutputStream;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
+import java.util.Collections;
 import java.util.Map;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipException;
@@ -344,5 +345,32 @@ public class ReadZip {
         assertThrows(IOException.class,  () -> {
             in.readAllBytes();
         });
+    }
+
+    /**
+     * Verify that ZipFile can open a ZIP file with zero entries
+     *
+     * @throws IOException if an unexpected IOException occurs
+     */
+    @Test
+    public void noEntries() throws IOException {
+        // Create a ZIP file with no entries
+        try (ZipOutputStream zo = new ZipOutputStream(Files.newOutputStream(zip))) {
+        }
+
+        // Open the "empty" ZIP file
+        try (ZipFile zf = new ZipFile(zip.toFile())) {
+            // Verify size
+            assertEquals(0, zf.size());
+
+            // Verify entry lookup using ZipFile.getEntry()
+            assertNull(zf.getEntry("file.txt"));
+
+            // Verify iteration using ZipFile.entries()
+            assertEquals(Collections.emptyList(), Collections.list(zf.entries()));
+
+            // Verify iteration using ZipFile.stream()
+            assertEquals(Collections.emptyList(), zf.stream().toList());
+        }
     }
 }
