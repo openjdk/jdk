@@ -103,12 +103,7 @@ public class NonICCFilterTest {
                 new ColorConvertOp(ColorSpace.getInstance(ColorSpace.CS_sRGB), null);
         ccop.filter(src, dest);
 
-        try {
-            if (compareImages(src, dest)) {
-                throw new RuntimeException("Source equal to Destination");
-            }
-        } catch (Exception e) {
-            throw new RuntimeException("Test failed: " + e);
-        }
+        if (compareImages(src, dest)) {
+            throw new RuntimeException("\"Test failed: \" Source equal to Destination");
     }
 }
