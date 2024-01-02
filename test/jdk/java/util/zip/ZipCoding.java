@@ -125,9 +125,10 @@ public class ZipCoding {
              ZipInputStream zis = new ZipInputStream(in, Charset.forName(readCharset))) {
             ZipEntry e = zis.getNextEntry();
             assertNotNull(e);
-            assertEquals(name, e.getName(), "Entry name does not match");
+            assertEquals(name, e.getName(),
+                    "ZipInputStream.getNextEntry() returned unexpected entry name");
             assertNull(e.getComment()); // No comment in the LOC header
-            assertArrayEquals(ENTRY_DATA, zis.readAllBytes(), "ZIP entry data does not match");
+            assertArrayEquals(ENTRY_DATA, zis.readAllBytes(), "Unexpected ZIP entry data");
         }
     }
 
@@ -172,7 +173,7 @@ public class ZipCoding {
             assertEquals(comment, e.getComment(), "ZipFile.getEntry() returned unexpected entry comment");
             try (InputStream is = zf.getInputStream(e)) {
                 assertNotNull(is);
-                assertArrayEquals(ENTRY_DATA, is.readAllBytes(), "ZIP entry data does not match");
+                assertArrayEquals(ENTRY_DATA, is.readAllBytes(), "Unexpected ZIP entry data");
             }
         }
 
