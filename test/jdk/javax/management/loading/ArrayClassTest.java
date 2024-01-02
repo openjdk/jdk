@@ -113,17 +113,6 @@ public class ArrayClassTest {
             super(urls, null);
         }
 
-        public Class loadClass(String name) throws ClassNotFoundException {
-            System.out.println("loadClass: " + name);
-            return super.loadClass(name);
-        }
-
-        public Class loadClass(String name, boolean resolve)
-                throws ClassNotFoundException {
-            System.out.println("loadClass: " + name + ", " + resolve);
-            return super.loadClass(name, resolve);
-        }
-
         public Class findClass(String name) throws ClassNotFoundException {
             System.out.println("findClass: " + name);
             if (false)
