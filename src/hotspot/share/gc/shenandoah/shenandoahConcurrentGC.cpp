@@ -707,7 +707,7 @@ void ShenandoahEvacUpdateCleanupOopStorageRootsClosure::do_oop(oop* p) {
       }
       ShenandoahHeap::atomic_update_oop(resolved, p, obj);
       assert(_heap->cancelled_gc() ||
-             _mark_context->is_marked(resolved) && !_heap->in_collection_set(resolved),
+             (_mark_context->is_marked(resolved) && !_heap->in_collection_set(resolved)),
              "Sanity");
     }
   }
