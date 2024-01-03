@@ -1203,9 +1203,9 @@ void NullCheckEliminator::handle_ProfileReturnType(ProfileReturnType* x) {
 
 void NullCheckEliminator::handle_Constant(Constant *x) {
   ObjectType* ot = x->type()->as_ObjectType();
-  if (ot && ot->is_loaded()) {
+  if (ot != nullptr && ot->is_loaded()) {
     ObjectConstant* oc = ot->as_ObjectConstant();
-    if (!oc || !oc->value()->is_null_object()) {
+    if (oc == nullptr || !oc->value()->is_null_object()) {
       set_put(x);
       if (PrintNullCheckElimination) {
         tty->print_cr("Constant %d is non-null", x->id());
