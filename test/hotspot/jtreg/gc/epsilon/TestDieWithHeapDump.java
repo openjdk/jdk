@@ -33,7 +33,6 @@ package gc.epsilon;
 
 import java.io.*;
 import jdk.test.lib.process.OutputAnalyzer;
-import jdk.test.lib.process.ProcessExecutor;
 import jdk.test.lib.process.ProcessTools;
 
 public class TestDieWithHeapDump {
