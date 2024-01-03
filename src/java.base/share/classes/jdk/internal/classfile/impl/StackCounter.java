@@ -36,6 +36,7 @@ import static java.lang.classfile.ClassFile.*;
 import java.lang.classfile.constantpool.Utf8Entry;
 import java.lang.constant.MethodTypeDesc;
 import java.util.ArrayDeque;
+import java.util.Queue;
 
 
 public final class StackCounter {
