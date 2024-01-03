@@ -1716,7 +1716,7 @@ public class Intro extends JPanel {
                 this.beginning = beg;
                 this.ending = end;
                 fm = surf.getMetrics(font);
-                java.util.Arrays.sort(members);
+                Arrays.sort(members);
                 cast.add("CONTRIBUTORS");
                 cast.add(" ");
                 cast.addAll(Arrays.asList(members));

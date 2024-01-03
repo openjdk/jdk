@@ -267,7 +267,7 @@ public class ThreadImpl implements ThreadMXBean {
 
         int length = ids.length;
         long[] times = new long[length];
-        java.util.Arrays.fill(times, -1);
+        Arrays.fill(times, -1);
 
         if (verified) {
             if (length == 1) {
@@ -306,7 +306,7 @@ public class ThreadImpl implements ThreadMXBean {
 
         int length = ids.length;
         long[] times = new long[length];
-        java.util.Arrays.fill(times, -1);
+        Arrays.fill(times, -1);
 
         if (verified) {
             if (length == 1) {
@@ -390,7 +390,7 @@ public class ThreadImpl implements ThreadMXBean {
         boolean verified = verifyThreadAllocatedMemory(ids);
 
         long[] sizes = new long[ids.length];
-        java.util.Arrays.fill(sizes, -1);
+        Arrays.fill(sizes, -1);
 
         if (verified) {
             getThreadAllocatedMemory1(ids, sizes);

@@ -85,7 +85,7 @@ final class DESKey implements SecretKey {
         // Use the cleaner to zero the key when no longer referenced
         final byte[] k = this.key;
         CleanerFactory.cleaner().register(this,
-                () -> java.util.Arrays.fill(k, (byte)0x00));
+                () -> Arrays.fill(k, (byte)0x00));
     }
 
     public byte[] getEncoded() {
@@ -136,7 +136,7 @@ final class DESKey implements SecretKey {
 
             byte[] thatKey = that.getEncoded();
             boolean ret = MessageDigest.isEqual(this.key, thatKey);
-            java.util.Arrays.fill(thatKey, (byte)0x00);
+            Arrays.fill(thatKey, (byte)0x00);
             return ret;
         } finally {
             // prevent this from being cleaned for the above block
@@ -168,7 +168,7 @@ final class DESKey implements SecretKey {
         // Use the cleaner to zero the key when no longer referenced
         final byte[] k = this.key;
         CleanerFactory.cleaner().register(this,
-                () -> java.util.Arrays.fill(k, (byte)0x00));
+                () -> Arrays.fill(k, (byte)0x00));
     }
 
     /**

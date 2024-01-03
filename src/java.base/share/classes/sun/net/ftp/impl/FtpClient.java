@@ -204,7 +204,7 @@ public class FtpClient extends sun.net.ftp.FtpClient {
             47, 63, 58, 64, 38, 61, 43, 36, 44};
 
         byte[] b = chkS.getBytes(encoding);
-        return java.util.Arrays.equals(b, chkB);
+        return Arrays.equals(b, chkB);
     }
 
     private class DefaultParser implements FtpDirParser {
