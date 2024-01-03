@@ -66,10 +66,6 @@ MODULES_SOURCE_PATH := $(call PathList, $(call GetModuleSrcPath) )
 # In order to get a specific ordering it's necessary to specify the total
 # ordering of tags as the tags are otherwise ordered in order of definition.
 JAVADOC_TAGS := \
-    -tag beaninfo:X \
-    -tag since.unbundled:X \
-    -tag Note:X \
-    -tag ToDo:X \
     -tag 'apiNote:a:API Note:' \
     -tag 'implSpec:a:Implementation Requirements:' \
     -tag 'implNote:a:Implementation Note:' \

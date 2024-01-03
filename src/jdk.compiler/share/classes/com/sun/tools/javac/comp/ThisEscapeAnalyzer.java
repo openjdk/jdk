@@ -167,7 +167,7 @@ class ThisEscapeAnalyzer extends TreeScanner {
 
     /** Used to terminate recursion in {@link #invokeInvokable invokeInvokable()}.
      */
-    private final Set<Pair<JCTree, RefSet<Ref>>> invocations = new HashSet<>();
+    private final Set<Pair<JCMethodDecl, RefSet<Ref>>> invocations = new HashSet<>();
 
     /** Snapshot of {@link #callStack} where a possible 'this' escape occurs.
      *  If non-null, a 'this' escape warning has been found in the current
@@ -506,7 +506,7 @@ class ThisEscapeAnalyzer extends TreeScanner {
     public void visitApply(JCMethodInvocation invoke) {
 
         // Get method symbol
-        MethodSymbol sym = (MethodSymbol)TreeInfo.symbolFor(invoke.meth);
+        Symbol sym = TreeInfo.symbolFor(invoke.meth);
 
         // Recurse on method expression
         scan(invoke.meth);
@@ -530,7 +530,7 @@ class ThisEscapeAnalyzer extends TreeScanner {
         invoke(invoke, sym, invoke.args, receiverRefs);
     }
 
-    private void invoke(JCTree site, MethodSymbol sym, List<JCExpression> args, RefSet<?> receiverRefs) {
+    private void invoke(JCTree site, Symbol sym, List<JCExpression> args, RefSet<?> receiverRefs) {
 
         // Skip if ignoring warnings for a constructor invoked via 'this()'
         if (suppressed.contains(sym))
@@ -590,7 +590,7 @@ class ThisEscapeAnalyzer extends TreeScanner {
                 return;
 
             // Stop infinite recursion here
-            Pair<JCTree, RefSet<Ref>> invocation = Pair.of(site, refs.clone());
+            Pair<JCMethodDecl, RefSet<Ref>> invocation = Pair.of(methodInfo.declaration, refs.clone());
             if (!invocations.add(invocation))
                 return;
 
@@ -678,7 +678,11 @@ class ThisEscapeAnalyzer extends TreeScanner {
 
     @Override
     public void visitForeachLoop(JCEnhancedForLoop tree) {
-        visitLooped(tree, super::visitForeachLoop);
+        visitLooped(tree, foreach -> {
+            scan(foreach.expr);
+            refs.discardExprs(depth);       // we don't handle iterator() yet
+            scan(foreach.body);
+        });
     }
 
     @Override
@@ -729,7 +733,10 @@ class ThisEscapeAnalyzer extends TreeScanner {
 
     @Override
     public void visitLambda(JCLambda lambda) {
-        visitDeferred(() -> visitScoped(false, () -> super.visitLambda(lambda)));
+        visitDeferred(() -> visitScoped(false, () -> {
+            scan(lambda.body);
+            refs.discardExprs(depth);       // needed in case body is a JCExpression
+        }));
     }
 
     @Override
@@ -803,6 +810,10 @@ class ThisEscapeAnalyzer extends TreeScanner {
 
     @Override
     public void visitReference(JCMemberReference tree) {
+        if (tree.type.isErroneous()) {
+            //error recovery - ignore erroneous member references
+            return ;
+        }
 
         // Scan target expression and extract 'this' references, if any
         scan(tree.expr);

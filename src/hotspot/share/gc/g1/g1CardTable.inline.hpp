@@ -31,7 +31,7 @@
 
 inline uint G1CardTable::region_idx_for(CardValue* p) {
   size_t const card_idx = pointer_delta(p, _byte_map, sizeof(CardValue));
-  return (uint)(card_idx >> (HeapRegion::LogOfHRGrainBytes - _card_shift));
+  return (uint)(card_idx >> HeapRegion::LogCardsPerRegion);
 }
 
 inline bool G1CardTable::mark_clean_as_dirty(CardValue* card) {

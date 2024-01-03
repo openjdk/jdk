@@ -23,7 +23,6 @@
 
 /* @test
  * @bug 8307508
- * @enablePreview
  * @run junit IndirectVarHandleTest
  * @summary Test VarHandle::isAccessModeSupported on indirect VarHandle
  *          produced by MethodHandles.filterCoordinates

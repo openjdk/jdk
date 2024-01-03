@@ -169,11 +169,11 @@ import java.util.stream.Collectors;
  * <i>NegativePattern:</i>
  *        <i>Prefix<sub>optional</sub></i> <i>MinimumInteger</i> <i>Suffix<sub>optional</sub></i>
  * <i>Prefix:</i>
- *      Any Unicode characters except {@code U+FFFE}, {@code U+FFFF}, and
- *      {@linkplain DecimalFormat##special_pattern_character special characters}.
+ *      Any characters except the {@linkplain
+ *      DecimalFormat##special_pattern_character special pattern characters}
  * <i>Suffix:</i>
- *      Any Unicode characters except {@code U+FFFE}, {@code U+FFFF}, and
- *      {@linkplain DecimalFormat##special_pattern_character special characters}.
+ *      Any characters except the {@linkplain
+ *      DecimalFormat##special_pattern_character special pattern characters}
  * <i>MinimumInteger:</i>
  *      0
  *      0 <i>MinimumInteger</i>
@@ -2343,13 +2343,17 @@ public final class CompactNumberFormat extends NumberFormat {
     }
 
     /**
-     * Checks if this {@code CompactNumberFormat} is equal to the
-     * specified {@code obj}. The objects of type {@code CompactNumberFormat}
-     * are compared, other types return false; obeys the general contract of
-     * {@link java.lang.Object#equals(java.lang.Object) Object.equals}.
+     * Compares the specified object with this {@code CompactNumberFormat} for equality.
+     * Returns true if the object is also a {@code CompactNumberFormat} and the
+     * two formats would format any value the same.
      *
+     * @implSpec This method performs an equality check with a notion of class
+     * identity based on {@code getClass()}, rather than {@code instanceof}.
+     * Therefore, in the equals methods in subclasses, no instance of this class
+     * should compare as equal to an instance of a subclass.
      * @param obj the object to compare with
      * @return true if this is equal to the other {@code CompactNumberFormat}
+     * @see Object#hashCode()
      */
     @Override
     public boolean equals(Object obj) {
@@ -2373,7 +2377,11 @@ public final class CompactNumberFormat extends NumberFormat {
     }
 
     /**
-     * {@return the hash code for this {@code CompactNumberFormat} instance}
+     * {@return the hash code for this {@code CompactNumberFormat}}
+     *
+     * @implSpec Non-transient instance fields of this class are used to calculate
+     * a hash code value which adheres to the contract defined in {@link Objects#hashCode}
+     * @see Object#hashCode()
      */
     @Override
     public int hashCode() {

@@ -68,6 +68,7 @@ public interface Element extends AnnotatedConstruct {
      * @see TypeElement#asType
      * @see TypeParameterElement#asType
      * @see VariableElement#asType
+     * @see RecordComponentElement#asType
      */
     TypeMirror asType();
 

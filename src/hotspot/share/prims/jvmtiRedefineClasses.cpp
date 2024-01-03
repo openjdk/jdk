@@ -1287,35 +1287,6 @@ int VM_RedefineClasses::find_new_operand_index(int old_index) {
 } // end find_new_operand_index()
 
 
-// Returns true if the current mismatch is due to a resolved/unresolved
-// class pair. Otherwise, returns false.
-bool VM_RedefineClasses::is_unresolved_class_mismatch(const constantPoolHandle& cp1,
-       int index1, const constantPoolHandle& cp2, int index2) {
-
-  jbyte t1 = cp1->tag_at(index1).value();
-  if (t1 != JVM_CONSTANT_Class && t1 != JVM_CONSTANT_UnresolvedClass) {
-    return false;  // wrong entry type; not our special case
-  }
-
-  jbyte t2 = cp2->tag_at(index2).value();
-  if (t2 != JVM_CONSTANT_Class && t2 != JVM_CONSTANT_UnresolvedClass) {
-    return false;  // wrong entry type; not our special case
-  }
-
-  if (t1 == t2) {
-    return false;  // not a mismatch; not our special case
-  }
-
-  char *s1 = cp1->klass_name_at(index1)->as_C_string();
-  char *s2 = cp2->klass_name_at(index2)->as_C_string();
-  if (strcmp(s1, s2) != 0) {
-    return false;  // strings don't match; not our special case
-  }
-
-  return true;  // made it through the gauntlet; this is our special case
-} // end is_unresolved_class_mismatch()
-
-
 // The bug 6214132 caused the verification to fail.
 // 1. What's done in RedefineClasses() before verification:
 //  a) A reference to the class being redefined (_the_class) and a
@@ -1705,14 +1676,6 @@ bool VM_RedefineClasses::merge_constant_pools(const constantPoolHandle& old_cp,
       if (match) {
         // found a match at the same index so nothing more to do
         continue;
-      } else if (is_unresolved_class_mismatch(scratch_cp, scratch_i,
-                                              *merge_cp_p, scratch_i)) {
-        // The mismatch in compare_entry_to() above is because of a
-        // resolved versus unresolved class entry at the same index
-        // with the same string value. Since Pass 0 reverted any
-        // class entries to unresolved class entries in *merge_cp_p,
-        // we go with the unresolved class entry.
-        continue;
       }
 
       int found_i = scratch_cp->find_matching_entry(scratch_i, *merge_cp_p);
@@ -1725,13 +1688,6 @@ bool VM_RedefineClasses::merge_constant_pools(const constantPoolHandle& old_cp,
         map_index(scratch_cp, scratch_i, found_i);
         continue;
       }
-
-      // The find_matching_entry() call above could fail to find a match
-      // due to a resolved versus unresolved class or string entry situation
-      // like we solved above with the is_unresolved_*_mismatch() calls.
-      // However, we would have to call is_unresolved_*_mismatch() over
-      // all of *merge_cp_p (potentially) and that doesn't seem to be
-      // worth the time.
 
       // No match found so we have to append this entry and any unique
       // referenced entries to *merge_cp_p.

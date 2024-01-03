@@ -73,8 +73,8 @@ public class SystemPropertiesWriter extends HtmlDocletWriter {
 
     @Override
     public void buildPage() throws DocFileIOException {
-        boolean hasSystemProperties = configuration.mainIndex != null
-                && !configuration.mainIndex.getItems(DocTree.Kind.SYSTEM_PROPERTY).isEmpty();
+        boolean hasSystemProperties = configuration.indexBuilder != null
+                && !configuration.indexBuilder.getItems(DocTree.Kind.SYSTEM_PROPERTY).isEmpty();
         if (!hasSystemProperties) {
             return;
         }
@@ -95,8 +95,8 @@ public class SystemPropertiesWriter extends HtmlDocletWriter {
                 .setFooter(getFooter()));
         printHtmlDocument(null, "system properties", body);
 
-        if (configuration.mainIndex != null) {
-            configuration.mainIndex.add(IndexItem.of(IndexItem.Category.TAGS, title, path));
+        if (configuration.indexBuilder != null) {
+            configuration.indexBuilder.add(IndexItem.of(IndexItem.Category.TAGS, title, path));
         }
     }
 
@@ -127,7 +127,7 @@ public class SystemPropertiesWriter extends HtmlDocletWriter {
     }
 
     private Map<String, List<IndexItem>> groupSystemProperties() {
-        return configuration.mainIndex.getItems(DocTree.Kind.SYSTEM_PROPERTY).stream()
+        return configuration.indexBuilder.getItems(DocTree.Kind.SYSTEM_PROPERTY).stream()
                 .collect(groupingBy(IndexItem::getLabel, TreeMap::new, Collectors.toCollection(ArrayList::new)));
     }
 

@@ -370,27 +370,27 @@ public class ReflectionFactory {
     private final Constructor<?> generateConstructor(Class<?> cl,
                                                      Constructor<?> constructorToCall) {
 
-
-        ConstructorAccessor acc = new SerializationConstructorAccessorGenerator().
-            generateSerializationConstructor(cl,
+        Constructor<?> ctor = newConstructor(constructorToCall.getDeclaringClass(),
                                              constructorToCall.getParameterTypes(),
+                                             constructorToCall.getExceptionTypes(),
                                              constructorToCall.getModifiers(),
-                                             constructorToCall.getDeclaringClass());
-        Constructor<?> c = newConstructor(constructorToCall.getDeclaringClass(),
-                                          constructorToCall.getParameterTypes(),
-                                          constructorToCall.getExceptionTypes(),
-                                          constructorToCall.getModifiers(),
-                                          langReflectAccess.
-                                          getConstructorSlot(constructorToCall),
-                                          langReflectAccess.
-                                          getConstructorSignature(constructorToCall),
-                                          langReflectAccess.
-                                          getConstructorAnnotations(constructorToCall),
-                                          langReflectAccess.
-                                          getConstructorParameterAnnotations(constructorToCall));
-        setConstructorAccessor(c, acc);
-        c.setAccessible(true);
-        return c;
+                                             langReflectAccess.getConstructorSlot(constructorToCall),
+                                             langReflectAccess.getConstructorSignature(constructorToCall),
+                                             langReflectAccess.getConstructorAnnotations(constructorToCall),
+                                             langReflectAccess.getConstructorParameterAnnotations(constructorToCall));
+        ConstructorAccessor acc;
+        if (useOldSerializableConstructor()) {
+            acc = new SerializationConstructorAccessorGenerator().
+                                generateSerializationConstructor(cl,
+                                                                 constructorToCall.getParameterTypes(),
+                                                                 constructorToCall.getModifiers(),
+                                                                 constructorToCall.getDeclaringClass());
+        } else {
+            acc = MethodHandleAccessorFactory.newSerializableConstructorAccessor(cl, ctor);
+        }
+        setConstructorAccessor(ctor, acc);
+        ctor.setAccessible(true);
+        return ctor;
     }
 
     public final MethodHandle readObjectForSerialization(Class<?> cl) {
@@ -548,6 +548,10 @@ public class ReflectionFactory {
         return config().useNativeAccessorOnly;
     }
 
+    static boolean useOldSerializableConstructor() {
+        return config().useOldSerializableConstructor;
+    }
+
     private static boolean disableSerialConstructorChecks() {
         return config().disableSerialConstructorChecks;
     }
@@ -564,6 +568,7 @@ public class ReflectionFactory {
     private static @Stable Config config;
 
     private static final Config DEFAULT_CONFIG = new Config(false, // useNativeAccessorOnly
+                                                            false,  // useOldSerializeableConstructor
                                                             false); // disableSerialConstructorChecks
 
     /**
@@ -578,6 +583,7 @@ public class ReflectionFactory {
      * is to override them.
      */
     private record Config(boolean useNativeAccessorOnly,
+                          boolean useOldSerializableConstructor,
                           boolean disableSerialConstructorChecks) {
     }
 
@@ -601,10 +607,12 @@ public class ReflectionFactory {
         Properties props = GetPropertyAction.privilegedGetProperties();
         boolean useNativeAccessorOnly =
             "true".equals(props.getProperty("jdk.reflect.useNativeAccessorOnly"));
+        boolean useOldSerializableConstructor =
+            "true".equals(props.getProperty("jdk.reflect.useOldSerializableConstructor"));
         boolean disableSerialConstructorChecks =
             "true".equals(props.getProperty("jdk.disableSerialConstructorChecks"));
 
-        return new Config(useNativeAccessorOnly, disableSerialConstructorChecks);
+        return new Config(useNativeAccessorOnly, useOldSerializableConstructor, disableSerialConstructorChecks);
     }
 
     /**

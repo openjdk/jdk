@@ -25,12 +25,8 @@
  * @test
  * @bug 8011181
  * @summary javac, empty UTF8 entry generated for inner class
- * @modules java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.constantpool
- *          java.base/jdk.internal.classfile.instruction
- *          java.base/jdk.internal.classfile.components
- *          jdk.compiler/com.sun.tools.javac.util
+ * @enablePreview
+ * @modules jdk.compiler/com.sun.tools.javac.util
  */
 
 import java.io.BufferedInputStream;
@@ -39,8 +35,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 
 import com.sun.tools.javac.util.Assert;
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.constantpool.*;
+import java.lang.classfile.*;
+import java.lang.classfile.constantpool.*;
 
 public class EmptyUTF8ForInnerClassNameTest {
 
@@ -56,10 +52,9 @@ public class EmptyUTF8ForInnerClassNameTest {
     }
 
     void checkClassFile(final Path path) throws Exception {
-        ClassModel classFile = Classfile.of().parse(
+        ClassModel classFile = ClassFile.of().parse(
                 new BufferedInputStream(Files.newInputStream(path)).readAllBytes());
-        for (int i = 1; i < classFile.constantPool().entryCount(); ++i) {
-            PoolEntry pe = classFile.constantPool().entryByIndex(i);
+        for (PoolEntry pe : classFile.constantPool()) {
             if (pe instanceof Utf8Entry utf8Info) {
                 Assert.check(utf8Info.stringValue().length() > 0,
                         "UTF8 with length 0 found at class " + classFile.thisClass().name());

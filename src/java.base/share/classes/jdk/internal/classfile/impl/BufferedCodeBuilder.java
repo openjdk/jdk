@@ -24,18 +24,18 @@
  */
 package jdk.internal.classfile.impl;
 
-import jdk.internal.classfile.BufWriter;
-import jdk.internal.classfile.CodeBuilder;
-import jdk.internal.classfile.CodeElement;
-import jdk.internal.classfile.CodeModel;
-import jdk.internal.classfile.TypeKind;
-import jdk.internal.classfile.constantpool.ConstantPoolBuilder;
-import jdk.internal.classfile.Label;
-import jdk.internal.classfile.MethodModel;
-import jdk.internal.classfile.instruction.ExceptionCatch;
-import jdk.internal.classfile.instruction.IncrementInstruction;
-import jdk.internal.classfile.instruction.LoadInstruction;
-import jdk.internal.classfile.instruction.StoreInstruction;
+import java.lang.classfile.BufWriter;
+import java.lang.classfile.CodeBuilder;
+import java.lang.classfile.CodeElement;
+import java.lang.classfile.CodeModel;
+import java.lang.classfile.TypeKind;
+import java.lang.classfile.constantpool.ConstantPoolBuilder;
+import java.lang.classfile.Label;
+import java.lang.classfile.MethodModel;
+import java.lang.classfile.instruction.ExceptionCatch;
+import java.lang.classfile.instruction.IncrementInstruction;
+import java.lang.classfile.instruction.LoadInstruction;
+import java.lang.classfile.instruction.StoreInstruction;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -45,7 +45,7 @@ import java.util.function.Consumer;
 public final class BufferedCodeBuilder
         implements TerminalCodeBuilder, LabelContext {
     private final SplitConstantPool constantPool;
-    private final ClassfileImpl context;
+    private final ClassFileImpl context;
     private final List<CodeElement> elements = new ArrayList<>();
     private final LabelImpl startLabel, endLabel;
     private final CodeModel original;
@@ -55,7 +55,7 @@ public final class BufferedCodeBuilder
 
     public BufferedCodeBuilder(MethodInfo methodInfo,
                                SplitConstantPool constantPool,
-                               ClassfileImpl context,
+                               ClassFileImpl context,
                                CodeModel original) {
         this.constantPool = constantPool;
         this.context = context;

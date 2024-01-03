@@ -42,6 +42,7 @@
 #include "gc/parallel/psScavenge.hpp"
 #include "gc/parallel/psStringDedup.hpp"
 #include "gc/parallel/psYoungGen.hpp"
+#include "gc/shared/classUnloadingContext.hpp"
 #include "gc/shared/gcCause.hpp"
 #include "gc/shared/gcHeapSummary.hpp"
 #include "gc/shared/gcId.hpp"
@@ -67,6 +68,7 @@
 #include "memory/metaspaceUtils.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
+#include "nmt/memTracker.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/instanceClassLoaderKlass.inline.hpp"
 #include "oops/instanceKlass.inline.hpp"
@@ -80,7 +82,6 @@
 #include "runtime/safepoint.hpp"
 #include "runtime/threads.hpp"
 #include "runtime/vmThread.hpp"
-#include "services/memTracker.hpp"
 #include "services/memoryService.hpp"
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
@@ -1024,9 +1025,12 @@ void PSParallelCompact::post_compact()
     ct->dirty_MemRegion(old_mr);
   }
 
-  // Delete metaspaces for unloaded class loaders and clean up loader_data graph
-  ClassLoaderDataGraph::purge(/*at_safepoint*/true);
-  DEBUG_ONLY(MetaspaceUtils::verify();)
+  {
+    // Delete metaspaces for unloaded class loaders and clean up loader_data graph
+    GCTraceTime(Debug, gc, phases) t("Purge Class Loader Data", gc_timer());
+    ClassLoaderDataGraph::purge(true /* at_safepoint */);
+    DEBUG_ONLY(MetaspaceUtils::verify();)
+  }
 
   // Need to clear claim bits for the next mark.
   ClassLoaderDataGraph::clear_claimed_marks();
@@ -1492,7 +1496,7 @@ void PSParallelCompact::fill_dense_prefix_end(SpaceId id)
     _mark_bitmap.mark_obj(obj_beg, obj_len);
     _summary_data.add_obj(obj_beg, obj_len);
     assert(start_array(id) != nullptr, "sanity");
-    start_array(id)->allocate_block(obj_beg);
+    start_array(id)->update_for_block(obj_beg, obj_beg + obj_len);
   }
 }
 
@@ -1763,6 +1767,10 @@ bool PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
 #endif
 
     ref_processor()->start_discovery(maximum_heap_compaction);
+
+    ClassUnloadingContext ctx(1 /* num_nmethod_unlink_workers */,
+                              false /* unregister_nmethods_during_purge */,
+                              false /* lock_codeblob_free_separately */);
 
     marking_phase(&_gc_tracer);
 
@@ -2052,19 +2060,39 @@ void PSParallelCompact::marking_phase(ParallelOldTracer *gc_tracer) {
 
   {
     GCTraceTime(Debug, gc, phases) tm_m("Class Unloading", &_gc_timer);
-    CodeCache::UnloadingScope scope(is_alive_closure());
 
-    // Follow system dictionary roots and unload classes.
-    bool purged_class = SystemDictionary::do_unloading(&_gc_timer);
+    ClassUnloadingContext* ctx = ClassUnloadingContext::context();
 
-    // Unload nmethods.
-    CodeCache::do_unloading(purged_class);
+    bool unloading_occurred;
+    {
+      CodeCache::UnlinkingScope scope(is_alive_closure());
+
+      // Follow system dictionary roots and unload classes.
+      unloading_occurred = SystemDictionary::do_unloading(&_gc_timer);
+
+      // Unload nmethods.
+      CodeCache::do_unloading(unloading_occurred);
+    }
+
+    {
+      GCTraceTime(Debug, gc, phases) t("Purge Unlinked NMethods", gc_timer());
+      // Release unloaded nmethod's memory.
+      ctx->purge_nmethods();
+    }
+    {
+      GCTraceTime(Debug, gc, phases) ur("Unregister NMethods", &_gc_timer);
+      ParallelScavengeHeap::heap()->prune_unlinked_nmethods();
+    }
+    {
+      GCTraceTime(Debug, gc, phases) t("Free Code Blobs", gc_timer());
+      ctx->free_code_blobs();
+    }
 
     // Prune dead klasses from subklass/sibling/implementor lists.
-    Klass::clean_weak_klass_links(purged_class);
+    Klass::clean_weak_klass_links(unloading_occurred);
 
     // Clean JVMCI metadata handles.
-    JVMCI_ONLY(JVMCI::do_unloading(purged_class));
+    JVMCI_ONLY(JVMCI::do_unloading(unloading_occurred));
   }
 
   {
@@ -2439,7 +2467,6 @@ void PSParallelCompact::compact() {
 
   ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
   PSOldGen* old_gen = heap->old_gen();
-  old_gen->start_array()->reset();
   uint active_gc_threads = ParallelScavengeHeap::heap()->workers().active_workers();
 
   // for [0..last_space_id)
@@ -2511,7 +2538,7 @@ void PSParallelCompact::verify_complete(SpaceId space_id) {
 #endif  // #ifdef ASSERT
 
 inline void UpdateOnlyClosure::do_addr(HeapWord* addr) {
-  _start_array->allocate_block(addr);
+  _start_array->update_for_block(addr, addr + cast_to_oop(addr)->size());
   compaction_manager()->update_contents(cast_to_oop(addr));
 }
 
@@ -2604,7 +2631,7 @@ void PSParallelCompact::update_deferred_object(ParCompactionManager* cm, HeapWor
   const SpaceInfo* const space_info = _space_info + space_id(addr);
   ObjectStartArray* const start_array = space_info->start_array();
   if (start_array != nullptr) {
-    start_array->allocate_block(addr);
+    start_array->update_for_block(addr, addr + cast_to_oop(addr)->size());
   }
 
   cm->update_contents(cast_to_oop(addr));
@@ -3110,7 +3137,7 @@ MoveAndUpdateClosure::do_addr(HeapWord* addr, size_t words) {
 
   // The start_array must be updated even if the object is not moving.
   if (_start_array != nullptr) {
-    _start_array->allocate_block(destination());
+    _start_array->update_for_block(destination(), destination() + words);
   }
 
   if (copy_destination() != source()) {
@@ -3150,7 +3177,6 @@ UpdateOnlyClosure::UpdateOnlyClosure(ParMarkBitMap* mbm,
                                      ParCompactionManager* cm,
                                      PSParallelCompact::SpaceId space_id) :
   ParMarkBitMapClosure(mbm, cm),
-  _space_id(space_id),
   _start_array(PSParallelCompact::start_array(space_id))
 {
 }
@@ -3175,8 +3201,9 @@ FillClosure::do_addr(HeapWord* addr, size_t size) {
   CollectedHeap::fill_with_objects(addr, size);
   HeapWord* const end = addr + size;
   do {
-    _start_array->allocate_block(addr);
-    addr += cast_to_oop(addr)->size();
+    size_t size = cast_to_oop(addr)->size();
+    _start_array->update_for_block(addr, addr + size);
+    addr += size;
   } while (addr < end);
   return ParMarkBitMap::incomplete;
 }

@@ -703,6 +703,9 @@ void PhaseIdealLoop::do_peeling(IdealLoopTree *loop, Node_List &old_new) {
   }
 #endif
   LoopNode* head = loop->_head->as_Loop();
+
+  C->print_method(PHASE_BEFORE_LOOP_PEELING, 4, head);
+
   bool counted_loop = head->is_CountedLoop();
   if (counted_loop) {
     CountedLoopNode *cl = head->as_CountedLoop();
@@ -795,6 +798,8 @@ void PhaseIdealLoop::do_peeling(IdealLoopTree *loop, Node_List &old_new) {
   peeled_dom_test_elim(loop,old_new);
 
   loop->record_for_igvn();
+
+  C->print_method(PHASE_AFTER_LOOP_PEELING, 4, new_head);
 }
 
 //------------------------------policy_maximally_unroll------------------------
@@ -933,7 +938,8 @@ bool IdealLoopTree::policy_unroll(PhaseIdealLoop *phase) {
   //   the residual iterations are more than 10% of the trip count
   //   and rounds of "unroll,optimize" are not making significant progress
   //   Progress defined as current size less than 20% larger than previous size.
-  if (UseSuperWord && cl->node_count_before_unroll() > 0 &&
+  if (phase->C->do_superword() &&
+      cl->node_count_before_unroll() > 0 &&
       future_unroll_cnt > LoopUnrollMin &&
       is_residual_iters_large(future_unroll_cnt, cl) &&
       1.2 * cl->node_count_before_unroll() < (double)_body.size()) {
@@ -1038,7 +1044,7 @@ bool IdealLoopTree::policy_unroll(PhaseIdealLoop *phase) {
     } // switch
   }
 
-  if (UseSuperWord) {
+  if (phase->C->do_superword()) {
     // Only attempt slp analysis when user controls do not prohibit it
     if (!range_checks_present() && (LoopMaxUnroll > _local_loop_unroll_factor)) {
       // Once policy_slp_analysis succeeds, mark the loop with the
@@ -1278,8 +1284,7 @@ Node *PhaseIdealLoop::clone_up_backedge_goo(Node *back_ctrl, Node *preheader_ctr
 }
 
 Node* PhaseIdealLoop::cast_incr_before_loop(Node* incr, Node* ctrl, Node* loop) {
-  Node* castii = new CastIINode(incr, TypeInt::INT, ConstraintCastNode::UnconditionalDependency);
-  castii->set_req(0, ctrl);
+  Node* castii = new CastIINode(ctrl, incr, TypeInt::INT, ConstraintCastNode::UnconditionalDependency);
   register_new_node(castii, ctrl);
   for (DUIterator_Fast imax, i = incr->fast_outs(imax); i < imax; i++) {
     Node* n = incr->fast_out(i);
@@ -1628,6 +1633,8 @@ void PhaseIdealLoop::insert_pre_post_loops(IdealLoopTree *loop, Node_List &old_n
   CountedLoopEndNode *main_end = main_head->loopexit();
   assert(main_end->outcnt() == 2, "1 true, 1 false path only");
 
+  C->print_method(PHASE_BEFORE_PRE_MAIN_POST, 4, main_head);
+
   Node *pre_header= main_head->in(LoopNode::EntryControl);
   Node *init      = main_head->init_trip();
   Node *incr      = main_end ->incr();
@@ -1824,6 +1831,8 @@ void PhaseIdealLoop::insert_pre_post_loops(IdealLoopTree *loop, Node_List &old_n
   // finds some, but we _know_ they are all useless.
   peeled_dom_test_elim(loop,old_new);
   loop->record_for_igvn();
+
+  C->print_method(PHASE_AFTER_PRE_MAIN_POST, 4, main_head);
 }
 
 //------------------------------insert_vector_post_loop------------------------
@@ -1917,6 +1926,9 @@ Node *PhaseIdealLoop::insert_post_loop(IdealLoopTree* loop, Node_List& old_new,
   post_head = old_new[main_head->_idx]->as_CountedLoop();
   post_head->set_normal_loop();
   post_head->set_post_loop(main_head);
+
+  // clone_loop() above changes the exit projection
+  main_exit = outer_main_end->proj_out(false);
 
   // Reduce the post-loop trip count.
   CountedLoopEndNode* post_end = old_new[main_end->_idx]->as_CountedLoopEnd();
@@ -2123,6 +2135,9 @@ void PhaseIdealLoop::do_unroll(IdealLoopTree *loop, Node_List &old_new, bool adj
   assert(LoopUnrollLimit, "");
   CountedLoopNode *loop_head = loop->_head->as_CountedLoop();
   CountedLoopEndNode *loop_end = loop_head->loopexit();
+
+  C->print_method(PHASE_BEFORE_LOOP_UNROLLING, 4, loop_head);
+
 #ifndef PRODUCT
   if (PrintOpto && VerifyLoopOptimizations) {
     tty->print("Unrolling ");
@@ -2282,6 +2297,8 @@ void PhaseIdealLoop::do_unroll(IdealLoopTree *loop, Node_List &old_new, bool adj
     // can edit it's inputs directly.  Hammer in the new limit for the
     // minimum-trip guard.
     assert(opaq->outcnt() == 1, "");
+    // Notify limit -> opaq -> CmpI, it may constant fold.
+    _igvn.add_users_to_worklist(opaq->in(1));
     _igvn.replace_input_of(opaq, 1, new_limit);
   }
 
@@ -2368,6 +2385,8 @@ void PhaseIdealLoop::do_unroll(IdealLoopTree *loop, Node_List &old_new, bool adj
     }
   }
 #endif
+
+  C->print_method(PHASE_AFTER_LOOP_UNROLLING, 4, clone_head);
 }
 
 //------------------------------do_maximally_unroll----------------------------
@@ -2962,6 +2981,8 @@ void PhaseIdealLoop::do_range_check(IdealLoopTree *loop, Node_List &old_new) {
         continue;  // Don't rce this check but continue looking for other candidates.
       }
 
+      assert(is_dominator(compute_early_ctrl(limit, limit_c), pre_end), "node pinned on loop exit test?");
+
       // Check for scaled induction variable plus an offset
       Node *offset = nullptr;
 
@@ -2980,6 +3001,8 @@ void PhaseIdealLoop::do_range_check(IdealLoopTree *loop, Node_List &old_new) {
       if (is_dominator(ctrl, offset_c)) {
         continue; // Don't rce this check but continue looking for other candidates.
       }
+
+      assert(is_dominator(compute_early_ctrl(offset, offset_c), pre_end), "node pinned on loop exit test?");
 #ifdef ASSERT
       if (TraceRangeLimitCheck) {
         tty->print_cr("RC bool node%s", flip ? " flipped:" : ":");
@@ -2992,6 +3015,8 @@ void PhaseIdealLoop::do_range_check(IdealLoopTree *loop, Node_List &old_new) {
       // monotonically increases by stride_con, a constant.  Both (or either)
       // stride_con and scale_con can be negative which will flip about the
       // sense of the test.
+
+      C->print_method(PHASE_BEFORE_RANGE_CHECK_ELIMINATION, 4, iff);
 
       // Perform the limit computations in jlong to avoid overflow
       jlong lscale_con = scale_con;
@@ -3093,6 +3118,9 @@ void PhaseIdealLoop::do_range_check(IdealLoopTree *loop, Node_List &old_new) {
           --imax;
         }
       }
+
+      C->print_method(PHASE_AFTER_RANGE_CHECK_ELIMINATION, 4, cl);
+
     } // End of is IF
   }
   if (loop_entry != cl->skip_strip_mined()->in(LoopNode::EntryControl)) {
@@ -3132,9 +3160,8 @@ void PhaseIdealLoop::do_range_check(IdealLoopTree *loop, Node_List &old_new) {
   // The new loop limit is <= (for an upward loop) >= (for a downward loop) than the orig limit.
   // The expression that computes the new limit may be too complicated and the computed type of the new limit
   // may be too pessimistic. A CastII here guarantees it's not lost.
-  main_limit = new CastIINode(main_limit, TypeInt::make(upward ? min_jint : orig_limit_t->_lo,
+  main_limit = new CastIINode(pre_ctrl, main_limit, TypeInt::make(upward ? min_jint : orig_limit_t->_lo,
                                                         upward ? orig_limit_t->_hi : max_jint, Type::WidenMax));
-  main_limit->init_req(0, pre_ctrl);
   register_new_node(main_limit, pre_ctrl);
   // Hack the now-private loop bounds
   _igvn.replace_input_of(main_cmp, 2, main_limit);
@@ -3393,7 +3420,10 @@ bool IdealLoopTree::do_remove_empty_loop(PhaseIdealLoop *phase) {
   Node* exact_limit = phase->exact_limit(this);
 
   // We need to pin the exact limit to prevent it from floating above the zero trip guard.
-  Node* cast_ii = ConstraintCastNode::make(cl->in(LoopNode::EntryControl), exact_limit, phase->_igvn.type(exact_limit), ConstraintCastNode::UnconditionalDependency, T_INT);
+  Node* cast_ii = ConstraintCastNode::make_cast_for_basic_type(
+      cl->in(LoopNode::EntryControl), exact_limit,
+      phase->_igvn.type(exact_limit),
+      ConstraintCastNode::UnconditionalDependency, T_INT);
   phase->register_new_node(cast_ii, cl->in(LoopNode::EntryControl));
 
   Node* final_iv = new SubINode(cast_ii, cl->stride());
@@ -3526,7 +3556,7 @@ void IdealLoopTree::enqueue_data_nodes(PhaseIdealLoop* phase, Unique_Node_List& 
 void IdealLoopTree::collect_loop_core_nodes(PhaseIdealLoop* phase, Unique_Node_List& wq) const {
   uint before = wq.size();
   wq.push(_head->in(LoopNode::LoopBackControl));
-  for (uint i = 0; i < wq.size(); ++i) {
+  for (uint i = before; i < wq.size(); ++i) {
     Node* n = wq.at(i);
     for (uint j = 0; j < n->req(); ++j) {
       Node* in = n->in(j);
@@ -3595,9 +3625,13 @@ bool IdealLoopTree::iteration_split_impl(PhaseIdealLoop *phase, Node_List &old_n
   // Non-counted loops may be peeled; exactly 1 iteration is peeled.
   // This removes loop-invariant tests (usually null checks).
   if (!_head->is_CountedLoop()) { // Non-counted loop
-    if (PartialPeelLoop && phase->partial_peel(this, old_new)) {
-      // Partial peel succeeded so terminate this round of loop opts
-      return false;
+    if (PartialPeelLoop) {
+      bool rc = phase->partial_peel(this, old_new);
+      if (Compile::current()->failing()) { return false; }
+      if (rc) {
+        // Partial peel succeeded so terminate this round of loop opts
+        return false;
+      }
     }
     if (policy_peeling(phase)) {    // Should we peel?
       if (PrintOpto) { tty->print_cr("should_peel"); }

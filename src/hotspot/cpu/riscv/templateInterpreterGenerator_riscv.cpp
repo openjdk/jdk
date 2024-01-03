@@ -37,10 +37,11 @@
 #include "interpreter/templateTable.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/arrayOop.hpp"
-#include "oops/method.hpp"
+#include "oops/method.inline.hpp"
 #include "oops/methodData.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/resolvedIndyEntry.hpp"
+#include "oops/resolvedMethodEntry.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiThreadState.hpp"
 #include "runtime/arguments.hpp"
@@ -332,6 +333,7 @@ address TemplateInterpreterGenerator::generate_StackOverflowError_handler() {
   {
     Label L;
     __ ld(t0, Address(fp, frame::interpreter_frame_monitor_block_top_offset * wordSize));
+    __ shadd(t0, t0, fp, t0, LogBytesPerWord);
     // maximal sp for current fp (stack grows negative)
     // check if frame is complete
     __ bge(t0, sp, L);
@@ -453,9 +455,9 @@ address TemplateInterpreterGenerator::generate_return_entry_for(TosState state, 
     __ shadd(esp, cache, esp, t0, 3);
   } else {
     // Pop N words from the stack
-    __ get_cache_and_index_at_bcp(cache, index, 1, index_size);
-    __ ld(cache, Address(cache, ConstantPoolCache::base_offset() + ConstantPoolCacheEntry::flags_offset()));
-    __ andi(cache, cache, ConstantPoolCacheEntry::parameter_size_mask);
+    assert(index_size == sizeof(u2), "Can only be u2");
+    __ load_method_entry(cache, index);
+    __ load_unsigned_short(cache, Address(cache, in_bytes(ResolvedMethodEntry::num_parameters_offset())));
 
     __ shadd(esp, cache, esp, t0, 3);
   }
@@ -710,8 +712,12 @@ void TemplateInterpreterGenerator::lock_method() {
   __ check_extended_sp();
   __ add(sp, sp, - entry_size); // add space for a monitor entry
   __ add(esp, esp, - entry_size);
-  __ sd(sp, Address(fp, frame::interpreter_frame_extended_sp_offset * wordSize));
-  __ sd(esp, monitor_block_top);  // set new monitor block top
+  __ sub(t0, sp, fp);
+  __ srai(t0, t0, Interpreter::logStackElementSize);
+  __ sd(t0, Address(fp, frame::interpreter_frame_extended_sp_offset * wordSize));
+  __ sub(t0, esp, fp);
+  __ srai(t0, t0, Interpreter::logStackElementSize);
+  __ sd(t0, monitor_block_top);  // set new monitor block top
   // store object
   __ sd(x10, Address(esp, BasicObjectLock::obj_offset()));
   __ mv(c_rarg1, esp); // object address
@@ -743,7 +749,8 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
     __ add(sp, sp, - 12 * wordSize);
   }
   __ sd(xbcp, Address(sp, wordSize));
-  __ sd(esp, Address(sp, 0));
+  __ mv(t0, frame::interpreter_frame_initial_sp_offset);
+  __ sd(t0, Address(sp, 0));
 
   if (ProfileInterpreter) {
     Label method_data_continue;
@@ -785,15 +792,19 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
     __ slli(t0, t0, 3);
     __ sub(t0, sp, t0);
     __ andi(t0, t0, -16);
+    __ sub(t1, t0, fp);
+    __ srai(t1, t1, Interpreter::logStackElementSize);
     // Store extended SP
-    __ sd(t0, Address(sp, 5 * wordSize));
+    __ sd(t1, Address(sp, 5 * wordSize));
     // Move SP out of the way
     __ mv(sp, t0);
   } else {
     // Make sure there is room for the exception oop pushed in case method throws
     // an exception (see TemplateInterpreterGenerator::generate_throw_exception())
     __ sub(t0, sp, 2 * wordSize);
-    __ sd(t0, Address(sp, 5 * wordSize));
+    __ sub(t1, t0, fp);
+    __ srai(t1, t1, Interpreter::logStackElementSize);
+    __ sd(t1, Address(sp, 5 * wordSize));
     __ mv(sp, t0);
   }
 }

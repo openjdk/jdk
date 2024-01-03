@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -405,21 +405,21 @@ public class DefaultMetalTheme extends MetalTheme {
      */
     private static class WindowsFontDelegate extends FontDelegate {
         private MetalFontDesktopProperty[] props;
-        private boolean[] checkedPriviledged;
+        private boolean[] checkedPrivileged;
 
         public WindowsFontDelegate() {
             props = new MetalFontDesktopProperty[6];
-            checkedPriviledged = new boolean[6];
+            checkedPrivileged = new boolean[6];
         }
 
         public FontUIResource getFont(int type) {
             if (fonts[type] != null) {
                 return fonts[type];
             }
-            if (!checkedPriviledged[type]) {
+            if (!checkedPrivileged[type]) {
                 Font f = getPrivilegedFont(type);
 
-                checkedPriviledged[type] = true;
+                checkedPrivileged[type] = true;
                 if (f != null) {
                     fonts[type] = new FontUIResource(f);
                     return fonts[type];

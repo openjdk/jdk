@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,25 +26,26 @@
  * @bug 4409072
  * @summary tests for set(), add(), and roll() with various week parameters.
  * @library /java/text/testlib
- * @run main bug4409072
+ * @run junit bug4409072
  */
 
 import  java.util.*;
 import static java.util.Calendar.*;
 
-public class bug4409072 extends IntlTest {
+import org.junit.jupiter.api.Test;
 
-    public static void main(String[] args) throws Exception {
-        new bug4409072().run(args);
-    }
+import static org.junit.jupiter.api.Assertions.fail;
+
+public class bug4409072 {
 
     /* Confirm some public methods' behavior in Calendar.
      * (e.g. add(), roll(), set())
      */
+    @Test
     public void Test4409072() {
         Locale locale = Locale.getDefault();
         if (!TestUtils.usesGregorianCalendar(locale)) {
-            logln("Skipping this test because locale is " + locale);
+            System.out.println("Skipping this test because locale is " + locale);
             return;
         }
 
@@ -411,7 +412,7 @@ public class bug4409072 extends IntlTest {
 
                 if (cal.get(WEEK_OF_YEAR) != 22) {
                     noerror = false;
-                    errln("Failed : set(WEEK_OF_YEAR=22)" +
+                    fail("Failed : set(WEEK_OF_YEAR=22)" +
                           " *** get(WEEK_OF_YEAR=" +
                           cal.get(WEEK_OF_YEAR) + ")" +
                           ", got " + (month+1)+"/"+date+"/"+year +
@@ -420,7 +421,7 @@ public class bug4409072 extends IntlTest {
                           ", FirstDOW=" + dow);
                 } else if ((year != y) || (month != m) || (date != d)) {
                     noerror = false;
-                    errln("Failed : set(WEEK_OF_YEAR=22)" +
+                    fail("Failed : set(WEEK_OF_YEAR=22)" +
                           " got " + (month+1)+"/"+date+"/"+year +
                           ", expected " + (m+1)+"/"+d+"/"+y +
                           ", MinFirstDOW=" + minDow +
@@ -446,7 +447,7 @@ public class bug4409072 extends IntlTest {
 
                     if ((year != y) || (month != m) || (date != d)) {
                         noerror = false;
-                        errln("Failed : set(WEEK_OF_MONTH=1)" +
+                        fail("Failed : set(WEEK_OF_MONTH=1)" +
                               " got " + (month+1)+"/"+date+"/"+year +
                               ", expected " + (m+1)+"/"+d+"/"+y +
                               ", MinFirstDOW=" + minDow +
@@ -470,7 +471,7 @@ public class bug4409072 extends IntlTest {
 
                     if (cal.get(WEEK_OF_YEAR) != 1) {
                         noerror = false;
-                        errln("Failed : set(WEEK_OF_YEAR=1)" +
+                        fail("Failed : set(WEEK_OF_YEAR=1)" +
                               " *** get(WEEK_OF_YEAR=" +
                               cal.get(WEEK_OF_YEAR) + ")" +
                               ", got " + (month+1)+"/"+date+"/"+year +
@@ -479,7 +480,7 @@ public class bug4409072 extends IntlTest {
                               ", FirstDOW=" + dow);
                     } else if ((year != y) || (month != m) || (date != d)) {
                         noerror = false;
-                        errln("Failed : set(WEEK_OF_YEAR=1)" +
+                        fail("Failed : set(WEEK_OF_YEAR=1)" +
                               " got " + (month+1)+"/"+date+"/"+year +
                               ", expected " + (m+1)+"/"+d+"/"+y +
                               ", MinFirstDOW=" + minDow +
@@ -490,7 +491,7 @@ public class bug4409072 extends IntlTest {
         }
 
         if (noerror) {
-            logln("Passed : set() test");
+            System.out.println("Passed : set() test");
         }
     }
 
@@ -525,7 +526,7 @@ public class bug4409072 extends IntlTest {
 
                 if ((year != 2006) || (month != 0) || (date != 25)) {
                     noerror = false;
-                    errln("Failed : add(WEEK_OF_YEAR+1)" +
+                    fail("Failed : add(WEEK_OF_YEAR+1)" +
                           " got " + (month+1)+"/"+date+"/"+year +
                           ", expected 1/25/2006" +
                           ", MinFirstDOW=" + minDow +
@@ -542,7 +543,7 @@ public class bug4409072 extends IntlTest {
                 date = cal.get(DATE);
 
                 if ((oldWOY - newWOY) != 3) {
-                    errln("Failed : add(WEEK_OF_YEAR-1)" +
+                    fail("Failed : add(WEEK_OF_YEAR-1)" +
                           " got " + (month+1)+"/"+date+"/"+year +
                           ", expected 11/16/2005" +
                           ", MinFirstDOW=" + minDow +
@@ -550,7 +551,7 @@ public class bug4409072 extends IntlTest {
                           ", WEEK_OF_YEAR=" + newWOY +
                           " should be " + (oldWOY-3));
                 } else if ((year != 2005) || (month != 10) || (date != 16)) {
-                    errln("Failed : add(-1)" +
+                    fail("Failed : add(-1)" +
                           " got " + (month+1)+"/"+date+"/"+year +
                           ", expected 11/16/2005" +
                           ", MinFirstDOW=" + minDow +
@@ -560,7 +561,7 @@ public class bug4409072 extends IntlTest {
         }
 
         if (noerror) {
-            logln("Passed : add() test");
+            System.out.println("Passed : add() test");
         }
     }
 
@@ -622,7 +623,7 @@ public class bug4409072 extends IntlTest {
 
                 if ((year != y) || (month != m) || (date != d)) {
                     noerror = false;
-                    errln("Failed : roll(WEEK_OF_MONTH-1)" +
+                    fail("Failed : roll(WEEK_OF_MONTH-1)" +
                           " got " + (month+1) + "/" + date + "/" + year +
                           ", expected " + (m+1) + "/" + d + "/" + y +
                           ", MinFirstDOW=" + minDow +
@@ -649,7 +650,7 @@ public class bug4409072 extends IntlTest {
 
                 if ((year != y) || (month != m) || (date != d)) {
                     noerror = false;
-                    errln("Failed : roll(WEEK_OF_YEAR+1)" +
+                    fail("Failed : roll(WEEK_OF_YEAR+1)" +
                           " got " + (month+1) + "/" + date + "/" + year +
                           ", expected " + (m+1) + "/" + d + "/" + y +
                           ", MinFirstDOW=" + minDow +
@@ -670,7 +671,7 @@ public class bug4409072 extends IntlTest {
 
                 if ((year != y) || (month != m) || (date != d)) {
                     noerror = false;
-                    errln("Failed : roll(WEEK_OF_YEAR-1)" +
+                    fail("Failed : roll(WEEK_OF_YEAR-1)" +
                           " got " + (month+1)+"/"+date+"/"+year +
                           ", expected " + (m+1)+"/"+d+"/"+y +
                           ", MinFirstDOW=" + minDow +
@@ -680,7 +681,7 @@ public class bug4409072 extends IntlTest {
         }
 
         if (noerror) {
-            logln("Passed : roll() test");
+            System.out.println("Passed : roll() test");
         }
     }
 }

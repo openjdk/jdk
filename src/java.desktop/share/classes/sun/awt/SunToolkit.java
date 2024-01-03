@@ -551,7 +551,7 @@ public abstract class SunToolkit extends Toolkit
      * Execute a chunk of code on the Java event handler thread. The
      * method takes into account provided AppContext and sets
      * {@code SunToolkit.getDefaultToolkit()} as a target of the
-     * event. See 6451487 for detailes.
+     * event. See 6451487 for details.
      * Does not wait for the execution to occur before returning to
      * the caller.
      */
@@ -1930,7 +1930,7 @@ public abstract class SunToolkit extends Toolkit
     public void updateScreenMenuBarUI() {
     }
 
-    // Cosntant alpha
+    // Constant alpha
     public boolean isWindowOpacitySupported() {
         return false;
     }

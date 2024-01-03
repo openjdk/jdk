@@ -440,6 +440,7 @@ JavaThread::JavaThread() :
   _carrier_thread_suspended(false),
   _is_in_VTMS_transition(false),
   _is_in_tmp_VTMS_transition(false),
+  _is_disable_suspend(false),
 #ifdef ASSERT
   _is_VTMS_transition_disabler(false),
 #endif
@@ -1586,6 +1587,13 @@ const char* JavaThread::name() const  {
 
   // The target JavaThread is not protected so we return the default:
   return Thread::name();
+}
+
+// Like name() but doesn't include the protection check. This must only be
+// called when it is known to be safe, even though the protection check can't tell
+// that e.g. when this thread is the init_thread() - see instanceKlass.cpp.
+const char* JavaThread::name_raw() const  {
+  return get_thread_name_string();
 }
 
 // Returns a non-null representation of this thread's name, or a suitable

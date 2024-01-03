@@ -35,6 +35,7 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Executable;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Type;
+import java.util.BitSet;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
@@ -766,5 +767,16 @@ final class HotSpotResolvedJavaMethodImpl extends HotSpotMethod implements HotSp
     private List<AnnotationData> getAnnotationData0(ResolvedJavaType... filter) {
         byte[] encoded = compilerToVM().getEncodedExecutableAnnotationData(this, filter);
         return VMSupport.decodeAnnotations(encoded, AnnotationDataDecoder.INSTANCE);
+    }
+
+    @Override
+    public BitSet getOopMapAt(int bci) {
+        if (getCodeSize() == 0) {
+            throw new IllegalArgumentException("has no bytecode");
+        }
+        int nwords = ((getMaxLocals() + getMaxStackSize() - 1) / 64) + 1;
+        long[] oopMap = new long[nwords];
+        compilerToVM().getOopMapAt(this, bci, oopMap);
+        return BitSet.valueOf(oopMap);
     }
 }

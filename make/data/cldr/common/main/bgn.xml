@@ -551,42 +551,23 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	<layout>
 		<orientation>
 			<characterOrder>right-to-left</characterOrder>
-			<lineOrder>top-to-bottom</lineOrder>
 		</orientation>
 	</layout>
 	<characters>
 		<exemplarCharacters>[آ ئ ا ب پ ت ث ٹ ج چ ح خ د ڈ ر ز ڑ ژ س ش ص ض ط ظ غ ف ق ک گ ل م ن ھ و ۆ ی ێ]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[\u200C ؤ]</exemplarCharacters>
 		<exemplarCharacters type="index">[آ ئ ا ب پ ت ث ٹ ج چ ح خ د ڈ ر ز ڑ ژ س ش ص ض ط ظ غ ف ق ک گ ل م ن ھ و ۆ ی ێ]</exemplarCharacters>
-		<exemplarCharacters type="punctuation">[‐ – — ، ؛ \: ! ؟ . … ‘ ’ &quot; “ ” « » ( ) \[ \] § @ * \\ \&amp; # † ‡ ′ ″]</exemplarCharacters>
+		<exemplarCharacters type="punctuation">[‐ – — ، ؛ \: ! ؟ . … ‘’ &quot;“” « » ( ) \[ \] § @ * \\ \&amp; # † ‡ ′ ″]</exemplarCharacters>
 	</characters>
 	<dates>
 		<fields>
 			<field type="year">
 				<displayName>سال</displayName>
 			</field>
-			<field type="year-short">
-				<displayName>سال</displayName>
-			</field>
-			<field type="year-narrow">
-				<displayName>سال</displayName>
-			</field>
 			<field type="month">
 				<displayName>ماه</displayName>
 			</field>
-			<field type="month-short">
-				<displayName>ماه</displayName>
-			</field>
-			<field type="month-narrow">
-				<displayName>ماه</displayName>
-			</field>
 			<field type="week">
-				<displayName>هفته‌گ</displayName>
-			</field>
-			<field type="week-short">
-				<displayName>هفته‌گ</displayName>
-			</field>
-			<field type="week-narrow">
 				<displayName>هفته‌گ</displayName>
 			</field>
 			<field type="day">
@@ -597,12 +578,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relativeTime type="future">
 					<relativeTimePattern count="other">+{0} روچ</relativeTimePattern>
 				</relativeTime>
-			</field>
-			<field type="day-short">
-				<displayName>روچ</displayName>
-			</field>
-			<field type="day-narrow">
-				<displayName>روچ</displayName>
 			</field>
 			<field type="weekday">
 				<displayName>هفته‌گئ روچان</displayName>
@@ -618,7 +593,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 		</fields>
 		<timeZoneNames>
-			<regionFormat>{0}</regionFormat>
 			<zone type="Etc/Unknown">
 				<exemplarCity>نازانتین شاران</exemplarCity>
 			</zone>
@@ -784,19 +758,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<decimal>٫</decimal>
 			<group>،</group>
 			<percentSign>٪</percentSign>
-			<plusSign>+</plusSign>
-			<minusSign>-</minusSign>
-			<superscriptingExponent>×</superscriptingExponent>
-			<infinity>∞</infinity>
 			<nan>ناعدد</nan>
-			<timeSeparator draft="contributed">:</timeSeparator>
 		</symbols>
 		<currencyFormats numberSystem="latn">
-			<currencyFormatLength>
-				<currencyFormat type="accounting">
-					<pattern>¤ #,##0.00</pattern>
-				</currencyFormat>
-			</currencyFormatLength>
 			<currencyFormatLength type="short">
 				<currencyFormat type="standard">
 					<pattern type="1000" count="other">0 هزار ¤</pattern>
@@ -814,130 +778,67 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<currencies>
 			<currency type="AFN">
 				<displayName>اوگانستانئ اوگانی</displayName>
-				<displayName count="other">اوگانستانئ اوگانی</displayName>
 				<symbol draft="contributed">؋</symbol>
 			</currency>
 			<currency type="BDT">
 				<displayName>بنگلادیشئ ٹاکه</displayName>
-				<displayName count="other">بنگلادیشئ ٹاکه</displayName>
-				<symbol draft="contributed">BDT</symbol>
-				<symbol alt="narrow" draft="contributed">৳</symbol>
 			</currency>
 			<currency type="BTN">
 				<displayName>بوتانئ انگولٹروم</displayName>
-				<displayName count="other">بوتانئ انگولٹروم</displayName>
-				<symbol draft="contributed">BTN</symbol>
 			</currency>
 			<currency type="INR">
 				<displayName>هندوستانئ روپی</displayName>
-				<displayName count="other">هندوستانئ روپی</displayName>
-				<symbol draft="contributed">₹</symbol>
-				<symbol alt="narrow" draft="contributed">₹</symbol>
 			</currency>
 			<currency type="IRR">
 				<displayName>ایرانئ ریال</displayName>
-				<displayName count="other">ایرانئ ریال</displayName>
 				<symbol draft="contributed">ریال</symbol>
 			</currency>
 			<currency type="LKR">
 				<displayName>سریلانکایی روپی</displayName>
-				<displayName count="other">سریلانکایی روپی</displayName>
-				<symbol draft="contributed">LKR</symbol>
-				<symbol alt="narrow" draft="contributed">Rs</symbol>
 			</currency>
 			<currency type="MVR">
 				<displayName>مالدیوی روپی</displayName>
-				<displayName count="other">مالدیوی روپی</displayName>
-				<symbol draft="contributed">MVR</symbol>
 			</currency>
 			<currency type="NPR">
 				<displayName>نیپالین روپی</displayName>
-				<displayName count="other">نیپالین روپی</displayName>
-				<symbol draft="contributed">NPR</symbol>
-				<symbol alt="narrow" draft="contributed">Rs</symbol>
 			</currency>
 			<currency type="PKR">
 				<displayName>پاکستانئ روپی</displayName>
-				<displayName count="other">پاکستانئ روپی</displayName>
-				<symbol draft="contributed">PKR</symbol>
-				<symbol alt="narrow" draft="contributed">Rs</symbol>
 			</currency>
 			<currency type="RUB">
 				<displayName>روسین روبل</displayName>
 			</currency>
 		</currencies>
-		<miscPatterns numberSystem="latn">
-			<pattern type="atLeast">≥{0}</pattern>
-			<pattern type="range">{0}–{1}</pattern>
-		</miscPatterns>
 	</numbers>
 	<units>
 		<unitLength type="long">
-			<unit type="duration-century">
-				<displayName>سده‌گ</displayName>
-				<unitPattern count="other">{0} سده‌گ</unitPattern>
-			</unit>
 			<unit type="duration-year">
-				<displayName>سال</displayName>
-				<unitPattern count="other">{0} سال</unitPattern>
 				<perUnitPattern>{0} سالئ تا</perUnitPattern>
 			</unit>
 			<unit type="duration-month">
-				<displayName>ماه</displayName>
-				<unitPattern count="other">{0} ماه</unitPattern>
 				<perUnitPattern>{0} به ماه‌ای تا</perUnitPattern>
 			</unit>
 			<unit type="duration-week">
-				<displayName>هفته‌گ</displayName>
-				<unitPattern count="other">{0} هفته‌گ</unitPattern>
 				<perUnitPattern>{0} هفته‌گئ تا</perUnitPattern>
 			</unit>
 			<unit type="duration-day">
-				<displayName>روچ</displayName>
-				<unitPattern count="other">{0} روچ</unitPattern>
 				<perUnitPattern>{0} روچئ تا</perUnitPattern>
 			</unit>
 			<unit type="duration-hour">
-				<displayName>ساعت</displayName>
-				<unitPattern count="other">{0} ساعت</unitPattern>
 				<perUnitPattern>{0} ساعتئ تا</perUnitPattern>
 			</unit>
 			<unit type="duration-minute">
-				<displayName>دقیقه</displayName>
-				<unitPattern count="other">{0} دقیقه</unitPattern>
 				<perUnitPattern>{0} دقیقه‌ای تا</perUnitPattern>
 			</unit>
 			<unit type="duration-second">
-				<displayName>ثانیه</displayName>
-				<unitPattern count="other">{0} ثانیه</unitPattern>
 				<perUnitPattern>{0} ثانیه‌ای تا</perUnitPattern>
 			</unit>
-			<unit type="duration-millisecond">
-				<displayName>میلی‌ثانیه</displayName>
-				<unitPattern count="other">{0} میلی‌ثانیه</unitPattern>
-			</unit>
-			<unit type="duration-microsecond">
-				<displayName>مایکروثانیه</displayName>
-				<unitPattern count="other">{0} مایکروثانیه</unitPattern>
-			</unit>
-			<unit type="duration-nanosecond">
-				<displayName>نانوثانیه</displayName>
-				<unitPattern count="other">{0} نانوثانیه</unitPattern>
-			</unit>
 			<unit type="length-kilometer">
-				<displayName>کیلومیتر</displayName>
-				<unitPattern count="other">{0} کیلومیتر</unitPattern>
 				<perUnitPattern>{0} کیلومیترئ تا</perUnitPattern>
 			</unit>
 			<unit type="length-meter">
-				<displayName>میتر</displayName>
-				<unitPattern count="other">{0} میتر</unitPattern>
 				<perUnitPattern>{0} میترئ تا</perUnitPattern>
 			</unit>
-			<coordinateUnit>
-				<coordinateUnitPattern type="east">روچ‌دراتین {0}</coordinateUnitPattern>
-				<coordinateUnitPattern type="north">بُرزسرین {0}</coordinateUnitPattern>
-			</coordinateUnit>
 		</unitLength>
 		<unitLength type="short">
 			<unit type="duration-century">
@@ -1007,60 +908,34 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</coordinateUnit>
 		</unitLength>
 		<unitLength type="narrow">
-			<unit type="duration-year">
-				<displayName>سال</displayName>
-				<unitPattern count="other">{0} سال</unitPattern>
-			</unit>
 			<unit type="duration-month">
-				<displayName>ماه</displayName>
 				<unitPattern count="other">{0}ماه</unitPattern>
 			</unit>
 			<unit type="duration-week">
-				<displayName>هفته‌گ</displayName>
 				<unitPattern count="other">{0}هفته‌گ</unitPattern>
 			</unit>
 			<unit type="duration-day">
-				<displayName>روچ</displayName>
 				<unitPattern count="other">{0}روچ</unitPattern>
 			</unit>
 			<unit type="duration-hour">
-				<displayName>ساعت</displayName>
 				<unitPattern count="other">{0}ساعت</unitPattern>
 			</unit>
 			<unit type="duration-minute">
-				<displayName>دقیقه</displayName>
 				<unitPattern count="other">{0}دقیقه</unitPattern>
 			</unit>
 			<unit type="duration-second">
-				<displayName>ثانیه</displayName>
 				<unitPattern count="other">{0}ث</unitPattern>
 			</unit>
 			<unit type="duration-millisecond">
-				<displayName>میلی‌ثانیه</displayName>
 				<unitPattern count="other">{0}میلی‌ثانیه</unitPattern>
 			</unit>
 			<unit type="length-kilometer">
-				<displayName>کیلومیتر</displayName>
 				<unitPattern count="other">{0}کیلومیتر</unitPattern>
 			</unit>
 			<unit type="length-meter">
-				<displayName>میتر</displayName>
 				<unitPattern count="other">{0}میتر</unitPattern>
 			</unit>
-			<coordinateUnit>
-				<coordinateUnitPattern type="east">روچ‌دراتین {0}</coordinateUnitPattern>
-				<coordinateUnitPattern type="north">بُرزسرین {0}</coordinateUnitPattern>
-			</coordinateUnit>
 		</unitLength>
-		<durationUnit type="hm">
-			<durationUnitPattern>h:mm</durationUnitPattern>
-		</durationUnit>
-		<durationUnit type="hms">
-			<durationUnitPattern>h:mm:ss</durationUnitPattern>
-		</durationUnit>
-		<durationUnit type="ms">
-			<durationUnitPattern>m:ss</durationUnitPattern>
-		</durationUnit>
 	</units>
 	<listPatterns>
 		<listPattern>
@@ -1069,18 +944,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<listPatternPart type="end">{0}، و {1}</listPatternPart>
 			<listPatternPart type="2">{0} و {1}</listPatternPart>
 		</listPattern>
-		<listPattern type="standard-short">
-			<listPatternPart type="start">{0}، {1}</listPatternPart>
-			<listPatternPart type="middle">{0}، {1}</listPatternPart>
-			<listPatternPart type="end">{0}، و {1}</listPatternPart>
-			<listPatternPart type="2">{0} و {1}</listPatternPart>
-		</listPattern>
-		<listPattern type="unit">
-			<listPatternPart type="start">{0}، {1}</listPatternPart>
-			<listPatternPart type="middle">{0}، {1}</listPatternPart>
-			<listPatternPart type="end">{0}، {1}</listPatternPart>
-			<listPatternPart type="2">{0}، {1}</listPatternPart>
-		</listPattern>
 		<listPattern type="unit-narrow">
 			<listPatternPart type="start">{0} {1}</listPatternPart>
 			<listPatternPart type="middle">{0} {1}</listPatternPart>
@@ -1088,8 +951,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<listPatternPart type="2">{0} {1}</listPatternPart>
 		</listPattern>
 		<listPattern type="unit-short">
-			<listPatternPart type="start">{0}، {1}</listPatternPart>
-			<listPatternPart type="middle">{0}، {1}</listPatternPart>
 			<listPatternPart type="end">{0}، {1}</listPatternPart>
 			<listPatternPart type="2">{0}، {1}</listPatternPart>
 		</listPattern>
@@ -1102,7 +963,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	</posix>
 	<characterLabels>
 		<characterLabelPattern type="all">{0} — موچ</characterLabelPattern>
-		<characterLabelPattern type="category-list">{0}: {1}</characterLabelPattern>
 		<characterLabelPattern type="historic">{0} — تاریخی</characterLabelPattern>
 		<characterLabelPattern type="strokes" count="other">{0} ضربه</characterLabelPattern>
 	</characterLabels>

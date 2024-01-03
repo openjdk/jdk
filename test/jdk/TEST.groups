@@ -75,11 +75,12 @@ tier2_part3 = \
 tier3 = \
     :build \
     :jdk_vector \
+    -:jdk_vector_sanity \
     :jdk_rmi \
     :jdk_svc \
-   -:jdk_svc_sanity \
-   -:jdk_vector_sanity \
-   -:svc_tools
+    -:jdk_svc_sanity \
+    -:svc_tools \
+    :jdk_jpackage
 
 # Everything not in other tiers
 tier4 = \
@@ -284,10 +285,11 @@ jdk_loom = \
     jdk/jfr/threading
 
 #
-# Tool (and tool API) tests are split into core and svc groups
+# Tool (and tool API) tests are mostly split into core and svc groups
 #
 core_tools = \
     tools \
+    -tools/jpackage \
     jdk/internal/jrtfs \
     sun/tools/jrunscript
 
@@ -299,10 +301,14 @@ svc_tools = \
 
 jdk_tools = \
     :core_tools \
-    :svc_tools
+    :svc_tools \
+    :jdk_jpackage
 
 jdk_jfr = \
     jdk/jfr
+
+jdk_jpackage = \
+    tools/jpackage
 
 #
 # Catch-all for other areas with a small number of tests
@@ -366,28 +372,8 @@ jdk_vector = \
     jdk/incubator/vector
 
 jdk_vector_sanity = \
-    jdk/incubator/vector/AddTest.java \
-    jdk/incubator/vector/ByteMaxVectorLoadStoreTests.java \
-    jdk/incubator/vector/ByteMaxVectorTests.java \
-    jdk/incubator/vector/CovarOverrideTest.java \
-    jdk/incubator/vector/DoubleMaxVectorLoadStoreTests.java \
-    jdk/incubator/vector/DoubleMaxVectorTests.java \
-    jdk/incubator/vector/FloatMaxVectorLoadStoreTests.java \
-    jdk/incubator/vector/FloatMaxVectorTests.java \
-    jdk/incubator/vector/ImageTest.java \
-    jdk/incubator/vector/IntMaxVectorLoadStoreTests.java \
-    jdk/incubator/vector/IntMaxVectorTests.java \
-    jdk/incubator/vector/LoadJsvmlTest.java \
-    jdk/incubator/vector/LongMaxVectorLoadStoreTests.java \
-    jdk/incubator/vector/LongMaxVectorTests.java \
-    jdk/incubator/vector/MethodOverideTest.java \
-    jdk/incubator/vector/MismatchTest.java \
     jdk/incubator/vector/PreferredSpeciesTest.java \
-    jdk/incubator/vector/ShortMaxVectorLoadStoreTests.java \
-    jdk/incubator/vector/ShortMaxVectorTests.java \
     jdk/incubator/vector/VectorHash.java \
-    jdk/incubator/vector/VectorMaxConversionTests.java \
-    jdk/incubator/vector/VectorReshapeTests.java \
     jdk/incubator/vector/VectorRuns.java
 
 #############################
@@ -599,14 +585,15 @@ jdk_nio_networkchannel = \
 
 jdk_core_manual = \
     :jdk_core_manual_no_input \
-    :jdk_core_manual_no_input_security
+    :jdk_security_manual_no_input \
+    :jdk_core_manual_interactive \
+    :jdk_security_manual_interactive
 
 jdk_core_manual_no_input = \
     java/net/HugeDataTransferTest.java \
     java/net/httpclient/BodyProcessorInputStreamTest.java \
     java/net/httpclient/HttpInputStreamTest.java \
     java/util/zip/ZipFile/TestZipFile.java \
-    java/util/zip/ZipFile/TestTooManyEntries.java \
     javax/net/ssl/compatibility/AlpnTest.java \
     javax/net/ssl/compatibility/BasicConnectTest.java \
     javax/net/ssl/compatibility/HrrTest.java \
@@ -616,9 +603,10 @@ jdk_core_manual_no_input = \
     java/util/ArrayList/Bug8146568.java \
     java/util/Vector/Bug8148174.java \
     com/sun/net/httpserver/simpleserver/CommandLinePortNotSpecifiedTest.java \
-    com/sun/net/httpserver/simpleserver/jwebserver/CommandLinePortNotSpecifiedTest.java
+    com/sun/net/httpserver/simpleserver/jwebserver/CommandLinePortNotSpecifiedTest.java \
+    javax/xml/jaxp/datatype/8033980/GregorianCalAndDurSerDataUtil.java
 
-jdk_core_manual_no_input_security = \
+jdk_security_manual_no_input = \
     com/sun/crypto/provider/Cipher/DES/PerformanceTest.java \
     com/sun/crypto/provider/Cipher/AEAD/GCMIncrementByte4.java \
     com/sun/crypto/provider/Cipher/AEAD/GCMIncrementDirect4.java \
@@ -639,21 +627,27 @@ jdk_core_manual_no_input_security = \
     sun/security/smartcardio/TestMultiplePresent.java \
     sun/security/smartcardio/TestPresent.java \
     sun/security/smartcardio/TestTransmit.java \
-    sun/security/tools/jarsigner/compatibility/Compatibility.java
+    sun/security/tools/jarsigner/compatibility/Compatibility.java \
+    sun/security/tools/keytool/ListKeyChainStore.java
 
 jdk_core_manual_interactive = \
     com/sun/jndi/dns/Test6991580.java \
     java/util/TimeZone/DefaultTimeZoneTest.java \
-    sun/security/tools/keytool/i18n.java \
     java/nio/MappedByteBuffer/PmemTest.java \
     java/rmi/registry/nonLocalRegistry/NonLocalRegistryTest.java \
-    java/rmi/registry/nonLocalRegistry/NonLocalSkeletonTest.java \
+    java/rmi/registry/nonLocalRegistry/NonLocalSkeletonTest.java
+
+jdk_security_manual_interactive = \
+    sun/security/tools/keytool/i18n.java \
     java/security/Policy/Root/Root.java \
     sun/security/krb5/config/native/TestDynamicStore.java
-
 
 # Test sets for running inside container environment
 jdk_containers_extended = \
     :jdk_io \
     :jdk_nio \
     :jdk_svc
+
+jdk_core_no_security = \
+   :jdk_core \
+   -:jdk_security

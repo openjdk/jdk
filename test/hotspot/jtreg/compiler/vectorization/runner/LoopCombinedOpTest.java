@@ -36,7 +36,7 @@
  *                   -XX:+WhiteBoxAPI
  *                   compiler.vectorization.runner.LoopCombinedOpTest
  *
- * @requires vm.compiler2.enabled & vm.flagless
+ * @requires vm.compiler2.enabled
  */
 
 package compiler.vectorization.runner;

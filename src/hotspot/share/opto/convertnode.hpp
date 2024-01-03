@@ -42,193 +42,190 @@ class Conv2BNode : public Node {
   virtual uint  ideal_reg() const { return Op_RegI; }
 };
 
+class ConvertNode : public TypeNode {
+protected:
+  ConvertNode(const Type* t, Node* input) : TypeNode(t, 2) {
+    init_class_id(Class_Convert);
+    init_req(1, input);
+  }
+public:
+  virtual const Type* in_type() const = 0;
+  virtual uint ideal_reg() const;
+
+  // Create a convert node for a given input and output type.
+  // Conversions to and from half float are specified via T_SHORT.
+  static Node* create_convert(BasicType source, BasicType target, Node* input);
+};
+
 // The conversions operations are all Alpha sorted.  Please keep it that way!
 //------------------------------ConvD2FNode------------------------------------
 // Convert double to float
-class ConvD2FNode : public Node {
+class ConvD2FNode : public ConvertNode {
   public:
-  ConvD2FNode( Node *in1 ) : Node(0,in1) {}
+  ConvD2FNode(Node* in1) : ConvertNode(Type::FLOAT,in1) {}
   virtual int Opcode() const;
-  virtual const Type *bottom_type() const { return Type::FLOAT; }
+  virtual const Type* in_type() const { return Type::DOUBLE; }
   virtual const Type* Value(PhaseGVN* phase) const;
   virtual Node* Identity(PhaseGVN* phase);
-  virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
-  virtual uint  ideal_reg() const { return Op_RegF; }
+  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
 };
 
 //------------------------------ConvD2INode------------------------------------
 // Convert Double to Integer
-class ConvD2INode : public Node {
+class ConvD2INode : public ConvertNode {
   public:
-  ConvD2INode( Node *in1 ) : Node(0,in1) {}
+  ConvD2INode(Node* in1) : ConvertNode(TypeInt::INT,in1) {}
   virtual int Opcode() const;
-  virtual const Type *bottom_type() const { return TypeInt::INT; }
+  virtual const Type* in_type() const { return Type::DOUBLE; }
   virtual const Type* Value(PhaseGVN* phase) const;
   virtual Node* Identity(PhaseGVN* phase);
-  virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
-  virtual uint  ideal_reg() const { return Op_RegI; }
+  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
 };
 
 //------------------------------ConvD2LNode------------------------------------
 // Convert Double to Long
-class ConvD2LNode : public Node {
+class ConvD2LNode : public ConvertNode {
   public:
-  ConvD2LNode( Node *dbl ) : Node(0,dbl) {}
+  ConvD2LNode(Node* in1) : ConvertNode(TypeLong::LONG, in1) {}
   virtual int Opcode() const;
-  virtual const Type *bottom_type() const { return TypeLong::LONG; }
+  virtual const Type* in_type() const { return Type::DOUBLE; }
   virtual const Type* Value(PhaseGVN* phase) const;
   virtual Node* Identity(PhaseGVN* phase);
-  virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
-  virtual uint ideal_reg() const { return Op_RegL; }
-};
-
-class RoundDNode : public Node {
-  public:
-  RoundDNode( Node *dbl ) : Node(0,dbl) {}
-  virtual int Opcode() const;
-  virtual const Type *bottom_type() const { return TypeLong::LONG; }
-  virtual uint ideal_reg() const { return Op_RegL; }
+  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
 };
 
 //------------------------------ConvF2DNode------------------------------------
 // Convert Float to a Double.
-class ConvF2DNode : public Node {
+class ConvF2DNode : public ConvertNode {
   public:
-  ConvF2DNode( Node *in1 ) : Node(0,in1) {}
+  ConvF2DNode(Node* in1) : ConvertNode(Type::DOUBLE,in1) {}
   virtual int Opcode() const;
-  virtual const Type *bottom_type() const { return Type::DOUBLE; }
+  virtual const Type* in_type() const { return Type::FLOAT; }
   virtual const Type* Value(PhaseGVN* phase) const;
-  virtual uint  ideal_reg() const { return Op_RegD; }
 };
 
 //------------------------------ConvF2HFNode------------------------------------
 // Convert Float to Halffloat
-class ConvF2HFNode : public Node {
+class ConvF2HFNode : public ConvertNode {
   public:
-  ConvF2HFNode( Node *in1 ) : Node(0,in1) {}
+  ConvF2HFNode(Node* in1) : ConvertNode(TypeInt::SHORT, in1) {}
   virtual int Opcode() const;
-  virtual const Type *bottom_type() const { return TypeInt::SHORT; }
+  virtual const Type* in_type() const { return TypeInt::FLOAT; }
   virtual const Type* Value(PhaseGVN* phase) const;
-  virtual uint  ideal_reg() const { return Op_RegI; }
 };
 
 //------------------------------ConvF2INode------------------------------------
 // Convert float to integer
-class ConvF2INode : public Node {
-  public:
-  ConvF2INode( Node *in1 ) : Node(0,in1) {}
+class ConvF2INode : public ConvertNode {
+public:
+  ConvF2INode(Node* in1) : ConvertNode(TypeInt::INT, in1) {}
   virtual int Opcode() const;
-  virtual const Type *bottom_type() const { return TypeInt::INT; }
+  virtual const Type* in_type() const { return TypeInt::FLOAT; }
   virtual const Type* Value(PhaseGVN* phase) const;
   virtual Node* Identity(PhaseGVN* phase);
-  virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
-  virtual uint  ideal_reg() const { return Op_RegI; }
+  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
 };
-
 
 //------------------------------ConvF2LNode------------------------------------
 // Convert float to long
-class ConvF2LNode : public Node {
-  public:
-  ConvF2LNode( Node *in1 ) : Node(0,in1) {}
+class ConvF2LNode : public ConvertNode {
+public:
+  ConvF2LNode(Node* in1) : ConvertNode(TypeLong::LONG, in1) {}
   virtual int Opcode() const;
-  virtual const Type *bottom_type() const { return TypeLong::LONG; }
+  virtual const Type* in_type() const { return TypeInt::FLOAT; }
   virtual const Type* Value(PhaseGVN* phase) const;
   virtual Node* Identity(PhaseGVN* phase);
-  virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
-  virtual uint  ideal_reg() const { return Op_RegL; }
+  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
 };
 
 //------------------------------ConvHF2FNode------------------------------------
 // Convert Halffloat to float
-class ConvHF2FNode : public Node {
-  public:
-  ConvHF2FNode( Node *in1 ) : Node(0,in1) {}
+class ConvHF2FNode : public ConvertNode {
+public:
+  ConvHF2FNode(Node* in1) : ConvertNode(Type::FLOAT, in1) {}
   virtual int Opcode() const;
-  virtual const Type *bottom_type() const { return Type::FLOAT; }
+  virtual const Type* in_type() const { return TypeInt::SHORT; }
   virtual const Type* Value(PhaseGVN* phase) const;
-  virtual uint  ideal_reg() const { return Op_RegF; }
 };
 
 //------------------------------ConvI2DNode------------------------------------
 // Convert Integer to Double
-class ConvI2DNode : public Node {
-  public:
-  ConvI2DNode( Node *in1 ) : Node(0,in1) {}
+class ConvI2DNode : public ConvertNode {
+public:
+  ConvI2DNode(Node* in1) : ConvertNode(Type::DOUBLE, in1) {}
   virtual int Opcode() const;
-  virtual const Type *bottom_type() const { return Type::DOUBLE; }
+  virtual const Type* in_type() const { return TypeInt::INT; }
   virtual const Type* Value(PhaseGVN* phase) const;
-  virtual uint  ideal_reg() const { return Op_RegD; }
 };
 
 //------------------------------ConvI2FNode------------------------------------
 // Convert Integer to Float
-class ConvI2FNode : public Node {
-  public:
-  ConvI2FNode( Node *in1 ) : Node(0,in1) {}
+class ConvI2FNode : public ConvertNode {
+public:
+  ConvI2FNode(Node* in1) : ConvertNode(Type::FLOAT, in1) {}
   virtual int Opcode() const;
-  virtual const Type *bottom_type() const { return Type::FLOAT; }
+  virtual const Type* in_type() const { return TypeInt::INT; }
   virtual const Type* Value(PhaseGVN* phase) const;
   virtual Node* Identity(PhaseGVN* phase);
-  virtual uint  ideal_reg() const { return Op_RegF; }
-};
-
-class RoundFNode : public Node {
-  public:
-  RoundFNode( Node *in1 ) : Node(0,in1) {}
-  virtual int Opcode() const;
-  virtual const Type *bottom_type() const { return TypeInt::INT; }
-  virtual uint  ideal_reg() const { return Op_RegI; }
 };
 
 //------------------------------ConvI2LNode------------------------------------
 // Convert integer to long
-class ConvI2LNode : public TypeNode {
+class ConvI2LNode : public ConvertNode {
   public:
-  ConvI2LNode(Node *in1, const TypeLong* t = TypeLong::INT)
-  : TypeNode(t, 2)
-  { init_req(1, in1); }
+  ConvI2LNode(Node* in1, const TypeLong* t = TypeLong::INT) : ConvertNode(t, in1) {}
   virtual int Opcode() const;
+  virtual const Type* in_type() const { return TypeInt::INT; }
   virtual const Type* Value(PhaseGVN* phase) const;
-  virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
+  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
   virtual Node* Identity(PhaseGVN* phase);
-  virtual uint  ideal_reg() const { return Op_RegL; }
 };
 
 //------------------------------ConvL2DNode------------------------------------
 // Convert Long to Double
-class ConvL2DNode : public Node {
-  public:
-  ConvL2DNode( Node *in1 ) : Node(0,in1) {}
+class ConvL2DNode : public ConvertNode {
+public:
+  ConvL2DNode(Node* in1) : ConvertNode(Type::DOUBLE, in1) {}
   virtual int Opcode() const;
-  virtual const Type *bottom_type() const { return Type::DOUBLE; }
+  virtual const Type* in_type() const { return TypeLong::LONG; }
   virtual const Type* Value(PhaseGVN* phase) const;
-  virtual uint ideal_reg() const { return Op_RegD; }
 };
 
 //------------------------------ConvL2FNode------------------------------------
 // Convert Long to Float
-class ConvL2FNode : public Node {
-  public:
-  ConvL2FNode( Node *in1 ) : Node(0,in1) {}
+class ConvL2FNode : public ConvertNode {
+public:
+  ConvL2FNode(Node* in1) : ConvertNode(Type::FLOAT, in1) {}
   virtual int Opcode() const;
-  virtual const Type *bottom_type() const { return Type::FLOAT; }
+  virtual const Type* in_type() const { return TypeLong::LONG; }
   virtual const Type* Value(PhaseGVN* phase) const;
-  virtual uint  ideal_reg() const { return Op_RegF; }
 };
 
 //------------------------------ConvL2INode------------------------------------
 // Convert long to integer
-class ConvL2INode : public TypeNode {
+class ConvL2INode : public ConvertNode {
   public:
-  ConvL2INode(Node *in1, const TypeInt* t = TypeInt::INT)
-  : TypeNode(t, 2) {
-    init_req(1, in1);
-  }
+  ConvL2INode(Node* in1, const TypeInt* t = TypeInt::INT) : ConvertNode(t, in1) {}
   virtual int Opcode() const;
+  virtual const Type* in_type() const { return TypeLong::LONG; }
   virtual Node* Identity(PhaseGVN* phase);
   virtual const Type* Value(PhaseGVN* phase) const;
-  virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
+  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
+};
+
+class RoundDNode : public Node {
+public:
+  RoundDNode(Node* in1) : Node(nullptr, in1) {}
+  virtual int Opcode() const;
+  virtual const Type* bottom_type() const { return TypeLong::LONG; }
+  virtual uint ideal_reg() const { return Op_RegL; }
+};
+
+class RoundFNode : public Node {
+public:
+  RoundFNode(Node* in1) : Node(nullptr, in1) {}
+  virtual int Opcode() const;
+  virtual const Type* bottom_type() const { return TypeInt::INT; }
   virtual uint  ideal_reg() const { return Op_RegI; }
 };
 

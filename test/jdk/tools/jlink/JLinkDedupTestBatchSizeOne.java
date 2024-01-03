@@ -21,12 +21,8 @@
  * questions.
  */
 
-import jdk.test.lib.JDKToolLauncher;
 import jdk.test.lib.compiler.CompilerUtils;
-import jdk.test.lib.process.OutputAnalyzer;
-import jdk.test.lib.process.ProcessTools;
 import tests.JImageGenerator;
-import tests.Result;
 
 import java.io.File;
 import java.nio.file.Files;
@@ -40,8 +36,8 @@ import java.nio.file.Paths;
  * @bug 8311591
  * @library /test/lib
  *          ../lib
+ * @enablePreview
  * @modules java.base/jdk.internal.jimage
- *          jdk.jdeps/com.sun.tools.classfile
  *          jdk.jlink/jdk.tools.jlink.internal
  *          jdk.jlink/jdk.tools.jlink.plugin
  *          jdk.jlink/jdk.tools.jmod
@@ -94,7 +90,7 @@ public class JLinkDedupTestBatchSizeOne {
                 .addMods("m2")
                 .addMods("m3")
                 .addMods("m4")
-                .option("--system-modules=batchSize=1")
+                .option("--system-modules=batch-size=1")
                 .call()
                 .assertSuccess();
 

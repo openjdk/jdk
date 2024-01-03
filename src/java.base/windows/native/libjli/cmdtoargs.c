@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -324,6 +324,10 @@ public:
     bool check() {
         // "pgmname" rest of cmdline ie. pgmname + 2 double quotes + space + cmdline from windows
         char* cptr = (char*) malloc(strlen(argv[0]) + sizeof(char) * 3 + strlen(cmdline) + 1);
+        if (cptr == NULL) {
+            printf("*** cannot allocate memory\n");
+            doabort();
+        }
         _snprintf(cptr, MAX_PATH, "\"%s\" %s", argv[0], cmdline);
         JLI_CmdToArgs(cptr);
         free(cptr);

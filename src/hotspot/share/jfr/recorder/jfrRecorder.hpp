@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,8 +61,9 @@ class JfrRecorder : public JfrCHeapObj {
  public:
   static bool is_enabled();
   static bool is_disabled();
-  static bool create(bool simulate_failure);
   static bool is_created();
+  static bool is_started_on_commandline();
+  static bool create(bool simulate_failure);
   static void destroy();
   static void start_recording();
   static bool is_recording();

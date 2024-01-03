@@ -81,6 +81,9 @@
 #ifdef COMPILER1
 #include "c1/c1_Runtime1.hpp"
 #endif
+#if INCLUDE_JFR
+#include "jfr/jfr.hpp"
+#endif
 
 // Shared stub locations
 RuntimeStub*        SharedRuntime::_wrong_method_blob;
@@ -238,7 +241,7 @@ const julong double_sign_mask = CONST64(0x7FFFFFFFFFFFFFFF);
 const julong double_infinity  = CONST64(0x7FF0000000000000);
 #endif
 
-#if !defined(X86) || !defined(TARGET_COMPILER_gcc) || defined(_WIN64)
+#if !defined(X86)
 JRT_LEAF(jfloat, SharedRuntime::frem(jfloat x, jfloat y))
 #ifdef _WIN64
   // 64-bit Windows on amd64 returns the wrong values for
@@ -270,7 +273,7 @@ JRT_LEAF(jdouble, SharedRuntime::drem(jdouble x, jdouble y))
   return ((jdouble)fmod((double)x,(double)y));
 #endif
 JRT_END
-#endif // !X86 || !TARGET_COMPILER_gcc || _WIN64
+#endif // !X86
 
 JRT_LEAF(jfloat, SharedRuntime::i2f(jint x))
   return (jfloat)x;
@@ -520,7 +523,7 @@ address SharedRuntime::raw_exception_handler_for_return_address(JavaThread* curr
     return StubRoutines::catch_exception_entry();
   }
   if (blob != nullptr && blob->is_upcall_stub()) {
-    return ((UpcallStub*)blob)->exception_handler();
+    return StubRoutines::upcall_stub_exception_handler();
   }
   // Interpreted code
   if (Interpreter::contains(return_address)) {
@@ -677,6 +680,7 @@ JRT_END
 
 // ret_pc points into caller; we are returning caller's exception handler
 // for given exception
+// Note that the implementation of this method assumes it's only called when an exception has actually occured
 address SharedRuntime::compute_compiled_exc_handler(CompiledMethod* cm, address ret_pc, Handle& exception,
                                                     bool force_unwind, bool top_frame_only, bool& recursive_exception_occurred) {
   assert(cm != nullptr, "must exist");
@@ -779,6 +783,9 @@ address SharedRuntime::compute_compiled_exc_handler(CompiledMethod* cm, address 
     return nullptr;
   }
 
+  if (handler_bci != -1) { // did we find a handler in this method?
+    sd->method()->set_exception_handler_entered(handler_bci); // profile
+  }
   return nm->code_begin() + t->pco();
 }
 
@@ -1338,6 +1345,7 @@ bool SharedRuntime::resolve_sub_helper_internal(methodHandle callee_method, cons
     CompiledStaticCall::compute_entry(callee_method, is_nmethod, static_call_info);
   }
 
+  JFR_ONLY(bool patched_caller = false;)
   // grab lock, check for deoptimization and potentially patch caller
   {
     CompiledICLocker ml(caller_nm);
@@ -1367,6 +1375,7 @@ bool SharedRuntime::resolve_sub_helper_internal(methodHandle callee_method, cons
           if (!inline_cache->set_to_monomorphic(virtual_call_info)) {
             return false;
           }
+          JFR_ONLY(patched_caller = true;)
         }
       } else {
         if (VM_Version::supports_fast_class_init_checks() &&
@@ -1379,10 +1388,14 @@ bool SharedRuntime::resolve_sub_helper_internal(methodHandle callee_method, cons
         if (is_nmethod && caller_nm->method()->is_continuation_enter_intrinsic()) {
           ssc->compute_entry_for_continuation_entry(callee_method, static_call_info);
         }
-        if (ssc->is_clean()) ssc->set(static_call_info);
+        if (ssc->is_clean()) {
+          ssc->set(static_call_info);
+          JFR_ONLY(patched_caller = true;)
+        }
       }
     }
   } // unlock CompiledICLocker
+  JFR_ONLY(if (patched_caller) Jfr::on_backpatching(callee_method(), THREAD);)
   return true;
 }
 
@@ -1991,7 +2004,7 @@ void SharedRuntime::check_member_name_argument_is_last_argument(const methodHand
   assert(member_arg_pos >= 0 && member_arg_pos < total_args_passed, "oob");
   assert(sig_bt[member_arg_pos] == T_OBJECT, "dispatch argument must be an object");
 
-  int comp_args_on_stack = java_calling_convention(sig_bt, regs_without_member_name, total_args_passed - 1);
+  java_calling_convention(sig_bt, regs_without_member_name, total_args_passed - 1);
 
   for (int i = 0; i < member_arg_pos; i++) {
     VMReg a =    regs_with_member_name[i].first();
@@ -3089,7 +3102,7 @@ void AdapterHandlerLibrary::create_native_wrapper(const methodHandle& method) {
       BasicType ret_type = si.return_type();
 
       // Now get the compiled-Java arguments layout.
-      int comp_args_on_stack = SharedRuntime::java_calling_convention(sig_bt, regs, total_args_passed);
+      SharedRuntime::java_calling_convention(sig_bt, regs, total_args_passed);
 
       // Generate the compiled-to-native wrapper code
       nm = SharedRuntime::generate_native_wrapper(&_masm, method, compile_id, sig_bt, regs, ret_type);
@@ -3257,16 +3270,24 @@ JRT_LEAF(intptr_t*, SharedRuntime::OSR_migration_begin( JavaThread *current) )
        kptr2 = fr.next_monitor_in_interpreter_frame(kptr2) ) {
     if (kptr2->obj() != nullptr) {         // Avoid 'holes' in the monitor array
       BasicLock *lock = kptr2->lock();
-      // Inflate so the object's header no longer refers to the BasicLock.
-      if (lock->displaced_header().is_unlocked()) {
-        // The object is locked and the resulting ObjectMonitor* will also be
-        // locked so it can't be async deflated until ownership is dropped.
-        // See the big comment in basicLock.cpp: BasicLock::move_to().
-        ObjectSynchronizer::inflate_helper(kptr2->obj());
+      if (LockingMode == LM_LEGACY) {
+        // Inflate so the object's header no longer refers to the BasicLock.
+        if (lock->displaced_header().is_unlocked()) {
+          // The object is locked and the resulting ObjectMonitor* will also be
+          // locked so it can't be async deflated until ownership is dropped.
+          // See the big comment in basicLock.cpp: BasicLock::move_to().
+          ObjectSynchronizer::inflate_helper(kptr2->obj());
+        }
+        // Now the displaced header is free to move because the
+        // object's header no longer refers to it.
+        buf[i] = (intptr_t)lock->displaced_header().value();
       }
-      // Now the displaced header is free to move because the
-      // object's header no longer refers to it.
-      buf[i++] = (intptr_t)lock->displaced_header().value();
+#ifdef ASSERT
+      else {
+        buf[i] = badDispHeaderOSR;
+      }
+#endif
+      i++;
       buf[i++] = cast_from_oop<intptr_t>(kptr2->obj());
     }
   }

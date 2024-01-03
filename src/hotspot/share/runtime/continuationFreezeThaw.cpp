@@ -299,7 +299,8 @@ inline void clear_anchor(JavaThread* thread) {
 }
 
 static void set_anchor(JavaThread* thread, intptr_t* sp) {
-  address pc = *(address*)(sp - frame::sender_sp_ret_address_offset());
+  address pc = ContinuationHelper::return_address_at(
+                 sp - frame::sender_sp_ret_address_offset());
   assert(pc != nullptr, "");
 
   JavaFrameAnchor* anchor = thread->frame_anchor();
@@ -592,7 +593,14 @@ void FreezeBase::freeze_fast_existing_chunk() {
   if (chunk->sp() < chunk->stack_size()) { // we are copying into a non-empty chunk
     DEBUG_ONLY(_empty = false;)
     assert(chunk->sp() < (chunk->stack_size() - chunk->argsize()), "");
-    assert(*(address*)(chunk->sp_address() - frame::sender_sp_ret_address_offset()) == chunk->pc(), "");
+#ifdef ASSERT
+    {
+      intptr_t* retaddr_slot = (chunk->sp_address()
+                                - frame::sender_sp_ret_address_offset());
+      assert(ContinuationHelper::return_address_at(retaddr_slot) == chunk->pc(),
+             "unexpected saved return address");
+    }
+#endif
 
     // the chunk's sp before the freeze, adjusted to point beyond the stack-passed arguments in the topmost frame
     // we overlap; we'll overwrite the chunk's top frame's callee arguments
@@ -606,8 +614,15 @@ void FreezeBase::freeze_fast_existing_chunk() {
     assert(bottom_sp == _bottom_address, "");
     // Because the chunk isn't empty, we know there's a caller in the chunk, therefore the bottom-most frame
     // should have a return barrier (installed back when we thawed it).
-    assert(*(address*)(bottom_sp-frame::sender_sp_ret_address_offset()) == StubRoutines::cont_returnBarrier(),
-           "should be the continuation return barrier");
+#ifdef ASSERT
+    {
+      intptr_t* retaddr_slot = (bottom_sp
+                                - frame::sender_sp_ret_address_offset());
+      assert(ContinuationHelper::return_address_at(retaddr_slot)
+             == StubRoutines::cont_returnBarrier(),
+             "should be the continuation return barrier");
+    }
+#endif
     // We copy the fp from the chunk back to the stack because it contains some caller data,
     // including, possibly, an oop that might have gone stale since we thawed.
     patch_stack_pd(bottom_sp, chunk->sp_address());
@@ -675,7 +690,14 @@ void FreezeBase::freeze_fast_copy(stackChunkOop chunk, int chunk_start_sp CONT_J
   assert(!(_fast_freeze_size > 0) || _orig_chunk_sp - (chunk->start_address() + chunk_new_sp) == _fast_freeze_size, "");
 
   intptr_t* chunk_top = chunk->start_address() + chunk_new_sp;
-  assert(_empty || *(address*)(_orig_chunk_sp - frame::sender_sp_ret_address_offset()) == chunk->pc(), "");
+#ifdef ASSERT
+  if (!_empty) {
+    intptr_t* retaddr_slot = (_orig_chunk_sp
+                              - frame::sender_sp_ret_address_offset());
+    assert(ContinuationHelper::return_address_at(retaddr_slot) == chunk->pc(),
+           "unexpected saved return address");
+  }
+#endif
 
   log_develop_trace(continuations)("freeze_fast start: " INTPTR_FORMAT " sp: %d chunk_top: " INTPTR_FORMAT,
                               p2i(chunk->start_address()), chunk_new_sp, p2i(chunk_top));
@@ -684,15 +706,27 @@ void FreezeBase::freeze_fast_copy(stackChunkOop chunk, int chunk_start_sp CONT_J
   copy_to_chunk(from, to, cont_size() + frame::metadata_words_at_bottom);
   // Because we're not patched yet, the chunk is now in a bad state
 
-  // patch return pc of the bottom-most frozen frame (now in the chunk) with the actual caller's return address
-  intptr_t* chunk_bottom_sp = chunk_top + cont_size() - _cont.argsize() - frame::metadata_words_at_top;
-  assert(_empty || *(address*)(chunk_bottom_sp-frame::sender_sp_ret_address_offset()) == StubRoutines::cont_returnBarrier(), "");
-  *(address*)(chunk_bottom_sp - frame::sender_sp_ret_address_offset()) = chunk->pc();
+  // patch return pc of the bottom-most frozen frame (now in the chunk)
+  // with the actual caller's return address
+  intptr_t* chunk_bottom_retaddr_slot = (chunk_top + cont_size()
+                                         - _cont.argsize()
+                                         - frame::metadata_words_at_top
+                                         - frame::sender_sp_ret_address_offset());
+#ifdef ASSERT
+  if (!_empty) {
+    assert(ContinuationHelper::return_address_at(chunk_bottom_retaddr_slot)
+           == StubRoutines::cont_returnBarrier(),
+           "should be the continuation return barrier");
+  }
+#endif
+  ContinuationHelper::patch_return_address_at(chunk_bottom_retaddr_slot,
+                                              chunk->pc());
 
   // We're always writing to a young chunk, so the GC can't see it until the next safepoint.
   chunk->set_sp(chunk_new_sp);
   // set chunk->pc to the return address of the topmost frame in the chunk
-  chunk->set_pc(*(address*)(_cont_stack_top - frame::sender_sp_ret_address_offset()));
+  chunk->set_pc(ContinuationHelper::return_address_at(
+                  _cont_stack_top - frame::sender_sp_ret_address_offset()));
 
   _cont.write();
 
@@ -1464,21 +1498,21 @@ static void jvmti_yield_cleanup(JavaThread* thread, ContinuationWrapper& cont) {
 #endif // INCLUDE_JVMTI
 
 #ifdef ASSERT
-static bool monitors_on_stack(JavaThread* thread) {
-  ContinuationEntry* ce = thread->last_continuation();
-  RegisterMap map(thread,
-                  RegisterMap::UpdateMap::include,
-                  RegisterMap::ProcessFrames::include,
-                  RegisterMap::WalkContinuation::skip);
-  map.set_include_argument_oops(false);
-  for (frame f = thread->last_frame(); Continuation::is_frame_in_continuation(ce, f); f = f.sender(&map)) {
-    if ((f.is_interpreted_frame() && ContinuationHelper::InterpretedFrame::is_owning_locks(f)) ||
-        (f.is_compiled_frame() && ContinuationHelper::CompiledFrame::is_owning_locks(map.thread(), &map, f))) {
-      return true;
-    }
-  }
-  return false;
-}
+// static bool monitors_on_stack(JavaThread* thread) {
+//   ContinuationEntry* ce = thread->last_continuation();
+//   RegisterMap map(thread,
+//                   RegisterMap::UpdateMap::include,
+//                   RegisterMap::ProcessFrames::include,
+//                   RegisterMap::WalkContinuation::skip);
+//   map.set_include_argument_oops(false);
+//   for (frame f = thread->last_frame(); Continuation::is_frame_in_continuation(ce, f); f = f.sender(&map)) {
+//     if ((f.is_interpreted_frame() && ContinuationHelper::InterpretedFrame::is_owning_locks(f)) ||
+//         (f.is_compiled_frame() && ContinuationHelper::CompiledFrame::is_owning_locks(map.thread(), &map, f))) {
+//       return true;
+//     }
+//   }
+//   return false;
+// }
 
 bool FreezeBase::interpreted_native_or_deoptimized_on_stack() {
   ContinuationEntry* ce = _thread->last_continuation();
@@ -1541,8 +1575,8 @@ static inline int freeze_internal(JavaThread* current, intptr_t* const sp) {
 
   assert(entry->is_virtual_thread() == (entry->scope(current) == java_lang_VirtualThread::vthread_scope()), "");
 
-  assert(monitors_on_stack(current) == ((current->held_monitor_count() - current->jni_monitor_count()) > 0),
-         "Held monitor count and locks on stack invariant: " INT64_FORMAT " JNI: " INT64_FORMAT, (int64_t)current->held_monitor_count(), (int64_t)current->jni_monitor_count());
+  // assert(monitors_on_stack(current) == ((current->held_monitor_count() - current->jni_monitor_count()) > 0),
+  //        "Held monitor count and locks on stack invariant: " INT64_FORMAT " JNI: " INT64_FORMAT, (int64_t)current->held_monitor_count(), (int64_t)current->jni_monitor_count());
 
   if (entry->is_pinned() || current->held_monitor_count() > 0) {
     log_develop_debug(continuations)("PINNED due to critical section/hold monitor");
@@ -1741,7 +1775,7 @@ private:
   inline void before_thaw_java_frame(const frame& hf, const frame& caller, bool bottom, int num_frame);
   inline void after_thaw_java_frame(const frame& f, bool bottom);
   inline void patch(frame& f, const frame& caller, bool bottom);
-  void clear_bitmap_bits(intptr_t* start, int range);
+  void clear_bitmap_bits(address start, address end);
 
   NOINLINE void recurse_thaw_interpreted_frame(const frame& hf, frame& caller, int num_frames);
   void recurse_thaw_compiled_frame(const frame& hf, frame& caller, int num_frames, bool stub_caller);
@@ -1846,7 +1880,15 @@ inline void ThawBase::clear_chunk(stackChunkOop chunk) {
     chunk->set_max_thawing_size(chunk->max_thawing_size() - frame_size);
     // We set chunk->pc to the return pc into the next frame
     chunk->set_pc(f.pc());
-    assert(f.pc() == *(address*)(chunk_sp + frame_size - frame::sender_sp_ret_address_offset()), "unexpected pc");
+#ifdef ASSERT
+    {
+      intptr_t* retaddr_slot = (chunk_sp
+                                + frame_size
+                                - frame::sender_sp_ret_address_offset());
+      assert(f.pc() == ContinuationHelper::return_address_at(retaddr_slot),
+             "unexpected pc");
+    }
+#endif
   }
   assert(empty == chunk->is_empty(), "");
   // returns the size required to store the frame on stack, and because it is a
@@ -1866,7 +1908,9 @@ void ThawBase::patch_return(intptr_t* sp, bool is_last) {
   log_develop_trace(continuations)("thaw_fast patching -- sp: " INTPTR_FORMAT, p2i(sp));
 
   address pc = !is_last ? StubRoutines::cont_returnBarrier() : _cont.entryPC();
-  *(address*)(sp - frame::sender_sp_ret_address_offset()) = pc;
+  ContinuationHelper::patch_return_address_at(
+    sp - frame::sender_sp_ret_address_offset(),
+    pc);
 }
 
 template <typename ConfigT>
@@ -2122,13 +2166,22 @@ inline void ThawBase::patch(frame& f, const frame& caller, bool bottom) {
   assert(!bottom || (_cont.is_empty() != Continuation::is_cont_barrier_frame(f)), "");
 }
 
-void ThawBase::clear_bitmap_bits(intptr_t* start, int range) {
+void ThawBase::clear_bitmap_bits(address start, address end) {
+  assert(is_aligned(start, wordSize), "should be aligned: " PTR_FORMAT, p2i(start));
+  assert(is_aligned(end, VMRegImpl::stack_slot_size), "should be aligned: " PTR_FORMAT, p2i(end));
+
   // we need to clear the bits that correspond to arguments as they reside in the caller frame
-  // or they will keep objects that are otherwise unreachable alive
-  log_develop_trace(continuations)("clearing bitmap for " INTPTR_FORMAT " - " INTPTR_FORMAT, p2i(start), p2i(start+range));
+  // or they will keep objects that are otherwise unreachable alive.
+
+  // Align `end` if UseCompressedOops is not set to avoid UB when calculating the bit index, since
+  // `end` could be at an odd number of stack slots from `start`, i.e might not be oop aligned.
+  // If that's the case the bit range corresponding to the last stack slot should not have bits set
+  // anyways and we assert that before returning.
+  address effective_end = UseCompressedOops ? end : align_down(end, wordSize);
+  log_develop_trace(continuations)("clearing bitmap for " INTPTR_FORMAT " - " INTPTR_FORMAT, p2i(start), p2i(effective_end));
   stackChunkOop chunk = _cont.tail();
-  chunk->bitmap().clear_range(chunk->bit_index_for(start),
-                              chunk->bit_index_for(start+range));
+  chunk->bitmap().clear_range(chunk->bit_index_for(start), chunk->bit_index_for(effective_end));
+  assert(chunk->bitmap().count_one_bits(chunk->bit_index_for(effective_end), chunk->bit_index_for(end)) == 0, "bits should not be set");
 }
 
 NOINLINE void ThawBase::recurse_thaw_interpreted_frame(const frame& hf, frame& caller, int num_frames) {
@@ -2181,7 +2234,9 @@ NOINLINE void ThawBase::recurse_thaw_interpreted_frame(const frame& hf, frame& c
     _cont.tail()->fix_thawed_frame(caller, SmallRegisterMap::instance);
   } else if (_cont.tail()->has_bitmap() && locals > 0) {
     assert(hf.is_heap_frame(), "should be");
-    clear_bitmap_bits(heap_frame_bottom - locals, locals);
+    address start = (address)(heap_frame_bottom - locals);
+    address end = (address)heap_frame_bottom;
+    clear_bitmap_bits(start, end);
   }
 
   DEBUG_ONLY(after_thaw_java_frame(f, is_bottom_frame);)
@@ -2254,7 +2309,10 @@ void ThawBase::recurse_thaw_compiled_frame(const frame& hf, frame& caller, int n
     // can only fix caller once this frame is thawed (due to callee saved regs); this happens on the stack
     _cont.tail()->fix_thawed_frame(caller, SmallRegisterMap::instance);
   } else if (_cont.tail()->has_bitmap() && added_argsize > 0) {
-    clear_bitmap_bits(heap_frame_top + ContinuationHelper::CompiledFrame::size(hf) + frame::metadata_words_at_top, added_argsize);
+    address start = (address)(heap_frame_top + ContinuationHelper::CompiledFrame::size(hf) + frame::metadata_words_at_top);
+    int stack_args_slots = f.cb()->as_compiled_method()->method()->num_stack_arg_slots(false /* rounded */);
+    int argsize_in_bytes = stack_args_slots * VMRegImpl::stack_slot_size;
+    clear_bitmap_bits(start, start + argsize_in_bytes);
   }
 
   DEBUG_ONLY(after_thaw_java_frame(f, is_bottom_frame);)
@@ -2403,7 +2461,6 @@ static inline intptr_t* thaw_internal(JavaThread* thread, const Continuation::th
 
 #ifdef ASSERT
   intptr_t* sp0 = sp;
-  address pc0 = *(address*)(sp - frame::sender_sp_ret_address_offset());
   set_anchor(thread, sp0);
   log_frames(thread);
   if (LoomVerifyAfterThaw) {

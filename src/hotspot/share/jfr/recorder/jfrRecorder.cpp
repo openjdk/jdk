@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "cds/cdsConfig.hpp"
 #include "classfile/javaClasses.hpp"
 #include "jfr/dcmd/jfrDcmds.hpp"
 #include "jfr/instrumentation/jfrJvmtiAgent.hpp"
@@ -76,20 +77,33 @@ bool JfrRecorder::is_enabled() {
   return _enabled;
 }
 
+bool JfrRecorder::is_started_on_commandline() {
+  return StartFlightRecording != nullptr;
+}
+
 bool JfrRecorder::create_oop_storages() {
   // currently only a single weak oop storage for Leak Profiler
   return ObjectSampler::create_oop_storage();
 }
 
+// Subsystem
+static JfrCheckpointManager* _checkpoint_manager = nullptr;
+
 bool JfrRecorder::on_create_vm_1() {
   if (!is_disabled()) {
-    if (FlightRecorder || StartFlightRecording != nullptr) {
+    if (FlightRecorder || is_started_on_commandline()) {
       enable();
     }
   }
   if (!create_oop_storages()) {
     return false;
   }
+
+  _checkpoint_manager = JfrCheckpointManager::create();
+  if (_checkpoint_manager == nullptr || !_checkpoint_manager->initialize_early()) {
+    return false;
+  }
+
   // fast time initialization
   return JfrTime::initialize();
 }
@@ -185,7 +199,7 @@ static void log_jdk_jfr_module_resolution_error(TRAPS) {
 
 static bool is_cds_dump_requested() {
   // we will not be able to launch recordings on startup if a cds dump is being requested
-  if (Arguments::is_dumping_archive() && JfrOptionSet::start_flight_recording_options() != nullptr) {
+  if (CDSConfig::is_dumping_archive() && JfrOptionSet::start_flight_recording_options() != nullptr) {
     warning("JFR will be disabled during CDS dumping");
     teardown_startup_support();
     return true;
@@ -227,7 +241,7 @@ bool JfrRecorder::on_create_vm_2() {
 
 bool JfrRecorder::on_create_vm_3() {
   assert(JvmtiEnvBase::get_phase() == JVMTI_PHASE_LIVE, "invalid init sequence");
-  return Arguments::is_dumping_archive() || launch_command_line_recordings(JavaThread::current());
+  return CDSConfig::is_dumping_archive() || launch_command_line_recordings(JavaThread::current());
 }
 
 static bool _created = false;
@@ -302,7 +316,6 @@ bool JfrRecorder::create_components() {
 // subsystems
 static JfrPostBox* _post_box = nullptr;
 static JfrStorage* _storage = nullptr;
-static JfrCheckpointManager* _checkpoint_manager = nullptr;
 static JfrRepository* _repository = nullptr;
 static JfrStackTraceRepository* _stack_trace_repository;
 static JfrStringPool* _stringpool = nullptr;
@@ -344,10 +357,9 @@ bool JfrRecorder::create_storage() {
 }
 
 bool JfrRecorder::create_checkpoint_manager() {
-  assert(_checkpoint_manager == nullptr, "invariant");
+  assert(_checkpoint_manager != nullptr, "invariant");
   assert(_repository != nullptr, "invariant");
-  _checkpoint_manager = JfrCheckpointManager::create(_repository->chunkwriter());
-  return _checkpoint_manager != nullptr && _checkpoint_manager->initialize();
+  return _checkpoint_manager->initialize(&_repository->chunkwriter());
 }
 
 bool JfrRecorder::create_stacktrace_repository() {
@@ -389,7 +401,7 @@ void JfrRecorder::destroy_components() {
   }
   if (_checkpoint_manager != nullptr) {
     JfrCheckpointManager::destroy();
-    _checkpoint_manager = nullptr;
+    // do not delete the _checkpoint_manager instance
   }
   if (_stack_trace_repository != nullptr) {
     JfrStackTraceRepository::destroy();

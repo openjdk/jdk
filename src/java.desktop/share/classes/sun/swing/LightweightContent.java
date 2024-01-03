@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -117,7 +117,7 @@ public interface LightweightContent {
      * @param height the logical height of the image
      * @param linestride the line stride of the pixel buffer
      * @param scale the scale factor of the pixel buffer
-     * @Deprecated replaced by
+     * @deprecated replaced by
      * {@link #imageBufferReset(int[],int,int,int,int,int,double,double)}
      */
     @Deprecated(since = "9")
