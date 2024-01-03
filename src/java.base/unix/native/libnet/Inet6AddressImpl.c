@@ -151,7 +151,7 @@ lookupIfLocalhost(JNIEnv *env, const char *hostname, jboolean includeV6)
     result = (*env)->NewObjectArray(env, arraySize, ia_class, NULL);
     if (!result) goto done;
 
-    if ((*env)->GetStaticBooleanField(env, ia_class, ia_preferIPv6AddressID)) {
+    if ((*env)->GetStaticIntField(env, ia_class, ia_preferIPv6AddressID) == java_net_InetAddress_PREFER_IPV6_VALUE) {
         i = includeLoopback ? addrs6 : (addrs6 - numV6Loopbacks);
         j = 0;
     } else {
