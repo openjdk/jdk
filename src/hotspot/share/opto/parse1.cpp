@@ -508,9 +508,10 @@ Parse::Parse(JVMState* caller, ciMethod* parse_method, float expected_uses)
 #ifndef PRODUCT
       if (PrintOpto && (Verbose || WizardMode)) {
         if (is_osr_parse()) {
-          tty->print("OSR @%d ", _entry_bci);
+          tty->print("OSR @%d type flow bailout: %s", _entry_bci, _flow->failure_reason());
+        } else {
+          tty->print_cr("type flow bailout: %s", _flow->failure_reason());
         }
-        tty->print_cr("type flow bailout: %s", _flow->failure_reason());
         if (Verbose) {
           method()->print();
           method()->print_codes();
@@ -520,11 +521,13 @@ Parse::Parse(JVMState* caller, ciMethod* parse_method, float expected_uses)
 #endif
   }
 
+#ifdef ASSERT
   if (depth() == 1) {
     assert(C->is_osr_compilation() == this->is_osr_parse(), "OSR in sync");
   } else {
     assert(!this->is_osr_parse(), "no recursive OSR");
   }
+#endif
 
 #ifndef PRODUCT
   if (_flow->has_irreducible_entry()) {
