@@ -145,11 +145,11 @@ public class CopyMoveVariations {
         try {
             switch (type) {
                 case FILE ->
-                    source = Files.createTempFile("file", "dat");
+                    source = Files.createTempFile(Path.of("."), "file", "dat");
                 case DIR ->
-                    source = Files.createTempDirectory("dir");
+                    source = Files.createTempDirectory(Path.of("."), "dir");
                 case LINK -> {
-                    linkTarget = Files.createTempFile("link", "target");
+                    linkTarget = Files.createTempFile(Path.of("."), "link", "target");
                     Path link = Path.of("link");
                     source = Files.createSymbolicLink(link, linkTarget);
                 }
@@ -163,7 +163,7 @@ public class CopyMoveVariations {
                 Files.setPosixFilePermissions(source, perms);
 
             if (targetExists)
-                target = Files.createTempFile("file", "target");
+                target = Files.createTempFile(Path.of("."), "file", "target");
             else
                 target = Path.of("target");
 
