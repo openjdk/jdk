@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -536,9 +536,7 @@ public class CertificateBuilder {
         tbsCertItems.write(publicKey.getEncoded());
 
         // Encode any extensions in the builder
-        if (!extensions.isEmpty()) {
-            encodeExtensions(tbsCertItems);
-        }
+        encodeExtensions(tbsCertItems);
 
         // Wrap it all up in a SEQUENCE and return the bytes
         tbsCertSeq.write(DerValue.tag_Sequence, tbsCertItems);
@@ -568,6 +566,10 @@ public class CertificateBuilder {
      */
     private void encodeExtensions(DerOutputStream tbsStream)
             throws IOException {
+
+        if (extensions.isEmpty()) {
+            return;
+        }
         DerOutputStream extSequence = new DerOutputStream();
         DerOutputStream extItems = new DerOutputStream();
 
