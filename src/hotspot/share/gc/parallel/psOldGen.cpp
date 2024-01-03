@@ -92,10 +92,10 @@ void PSOldGen::initialize_work(const char* perf_data_name, int level) {
   // If this wasn't true, a single card could span more than one generation,
   // which would cause problems when we commit/uncommit memory, and when we
   // clear and dirty cards.
-  guarantee(ct->is_card_aligned(reserved_mr.start()), "generation must be card aligned");
+  guarantee(CardTable::is_card_aligned(reserved_mr.start()), "generation must be card aligned");
   // Check the heap layout documented at `class ParallelScavengeHeap`.
   assert(reserved_mr.end() != heap->reserved_region().end(), "invariant");
-  guarantee(ct->is_card_aligned(reserved_mr.end()), "generation must be card aligned");
+  guarantee(CardTable::is_card_aligned(reserved_mr.end()), "generation must be card aligned");
 
   //
   // ObjectSpace stuff
@@ -133,17 +133,13 @@ size_t PSOldGen::num_iterable_blocks() const {
 
 void PSOldGen::object_iterate_block(ObjectClosure* cl, size_t block_index) {
   size_t block_word_size = IterateBlockSize / HeapWordSize;
-  assert((block_word_size % (ObjectStartArray::card_size())) == 0,
-         "Block size not a multiple of start_array block");
+  assert((block_word_size % BOTConstants::card_size_in_words()) == 0,
+         "To ensure fast object_start calls");
 
   MutableSpace *space = object_space();
 
   HeapWord* begin = space->bottom() + block_index * block_word_size;
   HeapWord* end = MIN2(space->top(), begin + block_word_size);
-
-  if (!start_array()->object_starts_in_range(begin, end)) {
-    return;
-  }
 
   // Get object starting at or reaching into this block.
   HeapWord* start = start_array()->object_start(begin);
@@ -286,8 +282,8 @@ void PSOldGen::shrink(size_t bytes) {
 void PSOldGen::complete_loaded_archive_space(MemRegion archive_space) {
   HeapWord* cur = archive_space.start();
   while (cur < archive_space.end()) {
-    _start_array.allocate_block(cur);
     size_t word_size = cast_to_oop(cur)->size();
+    _start_array.update_for_block(cur, cur + word_size);
     cur += word_size;
   }
 }
@@ -390,14 +386,13 @@ void PSOldGen::verify() {
 class VerifyObjectStartArrayClosure : public ObjectClosure {
   ObjectStartArray* _start_array;
 
- public:
+public:
   VerifyObjectStartArrayClosure(ObjectStartArray* start_array) :
     _start_array(start_array) { }
 
   virtual void do_object(oop obj) {
     HeapWord* test_addr = cast_from_oop<HeapWord*>(obj) + 1;
     guarantee(_start_array->object_start(test_addr) == cast_from_oop<HeapWord*>(obj), "ObjectStartArray cannot find start of object");
-    guarantee(_start_array->is_block_allocated(cast_from_oop<HeapWord*>(obj)), "ObjectStartArray missing block allocation");
   }
 };
 

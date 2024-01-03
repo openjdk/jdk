@@ -32,15 +32,15 @@ import java.security.NoSuchAlgorithmException;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.function.Consumer;
-import jdk.internal.classfile.AccessFlags;
-import jdk.internal.classfile.Attributes;
-import jdk.internal.classfile.ClassElement;
-import jdk.internal.classfile.Classfile;
-import jdk.internal.classfile.constantpool.*;
-import jdk.internal.classfile.FieldModel;
-import jdk.internal.classfile.MethodModel;
-import jdk.internal.classfile.attribute.EnclosingMethodAttribute;
-import jdk.internal.classfile.attribute.InnerClassesAttribute;
+import java.lang.classfile.AccessFlags;
+import java.lang.classfile.Attributes;
+import java.lang.classfile.ClassElement;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.constantpool.*;
+import java.lang.classfile.FieldModel;
+import java.lang.classfile.MethodModel;
+import java.lang.classfile.attribute.EnclosingMethodAttribute;
+import java.lang.classfile.attribute.InnerClassesAttribute;
 
 /**
  * A FingerPrint is an abstract representation of a JarFile entry that contains
@@ -166,7 +166,7 @@ final class FingerPrint {
     }
 
     private static ClassAttributes getClassAttributes(byte[] bytes) {
-        var cm = Classfile.of().parse(bytes);
+        var cm = ClassFile.of().parse(bytes);
         ClassAttributes attrs = new ClassAttributes(
                 cm.flags(),
                 cm.thisClass().asInternalName(),

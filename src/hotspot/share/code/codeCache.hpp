@@ -106,7 +106,6 @@ class CodeCache : AllStatic {
   static TruncatedSeq      _unloading_gc_intervals;
   static TruncatedSeq      _unloading_allocation_rates;
   static volatile bool     _unloading_threshold_gc_requested;
-  static nmethod* volatile _unlinked_head;
 
   static ExceptionCache* volatile _exception_cache_purge_list;
 
@@ -211,8 +210,7 @@ class CodeCache : AllStatic {
   //    nmethod::is_cold.
   static void arm_all_nmethods();
 
-  static void flush_unlinked_nmethods();
-  static void register_unlinked(nmethod* nm);
+  static void maybe_restart_compiler(size_t freed_memory);
   static void do_unloading(bool unloading_occurred);
   static uint8_t unloading_cycle() { return _unloading_cycle; }
 
@@ -229,7 +227,7 @@ class CodeCache : AllStatic {
   static void print_trace(const char* event, CodeBlob* cb, uint size = 0) PRODUCT_RETURN;
   static void print_summary(outputStream* st, bool detailed = true); // Prints a summary of the code cache usage
   static void log_state(outputStream* st);
-  LINUX_ONLY(static void write_perf_map();)
+  LINUX_ONLY(static void write_perf_map(const char* filename = nullptr);)
   static const char* get_code_heap_name(CodeBlobType code_blob_type)  { return (heap_available(code_blob_type) ? get_code_heap(code_blob_type)->name() : "Unused"); }
   static void report_codemem_full(CodeBlobType code_blob_type, bool print);
 
