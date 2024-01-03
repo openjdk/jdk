@@ -11142,7 +11142,7 @@ instruct convI2FPR_mem(regFPR dst, memory mem) %{
 
 // Convert an int to a float in xmm; no rounding step needed.
 instruct convI2F_reg(regF dst, rRegI src) %{
-  predicate( UseSSE==1 || UseSSE>=2 && !UseXmmI2F );
+  predicate( UseSSE==1 || ( UseSSE>=2 && !UseXmmI2F ));
   match(Set dst (ConvI2F src));
   format %{ "CVTSI2SS $dst, $src" %}
   ins_encode %{
