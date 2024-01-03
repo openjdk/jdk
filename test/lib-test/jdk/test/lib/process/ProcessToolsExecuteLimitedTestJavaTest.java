@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,36 +21,25 @@
  * questions.
  */
 
-/* @test
- * @bug 8187023
- * @summary Pkcs11 config file should be assumed in ISO-8859-1
+/*
+ * @test
+ * @summary Unit test for ProcessTools.executeLimitedTestJava()
  * @library /test/lib
- * @run testng/othervm ReadConfInUTF16Env
+ * @run main/othervm -Dtest.java.opts=-XX:MaxMetaspaceSize=123456789 ProcessToolsExecuteLimitedTestJavaTest
  */
 
+import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
-import org.testng.annotations.Test;
 
-import java.security.Provider;
-import java.security.Security;
-
-public class ReadConfInUTF16Env {
-
-    @Test
-    public void testReadConfInUTF16Env() throws Exception {
-        String[] testCommand = new String[] { "-Dfile.encoding=UTF-16",
-                TestSunPKCS11Provider.class.getName()};
-        ProcessTools.executeTestJava(testCommand).shouldHaveExitValue(0);
-    }
-
-    static class TestSunPKCS11Provider {
-        public static void main(String[] args) throws Exception {
-            Provider p = Security.getProvider("SunPKCS11");
-            if (p == null) {
-                System.out.println("Skipping test - no PKCS11 provider available");
-                return;
-            }
-            System.out.println(p.getName());
+public class ProcessToolsExecuteLimitedTestJavaTest {
+    public static void main(String[] args) throws Exception {
+        if (args.length > 0) {
+            // Do nothing. Just let the JVM log its output.
+        } else {
+            // In comparison to executeTestJava, executeLimitedTestJava should not add the
+            // -Dtest.java.opts flags. Check that it doesn't.
+            OutputAnalyzer output = ProcessTools.executeLimitedTestJava("-XX:+PrintFlagsFinal", "-version");
+            output.stdoutShouldNotMatch(".*MaxMetaspaceSize.* = 123456789.*");
         }
     }
 }
