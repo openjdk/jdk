@@ -39,6 +39,7 @@ import java.util.stream.Stream;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledIfSystemProperty;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.junit.jupiter.api.condition.EnabledOnOs;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -161,9 +162,8 @@ public class LocaleProvidersRun {
     // under HOST Windows (non-english locale)
     @Test
     @EnabledOnOs(WINDOWS)
+    @DisabledIfSystemProperty(named = "user.language", matches = "en")
     public void nonEnglishDisplayCountryHost() throws Throwable {
-        if (!defLang.equals("en")) {
-            LocaleProviders.testRun("HOST", "bug8220227Test");
-        }
+        LocaleProviders.testRun("HOST", "bug8220227Test");
     }
 }
