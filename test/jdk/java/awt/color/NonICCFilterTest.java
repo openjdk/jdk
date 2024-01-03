@@ -41,10 +41,11 @@ public class NonICCFilterTest {
 
     private static class TestColorSpace extends ColorSpace {
 
-        private ColorSpace csRGB;
+        private final ColorSpace csRGB;
 
         protected TestColorSpace(boolean bSrc) {
-            super(CS_sRGB, 3);
+            super(ColorSpace.getInstance(ColorSpace.CS_sRGB).getType(),
+                    ColorSpace.getInstance(ColorSpace.CS_sRGB).getNumComponents());
             csRGB = ColorSpace.getInstance(bSrc ? ColorSpace.CS_LINEAR_RGB :
                     ColorSpace.CS_sRGB);
         }
@@ -58,11 +59,11 @@ public class NonICCFilterTest {
         }
 
         public float[] toCIEXYZ(float[] colorvalue) {
-            return csRGB.toCIEXYZ(toRGB(colorvalue));
+            return csRGB.toCIEXYZ(csRGB.toRGB(colorvalue));
         }
 
         public float[] fromCIEXYZ(float[] xyzvalue) {
-            return fromRGB(csRGB.fromCIEXYZ(xyzvalue));
+            return csRGB.fromRGB(csRGB.fromCIEXYZ(xyzvalue));
         }
     }
 
@@ -105,5 +106,6 @@ public class NonICCFilterTest {
 
         if (compareImages(src, dest)) {
             throw new RuntimeException("Test failed: Source equal to Destination");
+        }
     }
 }
