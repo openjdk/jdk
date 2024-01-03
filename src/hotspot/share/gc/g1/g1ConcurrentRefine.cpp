@@ -58,56 +58,46 @@ G1ConcurrentRefineThread* G1ConcurrentRefineThreadControl::create_refinement_thr
   return result;
 }
 
-G1ConcurrentRefineThreadControl::G1ConcurrentRefineThreadControl() :
+G1ConcurrentRefineThreadControl::G1ConcurrentRefineThreadControl(uint max_num_threads) :
   _cr(nullptr),
-  _threads(nullptr),
-  _max_num_threads(0)
+  _threads(max_num_threads)
 {}
 
 G1ConcurrentRefineThreadControl::~G1ConcurrentRefineThreadControl() {
-  if (_threads != nullptr) {
-    for (uint i = 0; i < _max_num_threads; i++) {
-      G1ConcurrentRefineThread* t = _threads[i];
-      if (t == nullptr) {
-#ifdef ASSERT
-        for (uint j = i + 1; j < _max_num_threads; ++j) {
-          assert(_threads[j] == nullptr, "invariant");
-        }
-#endif // ASSERT
-        break;
-      } else {
-        delete t;
-      }
-    }
-    FREE_C_HEAP_ARRAY(G1ConcurrentRefineThread*, _threads);
+  while (_threads.is_nonempty()) {
+    delete _threads.pop();
   }
 }
 
-jint G1ConcurrentRefineThreadControl::initialize(G1ConcurrentRefine* cr, uint max_num_threads) {
+bool G1ConcurrentRefineThreadControl::ensure_threads_created(uint worker_id, bool initializing) {
+  assert(worker_id < max_num_threads(), "precondition");
+
+  while ((uint)_threads.length() <= worker_id) {
+    G1ConcurrentRefineThread* rt = create_refinement_thread(_threads.length(), initializing);
+    if (rt == nullptr) {
+      return false;
+    }
+    _threads.push(rt);
+  }
+
+  return true;
+}
+
+jint G1ConcurrentRefineThreadControl::initialize(G1ConcurrentRefine* cr) {
   assert(cr != nullptr, "G1ConcurrentRefine must not be null");
   _cr = cr;
-  _max_num_threads = max_num_threads;
 
-  if (max_num_threads > 0) {
-    _threads = NEW_C_HEAP_ARRAY(G1ConcurrentRefineThread*, max_num_threads, mtGC);
-
-    _threads[0] = create_refinement_thread(0, true);
-    if (_threads[0] == nullptr) {
+  if (max_num_threads() > 0) {
+    _threads.push(create_refinement_thread(0, true));
+    if (_threads.at(0) == nullptr) {
       vm_shutdown_during_initialization("Could not allocate primary refinement thread");
       return JNI_ENOMEM;
     }
 
-    if (UseDynamicNumberOfGCThreads) {
-      for (uint i = 1; i < max_num_threads; ++i) {
-        _threads[i] = nullptr;
-      }
-    } else {
-      for (uint i = 1; i < max_num_threads; ++i) {
-        _threads[i] = create_refinement_thread(i, true);
-        if (_threads[i] == nullptr) {
-          vm_shutdown_during_initialization("Could not allocate refinement threads.");
-          return JNI_ENOMEM;
-        }
+    if (!UseDynamicNumberOfGCThreads) {
+      if (!ensure_threads_created(max_num_threads() - 1, true)) {
+        vm_shutdown_during_initialization("Could not allocate refinement threads");
+        return JNI_ENOMEM;
       }
     }
   }
@@ -117,38 +107,28 @@ jint G1ConcurrentRefineThreadControl::initialize(G1ConcurrentRefine* cr, uint ma
 
 #ifdef ASSERT
 void G1ConcurrentRefineThreadControl::assert_current_thread_is_primary_refinement_thread() const {
-  assert(_threads != nullptr, "No threads");
-  assert(Thread::current() == _threads[0], "Not primary thread");
+  assert(Thread::current() == _threads.at(0), "Not primary thread");
 }
 #endif // ASSERT
 
 bool G1ConcurrentRefineThreadControl::activate(uint worker_id) {
-  assert(worker_id < _max_num_threads, "precondition");
-  G1ConcurrentRefineThread* thread_to_activate = _threads[worker_id];
-  if (thread_to_activate == nullptr) {
-    thread_to_activate = create_refinement_thread(worker_id, false);
-    if (thread_to_activate == nullptr) {
-      return false;
-    }
-    _threads[worker_id] = thread_to_activate;
+  if (ensure_threads_created(worker_id, false)) {
+    _threads.at(worker_id)->activate();
+    return true;
   }
-  thread_to_activate->activate();
-  return true;
+
+  return false;
 }
 
 void G1ConcurrentRefineThreadControl::worker_threads_do(ThreadClosure* tc) {
-  for (uint i = 0; i < _max_num_threads; i++) {
-    if (_threads[i] != nullptr) {
-      tc->do_thread(_threads[i]);
-    }
+  for (G1ConcurrentRefineThread* t : _threads) {
+    tc->do_thread(t);
   }
 }
 
 void G1ConcurrentRefineThreadControl::stop() {
-  for (uint i = 0; i < _max_num_threads; i++) {
-    if (_threads[i] != nullptr) {
-      _threads[i]->stop();
-    }
+  for (G1ConcurrentRefineThread* t : _threads) {
+    t->stop();
   }
 }
 
@@ -170,12 +150,12 @@ G1ConcurrentRefine::G1ConcurrentRefine(G1Policy* policy) :
   _last_adjust(),
   _needs_adjust(false),
   _threads_needed(policy, adjust_threads_period_ms()),
-  _thread_control(),
+  _thread_control(G1ConcRefinementThreads),
   _dcqs(G1BarrierSet::dirty_card_queue_set())
 {}
 
 jint G1ConcurrentRefine::initialize() {
-  return _thread_control.initialize(this, max_num_threads());
+  return _thread_control.initialize(this);
 }
 
 G1ConcurrentRefine* G1ConcurrentRefine::create(G1Policy* policy, jint* ecode) {
@@ -197,10 +177,6 @@ G1ConcurrentRefine::~G1ConcurrentRefine() {
 
 void G1ConcurrentRefine::threads_do(ThreadClosure *tc) {
   _thread_control.worker_threads_do(tc);
-}
-
-uint G1ConcurrentRefine::max_num_threads() {
-  return G1ConcRefinementThreads;
 }
 
 void G1ConcurrentRefine::update_pending_cards_target(double logged_cards_time_ms,

@@ -83,14 +83,6 @@ protected:
     return cards_required(_whole_heap.word_size()) - 1;
   }
 
-  // Mapping from card marking array entry to address of first word without checks.
-  HeapWord* addr_for_raw(const CardValue* p) const {
-    // As _byte_map_base may be "negative" (the card table has been allocated before
-    // the heap in memory), do not use pointer_delta() to avoid the assertion failure.
-    size_t delta = p - _byte_map_base;
-    return (HeapWord*) (delta << _card_shift);
-  }
-
 private:
   void initialize_covered_region(void* region0_start, void* region1_start);
 
@@ -152,13 +144,16 @@ public:
     return byte_after(p);
   }
 
-  // Mapping from card marking array entry to address of first word.
+  // Mapping from card marking array entry to address of first word
   HeapWord* addr_for(const CardValue* p) const {
     assert(p >= _byte_map && p < _byte_map + _byte_map_size,
            "out of bounds access to card marking array. p: " PTR_FORMAT
            " _byte_map: " PTR_FORMAT " _byte_map + _byte_map_size: " PTR_FORMAT,
            p2i(p), p2i(_byte_map), p2i(_byte_map + _byte_map_size));
-    HeapWord* result = addr_for_raw(p);
+    // As _byte_map_base may be "negative" (the card table has been allocated before
+    // the heap in memory), do not use pointer_delta() to avoid the assertion failure.
+    size_t delta = p - _byte_map_base;
+    HeapWord* result = (HeapWord*) (delta << _card_shift);
     assert(_whole_heap.contains(result),
            "Returning result = " PTR_FORMAT " out of bounds of "
            " card marking array's _whole_heap = [" PTR_FORMAT "," PTR_FORMAT ")",
