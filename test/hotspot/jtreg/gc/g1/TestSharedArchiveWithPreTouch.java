@@ -50,8 +50,6 @@ public class TestSharedArchiveWithPreTouch {
         final List<String> BaseOptions = Arrays.asList(new String[] {"-XX:+UseG1GC", "-XX:+AlwaysPreTouch",
             "-XX:+UnlockDiagnosticVMOptions", "-XX:SharedArchiveFile=" + ArchiveFileName });
 
-        ProcessBuilder pb;
-
         List<String> dump_args = new ArrayList<String>(BaseOptions);
 
         if (Platform.is64bit()) {
