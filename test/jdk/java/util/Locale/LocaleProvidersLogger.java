@@ -33,7 +33,7 @@
 
 import org.junit.jupiter.api.Test;
 
-public class LocaleProvidersLogger extends LocaleProvidersRun {
+public class LocaleProvidersLogger {
 
     /*
      * 8245241 8246721 8261919: Ensure if an incorrect system property for locale providers is set,
