@@ -25,20 +25,22 @@
  * @test id=default
  * @bug 8312498
  * @summary Basic test for JVMTI GetThreadState with virtual threads
+ * @library /test/lib
  * @run junit/othervm/native GetThreadStateTest
  */
 
 /*
  * @test id=no-vmcontinuations
  * @requires vm.continuations
+ * @library /test/lib
  * @run junit/othervm/native -XX:+UnlockExperimentalVMOptions -XX:-VMContinuations GetThreadStateTest
  */
 
 import java.util.StringJoiner;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.LockSupport;
 
+import jdk.test.lib.thread.VThreadPinner;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
@@ -75,10 +77,10 @@ class GetThreadStateTest {
      */
     @Test
     void testRunnable() throws Exception {
-        var latch = new CountDownLatch(1);
+        var started = new AtomicBoolean();
         var done = new AtomicBoolean();
         var thread = Thread.ofVirtual().start(() -> {
-            latch.countDown();
+            started.set(true);
 
             // spin until done
             while (!done.get()) {
@@ -87,7 +89,7 @@ class GetThreadStateTest {
         });
         try {
             // wait for thread to start execution
-            latch.await();
+            awaitTrue(started);
 
             // thread should be runnable
             int expected = JVMTI_THREAD_STATE_ALIVE | JVMTI_THREAD_STATE_RUNNABLE;
@@ -107,17 +109,17 @@ class GetThreadStateTest {
      */
     @Test
     void testMonitorEnter() throws Exception {
-        var latch = new CountDownLatch(1);
+        var started = new AtomicBoolean();
         Object lock = new Object();
         var thread = Thread.ofVirtual().unstarted(() -> {
-            latch.countDown();
+            started.set(true);
             synchronized (lock) { }
         });
         try {
             synchronized (lock) {
                 // start thread and wait for it to start execution
                 thread.start();
-                latch.await();
+                awaitTrue(started);
 
                 // thread should block on monitor enter
                 int expected = JVMTI_THREAD_STATE_ALIVE | JVMTI_THREAD_STATE_BLOCKED_ON_MONITOR_ENTER;
@@ -137,19 +139,19 @@ class GetThreadStateTest {
      */
     @Test
     void testObjectWait() throws Exception {
-        var latch = new CountDownLatch(1);
+        var started = new AtomicBoolean();
         Object lock = new Object();
         var thread = Thread.ofVirtual().start(() -> {
             synchronized (lock) {
-                latch.countDown();
+                started.set(true);
                 try {
                     lock.wait();
                 } catch (InterruptedException e) { }
             }
         });
         try {
-            // wait for thread to own monitor
-            latch.await();
+            // wait for thread to start execution
+            awaitTrue(started);
 
             // thread should wait
             int expected = JVMTI_THREAD_STATE_ALIVE |
@@ -179,19 +181,19 @@ class GetThreadStateTest {
      */
     @Test
     void testObjectWaitMillis() throws Exception {
-        var latch = new CountDownLatch(1);
+        var started = new AtomicBoolean();
         Object lock = new Object();
         var thread = Thread.ofVirtual().start(() -> {
             synchronized (lock) {
-                latch.countDown();
+                started.set(true);
                 try {
                     lock.wait(Long.MAX_VALUE);
                 } catch (InterruptedException e) { }
             }
         });
         try {
-            // wait for thread to own monitor
-            latch.await();
+            // wait for thread to start execution
+            awaitTrue(started);
 
             // thread should wait
             int expected = JVMTI_THREAD_STATE_ALIVE |
@@ -221,17 +223,17 @@ class GetThreadStateTest {
      */
     @Test
     void testPark() throws Exception {
-        var latch = new CountDownLatch(1);
+        var started = new AtomicBoolean();
         var done = new AtomicBoolean();
         var thread = Thread.ofVirtual().start(() -> {
-            latch.countDown();
+            started.set(true);
             while (!done.get()) {
                 LockSupport.park();
             }
         });
         try {
             // wait for thread to start execution
-            latch.await();
+            awaitTrue(started);
 
             // thread should park
             int expected = JVMTI_THREAD_STATE_ALIVE |
@@ -251,17 +253,17 @@ class GetThreadStateTest {
      */
     @Test
     void testParkNanos() throws Exception {
-        var latch = new CountDownLatch(1);
+        var started = new AtomicBoolean();
         var done = new AtomicBoolean();
         var thread = Thread.ofVirtual().start(() -> {
-            latch.countDown();
+            started.set(true);
             while (!done.get()) {
                 LockSupport.parkNanos(Long.MAX_VALUE);
             }
         });
         try {
             // wait for thread to start execution
-            latch.await();
+            awaitTrue(started);
 
             // thread should park
             int expected = JVMTI_THREAD_STATE_ALIVE |
@@ -281,20 +283,19 @@ class GetThreadStateTest {
      */
     @Test
     void testParkWhenPinned() throws Exception {
-        var latch = new CountDownLatch(1);
-        Object lock = new Object();
+        var started = new AtomicBoolean();
         var done = new AtomicBoolean();
         var thread = Thread.ofVirtual().start(() -> {
-            synchronized (lock) {
-                latch.countDown();
+            VThreadPinner.runPinned(() -> {
+                started.set(true);
                 while (!done.get()) {
                     LockSupport.park();
                 }
-            }
+            });
         });
         try {
-            // wait for thread to own monitor
-            latch.await();
+            // wait for thread to start execution
+            awaitTrue(started);
 
             // thread should park
             int expected = JVMTI_THREAD_STATE_ALIVE |
@@ -314,20 +315,19 @@ class GetThreadStateTest {
      */
     @Test
     void testParkNanosWhenPinned() throws Exception {
-        var latch = new CountDownLatch(1);
-        Object lock = new Object();
+        var started = new AtomicBoolean();
         var done = new AtomicBoolean();
         var thread = Thread.ofVirtual().start(() -> {
-            synchronized (lock) {
-                latch.countDown();
+            VThreadPinner.runPinned(() -> {
+                started.set(true);
                 while (!done.get()) {
                     LockSupport.parkNanos(Long.MAX_VALUE);
                 }
-            }
+            });
         });
         try {
-            // wait for thread to own monitor
-            latch.await();
+            // wait for thread to start execution
+            awaitTrue(started);
 
             // thread should park
             int expected = JVMTI_THREAD_STATE_ALIVE |
@@ -339,6 +339,15 @@ class GetThreadStateTest {
             done.set(true);
             LockSupport.unpark(thread);
             thread.join();
+        }
+    }
+
+    /**
+     * Waits for the boolean value to become true.
+     */
+    private static void awaitTrue(AtomicBoolean ref) throws Exception {
+        while (!ref.get()) {
+            Thread.sleep(20);
         }
     }
 
