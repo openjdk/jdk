@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -644,7 +644,7 @@ public class BufferedInputStream extends FilterInputStream {
             int avail = count - pos;
             if (avail > 0) {
                 if (isTrusted(out)) {
-                    out.write(getBufIfOpen(), pos, count);
+                    out.write(getBufIfOpen(), pos, avail);
                 } else {
                     // Prevent poisoning and leaking of buf
                     byte[] buffer = Arrays.copyOfRange(getBufIfOpen(), pos, count);

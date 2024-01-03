@@ -503,7 +503,6 @@ java/lang/instrument/RetransformBigClass.sh                     8065756 generic-
 # jdk_io
 
 java/io/pathNames/GeneralWin32.java                             8180264 windows-all
-java/io/BufferedInputStream/TransferTo.java                     8322877 generic-all
 
 ############################################################################
 
