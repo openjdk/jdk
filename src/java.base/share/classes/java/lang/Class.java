@@ -261,7 +261,7 @@ public final class Class<T> implements java.io.Serializable,
 
     /**
      * Returns a string describing this {@code Class}, including
-     * information about modifiers and type parameters.
+     * information about modifiers, {@linkplain #isSealed() sealing}, and type parameters.
      *
      * The string is formatted as a list of type modifiers, if any,
      * followed by the kind of type (empty string for primitive types
@@ -312,6 +312,14 @@ public final class Class<T> implements java.io.Serializable,
                 if (modifiers != 0) {
                     sb.append(Modifier.toString(modifiers));
                     sb.append(' ');
+                }
+
+                // A class cannot be strictfp and sealed so it is
+                // sufficient to check for sealed-ness after all
+                // modifiers are printed.
+                boolean isSealed = isSealed();
+                if (isSealed) {
+                    sb.append("sealed ");
                 }
 
                 if (isAnnotation()) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,8 @@
 
 /*
  * @test
- * @bug 6298888 6992705 8161500 6304578
+ * @bug 6298888 6992705 8161500 6304578 8322878
  * @summary Check Class.toGenericString()
- * @author Joseph D. Darcy
  */
 
 import java.lang.reflect.*;
@@ -43,7 +42,7 @@ public class GenericStringTest {
         String[][] nested = {{""}};
         int[][]    intArray = {{1}};
 
-        Map<Class<?>, String> testCases =
+        Map<Class<?>, String> platformTestCases =
             Map.of(int.class,                          "int",
                    void.class,                         "void",
                    args.getClass(),                    "java.lang.String[]",
@@ -52,10 +51,15 @@ public class GenericStringTest {
                    java.lang.Enum.class,               "public abstract class java.lang.Enum<E extends java.lang.Enum<E>>",
                    java.util.Map.class,                "public abstract interface java.util.Map<K,V>",
                    java.util.EnumMap.class,            "public class java.util.EnumMap<K extends java.lang.Enum<K>,V>",
-                   java.util.EventListenerProxy.class, "public abstract class java.util.EventListenerProxy<T extends java.util.EventListener>");
+                   java.util.EventListenerProxy.class, "public abstract class java.util.EventListenerProxy<T extends java.util.EventListener>",
 
-        for (Map.Entry<Class<?>, String> testCase : testCases.entrySet()) {
-            failures += checkToGenericString(testCase.getKey(), testCase.getValue());
+                   // Sealed class
+                   java.lang.ref.Reference.class,      "public abstract sealed class java.lang.ref.Reference<T>"
+                   );
+
+        for (Map.Entry<Class<?>, String> platformTestCase : platformTestCases.entrySet()) {
+            failures += checkToGenericString(platformTestCase.getKey(),
+                                             platformTestCase.getValue());
         }
 
         Field f = GenericStringTest.class.getDeclaredField("mixed");
@@ -107,7 +111,10 @@ enum AnEnum {
     FOO;
 }
 
-@ExpectedGenericString("enum AnotherEnum")
+// If an enum class has a specialized enum constant, that is compiled
+// by having the enum class as being sealed rather than final. See JLS
+// 8.9 Enum Classes.
+@ExpectedGenericString("sealed enum AnotherEnum")
 enum AnotherEnum {
     BAR{};
 }
