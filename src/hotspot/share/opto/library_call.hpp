@@ -245,6 +245,7 @@ class LibraryCallKit : public GraphKit {
 #if INCLUDE_JVMTI
   bool inline_native_notify_jvmti_funcs(address funcAddr, const char* funcName, bool is_start, bool is_end);
   bool inline_native_notify_jvmti_hide();
+  bool inline_native_notify_jvmti_sync();
 #endif
 
 #ifdef JFR_HAVE_INTRINSICS

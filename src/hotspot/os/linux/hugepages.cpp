@@ -28,6 +28,7 @@
 
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
+#include "runtime/globals_extension.hpp"
 #include "runtime/os.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -227,15 +228,97 @@ void THPSupport::print_on(outputStream* os) {
   }
 }
 
+ShmemTHPSupport::ShmemTHPSupport() :
+    _initialized(false), _mode(ShmemTHPMode::unknown) {}
+
+ShmemTHPMode ShmemTHPSupport::mode() const {
+  assert(_initialized, "Not initialized");
+  return _mode;
+}
+
+bool ShmemTHPSupport::is_forced() const {
+  return _mode == ShmemTHPMode::always || _mode == ShmemTHPMode::force || _mode == ShmemTHPMode::within_size;
+}
+
+bool ShmemTHPSupport::is_enabled() const {
+  return is_forced() || _mode == ShmemTHPMode::advise;
+}
+
+bool ShmemTHPSupport::is_disabled() const {
+  return _mode == ShmemTHPMode::never || _mode == ShmemTHPMode::deny || _mode == ShmemTHPMode::unknown;
+}
+
+void ShmemTHPSupport::scan_os() {
+  // Scan /sys/kernel/mm/transparent_hugepage/shmem_enabled
+  // see mm/huge_memory.c
+  _mode = ShmemTHPMode::unknown;
+  const char* filename = "/sys/kernel/mm/transparent_hugepage/shmem_enabled";
+  FILE* f = ::fopen(filename, "r");
+  if (f != nullptr) {
+    char buf[64];
+    char* s = fgets(buf, sizeof(buf), f);
+    assert(s == buf, "Should have worked");
+    if (::strstr(buf, "[always]") != nullptr) {
+      _mode = ShmemTHPMode::always;
+    } else if (::strstr(buf, "[within_size]") != nullptr) {
+      _mode = ShmemTHPMode::within_size;
+    } else if (::strstr(buf, "[advise]") != nullptr) {
+      _mode = ShmemTHPMode::advise;
+    } else if (::strstr(buf, "[never]") != nullptr) {
+      _mode = ShmemTHPMode::never;
+    } else if (::strstr(buf, "[deny]") != nullptr) {
+      _mode = ShmemTHPMode::deny;
+    } else if (::strstr(buf, "[force]") != nullptr) {
+      _mode = ShmemTHPMode::force;
+    } else {
+      assert(false, "Weird content of %s: %s", filename, buf);
+    }
+    fclose(f);
+  }
+
+  _initialized = true;
+
+  LogTarget(Info, pagesize) lt;
+  if (lt.is_enabled()) {
+    LogStream ls(lt);
+    print_on(&ls);
+  }
+}
+
+const char* ShmemTHPSupport::mode_to_string(ShmemTHPMode mode) {
+  switch (mode) {
+    case ShmemTHPMode::always:      return "always";
+    case ShmemTHPMode::advise:      return "advise";
+    case ShmemTHPMode::within_size: return "within_size";
+    case ShmemTHPMode::never:       return "never";
+    case ShmemTHPMode::deny:        return "deny";
+    case ShmemTHPMode::force:       return "force";
+    case ShmemTHPMode::unknown:      // Fallthrough
+    default:                        return "unknown";
+  };
+}
+
+void ShmemTHPSupport::print_on(outputStream* os) {
+  if (_initialized) {
+    os->print_cr("Shared memory transparent hugepage (THP) support:");
+    os->print_cr("  Shared memory THP mode: %s", mode_to_string(_mode));
+  } else {
+    os->print_cr("  unknown.");
+  }
+}
+
 StaticHugePageSupport HugePages::_static_hugepage_support;
 THPSupport HugePages::_thp_support;
+ShmemTHPSupport HugePages::_shmem_thp_support;
 
 void HugePages::initialize() {
   _static_hugepage_support.scan_os();
   _thp_support.scan_os();
+  _shmem_thp_support.scan_os();
 }
 
 void HugePages::print_on(outputStream* os) {
   _static_hugepage_support.print_on(os);
   _thp_support.print_on(os);
+  _shmem_thp_support.print_on(os);
 }

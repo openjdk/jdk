@@ -44,35 +44,83 @@ import java.util.Arrays;
 import java.util.List;
 
 public class CheckLargePages {
-    private final static WhiteBox WHITE_BOX = WhiteBox.getWhiteBox();
+    private final static long LP_1G = 1024 * 1024 * 1024;
+    private final static boolean LARGE_PAGES_ENABLED;
+    private final static long LARGE_PAGE_SIZE;
 
+    static {
+        WhiteBox whiteBox = WhiteBox.getWhiteBox();
+        LARGE_PAGES_ENABLED = whiteBox.getBooleanVMFlag("UseLargePages");
+        LARGE_PAGE_SIZE = (whiteBox.getBooleanVMFlag("UseLargePages")) ? whiteBox.getVMLargePageSize() : 0;
+    }
+
+    private static boolean isLargePageSizeEqual(long size) {
+        return LARGE_PAGE_SIZE == size;
+    }
+
+    private static void testSegmented2GbCodeCacheWith1GbPage() throws Exception {
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+                "-XX:+UseLargePages",
+                "-XX:+SegmentedCodeCache",
+                "-XX:InitialCodeCacheSize=2g",
+                "-XX:ReservedCodeCacheSize=2g",
+                "-XX:LargePageSizeInBytes=1g",
+                "-Xlog:pagesize=info",
+                "-version");
+        OutputAnalyzer out = new OutputAnalyzer(pb.start());
+        out.shouldMatch("Code cache size too small for \\S* pages\\. Reverting to smaller page size \\((\\S*)\\)\\.");
+        out.shouldHaveExitValue(0);
+        // Parse page sizes to find next biggest page
+        String sizes = out.firstMatch("Usable page sizes:([^.]+)", 1);
+        List<Long> sizeList = Arrays.stream(sizes.trim().split("\\s*,\\s*")).map(CheckLargePages::parseMemoryString)
+                .sorted().toList();
+        final int smallerPageSizeIndex = sizeList.indexOf(LARGE_PAGE_SIZE) - 1;
+        Asserts.assertGreaterThanOrEqual(smallerPageSizeIndex, 0);
+        final long smallerPageSize = sizeList.get(smallerPageSizeIndex);
+        // Retrieve reverted page size from code cache warning
+        String revertedSizeString = out.firstMatch(
+                "Code cache size too small for (\\S*) pages. Reverting to smaller page size \\((\\S*)\\)\\.", 2);
+        Asserts.assertEquals(parseMemoryString(revertedSizeString), smallerPageSize);
+    }
+
+    private static void testDefaultCodeCacheWith1GbLargePages() throws Exception {
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+                "-XX:+UseLargePages",
+                "-XX:LargePageSizeInBytes=1g",
+                "-XX:+PrintCodeCache",
+                "-version");
+        OutputAnalyzer out = new OutputAnalyzer(pb.start());
+        out.shouldHaveExitValue(0);
+        out.shouldContain("CodeHeap 'non-nmethods'");
+        out.shouldContain("CodeHeap 'profiled nmethods'");
+        out.shouldContain("CodeHeap 'non-profiled nmethods'");
+    }
+
+    private static void testNonSegmented1GbCodeCacheWith1GbLargePages() throws Exception {
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+                "-XX:+UseLargePages",
+                "-XX:LargePageSizeInBytes=1g",
+                "-XX:ReservedCodeCacheSize=1g",
+                "-XX:InitialCodeCacheSize=1g",
+                "-XX:+PrintCodeCache",
+                "-Xlog:pagesize=info",
+                "-version");
+        OutputAnalyzer out = new OutputAnalyzer(pb.start());
+        out.shouldHaveExitValue(0);
+        out.shouldNotContain("CodeHeap 'non-nmethods'");
+        out.shouldNotContain("CodeHeap 'profiled nmethods'");
+        out.shouldNotContain("CodeHeap 'non-profiled nmethods'");
+        out.shouldContain("UseLargePages=1, UseTransparentHugePages=0");
+        out.shouldMatch("CodeCache:  min=1[gG] max=1[gG] base=[^ ]+ size=1[gG] page_size=1[gG]");
+    }
     public static void main(String[] args) throws Exception {
-        final boolean largePages = WHITE_BOX.getBooleanVMFlag("UseLargePages");
-        final long largePageSize = WHITE_BOX.getVMLargePageSize();
-        if (largePages && (largePageSize == 1024 * 1024 * 1024)) {
-            ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
-                    "-XX:+UseLargePages",
-                    "-XX:+SegmentedCodeCache",
-                    "-XX:InitialCodeCacheSize=2g",
-                    "-XX:ReservedCodeCacheSize=2g",
-                    "-XX:LargePageSizeInBytes=1g",
-                    "-Xlog:pagesize=info",
-                    "-version");
-            OutputAnalyzer out = new OutputAnalyzer(pb.start());
-            out.shouldMatch("Code cache size too small for \\S* pages\\. Reverting to smaller page size \\((\\S*)\\)\\.");
-            out.shouldHaveExitValue(0);
-            // Parse page sizes to find next biggest page
-            String sizes = out.firstMatch("Usable page sizes:(.*)", 1);
-            List<Long> sizeList = Arrays.stream(sizes.trim().split("\\s*,\\s*")).map(CheckLargePages::parseMemoryString).sorted().toList();
-            final int smallerPageSizeIndex = sizeList.indexOf(largePageSize) - 1;
-            Asserts.assertGreaterThanOrEqual(smallerPageSizeIndex, 0);
-            final long smallerPageSize = sizeList.get(smallerPageSizeIndex);
-            // Retrieve reverted page size from code cache warning
-            String revertedSizeString = out.firstMatch("Code cache size too small for (\\S*) pages. Reverting to smaller page size \\((\\S*)\\)\\.", 2);
-            Asserts.assertEquals(parseMemoryString(revertedSizeString), smallerPageSize);
+        if (isLargePageSizeEqual(LP_1G)) {
+            testSegmented2GbCodeCacheWith1GbPage();
+            testDefaultCodeCacheWith1GbLargePages();
+            testNonSegmented1GbCodeCacheWith1GbLargePages();
         } else {
-            System.out.println("1GB large pages not supported: UseLargePages=" + largePages +
-                    (largePages ? ", largePageSize=" + largePageSize : "") + ". Skipping");
+            System.out.println("1GB large pages not supported: UseLargePages=" + LARGE_PAGES_ENABLED +
+                    (LARGE_PAGES_ENABLED ? ", largePageSize=" + LARGE_PAGE_SIZE : "") + ". Skipping");
         }
     }
 
