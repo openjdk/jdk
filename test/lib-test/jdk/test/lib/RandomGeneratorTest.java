@@ -69,7 +69,7 @@ public class RandomGeneratorTest {
         jvmArgs.add(origFileName);
         int fileNameIndex = jvmArgs.size() - 1;
         String[] cmdLineArgs = jvmArgs.toArray(new String[jvmArgs.size()]);
-        ProcessTools.executeTestJvm(cmdLineArgs).shouldHaveExitValue(0);
+        ProcessTools.executeTestJava(cmdLineArgs).shouldHaveExitValue(0);
         String etalon = Utils.fileAsString(origFileName).trim();
         cmdLineArgs[fileNameIndex] = seedOpt.name();
         seedOpt.verify(etalon, cmdLineArgs);
@@ -143,7 +143,7 @@ public class RandomGeneratorTest {
             String output;
             OutputAnalyzer oa;
             try {
-                oa = ProcessTools.executeTestJvm(cmdLine);
+                oa = ProcessTools.executeTestJava(cmdLine);
             } catch (Throwable t) {
                 throw new Error("TESTBUG: Unexpedted exception during jvm execution.", t);
             }

@@ -608,43 +608,69 @@ public final class ProcessTools {
     }
 
     /**
-     * Executes a test jvm process, waits for it to finish and returns
+     * Executes a process using the java launcher from the jdk to
+     * be tested, waits for it to finish and returns
      * the process output.
      *
      * <p>The process is created using runtime flags set up by:
      * {@link #createTestJavaProcessBuilder(String...)}. The
      * jvm process will have exited before this method returns.
      *
-     * @param cmds User specified arguments.
+     * @param command User specified arguments.
      * @return The output from the process.
      */
-    public static OutputAnalyzer executeTestJvm(List<String> cmds) throws Exception {
-        return executeTestJvm(cmds.toArray(String[]::new));
+    public static OutputAnalyzer executeTestJava(List<String> command) throws Exception {
+        return executeTestJava(command.toArray(String[]::new));
     }
 
     /**
-     * Executes a test jvm process, waits for it to finish and returns
+     * Executes a process using the java launcher from the jdk to
+     * be tested, waits for it to finish and returns
      * the process output.
      *
      * <p>The process is created using runtime flags set up by:
      * {@link #createTestJavaProcessBuilder(String...)}. The
      * jvm process will have exited before this method returns.
      *
-     * @param cmds User specified arguments.
+     * @param command User specified arguments.
      * @return The output from the process.
      */
-    public static OutputAnalyzer executeTestJvm(String... cmds) throws Exception {
-        ProcessBuilder pb = createTestJavaProcessBuilder(cmds);
+    public static OutputAnalyzer executeTestJava(String... command) throws Exception {
+        ProcessBuilder pb = createTestJavaProcessBuilder(command);
         return executeProcess(pb);
     }
 
     /**
-     * @param cmds User specified arguments.
+     * Executes a process using the java launcher from the jdk to
+     * be tested, waits for it to finish and returns
+     * the process output.
+     *
+     * <p>The process is created using runtime flags set up by:
+     * {@link #createLimitedTestJavaProcessBuilder(String...)}. The
+     * jvm process will have exited before this method returns.
+     *
+     * @param command User specified arguments.
      * @return The output from the process.
-     * @see #executeTestJvm(String...)
      */
-    public static OutputAnalyzer executeTestJava(String... cmds) throws Exception {
-        return executeTestJvm(cmds);
+    public static OutputAnalyzer executeLimitedTestJava(List<String> command) throws Exception {
+        return executeLimitedTestJava(command.toArray(String[]::new));
+    }
+
+    /**
+     * Executes a process using the java launcher from the jdk to
+     * be tested, waits for it to finish and returns
+     * the process output.
+     *
+     * <p>The process is created using runtime flags set up by:
+     * {@link #createLimitedTestJavaProcessBuilder(String...)}. The
+     * jvm process will have exited before this method returns.
+     *
+     * @param command User specified arguments.
+     * @return The output from the process.
+     */
+    public static OutputAnalyzer executeLimitedTestJava(String... command) throws Exception {
+        ProcessBuilder pb = createLimitedTestJavaProcessBuilder(command);
+        return executeProcess(pb);
     }
 
     /**
@@ -697,7 +723,10 @@ public final class ProcessTools {
             }
 
             output = new OutputAnalyzer(p, cs);
-            p.waitFor();
+
+            // Wait for the process to finish. Call through the output
+            // analyzer to get correct logging and timestamps.
+            output.waitFor();
 
             {   // Dumping the process output to a separate file
                 var fileName = String.format("pid-%d-output.log", p.pid());
