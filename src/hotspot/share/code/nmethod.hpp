@@ -621,7 +621,7 @@ public:
 #if defined(SUPPORT_DATA_STRUCTS)
   // print output in opt build for disassembler library
   void print_relocations()                        PRODUCT_RETURN;
-  virtual void print_pcs_on(outputStream* st) override final;
+  void print_pcs_on(outputStream* st);
   void print_scopes() { print_scopes_on(tty); }
   void print_scopes_on(outputStream* st)          PRODUCT_RETURN;
   void print_value_on(outputStream* st) const;
@@ -634,7 +634,7 @@ public:
   void print_oops(outputStream* st);     // oops from the underlying CodeBlob.
   void print_metadata(outputStream* st); // metadata in metadata pool.
 #else
-  virtual void print_pcs_on(outputStream* st) override final { return; }
+  void print_pcs_on(outputStream* st) { return; }
 #endif
 
   void print_calls(outputStream* st)              PRODUCT_RETURN;
