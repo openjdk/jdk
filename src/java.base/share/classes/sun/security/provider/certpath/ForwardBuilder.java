@@ -561,7 +561,7 @@ public final class ForwardBuilder extends Builder {
         if (minLen == 0) {
             return null;
         }
- 
+
         // Compare names from highest RDN down the naming tree.
         int i = 0;
         for (; i < minLen; i++) {
