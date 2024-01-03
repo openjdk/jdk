@@ -190,7 +190,7 @@ class Invokers {
 
     private boolean checkInvoker(MethodHandle invoker) {
         assert(targetType.invokerType().equals(invoker.type()))
-                : java.util.Arrays.asList(targetType, targetType.invokerType(), invoker);
+                : Arrays.asList(targetType, targetType.invokerType(), invoker);
         assert(invoker.internalMemberName() == null ||
                invoker.internalMemberName().getMethodType().equals(targetType));
         assert(!invoker.isVarargsCollector());
@@ -200,7 +200,7 @@ class Invokers {
     private boolean checkVarHandleInvoker(MethodHandle invoker) {
         MethodType invokerType = targetType.insertParameterTypes(0, VarHandle.class);
         assert(invokerType.equals(invoker.type()))
-                : java.util.Arrays.asList(targetType, invokerType, invoker);
+                : Arrays.asList(targetType, invokerType, invoker);
         assert(invoker.internalMemberName() == null ||
                invoker.internalMemberName().getMethodType().equals(targetType));
         assert(!invoker.isVarargsCollector());
