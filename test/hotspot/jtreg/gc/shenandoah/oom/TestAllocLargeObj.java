@@ -55,7 +55,7 @@ public class TestAllocLargeObj {
         }
 
         {
-            OutputAnalyzer output = ProcessTools.executeLimitedTestJava(
+            OutputAnalyzer analyzer = ProcessTools.executeLimitedTestJava(
                     "-Xmx16m",
                     "-XX:+UnlockExperimentalVMOptions",
                     "-XX:+UseShenandoahGC",
@@ -67,7 +67,7 @@ public class TestAllocLargeObj {
         }
 
         {
-            OutputAnalyzer output = ProcessTools.executeLimitedTestJava(
+            OutputAnalyzer analyzer = ProcessTools.executeLimitedTestJava(
                     "-Xmx1g",
                     "-XX:+UnlockExperimentalVMOptions",
                     "-XX:+UseShenandoahGC",
