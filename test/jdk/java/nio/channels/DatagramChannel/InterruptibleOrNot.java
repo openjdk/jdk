@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @bug 8236246
  * @modules java.base/sun.nio.ch
- * @run testng InterruptibleOrNot
+ * @run junit InterruptibleOrNot
  * @summary Test SelectorProviderImpl.openDatagramChannel(boolean) to create
  *     DatagramChannel objects that optionally support interrupt
  */
@@ -43,75 +43,50 @@ import java.time.Duration;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import sun.nio.ch.DefaultSelectorProvider;
 
-import org.testng.annotations.Test;
-import static org.testng.Assert.*;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.AfterAll;
+import static org.junit.jupiter.api.Assertions.*;
 
-@Test
 public class InterruptibleOrNot {
 
+    // used for scheduling thread interrupt or close
+    private static ScheduledExecutorService scheduler;
+
+    @BeforeAll
+    static void setup() throws Exception {
+        ThreadFactory factory = Executors.defaultThreadFactory();
+        scheduler = Executors.newSingleThreadScheduledExecutor(factory);
+    }
+
+    @AfterAll
+    static void finish() {
+        scheduler.shutdown();
+    }
+
+    @Test
     public void testInterruptBeforeInterruptibleReceive() throws Exception {
-        testInterruptBeforeReceive(true);
-    }
-
-    public void testInterruptDuringInterruptibleReceive() throws Exception {
-        testInterruptDuringReceive(true);
-    }
-
-    public void testInterruptBeforeUninterruptibleReceive() throws Exception {
-        testInterruptBeforeReceive(false);
-    }
-
-    public void testInterruptDuringUninterruptibleReceive() throws Exception {
-        testInterruptDuringReceive(false);
-    }
-
-    public void testInterruptBeforeInterruptibleSend() throws Exception {
-        testInterruptBeforeSend(true);
-    }
-
-    public void testInterruptBeforeUninterruptibleSend() throws Exception {
-        testInterruptBeforeSend(false);
-    }
-
-    /**
-     * Test invoking DatagramChannel receive with interrupt status set
-     */
-    static void testInterruptBeforeReceive(boolean interruptible)
-        throws Exception
-    {
-        try (DatagramChannel dc = openDatagramChannel(interruptible)) {
-            dc.bind(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0));
-            Future<?> timeout = scheduleClose(dc, Duration.ofSeconds(2));
-            try {
-                ByteBuffer buf = ByteBuffer.allocate(100);
-                Thread.currentThread().interrupt();
-                assertThrows(expectedException(interruptible), () -> dc.receive(buf));
-            } finally {
-                timeout.cancel(false);
-            }
+        try (DatagramChannel dc = boundDatagramChannel(true)) {
+            ByteBuffer buf = ByteBuffer.allocate(100);
+            Thread.currentThread().interrupt();
+            assertThrows(ClosedByInterruptException.class, () -> dc.receive(buf));
         } finally {
             Thread.interrupted();  // clear interrupt
         }
     }
 
-    /**
-     * Test Thread.interrupt when target thread is blocked in DatagramChannel receive
-     */
-    static void testInterruptDuringReceive(boolean interruptible)
-        throws Exception
-    {
-        try (DatagramChannel dc = openDatagramChannel(interruptible)) {
-            dc.bind(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0));
-            Future<?> timerTask = scheduleClose(dc, Duration.ofSeconds(5));
-            Future<?> interruptTask = scheduleInterrupt(Thread.currentThread(), Duration.ofSeconds(1));
+    @Test
+    public void testInterruptDuringInterruptibleReceive() throws Exception {
+        try (DatagramChannel dc = boundDatagramChannel(true)) {
+            ByteBuffer buf = ByteBuffer.allocate(100);
+            Future<?> interruptTask = scheduleInterrupt(Thread.currentThread(), Duration.ofSeconds(2));
             try {
-                ByteBuffer buf = ByteBuffer.allocate(100);
-                assertThrows(expectedException(interruptible), () -> dc.receive(buf));
+                assertThrows(ClosedByInterruptException.class, () -> dc.receive(buf));
             } finally {
-                timerTask.cancel(false);
                 interruptTask.cancel(false);
             }
         } finally {
@@ -119,53 +94,84 @@ public class InterruptibleOrNot {
         }
     }
 
-    /**
-     * Test invoking DatagramChannel send with interrupt status set
-     */
-    static void testInterruptBeforeSend(boolean interruptible)
-        throws Exception
-    {
-        try (DatagramChannel dc = openDatagramChannel(interruptible)) {
-            dc.bind(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0));
-            Future<?> timeout = scheduleClose(dc, Duration.ofSeconds(2));
+    @Test
+    public void testInterruptBeforeUninterruptibleReceive() throws Exception {
+        try (DatagramChannel dc = boundDatagramChannel(false)) {
+            ByteBuffer buf = ByteBuffer.allocate(100);
+            // give thread enough time to block in receive
+            Future<?> closeTask = scheduleClose(dc, Duration.ofSeconds(5));
             try {
-                ByteBuffer buf = ByteBuffer.allocate(100);
-                SocketAddress target = dc.getLocalAddress();
                 Thread.currentThread().interrupt();
-                if (interruptible) {
-                    assertThrows(ClosedByInterruptException.class, () -> dc.send(buf, target));
-                } else {
-                    int n = dc.send(buf, target);
-                    assertTrue(n == 100);
-                }
+                assertThrows(AsynchronousCloseException.class, () -> dc.receive(buf));
             } finally {
-                timeout.cancel(false);
+                closeTask.cancel(false);
             }
         } finally {
             Thread.interrupted();  // clear interrupt
         }
     }
 
-    /**
-     * Creates a DatagramChannel that is interruptible or not.
-     */
-    static DatagramChannel openDatagramChannel(boolean interruptible) throws IOException {
-        if (interruptible) {
-            return DatagramChannel.open();
-        } else {
-            return DefaultSelectorProvider.get().openUninterruptibleDatagramChannel();
+    @Test
+    public void testInterruptDuringUninterruptibleReceive() throws Exception {
+        try (DatagramChannel dc = boundDatagramChannel(true)) {
+            ByteBuffer buf = ByteBuffer.allocate(100);
+            // the interrupt should not cause the receive to wakeup
+            Future<?> interruptTask = scheduleInterrupt(Thread.currentThread(), Duration.ofSeconds(2));
+            Future<?> closeTask = scheduleClose(dc, Duration.ofSeconds(5));
+            try {
+                assertThrows(AsynchronousCloseException.class, () -> dc.receive(buf));
+            } finally {
+                closeTask.cancel(false);
+                interruptTask.cancel(false);
+            }
+        } finally {
+            Thread.interrupted();  // clear interrupt
+        }
+    }
+
+    @Test
+    public void testInterruptBeforeInterruptibleSend() throws Exception {
+        try (DatagramChannel dc = boundDatagramChannel(true)) {
+            ByteBuffer buf = ByteBuffer.allocate(100);
+            SocketAddress target = dc.getLocalAddress();
+            Thread.currentThread().interrupt();
+            assertThrows(ClosedByInterruptException.class, () -> dc.send(buf, target));
+        } finally {
+            Thread.interrupted();  // clear interrupt
+        }
+    }
+
+    @Test
+    public void testInterruptBeforeUninterruptibleSend() throws Exception {
+        try (DatagramChannel dc = boundDatagramChannel(false)) {
+            ByteBuffer buf = ByteBuffer.allocate(100);
+            SocketAddress target = dc.getLocalAddress();
+            Thread.currentThread().interrupt();
+            int n = dc.send(buf, target);
+            assertTrue(n == 100);
+        } finally {
+            Thread.interrupted();  // clear interrupt
         }
     }
 
     /**
-     * Expect ClosedByInterruptException if interruptible.
+     * Creates a DatagramChannel that is interruptible or not, and bound to the loopback
+     * address.
      */
-    static Class<? extends Exception> expectedException(boolean expectInterrupt) {
-        if (expectInterrupt) {
-            return ClosedByInterruptException.class;
+    static DatagramChannel boundDatagramChannel(boolean interruptible) throws IOException {
+        DatagramChannel dc;
+        if (interruptible) {
+            dc = DatagramChannel.open();
         } else {
-            return AsynchronousCloseException.class;
+            dc = DefaultSelectorProvider.get().openUninterruptibleDatagramChannel();
         }
+        try {
+            dc.bind(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0));
+        } catch (IOException ioe) {
+            dc.close();
+            throw ioe;
+        }
+        return dc;
     }
 
     /**
@@ -173,7 +179,7 @@ public class InterruptibleOrNot {
      */
     static Future<?> scheduleClose(Closeable c, Duration timeout) {
         long nanos = TimeUnit.NANOSECONDS.convert(timeout);
-        return STPE.schedule(() -> {
+        return scheduler.schedule(() -> {
             c.close();
             return null;
         }, nanos, TimeUnit.NANOSECONDS);
@@ -184,8 +190,6 @@ public class InterruptibleOrNot {
      */
     static Future<?> scheduleInterrupt(Thread t, Duration timeout) {
         long nanos = TimeUnit.NANOSECONDS.convert(timeout);
-        return STPE.schedule(t::interrupt, nanos, TimeUnit.NANOSECONDS);
+        return scheduler.schedule(t::interrupt, nanos, TimeUnit.NANOSECONDS);
     }
-
-    static final ScheduledExecutorService STPE = Executors.newScheduledThreadPool(0);
 }
