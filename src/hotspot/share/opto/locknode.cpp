@@ -341,7 +341,7 @@ void Parse::do_monitor_exit() {
               }
             }
 
-            new_rgn = _gvn.transform_no_reclaim(new_rgn);
+            new_rgn = _gvn.transform(new_rgn);
             set_control(new_rgn);
             record_for_igvn(new_rgn);
 
