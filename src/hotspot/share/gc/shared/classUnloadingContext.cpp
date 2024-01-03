@@ -32,10 +32,13 @@
 
 ClassUnloadingContext* ClassUnloadingContext::_context = nullptr;
 
-ClassUnloadingContext::ClassUnloadingContext(uint num_workers, bool lock_codeblob_free_separately) :
+ClassUnloadingContext::ClassUnloadingContext(uint num_workers,
+                                             bool unregister_nmethods_during_purge,
+                                             bool lock_codeblob_free_separately) :
   _cld_head(nullptr),
   _num_nmethod_unlink_workers(num_workers),
   _unlinked_nmethods(nullptr),
+  _unregister_nmethods_during_purge(unregister_nmethods_during_purge),
   _lock_codeblob_free_separately(lock_codeblob_free_separately) {
 
   assert(_context == nullptr, "context already set");
@@ -113,7 +116,7 @@ void ClassUnloadingContext::purge_nmethods() {
     NMethodSet* set = _unlinked_nmethods[i];
     for (nmethod* nm : *set) {
       freed_memory += nm->size();
-      nm->purge(false /* free_code_cache_data */);
+      nm->purge(false /* free_code_cache_data */, _unregister_nmethods_during_purge);
     }
   }
 

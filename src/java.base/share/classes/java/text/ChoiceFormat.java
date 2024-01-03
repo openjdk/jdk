@@ -88,7 +88,6 @@ import java.util.Arrays;
  * <p>
  * Below is an example of constructing a ChoiceFormat with arrays to format
  * and parse values:
- * <blockquote>
  * {@snippet lang=java :
  * double[] limits = {1,2,3,4,5,6,7};
  * String[] dayOfWeekNames = {"Sun","Mon","Tue","Wed","Thur","Fri","Sat"};
@@ -100,34 +99,27 @@ import java.util.Arrays;
  *                              + form.parse(form.format(i),status));
  * }
  * }
- * </blockquote>
+ *
+ * <p>
  * For more sophisticated patterns, {@code ChoiceFormat} can be used with
  * {@link MessageFormat} to produce accurate forms for singular and plural:
- * <blockquote>
  * {@snippet lang=java :
- * double[] filelimits = {0,1,2};
- * String[] filepart = {"are no files","is one file","are {2} files"};
- * ChoiceFormat fileform = new ChoiceFormat(filelimits, filepart);
- * Format[] testFormats = {fileform, null, NumberFormat.getInstance()};
- * MessageFormat pattform = new MessageFormat("There {0} on {1}");
- * pattform.setFormats(testFormats);
- * Object[] testArgs = {null, "ADisk", null};
- * for (int i = 0; i < 4; ++i) {
- *     testArgs[0] = Integer.valueOf(i);
- *     testArgs[2] = testArgs[0];
- *     System.out.println(pattform.format(testArgs));
+ * MessageFormat msgFmt = new MessageFormat("The disk \"{0}\" contains {1}.");
+ * double[] fileLimits = {0,1,2};
+ * String[] filePart = {"no files","one file","{1,number} files"};
+ * ChoiceFormat fileChoices = new ChoiceFormat(fileLimits, filePart);
+ * msgFmt.setFormatByArgumentIndex(1, fileChoices);
+ * Object[] args = {"MyDisk", 1273};
+ * System.out.println(msgFmt.format(args));
  * }
- * }
- * </blockquote>
- * Would output the following:
- * <blockquote>
- * <pre>{@code
- * There are no files on ADisk
- * There is one file on ADisk
- * There are 2 files on ADisk
- * There are 3 files on ADisk
- * }</pre>
- * </blockquote>
+ * The output with different values for {@code fileCount}:
+ * <blockquote><pre>
+ * The disk "MyDisk" contains no files.
+ * The disk "MyDisk" contains one file.
+ * The disk "MyDisk" contains 1,273 files.
+ * </pre></blockquote>
+ * See {@link MessageFormat##pattern_caveats MessageFormat} for caveats regarding
+ * {@code MessageFormat} patterns within a {@code ChoiceFormat} pattern.
  *
  * <h2><a id="patterns">Patterns</a></h2>
  * A {@code ChoiceFormat} pattern has the following syntax:
@@ -194,7 +186,6 @@ import java.util.Arrays;
  * {@code new ChoiceFormat("1# ''one'' ").format(1)} returns {@code " 'one' "}.
  *
  * <p>Below is an example of constructing a ChoiceFormat with a pattern:
- * <blockquote>
  * {@snippet lang=java :
  * ChoiceFormat fmt = new ChoiceFormat(
  *      "-1#is negative| 0#is zero or fraction | 1#is one |1.0<is 1+ |2#is two |2<is more than 2.");
@@ -210,7 +201,6 @@ import java.util.Arrays;
  * System.out.println(fmt.format(Double.NaN)); // outputs "is negative"
  * System.out.println(fmt.format(Double.POSITIVE_INFINITY)); // outputs "is more than 2."
  * }
- * </blockquote>
  *
  * <h2><a id="synchronization">Synchronization</a></h2>
  *

@@ -136,7 +136,7 @@ class ClassHierarchyInfoTest {
                     else
                         clb.with(cle);
                 });
-        var errors = ClassFile.of().parse(newBytes).verify(null);
+        var errors = ClassFile.of().verify(newBytes);
         if (!errors.isEmpty()) {
             var itr = errors.iterator();
             var thrown = itr.next();
