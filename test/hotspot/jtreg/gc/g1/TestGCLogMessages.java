@@ -268,29 +268,27 @@ public class TestGCLogMessages {
     };
 
     private void testWithEvacuationFailureLogs() throws Exception {
-        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:+UseG1GC",
-                                                                             "-Xmx32M",
-                                                                             "-Xmn16M",
-                                                                             "-XX:+G1GCAllocationFailureALot",
-                                                                             "-XX:G1GCAllocationFailureALotCount=100",
-                                                                             "-XX:G1GCAllocationFailureALotInterval=1",
-                                                                             "-XX:+UnlockDiagnosticVMOptions",
-                                                                             "-Xlog:gc+phases=debug",
-                                                                             GCTestWithAllocationFailure.class.getName());
+        OutputAnalyzer output = ProcessTools.executeLimitedTestJava("-XX:+UseG1GC",
+                                                                    "-Xmx32M",
+                                                                    "-Xmn16M",
+                                                                    "-XX:+G1GCAllocationFailureALot",
+                                                                    "-XX:G1GCAllocationFailureALotCount=100",
+                                                                    "-XX:G1GCAllocationFailureALotInterval=1",
+                                                                    "-XX:+UnlockDiagnosticVMOptions",
+                                                                    "-Xlog:gc+phases=debug",
+                                                                    GCTestWithAllocationFailure.class.getName());
 
-        OutputAnalyzer output = new OutputAnalyzer(pb.start());
         checkMessagesAtLevel(output, exhFailureMessages, Level.DEBUG);
         output.shouldHaveExitValue(0);
 
-        pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:+UseG1GC",
-                                                              "-Xmx32M",
-                                                              "-Xmn16M",
-                                                              "-Xms32M",
-                                                              "-XX:+UnlockDiagnosticVMOptions",
-                                                              "-Xlog:gc+phases=trace",
-                                                              GCTestWithAllocationFailure.class.getName());
+        output = ProcessTools.executeLimitedTestJava("-XX:+UseG1GC",
+                                                     "-Xmx32M",
+                                                     "-Xmn16M",
+                                                     "-Xms32M",
+                                                     "-XX:+UnlockDiagnosticVMOptions",
+                                                     "-Xlog:gc+phases=trace",
+                                                     GCTestWithAllocationFailure.class.getName());
 
-        output = new OutputAnalyzer(pb.start());
         checkMessagesAtLevel(output, exhFailureMessages, Level.TRACE);
         output.shouldHaveExitValue(0);
     }
