@@ -239,7 +239,7 @@ public class ClassLoaderTest {
                     if (s.contains(" ")) { throw new RuntimeException("No spaces in args");}
                     return !s.isEmpty();
                 }).toArray(String[]::new);
-        String out = ProcessTools.executeTestJvm(safeArgs).getOutput();
+        String out = ProcessTools.executeTestJava(safeArgs).getOutput();
         // Handle response.
         if ("PASS".equals(status) && out.contains(msg)) {
             System.out.println("PASS: Expected Result: " + msg);
