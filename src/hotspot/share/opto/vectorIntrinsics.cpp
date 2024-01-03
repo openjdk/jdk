@@ -163,6 +163,8 @@ Node* GraphKit::unbox_vector(Node* v, const TypeInstPtr* vbox_type, BasicType el
   assert(EnableVectorSupport, "");
   const TypeInstPtr* vbox_type_v = gvn().type(v)->is_instptr();
   if (vbox_type->instance_klass() != vbox_type_v->instance_klass()) {
+    C->set_inlining_progress(true);
+    C->set_do_cleanup(true);
     return nullptr; // arguments don't agree on vector shapes
   }
   if (vbox_type_v->maybe_null()) {
