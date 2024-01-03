@@ -3148,7 +3148,7 @@ bool LibraryCallKit::inline_index_partially_in_upper_range() {
   }
 
   Node* offset = argument(3);
-  Node* limit = argument(5);
+  Node* limit = argument(4);
   if (offset == nullptr || limit == nullptr) {
     if (C->print_intrinsics()) {
       tty->print_cr("  ** offset or limit argument is null");
