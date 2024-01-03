@@ -493,7 +493,10 @@ else
    endif
 
    # hb-ft.cc is not presently needed, and requires freetype 2.4.2 or later.
-   LIBFONTMANAGER_EXCLUDE_FILES += libharfbuzz/hb-ft.cc
+   # hb-subset and hb-style APIs are not needed, excluded to cut on compilation time.
+   LIBFONTMANAGER_EXCLUDE_FILES += hb-ft.cc hb-subset-cff-common.cc \
+       hb-subset-cff1.cc hb-subset-cff2.cc hb-subset-input.cc hb-subset-plan.cc \
+       hb-subset.cc hb-subset-instancer-solver.cc gsubgpos-context.cc hb-style.cc
 
    # list of disabled warnings and the compilers for which it was specifically added.
    # array-bounds         -> GCC 12 on Alpine Linux

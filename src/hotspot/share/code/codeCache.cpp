@@ -37,6 +37,7 @@
 #include "compiler/compilerDefinitions.inline.hpp"
 #include "compiler/oopMap.hpp"
 #include "gc/shared/barrierSetNMethod.hpp"
+#include "gc/shared/classUnloadingContext.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "jvm_io.h"
@@ -200,8 +201,9 @@ void CodeCache::initialize_heaps() {
   bool non_nmethod_set      = FLAG_IS_CMDLINE(NonNMethodCodeHeapSize);
   bool profiled_set         = FLAG_IS_CMDLINE(ProfiledCodeHeapSize);
   bool non_profiled_set     = FLAG_IS_CMDLINE(NonProfiledCodeHeapSize);
-  size_t min_size           = os::vm_page_size();
-  size_t cache_size         = ReservedCodeCacheSize;
+  const size_t ps           = page_size(false, 8);
+  const size_t min_size     = MAX2(os::vm_allocation_granularity(), ps);
+  const size_t cache_size   = ReservedCodeCacheSize;
   size_t non_nmethod_size   = NonNMethodCodeHeapSize;
   size_t profiled_size      = ProfiledCodeHeapSize;
   size_t non_profiled_size  = NonProfiledCodeHeapSize;
@@ -232,8 +234,10 @@ void CodeCache::initialize_heaps() {
   }
   // Calculate default CodeHeap sizes if not set by user
   if (!non_nmethod_set && !profiled_set && !non_profiled_set) {
+    // Leave room for the other two parts of the code cache
+    const size_t max_non_nmethod_size = cache_size - 2 * min_size;
     // Check if we have enough space for the non-nmethod code heap
-    if (cache_size > non_nmethod_size) {
+    if (max_non_nmethod_size >= non_nmethod_size) {
       // Use the default value for non_nmethod_size and one half of the
       // remaining size for non-profiled and one half for profiled methods
       size_t remaining_size = cache_size - non_nmethod_size;
@@ -241,7 +245,7 @@ void CodeCache::initialize_heaps() {
       non_profiled_size = remaining_size - profiled_size;
     } else {
       // Use all space for the non-nmethod heap and set other heaps to minimal size
-      non_nmethod_size = cache_size - 2 * min_size;
+      non_nmethod_size = max_non_nmethod_size;
       profiled_size = min_size;
       non_profiled_size = min_size;
     }
@@ -310,7 +314,6 @@ void CodeCache::initialize_heaps() {
   FLAG_SET_ERGO(ProfiledCodeHeapSize, profiled_size);
   FLAG_SET_ERGO(NonProfiledCodeHeapSize, non_profiled_size);
 
-  const size_t ps = page_size(false, 8);
   // Print warning if using large pages but not able to use the size given
   if (UseLargePages) {
     const size_t lg_ps = page_size(false, 1);
@@ -321,12 +324,11 @@ void CodeCache::initialize_heaps() {
     }
   }
 
-  // If large page support is enabled, align code heaps according to large
-  // page size to make sure that code cache is covered by large pages.
-  const size_t alignment = MAX2(ps, os::vm_allocation_granularity());
-  non_nmethod_size = align_up(non_nmethod_size, alignment);
-  profiled_size    = align_down(profiled_size, alignment);
-  non_profiled_size = align_down(non_profiled_size, alignment);
+  // Note: if large page support is enabled, min_size is at least the large
+  // page size. This ensures that the code cache is covered by large pages.
+  non_nmethod_size = align_up(non_nmethod_size, min_size);
+  profiled_size    = align_down(profiled_size, min_size);
+  non_profiled_size = align_down(non_profiled_size, min_size);
 
   // Reserve one continuous chunk of memory for CodeHeaps and split it into
   // parts for the individual heaps. The memory layout looks like this:
@@ -353,16 +355,8 @@ void CodeCache::initialize_heaps() {
 }
 
 size_t CodeCache::page_size(bool aligned, size_t min_pages) {
-  if (os::can_execute_large_page_memory()) {
-    if (InitialCodeCacheSize < ReservedCodeCacheSize) {
-      // Make sure that the page size allows for an incremental commit of the reserved space
-      min_pages = MAX2(min_pages, (size_t)8);
-    }
-    return aligned ? os::page_size_for_region_aligned(ReservedCodeCacheSize, min_pages) :
-                     os::page_size_for_region_unaligned(ReservedCodeCacheSize, min_pages);
-  } else {
-    return os::vm_page_size();
-  }
+  return aligned ? os::page_size_for_region_aligned(ReservedCodeCacheSize, min_pages) :
+                   os::page_size_for_region_unaligned(ReservedCodeCacheSize, min_pages);
 }
 
 ReservedCodeSpace CodeCache::reserve_heap_memory(size_t size, size_t rs_ps) {
@@ -519,10 +513,10 @@ CodeBlob* CodeCache::next_blob(CodeHeap* heap, CodeBlob* cb) {
  * run the constructor for the CodeBlob subclass he is busy
  * instantiating.
  */
-CodeBlob* CodeCache::allocate(int size, CodeBlobType code_blob_type, bool handle_alloc_failure, CodeBlobType orig_code_blob_type) {
+CodeBlob* CodeCache::allocate(uint size, CodeBlobType code_blob_type, bool handle_alloc_failure, CodeBlobType orig_code_blob_type) {
   assert_locked_or_safepoint(CodeCache_lock);
-  assert(size > 0, "Code cache allocation request must be > 0 but is %d", size);
-  if (size <= 0) {
+  assert(size > 0, "Code cache allocation request must be > 0");
+  if (size == 0) {
     return nullptr;
   }
   CodeBlob* cb = nullptr;
@@ -608,7 +602,7 @@ void CodeCache::free(CodeBlob* cb) {
 
   cb->~CodeBlob();
   // Get heap for given CodeBlob and deallocate
-  get_code_heap(cb)->deallocate(cb);
+  heap->deallocate(cb);
 
   assert(heap->blob_count() >= 0, "sanity check");
 }
@@ -964,36 +958,8 @@ void CodeCache::purge_exception_caches() {
   _exception_cache_purge_list = nullptr;
 }
 
-// Register an is_unloading nmethod to be flushed after unlinking
-void CodeCache::register_unlinked(nmethod* nm) {
-  assert(nm->unlinked_next() == nullptr, "Only register for unloading once");
-  for (;;) {
-    // Only need acquire when reading the head, when the next
-    // pointer is walked, which it is not here.
-    nmethod* head = Atomic::load(&_unlinked_head);
-    nmethod* next = head != nullptr ? head : nm; // Self looped means end of list
-    nm->set_unlinked_next(next);
-    if (Atomic::cmpxchg(&_unlinked_head, head, nm) == head) {
-      break;
-    }
-  }
-}
-
-// Flush all the nmethods the GC unlinked
-void CodeCache::flush_unlinked_nmethods() {
-  nmethod* nm = _unlinked_head;
-  _unlinked_head = nullptr;
-  size_t freed_memory = 0;
-  while (nm != nullptr) {
-    nmethod* next = nm->unlinked_next();
-    freed_memory += nm->total_size();
-    nm->flush();
-    if (next == nm) {
-      // Self looped means end of list
-      break;
-    }
-    nm = next;
-  }
+// Restart compiler if possible and required..
+void CodeCache::maybe_restart_compiler(size_t freed_memory) {
 
   // Try to start the compiler again if we freed any memory
   if (!CompileBroker::should_compile_new_jobs() && freed_memory != 0) {
@@ -1007,7 +973,6 @@ void CodeCache::flush_unlinked_nmethods() {
 }
 
 uint8_t CodeCache::_unloading_cycle = 1;
-nmethod* volatile CodeCache::_unlinked_head = nullptr;
 
 void CodeCache::increment_unloading_cycle() {
   // 2-bit value (see IsUnloadingState in nmethod.cpp for details)
@@ -1198,7 +1163,11 @@ void CodeCache::initialize() {
     FLAG_SET_ERGO(NonNMethodCodeHeapSize, (uintx)os::vm_page_size());
     FLAG_SET_ERGO(ProfiledCodeHeapSize, 0);
     FLAG_SET_ERGO(NonProfiledCodeHeapSize, 0);
-    ReservedCodeSpace rs = reserve_heap_memory(ReservedCodeCacheSize, page_size(false, 8));
+
+    // If InitialCodeCacheSize is equal to ReservedCodeCacheSize, then it's more likely
+    // users want to use the largest available page.
+    const size_t min_pages = (InitialCodeCacheSize == ReservedCodeCacheSize) ? 1 : 8;
+    ReservedCodeSpace rs = reserve_heap_memory(ReservedCodeCacheSize, page_size(false, min_pages));
     // Register CodeHeaps with LSan as we sometimes embed pointers to malloc memory.
     LSAN_REGISTER_ROOT_REGION(rs.base(), rs.size());
     add_heap(rs, "CodeCache", CodeBlobType::All);
@@ -1574,10 +1543,14 @@ void CodeCache::print_memory_overhead() {
 
 #ifndef PRODUCT
 
-void CodeCache::print_trace(const char* event, CodeBlob* cb, int size) {
+void CodeCache::print_trace(const char* event, CodeBlob* cb, uint size) {
   if (PrintCodeCache2) {  // Need to add a new flag
     ResourceMark rm;
-    if (size == 0)  size = cb->size();
+    if (size == 0) {
+      int s = cb->size();
+      assert(s >= 0, "CodeBlob size is negative: %d", s);
+      size = (uint) s;
+    }
     tty->print_cr("CodeCache %s:  addr: " INTPTR_FORMAT ", size: 0x%x", event, p2i(cb), size);
   }
 }
@@ -1842,16 +1815,20 @@ void CodeCache::log_state(outputStream* st) {
 }
 
 #ifdef LINUX
-void CodeCache::write_perf_map() {
+void CodeCache::write_perf_map(const char* filename) {
   MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
 
-  // Perf expects to find the map file at /tmp/perf-<pid>.map.
+  // Perf expects to find the map file at /tmp/perf-<pid>.map
+  // if the file name is not specified.
   char fname[32];
-  jio_snprintf(fname, sizeof(fname), "/tmp/perf-%d.map", os::current_process_id());
+  if (filename == nullptr) {
+    jio_snprintf(fname, sizeof(fname), "/tmp/perf-%d.map", os::current_process_id());
+    filename = fname;
+  }
 
-  fileStream fs(fname, "w");
+  fileStream fs(filename, "w");
   if (!fs.is_open()) {
-    log_warning(codecache)("Failed to create %s for perf map", fname);
+    log_warning(codecache)("Failed to create %s for perf map", filename);
     return;
   }
 

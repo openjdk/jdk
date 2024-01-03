@@ -193,4 +193,9 @@
     }
   }
 
+  // Is SIMD sort supported for this CPU?
+  static bool supports_simd_sort(BasicType bt) {
+    return false;
+  }
+
 #endif // CPU_AARCH64_MATCHER_AARCH64_HPP

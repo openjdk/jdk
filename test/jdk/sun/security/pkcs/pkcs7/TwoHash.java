@@ -45,7 +45,7 @@ public class TwoHash {
 
         CertAndKeyGen cak = new CertAndKeyGen("EC", "SHA512withECDSA");
         cak.generate("secp256r1");
-        byte[] signature = PKCS7.generateNewSignedData(
+        byte[] signature = PKCS7.generateSignedData(
                 "SHA256withECDSA",
                 null,
                 cak.getPrivateKey(),

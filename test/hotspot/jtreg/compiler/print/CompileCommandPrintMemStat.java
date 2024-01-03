@@ -24,6 +24,7 @@
 /*
  * @test
  * @summary Checks that -XX:CompileCommand=PrintMemStat,... works
+ * @requires vm.compiler1.enabled | vm.compiler2.enabled
  * @library /test/lib
  * @run driver compiler.print.CompileCommandPrintMemStat
  */
@@ -54,7 +55,7 @@ public class CompileCommandPrintMemStat {
         options.add("-XX:CompileCommand=MemStat," + getTestMethod(include) + ",print");
         options.add(getTestClass());
 
-        OutputAnalyzer oa = ProcessTools.executeTestJvm(options);
+        OutputAnalyzer oa = ProcessTools.executeTestJava(options);
 
         // We expect two printouts for "PrintMemStat". A line at compilation time, and a line in a summary report
         // that is printed when we exit. Both use the typical <class>::name format but use / as separator and also

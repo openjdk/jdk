@@ -24,6 +24,7 @@
 /**
  * @test
  * @bug 6568874
+ * @key printer
  * @summary Verify the native dialog works with attribute sets.
  * @run main/manual=yesno DialogType
  */
