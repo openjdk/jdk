@@ -755,21 +755,14 @@ public class LambdaToMethod extends TreeTranslator {
         String functionalInterfaceClass = classSig(targetType);
         String functionalInterfaceMethodName = samSym.getSimpleName().toString();
         String functionalInterfaceMethodSignature = typeSig(types.erasure(samSym.type));
-        Symbol baseMethod = refSym.baseSymbol();
-        Symbol origMethod = baseMethod.baseSymbol();
-        if (baseMethod != origMethod && origMethod.owner == syms.objectType.tsym) {
-            //the implementation method is a java.lang.Object method transferred to an
-            //interface that does not declare it. Runtime will refer to this method as to
-            //a java.lang.Object method, so do the same:
-            refSym = ((MethodSymbol) origMethod).asHandle();
-        }
         String implClass = classSig(types.erasure(refSym.owner.type));
         String implMethodName = refSym.getQualifiedName().toString();
         String implMethodSignature = typeSig(types.erasure(refSym.type));
-        String instantiatedMethodType = typeSig(samType);
+        String instantiatedMethodType = typeSig(types.erasure(samType));
 
+        int implMethodKind = refSym.referenceKind();
         JCExpression kindTest = eqTest(syms.intType, deserGetter("getImplMethodKind", syms.intType),
-                make.Literal(refSym.referenceKind()));
+                make.Literal(implMethodKind));
         ListBuffer<JCExpression> serArgs = new ListBuffer<>();
         int i = 0;
         for (Type t : indyType.getParameterTypes()) {
@@ -803,6 +796,7 @@ public class LambdaToMethod extends TreeTranslator {
         System.err.printf("*functionalInterfaceClass: '%s'\n", functionalInterfaceClass);
         System.err.printf("*functionalInterfaceMethodName: '%s'\n", functionalInterfaceMethodName);
         System.err.printf("*functionalInterfaceMethodSignature: '%s'\n", functionalInterfaceMethodSignature);
+        System.err.printf("*implMethodKind: %d\n", implMethodKind);
         System.err.printf("*implClass: '%s'\n", implClass);
         System.err.printf("*implMethodName: '%s'\n", implMethodName);
         System.err.printf("*implMethodSignature: '%s'\n", implMethodSignature);
@@ -1114,11 +1108,11 @@ public class LambdaToMethod extends TreeTranslator {
         JCFunctionalExpression tree = context.tree;
         //determine the static bsm args
         MethodSymbol samSym = (MethodSymbol) types.findDescriptorSymbol(tree.target.tsym);
-        Type samType = types.findDescriptorType(tree.target);
+        Type samType = tree.getDescriptorType(types);
         List<LoadableConstant> staticArgs = List.of(
                 typeToMethodType(samSym.type),
                 refSym.asHandle(),
-                typeToMethodType(tree.getDescriptorType(types)));
+                typeToMethodType(samType));
 
         //computed indy arg types
         ListBuffer<Type> indy_args_types = new ListBuffer<>();
