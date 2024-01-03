@@ -69,9 +69,9 @@ public class SjavacClient implements Sjavac {
     // Accept 120 seconds of inactivity before quitting.
     private static final int KEEPALIVE = 120;
     private static final int POOLSIZE = Runtime.getRuntime().availableProcessors();
-    // Wait 2 seconds for response, before giving up on javac server.
-    private static final int CONNECTION_TIMEOUT = 2000;
-    private static final int MAX_CONNECT_ATTEMPTS = 3;
+    // Wait 4 seconds for response, before giving up on javac server.
+    private static final int CONNECTION_TIMEOUT = 4000;
+    private static final int MAX_CONNECT_ATTEMPTS = 10;
     private static final int WAIT_BETWEEN_CONNECT_ATTEMPTS = 2000;
 
     public SjavacClient(Options options) {
@@ -184,7 +184,7 @@ public class SjavacClient implements Sjavac {
                 Log.error("Connection attempt failed: " + ex.getMessage());
                 if (attempt >= MAX_CONNECT_ATTEMPTS) {
                     Log.error("Giving up");
-                    throw new IOException("Could not connect to server", ex);
+                    throw new IOException("Could not connect to server after " + MAX_CONNECT_ATTEMPTS + " attempts with timeout " + CONNECTION_TIMEOUT, ex);
                 }
             }
             Thread.sleep(WAIT_BETWEEN_CONNECT_ATTEMPTS);
