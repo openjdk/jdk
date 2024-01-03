@@ -130,9 +130,9 @@ class PCAdjustPointerClosure: public BasicOopIterateClosure {
 public:
   PCAdjustPointerClosure(ParCompactionManager* cm) : _cm(cm) {
   }
-  template <typename T> void do_oop_nv(T* p) { PSParallelCompact::adjust_pointer(p, _cm); }
-  virtual void do_oop(oop* p)                { do_oop_nv(p); }
-  virtual void do_oop(narrowOop* p)          { do_oop_nv(p); }
+  template <typename T> void do_oop_work(T* p) { PSParallelCompact::adjust_pointer(p, _cm); }
+  virtual void do_oop(oop* p)                { do_oop_work(p); }
+  virtual void do_oop(narrowOop* p)          { do_oop_work(p); }
 
   virtual ReferenceIterationMode reference_iteration_mode() { return DO_FIELDS; }
 private:
