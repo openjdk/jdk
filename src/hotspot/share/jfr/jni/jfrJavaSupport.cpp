@@ -525,6 +525,40 @@ const char* JfrJavaSupport::c_str(jstring string, Thread* thread, bool c_heap /*
   return string != nullptr ? c_str(resolve_non_null(string), thread, c_heap) : nullptr;
 }
 
+void JfrJavaSupport::free_c_str(const char* str, bool c_heap) {
+  if (c_heap) {
+    FREE_C_HEAP_ARRAY(char, str);
+  }
+}
+
+static Symbol** allocate_symbol_array(bool c_heap, int length, Thread* thread) {
+  return c_heap ?
+           NEW_C_HEAP_ARRAY(Symbol*, length, mtTracing) :
+           NEW_RESOURCE_ARRAY_IN_THREAD(thread, Symbol*, length);
+}
+
+Symbol** JfrJavaSupport::symbol_array(jobjectArray string_array, JavaThread* thread, intptr_t* result_array_size, bool c_heap /* false */) {
+  DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_vm(thread));
+  assert(string_array != nullptr, "invariant");
+  assert(result_array_size != nullptr, "invariant");
+  objArrayOop arrayOop = objArrayOop(resolve_non_null(string_array));
+  const int length = arrayOop->length();
+  *result_array_size = length;
+  Symbol** result_array = allocate_symbol_array(c_heap, length, thread);
+  assert(result_array != nullptr, "invariant");
+  for (int i = 0; i < length; i++) {
+    oop object = arrayOop->obj_at(i);
+    Symbol* symbol = nullptr;
+    if (object != nullptr) {
+      const char* text = c_str(arrayOop->obj_at(i), thread, c_heap);
+      symbol = SymbolTable::new_symbol(text);
+      free_c_str(text, c_heap);
+    }
+    result_array[i] = symbol;
+  }
+  return result_array;
+}
+
 /*
  *  Exceptions and errors
  */

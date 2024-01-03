@@ -15,15 +15,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="arn">Mapudungun</language>
 		</languages>
 	</localeDisplayNames>
-	<layout>
-		<orientation>
-			<characterOrder>left-to-right</characterOrder>
-			<lineOrder>top-to-bottom</lineOrder>
-		</orientation>
-	</layout>
 	<characters>
-		<exemplarCharacters>[a {ch} d e f g i k l ḻ {ll} m n ñ ṉ {ng} o p r s {sh} t ṯ {tr} u ü w y]</exemplarCharacters>
+		<exemplarCharacters>[a {ch} d e f g i k lḻ {ll} m nñṉ {ng} o p r s {sh} tṯ {tr} uü w y]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[b c h j q x z]</exemplarCharacters>
-		<exemplarCharacters type="index">[A {CH} D E F G I K L Ḻ {LL} M N Ñ Ṉ {NG} O P R S {SH} T Ṯ {TR} U Ü W Y]</exemplarCharacters>
+		<exemplarCharacters type="index">[A {CH} D E F G I K LḺ {LL} M NÑṈ {NG} O P R S {SH} TṮ {TR} UÜ W Y]</exemplarCharacters>
 	</characters>
 </ldml>

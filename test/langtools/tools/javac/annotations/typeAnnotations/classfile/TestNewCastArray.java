@@ -25,15 +25,11 @@
  * @test
  * @bug 8005681
  * @summary Repeated annotations on new,array,cast.
- * @modules java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.constantpool
- *          java.base/jdk.internal.classfile.instruction
- *          java.base/jdk.internal.classfile.components
- *          java.base/jdk.internal.classfile.impl
+ * @enablePreview
+ * @modules java.base/jdk.internal.classfile.impl
  */
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.attribute.*;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.*;
 import java.lang.annotation.*;
 import java.io.*;
 import java.util.List;
@@ -204,7 +200,7 @@ public class TestNewCastArray {
             System.out.println("Testing " + testclazz);
             try {
                 in = Objects.requireNonNull(getClass().getResource(testclazz)).openStream();
-                cm = Classfile.of().parse(in.readAllBytes());
+                cm = ClassFile.of().parse(in.readAllBytes());
                 in.close();
             } catch(Exception e) { e.printStackTrace();  }
 

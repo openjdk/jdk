@@ -347,6 +347,7 @@ class Compile : public Phase {
   bool                  _print_intrinsics;      // True if we should print intrinsics for this compilation
 #ifndef PRODUCT
   uint                  _igv_idx;               // Counter for IGV node identifiers
+  uint                  _igv_phase_iter[PHASE_NUM_TYPES]; // Counters for IGV phase iterations
   bool                  _trace_opto_output;
   bool                  _parsed_irreducible_loop; // True if ciTypeFlow detected irreducible loops during parsing
 #endif
@@ -537,6 +538,7 @@ private:
 
 #ifndef PRODUCT
   IdealGraphPrinter* igv_printer() { return _igv_printer; }
+  void reset_igv_phase_iter(CompilerPhaseType cpt) { _igv_phase_iter[cpt] = 0; }
 #endif
 
   void log_late_inline(CallGenerator* cg);
@@ -1081,6 +1083,7 @@ private:
   bool inline_incrementally_one();
   void inline_incrementally_cleanup(PhaseIterGVN& igvn);
   void inline_incrementally(PhaseIterGVN& igvn);
+  bool should_delay_inlining() { return AlwaysIncrementalInline || (StressIncrementalInlining && (random() % 2) == 0); }
   void inline_string_calls(bool parse_time);
   void inline_boxing_calls(PhaseIterGVN& igvn);
   bool optimize_loops(PhaseIterGVN& igvn, LoopOptsMode mode);

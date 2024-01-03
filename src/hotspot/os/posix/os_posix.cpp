@@ -343,9 +343,10 @@ char* os::replace_existing_mapping_with_file_mapping(char* base, size_t size, in
 }
 
 static size_t calculate_aligned_extra_size(size_t size, size_t alignment) {
-  assert((alignment & (os::vm_allocation_granularity() - 1)) == 0,
+  assert(is_aligned(alignment, os::vm_allocation_granularity()),
       "Alignment must be a multiple of allocation granularity (page size)");
-  assert((size & (alignment -1)) == 0, "size must be 'alignment' aligned");
+  assert(is_aligned(size, os::vm_allocation_granularity()),
+      "Size must be a multiple of allocation granularity (page size)");
 
   size_t extra_size = size + alignment;
   assert(extra_size >= size, "overflow, size is too large to allow alignment");
