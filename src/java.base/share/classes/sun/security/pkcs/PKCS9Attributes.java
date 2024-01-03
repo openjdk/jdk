@@ -267,27 +267,6 @@ public class PKCS9Attributes {
         return attributes.get(PKCS9Attribute.getOID(name));
     }
 
-
-    /**
-     * Get an array of all attributes in this set, in order of OID.
-     */
-    public PKCS9Attribute[] getAttributes() {
-        PKCS9Attribute[] attribs = new PKCS9Attribute[attributes.size()];
-
-        int j = 0;
-        for (int i=1; i < PKCS9Attribute.PKCS9_OIDS.length &&
-                      j < attribs.length; i++) {
-            if (PKCS9Attribute.PKCS9_OIDS[i] == null) {
-                continue;
-            }
-            attribs[j] = getAttribute(PKCS9Attribute.PKCS9_OIDS[i]);
-
-            if (attribs[j] != null)
-                j++;
-        }
-        return attribs;
-    }
-
     /**
      * Get an attribute value by OID.
      */
@@ -325,12 +304,10 @@ public class PKCS9Attributes {
         PKCS9Attribute value;
 
         boolean first = true;
-        for (int i = 1; i < PKCS9Attribute.PKCS9_OIDS.length; i++) {
-            if (PKCS9Attribute.PKCS9_OIDS[i] == null) {
-                continue;
-            }
-            value = getAttribute(PKCS9Attribute.PKCS9_OIDS[i]);
+        for (ObjectIdentifier oid : PKCS9Attribute.getOIDs()) {
+            if (oid == null) continue;
 
+            value = getAttribute(oid);
             if (value == null) continue;
 
             // we have a value; print it

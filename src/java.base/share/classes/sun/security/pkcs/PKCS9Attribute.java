@@ -179,23 +179,7 @@ public class PKCS9Attribute implements DerEncoder {
     /* Are we debugging ? */
     private static final Debug debug = Debug.getInstance("jar");
 
-    private record AttributeInfo(Byte[] valueTags, Class<?> valueClass, boolean singleValued) {}
-
-    /**
-     * Array of attribute OIDs defined in PKCS9, by number.
-     */
-    static final ObjectIdentifier[] PKCS9_OIDS = new ObjectIdentifier[19];
-
-    private static final Class<?> BYTE_ARRAY_CLASS;
-
-    static {
-        try {
-            BYTE_ARRAY_CLASS = Class.forName("[B");
-        } catch (ClassNotFoundException e) {
-            throw new ExceptionInInitializerError(e.toString());
-        }
-    }
-
+    /* OID Constants */
     public static final ObjectIdentifier EMAIL_ADDRESS_OID =
         ObjectIdentifier.of(KnownOIDs.EmailAddress);
     public static final ObjectIdentifier UNSTRUCTURED_NAME_OID =
@@ -216,8 +200,6 @@ public class PKCS9Attribute implements DerEncoder {
         ObjectIdentifier.of(KnownOIDs.ExtendedCertificateAttributes);
     public static final ObjectIdentifier ISSUER_SERIALNUMBER_OID =
         ObjectIdentifier.of(KnownOIDs.IssuerAndSerialNumber);
-    // [11], [12] are RSA DSI proprietary
-    // [13] ==> signingDescription, S/MIME, not used anymore
     public static final ObjectIdentifier EXTENSION_REQUEST_OID =
         ObjectIdentifier.of(KnownOIDs.ExtensionRequest);
     public static final ObjectIdentifier SIGNING_CERTIFICATE_OID =
@@ -227,9 +209,12 @@ public class PKCS9Attribute implements DerEncoder {
     public static final ObjectIdentifier CMS_ALGORITHM_PROTECTION_OID =
         ObjectIdentifier.of(KnownOIDs.CMSAlgorithmProtection);
 
-    private static final Map<ObjectIdentifier,AttributeInfo> oidMap = new LinkedHashMap<>();
+    private record AttributeInfo(byte[] valueTags, Class<?> valueClass, boolean singleValued) {}
+
+    private static final Map<ObjectIdentifier,AttributeInfo> oidMap = new HashMap<>();
+
     private static void add(ObjectIdentifier oid, boolean singleValued,
-                            Class<?> valueClass, Byte[] valueTags) {
+                            Class<?> valueClass, byte... valueTags) {
         AttributeInfo info = new AttributeInfo(valueTags,valueClass,singleValued);
         if (oidMap.put(oid, info) != null) {
             throw new RuntimeException("Duplication oid: " + oid);
@@ -240,58 +225,58 @@ public class PKCS9Attribute implements DerEncoder {
         try {
             Class<?> str = Class.forName("[Ljava.lang.String;");
 
-            add(EMAIL_ADDRESS_OID, false, str,
-                new Byte[]{DerValue.tag_IA5String});
+            add(EMAIL_ADDRESS_OID, false, str, DerValue.tag_IA5String);
 
-            add(UNSTRUCTURED_NAME_OID, false, str, new Byte[]{
+            add(UNSTRUCTURED_NAME_OID, false, str,
                 DerValue.tag_IA5String,
                 DerValue.tag_PrintableString,
                 DerValue.tag_T61String,
                 DerValue.tag_BMPString,
                 DerValue.tag_UniversalString,
-                DerValue.tag_UTF8String});
+                DerValue.tag_UTF8String);
 
             add(CONTENT_TYPE_OID, true,
                 Class.forName("sun.security.util.ObjectIdentifier"),
-                new Byte[]{DerValue.tag_ObjectId});
+                DerValue.tag_ObjectId);
 
-            add(MESSAGE_DIGEST_OID, true, BYTE_ARRAY_CLASS,
-                new Byte[]{DerValue.tag_OctetString});
+            add(MESSAGE_DIGEST_OID, true, byte[].class,
+                DerValue.tag_OctetString);
 
             add(SIGNING_TIME_OID, true, Class.forName("java.util.Date"),
-                new Byte[]{DerValue.tag_UtcTime, DerValue.tag_GeneralizedTime});
+                DerValue.tag_UtcTime, DerValue.tag_GeneralizedTime);
 
             add(COUNTERSIGNATURE_OID, false,
                 Class.forName("[Lsun.security.pkcs.SignerInfo;"),
-                new Byte[] {DerValue.tag_Sequence});
+                DerValue.tag_Sequence);
 
             add(CHALLENGE_PASSWORD_OID, true,
-                Class.forName("java.lang.String"), new Byte[]{
+                Class.forName("java.lang.String"),
                     DerValue.tag_PrintableString,
                     DerValue.tag_T61String,
                     DerValue.tag_BMPString,
                     DerValue.tag_UniversalString,
-                    DerValue.tag_UTF8String});
+                    DerValue.tag_UTF8String);
 
-            add(UNSTRUCTURED_ADDRESS_OID, false, str, new Byte[]{
+            add(UNSTRUCTURED_ADDRESS_OID, false, str,
                 DerValue.tag_PrintableString,
                 DerValue.tag_T61String,
                 DerValue.tag_BMPString,
                 DerValue.tag_UniversalString,
-                DerValue.tag_UTF8String});
+                DerValue.tag_UTF8String);
 
             add(EXTENSION_REQUEST_OID, true,
                 Class.forName("sun.security.x509.CertificateExtensions"),
-                new Byte[]{DerValue.tag_Sequence});
+                DerValue.tag_Sequence);
 
-            add(SIGNING_CERTIFICATE_OID, true, null,
-                new Byte[]{DerValue.tag_Sequence});
+            add(SIGNING_CERTIFICATE_OID, true,
+                Class.forName("sun.security.pkcs.SigningCertificateInfo"),
+                DerValue.tag_Sequence);
 
-            add(SIGNATURE_TIMESTAMP_TOKEN_OID, true, BYTE_ARRAY_CLASS,
-                new Byte[]{DerValue.tag_Sequence});
+            add(SIGNATURE_TIMESTAMP_TOKEN_OID, true, byte[].class,
+                DerValue.tag_Sequence);
 
-            add(CMS_ALGORITHM_PROTECTION_OID, true, BYTE_ARRAY_CLASS,
-                new Byte[]{DerValue.tag_Sequence});
+            add(CMS_ALGORITHM_PROTECTION_OID, true, byte[].class,
+                DerValue.tag_Sequence);
 
         } catch (ClassNotFoundException e) {
             throw new ExceptionInInitializerError(e.toString());
@@ -301,20 +286,19 @@ public class PKCS9Attribute implements DerEncoder {
     /**
      * The OID of this attribute.
      */
-    private ObjectIdentifier oid;
+    private final ObjectIdentifier oid;
 
     /**
-     * The index of the OID of this attribute in <code>PKCS9_OIDS</code>,
-     * or -1 if it's unknown.
+     * The AttributeInfo of this attribute
      */
-    private AttributeInfo info;
+    private final AttributeInfo info;
 
     /**
      * Value set of this attribute.  Its class is given by
-     * <code>VALUE_CLASSES[index]</code>. The SET itself
+     * <code>AttributeInfo.valueClass</code>. The SET itself
      * as byte[] if unknown.
      */
-    private Object value;
+    private final Object value;
 
     /**
      * Construct an attribute object from the attribute's OID and
@@ -331,29 +315,24 @@ public class PKCS9Attribute implements DerEncoder {
      * if the <code>value</code> has the wrong type.
      */
     public PKCS9Attribute(ObjectIdentifier oid, Object value)
-    throws IllegalArgumentException {
-        init(oid, value);
-    }
-
-    private void init(ObjectIdentifier oid, Object value)
         throws IllegalArgumentException {
 
         this.oid = oid;
         info = oidMap.get(oid);
-        Class<?> clazz = (info == null) ? BYTE_ARRAY_CLASS : info.valueClass();
+        Class<?> clazz = info.valueClass();
         if (clazz == null) {
             throw new IllegalArgumentException(
-                    "No value class supported " +
-                            " for attribute " + oid +
-                            " constructing PKCS9Attribute");
+                "No value class supported " +
+                    " for attribute " + oid +
+                    " constructing PKCS9Attribute");
         }
         if (!clazz.isInstance(value)) {
-                throw new IllegalArgumentException(
-                           "Wrong value class " +
-                           " for attribute " + oid +
-                           " constructing PKCS9Attribute; was " +
-                           value.getClass().toString() + ", should be " +
-                           clazz.toString());
+            throw new IllegalArgumentException(
+                "Wrong value class " +
+                    " for attribute " + oid +
+                    " constructing PKCS9Attribute; was " +
+                    value.getClass().toString() + ", should be " +
+                    clazz.toString());
         }
         this.value = value;
     }
@@ -395,14 +374,13 @@ public class PKCS9Attribute implements DerEncoder {
             throwSingleValuedException();
 
         // check for illegal element tags
-        Byte tag;
+        byte tag;
         for (DerValue elem : elems) {
             tag = elem.tag;
             if (indexOf(tag, info.valueTags(), 0) == -1)
                 throwTagException(tag);
         }
 
-        //should the behavior be different for RSA/smime
         KnownOIDs knownOID = KnownOIDs.findMatch(oid.toString());
         switch (knownOID) {
         case KnownOIDs.EmailAddress:
@@ -459,7 +437,8 @@ public class PKCS9Attribute implements DerEncoder {
             value = elems[0].toByteArray();
             break;
 
-        default: // Can't happen
+        default:
+            throw new IOException("Unsupported signer attribute: " + oid);
         }
     }
 
@@ -476,13 +455,13 @@ public class PKCS9Attribute implements DerEncoder {
         DerOutputStream temp = new DerOutputStream();
         temp.putOID(oid);
 
-        KnownOIDs knownOID = KnownOIDs.findMatch(oid.toString());
-        if (knownOID == null) {
+        if (info == null) {
             temp.writeBytes((byte[])value);
             out.write(DerValue.tag_Sequence, temp.toByteArray());
             return;
         }
 
+        KnownOIDs knownOID = KnownOIDs.findMatch(oid.toString());
         switch (knownOID) {
         case KnownOIDs.EmailAddress:
         case KnownOIDs.UnstructuredName:
@@ -571,7 +550,10 @@ public class PKCS9Attribute implements DerEncoder {
             temp.write(DerValue.tag_Set, (byte[])value);
             break;
 
-        default: // Can't happen
+        default: //Should never happen
+            temp.writeBytes((byte[])value);
+            out.write(DerValue.tag_Sequence, temp.toByteArray());
+            return;
         }
 
         out.write(DerValue.tag_Sequence, temp.toByteArray());
@@ -612,6 +594,8 @@ public class PKCS9Attribute implements DerEncoder {
     public ObjectIdentifier getOID() {
         return oid;
     }
+
+    public static Set<ObjectIdentifier> getOIDs() { return oidMap.keySet(); }
 
     /**
      *  Return the name of this attribute.
@@ -688,9 +672,9 @@ public class PKCS9Attribute implements DerEncoder {
      *
      * @return the index, if found, and -1 otherwise.
      */
-    static int indexOf(Object obj, Object[] a, int start) {
-        for (int i=start; i < a.length; i++) {
-            if (obj.equals(a[i])) return i;
+    static int indexOf(byte b, byte[] bs, int start) {
+        for (int i=start; i < bs.length; i++) {
+            if (b == bs[i]) return i;
         }
         return -1;
     }
@@ -710,23 +694,23 @@ public class PKCS9Attribute implements DerEncoder {
      * wrong for the attribute whose value it is. This method
      * will only be called for known tags.
      */
-    private void throwTagException(Byte tag)
+    private void throwTagException(byte tag)
     throws IOException {
-        Byte[] expectedTags = info.valueTags();
+        byte[] expectedTags = info.valueTags();
         StringBuilder msg = new StringBuilder(100);
         msg.append("Value of attribute ");
         msg.append(oid.toString());
         msg.append(" (");
         msg.append(getName());
         msg.append(") has wrong tag: ");
-        msg.append(tag.toString());
+        msg.append(tag);
         msg.append(".  Expected tags: ");
 
-        msg.append(expectedTags[0].toString());
+        msg.append(expectedTags[0]);
 
         for (int i = 1; i < expectedTags.length; i++) {
             msg.append(", ");
-            msg.append(expectedTags[i].toString());
+            msg.append(expectedTags[i]);
         }
         msg.append(".");
         throw new IOException(msg.toString());
