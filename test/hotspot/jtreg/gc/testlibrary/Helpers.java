@@ -101,8 +101,7 @@ public class Helpers {
                 .addToolArg(System.getProperty("java.class.path") + File.pathSeparator + root.toAbsolutePath())
                 .addToolArg(sourceFile.toAbsolutePath().toString());
 
-        ProcessBuilder pb = new ProcessBuilder(jar.getCommand());
-        OutputAnalyzer output = ProcessTools.executeProcess(pb);
+        OutputAnalyzer output = ProcessTools.executeProcess(jar.getCommand());
         output.shouldHaveExitValue(0);
     }
 
