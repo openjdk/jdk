@@ -50,7 +50,6 @@ public class Maps {
     private SimpleRandom rng;
     private Map<Integer, Integer> map;
     private Map<Integer, Integer> staticMap;
-    private Map<Integer, Integer> dummy;
     private Integer[] key;
 
     private int removesPerMaxRandom;
@@ -70,17 +69,14 @@ public class Maps {
 
         rng = new SimpleRandom();
         map = new ConcurrentHashMap<>();
+        staticMap = new ConcurrentHashMap<>();
         total = 0;
         key = new Integer[nkeys];
         for (int i = 0; i < key.length; ++i) {
             key[i] = rng.next();
-        }
-        position = key.length / 2;
-
-        staticMap = new ConcurrentHashMap<>();
-        for (int i = 0; i < nkeys; ++i) {
             staticMap.put(rng.next(), rng.next());
         }
+        position = key.length / 2;
     }
 
     @Benchmark
@@ -117,9 +113,8 @@ public class Maps {
     }
 
     @Benchmark
-    public void testCopyConstructor() {
-        ConcurrentHashMap<Integer, Integer> clone = new ConcurrentHashMap<>(staticMap);
-        dummy = clone;
+    public ConcurrentHashMap<Integer, Integer> testConcurrentHashMapCopyConstructor() {
+        return new ConcurrentHashMap<>(staticMap);
     }
 
     private static class SimpleRandom {

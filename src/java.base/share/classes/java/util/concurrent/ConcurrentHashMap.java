@@ -848,7 +848,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
      * @param m the map
      */
     public ConcurrentHashMap(Map<? extends K, ? extends V> m) {
-        this(m.size(), LOAD_FACTOR, 1);
+        this(m.size());
         putAll(m);
     }
 
