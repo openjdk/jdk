@@ -39,7 +39,7 @@
  *         <li><a href="#Conf_CF_SP">User-defined Configuration File</a></li>
  *         </ul>
  *     </li>
- *     <li><a href="#PP">Property Precedence</a></li>
+ *     <li><a href="#Conf_PP">Property Precedence</a></li>
  *     </ul>
  * </li>
  * <li><a href="#LookupMechanism">JAXP Lookup Mechanism</a>
@@ -101,7 +101,7 @@
  * <a href="#Conf_Properties">JAXP Properties</a>,
  * <a href="#Conf_SystemProperties">System Properties</a>,
  * and the <a href="#Conf_CF">JAXP Configuration File</a>, and sets the values
- * following the <a href="#PP">Property Precedence</a>. The terminologies and
+ * following the <a href="#Conf_PP">Property Precedence</a>. The terminologies and
  * process are defined below.
  *
  * <h3 id="Conf_Properties">JAXP Properties</h3>
@@ -168,7 +168,7 @@
  * proceeds as if the {@code java.xml.config.file} property was not set.
  * Implementations may optionally issue a warning message.
  *
- * <h3 id="PP">Property Precedence</h3>
+ * <h3 id="Conf_PP">Property Precedence</h3>
  * JAXP properties can be set in multiple ways, including by API methods, system
  * properties, and the <a href="#Conf_CF">JAXP Configuration File</a>. When not
  * explicitly set, they will be initialized with default values or more restrictive
@@ -262,7 +262,7 @@
  * <td style="text-align:center">{@link javax.xml.datatype.DatatypeFactory#newDefaultInstance() newDefaultInstance()}</td>
  * </tr>
  * <tr>
- * <th scope="row" style="font-weight:normal" id="DOM">
+ * <th scope="row" style="font-weight:normal" id="DocumentBuilderFactory">
  *     {@link javax.xml.parsers.DocumentBuilderFactory DocumentBuilderFactory}
  * </th>
  * <td style="text-align:center">{@link javax.xml.parsers.DocumentBuilderFactory#newInstance() newInstance()}</td>
@@ -270,7 +270,7 @@
  * <td style="text-align:center">{@link javax.xml.parsers.DocumentBuilderFactory#newDefaultInstance() newDefaultInstance()}</td>
  * </tr>
  * <tr>
- * <th scope="row" style="font-weight:normal" id="SAX">
+ * <th scope="row" style="font-weight:normal" id="SAXParserFactory">
  *     {@link javax.xml.parsers.SAXParserFactory SAXParserFactory}
  * </th>
  * <td style="text-align:center">{@link javax.xml.parsers.SAXParserFactory#newInstance() newInstance()}</td>
@@ -310,7 +310,7 @@
  * <td style="text-align:center">{@link javax.xml.transform.TransformerFactory#newDefaultInstance() newDefaultInstance()}</td>
  * </tr>
  * <tr>
- * <th scope="row" style="font-weight:normal" id="Validation">
+ * <th scope="row" style="font-weight:normal" id="SchemaFactory">
  *     {@link javax.xml.validation.SchemaFactory SchemaFactory}
  * </th>
  * <td style="text-align:center">{@link javax.xml.validation.SchemaFactory#newInstance(java.lang.String) newInstance(schemaLanguage)}</td>
@@ -318,7 +318,7 @@
  * <td style="text-align:center">{@link javax.xml.validation.SchemaFactory#newDefaultInstance() newDefaultInstance()}</td>
  * </tr>
  * <tr>
- * <th scope="row" style="font-weight:normal" id="XPath">
+ * <th scope="row" style="font-weight:normal" id="XPathFactory">
  *     {@link javax.xml.xpath.XPathFactory XPathFactory}
  * </th>
  * <td style="text-align:center">{@link javax.xml.xpath.XPathFactory#newInstance(java.lang.String) newInstance(uri)}</td>
@@ -759,7 +759,7 @@
  * <td style="text-align:center" rowspan="3">Yes</td>
  * <td style="text-align:center" rowspan="2">
  *     <a href="#Transform">Transform</a><br>
- *     <a href="#XPath">XPath</a>
+ *     <a href="#XPATH">XPath</a>
  * </td>
  * <td style="text-align:center" rowspan="3">19</td>
  * </tr>
@@ -794,7 +794,7 @@
  * <td style="text-align:center">Yes</td>
  * <td style="text-align:center">
  *     <a href="#Transform">Transform</a><br>
- *     <a href="#XPAth">XPath</a>
+ *     <a href="#XPATH">XPath</a>
  * </td>
  * <td style="text-align:center"><a href="#Processor">Method 2</a></td>
  * <td style="text-align:center">8</td>
@@ -816,7 +816,7 @@
  * <td style="text-align:center">
  *     <a href="#Transform">Transform</a><br>
  *     <a href="#Validation">Validation</a><br>
- *     <a href="#XPAth">XPath</a>
+ *     <a href="#XPATH">XPath</a>
  * </td>
  * <td style="text-align:center"><a href="#Processor">Method 2</a></td>
  * <td style="text-align:center">9</td>
@@ -929,7 +929,7 @@
  *
  * <p id="Note4">
  * <b>[4]</b> A value "yes" indicates the property is a Security Property. As indicated
- * in the <a href="#PP">Property Precedence</a>, the values listed in the column
+ * in the <a href="#Conf_PP">Property Precedence</a>, the values listed in the column
  * {@code enforced} will be used to initialize these properties when
  * {@link javax.xml.XMLConstants#FEATURE_SECURE_PROCESSING FSP} is true.
  *
@@ -957,7 +957,7 @@
  * These legacy property names are <b>deprecated</b> as of JDK 17 and may be removed
  * in future releases. If both new and legacy properties are set, the new property
  * names take precedence regardless of how and where they are set. The overriding order
- * as defined in <a href="#PropPrec">Property Precedence</a> thus becomes:
+ * as defined in <a href="#Conf_PP">Property Precedence</a> thus becomes:
  *
  * <ul>
  * <li>Value set on factories or processors using new property names.</li>
