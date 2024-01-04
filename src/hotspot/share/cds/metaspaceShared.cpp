@@ -539,7 +539,7 @@ void VM_PopulateDumpSharedSpace::doit() {
   builder.relocate_to_requested();
 
   // Write the archive file
-  const char* static_archive = Arguments::GetSharedArchivePath();
+  const char* static_archive = CDSConfig::static_archive_path();
   assert(static_archive != nullptr, "SharedArchiveFile not set?");
   FileMapInfo* mapinfo = new FileMapInfo(static_archive, true);
   mapinfo->populate_header(MetaspaceShared::core_region_alignment());
@@ -651,8 +651,7 @@ void MetaspaceShared::link_shared_classes(bool jcmd_request, TRAPS) {
 
 void MetaspaceShared::prepare_for_dumping() {
   assert(CDSConfig::is_dumping_archive(), "sanity");
-  Arguments::check_unsupported_dumping_properties();
-
+  CDSConfig::check_unsupported_dumping_properties();
   ClassLoader::initialize_shared_path(JavaThread::current());
 }
 
@@ -783,7 +782,6 @@ void MetaspaceShared::preload_and_dump_impl(TRAPS) {
 
 #if INCLUDE_CDS_JAVA_HEAP
   if (CDSConfig::is_dumping_heap()) {
-    StringTable::allocate_shared_strings_array(CHECK);
     if (!HeapShared::is_archived_boot_layer_available(THREAD)) {
       log_info(cds)("archivedBootLayer not available, disabling full module graph");
       CDSConfig::disable_dumping_full_module_graph();
@@ -793,6 +791,10 @@ void MetaspaceShared::preload_and_dump_impl(TRAPS) {
     if (CDSConfig::is_dumping_full_module_graph()) {
       HeapShared::reset_archived_object_states(CHECK);
     }
+
+    // Do this at the very end, when no Java code will be executed. Otherwise
+    // some new strings may be added to the intern table.
+    StringTable::allocate_shared_strings_array(CHECK);
   }
 #endif
 
@@ -984,8 +986,8 @@ void MetaspaceShared::initialize_runtime_shared_and_meta_spaces() {
 }
 
 FileMapInfo* MetaspaceShared::open_static_archive() {
-  const char* static_archive = Arguments::GetSharedArchivePath();
-  assert(static_archive != nullptr, "SharedArchivePath is nullptr");
+  const char* static_archive = CDSConfig::static_archive_path();
+  assert(static_archive != nullptr, "sanity");
   FileMapInfo* mapinfo = new FileMapInfo(static_archive, true);
   if (!mapinfo->initialize()) {
     delete(mapinfo);
@@ -998,7 +1000,7 @@ FileMapInfo* MetaspaceShared::open_dynamic_archive() {
   if (CDSConfig::is_dumping_dynamic_archive()) {
     return nullptr;
   }
-  const char* dynamic_archive = Arguments::GetSharedDynamicArchivePath();
+  const char* dynamic_archive = CDSConfig::dynamic_archive_path();
   if (dynamic_archive == nullptr) {
     return nullptr;
   }
@@ -1491,7 +1493,7 @@ void MetaspaceShared::initialize_shared_spaces() {
   if (PrintSharedArchiveAndExit) {
     // Print archive names
     if (dynamic_mapinfo != nullptr) {
-      tty->print_cr("\n\nBase archive name: %s", Arguments::GetSharedArchivePath());
+      tty->print_cr("\n\nBase archive name: %s", CDSConfig::static_archive_path());
       tty->print_cr("Base archive version %d", static_mapinfo->version());
     } else {
       tty->print_cr("Static archive name: %s", static_mapinfo->full_path());

@@ -33,12 +33,10 @@
 #include "oops/oop.hpp"
 #include "utilities/stack.hpp"
 
-class OopStack;
 class ReferenceProcessor;
 class ParallelScavengeHeap;
 class ParallelScavengeTracer;
 class PSIsAliveClosure;
-class PSRefProcTaskExecutor;
 class STWGCTimer;
 
 class PSScavenge: AllStatic {

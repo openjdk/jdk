@@ -111,7 +111,7 @@ public:
   void clear_MemRegion(MemRegion mr);
 
   // Return true if "p" is at the start of a card.
-  bool is_card_aligned(HeapWord* p) {
+  static bool is_card_aligned(HeapWord* p) {
     return is_aligned(p, card_size());
   }
 
