@@ -1455,7 +1455,7 @@ ProfileData* MethodData::bci_to_extra_data_find(int bci, Method* m, DataLayout*&
       if (m != nullptr) {
         SpeculativeTrapData* data = new SpeculativeTrapData(dp);
         if (dp->bci() == bci) {
-          assert(data->method() == nullptr, "method must be set");
+          assert(data->method() != nullptr, "method must be set");
           if (data->method() == m) {
             return data;
           }
