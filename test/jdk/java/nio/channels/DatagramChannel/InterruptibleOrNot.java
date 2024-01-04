@@ -69,6 +69,7 @@ public class InterruptibleOrNot {
             ByteBuffer buf = ByteBuffer.allocate(100);
             Thread.currentThread().interrupt();
             assertThrows(ClosedByInterruptException.class, () -> dc.receive(buf));
+            assertFalse(dc.isOpen());
         } finally {
             Thread.interrupted();  // clear interrupt status
         }
@@ -85,6 +86,7 @@ public class InterruptibleOrNot {
             Thread thread = Thread.currentThread();
             onReceive(thread::interrupt);
             assertThrows(ClosedByInterruptException.class, () -> dc.receive(buf));
+            assertFalse(dc.isOpen());
         } finally {
             Thread.interrupted();  // clear interrupt status
         }
@@ -105,6 +107,7 @@ public class InterruptibleOrNot {
             });
             Thread.currentThread().interrupt();
             assertThrows(AsynchronousCloseException.class, () -> dc.receive(buf));
+            assertFalse(dc.isOpen());
         } finally {
             Thread.interrupted();  // clear interrupt status
         }
@@ -128,6 +131,7 @@ public class InterruptibleOrNot {
                 dc.close();
             });
             assertThrows(AsynchronousCloseException.class, () -> dc.receive(buf));
+            assertFalse(dc.isOpen());
         } finally {
             Thread.interrupted();  // clear interrupt status
         }
@@ -144,6 +148,7 @@ public class InterruptibleOrNot {
             SocketAddress target = dc.getLocalAddress();
             Thread.currentThread().interrupt();
             assertThrows(ClosedByInterruptException.class, () -> dc.send(buf, target));
+            assertFalse(dc.isOpen());
         } finally {
             Thread.interrupted();  // clear interrupt
         }
@@ -160,7 +165,8 @@ public class InterruptibleOrNot {
             SocketAddress target = dc.getLocalAddress();
             Thread.currentThread().interrupt();
             int n = dc.send(buf, target);
-            assertTrue(n == 100);
+            assertEquals(100, n);
+            assertTrue(dc.isOpen());
         } finally {
             Thread.interrupted();  // clear interrupt status
         }
