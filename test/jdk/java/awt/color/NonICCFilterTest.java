@@ -56,12 +56,12 @@ public class NonICCFilterTest {
 
         @Override
         public float[] toRGB(float[] colorvalue) {
-            return csRGB.toRGB(colorvalue);
+            return colorvalue;
         }
 
         @Override
         public float[] fromRGB(float[] rgbvalue) {
-            return csRGB.fromRGB(rgbvalue);
+            return rgbvalue;
         }
 
         @Override
