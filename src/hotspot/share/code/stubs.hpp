@@ -154,9 +154,10 @@ class StubQueue: public CHeapObj<mtCode> {
   Mutex* const   _mutex;                         // the lock used for a (request, commit) transaction
 
   void  check_index(int i) const                 { assert(0 <= i && i < _buffer_limit && i % stub_alignment() == 0, "illegal index"); }
+  void  check_stub_align(Stub* s) const          { assert(((intptr_t)s) % stub_alignment() == 0, "incorrect stub alignment"); }
   bool  is_contiguous() const                    { return _queue_begin <= _queue_end; }
   int   index_of(Stub* s) const                  { int i = (int)((address)s - _stub_buffer); check_index(i); return i; }
-  Stub* stub_at(int i) const                     { check_index(i); return (Stub*)(_stub_buffer + i); }
+  Stub* stub_at(int i) const                     { check_index(i); Stub* s = (Stub*)(_stub_buffer + i); check_stub_align(s); return s; }
   Stub* current_stub() const                     { return stub_at(_queue_end); }
 
   // Stub functionality accessed via interface
