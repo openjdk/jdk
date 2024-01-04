@@ -192,7 +192,11 @@ void AwtWin32GraphicsDevice::Initialize()
     if (hBM == NULL) {
         J2dTraceLn(J2D_TRACE_WARNING, "AwtWin32GraphicsDevice::Initialize CreateCompatibleBitmap failed");
     }
-    VERIFY(::GetDIBits(hBMDC, hBM, 0, 1, NULL, gpBitmapInfo, DIB_RGB_COLORS));
+
+    bool cbf = false;
+    if (::GetDIBits(hBMDC, hBM, 0, 1, NULL, gpBitmapInfo, DIB_RGB_COLORS) == 0) {
+        cbf = true;
+    }
 
     if (colorData->bitsperpixel > 8) {
         if (MONITORINFOF_PRIMARY & pMonitorInfo->dwFlags) {
@@ -201,7 +205,7 @@ void AwtWin32GraphicsDevice::Initialize()
         if (colorData->bitsperpixel != 24) { // 15, 16, or 32 bpp
             int foo;
             gpBitmapInfo->bmiHeader.biCompression = BI_BITFIELDS;
-            if (::GetDIBits(hBMDC, hBM, 0, 1, &foo, gpBitmapInfo,
+            if (cbf || ::GetDIBits(hBMDC, hBM, 0, 1, &foo, gpBitmapInfo,
                             DIB_RGB_COLORS) == 0)
             {
                 // Bug 4684966: If GetDIBits returns an error, we could
@@ -305,8 +309,8 @@ void AwtWin32GraphicsDevice::Initialize()
         }
         palette->UpdateLogical();
     }
-    if (hBM != NULL) VERIFY(::DeleteObject(hBM));
-    if (hBMDC != NULL) VERIFY(::DeleteDC(hBMDC));
+    if (hBM != NULL) { VERIFY(::DeleteObject(hBM)); }
+    if (hBMDC != NULL) { VERIFY(::DeleteDC(hBMDC)); }
 }
 
 /**
