@@ -135,11 +135,11 @@ public class StringBufferRepeat {
         sb.toString();
         sb.repeat('*', 5);
         expected = "*****";
-        assertEquals(expected, sb.toString());
+        assertEquals(sb.toString(), expected);
         sb.setLength(0);
         sb.toString();
         sb.repeat("*", 5);
-        assertEquals(expected, sb.toString());
+        assertEquals(sb.toString(), expected);
 
 
     }
