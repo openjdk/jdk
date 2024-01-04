@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -225,6 +225,8 @@ void Parse::load_interpreter_state(Node* osr_buf) {
   for (index = 0; index < mcnt; index++) {
     // Make a BoxLockNode for the monitor.
     Node *box = _gvn.transform(new BoxLockNode(next_monitor()));
+    // Check for bailout after new BoxLockNode
+    if (failing()) { return; }
 
 
     // Displaced headers and locked objects are interleaved in the
