@@ -4790,8 +4790,7 @@ void PhaseIdealLoop::expand_get_from_sv_cache(ScopedValueGetHitsInCacheNode* get
   Node* cache_null_proj = new IfFalseNode(cache_not_null_iff);
   register_control(cache_null_proj, loop, cache_not_null_iff);
 
-  Node* not_null_load_of_cache = new CastPPNode(load_of_cache, _igvn.type(load_of_cache)->join(TypePtr::NOTNULL));
-  not_null_load_of_cache->set_req(0, cache_not_null_proj);
+  Node* not_null_load_of_cache = new CastPPNode(cache_not_null_proj, load_of_cache, _igvn.type(load_of_cache)->join(TypePtr::NOTNULL));
   register_new_node(not_null_load_of_cache, cache_not_null_proj);
 
   Node* mem = get_from_cache->mem();
