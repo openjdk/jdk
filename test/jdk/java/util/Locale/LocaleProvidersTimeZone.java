@@ -28,6 +28,7 @@
  * @library /test/lib
  * @build LocaleProviders
  *        providersrc.spi.src.tznp
+ *        providersrc.spi.src.tznp8013086
  * @modules java.base/sun.util.locale.provider
  * @run junit/othervm LocaleProvidersTimeZone
  */
