@@ -23,8 +23,7 @@
 
 /**
  * @test
- * @requires vm.gc.Serial
- * @requires vm.opt.DisableExplicitGC != "true"
+ * @requires vm.gc.Serial & (vm.opt.DisableExplicitGC != "true")
  * @summary Test of option -XX:FullGCHeapDumpLimit
  * @library /test/lib
  * @run main/othervm -XX:+UseSerialGC -XX:+HeapDumpBeforeFullGC -XX:+HeapDumpAfterFullGC -XX:HeapDumpPath=test.hprof -XX:FullGCHeapDumpLimit=1 FullGCHeapDumpLimitTest
