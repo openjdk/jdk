@@ -38,7 +38,7 @@ import javax.swing.SwingUtilities;
 public class ComboPopupBug {
     private static final String instructionsText = """
             This test is used to verify that clicking on JComboBox
-            when frame containing it is about to close should not 
+            when frame containing it is about to close should not
             cause IllegalStateException.
 
             A JComboBox is shown with Close button at the bottom.
