@@ -43,7 +43,7 @@ public class LocaleProvidersLogger {
      */
     @Test
     public void logIncorrectLocaleProvider() throws Throwable {
-        LocaleProviders.testRun("FOO", "bug8245241Test",
+        LocaleProviders.test("FOO", "bug8245241Test",
                 "Invalid locale provider adapter \"FOO\" ignored.");
     }
 }

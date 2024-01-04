@@ -43,9 +43,9 @@ public class LocaleProvidersTimeZone {
      */
     @Test
     public void timeZoneWithCustomProvider() throws Throwable {
-        LocaleProviders.testRun("JRE", "tzNameTest", "Europe/Moscow");
-        LocaleProviders.testRun("COMPAT", "tzNameTest", "Europe/Moscow");
-        LocaleProviders.testRun("JRE", "tzNameTest", "America/Los_Angeles");
-        LocaleProviders.testRun("COMPAT", "tzNameTest", "America/Los_Angeles");
+        LocaleProviders.test("JRE", "tzNameTest", "Europe/Moscow");
+        LocaleProviders.test("COMPAT", "tzNameTest", "Europe/Moscow");
+        LocaleProviders.test("JRE", "tzNameTest", "America/Los_Angeles");
+        LocaleProviders.test("COMPAT", "tzNameTest", "America/Los_Angeles");
     }
 }

@@ -49,7 +49,7 @@ public class LocaleProvidersFormat {
     @Test
     @EnabledOnOs(WINDOWS)
     public void dateFormatExtraSpace() throws Throwable {
-        LocaleProviders.testRun("HOST", "bug7198834Test");
+        LocaleProviders.test("HOST", "bug7198834Test");
     }
 
     /*
@@ -59,7 +59,7 @@ public class LocaleProvidersFormat {
      */
     @Test
     public void formatWithInvalidLocaleExtension() throws Throwable {
-        LocaleProviders.testRun("CLDR", "bug8001440Test");
+        LocaleProviders.test("CLDR", "bug8001440Test");
     }
 
     /*
@@ -69,8 +69,8 @@ public class LocaleProvidersFormat {
      */
     @Test
     public void simpleDateFormatWithTZNProvider() throws Throwable {
-        LocaleProviders.testRun("JRE,SPI", "bug8013086Test", "ja", "JP");
-        LocaleProviders.testRun("COMPAT,SPI", "bug8013086Test", "ja", "JP");
+        LocaleProviders.test("JRE,SPI", "bug8013086Test", "ja", "JP");
+        LocaleProviders.test("COMPAT,SPI", "bug8013086Test", "ja", "JP");
     }
 
     /*
@@ -80,9 +80,9 @@ public class LocaleProvidersFormat {
     @Test
     @EnabledOnOs(WINDOWS)
     public void windowsJapaneseDateFields() throws Throwable {
-        LocaleProviders.testRun("HOST,JRE", "bug8013903Test");
-        LocaleProviders.testRun("HOST", "bug8013903Test");
-        LocaleProviders.testRun("HOST,COMPAT", "bug8013903Test");
+        LocaleProviders.test("HOST,JRE", "bug8013903Test");
+        LocaleProviders.test("HOST", "bug8013903Test");
+        LocaleProviders.test("HOST,COMPAT", "bug8013903Test");
     }
 
     /*
@@ -94,9 +94,9 @@ public class LocaleProvidersFormat {
     @EnabledIfSystemProperty(named = "user.language", matches = "zh")
     @EnabledIfSystemProperty(named = "user.country", matches = "CN")
     public void windowsChineseCurrencySymbol() throws Throwable {
-        LocaleProviders.testRun("JRE,HOST", "bug8027289Test", "FFE5");
-        LocaleProviders.testRun("COMPAT,HOST", "bug8027289Test", "FFE5");
-        LocaleProviders.testRun("HOST", "bug8027289Test", "00A5");
+        LocaleProviders.test("JRE,HOST", "bug8027289Test", "FFE5");
+        LocaleProviders.test("COMPAT,HOST", "bug8027289Test", "FFE5");
+        LocaleProviders.test("HOST", "bug8027289Test", "00A5");
     }
 
     /*
@@ -106,6 +106,6 @@ public class LocaleProvidersFormat {
     @Test
     @EnabledOnOs({WINDOWS, MAC})
     public void hostOptionalFracDigits() throws Throwable {
-        LocaleProviders.testRun("HOST", "bug8232860Test");
+        LocaleProviders.test("HOST", "bug8232860Test");
     }
 }

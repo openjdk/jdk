@@ -485,7 +485,7 @@ public class LocaleProviders {
      * LocaleProviders test method with the appropriate LocaleProvider (e.g. CLDR,
      * COMPAT, ETC.)
      */
-    static void testRun(String prefList, String methodName, String... params) throws Throwable {
+    static void test(String prefList, String methodName, String... params) throws Throwable {
 
         List<String> command = List.of(
                 "-ea", "-esa",

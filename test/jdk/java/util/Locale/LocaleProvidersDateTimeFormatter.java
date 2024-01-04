@@ -41,6 +41,6 @@ public class LocaleProvidersDateTimeFormatter {
      */
     @Test
     public void dateOnlyJavaTimePattern() throws Throwable {
-        LocaleProviders.testRun("HOST", "bug8248695Test");
+        LocaleProviders.test("HOST", "bug8248695Test");
     }
 }

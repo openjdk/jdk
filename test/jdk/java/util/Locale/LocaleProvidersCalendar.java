@@ -47,7 +47,7 @@ public class LocaleProvidersCalendar {
     @Test
     @EnabledOnOs(WINDOWS)
     public void gregCalEraHost() throws Throwable {
-        LocaleProviders.testRun("HOST", "bug8228465Test");
+        LocaleProviders.test("HOST", "bug8228465Test");
     }
 
     /*
@@ -57,7 +57,7 @@ public class LocaleProvidersCalendar {
     @Test
     @EnabledOnOs(MAC)
     public void japaneseCalValuesHost() throws Throwable {
-        LocaleProviders.testRun("HOST", "bug8232871Test");
+        LocaleProviders.test("HOST", "bug8232871Test");
     }
 
     /*
@@ -69,6 +69,6 @@ public class LocaleProvidersCalendar {
     @EnabledIfSystemProperty(named = "user.language", matches = "en")
     @EnabledIfSystemProperty(named = "user.country", matches = "GB")
     public void minDaysFirstWeekHost() throws Throwable {
-        LocaleProviders.testRun("HOST", "bug8257964Test");
+        LocaleProviders.test("HOST", "bug8257964Test");
     }
 }

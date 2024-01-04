@@ -83,7 +83,7 @@ public class LocaleProvidersRun {
     @MethodSource
     public void adapterTest(String prefList, String param1,
                             String param2, String param3) throws Throwable {
-        LocaleProviders.testRun(prefList, "adapterTest", param1, param2, param3);
+        LocaleProviders.test(prefList, "adapterTest", param1, param2, param3);
     }
 
     /*
@@ -157,7 +157,7 @@ public class LocaleProvidersRun {
     @EnabledOnOs(WINDOWS)
     @EnabledIfSystemProperty(named = "user.language", matches = "en")
     public void currencyNameProviderWindowsHost() throws Throwable {
-        LocaleProviders.testRun("HOST", "bug8010666Test");
+        LocaleProviders.test("HOST", "bug8010666Test");
     }
 
     /*
@@ -168,6 +168,6 @@ public class LocaleProvidersRun {
     @EnabledOnOs(WINDOWS)
     @DisabledIfSystemProperty(named = "user.language", matches = "en")
     public void nonEnglishDisplayCountryHost() throws Throwable {
-        LocaleProviders.testRun("HOST", "bug8220227Test");
+        LocaleProviders.test("HOST", "bug8220227Test");
     }
 }
