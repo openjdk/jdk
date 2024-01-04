@@ -37,8 +37,10 @@ import org.junit.jupiter.api.Test;
 
 public class LocaleProvidersTimeZone {
 
-    // 8000245 and 8000615: Ensure preference is followed, even with a custom
-    // SPI defined.
+    /*
+     * 8000245 and 8000615: Ensure preference is followed, even with a custom
+     * SPI defined.
+     */
     @Test
     public void timeZoneWithCustomProvider() throws Throwable {
         LocaleProviders.testRun("JRE", "tzNameTest", "Europe/Moscow");

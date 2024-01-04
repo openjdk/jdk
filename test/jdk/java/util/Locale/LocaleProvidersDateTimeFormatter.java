@@ -35,8 +35,10 @@ import org.junit.jupiter.api.Test;
 
 public class LocaleProvidersDateTimeFormatter {
 
-    // 8248695: Ensure DateTimeFormatter::ofLocalizedDate does not throw exception
-    // under HOST (date only pattern leaks time field)
+    /*
+     * 8248695: Ensure DateTimeFormatter::ofLocalizedDate does not throw exception
+     * under HOST (date only pattern leaks time field)
+     */
     @Test
     public void dateOnlyJavaTimePattern() throws Throwable {
         LocaleProviders.testRun("HOST", "bug8248695Test");

@@ -481,14 +481,16 @@ public class LocaleProviders {
         }
     }
 
-    // Method is used by the LocaleProviders* related tests to launch a
-    // LocaleProviders test method with the appropriate LocaleProvider (e.g. CLDR,
-    // COMPAT, ETC.)
+    /* Method is used by the LocaleProviders* related tests to launch a
+     * LocaleProviders test method with the appropriate LocaleProvider (e.g. CLDR,
+     * COMPAT, ETC.)
+     */
     static void testRun(String prefList, String methodName, String... params) throws Throwable {
 
         List<String> command = List.of(
                 "-ea", "-esa",
                 "-cp", Utils.TEST_CLASS_PATH,
+                // Required for LocaleProvidersLogger
                 "-Djava.util.logging.config.class=LocaleProviders$LogConfig",
                 "-Djava.locale.providers=" + prefList,
                 "--add-exports=java.base/sun.util.locale.provider=ALL-UNNAMED",

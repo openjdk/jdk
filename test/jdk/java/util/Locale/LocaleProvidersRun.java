@@ -149,8 +149,10 @@ public class LocaleProvidersRun {
             );
     }
 
-    // 8010666: Test to ensure correct implementation of Currency/LocaleNameProvider
-    // in HOST Windows provider (English locale)
+    /*
+     * 8010666: Test to ensure correct implementation of Currency/LocaleNameProvider
+     * in HOST Windows provider (English locale)
+     */
     @Test
     @EnabledOnOs(WINDOWS)
     @EnabledIfSystemProperty(named = "user.language", matches = "en")
@@ -158,8 +160,10 @@ public class LocaleProvidersRun {
         LocaleProviders.testRun("HOST", "bug8010666Test");
     }
 
-    // 8220227: Ensure Locale::getDisplayCountry does not display error message
-    // under HOST Windows (non-english locale)
+    /*
+     * 8220227: Ensure Locale::getDisplayCountry does not display error message
+     * under HOST Windows (non-english locale)
+     */
     @Test
     @EnabledOnOs(WINDOWS)
     @DisabledIfSystemProperty(named = "user.language", matches = "en")
