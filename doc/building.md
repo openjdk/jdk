@@ -1316,9 +1316,6 @@ For example, cross-compiling to AArch64 from x86_64 could be done like this:
     https://httpredir.debian.org/debian/
   ```
 
-  If the target architecture is `riscv64`, the path should be `debian-ports`
-  instead of `debian`.
-
 * To create an Ubuntu-based chroot:
 
   ```

@@ -48,6 +48,9 @@ const bool CCallingConventionRequiresIntsAsLongs = true;
 // The expected size in bytes of a cache line, used to pad data structures.
 #define DEFAULT_CACHE_LINE_SIZE 256
 
+// The default padding size for data structures to avoid false sharing.
+#define DEFAULT_PADDING_SIZE DEFAULT_CACHE_LINE_SIZE
+
 #define SUPPORT_RESERVED_STACK_AREA
 
 #endif // CPU_S390_GLOBALDEFINITIONS_S390_HPP

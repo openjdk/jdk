@@ -76,7 +76,6 @@ static const char * timer_name[] = {
 };
 
 static elapsedTimer timers[max_phase_timers];
-static uint totalInstructionNodes = 0;
 
 class PhaseTraceTime: public TraceTime {
  private:
@@ -494,7 +493,6 @@ void Compilation::compile_method() {
   if (log() != nullptr) // Print code cache state into compiler log
     log()->code_cache_state();
 
-  totalInstructionNodes += Instruction::number_of_instructions();
 }
 
 
