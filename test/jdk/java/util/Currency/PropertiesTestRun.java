@@ -116,7 +116,7 @@ public class PropertiesTestRun {
 
     // Launch a PropertiesTest method using the TEST JDK
     private static void executeTestJDKMethod(String... params) throws Throwable {
-        int exitStatus = ProcessTools.executeTestJvm(params).getExitValue();
+        int exitStatus = ProcessTools.executeTestJava(params).getExitValue();
         if (exitStatus != 0) {
             fail("Process started with: " + Arrays.toString(params) + " failed");
         }
@@ -126,7 +126,7 @@ public class PropertiesTestRun {
     private static void executeWritableJDKMethod(String... params) throws Throwable {
         // Need to include WritableJDK javapath, TEST JDK classpath
         String[] allParams = new String[3+params.length+Utils.getTestJavaOpts().length];
-        // We don't use executeTestJvm() because we want to point to separate JDK java path
+        // We don't use executeTestJava() because we want to point to separate JDK java path
         allParams[0] = WRITABLE_JDK_JAVA_PATH;
         allParams[1] = "-cp";
         allParams[2] = System.getProperty("java.class.path");

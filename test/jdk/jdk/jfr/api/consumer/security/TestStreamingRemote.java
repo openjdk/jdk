@@ -81,7 +81,7 @@ public class TestStreamingRemote {
             c[1] = "-Djava.security.policy=" + escapeBackslashes(policy.toString());
             c[2] = Test.class.getName();
             c[3] = repository;
-            OutputAnalyzer oa = ProcessTools.executeTestJvm(c);
+            OutputAnalyzer oa = ProcessTools.executeTestJava(c);
             oa.shouldContain(SUCCESS);
         }
     }
