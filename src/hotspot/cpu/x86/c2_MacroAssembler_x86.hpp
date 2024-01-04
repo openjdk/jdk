@@ -390,6 +390,9 @@ public:
 
   void vector_round_float_avx(XMMRegister dst, XMMRegister src, AddressLiteral float_sign_flip, AddressLiteral new_mxcsr, int vec_enc,
                               Register tmp, XMMRegister xtmp1, XMMRegister xtmp2, XMMRegister xtmp3, XMMRegister xtmp4);
+
+  void vector_compress_expand_avx2(int opcode, XMMRegister dst, XMMRegister src, XMMRegister mask, Register rtmp,
+                                   Register rscratch, XMMRegister permv, XMMRegister xtmp, BasicType bt, int vec_enc);
 #endif // _LP64
 
   void udivI(Register rax, Register divisor, Register rdx);
@@ -481,6 +484,7 @@ public:
 
   void vector_signum_evex(int opcode, XMMRegister dst, XMMRegister src, XMMRegister zero, XMMRegister one,
                           KRegister ktmp1, int vec_enc);
+
 
   void vmovmask(BasicType elem_bt, XMMRegister dst, Address src, XMMRegister mask, int vec_enc);
 

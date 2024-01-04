@@ -99,6 +99,10 @@ class StubGenerator: public StubCodeGenerator {
 
   address generate_fp_mask(const char *stub_name, int64_t mask);
 
+  address generate_compress_perm_table(const char *stub_name, int32_t esize);
+
+  address generate_expand_perm_table(const char *stub_name, int32_t esize);
+
   address generate_vector_mask(const char *stub_name, int64_t mask);
 
   address generate_vector_byte_perm_mask(const char *stub_name);

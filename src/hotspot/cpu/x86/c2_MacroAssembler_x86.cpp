@@ -5280,6 +5280,55 @@ void C2_MacroAssembler::vector_mask_compress(KRegister dst, KRegister src, Regis
   kmov(dst, rtmp2);
 }
 
+#ifdef _LP64
+void C2_MacroAssembler::vector_compress_expand_avx2(int opcode, XMMRegister dst, XMMRegister src, XMMRegister mask,
+                                                    Register rtmp, Register rscratch, XMMRegister permv,
+                                                    XMMRegister xtmp, BasicType bt, int vec_enc) {
+  assert(type2aelembytes(bt) >= 4, "");
+  assert(opcode == Op_CompressV || opcode == Op_ExpandV, "");
+  if (bt == T_INT || bt == T_FLOAT) {
+    vmovmskps(rtmp, mask, vec_enc);
+    shlq(rtmp, 5);
+    if (opcode == Op_CompressV) {
+      lea(rscratch, ExternalAddress(StubRoutines::x86::compress_perm_table32()));
+    } else {
+      lea(rscratch, ExternalAddress(StubRoutines::x86::expand_perm_table32()));
+    }
+    addptr(rtmp, rscratch);
+    vmovdqu(permv, Address(rtmp));
+    vpermps(dst, permv, src, Assembler::AVX_256bit);
+    vpxor(xtmp, xtmp, xtmp, vec_enc);
+    // Blend the results with zero vector using permute vector as mask, its
+    // non-participating lanes holds a -1 value.
+    vblendvps(dst, dst, xtmp, permv, vec_enc);
+  } else {
+    assert(bt == T_LONG || bt == T_DOUBLE, "");
+    vmovmskpd(rtmp, mask, vec_enc);
+    shlq(rtmp, 5);
+    if (opcode == Op_CompressV) {
+      lea(rscratch, ExternalAddress(StubRoutines::x86::compress_perm_table64()));
+    } else {
+      lea(rscratch, ExternalAddress(StubRoutines::x86::expand_perm_table64()));
+    }
+    addptr(rtmp, rscratch);
+    vmovdqu(permv, Address(rtmp));
+    vmovdqu(xtmp, permv);
+    // Multiply permute index by 2 to get double word index.
+    vpsllq(permv, permv, 1, vec_enc);
+    // Duplicate each double word shuffle
+    vpsllq(dst, permv, 32, vec_enc);
+    vpor(permv, permv, dst, vec_enc);
+    // Add one to get alternate double word index
+    vpaddd(permv, permv, ExternalAddress(StubRoutines::x86::vector_long_shuffle_mask()), vec_enc, noreg);
+    vpermps(dst, permv, src, Assembler::AVX_256bit);
+    vpxor(permv, permv, permv, vec_enc);
+    // Blend the results with zero vector using permute vector as mask, its
+    // non-participating lanes holds a -1 value.
+    vblendvps(dst, dst, permv, xtmp, vec_enc);
+  }
+}
+#endif
+
 void C2_MacroAssembler::vector_compress_expand(int opcode, XMMRegister dst, XMMRegister src, KRegister mask,
                                                bool merge, BasicType bt, int vec_enc) {
   if (opcode == Op_CompressV) {

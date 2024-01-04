@@ -951,6 +951,76 @@ address StubGenerator::generate_fp_mask(const char *stub_name, int64_t mask) {
   return start;
 }
 
+address StubGenerator::generate_compress_perm_table(const char *stub_name, int32_t esize) {
+  __ align(CodeEntryAlignment);
+  StubCodeMark mark(this, "StubRoutines", stub_name);
+  address start = __ pc();
+  if (esize == 32) {
+    for (int i = 0; i < 256; i++) {
+      int tmp = i;
+      int ctr = 0;
+      for (int j = 0; j < 8; j++) {
+        if (tmp & (1 << j)) {
+          __ emit_data(j, relocInfo::none);
+          ctr++;
+        }
+      }
+      for (; ctr < 8; ctr++) {
+        __ emit_data(-1, relocInfo::none);
+      }
+    }
+  } else {
+    assert(esize == 64, "");
+    for (int i = 0; i < 16; i++) {
+      int tmp = i;
+      int ctr = 0;
+      for (int j = 0; j < 4; j++) {
+        if (tmp & (1 << j)) {
+          __ emit_data64(j, relocInfo::none);
+          ctr++;
+        }
+      }
+      for (; ctr < 4; ctr++) {
+        __ emit_data64(-1L, relocInfo::none);
+      }
+    }
+  }
+  return start;
+}
+
+address StubGenerator::generate_expand_perm_table(const char *stub_name, int32_t esize) {
+  __ align(CodeEntryAlignment);
+  StubCodeMark mark(this, "StubRoutines", stub_name);
+  address start = __ pc();
+  if (esize == 32) {
+    for (int i = 0; i < 256; i++) {
+      int tmp = i;
+      int ctr = 0;
+      for (int j = 0; j < 8; j++) {
+        if (tmp & (1 << j)) {
+          __ emit_data(ctr++, relocInfo::none);
+        } else {
+          __ emit_data(-1, relocInfo::none);
+        }
+      }
+    }
+  } else {
+    assert(esize == 64, "");
+    for (int i = 0; i < 16; i++) {
+      int tmp = i;
+      int ctr = 0;
+      for (int j = 0; j < 4; j++) {
+        if (tmp & (1 << j)) {
+          __ emit_data64(ctr++, relocInfo::none);
+        } else {
+          __ emit_data64(-1L, relocInfo::none);
+        }
+      }
+    }
+  }
+  return start;
+}
+
 address StubGenerator::generate_vector_mask(const char *stub_name, int64_t mask) {
   __ align(CodeEntryAlignment);
   StubCodeMark mark(this, "StubRoutines", stub_name);
@@ -4094,6 +4164,13 @@ void StubGenerator::generate_compiler_stubs() {
   StubRoutines::x86::_vector_reverse_byte_perm_mask_long = generate_vector_reverse_byte_perm_mask_long("perm_mask_long");
   StubRoutines::x86::_vector_reverse_byte_perm_mask_int = generate_vector_reverse_byte_perm_mask_int("perm_mask_int");
   StubRoutines::x86::_vector_reverse_byte_perm_mask_short = generate_vector_reverse_byte_perm_mask_short("perm_mask_short");
+
+  if (VM_Version::supports_avx2() && !VM_Version::supports_avx512vl()) {
+    StubRoutines::x86::_compress_perm_table32 = generate_compress_perm_table("compress_perm_table32", 32);
+    StubRoutines::x86::_compress_perm_table64 = generate_compress_perm_table("compress_perm_table64", 64);
+    StubRoutines::x86::_expand_perm_table32 = generate_expand_perm_table("expand_perm_table32", 32);
+    StubRoutines::x86::_expand_perm_table64 = generate_expand_perm_table("expand_perm_table64", 64);
+  }
 
   if (VM_Version::supports_avx2() && !VM_Version::supports_avx512_vpopcntdq()) {
     // lut implementation influenced by counting 1s algorithm from section 5-1 of Hackers' Delight.
