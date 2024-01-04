@@ -3676,11 +3676,6 @@ class StubGenerator: public StubCodeGenerator {
       }
    private:
 
-    void vl1reXX_v(Assembler::SEW vset_sew, VectorRegister vr, Register sr) {
-      if (vset_sew == Assembler::e32) __ vl1re32_v(vr, sr);
-      else                            __ vl1re64_v(vr, sr);
-    }
-
     void vleXX_v(Assembler::SEW vset_sew, VectorRegister vr, Register sr) {
       if (vset_sew == Assembler::e32) __ vle32_v(vr, sr);
       else                            __ vle64_v(vr, sr);
@@ -3789,7 +3784,7 @@ class StubGenerator: public StubCodeGenerator {
     void sha2_quad_round(Assembler::SEW vset_sew, VectorRegister rot1, VectorRegister rot2, VectorRegister rot3, VectorRegister rot4,
                          Register scalarconst, VectorRegister vtemp, VectorRegister vtemp2, VectorRegister v_abef, VectorRegister v_cdgh,
                          bool gen_words = true, bool step_const = true) {
-      __ vl1reXX_v(vset_sew, vtemp, scalarconst);
+      __ vleXX_v(vset_sew, vtemp, scalarconst);
       if (step_const) {
         __ addi(scalarconst, scalarconst, vset_sew == Assembler::e32 ? 16 : 32);
       }
@@ -3879,17 +3874,17 @@ class StubGenerator: public StubCodeGenerator {
       Register limit = c_rarg3;
       Register consts =  t2; // caller saved
       Register state_c = x28; // caller saved
-      VectorRegister vindex = v1;
-      VectorRegister vW0 = v2;
-      VectorRegister vW1 = v4;
-      VectorRegister vW2 = v6;
-      VectorRegister vW3 = v8;
-      VectorRegister vState0 = v10;
-      VectorRegister vState1 = v12;
-      VectorRegister vHash0  = v14;
-      VectorRegister vHash1  = v16;
-      VectorRegister vTmp0   = v18;
-      VectorRegister vTmp1   = v20;
+      VectorRegister vindex = v2;
+      VectorRegister vW0 = v4;
+      VectorRegister vW1 = v6;
+      VectorRegister vW2 = v8;
+      VectorRegister vW3 = v10;
+      VectorRegister vState0 = v12;
+      VectorRegister vState1 = v14;
+      VectorRegister vHash0  = v16;
+      VectorRegister vHash1  = v18;
+      VectorRegister vTmp0   = v20;
+      VectorRegister vTmp1   = v22;
 
       Label multi_block_loop;
 
@@ -3941,10 +3936,10 @@ class StubGenerator: public StubCodeGenerator {
       } else {
         __ vsetivli(x0, 4, vset_sew, Assembler::m1, Assembler::ma, Assembler::ta);
       }
-      // Splat indexes in vindex if SEW = e64, but don't hurt anything.
+
       int64_t indexes = vset_sew == Assembler::e32 ? 0x00041014ul : 0x00082028ul;
       __ li(t0, indexes);
-      __ vmv_s_x(vindex, t0);
+      __ vmv_v_x(vindex, t0);
 
       // Step-over a,b, so we are pointing to c.
       // const_add is equal to 4x state variable, div by 2 is thus 2, a,b
