@@ -671,10 +671,12 @@ void SuperWord::find_adjacent_refs() {
   assert(_packset.is_empty() || align_to_mem_ref != nullptr,
          "packset empty or we find the alignment reference");
 
+#ifndef PRODUCT
   if (TraceSuperWord) {
     tty->print_cr("\nAfter find_adjacent_refs");
     print_packset();
   }
+#endif
 }
 
 //------------------------------find_align_to_ref---------------------------
@@ -1602,10 +1604,12 @@ void SuperWord::combine_packs() {
   // Remove all nullptr from packset
   compress_packset();
 
+#ifndef PRODUCT
   if (TraceSuperWord) {
     tty->print_cr("\nAfter combine_packs");
     print_packset();
   }
+#endif
 }
 
 // Find the set of alignment solutions for load/store pack.
