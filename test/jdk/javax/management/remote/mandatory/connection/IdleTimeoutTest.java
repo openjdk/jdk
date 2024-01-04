@@ -211,7 +211,7 @@ public class IdleTimeoutTest {
                     System.out.println("Operation[" + (i+1)
                                        +"]: starting at " +
                                        elapsed + "ms");
-                    final String name = ":name=Test_instance_" + i;
+                    final String name = "d:instance=" + i;
                     mbs.registerMBean(new Test(), new ObjectName(name));
                     if (i == (opCount-1))
                         startIdle = System.currentTimeMillis();
