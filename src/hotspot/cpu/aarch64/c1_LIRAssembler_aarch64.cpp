@@ -282,10 +282,10 @@ void LIR_Assembler::osr_entry() {
         __ bind(L);
       }
 #endif
-      __ ldr(r19, Address(OSR_buf, slot_offset + 0));
+      __ ldr(r19, Address(OSR_buf, slot_offset));
+      __ ldr(r20, Address(OSR_buf, slot_offset + BytesPerWord));
       __ str(r19, frame_map()->address_for_monitor_lock(i));
-      __ ldr(r19, Address(OSR_buf, slot_offset + 1*BytesPerWord));
-      __ str(r19, frame_map()->address_for_monitor_object(i));
+      __ str(r20, frame_map()->address_for_monitor_object(i));
     }
   }
 }
