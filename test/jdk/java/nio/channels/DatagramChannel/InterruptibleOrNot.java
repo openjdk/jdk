@@ -114,7 +114,8 @@ public class InterruptibleOrNot {
     }
 
     /**
-     * Test interrupting a thread blocked in DatagramChannel.receive. ??
+     * Test interrupting a thread blocked in DatagramChannel.receive, the DatagramChannel
+     * is not interruptible.
      */
     @Test
     public void testInterruptDuringUninterruptibleReceive() throws Exception {
