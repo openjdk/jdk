@@ -2170,7 +2170,7 @@ private:
   // What is the index of the first data entry?
   int first_di() const { return 0; }
 
-  ProfileData* bci_to_extra_data_helper(int bci, Method* m, DataLayout*& dp, bool concurrent);
+  ProfileData* bci_to_extra_data_find(int bci, Method* m, DataLayout*& dp);
   // Find or create an extra ProfileData:
   ProfileData* bci_to_extra_data(int bci, Method* m, bool create_if_missing);
 

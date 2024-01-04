@@ -1431,7 +1431,7 @@ DataLayout* MethodData::next_extra(DataLayout* dp) {
   return (DataLayout*)((address)dp + DataLayout::compute_size_in_bytes(nb_cells));
 }
 
-ProfileData* MethodData::bci_to_extra_data_helper(int bci, Method* m, DataLayout*& dp, bool concurrent) {
+ProfileData* MethodData::bci_to_extra_data_find(int bci, Method* m, DataLayout*& dp) {
   check_extra_data_locked();
 
   DataLayout* end = args_data_limit();
@@ -1454,14 +1454,9 @@ ProfileData* MethodData::bci_to_extra_data_helper(int bci, Method* m, DataLayout
     case DataLayout::speculative_trap_data_tag:
       if (m != nullptr) {
         SpeculativeTrapData* data = new SpeculativeTrapData(dp);
-        // data->method() may be null in case of a concurrent
-        // allocation. Maybe it's for the same method. Try to use that
-        // entry in that case.
         if (dp->bci() == bci) {
-          if (data->method() == nullptr) {
-            assert(concurrent, "impossible because no concurrent allocation");
-            return nullptr;
-          } else if (data->method() == m) {
+          assert(data->method() == nullptr, "method must be set");
+          if (data->method() == m) {
             return data;
           }
         }
@@ -1492,26 +1487,14 @@ ProfileData* MethodData::bci_to_extra_data(int bci, Method* m, bool create_if_mi
   DataLayout* dp  = extra_data_base();
   DataLayout* end = args_data_limit();
 
-  // Allocation in the extra data space has to be atomic because not
-  // all entries have the same size and non atomic concurrent
-  // allocation would result in a corrupted extra data space.
-  ProfileData* result = bci_to_extra_data_helper(bci, m, dp, true);
-  if (result != nullptr) {
+  // Find if already exists
+  ProfileData* result = bci_to_extra_data_find(bci, m, dp);
+  if (result != nullptr || dp >= end) {
     return result;
   }
 
-  if (create_if_missing && dp < end) {
-    // TODO lock is not useless, since we require lock at the beginning of the method.
-    // // Check again now that we have the lock. Another thread may
-    // // have added extra data entries. Do it re-entrant in case
-    // // we already have the lock further up.
-    // ConditionalMutexLocker ml(extra_data_lock(), !extra_data_lock()->owned_by_self());
-    // Mutex::_no_safepoint_check_flag
-    ProfileData* result = bci_to_extra_data_helper(bci, m, dp, false);
-    if (result != nullptr || dp >= end) {
-      return result;
-    }
-
+  if (create_if_missing) {
+    // Not found -> Allocate
     assert(dp->tag() == DataLayout::no_tag || (dp->tag() == DataLayout::speculative_trap_data_tag && m != nullptr), "should be free");
     assert(next_extra(dp)->tag() == DataLayout::no_tag || next_extra(dp)->tag() == DataLayout::arg_info_data_tag, "should be free or arg info");
     u1 tag = m == nullptr ? DataLayout::bit_data_tag : DataLayout::speculative_trap_data_tag;
