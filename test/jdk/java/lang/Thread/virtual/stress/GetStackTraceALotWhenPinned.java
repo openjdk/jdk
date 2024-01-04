@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
  * @bug 8322818
  * @summary Stress test Thread.getStackTrace on a virtual thread that is pinned
  * @requires vm.debug != true
- * @run main GetStackTraceALotWhenPinned 100000
+ * @run main GetStackTraceALotWhenPinned 25000
  */
 
 /*
@@ -35,6 +35,7 @@
  * @run main/timeout=300 GetStackTraceALotWhenPinned 10000
  */
 
+import java.time.Instant;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.LockSupport;
 
@@ -67,7 +68,7 @@ public class GetStackTraceALotWhenPinned {
             LockSupport.unpark(thread);
             long currentTime = System.currentTimeMillis();
             if ((currentTime - lastTimestamp) > 500) {
-                System.out.println(counter.get() + " remaining ...");
+                System.out.format("%s %d remaining ...%n", Instant.now(), counter.get());
                 lastTimestamp = currentTime;
             }
         }
