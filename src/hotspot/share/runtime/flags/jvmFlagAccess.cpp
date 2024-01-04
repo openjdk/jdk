@@ -321,7 +321,7 @@ JVMFlag::Error JVMFlagAccess::set_ccstr(JVMFlag* flag, ccstr* value, JVMFlagOrig
     // Old value is heap allocated so free it.
     FREE_C_HEAP_ARRAY(char, old_value);
   }
-  // Unlike the other APIs, the old vale is NOT returned, so the caller won't need to free it.
+  // Unlike the other APIs, the old value is NOT returned, so the caller won't need to free it.
   // The callers typically don't care what the old value is.
   // If the caller really wants to know the old value, read it (and make a copy if necessary)
   // before calling this API.

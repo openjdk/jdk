@@ -697,7 +697,10 @@ public final class ProcessTools {
             }
 
             output = new OutputAnalyzer(p, cs);
-            p.waitFor();
+
+            // Wait for the process to finish. Call through the output
+            // analyzer to get correct logging and timestamps.
+            output.waitFor();
 
             {   // Dumping the process output to a separate file
                 var fileName = String.format("pid-%d-output.log", p.pid());

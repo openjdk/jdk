@@ -25,6 +25,7 @@
  * @test
  * @bug 4500750 6848799 8028584
  * @summary Tests creating page format from attributes
+ * @key printer
  * @run main PageFormatFromAttributes
  */
 import java.awt.print.*;

@@ -1017,6 +1017,10 @@ int os::current_process_id() {
 // directory not the java application's temp directory, ala java.io.tmpdir.
 const char* os::get_temp_directory() { return "/tmp"; }
 
+void os::prepare_native_symbols() {
+  LoadedLibraries::reload();
+}
+
 // Check if addr is inside libjvm.so.
 bool os::address_is_in_vm(address addr) {
 
@@ -2104,11 +2108,6 @@ size_t os::large_page_size() {
 }
 
 bool os::can_commit_large_page_memory() {
-  // Does not matter, we do not support huge pages.
-  return false;
-}
-
-bool os::can_execute_large_page_memory() {
   // Does not matter, we do not support huge pages.
   return false;
 }

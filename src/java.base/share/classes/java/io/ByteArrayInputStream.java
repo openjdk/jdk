@@ -207,10 +207,25 @@ public class ByteArrayInputStream extends InputStream {
     public synchronized long transferTo(OutputStream out) throws IOException {
         int len = count - pos;
         if (len > 0) {
+            // 'tmpbuf' is null if and only if 'out' is trusted
+            byte[] tmpbuf;
+            Class<?> outClass = out.getClass();
+            if (outClass == ByteArrayOutputStream.class ||
+                outClass == FileOutputStream.class ||
+                outClass == PipedOutputStream.class)
+                tmpbuf = null;
+            else
+                tmpbuf = new byte[Integer.min(len, MAX_TRANSFER_SIZE)];
+
             int nwritten = 0;
             while (nwritten < len) {
                 int nbyte = Integer.min(len - nwritten, MAX_TRANSFER_SIZE);
-                out.write(buf, pos, nbyte);
+                // if 'out' is not trusted, transfer via a temporary buffer
+                if (tmpbuf != null) {
+                    System.arraycopy(buf, pos, tmpbuf, 0, nbyte);
+                    out.write(tmpbuf, 0, nbyte);
+                } else
+                    out.write(buf, pos, nbyte);
                 pos += nbyte;
                 nwritten += nbyte;
             }
