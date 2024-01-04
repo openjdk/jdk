@@ -40,6 +40,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import javax.tools.JavaFileManager;
 import javax.tools.JavaFileObject;
@@ -457,6 +458,7 @@ public class Start {
             if (haveErrors && result.isOK()) {
                 result = ERROR;
             }
+            log.flush();
             log.printErrorWarningCounts();
             log.flush();
         }
@@ -657,9 +659,32 @@ public class Start {
         // check if arg is accepted by the tool before emitting error
         if (!isToolOption) {
             text = log.getText("main.invalid_flag", arg);
-            throw new OptionException(ERROR, this::showUsage, text);
+            throw new OptionException(ERROR, () -> reportBadOption(arg), text);
         }
         return m * idx;
+    }
+
+    private void reportBadOption(String name) {
+        var allOptionNames = Stream.concat(
+                getToolOptions().getSupportedOptions().stream()
+                        .flatMap(o -> o.getNames().stream()),
+                docletOptions.stream()
+                        .flatMap(o -> o.getNames().stream()));
+        // The following code is from the snippet in the comment for StringUtils.DamerauLevenshteinDistance
+        record Pair(String word, int distance) { }
+        var suggestions = allOptionNames
+                             .map(v -> new Pair(v, StringUtils.DamerauLevenshteinDistance.of(v, name)))
+                             .filter(p -> Double.compare(1.0 / 3, ((double) p.distance()) / p.word().length()) >= 0)
+                             .sorted(Comparator.comparingDouble(Pair::distance))
+                             .limit(3)
+                             .toList();
+        switch (suggestions.size()) {
+            case 0 -> { }
+            case 1 -> showLinesUsingKey("main.did-you-mean", suggestions.get(0).word);
+            default -> showLinesUsingKey("main.did-you-mean-one-of",
+                    suggestions.stream().map(Pair::word).collect(Collectors.joining(" ")));
+        }
+        showLinesUsingKey("main.for-more-details-see-usage");
     }
 
     private static Set<? extends Option> getSupportedOptionsOf(Doclet doclet) {
