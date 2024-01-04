@@ -23,6 +23,7 @@
 
 /**
  * @test
+ * @requires vm.flagless
  * @summary Test of option -XX:FullGCHeapDumpLimit
  * @library /test/lib
  * @run main/othervm -XX:+UseSerialGC -XX:+HeapDumpBeforeFullGC -XX:+HeapDumpAfterFullGC -XX:HeapDumpPath=test.hprof -XX:FullGCHeapDumpLimit=1 FullGCHeapDumpLimitTest
