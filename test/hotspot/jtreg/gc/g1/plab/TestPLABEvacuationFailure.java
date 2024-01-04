@@ -108,7 +108,7 @@ public class TestPLABEvacuationFailure {
                 "-XX:" + (plabIsFixed ? "-" : "+") + "ResizePLAB",
                 "-XX:MaxHeapSize=" + heapSize + "m");
         testOptions.add(AppPLABEvacuationFailure.class.getName());
-        OutputAnalyzer out = ProcessTools.executeTestJvm(testOptions);
+        OutputAnalyzer out = ProcessTools.executeTestJava(testOptions);
 
         appPlabEvacFailureOutput = out.getOutput();
         if (out.getExitValue() != 0) {

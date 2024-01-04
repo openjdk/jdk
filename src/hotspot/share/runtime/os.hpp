@@ -531,7 +531,6 @@ class os: AllStatic {
   static void   large_page_init();
   static size_t large_page_size();
   static bool   can_commit_large_page_memory();
-  static bool   can_execute_large_page_memory();
 
   // Check if pointer points to readable memory (by 4-byte read access)
   static bool    is_readable_pointer(const void* p);

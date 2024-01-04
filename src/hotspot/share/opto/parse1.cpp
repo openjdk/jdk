@@ -700,7 +700,7 @@ void Parse::do_all_blocks() {
         // that any path which was supposed to reach here has already
         // been parsed or must be dead.
         Node* c = control();
-        Node* result = _gvn.transform_no_reclaim(control());
+        Node* result = _gvn.transform(control());
         if (c != result && TraceOptoParse) {
           tty->print_cr("Block #%d replace %d with %d", block->rpo(), c->_idx, result->_idx);
         }
@@ -882,7 +882,7 @@ void Compile::return_values(JVMState* jvms) {
   // bind it to root
   root()->add_req(ret);
   record_for_igvn(ret);
-  initial_gvn()->transform_no_reclaim(ret);
+  initial_gvn()->transform(ret);
 }
 
 //------------------------rethrow_exceptions-----------------------------------
@@ -901,7 +901,7 @@ void Compile::rethrow_exceptions(JVMState* jvms) {
   // bind to root
   root()->add_req(exit);
   record_for_igvn(exit);
-  initial_gvn()->transform_no_reclaim(exit);
+  initial_gvn()->transform(exit);
 }
 
 //---------------------------do_exceptions-------------------------------------
@@ -1767,7 +1767,7 @@ void Parse::merge_common(Parse::Block* target, int pnum) {
 
     if (pnum == 1) {            // Last merge for this Region?
       if (!block()->flow()->is_irreducible_loop_secondary_entry()) {
-        Node* result = _gvn.transform_no_reclaim(r);
+        Node* result = _gvn.transform(r);
         if (r != result && TraceOptoParse) {
           tty->print_cr("Block #%d replace %d with %d", block()->rpo(), r->_idx, result->_idx);
         }
@@ -1831,7 +1831,7 @@ void Parse::merge_common(Parse::Block* target, int pnum) {
           // Phis of pointers cannot lose the basic pointer type.
           debug_only(const Type* bt1 = phi->bottom_type());
           assert(bt1 != Type::BOTTOM, "should not be building conflict phis");
-          map()->set_req(j, _gvn.transform_no_reclaim(phi));
+          map()->set_req(j, _gvn.transform(phi));
           debug_only(const Type* bt2 = phi->bottom_type());
           assert(bt2->higher_equal_speculative(bt1), "must be consistent with type-flow");
           record_for_igvn(phi);
@@ -1910,7 +1910,7 @@ void Parse::merge_memory_edges(MergeMemNode* n, int pnum, bool nophi) {
         base = phi;  // delay transforming it
       } else if (pnum == 1) {
         record_for_igvn(phi);
-        p = _gvn.transform_no_reclaim(phi);
+        p = _gvn.transform(phi);
       }
       mms.set_memory(p);// store back through the iterator
     }
@@ -1918,7 +1918,7 @@ void Parse::merge_memory_edges(MergeMemNode* n, int pnum, bool nophi) {
   // Transform base last, in case we must fiddle with remerging.
   if (base != nullptr && pnum == 1) {
     record_for_igvn(base);
-    m->set_base_memory( _gvn.transform_no_reclaim(base) );
+    m->set_base_memory(_gvn.transform(base));
   }
 }
 

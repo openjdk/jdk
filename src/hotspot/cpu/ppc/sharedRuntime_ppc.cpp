@@ -734,7 +734,7 @@ int SharedRuntime::java_calling_convention(const BasicType *sig_bt,
       ShouldNotReachHere();
     }
   }
-  return align_up(stk, 2);
+  return stk;
 }
 
 #if defined(COMPILER1) || defined(COMPILER2)

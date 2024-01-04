@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2015, 2022 SAP SE. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1856,18 +1856,19 @@ void * os::Linux::dlopen_helper(const char *filename, char *ebuf, int ebuflen) {
     if (! IEEE_subnormal_handling_OK()) {
       // We just dlopen()ed a library that mangled the floating-point flags.
       // Attempt to fix things now.
+      JFR_ONLY(load_event.set_fp_env_correction_attempt(true);)
       int rtn = fesetenv(&default_fenv);
       assert(rtn == 0, "fesetenv must succeed");
-      bool ieee_handling_after_issue = IEEE_subnormal_handling_OK();
 
-      if (ieee_handling_after_issue) {
+      if (IEEE_subnormal_handling_OK()) {
         Events::log_dll_message(nullptr, "IEEE subnormal handling had to be corrected after loading %s", filename);
         log_info(os)("IEEE subnormal handling had to be corrected after loading %s", filename);
+        JFR_ONLY(load_event.set_fp_env_correction_success(true);)
       } else {
         Events::log_dll_message(nullptr, "IEEE subnormal handling could not be corrected after loading %s", filename);
         log_info(os)("IEEE subnormal handling could not be corrected after loading %s", filename);
+        assert(false, "fesetenv didn't work");
       }
-      assert(ieee_handling_after_issue, "fesetenv didn't work");
     }
 #endif // IA32
   }
@@ -2096,7 +2097,6 @@ const char* distro_files[] = {
   "/etc/mandrake-release",
   "/etc/sun-release",
   "/etc/redhat-release",
-  "/etc/SuSE-release",
   "/etc/lsb-release",
   "/etc/turbolinux-release",
   "/etc/gentoo-release",
@@ -2104,6 +2104,7 @@ const char* distro_files[] = {
   "/etc/angstrom-version",
   "/etc/system-release",
   "/etc/os-release",
+  "/etc/SuSE-release", // Deprecated in favor of os-release since SuSE 12
   nullptr };
 
 void os::Linux::print_distro_info(outputStream* st) {
@@ -2215,6 +2216,8 @@ void os::Linux::print_system_memory_info(outputStream* st) {
   // https://www.kernel.org/doc/Documentation/vm/transhuge.txt
   _print_ascii_file_h("/sys/kernel/mm/transparent_hugepage/enabled",
                       "/sys/kernel/mm/transparent_hugepage/enabled", st);
+  _print_ascii_file_h("/sys/kernel/mm/transparent_hugepage/hpage_pdm_size",
+                      "/sys/kernel/mm/transparent_hugepage/hpage_pmd_size", st);
   _print_ascii_file_h("/sys/kernel/mm/transparent_hugepage/shmem_enabled",
                       "/sys/kernel/mm/transparent_hugepage/shmem_enabled", st);
   _print_ascii_file_h("/sys/kernel/mm/transparent_hugepage/defrag (defrag/compaction efforts parameter)",
@@ -4072,10 +4075,6 @@ size_t os::large_page_size() {
 // behavior we can't commit hugetlbfs memory. Instead, we commit that
 // memory at reservation.
 bool os::can_commit_large_page_memory() {
-  return UseTransparentHugePages;
-}
-
-bool os::can_execute_large_page_memory() {
   return UseTransparentHugePages;
 }
 
