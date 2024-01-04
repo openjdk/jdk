@@ -35,7 +35,7 @@ import java.awt.image.WritableRaster;
 /*
  * @test
  * @bug 8316497
- * @summary Verifies Color filter on Non ICC profile
+ * @summary Verifies Color filter on non-ICC profile
  */
 public class NonICCFilterTest {
 
@@ -43,32 +43,40 @@ public class NonICCFilterTest {
 
         private final ColorSpace csRGB;
 
-        protected TestColorSpace(boolean bSrc) {
-            super(ColorSpace.getInstance(ColorSpace.CS_sRGB).getType(),
-                    ColorSpace.getInstance(ColorSpace.CS_sRGB).getNumComponents());
-            csRGB = ColorSpace.getInstance(bSrc ? ColorSpace.CS_LINEAR_RGB :
-                    ColorSpace.CS_sRGB);
+        protected TestColorSpace(ColorSpace csRGB) {
+            super(csRGB.getType(), csRGB.getNumComponents());
+            this.csRGB = csRGB;
         }
 
+        private static ColorSpace createColorSpace(boolean isSrc) {
+            return new TestColorSpace(ColorSpace.getInstance(isSrc
+                    ? ColorSpace.CS_LINEAR_RGB
+                    : ColorSpace.CS_sRGB));
+        }
+
+        @Override
         public float[] toRGB(float[] colorvalue) {
-            return colorvalue;
+            return csRGB.toRGB(colorvalue);
         }
 
+        @Override
         public float[] fromRGB(float[] rgbvalue) {
-            return rgbvalue;
+            return csRGB.fromRGB(rgbvalue);
         }
 
+        @Override
         public float[] toCIEXYZ(float[] colorvalue) {
             return csRGB.toCIEXYZ(csRGB.toRGB(colorvalue));
         }
 
+        @Override
         public float[] fromCIEXYZ(float[] xyzvalue) {
             return csRGB.fromRGB(csRGB.fromCIEXYZ(xyzvalue));
         }
     }
 
     private static BufferedImage createTestImage(boolean isSrc) {
-        ColorSpace cs = new TestColorSpace(isSrc);
+        ColorSpace cs = TestColorSpace.createColorSpace(isSrc);
         ComponentColorModel cm = new ComponentColorModel(cs, false, false,
                 Transparency.OPAQUE, DataBuffer.TYPE_FLOAT);
         WritableRaster raster = cm.createCompatibleWritableRaster(50, 50);
@@ -96,15 +104,15 @@ public class NonICCFilterTest {
     }
 
     public static void main(String[] args) {
-        BufferedImage src, dest;
-        src = createTestImage(true);
-        dest = createTestImage(false);
+
+        BufferedImage src = createTestImage(true);
+        BufferedImage dst = createTestImage(false);
 
         ColorConvertOp ccop =
                 new ColorConvertOp(ColorSpace.getInstance(ColorSpace.CS_sRGB), null);
-        ccop.filter(src, dest);
+        ccop.filter(src, dst);
 
-        if (compareImages(src, dest)) {
+        if (compareImages(src, dst)) {
             throw new RuntimeException("Test failed: Source equal to Destination");
         }
     }
