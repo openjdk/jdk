@@ -40,34 +40,29 @@ import java.nio.channels.AsynchronousCloseException;
 import java.nio.channels.ClosedByInterruptException;
 import java.nio.channels.DatagramChannel;
 import java.time.Duration;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.TimeUnit;
+import java.util.Arrays;
 import sun.nio.ch.DefaultSelectorProvider;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.function.Executable;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class InterruptibleOrNot {
-
-    // used for scheduling thread interrupt or close
-    private static ScheduledExecutorService scheduler;
+    // DatagramChannel implementation class
+    private static String dcImplClassName;
 
     @BeforeAll
     static void setup() throws Exception {
-        ThreadFactory factory = Executors.defaultThreadFactory();
-        scheduler = Executors.newSingleThreadScheduledExecutor(factory);
+        try (DatagramChannel dc = boundDatagramChannel(true)) {
+            dcImplClassName = dc.getClass().getName();
+        }
     }
 
-    @AfterAll
-    static void finish() {
-        scheduler.shutdown();
-    }
-
+    /**
+     * Call DatagramChannel.receive with the interrupt status set, the DatagramChannel
+     * is interruptible.
+     */
     @Test
     public void testInterruptBeforeInterruptibleReceive() throws Exception {
         try (DatagramChannel dc = boundDatagramChannel(true)) {
@@ -75,60 +70,73 @@ public class InterruptibleOrNot {
             Thread.currentThread().interrupt();
             assertThrows(ClosedByInterruptException.class, () -> dc.receive(buf));
         } finally {
-            Thread.interrupted();  // clear interrupt
+            Thread.interrupted();  // clear interrupt status
         }
     }
 
+    /**
+     * Test interrupting a thread blocked in DatagramChannel.receive, the DatagramChannel
+     * is interruptible.
+     */
     @Test
     public void testInterruptDuringInterruptibleReceive() throws Exception {
         try (DatagramChannel dc = boundDatagramChannel(true)) {
             ByteBuffer buf = ByteBuffer.allocate(100);
-            Future<?> interruptTask = scheduleInterrupt(Thread.currentThread(), Duration.ofSeconds(2));
-            try {
-                assertThrows(ClosedByInterruptException.class, () -> dc.receive(buf));
-            } finally {
-                interruptTask.cancel(false);
-            }
+            Thread thread = Thread.currentThread();
+            onReceive(thread::interrupt);
+            assertThrows(ClosedByInterruptException.class, () -> dc.receive(buf));
         } finally {
-            Thread.interrupted();  // clear interrupt
+            Thread.interrupted();  // clear interrupt status
         }
     }
 
+    /**
+     * Call DatagramChannel.receive with the interrupt status set, the DatagramChannel
+     * is not interruptible.
+     */
     @Test
     public void testInterruptBeforeUninterruptibleReceive() throws Exception {
         try (DatagramChannel dc = boundDatagramChannel(false)) {
             ByteBuffer buf = ByteBuffer.allocate(100);
-            // give thread enough time to block in receive
-            Future<?> closeTask = scheduleClose(dc, Duration.ofSeconds(5));
-            try {
-                Thread.currentThread().interrupt();
-                assertThrows(AsynchronousCloseException.class, () -> dc.receive(buf));
-            } finally {
-                closeTask.cancel(false);
-            }
+            onReceive(() -> {
+                // close the channel after a delay to ensure receive wakes up
+                Thread.sleep(1000);
+                dc.close();
+            });
+            Thread.currentThread().interrupt();
+            assertThrows(AsynchronousCloseException.class, () -> dc.receive(buf));
         } finally {
-            Thread.interrupted();  // clear interrupt
+            Thread.interrupted();  // clear interrupt status
         }
     }
 
+    /**
+     * Test interrupting a thread blocked in DatagramChannel.receive. ??
+     */
     @Test
     public void testInterruptDuringUninterruptibleReceive() throws Exception {
         try (DatagramChannel dc = boundDatagramChannel(true)) {
             ByteBuffer buf = ByteBuffer.allocate(100);
-            // the interrupt should not cause the receive to wakeup
-            Future<?> interruptTask = scheduleInterrupt(Thread.currentThread(), Duration.ofSeconds(2));
-            Future<?> closeTask = scheduleClose(dc, Duration.ofSeconds(5));
-            try {
-                assertThrows(AsynchronousCloseException.class, () -> dc.receive(buf));
-            } finally {
-                closeTask.cancel(false);
-                interruptTask.cancel(false);
-            }
+
+            Thread thread = Thread.currentThread();
+            onReceive(() -> {
+                // interrupt should not cause the receive to wakeup
+                thread.interrupt();
+
+                // close the channel after a delay to ensure receive wakes up
+                Thread.sleep(1000);
+                dc.close();
+            });
+            assertThrows(AsynchronousCloseException.class, () -> dc.receive(buf));
         } finally {
-            Thread.interrupted();  // clear interrupt
+            Thread.interrupted();  // clear interrupt status
         }
     }
 
+    /**
+     * Call DatagramChannel.send with the interrupt status set, the DatagramChannel
+     * is interruptible.
+     */
     @Test
     public void testInterruptBeforeInterruptibleSend() throws Exception {
         try (DatagramChannel dc = boundDatagramChannel(true)) {
@@ -141,6 +149,10 @@ public class InterruptibleOrNot {
         }
     }
 
+    /**
+     * Call DatagramChannel.send with the interrupt status set, the DatagramChannel
+     * is not interruptible.
+     */
     @Test
     public void testInterruptBeforeUninterruptibleSend() throws Exception {
         try (DatagramChannel dc = boundDatagramChannel(false)) {
@@ -150,7 +162,7 @@ public class InterruptibleOrNot {
             int n = dc.send(buf, target);
             assertTrue(n == 100);
         } finally {
-            Thread.interrupted();  // clear interrupt
+            Thread.interrupted();  // clear interrupt status
         }
     }
 
@@ -175,21 +187,24 @@ public class InterruptibleOrNot {
     }
 
     /**
-     * Schedule the given object to be closed.
+     * Runs the given action when the current thread is sampled in DatagramChannel.receive.
      */
-    static Future<?> scheduleClose(Closeable c, Duration timeout) {
-        long nanos = TimeUnit.NANOSECONDS.convert(timeout);
-        return scheduler.schedule(() -> {
-            c.close();
-            return null;
-        }, nanos, TimeUnit.NANOSECONDS);
-    }
-
-    /**
-     * Schedule the given thread to be interrupted.
-     */
-    static Future<?> scheduleInterrupt(Thread t, Duration timeout) {
-        long nanos = TimeUnit.NANOSECONDS.convert(timeout);
-        return scheduler.schedule(t::interrupt, nanos, TimeUnit.NANOSECONDS);
+    static void onReceive(Executable action) {
+        Thread target = Thread.currentThread();
+        Thread.ofPlatform().daemon().start(() -> {
+            try {
+                boolean found = false;
+                while (!found) {
+                    Thread.sleep(20);
+                    StackTraceElement[] stack = target.getStackTrace();
+                    found = Arrays.stream(stack)
+                            .anyMatch(e -> dcImplClassName.equals(e.getClassName())
+                                    && "receive".equals(e.getMethodName()));
+                }
+                action.execute();
+            } catch (Throwable ex) {
+                ex.printStackTrace();
+            }
+        });
     }
 }
