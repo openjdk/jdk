@@ -60,11 +60,7 @@ class ICStub: public Stub {
   // in a separate instruction cache line. This would allow for piggybacking on instruction
   // cache coherency on some architectures to order the updates to ICStub and setting
   // the destination to the ICStub.
-  //
-  // Since we align the stub first, and then the code section, we can align both
-  // to half of the cache line size, reaching the full stub size to be aligned to full
-  // cache line.
-  static const int IC_STUB_ALIGN = DEFAULT_CACHE_LINE_SIZE / 2;
+  static const int IC_STUB_ALIGN = DEFAULT_CACHE_LINE_SIZE;
 
   int                 _size;       // total size of the stub incl. code
   address             _ic_site;    // points at call instruction of owning ic-buffer
@@ -85,7 +81,7 @@ class ICStub: public Stub {
   void set_stub(CompiledIC *ic, void* cached_value, address dest_addr);
 
   // Code info
-  address code_begin() const                     { return align_up((address)this + sizeof(ICStub), IC_STUB_ALIGN); }
+  address code_begin() const                     { return align_up((address)this + sizeof(ICStub), HeapWordSize); }
   address code_end() const                       { return (address)this + size(); }
 
   // Call site info
