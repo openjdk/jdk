@@ -146,45 +146,9 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseAESCTRIntrinsics, false);
   }
 
-  if (UseSHA) {
-    warning("SHA instructions are not available on this CPU");
-    FLAG_SET_DEFAULT(UseSHA, false);
-  }
-
   if (UseSHA1Intrinsics) {
     warning("Intrinsics for SHA-1 crypto hash functions not available on this CPU.");
     FLAG_SET_DEFAULT(UseSHA1Intrinsics, false);
-  }
-
-  if (UseZvkn) {
-    if (!ext_V.enabled()) {
-      FLAG_SET_DEFAULT(UseZvkn, false);
-      warning("Cannot enable Zvkn on cpu without RVV support.");
-    }
-    if (FLAG_IS_DEFAULT(UseRVV)) {
-      FLAG_SET_DEFAULT(UseRVV, true);
-    }
-    if (UseRVV) {
-      if (FLAG_IS_DEFAULT(UseSHA256Intrinsics)) {
-        FLAG_SET_DEFAULT(UseSHA256Intrinsics, true);
-      }
-      if (FLAG_IS_DEFAULT(UseSHA256Intrinsics)) {
-        FLAG_SET_DEFAULT(UseSHA256Intrinsics, true);
-      }
-    } else {
-      FLAG_SET_DEFAULT(UseZvkn, false);
-      warning("Cannot enabled Zvkn when RVV is disabled.");
-    }
-  }
-  if (!UseZvkn) {
-    if (UseSHA256Intrinsics) {
-      warning("Intrinsics for SHA-224 and SHA-256 crypto hash functions not available on this CPU, UseZvkn needed.");
-      FLAG_SET_DEFAULT(UseSHA256Intrinsics, false);
-    }
-    if (UseSHA512Intrinsics) {
-      warning("Intrinsics for SHA-384 and SHA-512 crypto hash functions not available on this CPU, UseZvkn needed.");
-      FLAG_SET_DEFAULT(UseSHA512Intrinsics, false);
-    }
   }
 
   if (UseSHA3Intrinsics) {
@@ -293,16 +257,45 @@ void VM_Version::initialize() {
   // NOTE: Make sure codes dependent on UseRVV are put after c2_initialize(),
   //       as there are extra checks inside it which could disable UseRVV
   //       in some situations.
+  if (UseZvkn && !UseRVV) {
+    FLAG_SET_DEFAULT(UseZvkn, false);
+    warning("Cannot enable Zvkn on cpu without RVV support.");
+  }
 
   if (UseRVV) {
     if (FLAG_IS_DEFAULT(UseChaCha20Intrinsics)) {
       FLAG_SET_DEFAULT(UseChaCha20Intrinsics, true);
     }
-  } else if (UseChaCha20Intrinsics) {
+  } if (UseChaCha20Intrinsics) {
     if (!FLAG_IS_DEFAULT(UseChaCha20Intrinsics)) {
       warning("Chacha20 intrinsic requires RVV instructions (not available on this CPU)");
     }
     FLAG_SET_DEFAULT(UseChaCha20Intrinsics, false);
+  }
+
+  if (!UseZvkn && UseSHA) {
+    warning("SHA instructions are not available on this CPU");
+    FLAG_SET_DEFAULT(UseSHA, false);
+  } else if (UseZvkn && FLAG_IS_DEFAULT(UseSHA)) {
+    FLAG_SET_DEFAULT(UseSHA, true);
+  }
+
+  if (!UseSHA) {
+    if (UseSHA256Intrinsics) {
+      warning("Intrinsics for SHA-224 and SHA-256 crypto hash functions not available on this CPU, UseZvkn needed.");
+      FLAG_SET_DEFAULT(UseSHA256Intrinsics, false);
+    }
+    if (UseSHA512Intrinsics) {
+      warning("Intrinsics for SHA-384 and SHA-512 crypto hash functions not available on this CPU, UseZvkn needed.");
+      FLAG_SET_DEFAULT(UseSHA512Intrinsics, false);
+    }
+  } else {
+    if (FLAG_IS_DEFAULT(UseSHA256Intrinsics)) {
+       FLAG_SET_DEFAULT(UseSHA256Intrinsics, true);
+    }
+    if (FLAG_IS_DEFAULT(UseSHA512Intrinsics)) {
+      FLAG_SET_DEFAULT(UseSHA512Intrinsics, true);
+    }
   }
 }
 
