@@ -508,7 +508,7 @@ Parse::Parse(JVMState* caller, ciMethod* parse_method, float expected_uses)
 #ifndef PRODUCT
       if (PrintOpto && (Verbose || WizardMode)) {
         if (is_osr_parse()) {
-          tty->print("OSR @%d type flow bailout: %s", _entry_bci, _flow->failure_reason());
+          tty->print_cr("OSR @%d type flow bailout: %s", _entry_bci, _flow->failure_reason());
         } else {
           tty->print_cr("type flow bailout: %s", _flow->failure_reason());
         }
