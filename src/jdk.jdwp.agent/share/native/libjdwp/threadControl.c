@@ -2662,10 +2662,10 @@ dumpThread(ThreadNode *node) {
     setThreadName(node);
     tty_message("\tname: %s", node->name);
 #endif
+    tty_message("\tsuspendCount: %d", node->suspendCount);
 #if 0
     // More fields can be printed here when needed. The amount of output is intentionally
     // kept small so it doesn't generate too much output.
-    tty_message("\tsuspendCount: %d", node->suspendCount);
     tty_message("\tsuspendAllCount: %d", suspendAllCount);
     tty_message("\tthreadState: 0x%x", getThreadState(node));
     tty_message("\ttoBeResumed: %d", node->toBeResumed);
