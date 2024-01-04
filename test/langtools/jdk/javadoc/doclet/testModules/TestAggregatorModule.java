@@ -21,7 +21,7 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 8322865
  * @summary JavaDoc fails on aggregator modules
