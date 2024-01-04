@@ -49,7 +49,7 @@ class Mutex;
 //               |        |    |
 //               |  data  |    |
 //               |        |    |
-// code_begin -->|--------|    |       <--- aligned by CodeEntryAlignment
+// code_begin -->|--------|    |       <--- aligned by code_alignment()
 //               |        |    |
 //               |        |    |
 //               |  code  |    | size
@@ -99,6 +99,7 @@ class StubInterface: public CHeapObj<mtCode> {
   // General info/converters
   virtual int     size(Stub* self) const                   = 0; // the total size of the stub in bytes (must be a multiple of HeapWordSize)
   virtual int     alignment() const                        = 0; // computes the alignment
+  virtual int     code_alignment() const                   = 0; // computes the code alignment
 
   // Code info
   virtual address code_begin(Stub* self) const             = 0; // points to the first code byte
@@ -127,6 +128,7 @@ class StubInterface: public CHeapObj<mtCode> {
     /* General info */                                     \
     virtual int     size(Stub* self) const                 { return cast(self)->size(); }          \
     virtual int     alignment() const                      { return stub::alignment(); }           \
+    virtual int     code_alignment() const                 { return stub::code_alignment(); }      \
                                                            \
     /* Code info */                                        \
     virtual address code_begin(Stub* self) const           { return cast(self)->code_begin(); }    \
