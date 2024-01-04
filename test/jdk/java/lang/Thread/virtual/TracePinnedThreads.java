@@ -99,7 +99,9 @@ class TracePinnedThreads {
     }
 
     /**
-     * Test contention writing to System.out when pinned.
+     * Test contention writing to System.out when pinned. The test creates four threads
+     * that write to System.out when pinned, this is enough to potentially deadlock
+     * without the changes in JDK-8322846.
      */
     @Test
     void testContention() throws Exception {
