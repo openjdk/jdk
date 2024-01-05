@@ -857,6 +857,11 @@ else
       exeinvoke.c exestack-gap.c exestack-tls.c libAsyncGetCallTraceTest.cpp
 endif
 
+ifeq ($(call And, $(call isTargetOs, linux) $(call isTargetCpu, aarch64)), false)
+  BUILD_HOTSPOT_JTREG_EXCLUDE += libTestSVEWithJNI.c
+endif
+
+
 BUILD_HOTSPOT_JTREG_EXECUTABLES_LIBS_exesigtest := -ljvm
 
 ifeq ($(call isTargetOs, windows), true)

@@ -45,6 +45,10 @@ BUILD_LIBTEST_OUTPUT_DIR := $(OUTPUTDIR)/support/test/lib/native
 
 BUILD_LIBTEST_IMAGE_DIR := $(TEST_IMAGE_DIR)/lib
 
+ifeq ($(call isTargetOs, windows), false)
+  BUILD_LIBTEST_LIBRARIES_EXCLUDE += libFileUtils.c
+endif
+
 # This evaluation is expensive and should only be done if this target was
 # explicitly called.
 ifneq ($(filter build-test-lib-native, $(MAKECMDGOALS)), )
