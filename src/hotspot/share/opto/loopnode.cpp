@@ -4822,7 +4822,7 @@ bool PhaseIdealLoop::verify_loop_ctrl(Node* n, const PhaseIdealLoop* phase_verif
         n->dump();
         tty->print_cr("Loop for this:");
         loop_this->dump();
-        tty->print_cr("Loop for verif::");
+        tty->print_cr("Loop for verify::");
         loop_verify->dump();
         tty->cr();
         return false; // fail
