@@ -10095,7 +10095,7 @@ instruct cmpD_imm(rRegI dst, regD src, immD con, rFlagsReg cr) %{
 instruct convF2D_reg_reg(regD dst, regF src)
 %{
   match(Set dst (ConvF2D src));
-  effect(TEMP dst);
+
   format %{ "cvtss2sd $dst, $src" %}
   ins_encode %{
     __ cvtss2sd ($dst$$XMMRegister, $src$$XMMRegister);
@@ -10117,7 +10117,7 @@ instruct convF2D_reg_mem(regD dst, memory src)
 instruct convD2F_reg_reg(regF dst, regD src)
 %{
   match(Set dst (ConvD2F src));
-  effect(TEMP dst);
+
   format %{ "cvtsd2ss $dst, $src" %}
   ins_encode %{
     __ cvtsd2ss ($dst$$XMMRegister, $src$$XMMRegister);
