@@ -34,6 +34,14 @@
 
 class ShenandoahCollectionSet : public CHeapObj<mtGC> {
   friend class ShenandoahHeap;
+  friend class ShenandoahCollectionSetPreselector;
+
+  void establish_preselected(bool *preselected) {
+   assert(_preselected_regions == nullptr, "Over-writing");
+   _preselected_regions = preselected;
+  }
+  void abandon_preselected() { _preselected_regions = nullptr; }
+
 private:
   size_t const          _map_size;
   size_t const          _region_size_bytes_shift;
@@ -106,9 +114,15 @@ public:
 
   inline size_t get_old_garbage();
 
-  void establish_preselected(bool *preselected) { _preselected_regions = preselected; }
-  void abandon_preselected() { _preselected_regions = nullptr; }
-  bool is_preselected(size_t region_idx) { return (_preselected_regions != nullptr) && _preselected_regions[region_idx]; }
+  bool is_preselected(size_t region_idx) {
+    assert(_preselected_regions != nullptr, "Missing etsablish after abandon");
+    return _preselected_regions[region_idx];
+  }
+
+  bool* preselected_regions() {
+    assert(_preselected_regions != nullptr, "Null ptr");
+    return _preselected_regions;
+  }
 
   bool has_old_regions() const { return _has_old_regions; }
   size_t used()          const { return _used; }

@@ -71,26 +71,28 @@ protected:
 
 private:
   // Compute evacuation budgets prior to choosing collection set.
-  // preselected_regions is an array of indicator bits for regions that will
-  // be preselected for inclusion into the collection set by this method.
-  // collection_set is the set of regions to be collected that is maintained
-  // for the heap as a whole.
-  void compute_evacuation_budgets(ShenandoahHeap* heap,
-                                  bool* preselected_regions,
-                                  ShenandoahCollectionSet* collection_set);
+  void compute_evacuation_budgets(ShenandoahHeap* heap);
 
   // Adjust evacuation budgets after choosing collection set.
   void adjust_evacuation_budgets(ShenandoahHeap* heap,
                                  ShenandoahCollectionSet* collection_set);
 
-  // Preselect for inclusion into the collection set regions whose age is
-  // at or above tenure age and which contain more than ShenandoahOldGarbageThreshold
-  // amounts of garbage.
+  // Preselect for possible inclusion into the collection set exactly the most
+  // garbage-dense regions, including those that satisfy criteria 1 & 2 below,
+  // and whose live bytes will fit within old_available budget:
+  // Criterion 1. region age >= tenuring threshold
+  // Criterion 2. region garbage percentage > ShenandoahOldGarbageThreshold
   //
-  // Returns bytes of old-gen memory consumed by selected aged regions
-  size_t select_aged_regions(size_t old_available,
-                             size_t num_regions, bool
-                             candidate_regions_for_promotion_by_copy[]);
+  // Identifies regions eligible for promotion in place,
+  // being those of at least tenuring_threshold age that have lower garbage
+  // density.
+  //
+  // Updates promotion_potential and pad_for_promote_in_place fields
+  // of the heap. Returns bytes of live object memory in the preselected
+  // regions, which are marked in the preselected_regions() indicator
+  // array of the heap's collection set, which should be initialized
+  // to false.
+  size_t select_aged_regions(size_t old_available);
 
   size_t available(size_t capacity) const;
 

@@ -47,6 +47,7 @@ ShenandoahCollectionSet::ShenandoahCollectionSet(ShenandoahHeap* heap, ReservedS
   _live(0),
   _region_count(0),
   _old_garbage(0),
+  _preselected_regions(nullptr),
   _current_index(0) {
 
   // The collection set map is reserved to cover the entire heap *and* zero addresses.

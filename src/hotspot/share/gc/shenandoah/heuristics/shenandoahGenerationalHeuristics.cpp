@@ -106,6 +106,7 @@ void ShenandoahGenerationalHeuristics::choose_collection_set(ShenandoahCollectio
           // in old gen to hold the evacuated copies of this region's live data.  In both cases, we choose not to
           // place this region into the collection set.
           if (region->get_top_before_promote() != nullptr) {
+            // Region was included for promotion-in-place
             regular_regions_promoted_in_place++;
             regular_regions_promoted_usage += region->used_before_promote();
           }
