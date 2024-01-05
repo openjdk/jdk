@@ -1720,6 +1720,12 @@ Rule	Para	2010	2012	-	Apr	Sun>=8	0:00	0	-
 # From Carlos Raúl Perasso (2014-02-28):
 # Decree 1264 can be found at:
 # http://www.presidencia.gov.py/archivos/documentos/DECRETO1264_ey9r8zai.pdf
+#
+# From Paul Eggert (2023-07-26):
+# Transition dates are now set by Law No. 7115, not by presidential decree.
+# https://www.abc.com.py/politica/2023/07/12/promulgacion-el-cambio-de-hora-sera-por-ley/
+# From Carlos Raúl Perasso (2023-07-27):
+# http://silpy.congreso.gov.py/descarga/ley-144138
 Rule	Para	2013	max	-	Mar	Sun>=22	0:00	0	-
 
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
