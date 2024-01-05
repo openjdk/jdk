@@ -1512,13 +1512,13 @@ void Parse::do_one_block() {
     int ns = b->num_successors();
     int nt = b->all_successors();
 
-    tty->print("Parsing block #%d at bci [%d,%d), successors: ",
+    tty->print("Parsing block #%d at bci [%d,%d), successors:",
                   block()->rpo(), block()->start(), block()->limit());
     for (int i = 0; i < nt; i++) {
-      tty->print((( i < ns) ? " %d" : " %d(e)"), b->successor_at(i)->rpo());
+      tty->print((( i < ns) ? " %d" : " %d(exception block)"), b->successor_at(i)->rpo());
     }
     if (b->is_loop_head()) {
-      tty->print("  lphd");
+      tty->print("  loop head");
     }
     if (b->is_irreducible_loop_entry()) {
       tty->print("  irreducible");
