@@ -382,7 +382,7 @@ public class MethodHandleProxies {
 
             // <clinit>
             clb.withMethodBody(CLASS_INIT_NAME, MTD_void, ACC_STATIC, cob -> {
-                cob.constantInstruction(ifaceDesc);
+                cob.loadConstant(ifaceDesc);
                 cob.putstatic(proxyDesc, TYPE_NAME, CD_Class);
                 cob.return_();
             });
@@ -406,7 +406,7 @@ public class MethodHandleProxies {
                     // this.m<i> = callerBoundTarget.asType(xxType);
                     cob.aload(0);
                     cob.aload(3);
-                    cob.constantInstruction(mi.desc);
+                    cob.loadConstant(mi.desc);
                     cob.invokevirtual(CD_MethodHandle, "asType", MTD_MethodHandle_MethodType);
                     cob.putfield(proxyDesc, mi.fieldName, CD_MethodHandle);
                 }
@@ -423,12 +423,12 @@ public class MethodHandleProxies {
                 // check lookupClass
                 cob.aload(0);
                 cob.invokevirtual(CD_MethodHandles_Lookup, "lookupClass", MTD_Class);
-                cob.constantInstruction(proxyDesc);
+                cob.loadConstant(proxyDesc);
                 cob.if_acmpne(failLabel);
                 // check original access
                 cob.aload(0);
                 cob.invokevirtual(CD_MethodHandles_Lookup, "lookupModes", MTD_int);
-                cob.constantInstruction(Lookup.ORIGINAL);
+                cob.loadConstant(Lookup.ORIGINAL);
                 cob.iand();
                 cob.ifeq(failLabel);
                 // success
@@ -452,11 +452,11 @@ public class MethodHandleProxies {
                                     bcb.aload(0);
                                     bcb.getfield(proxyDesc, mi.fieldName, CD_MethodHandle);
                                     for (int j = 0; j < mi.desc.parameterCount(); j++) {
-                                        bcb.loadInstruction(TypeKind.from(mi.desc.parameterType(j)),
+                                        bcb.loadLocal(TypeKind.from(mi.desc.parameterType(j)),
                                                 bcb.parameterSlot(j));
                                     }
                                     bcb.invokevirtual(CD_MethodHandle, "invokeExact", mi.desc);
-                                    bcb.returnInstruction(TypeKind.from(mi.desc.returnType()));
+                                    bcb.return_(TypeKind.from(mi.desc.returnType()));
                                 }, ctb -> ctb
                                         // catch (Error | RuntimeException | Declared ex) { throw ex; }
                                         .catchingMulti(mi.thrown, CodeBuilder::athrow)

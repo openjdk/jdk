@@ -399,7 +399,7 @@ public class SwitchBootstraps {
                     cb.ireturn();
                     cb.labelBinding(nonNullLabel);
                     if (labels.length == 0) {
-                        cb.constantInstruction(0)
+                        cb.loadConstant(0)
                           .ireturn();
                         return ;
                     }
@@ -435,11 +435,11 @@ public class SwitchBootstraps {
                             Optional<ClassDesc> classLabelConstableOpt = classLabel.describeConstable();
                             if (classLabelConstableOpt.isPresent()) {
                                 cb.aload(0);
-                                cb.instanceof_(classLabelConstableOpt.orElseThrow());
+                                cb.instanceOf(classLabelConstableOpt.orElseThrow());
                                 cb.ifeq(next);
                             } else {
                                 cb.aload(3);
-                                cb.constantInstruction(extraClassLabels.size());
+                                cb.loadConstant(extraClassLabels.size());
                                 cb.invokeinterface(ConstantDescs.CD_List,
                                                    "get",
                                                    MethodTypeDesc.of(ConstantDescs.CD_Object,
@@ -457,7 +457,7 @@ public class SwitchBootstraps {
                             int enumIdx = enumDescs.size();
                             enumDescs.add(enumLabel);
                             cb.aload(2);
-                            cb.constantInstruction(enumIdx);
+                            cb.loadConstant(enumIdx);
                             cb.invokestatic(ConstantDescs.CD_Integer,
                                             "valueOf",
                                             MethodTypeDesc.of(ConstantDescs.CD_Integer,
@@ -481,7 +481,7 @@ public class SwitchBootstraps {
                             Label compare = cb.newLabel();
                             Label notNumber = cb.newLabel();
                             cb.aload(0);
-                            cb.instanceof_(ConstantDescs.CD_Number);
+                            cb.instanceOf(ConstantDescs.CD_Number);
                             cb.ifeq(notNumber);
                             cb.aload(0);
                             cb.checkcast(ConstantDescs.CD_Number);
@@ -491,7 +491,7 @@ public class SwitchBootstraps {
                             cb.goto_(compare);
                             cb.labelBinding(notNumber);
                             cb.aload(0);
-                            cb.instanceof_(ConstantDescs.CD_Character);
+                            cb.instanceOf(ConstantDescs.CD_Character);
                             cb.ifeq(next);
                             cb.aload(0);
                             cb.checkcast(ConstantDescs.CD_Character);
@@ -505,11 +505,11 @@ public class SwitchBootstraps {
                             throw new InternalError("Unsupported label type: " +
                                                     element.caseLabel().getClass());
                         }
-                        cb.constantInstruction(idx);
+                        cb.loadConstant(idx);
                         cb.ireturn();
                     }
                     cb.labelBinding(dflt);
-                    cb.constantInstruction(cases.size());
+                    cb.loadConstant(cases.size());
                     cb.ireturn();
                 });
         });
