@@ -95,7 +95,8 @@ import static java.util.zip.ZipUtils.*;
  */
 public class ZipFile implements ZipConstants, Closeable {
 
-    private final String name;     // zip file name
+    private final String filePath;     // zip file path
+    private final String fileName;     // name of the file
     private volatile boolean closeRequested;
 
     // The "resource" used by this zip file that needs to be
@@ -245,7 +246,8 @@ public class ZipFile implements ZipConstants, Closeable {
         }
         Objects.requireNonNull(charset, "charset");
 
-        this.name = name;
+        this.filePath = name;
+        this.fileName = file.getName();
         long t0 = System.nanoTime();
 
         this.res = new CleanableResource(this, ZipCoder.get(charset), file, mode);
@@ -483,7 +485,16 @@ public class ZipFile implements ZipConstants, Closeable {
      * @return the path name of the ZIP file
      */
     public String getName() {
-        return name;
+        return filePath;
+    }
+
+    /**
+     * {@return a string identifying this {@code ZipFile}, for debugging}
+     */
+    @Override
+    public String toString() {
+        return this.fileName
+                + "@" + Integer.toHexString(System.identityHashCode(this));
     }
 
     private class ZipEntryIterator<T extends ZipEntry>

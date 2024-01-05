@@ -167,9 +167,9 @@ private:
     size_t _num_buckets;
     bool _should_grow;
     TaskQueueEntryChunk* volatile* _buckets;
-    char _pad0[DEFAULT_CACHE_LINE_SIZE];
+    char _pad0[DEFAULT_PADDING_SIZE];
     volatile size_t _size;
-    char _pad4[DEFAULT_CACHE_LINE_SIZE - sizeof(size_t)];
+    char _pad4[DEFAULT_PADDING_SIZE - sizeof(size_t)];
 
     size_t bucket_size(size_t bucket) {
       return (bucket == 0) ?
@@ -232,12 +232,12 @@ private:
 
   ChunkAllocator _chunk_allocator;
 
-  char _pad0[DEFAULT_CACHE_LINE_SIZE];
+  char _pad0[DEFAULT_PADDING_SIZE];
   TaskQueueEntryChunk* volatile _free_list;  // Linked list of free chunks that can be allocated by users.
-  char _pad1[DEFAULT_CACHE_LINE_SIZE - sizeof(TaskQueueEntryChunk*)];
+  char _pad1[DEFAULT_PADDING_SIZE - sizeof(TaskQueueEntryChunk*)];
   TaskQueueEntryChunk* volatile _chunk_list; // List of chunks currently containing data.
   volatile size_t _chunks_in_chunk_list;
-  char _pad2[DEFAULT_CACHE_LINE_SIZE - sizeof(TaskQueueEntryChunk*) - sizeof(size_t)];
+  char _pad2[DEFAULT_PADDING_SIZE - sizeof(TaskQueueEntryChunk*) - sizeof(size_t)];
 
   // Atomically add the given chunk to the list.
   void add_chunk_to_list(TaskQueueEntryChunk* volatile* list, TaskQueueEntryChunk* elem);
