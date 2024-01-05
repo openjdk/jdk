@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3140,8 +3140,8 @@ void Compile::final_graph_reshaping_impl(Node *n, Final_Reshape_Counts& frc, Uni
     int alias_idx = get_alias_index(n->as_Mem()->adr_type());
     assert( n->in(0) != nullptr || alias_idx != Compile::AliasIdxRaw ||
             // oop will be recorded in oop map if load crosses safepoint
-            n->is_Load() && (n->as_Load()->bottom_type()->isa_oopptr() ||
-                             LoadNode::is_immutable_value(n->in(MemNode::Address))),
+            (n->is_Load() && (n->as_Load()->bottom_type()->isa_oopptr() ||
+                              LoadNode::is_immutable_value(n->in(MemNode::Address)))),
             "raw memory operations should have control edge");
   }
   if (n->is_MemBar()) {

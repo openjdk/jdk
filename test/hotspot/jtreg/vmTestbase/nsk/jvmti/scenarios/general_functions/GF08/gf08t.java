@@ -38,13 +38,13 @@ public class gf08t {
                              .skip(3)
                              .collect(Collectors.joining(" "));
 
-        OutputAnalyzer oa = ProcessTools.executeTestJvm(
+        OutputAnalyzer oa = ProcessTools.executeTestJava(
                 "-agentlib:" + libName + "=-waittime=5 setVerboseMode=yes",
                 className);
         oa.shouldHaveExitValue(95);
         oa.stdoutShouldContain(phrase);
 
-        oa = ProcessTools.executeTestJvm(
+        oa = ProcessTools.executeTestJava(
                 "-agentlib:" + libName + "=-waittime=5 setVerboseMode=no",
                 "-verbose:" + verboseType,
                 className);
