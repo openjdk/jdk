@@ -5298,8 +5298,10 @@ void C2_MacroAssembler::vector_compress_expand_avx2(int opcode, XMMRegister dst,
     vmovdqu(permv, Address(rtmp));
     vpermps(dst, permv, src, Assembler::AVX_256bit);
     vpxor(xtmp, xtmp, xtmp, vec_enc);
-    // Blend the results with zero vector using permute vector as mask, its
-    // non-participating lanes holds a -1 value.
+    // Blend the result with zero vector using permute mask, each row of
+    // permute table contains either a valid permute index or a -1 (default)
+    // value, this can potentially be used as a blending mask after
+    // compressing/expanding the source vector lanes.
     vblendvps(dst, dst, xtmp, permv, vec_enc);
   } else {
     assert(bt == T_LONG || bt == T_DOUBLE, "");
@@ -5322,8 +5324,10 @@ void C2_MacroAssembler::vector_compress_expand_avx2(int opcode, XMMRegister dst,
     vpaddd(permv, permv, ExternalAddress(StubRoutines::x86::vector_long_shuffle_mask()), vec_enc, noreg);
     vpermps(dst, permv, src, Assembler::AVX_256bit);
     vpxor(permv, permv, permv, vec_enc);
-    // Blend the results with zero vector using permute vector as mask, its
-    // non-participating lanes holds a -1 value.
+    // Blend the result with zero vector using permute mask, each row of
+    // permute table contains either a valid permute index or a -1 (default)
+    // value, this can potentially be used as a blending mask after
+    // compressing/expanding the source vector lanes.
     vblendvps(dst, dst, permv, xtmp, vec_enc);
   }
 }

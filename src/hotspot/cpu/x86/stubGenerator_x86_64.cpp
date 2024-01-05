@@ -956,6 +956,9 @@ address StubGenerator::generate_compress_perm_table(const char *stub_name, int32
   StubCodeMark mark(this, "StubRoutines", stub_name);
   address start = __ pc();
   if (esize == 32) {
+    // Loop to generate 256 x 8 int compression permute index table where each
+    // row holds either a valid permute index corresponding to set bit position
+    // or a -1 (default) value.
     for (int i = 0; i < 256; i++) {
       int tmp = i;
       int ctr = 0;
@@ -971,6 +974,9 @@ address StubGenerator::generate_compress_perm_table(const char *stub_name, int32
     }
   } else {
     assert(esize == 64, "");
+    // Loop to generate 16 x 4 long compression permute index table where each
+    // row holds either a valid permute index corresponding to set bit position
+    // or a -1 (default) value.
     for (int i = 0; i < 16; i++) {
       int tmp = i;
       int ctr = 0;
@@ -993,6 +999,9 @@ address StubGenerator::generate_expand_perm_table(const char *stub_name, int32_t
   StubCodeMark mark(this, "StubRoutines", stub_name);
   address start = __ pc();
   if (esize == 32) {
+    // Loop to generate 256 x 8 int expand permute index table where each
+    // row either places a valid permute index (starting from least significant
+    // lane) into columns corresponding to set bit position or a -1 (default) value.
     for (int i = 0; i < 256; i++) {
       int tmp = i;
       int ctr = 0;
@@ -1006,6 +1015,9 @@ address StubGenerator::generate_expand_perm_table(const char *stub_name, int32_t
     }
   } else {
     assert(esize == 64, "");
+    // Loop to generate 16 x 4 long expand permute index table where each
+    // row either places a valid permute index (starting from least significant
+    // lane) into columns corresponding to set bit position or a -1 (default) value.
     for (int i = 0; i < 16; i++) {
       int tmp = i;
       int ctr = 0;

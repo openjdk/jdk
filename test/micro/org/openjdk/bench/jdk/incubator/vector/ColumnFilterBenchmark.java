@@ -84,6 +84,34 @@ public class ColumnFilterBenchmark {
     }
 
     @Benchmark
+    public void fuzzyFilterIntColumn() {
+       int i = 0;
+       int j = 0;
+       long maskctr = 1;
+       int endIndex = ispecies.loopBound(size);
+       for (; i < endIndex; i += ispecies.length()) {
+           IntVector vec = IntVector.fromArray(ispecies, intinCol, i);
+           VectorMask<Integer> pred = VectorMask.fromLong(ispecies, maskctr++);
+           vec.compress(pred).intoArray(intoutCol, j);
+           j += pred.trueCount();
+       }
+   }
+
+   @Benchmark
+   public void fuzzyFilterLongColumn() {
+       int i = 0;
+       int j = 0;
+       long maskctr = 1;
+       int endIndex = lspecies.loopBound(size);
+       for (; i < endIndex; i += lspecies.length()) {
+           LongVector vec = LongVector.fromArray(lspecies, longinCol, i);
+           VectorMask<Long> pred = VectorMask.fromLong(lspecies, maskctr++);
+           vec.compress(pred).intoArray(longoutCol, j);
+           j += pred.trueCount();
+       }
+   }
+
+    @Benchmark
     public void filterIntColumn() {
        int i = 0;
        int j = 0;
