@@ -922,11 +922,11 @@ public class ClassWriter extends ClassFile {
     /** Write "PermittedSubclasses" attribute.
      */
     int writePermittedSubclassesIfNeeded(ClassSymbol csym) {
-        if (csym.permitted.nonEmpty()) {
+        if (csym.getPermittedSubclasses().nonEmpty()) {
             int alenIdx = writeAttr(names.PermittedSubclasses);
-            databuf.appendChar(csym.permitted.size());
-            for (Symbol c : csym.permitted) {
-                databuf.appendChar(poolWriter.putClass((ClassSymbol) c));
+            databuf.appendChar(csym.getPermittedSubclasses().size());
+            for (Type t : csym.getPermittedSubclasses()) {
+                databuf.appendChar(poolWriter.putClass((ClassSymbol) t.tsym));
             }
             endAttr(alenIdx);
             return 1;

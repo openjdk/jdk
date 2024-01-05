@@ -1643,7 +1643,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
                         originalAnnos.forEach(a -> visitAnnotation(a));
                     }
                     // we should empty the list of permitted subclasses for next round
-                    node.sym.permitted = List.nil();
+                    node.sym.clearPermittedSubclasses();
                 }
                 node.sym = null;
             }
