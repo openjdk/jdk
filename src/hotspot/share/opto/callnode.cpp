@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -977,8 +977,8 @@ Node* CallNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   // Validate attached generator
   CallGenerator* cg = generator();
   if (cg != nullptr) {
-    assert(is_CallStaticJava()  && cg->is_mh_late_inline() ||
-           is_CallDynamicJava() && cg->is_virtual_late_inline(), "mismatch");
+    assert((is_CallStaticJava()  && cg->is_mh_late_inline()) ||
+           (is_CallDynamicJava() && cg->is_virtual_late_inline()), "mismatch");
   }
 #endif // ASSERT
   return SafePointNode::Ideal(phase, can_reshape);
@@ -1638,8 +1638,8 @@ Node *AllocateArrayNode::make_ideal_length(const TypeOopPtr* oop_type, PhaseValu
       //   - the narrow_length is 0
       //   - the narrow_length is not wider than length
       assert(narrow_length_type == TypeInt::ZERO ||
-             length_type->is_con() && narrow_length_type->is_con() &&
-                (narrow_length_type->_hi <= length_type->_lo) ||
+             (length_type->is_con() && narrow_length_type->is_con() &&
+              (narrow_length_type->_hi <= length_type->_lo)) ||
              (narrow_length_type->_hi <= length_type->_hi &&
               narrow_length_type->_lo >= length_type->_lo),
              "narrow type must be narrower than length type");
@@ -1652,8 +1652,7 @@ Node *AllocateArrayNode::make_ideal_length(const TypeOopPtr* oop_type, PhaseValu
       // propagate the fact that the array length must be positive.
       InitializeNode* init = initialization();
       if (init != nullptr) {
-        length = new CastIINode(length, narrow_length_type);
-        length->set_req(TypeFunc::Control, init->proj_out_or_null(TypeFunc::Control));
+        length = new CastIINode(init->proj_out_or_null(TypeFunc::Control), length, narrow_length_type);
       }
     }
   }

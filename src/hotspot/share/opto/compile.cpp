@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3140,8 +3140,8 @@ void Compile::final_graph_reshaping_impl(Node *n, Final_Reshape_Counts& frc, Uni
     int alias_idx = get_alias_index(n->as_Mem()->adr_type());
     assert( n->in(0) != nullptr || alias_idx != Compile::AliasIdxRaw ||
             // oop will be recorded in oop map if load crosses safepoint
-            n->is_Load() && (n->as_Load()->bottom_type()->isa_oopptr() ||
-                             LoadNode::is_immutable_value(n->in(MemNode::Address))),
+            (n->is_Load() && (n->as_Load()->bottom_type()->isa_oopptr() ||
+                              LoadNode::is_immutable_value(n->in(MemNode::Address)))),
             "raw memory operations should have control edge");
   }
   if (n->is_MemBar()) {
@@ -4471,12 +4471,11 @@ Node* Compile::conv_I2X_index(PhaseGVN* phase, Node* idx, const TypeInt* sizetyp
 Node* Compile::constrained_convI2L(PhaseGVN* phase, Node* value, const TypeInt* itype, Node* ctrl, bool carry_dependency) {
   if (ctrl != nullptr) {
     // Express control dependency by a CastII node with a narrow type.
-    value = new CastIINode(value, itype, carry_dependency ? ConstraintCastNode::StrongDependency : ConstraintCastNode::RegularDependency, true /* range check dependency */);
     // Make the CastII node dependent on the control input to prevent the narrowed ConvI2L
     // node from floating above the range check during loop optimizations. Otherwise, the
     // ConvI2L node may be eliminated independently of the range check, causing the data path
     // to become TOP while the control path is still there (although it's unreachable).
-    value->set_req(0, ctrl);
+    value = new CastIINode(ctrl, value, itype, carry_dependency ? ConstraintCastNode::StrongDependency : ConstraintCastNode::RegularDependency, true /* range check dependency */);
     value = phase->transform(value);
   }
   const TypeLong* ltype = TypeLong::make(itype->_lo, itype->_hi, itype->_widen);

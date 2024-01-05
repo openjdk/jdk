@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1774,7 +1774,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
             carry = product >>> 32;
         }
         if (carry == 0L) {
-            rmag = java.util.Arrays.copyOfRange(rmag, 1, rmag.length);
+            rmag = Arrays.copyOfRange(rmag, 1, rmag.length);
         } else {
             rmag[rstart] = (int)carry;
         }
@@ -1819,7 +1819,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
             rmag[0] = (int)carry;
         }
         if (carry == 0L)
-            rmag = java.util.Arrays.copyOfRange(rmag, 1, rmag.length);
+            rmag = Arrays.copyOfRange(rmag, 1, rmag.length);
         return new BigInteger(rmag, rsign);
     }
 
@@ -4593,7 +4593,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
         // Find first nonzero byte
         for (keep = 0; keep < vlen && val[keep] == 0; keep++)
             ;
-        return java.util.Arrays.copyOfRange(val, keep, vlen);
+        return Arrays.copyOfRange(val, keep, vlen);
     }
 
     /**
@@ -4607,7 +4607,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
         // Find first nonzero byte
         for (keep = 0; keep < vlen && val[keep] == 0; keep++)
             ;
-        return keep == 0 ? val : java.util.Arrays.copyOfRange(val, keep, vlen);
+        return keep == 0 ? val : Arrays.copyOfRange(val, keep, vlen);
     }
 
     private static int[] stripLeadingZeroBytes(byte[] a, int from, int len) {

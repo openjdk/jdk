@@ -38,22 +38,22 @@ import jdk.test.lib.process.ProcessTools;
 public class MemStatTest {
     public static void main(String[] args) throws Exception {
         // default => collect
-        ProcessTools.executeTestJvm("-XX:CompileCommand=MemStat,*.*", "-version")
+        ProcessTools.executeTestJava("-XX:CompileCommand=MemStat,*.*", "-version")
                 .shouldHaveExitValue(0)
                 .shouldNotContain("CompileCommand: An error occurred during parsing")
                 .shouldContain("CompileCommand: MemStat *.* uintx MemStat = 1"); // should be registered
         // collect explicit
-        ProcessTools.executeTestJvm("-XX:CompileCommand=MemStat,*.*,collect", "-version")
+        ProcessTools.executeTestJava("-XX:CompileCommand=MemStat,*.*,collect", "-version")
                 .shouldHaveExitValue(0)
                 .shouldNotContain("CompileCommand: An error occurred during parsing")
                 .shouldContain("CompileCommand: MemStat *.* uintx MemStat = 1"); // should be registered
         // print explicit
-        ProcessTools.executeTestJvm("-XX:CompileCommand=MemStat,*.*,print", "-version")
+        ProcessTools.executeTestJava("-XX:CompileCommand=MemStat,*.*,print", "-version")
                 .shouldHaveExitValue(0)
                 .shouldNotContain("CompileCommand: An error occurred during parsing")
                 .shouldContain("CompileCommand: MemStat *.* uintx MemStat = 2");
         // invalid suboption
-        ProcessTools.executeTestJvm("-XX:CompileCommand=MemStat,*.*,invalid", "-version")
+        ProcessTools.executeTestJava("-XX:CompileCommand=MemStat,*.*,invalid", "-version")
                 .shouldNotHaveExitValue(0)
                 .shouldContain("CompileCommand: An error occurred during parsing")
                 .shouldContain("Error: Value cannot be read for option 'MemStat'")
