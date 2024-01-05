@@ -532,6 +532,14 @@ void ParallelScavengeHeap::resize_all_tlabs() {
   CollectedHeap::resize_all_tlabs();
 }
 
+void ParallelScavengeHeap::prune_scavengable_nmethods() {
+  ScavengableNMethods::prune_nmethods_not_into_young();
+}
+
+void ParallelScavengeHeap::prune_unlinked_nmethods() {
+  ScavengableNMethods::prune_unlinked_nmethods();
+}
+
 // This method is used by System.gc() and JVMTI.
 void ParallelScavengeHeap::collect(GCCause::Cause cause) {
   assert(!Heap_lock->owned_by_self(),
@@ -861,10 +869,6 @@ void ParallelScavengeHeap::unregister_nmethod(nmethod* nm) {
 
 void ParallelScavengeHeap::verify_nmethod(nmethod* nm) {
   ScavengableNMethods::verify_nmethod(nm);
-}
-
-void ParallelScavengeHeap::prune_scavengable_nmethods() {
-  ScavengableNMethods::prune_nmethods();
 }
 
 GrowableArray<GCMemoryManager*> ParallelScavengeHeap::memory_managers() {
