@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8144903 8177466 8191842 8211694 8213725 8239536 8257236 8252409 8294431
+ * @bug 8144903 8177466 8191842 8211694 8213725 8239536 8257236 8252409 8294431 8322532
  * @summary Tests for EvaluationState.variables
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -619,6 +619,12 @@ public class VariablesTest extends KullaTesting {
 
     public void varAnonymousClassAndStaticField() { //JDK-8294431
         assertEval("var obj = new Object() { public static final String msg = \"hello\"; };");
+    }
+
+    public void underscoreAsLambdaParameter() { //JDK-8322532
+        assertAnalyze("Func f = _ -> 0; int i;",
+                      "Func f = _ -> 0;",
+                      " int i;", true);
     }
 
 }
