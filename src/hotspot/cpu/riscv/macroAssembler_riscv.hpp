@@ -493,8 +493,7 @@ class MacroAssembler: public Assembler {
   }
 
   inline void zext_b(Register Rd, Register Rs) {
-    if (do_compress_zcb(Rd, Rs) &&
-        (Rd == Rs)) {
+    if (do_compress_zcb(Rd, Rs) && (Rd == Rs)) {
       c_zext_b(Rd);
     } else {
       andi(Rd, Rs, 0xFF);

@@ -537,9 +537,9 @@ public:
   }
 
   INSN(lb,  0b0000011, 0b000);
-  INSN(_lbu, 0b0000011, 0b100); // Zcb
-  INSN(_lh,  0b0000011, 0b001); // Zcb
-  INSN(_lhu, 0b0000011, 0b101); // Zcb
+  INSN(_lbu, 0b0000011, 0b100);
+  INSN(_lh,  0b0000011, 0b001);
+  INSN(_lhu, 0b0000011, 0b101);
   INSN(_lw, 0b0000011, 0b010);
   INSN(lwu, 0b0000011, 0b110);
   INSN(_ld, 0b0000011, 0b011);
@@ -2959,7 +2959,7 @@ public:
     }
   }
 
-  // Format CU, c.[sz]ext.*, c.no
+  // Format CU, c.[sz]ext.*, c.not
   template <uint8_t InstructionType>
   void c_u_if(Register Rs1) {
     assert_cond(do_compress_zcb(Rs1));
@@ -3094,7 +3094,6 @@ public:
   // Prerequisites: Zcb, Zbb
   // Format CS
   void c_zext_h(Register Rs1) {
-    //assert(instruction_premitted<VM_Version::rv_ext_Zbb, VM_Version::rv_ext_Zcb>(Rs1), "invalid");
     c_u_if<0b010>(Rs1);
   }
 
