@@ -36,13 +36,12 @@ import jdk.test.lib.process.OutputAnalyzer;
 
 public class TestAllocateHeapAt {
   public static void main(String args[]) throws Exception {
-    ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
+    OutputAnalyzer output = ProcessTools.executeTestJava(
         "-XX:AllocateHeapAt=" + System.getProperty("test.dir", "."),
         "-Xlog:gc+heap=info",
         "-Xmx32m",
         "-Xms32m",
         "-version");
-    OutputAnalyzer output = new OutputAnalyzer(pb.start());
 
     System.out.println("Output:\n" + output.getOutput());
 

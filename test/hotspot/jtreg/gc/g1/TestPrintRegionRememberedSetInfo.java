@@ -69,8 +69,7 @@ public class TestPrintRegionRememberedSetInfo {
 
         finalargs.add(RunAndWaitForMarking.class.getName());
 
-        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(finalargs);
-        OutputAnalyzer output = new OutputAnalyzer(pb.start());
+        OutputAnalyzer output = ProcessTools.executeLimitedTestJava(finalargs);
         output.shouldHaveExitValue(0);
 
         String result = output.getStdout();

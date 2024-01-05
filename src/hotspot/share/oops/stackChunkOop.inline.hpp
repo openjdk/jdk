@@ -256,12 +256,13 @@ inline BitMapView stackChunkOopDesc::bitmap() const {
   return bitmap;
 }
 
-inline BitMap::idx_t stackChunkOopDesc::bit_index_for(intptr_t* p) const {
+inline BitMap::idx_t stackChunkOopDesc::bit_index_for(address p) const {
   return UseCompressedOops ? bit_index_for((narrowOop*)p) : bit_index_for((oop*)p);
 }
 
 template <typename OopT>
 inline BitMap::idx_t stackChunkOopDesc::bit_index_for(OopT* p) const {
+  assert(is_aligned(p, alignof(OopT)), "should be aligned: " PTR_FORMAT, p2i(p));
   assert(p >= (OopT*)start_address(), "Address not in chunk");
   return p - (OopT*)start_address();
 }
