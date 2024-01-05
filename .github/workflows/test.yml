@@ -60,7 +60,9 @@ jobs:
           - 'jdk/tier1 part 3'
           - 'langtools/tier1'
           - 'hs/tier1 common'
-          - 'hs/tier1 compiler'
+          - 'hs/tier1 compiler part 1'
+          - 'hs/tier1 compiler part 2'
+          - 'hs/tier1 compiler part 3'
           - 'hs/tier1 gc'
           - 'hs/tier1 runtime'
           - 'hs/tier1 serviceability'
@@ -83,8 +85,16 @@ jobs:
             test-suite: 'test/hotspot/jtreg/:tier1_common'
             debug-suffix: -debug
 
-          - test-name: 'hs/tier1 compiler'
-            test-suite: 'test/hotspot/jtreg/:tier1_compiler'
+          - test-name: 'hs/tier1 compiler part 1'
+            test-suite: 'test/hotspot/jtreg/:tier1_compiler_1'
+            debug-suffix: -debug
+
+          - test-name: 'hs/tier1 compiler part 2'
+            test-suite: 'test/hotspot/jtreg/:tier1_compiler_2 test/hotspot/jtreg/:tier1_compiler_not_xcomp'
+            debug-suffix: -debug
+
+          - test-name: 'hs/tier1 compiler part 3'
+            test-suite: 'test/hotspot/jtreg/:tier1_compiler_3'
             debug-suffix: -debug
 
           - test-name: 'hs/tier1 gc'
