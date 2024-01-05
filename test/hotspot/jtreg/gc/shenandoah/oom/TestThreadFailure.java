@@ -62,14 +62,13 @@ public class TestThreadFailure {
         }
 
         {
-            ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+            OutputAnalyzer analyzer = ProcessTools.executeLimitedTestJava(
                     "-Xmx32m",
                     "-XX:+UnlockExperimentalVMOptions",
                     "-XX:+UseShenandoahGC",
                     TestThreadFailure.class.getName(),
                     "test");
 
-            OutputAnalyzer analyzer = new OutputAnalyzer(pb.start());
             analyzer.shouldHaveExitValue(0);
             analyzer.shouldContain("java.lang.OutOfMemoryError");
             analyzer.shouldContain("All good");

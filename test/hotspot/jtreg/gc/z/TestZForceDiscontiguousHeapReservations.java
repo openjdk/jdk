@@ -45,17 +45,17 @@ public class TestZForceDiscontiguousHeapReservations {
          */
         final int XmxInM = 2000;
         final int XmsInM = Math.min(16 * XmxInM / (n + 1), XmxInM);
-        OutputAnalyzer oa = ProcessTools.executeProcess(ProcessTools.createTestJavaProcessBuilder(
-                                                        "-XX:+UseZGC",
-                                                        "-XX:+ZGenerational",
-                                                        "-Xms" + XmsInM + "M",
-                                                        "-Xmx" + XmxInM + "M",
-                                                        "-Xlog:gc,gc+init",
-                                                        "-XX:ZForceDiscontiguousHeapReservations=" + n,
-                                                        "-version"))
-                                        .outputTo(System.out)
-                                        .errorTo(System.out)
-                                        .shouldHaveExitValue(0);
+        OutputAnalyzer oa = ProcessTools.executeTestJava(
+            "-XX:+UseZGC",
+            "-XX:+ZGenerational",
+            "-Xms" + XmsInM + "M",
+            "-Xmx" + XmxInM + "M",
+            "-Xlog:gc,gc+init",
+            "-XX:ZForceDiscontiguousHeapReservations=" + n,
+            "-version")
+                .outputTo(System.out)
+                .errorTo(System.out)
+                .shouldHaveExitValue(0);
         if (n > 1) {
             oa.shouldContain("Address Space Type: Discontiguous");
         }

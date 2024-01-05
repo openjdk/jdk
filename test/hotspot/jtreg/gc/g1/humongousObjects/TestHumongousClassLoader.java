@@ -140,9 +140,7 @@ public class TestHumongousClassLoader {
         public abstract void provoke();
     }
 
-    public static void main(String[] args) throws ClassNotFoundException, InstantiationException,
-            IllegalAccessException, IOException, NoSuchMethodException, InvocationTargetException {
-
+    public static void main(String[] args) throws Exception {
         if (args.length != 1) {
             throw new Error("Test Bug: Expected GC type wasn't provided as command line argument");
         }
