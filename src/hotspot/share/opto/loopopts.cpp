@@ -305,7 +305,7 @@ bool PhaseIdealLoop::loop_phi_backedge_type_contains_zero(const Node* phi_diviso
 // Replace the dominated test with an obvious true or false.  Place it on the
 // IGVN worklist for later cleanup.  Move control-dependent data Nodes on the
 // live path up to the dominating control.
-void PhaseIdealLoop::dominated_by(IfProjNode* prevdom, IfNode* iff, bool flip, bool range_check_predicate) {
+void PhaseIdealLoop::dominated_by(IfProjNode* prevdom, IfNode* iff, bool flip, bool pin_array_nodes) {
   if (VerifyLoopOptimizations && PrintOpto) { tty->print_cr("dominating test"); }
 
   // prevdom is the dominating projection of the dominating test.
@@ -352,13 +352,14 @@ void PhaseIdealLoop::dominated_by(IfProjNode* prevdom, IfNode* iff, bool flip, b
     if (cd->depends_only_on_test() && _igvn.no_dependent_zero_check(cd)) {
       assert(cd->in(0) == dp, "");
       _igvn.replace_input_of(cd, 0, prevdom);
-      if (range_check_predicate) {
-        // Loads and range check Cast nodes that are control dependent on this range check (that is about to be removed)
-        // now depend on multiple dominating range checks. After the removal of this range check, these control
-        // dependent nodes end up at the lowest/nearest dominating check in the graph. To ensure that these Loads/Casts
-        // do not float above any of the dominating checks (even when the lowest dominating check is later replaced by
-        // yet another dominating check), we need to pin them at the lowest dominating check.
-        Node* clone = cd->pin_for_array_access();
+      if (pin_array_nodes) {
+        // Because of range check predication, Loads and range check Cast nodes that are control dependent on this range
+        // check (that is about to be removed) now depend on multiple dominating range check predicates. After the
+        // removal of this range check, these control dependent nodes end up at the lowest/nearest dominating predicate
+        // in the graph. To ensure that these Loads/Casts do not float above any of the dominating checks (even when the
+        // lowest dominating check is later replaced by yet another dominating check), we need to pin them at the lowest
+        // dominating check.
+        Node* clone = cd->pin_array_access_node();
         if (clone != nullptr) {
           clone = _igvn.register_new_node_with_optimizer(clone, cd);
           _igvn.replace_node(cd, clone);

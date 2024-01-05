@@ -845,10 +845,11 @@ bool LoadNode::can_remove_control() const {
   return !has_pinned_control_dependency();
 }
 uint LoadNode::size_of() const { return sizeof(*this); }
-bool LoadNode::cmp( const Node &n ) const {
-  return !Type::cmp( _type, ((LoadNode&)n)._type ) &&
-         _control_dependency == ((LoadNode&)n)._control_dependency &&
-         _mo == ((LoadNode&)n)._mo;
+bool LoadNode::cmp(const Node &n) const {
+  LoadNode& load = (LoadNode &)n;
+  return !Type::cmp(_type, load._type) &&
+         _control_dependency == load._control_dependency &&
+         _mo == load._mo;
 }
 const Type *LoadNode::bottom_type() const { return _type; }
 uint LoadNode::ideal_reg() const {
@@ -986,7 +987,7 @@ static bool skip_through_membars(Compile::AliasType* atp, const TypeInstPtr* tp,
   return false;
 }
 
-LoadNode* LoadNode::pin_for_array_access() const {
+LoadNode* LoadNode::pin_array_access_node() const {
   const TypePtr* adr_type = this->adr_type();
   if (adr_type != nullptr && adr_type->isa_aryptr()) {
     return clone_pinned();

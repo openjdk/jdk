@@ -566,11 +566,12 @@ static void adjust_check(IfProjNode* proj, Node* range, Node* index,
   Node* new_bol = gvn->transform(new BoolNode(new_cmp, bol->as_Bool()->_test._test));
   igvn->rehash_node_delayed(iff);
   iff->set_req_X(1, new_bol, igvn);
-  // Loads and range check Cast nodes that are control dependent on this range check now depend on multiple dominating
-  // range checks. These control dependent nodes end up at the lowest/nearest dominating check in the graph. To ensure
-  // that these Loads/Casts do not float above any of the dominating checks (even when the lowest dominating check is
-  // later replaced by yet another dominating check), we need to pin them at the lowest dominating check.
-  proj->pin_array_loads(igvn);
+  // As part of range check smearing, this range check is widen. Loads and range check Cast nodes that are control
+  // dependent on this range check now depend on multiple dominating range checks. These control dependent nodes end up
+  // at the lowest/nearest dominating check in the graph. To ensure that these Loads/Casts do not float above any of the
+  // dominating checks (even when the lowest dominating check is later replaced by yet another dominating check), we
+  // need to pin them at the lowest dominating check.
+  proj->pin_array_access_nodes(igvn);
 }
 
 //------------------------------up_one_dom-------------------------------------
@@ -1498,7 +1499,7 @@ Node* IfNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 }
 
 //------------------------------dominated_by-----------------------------------
-Node* IfNode::dominated_by(Node* prev_dom, PhaseIterGVN* igvn, bool range_check_smearing) {
+Node* IfNode::dominated_by(Node* prev_dom, PhaseIterGVN* igvn, bool pin_array_nodes) {
 #ifndef PRODUCT
   if (TraceIterativeGVN) {
     tty->print("   Removing IfNode: "); this->dump();
@@ -1533,13 +1534,14 @@ Node* IfNode::dominated_by(Node* prev_dom, PhaseIterGVN* igvn, bool range_check_
         // For control producers.
         // Do not rewire Div and Mod nodes which could have a zero divisor to avoid skipping their zero check.
         igvn->replace_input_of(s, 0, data_target); // Move child to data-target
-        if (range_check_smearing && data_target != top) {
-          // Loads and range check Cast nodes that are control dependent on this range check (that is about to be
-          // removed) now depend on multiple dominating range checks. After the removal of this range check, these
-          // control dependent nodes end up at the lowest/nearest dominating check in the graph. To ensure that these
-          // Loads/Casts do not float above any of the dominating checks (even when the lowest dominating check is later
-          // replaced by yet another dominating check), we need to pin them at the lowest dominating check.
-          Node* clone = s->pin_for_array_access();
+        if (pin_array_nodes && data_target != top) {
+          // As a result of range check smearing, Loads and range check Cast nodes that are control dependent on this
+          // range check (that is about to be removed) now depend on multiple dominating range checks. After the removal
+          // of this range check, these control dependent nodes end up at the lowest/nearest dominating check in the
+          // graph. To ensure that these Loads/Casts do not float above any of the dominating checks (even when the
+          // lowest dominating check is later replaced by yet another dominating check), we need to pin them at the
+          // lowest dominating check.
+          Node* clone = s->pin_array_access_node();
           if (clone != nullptr) {
             clone = igvn->transform(clone);
             igvn->replace_node(s, clone);
@@ -1789,13 +1791,13 @@ bool IfNode::is_zero_trip_guard() const {
   return false;
 }
 
-void IfProjNode::pin_array_loads(PhaseIterGVN* igvn) {
+void IfProjNode::pin_array_access_nodes(PhaseIterGVN* igvn) {
   for (DUIterator i = outs(); has_out(i); i++) {
     Node* u = out(i);
     if (!u->depends_only_on_test()) {
       continue;
     }
-    Node* clone = u->pin_for_array_access();
+    Node* clone = u->pin_array_access_node();
     if (clone != nullptr) {
       clone = igvn->transform(clone);
       assert(clone != u, "shouldn't common");
@@ -2029,6 +2031,25 @@ Node* RangeCheckNode::Ideal(PhaseGVN *phase, bool can_reshape) {
         // Test is now covered by prior checks, dominate it out
         prev_dom = rc0.ctl;
       }
+      // The last RangeCheck is found to be redundant with a sequence of n (n >= 2) preceding RangeChecks.
+      // If an array load is control dependent on the eliminated range check, the array load nodes (CastII and Load)
+      // become control dependent on the last range check of the sequence, but they are really dependent on the entire
+      // sequence of RangeChecks. If RangeCheck#n is later replaced by a dominating identical check, the array load
+      // nodes must not float above the n-1 other RangeCheck in the sequence. We pin the array load nodes here to
+      // guarantee it doesn't happen.
+      //
+      // RangeCheck#1                 RangeCheck#1           
+      //    |      \                     |      \            
+      //    |      uncommon trap         |      uncommon trap
+      //    ..                           ..                  
+      // RangeCheck#n              -> RangeCheck#n           
+      //    |      \                     |      \            
+      //    |      uncommon trap        CastII  uncommon trap
+      // RangeCheck                     Load
+      //    |      \
+      //   CastII  uncommon trap
+      //   Load
+      
       return dominated_by(prev_dom, igvn, true);
     }
   } else {
