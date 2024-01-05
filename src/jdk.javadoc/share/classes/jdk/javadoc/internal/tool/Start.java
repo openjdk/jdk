@@ -670,19 +670,19 @@ public class Start {
                         .flatMap(o -> o.getNames().stream()),
                 docletOptions.stream()
                         .flatMap(o -> o.getNames().stream()));
-        // The following code is from the snippet in the comment for StringUtils.DamerauLevenshteinDistance
+        // The following code is based on the snippet in the comment for StringUtils.DamerauLevenshteinDistance
         record Pair(String word, int distance) { }
         var suggestions = allOptionNames
                              .map(v -> new Pair(v, StringUtils.DamerauLevenshteinDistance.of(v, name)))
                              .filter(p -> Double.compare(1.0 / 3, ((double) p.distance()) / p.word().length()) >= 0)
                              .sorted(Comparator.comparingDouble(Pair::distance))
+                             .map(Pair::word)
                              .limit(3)
                              .toList();
         switch (suggestions.size()) {
             case 0 -> { }
-            case 1 -> showLinesUsingKey("main.did-you-mean", suggestions.get(0).word);
-            default -> showLinesUsingKey("main.did-you-mean-one-of",
-                    suggestions.stream().map(Pair::word).collect(Collectors.joining(" ")));
+            case 1 -> showLinesUsingKey("main.did-you-mean", suggestions.get(0));
+            default -> showLinesUsingKey("main.did-you-mean-one-of", String.join(" ", suggestions));
         }
         showLinesUsingKey("main.for-more-details-see-usage");
     }
