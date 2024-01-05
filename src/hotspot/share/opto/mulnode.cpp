@@ -611,13 +611,10 @@ Node *AndINode::Ideal(PhaseGVN *phase, bool can_reshape) {
   }
 
   // Convert "(~a) & (~b)" into "~(a | b)"
-  if (in(1)->Opcode() == Op_XorI &&
-      phase->type(in(1)->in(2)) == TypeInt::MINUS_1 &&
-      in(2)->Opcode() == Op_XorI &&
-      phase->type(in(2)->in(2)) == TypeInt::MINUS_1) {
+  if (AddNode::is_not(phase, in(1), T_INT) && AddNode::is_not(phase, in(2), T_INT)) {
     Node *or_a_b = new OrINode(in(1)->in(1), in(2)->in(1));
-    Node *t = phase->transform(or_a_b);
-    return new XorINode(t, in(1)->in(2));
+    Node *tn = phase->transform(or_a_b);
+    return AddNode::make_not(phase, tn, T_INT);
   }
 
   // Special case constant AND mask
@@ -761,11 +758,10 @@ Node *AndLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   }
 
   // Convert "(~a) & (~b)" into "~(a | b)"
-  if (in(1)->Opcode() == Op_XorL
-      && phase->type(in(1)->in(2)) == TypeLong::MINUS_1
-      && in(2)->Opcode() == Op_XorL
-      && in(1)->in(2) == in(2)->in(2)) {
-    return new XorLNode(phase->transform(new OrLNode(in(1)->in(1), in(2)->in(1))), in(1)->in(2));
+  if (AddNode::is_not(phase, in(1), T_LONG) && AddNode::is_not(phase, in(2), T_LONG)) {
+    Node *or_a_b = new OrLNode(in(1)->in(1), in(2)->in(1));
+    Node *tn = phase->transform(or_a_b);
+    return AddNode::make_not(phase, tn, T_LONG);
   }
 
   // Special case constant AND mask
