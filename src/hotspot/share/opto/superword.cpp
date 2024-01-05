@@ -3516,7 +3516,7 @@ void SuperWord::remove_pack_at(int pos) {
 void SuperWord::packset_sort(int n) {
   // simple bubble sort so that we capitalize with O(n) when its already sorted
   do {
-    int newN = 0;
+    int max_swap_index = 0;
     for (int i = 1; i < n; i++) {
       Node_List* q_low = _packset.at(i-1);
       Node_List* q_i = _packset.at(i);
@@ -3526,10 +3526,10 @@ void SuperWord::packset_sort(int n) {
         Node_List* t = q_i;
         *(_packset.adr_at(i)) = q_low;
         *(_packset.adr_at(i-1)) = q_i;
-        newN = i;
+        max_swap_index = i;
       }
     }
-    n = newN;
+    n = max_swap_index;
   } while (n > 1);
 }
 
