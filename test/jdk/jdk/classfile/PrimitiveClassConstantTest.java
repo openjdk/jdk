@@ -60,7 +60,7 @@ public final class PrimitiveClassConstantTest {
                 cob.return_();
             });
             clb.withMethodBody("get", MethodTypeDesc.of(CD_Object), ACC_PUBLIC, cob -> {
-                cob.constantInstruction(CD_int);
+                cob.loadConstant(CD_int);
                 cob.areturn();
             });
             clb.withMethodBody("get2", MethodTypeDesc.of(CD_Class), ACC_PUBLIC, cob -> {

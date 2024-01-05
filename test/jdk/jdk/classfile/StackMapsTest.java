@@ -286,10 +286,10 @@ class StackMapsTest {
                                            Label next = cb.newLabel();
                                            cb.iload(0);
                                            cb.ifeq(next);
-                                           cb.constantInstruction(0.0d);
+                                           cb.loadConstant(0.0d);
                                            cb.goto_(target);
                                            cb.labelBinding(next);
-                                           cb.constantInstruction(0);
+                                           cb.loadConstant(0);
                                            cb.labelBinding(target);
                                            cb.pop();
                                        })));
@@ -304,10 +304,10 @@ class StackMapsTest {
                                            Label next = cb.newLabel();
                                            cb.iload(0);
                                            cb.ifeq(next);
-                                           cb.constantInstruction(0.0f);
+                                           cb.loadConstant(0.0f);
                                            cb.goto_(target);
                                            cb.labelBinding(next);
-                                           cb.constantInstruction(0);
+                                           cb.loadConstant(0);
                                            cb.labelBinding(target);
                                            cb.pop();
                                        })));

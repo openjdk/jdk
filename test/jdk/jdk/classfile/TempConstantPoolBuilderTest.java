@@ -58,9 +58,9 @@ class TempConstantPoolBuilderTest {
             cb.withFlags(AccessFlag.PUBLIC)
               .with(SourceFileAttribute.of(cb.constantPool().utf8Entry(("MyClass.java"))))
               .withMethod("<init>", MethodTypeDesc.of(CD_void), 0, mb -> mb
-                            .withCode(codeb -> codeb.loadInstruction(TypeKind.ReferenceType, 0)
-                                    .invokeInstruction(INVOKESPECIAL, CD_Object, "<init>", MTD_VOID, false)
-                                    .returnInstruction(VoidType)
+                            .withCode(codeb -> codeb.aload(0)
+                                    .invokespecial(CD_Object, "<init>", MTD_VOID, false)
+                                    .return_()
                             )
                             .with(RuntimeVisibleAnnotationsAttribute.of(Annotation.of(INTERFACE,
                                                                                       AnnotationElement.ofString("foo", "bar"))))
