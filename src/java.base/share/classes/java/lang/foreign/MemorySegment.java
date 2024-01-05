@@ -1942,8 +1942,6 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      *         in the provided layout
      * @throws IndexOutOfBoundsException if {@code offset > byteSize() - layout.byteSize()}
      *         or {@code offset < 0}
-     * @throws UnsupportedOperationException if this segment is
-     *         {@linkplain #isReadOnly() read-only}
      * @throws IllegalArgumentException if {@code value} is not a
      *         {@linkplain #isNative() native} segment
      * @throws IllegalArgumentException if this segment is
@@ -2040,7 +2038,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @throws IndexOutOfBoundsException if {@code index * layout.byteSize()} overflows
      * @throws IndexOutOfBoundsException if {@code index * layout.byteSize() > byteSize() - layout.byteSize()}
      *         or {@code index < 0}
-     * @throws UnsupportedOperationException if this segment is {@linkplain #isReadOnly() read-only}
+     * @throws IllegalArgumentException if this segment is {@linkplain #isReadOnly() read-only}
      */
     void setAtIndex(ValueLayout.OfChar layout, long index, char value);
 
@@ -2378,7 +2376,6 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @throws IndexOutOfBoundsException if {@code index * layout.byteSize()} overflows
      * @throws IndexOutOfBoundsException if {@code index * layout.byteSize() > byteSize() - layout.byteSize()}
      *         or {@code index < 0}
-     * @throws UnsupportedOperationException if this segment is {@linkplain #isReadOnly() read-only}
      * @throws IllegalArgumentException if {@code value} is not a {@linkplain #isNative() native} segment
      * @throws IllegalArgumentException if this segment is
      *         {@linkplain #isReadOnly() read-only}
