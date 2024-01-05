@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,10 +42,10 @@ public sealed interface ClassSignature
     List<Signature.TypeParam> typeParameters();
 
     /** {@return the instantiation of the superclass in this signature} */
-    Signature.RefTypeSig superclassSignature();
+    Signature.ClassTypeSig superclassSignature();
 
     /** {@return the instantiation of the interfaces in this signature} */
-    List<Signature.RefTypeSig> superinterfaceSignatures();
+    List<Signature.ClassTypeSig> superinterfaceSignatures();
 
     /** {@return the raw signature string} */
     String signatureString();
@@ -55,8 +55,8 @@ public sealed interface ClassSignature
      * @param superclassSignature the superclass
      * @param superinterfaceSignatures the interfaces
      */
-    public static ClassSignature of(Signature.RefTypeSig superclassSignature,
-                                    Signature.RefTypeSig... superinterfaceSignatures) {
+    public static ClassSignature of(Signature.ClassTypeSig superclassSignature,
+                                    Signature.ClassTypeSig... superinterfaceSignatures) {
         return of(List.of(), superclassSignature, superinterfaceSignatures);
     }
 
@@ -67,8 +67,8 @@ public sealed interface ClassSignature
      * @param superinterfaceSignatures the interfaces
      */
     public static ClassSignature of(List<Signature.TypeParam> typeParameters,
-                                    Signature.RefTypeSig superclassSignature,
-                                    Signature.RefTypeSig... superinterfaceSignatures) {
+                                    Signature.ClassTypeSig superclassSignature,
+                                    Signature.ClassTypeSig... superinterfaceSignatures) {
         return new SignaturesImpl.ClassSignatureImpl(
                 requireNonNull(typeParameters),
                 requireNonNull(superclassSignature),
@@ -81,6 +81,6 @@ public sealed interface ClassSignature
      * @return class signature
      */
     public static ClassSignature parseFrom(String classSignature) {
-        return new SignaturesImpl().parseClassSignature(requireNonNull(classSignature));
+        return new SignaturesImpl(classSignature).parseClassSignature();
     }
 }

@@ -26,6 +26,7 @@ package jdk.internal.classfile.impl;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Collections;
 import java.lang.classfile.ClassSignature;
@@ -35,23 +36,23 @@ import java.lang.classfile.Signature.*;
 
 public final class SignaturesImpl {
 
-    public SignaturesImpl() {
+    public SignaturesImpl(String signature) {
+        this.sig = Objects.requireNonNull(signature);
+        this.sigp = 0;
     }
 
-    private String sig;
+    private final String sig;
     private int sigp;
 
-    public ClassSignature parseClassSignature(String signature) {
-        this.sig = signature;
-        sigp = 0;
+    public ClassSignature parseClassSignature() {
         try {
             List<TypeParam> typeParamTypes = parseParamTypes();
-            RefTypeSig superclass = referenceTypeSig();
-            ArrayList<RefTypeSig> superinterfaces = null;
+            ClassTypeSig superclass = classTypeSig();
+            ArrayList<ClassTypeSig> superinterfaces = null;
             while (sigp < sig.length()) {
                 if (superinterfaces == null)
                     superinterfaces = new ArrayList<>();
-                superinterfaces.add(referenceTypeSig());
+                superinterfaces.add(classTypeSig());
             }
             return new ClassSignatureImpl(typeParamTypes, superclass, null2Empty(superinterfaces));
         } catch (IndexOutOfBoundsException e) {
@@ -59,25 +60,20 @@ public final class SignaturesImpl {
         }
     }
 
-    public MethodSignature parseMethodSignature(String signature) {
-        this.sig = signature;
-        sigp = 0;
+    public MethodSignature parseMethodSignature() {
         try {
             List<TypeParam> typeParamTypes = parseParamTypes();
-            if (sig.charAt(sigp) != '(') throw error("Expected ( at possition %d of signature".formatted(sigp));
-            sigp++;
+            require('(');
             ArrayList<Signature> paramTypes = null;
-            while (sig.charAt(sigp) != ')') {
+            while (!match(')')) {
                 if (paramTypes == null)
-                     paramTypes = new ArrayList<>();
+                    paramTypes = new ArrayList<>();
                 paramTypes.add(typeSig());
             }
-            sigp++;
             Signature returnType = typeSig();
             ArrayList<ThrowableSig> throwsTypes = null;
             while (sigp < sig.length()) {
-                if (sig.charAt(sigp) != '^') throw error("Expected ^ at possition %d of signature".formatted(sigp));
-                sigp++;
+                require('^');
                 if (throwsTypes == null)
                     throwsTypes = new ArrayList<>();
                 var t = referenceTypeSig();
@@ -92,12 +88,10 @@ public final class SignaturesImpl {
         }
     }
 
-    public Signature parseSignature(String signature) {
-        this.sig = signature;
-        sigp = 0;
+    public Signature parseSignature() {
         try {
             var s = typeSig();
-            if (sigp == signature.length())
+            if (sigp == sig.length())
                 return s;
         } catch (IndexOutOfBoundsException e) {
         }
@@ -106,26 +100,23 @@ public final class SignaturesImpl {
 
     private List<TypeParam> parseParamTypes() {
         ArrayList<TypeParam> typeParamTypes = null;
-        if (sig.charAt(sigp) == '<') {
-            sigp++;
+        if (match('<')) {
             typeParamTypes = new ArrayList<>();
-            while (sig.charAt(sigp) != '>') {
-                int sep = sig.indexOf(":", sigp);
-                String name = sig.substring(sigp, sep);
+            // cannot have empty <>
+            do {
+                String name = sig.substring(sigp, requireIdentifier());
                 RefTypeSig classBound = null;
                 ArrayList<RefTypeSig> interfaceBounds = null;
-                sigp = sep + 1;
+                require(':');
                 if (sig.charAt(sigp) != ':')
                     classBound = referenceTypeSig();
-                while (sig.charAt(sigp) == ':') {
-                    sigp++;
+                while (match(':')) {
                     if (interfaceBounds == null)
                         interfaceBounds = new ArrayList<>();
                     interfaceBounds.add(referenceTypeSig());
                 }
                 typeParamTypes.add(new TypeParamImpl(name, Optional.ofNullable(classBound), null2Empty(interfaceBounds)));
-            }
-            sigp++;
+            } while (!match('>'));
         }
         return null2Empty(typeParamTypes);
     }
@@ -141,38 +132,20 @@ public final class SignaturesImpl {
     }
 
     private RefTypeSig referenceTypeSig() {
-        char c = sig.charAt(sigp++);
-        switch (c) {
-            case 'L':
-                StringBuilder sb = new StringBuilder();
-                ArrayList<TypeArg> argTypes = null;
-                Signature.ClassTypeSig t = null;
-                char sigch ;
-                do {
-                    switch  (sigch = sig.charAt(sigp++)) {
-                        case '<' -> {
-                            argTypes = new ArrayList<>();
-                            while (sig.charAt(sigp) != '>')
-                                argTypes.add(typeArg());
-                            sigp++;
-                        }
-                        case '.',';' -> {
-                            t = new ClassTypeSigImpl(Optional.ofNullable(t), sb.toString(), null2Empty(argTypes));
-                            sb.setLength(0);
-                            argTypes = null;
-                        }
-                        default -> sb.append(sigch);
-                    }
-                } while (sigch != ';');
-                return t;
-            case 'T':
-                int sep = sig.indexOf(';', sigp);
-                var ty = Signature.TypeVarSig.of(sig.substring(sigp, sep));
-                sigp = sep + 1;
-                return ty;
-            case '[': return ArrayTypeSig.of(typeSig());
-        }
-        throw error("Unexpected character %c at possition %d of signature".formatted(c, sigp - 1));
+        return switch (sig.charAt(sigp)) {
+            case 'L' -> classTypeSig();
+            case 'T' -> {
+                sigp++;
+                var ty = Signature.TypeVarSig.of(sig.substring(sigp, requireIdentifier()));
+                require(';');
+                yield ty;
+            }
+            case '[' -> {
+                sigp++;
+                yield ArrayTypeSig.of(typeSig());
+            }
+            default -> throw unexpectedError("a type signature");
+        };
     }
 
     private TypeArg typeArg() {
@@ -185,6 +158,82 @@ public final class SignaturesImpl {
                 sigp--;
                 return TypeArg.of(referenceTypeSig());
         }
+    }
+
+    private ClassTypeSig classTypeSig() {
+        require('L');
+        Signature.ClassTypeSig t = null;
+
+        do {
+            int start = sigp;
+            requireIdentifier();
+            if (t == null) {
+                while (match('/')) {
+                    requireIdentifier();
+                }
+            }
+            String className = sig.substring(start, sigp);
+
+            ArrayList<TypeArg> argTypes;
+            if (match('<')) {
+                // cannot have empty <>
+                argTypes = new ArrayList<>();
+                do {
+                    argTypes.add(typeArg());
+                } while (!match('>'));
+            } else {
+                argTypes = null;
+            }
+
+            boolean end = match(';');
+            if (end || match('.')) {
+                t = new ClassTypeSigImpl(Optional.ofNullable(t), className, null2Empty(argTypes));
+                if (end)
+                    return t;
+            } else {
+                throw unexpectedError(". or ;");
+            }
+        } while (true);
+    }
+
+    /**
+     * Tries to match a character, and moves pointer if it matches.
+     */
+    private boolean match(char c) {
+        if (sigp < sig.length() && sig.charAt(sigp) == c) {
+            sigp++;
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Requires a character and moves past it, failing otherwise.
+     */
+    private void require(char c) {
+        if (!match(c))
+            throw unexpectedError(String.valueOf(c));
+    }
+
+    /**
+     * Requires an identifier, moving pointer to next illegal character and returning
+     * its position. Fails if the identifier is empty.
+     */
+    private int requireIdentifier() {
+        int start = sigp;
+        l:
+        while (sigp < sig.length()) {
+            switch (sig.charAt(sigp)) {
+                case '.', ';', '[', '/', '<', '>', ':' -> {
+                    break l;
+                }
+            }
+            sigp++;
+        }
+        if (start == sigp) {
+            throw unexpectedError("an identifier");
+        }
+        return sigp;
     }
 
     public static record BaseTypeSigImpl(char baseType) implements Signature.BaseTypeSig {
@@ -271,8 +320,8 @@ public final class SignaturesImpl {
         return sb;
     }
 
-    public static record ClassSignatureImpl(List<TypeParam> typeParameters, RefTypeSig superclassSignature,
-            List<RefTypeSig> superinterfaceSignatures) implements ClassSignature {
+    public static record ClassSignatureImpl(List<TypeParam> typeParameters, ClassTypeSig superclassSignature,
+            List<ClassTypeSig> superinterfaceSignatures) implements ClassSignature {
 
         @Override
         public String signatureString() {
@@ -306,6 +355,12 @@ public final class SignaturesImpl {
 
     private static <T> List<T> null2Empty(ArrayList<T> l) {
         return l == null ? List.of() : Collections.unmodifiableList(l);
+    }
+
+    private IllegalArgumentException unexpectedError(String expected) {
+        return error(sigp < sig.length() ? "Unexpected character %c at position %d, expected %s"
+                .formatted(sig.charAt(sigp), sigp, expected)
+                : "Unexpected end of signature at position %d, expected %s".formatted(sigp, expected));
     }
 
     private IllegalArgumentException error(String message) {

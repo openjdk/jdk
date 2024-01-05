@@ -291,7 +291,7 @@ public record ClassRemapperImpl(Function<ClassDesc, ClassDesc> mapFunction) impl
         return ClassSignature.of(mapTypeParams(signature.typeParameters()),
                 mapSignature(signature.superclassSignature()),
                 signature.superinterfaceSignatures().stream()
-                        .map(this::mapSignature).toArray(Signature.RefTypeSig[]::new));
+                        .map(this::mapSignature).toArray(Signature.ClassTypeSig[]::new));
     }
 
     MethodSignature mapMethodSignature(MethodSignature signature) {
