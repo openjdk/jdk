@@ -138,7 +138,7 @@ public class CondyNestedTest {
 //                                .withCode(codeBuilder -> {
 //                                            codeBuilder
 //                                                    .aload(2)
-//                                                    .instanceof_(ConstantDescs.CD_MethodType)
+//                                                    .instanceOf(ConstantDescs.CD_MethodType)
 //                                                    .iconst_0();
 //                                            Label condy = codeBuilder.newLabel();
 //                                            codeBuilder

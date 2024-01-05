@@ -43,7 +43,7 @@ public class ClassToInterfaceConverter implements ClassFilePreprocessor {
         CodeTransform ct = (b, e) -> {
             if (e instanceof InvokeInstruction i && i.owner() == classModel.thisClass()) {
                 Opcode opcode = i.opcode() == Opcode.INVOKEVIRTUAL ? Opcode.INVOKEINTERFACE : i.opcode();
-                b.invokeInstruction(opcode, i.owner().asSymbol(),
+                b.invoke(opcode, i.owner().asSymbol(),
                         i.name().stringValue(), i.typeSymbol(), true);
             } else {
                 b.with(e);
