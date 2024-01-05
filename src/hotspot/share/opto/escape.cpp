@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1121,7 +1121,7 @@ void ConnectionGraph::add_final_edges(Node *n) {
     return;
   }
   assert(n->is_Store() || n->is_LoadStore() ||
-         (n_ptn != nullptr) && (n_ptn->ideal_node() != nullptr),
+         ((n_ptn != nullptr) && (n_ptn->ideal_node() != nullptr)),
          "node should be registered already");
   int opcode = n->Opcode();
   bool gc_handled = BarrierSet::barrier_set()->barrier_set_c2()->escape_add_final_edges(this, _igvn, n, opcode);
@@ -3856,7 +3856,7 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
           record_for_optimizer(n);
         } else {
           assert(tn_type == TypePtr::NULL_PTR ||
-                 tn_t != nullptr && !tinst->maybe_java_subtype_of(tn_t),
+                 (tn_t != nullptr && !tinst->maybe_java_subtype_of(tn_t)),
                  "unexpected type");
           continue; // Skip dead path with different type
         }

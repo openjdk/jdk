@@ -255,7 +255,7 @@ public class SecurityProviderModularTest {
             }
             return !s.isEmpty();
         }).toArray(String[]::new);
-        String out = ProcessTools.executeTestJvm(safeArgs).getOutput();
+        String out = ProcessTools.executeTestJava(safeArgs).getOutput();
         // Handle response.
         if ((msgKey != null && out.contains(MSG_MAP.get(msgKey)))) {
             System.out.printf("PASS: Expected Result: %s.%n",
