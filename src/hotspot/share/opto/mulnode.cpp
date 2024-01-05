@@ -611,11 +611,13 @@ Node *AndINode::Ideal(PhaseGVN *phase, bool can_reshape) {
   }
 
   // Convert "(~a) & (~b)" into "~(a | b)"
-  if (in(1)->Opcode() == Op_XorI
-      && phase->type(in(1)->in(2)) == TypeInt::MINUS_1
-      && in(2)->Opcode() == Op_XorI
-      && in(1)->in(2) == in(2)->in(2)) {
-    return new XorINode(phase->transform(new OrINode(in(1)->in(1), in(2)->in(1))), in(1)->in(2));
+  if (in(1)->Opcode() == Op_XorI &&
+      phase->type(in(1)->in(2)) == TypeInt::MINUS_1 &&
+      in(2)->Opcode() == Op_XorI &&
+      phase->type(in(2)->in(2)) == TypeInt::MINUS_1) {
+    Node *or_a_b = new OrINode(in(1)->in(1), in(2)->in(1));
+    Node *t = phase->transform(or_a_b);
+    return new XorINode(t, in(1)->in(2));
   }
 
   // Special case constant AND mask

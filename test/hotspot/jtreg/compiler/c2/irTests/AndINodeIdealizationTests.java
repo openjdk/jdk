@@ -47,7 +47,7 @@ public class AndINodeIdealizationTests {
         int max = Integer.MAX_VALUE;
 
         assertResult(0, 0);
-        assertResult(a, a);
+        assertResult(a, b);
         assertResult(min, min);
         assertResult(max, max);
     }
