@@ -3923,15 +3923,19 @@ class StubGenerator: public StubCodeGenerator {
       // During most of the function the vector state is configured so that each
       // vector is interpreted as containing four 32/64 bits (e32/e64) elements (128/256 bits).
 
-      // Set vectors as 4 * 32/64 bits
+      // vsha2ch/vsha2cl uses EGW of 4*SEW.
+      // SHA256 SEW = e32, EGW = 128-bits
+      // SHA512 SEW = e64, EGW = 256-bits
       //
-      // e32/e64: vector of 32b/64b/4B/8B elements
-      // m1: LMUL=1
+      // VLEN is required to be at least 128.
+      // For the case of VLEN=128 and SHA512 we need LMUL=2 to work with 4*e64 (EGW = 256)
+      //
+      // m1: LMUL=1/2
       // ta: tail agnostic (don't care about those lanes)
       // ma: mask agnostic (don't care about those lanes)
       // x0 is not written, we known the number of vector elements.
 
-      if (vset_sew == Assembler::e64 && MaxVectorSize == 16) {
+      if (vset_sew == Assembler::e64 && MaxVectorSize == 16) { // SHA512 and VLEN = 128
         __ vsetivli(x0, 4, vset_sew, Assembler::m2, Assembler::ma, Assembler::ta);
       } else {
         __ vsetivli(x0, 4, vset_sew, Assembler::m1, Assembler::ma, Assembler::ta);
