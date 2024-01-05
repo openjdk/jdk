@@ -675,7 +675,7 @@ public class Start {
         var suggestions = allOptionNames
                 .map(t -> new Pair(t, similarity(t, name)))
                 .sorted(Comparator.comparingDouble(Pair::similarity).reversed() /* more similar first */)
-                // .peek(p -> System.out.printf("%.3f, (%s ~ %s)%n", p.similarity, p.tag, unknownTag)) // debug
+                // .peek(p -> System.out.printf("%.3f, (%s ~ %s)%n", p.similarity, p.word, name)) // debug
                 .takeWhile(p -> Double.compare(p.similarity, MIN_SIMILARITY) >= 0)
                 .map(Pair::word)
                 .toList();
