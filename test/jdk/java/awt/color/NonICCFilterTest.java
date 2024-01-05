@@ -38,6 +38,15 @@ import java.awt.image.WritableRaster;
  * @summary Verifies Color filter on Non ICC profile
  */
 public final class NonICCFilterTest {
+    private static final int WIDTH = 100;
+    private static final int HEIGHT = 100;
+
+    private enum ColorSpaceSelector {
+        GRAY,
+        RGB,
+        WRAPPED_GRAY,
+        WRAPPED_RGB
+    }
 
     private static final class TestColorSpace extends ColorSpace {
 
@@ -69,11 +78,10 @@ public final class NonICCFilterTest {
         }
     }
 
-    private static BufferedImage createTestImage(boolean isSrc, boolean plain) {
-        ColorSpace cs = createCS(isSrc, plain);
+    private static BufferedImage createTestImage(final ColorSpace cs) {
         ComponentColorModel cm = new ComponentColorModel(cs, false, false,
                 Transparency.OPAQUE, DataBuffer.TYPE_BYTE);
-        WritableRaster raster = cm.createCompatibleWritableRaster(100, 100);
+        WritableRaster raster = cm.createCompatibleWritableRaster(WIDTH, HEIGHT);
         BufferedImage img = new BufferedImage(cm, raster, false, null);
 
         Graphics2D g = img.createGraphics();
@@ -86,13 +94,14 @@ public final class NonICCFilterTest {
         return img;
     }
 
-    private static ColorSpace createCS(boolean isSrc, boolean plain) {
-        ColorSpace cs = ColorSpace.getInstance(
-                isSrc ? ColorSpace.CS_GRAY : ColorSpace.CS_sRGB);
-        if (plain) {
-            return cs;
-        }
-        return new TestColorSpace(cs);
+    private static ColorSpace createCS(ColorSpaceSelector selector) {
+        return switch (selector) {
+            case GRAY -> ColorSpace.getInstance(ColorSpace.CS_GRAY);
+            case WRAPPED_GRAY -> new TestColorSpace(ColorSpace.getInstance(ColorSpace.CS_GRAY));
+
+            case RGB -> ColorSpace.getInstance(ColorSpace.CS_sRGB);
+            case WRAPPED_RGB -> new TestColorSpace(ColorSpace.getInstance(ColorSpace.CS_sRGB));
+        };
     }
 
     private static boolean compareImages(BufferedImage destTest, BufferedImage destGold) {
@@ -101,6 +110,7 @@ public final class NonICCFilterTest {
                 int rgb1 = destTest.getRGB(x, y);
                 int rgb2 = destGold.getRGB(x, y);
                 if (rgb1 != rgb2) {
+                    System.err.println("x = " + x + ", y = " + y);
                     System.err.println("rgb1 = " + Integer.toHexString(rgb1));
                     System.err.println("rgb2 = " + Integer.toHexString(rgb2));
                     return true;
@@ -111,11 +121,11 @@ public final class NonICCFilterTest {
     }
 
     public static void main(String[] args) {
-        BufferedImage srcTest = createTestImage(true, false);
-        BufferedImage destTest = createTestImage(false, false);
+        BufferedImage srcTest = createTestImage(createCS(ColorSpaceSelector.WRAPPED_GRAY));
+        BufferedImage destTest = createTestImage(createCS(ColorSpaceSelector.WRAPPED_RGB));
 
-        BufferedImage srcGold = createTestImage(true, true);
-        BufferedImage destGold = createTestImage(false, true);
+        BufferedImage srcGold = createTestImage(createCS(ColorSpaceSelector.GRAY));
+        BufferedImage destGold = createTestImage(createCS(ColorSpaceSelector.RGB));
 
         ColorSpace mid = ColorSpace.getInstance(ColorSpace.CS_PYCC);
         ColorConvertOp test = new ColorConvertOp(mid, null);
