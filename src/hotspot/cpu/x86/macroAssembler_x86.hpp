@@ -800,23 +800,6 @@ public:
 
   void cmpxchgptr(Register reg, Address adr);
 
-
-  // cvt instructions
-  void cvtss2sd(XMMRegister dst, XMMRegister src);
-  void cvtss2sd(XMMRegister dst, Address src);
-  void cvtsd2ss(XMMRegister dst, XMMRegister src);
-  void cvtsd2ss(XMMRegister dst, Address src);
-  void cvtsi2sdl(XMMRegister dst, Register src);
-  void cvtsi2sdl(XMMRegister dst, Address src);
-  void cvtsi2ssl(XMMRegister dst, Register src);
-  void cvtsi2ssl(XMMRegister dst, Address src);
-#ifdef _LP64
-  void cvtsi2sdq(XMMRegister dst, Register src);
-  void cvtsi2sdq(XMMRegister dst, Address src);
-  void cvtsi2ssq(XMMRegister dst, Register src);
-  void cvtsi2ssq(XMMRegister dst, Address src);
-#endif
-
   void locked_cmpxchgptr(Register reg, AddressLiteral adr, Register rscratch = noreg);
 
   void imulptr(Register dst, Register src) { LP64_ONLY(imulq(dst, src)) NOT_LP64(imull(dst, src)); }
