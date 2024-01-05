@@ -670,21 +670,31 @@ public class Start {
                         .flatMap(o -> o.getNames().stream()),
                 docletOptions.stream()
                         .flatMap(o -> o.getNames().stream()));
-        // The following code is based on the snippet in the comment for StringUtils.DamerauLevenshteinDistance
-        record Pair(String word, int distance) { }
+        record Pair(String word, double similarity) { }
+        final double MIN_SIMILARITY = 0.7;
         var suggestions = allOptionNames
-                             .map(v -> new Pair(v, StringUtils.DamerauLevenshteinDistance.of(v, name)))
-                             .filter(p -> Double.compare(1.0 / 3, ((double) p.distance()) / p.word().length()) >= 0)
-                             .sorted(Comparator.comparingDouble(Pair::distance))
-                             .map(Pair::word)
-                             .limit(3)
-                             .toList();
+                .map(t -> new Pair(t, similarity(t, name)))
+                .sorted(Comparator.comparingDouble(Pair::similarity).reversed() /* more similar first */)
+                // .peek(p -> System.out.printf("%.3f, (%s ~ %s)%n", p.similarity, p.tag, unknownTag)) // debug
+                .takeWhile(p -> Double.compare(p.similarity, MIN_SIMILARITY) >= 0)
+                .map(Pair::word)
+                .toList();
         switch (suggestions.size()) {
             case 0 -> { }
             case 1 -> showLinesUsingKey("main.did-you-mean", suggestions.get(0));
             default -> showLinesUsingKey("main.did-you-mean-one-of", String.join(" ", suggestions));
         }
         showLinesUsingKey("main.for-more-details-see-usage");
+    }
+
+    // a value in [0, 1] range: the closer the value is to 1, the more similar
+    // the strings are
+    private static double similarity(String a, String b) {
+        // Normalize the distance so that similarity between "x" and "y" is
+        // less than that of "ax" and "ay". Use the greater of two lengths
+        // as normalizer, as it's an upper bound for the distance.
+        return 1.0 - ((double) StringUtils.DamerauLevenshteinDistance.of(a, b))
+                / Math.max(a.length(), b.length());
     }
 
     private static Set<? extends Option> getSupportedOptionsOf(Doclet doclet) {
