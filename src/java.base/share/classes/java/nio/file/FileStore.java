@@ -96,10 +96,9 @@ public abstract class FileStore {
     public abstract long getTotalSpace() throws IOException;
 
     /**
-     * Returns the number of bytes of the file store available to this Java
-     * virtual machine as of invoking this method. If the number of bytes
-     * available is greater than {@link Long#MAX_VALUE}, then
-     * {@code Long.MAX_VALUE} will be returned.
+     * Returns the number of bytes available to this Java virtual machine on the
+     * file store.  If the number of bytes available is greater than
+     * {@link Long#MAX_VALUE}, then {@code Long.MAX_VALUE} will be returned.
      *
      * <p> The returned number of available bytes is a hint, but not a
      * guarantee, that it is possible to use most or any of these bytes.  The
@@ -108,7 +107,7 @@ public abstract class FileStore {
      * by any external I/O operations including those made on the system outside
      * of this Java virtual machine.
      *
-     * @return  the number of bytes available at the time of invocation
+     * @return  the current number of usable bytes
      *
      * @throws  IOException
      *          if an I/O error occurs
@@ -116,8 +115,8 @@ public abstract class FileStore {
     public abstract long getUsableSpace() throws IOException;
 
     /**
-     * Returns the number of unallocated bytes in the file store as of invoking
-     * this method. If the number of unallocated bytes is greater than
+     * Returns the number of unallocated bytes in the file store.
+     * If the number of unallocated bytes is greater than
      * {@link Long#MAX_VALUE}, then {@code Long.MAX_VALUE} will be returned.
      *
      * <p> The returned number of unallocated bytes is a hint, but not a
@@ -127,7 +126,7 @@ public abstract class FileStore {
      * made inaccurate by any external I/O operations including those made on
      * the system outside of this virtual machine.
      *
-     * @return  the number of unallocated bytes at the time of invocation
+     * @return  the current number of unallocated bytes
      *
      * @throws  IOException
      *          if an I/O error occurs
