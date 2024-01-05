@@ -659,4 +659,12 @@ public final class JVM {
      * @param stackFilterId the stack filter ID to unregister
      */
     public static native void unregisterStackFilter(long stackFilterId);
+
+    /**
+     * Sets bits used for event settings, like cutoff(ticks) and level
+     *
+     * @param eventTypeId the id of the event type
+     * @param value
+     */
+    public static native void setMiscellaneous(long eventTypeId, long value);
 }
