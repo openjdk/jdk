@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -889,8 +889,8 @@ address Assembler::locate_operand(address inst, WhichOperand which) {
     assert(which == imm_operand || which == disp32_operand,
            "which %d is_64_bit %d ip " INTPTR_FORMAT, which, is_64bit, p2i(ip));
 #else
-    assert((which == call32_operand || which == imm_operand) && is_64bit ||
-           which == narrow_oop_operand && !is_64bit,
+    assert(((which == call32_operand || which == imm_operand) && is_64bit) ||
+           (which == narrow_oop_operand && !is_64bit),
            "which %d is_64_bit %d ip " INTPTR_FORMAT, which, is_64bit, p2i(ip));
 #endif // _LP64
     return ip;
@@ -7235,7 +7235,7 @@ void Assembler::vxorps(XMMRegister dst, XMMRegister nds, Address src, int vector
 
 // Integer vector arithmetic
 void Assembler::vphaddw(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len) {
-  assert(VM_Version::supports_avx() && (vector_len == 0) ||
+  assert((VM_Version::supports_avx() && (vector_len == 0)) ||
          VM_Version::supports_avx2(), "256 bit integer vectors requires AVX2");
   InstructionAttr attributes(vector_len, /* vex_w */ false, /* legacy_mode */ true, /* no_mask_reg */ true, /* uses_vl */ true);
   int encode = vex_prefix_and_encode(dst->encoding(), nds->encoding(), src->encoding(), VEX_SIMD_66, VEX_OPCODE_0F_38, &attributes);
@@ -7243,7 +7243,7 @@ void Assembler::vphaddw(XMMRegister dst, XMMRegister nds, XMMRegister src, int v
 }
 
 void Assembler::vphaddd(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len) {
-  assert(VM_Version::supports_avx() && (vector_len == 0) ||
+  assert((VM_Version::supports_avx() && (vector_len == 0)) ||
          VM_Version::supports_avx2(), "256 bit integer vectors requires AVX2");
   InstructionAttr attributes(vector_len, /* vex_w */ false, /* legacy_mode */ true, /* no_mask_reg */ true, /* uses_vl */ true);
   int encode = vex_prefix_and_encode(dst->encoding(), nds->encoding(), src->encoding(), VEX_SIMD_66, VEX_OPCODE_0F_38, &attributes);
