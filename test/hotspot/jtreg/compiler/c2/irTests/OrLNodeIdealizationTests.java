@@ -42,7 +42,6 @@ public class OrLNodeIdealizationTests {
     public void runMethod() {
         long a = RunInfo.getRandom().nextLong();
         long b = RunInfo.getRandom().nextLong();
-        long c = RunInfo.getRandom().nextLong();
 
         long min = Long.MIN_VALUE;
         long max = Long.MAX_VALUE;
