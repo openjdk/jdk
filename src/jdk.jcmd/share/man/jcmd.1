@@ -1,4 +1,4 @@
-.\" Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+.\" Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
 .\" DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 .\"
 .\" This code is free software; you can redistribute it and/or modify it
@@ -164,6 +164,23 @@ The following \f[I]options\f[R] must be specified using either
 \f[V]-all\f[R]: (Optional) Show help for all commands (BOOLEAN, false) .
 .RE
 .TP
+\f[V]Compiler.CodeHeap_Analytics\f[R] [\f[I]function\f[R]] [\f[I]granularity\f[R]]
+Print CodeHeap analytics
+.RS
+.PP
+Impact: Low: Depends on code heap size and content.
+Holds CodeCache_lock during analysis step, usually sub-second duration.
+.PP
+\f[I]arguments\f[R]:
+.PP
+\f[I]function\f[R]: (Optional) Function to be performed (aggregate,
+UsedSpace, FreeSpace, MethodCount, MethodSpace, MethodAge, MethodNames,
+discard (STRING, all)
+.PP
+\f[I]granularity\f[R]: (Optional) Detail level - smaller value -> more
+detail (INT, 4096)
+.RE
+.TP
 \f[V]Compiler.codecache\f[R]
 Prints code cache layout and bounds.
 .RS
@@ -178,21 +195,7 @@ Prints all compiled methods in code cache that are alive.
 Impact: Medium
 .RE
 .TP
-\f[V]Compiler.perfmap\f[R] (Linux only)
-Write map file for Linux perf tool.
-.RS
-.PP
-Impact: Low
-.RE
-.TP
-\f[V]Compiler.queue\f[R]
-Prints methods queued for compilation.
-.RS
-.PP
-Impact: Low
-.RE
-.TP
-\f[V]Compiler.directives_add *filename* *arguments*\f[R]
+\f[V]Compiler.directives_add\f[R] \f[I]arguments\f[R]
 Adds compiler directives from a file.
 .RS
 .PP
@@ -220,6 +223,38 @@ Impact: Low
 .TP
 \f[V]Compiler.directives_remove\f[R]
 Remove latest added compiler directive.
+.RS
+.PP
+Impact: Low
+.RE
+.TP
+\f[V]Compiler.memory\f[R] [\f[I]options\f[R]]
+Print compilation footprint
+.RS
+.PP
+Impact: Medium: Pause time depends on number of compiled methods
+.PP
+\f[B]Note:\f[R]
+.PP
+The \f[I]options\f[R] must be specified using either \f[I]key\f[R] or
+\f[I]key\f[R]\f[V]=\f[R]\f[I]value\f[R] syntax.
+.PP
+\f[I]options\f[R]:
+.IP \[bu] 2
+\f[V]-H\f[R]: (Optional) Human readable format (BOOLEAN, false)
+.IP \[bu] 2
+\f[V]-s\f[R]: (Optional) Minimum memory size (MEMORY SIZE, 0)
+.RE
+.TP
+\f[V]Compiler.perfmap\f[R] (Linux only)
+Write map file for Linux perf tool.
+.RS
+.PP
+Impact: Low
+.RE
+.TP
+\f[V]Compiler.queue\f[R]
+Prints methods queued for compilation.
 .RS
 .PP
 Impact: Low
@@ -281,6 +316,12 @@ gzipped format using the given compression level.
 .IP \[bu] 2
 \f[V]-overwrite\f[R]: (Optional) If specified, the dump file will be
 overwritten if it exists (BOOLEAN, false)
+.IP \[bu] 2
+\f[V]-parallel\f[R]: (Optional) Number of parallel threads to use for
+heap dump.
+The VM will try to use the specified number of threads, but might use
+fewer.
+(INT, 1)
 .PP
 \f[I]arguments\f[R]:
 .IP \[bu] 2
@@ -343,6 +384,11 @@ The \f[I]options\f[R] must be specified using either \f[I]key\f[R] or
 If no parameters are entered, the current settings are displayed.
 .PP
 \f[I]options\f[R]:
+.IP \[bu] 2
+\f[V]dumppath\f[R]: (Optional) Path to the location where a recording
+file is written in case the VM runs into a critical error, such as a
+system crash.
+(STRING, The default location is the current directory)
 .IP \[bu] 2
 \f[V]globalbuffercount\f[R]: (Optional) Number of global buffers.
 This option is a legacy option: change the \f[V]memorysize\f[R]
@@ -641,7 +687,7 @@ Impact: Low
 .RE
 .TP
 \f[V]JVMTI.data_dump\f[R]
-Signals the JVM to do a data-dump request for JVMTI.
+Signal the JVM to do a data-dump request for JVMTI.
 .RS
 .PP
 Impact: High
@@ -757,8 +803,45 @@ Stops the remote management agent.
 Impact: Low --- no impact
 .RE
 .TP
+\f[V]System.dump_map\f[R] [\f[I]options\f[R]] (Linux only)
+Dumps an annotated process memory map to an output file.
+.RS
+.PP
+Impact: Low
+.PP
+\f[B]Note:\f[R]
+.PP
+The following \f[I]options\f[R] must be specified using either
+\f[I]key\f[R] or \f[I]key\f[R]\f[V]=\f[R]\f[I]value\f[R] syntax.
+.PP
+\f[I]options\f[R]:
+.IP \[bu] 2
+\f[V]-H\f[R]: (Optional) Human readable format (BOOLEAN, false)
+.IP \[bu] 2
+\f[V]-F\f[R]: (Optional) File path (STRING,
+\[dq]vm_memory_map_.txt\[dq])
+.RE
+.TP
+\f[V]System.map\f[R] [\f[I]options\f[R]] (Linux only)
+Prints an annotated process memory map of the VM process.
+.RS
+.PP
+Impact: Low
+.PP
+\f[B]Note:\f[R]
+.PP
+The following \f[I]options\f[R] must be specified using either
+\f[I]key\f[R] or \f[I]key\f[R]\f[V]=\f[R]\f[I]value\f[R] syntax.
+.PP
+\f[I]options\f[R]:
+.IP \[bu] 2
+\f[V]-H\f[R]: (Optional) Human readable format (BOOLEAN, false)
+.RE
+.TP
 \f[V]System.native_heap_info\f[R] (Linux only)
-Prints information about native heap usage through malloc_info(3).
+Attempts to output information regarding native heap usage through
+malloc_info(3).
+If unsuccessful outputs \[dq]Error: \[dq] and a reason.
 .RS
 .PP
 Impact: Low
@@ -769,6 +852,31 @@ Attempts to free up memory by trimming the C-heap.
 .RS
 .PP
 Impact: Low
+.RE
+.TP
+\f[V]Thread.dump_to_file\f[R] [\f[I]options\f[R]] \f[I]filepath\f[R]
+Dump threads, with stack traces, to a file in plain text or JSON format.
+.RS
+.PP
+Impact: Medium: Depends on the number of threads.
+.PP
+\f[B]Note:\f[R]
+.PP
+The following \f[I]options\f[R] must be specified using either
+\f[I]key\f[R] or \f[I]key\f[R]\f[V]=\f[R]\f[I]value\f[R] syntax.
+.PP
+\f[I]options\f[R]:
+.IP \[bu] 2
+\f[V]-overwrite\f[R]: (Optional) May overwrite existing file (BOOLEAN,
+false)
+.IP \[bu] 2
+\f[V]-format\f[R]: (Optional) Output format (\[dq]plain\[dq] or
+\[dq]json\[dq]) (STRING, plain)
+.PP
+\f[I]arguments\f[R]:
+.IP \[bu] 2
+\f[V]filepath\f[R]: The file path to the output file (STRING, no default
+value)
 .RE
 .TP
 \f[V]Thread.print\f[R] [\f[I]options\f[R]]
@@ -792,7 +900,7 @@ false)
 .RE
 .TP
 \f[V]VM.cds\f[R] [\f[I]arguments\f[R]]
-Dumps a static or dynamic shared archive that includes all currently
+Dump a static or dynamic shared archive that includes all currently
 loaded classes.
 .RS
 .PP
@@ -818,38 +926,8 @@ If \f[V]dynamic_dump\f[R] is specified, the target JVM must be started
 with the JVM option \f[V]-XX:+RecordDynamicDumpInfo\f[R].
 .RE
 .TP
-\f[V]VM.classloaders\f[R] [\f[I]options\f[R]]
-Prints classloader hierarchy.
-.RS
-.PP
-Impact: Medium --- Depends on number of class loaders and classes
-loaded.
-.PP
-The following \f[I]options\f[R] must be specified using either
-\f[I]key\f[R] or \f[I]key\f[R]\f[V]=\f[R]\f[I]value\f[R] syntax.
-.PP
-\f[I]options\f[R]:
-.IP \[bu] 2
-\f[V]show-classes\f[R]: (Optional) Print loaded classes.
-(BOOLEAN, false)
-.IP \[bu] 2
-\f[V]verbose\f[R]: (Optional) Print detailed information.
-(BOOLEAN, false)
-.IP \[bu] 2
-\f[V]fold\f[R]: (Optional) Show loaders of the same name and class as
-one.
-(BOOLEAN, true)
-.RE
-.TP
-\f[V]VM.classloader_stats\f[R]
-Prints statistics about all ClassLoaders.
-.RS
-.PP
-Impact: Low
-.RE
-.TP
 \f[V]VM.class_hierarchy\f[R] [\f[I]options\f[R]] [\f[I]arguments\f[R]]
-Prints a list of all loaded classes, indented to show the class
+Print a list of all loaded classes, indented to show the class
 hierarchy.
 The name of each class is followed by the ClassLoaderData* of its
 ClassLoader, or \[dq]null\[dq] if it is loaded by the bootstrap class
@@ -881,15 +959,65 @@ If not specified, all class hierarchies are printed.
 (STRING, no default value)
 .RE
 .TP
+\f[V]VM.classes\f[R] [\f[I]options\f[R]]
+Print all loaded classes
+.RS
+.PP
+Impact: Medium: Depends on number of loaded classes.
+.PP
+The following \f[I]options\f[R] must be specified using either
+\f[I]key\f[R] or \f[I]key\f[R]\f[V]=\f[R]\f[I]value\f[R] syntax.
+.PP
+\f[I]options\f[R]:
+.IP \[bu] 2
+\f[V]-verbose\f[R]: (Optional) Dump the detailed content of a Java
+class.
+Some classes are annotated with flags: \f[V]F\f[R] = has, or inherits, a
+non-empty finalize method, \f[V]f\f[R] = has final method, \f[V]W\f[R] =
+methods rewritten, \f[V]C\f[R] = marked with \f[V]\[at]Contended\f[R]
+annotation, \f[V]R\f[R] = has been redefined, \f[V]S\f[R] = is shared
+class (BOOLEAN, false)
+.RE
+.TP
+\f[V]VM.classloader_stats\f[R]
+Print statistics about all ClassLoaders.
+.RS
+.PP
+Impact: Low
+.RE
+.TP
+\f[V]VM.classloaders\f[R] [\f[I]options\f[R]]
+Prints classloader hierarchy.
+.RS
+.PP
+Impact: Medium --- Depends on number of class loaders and classes
+loaded.
+.PP
+The following \f[I]options\f[R] must be specified using either
+\f[I]key\f[R] or \f[I]key\f[R]\f[V]=\f[R]\f[I]value\f[R] syntax.
+.PP
+\f[I]options\f[R]:
+.IP \[bu] 2
+\f[V]show-classes\f[R]: (Optional) Print loaded classes.
+(BOOLEAN, false)
+.IP \[bu] 2
+\f[V]verbose\f[R]: (Optional) Print detailed information.
+(BOOLEAN, false)
+.IP \[bu] 2
+\f[V]fold\f[R]: (Optional) Show loaders of the same name and class as
+one.
+(BOOLEAN, true)
+.RE
+.TP
 \f[V]VM.command_line\f[R]
-Prints the command line used to start this VM instance.
+Print the command line used to start this VM instance.
 .RS
 .PP
 Impact: Low
 .RE
 .TP
 \f[V]VM.dynlibs\f[R]
-Prints the loaded dynamic libraries.
+Print loaded dynamic libraries.
 .RS
 .PP
 Impact: Low
@@ -918,8 +1046,25 @@ If omitted, all events are printed.
 (STRING, no default value)
 .RE
 .TP
+\f[V]VM.flags\f[R] [\f[I]options\f[R]]
+Print the VM flag options and their current values.
+.RS
+.PP
+Impact: Low
+.PP
+\f[B]Note:\f[R]
+.PP
+The following \f[I]options\f[R] must be specified using either
+\f[I]key\f[R] or \f[I]key\f[R]\f[V]=\f[R]\f[I]value\f[R] syntax.
+.PP
+\f[I]options\f[R]:
+.IP \[bu] 2
+\f[V]-all\f[R]: (Optional) Prints all flags supported by the VM
+(BOOLEAN, false).
+.RE
+.TP
 \f[V]VM.info\f[R]
-Prints information about the JVM environment and status.
+Print information about the JVM environment and status.
 .RS
 .PP
 Impact: Low
@@ -964,23 +1109,6 @@ configuration.
 (BOOLEAN, no default value)
 .RE
 .TP
-\f[V]VM.flags\f[R] [\f[I]options\f[R]]
-Prints the VM flag options and their current values.
-.RS
-.PP
-Impact: Low
-.PP
-\f[B]Note:\f[R]
-.PP
-The following \f[I]options\f[R] must be specified using either
-\f[I]key\f[R] or \f[I]key\f[R]\f[V]=\f[R]\f[I]value\f[R] syntax.
-.PP
-\f[I]options\f[R]:
-.IP \[bu] 2
-\f[V]-all\f[R]: (Optional) Prints all flags supported by the VM
-(BOOLEAN, false).
-.RE
-.TP
 \f[V]VM.metaspace\f[R] [\f[I]options\f[R]]
 Prints the statistics for the metaspace
 .RS
@@ -1015,6 +1143,10 @@ classes for each loader.
 space.
 (BOOLEAN, false)
 .IP \[bu] 2
+\f[V]chunkfreelist\f[R]: (Optional) Shows details about global chunk
+free lists (ChunkManager).
+(BOOLEAN, false)
+.IP \[bu] 2
 \f[V]scale\f[R]: (Optional) Memory usage in which to scale.
 Valid values are: 1, KB, MB or GB (fixed scale) or \[dq]dynamic\[dq] for
 a dynamically chosen scale.
@@ -1022,7 +1154,7 @@ a dynamically chosen scale.
 .RE
 .TP
 \f[V]VM.native_memory\f[R] [\f[I]options\f[R]]
-Prints native memory usage
+Print native memory usage
 .RS
 .PP
 Impact: Medium
@@ -1064,16 +1196,8 @@ purpose.
 (STRING, KB)
 .RE
 .TP
-\f[V]VM.print_touched_methods\f[R]
-Prints all methods that have ever been touched during the lifetime of
-this JVM.
-.RS
-.PP
-Impact: Medium --- depends on Java content.
-.RE
-.TP
 \f[V]VM.set_flag\f[R] [\f[I]arguments\f[R]]
-Sets the VM flag option by using the provided value.
+Sets VM flag option using the provided value.
 .RS
 .PP
 Impact: Low
@@ -1088,7 +1212,7 @@ no default value)
 .RE
 .TP
 \f[V]VM.stringtable\f[R] [\f[I]options\f[R]]
-Dumps the string table.
+Dump string table.
 .RS
 .PP
 Impact: Medium --- depends on the Java content.
@@ -1105,7 +1229,7 @@ table (BOOLEAN, false)
 .RE
 .TP
 \f[V]VM.symboltable\f[R] [\f[I]options\f[R]]
-Dumps the symbol table.
+Dump symbol table.
 .RS
 .PP
 Impact: Medium --- depends on the Java content.
@@ -1119,6 +1243,13 @@ The following \f[I]options\f[R] must be specified using either
 .IP \[bu] 2
 \f[V]-verbose\f[R]: (Optional) Dumps the content of each symbol in the
 table (BOOLEAN, false)
+.RE
+.TP
+\f[V]VM.system_properties\f[R]
+Print system properties.
+.RS
+.PP
+Impact: Low
 .RE
 .TP
 \f[V]VM.systemdictionary\f[R]
@@ -1138,15 +1269,8 @@ The following \f[I]options\f[R] must be specified using either
 for all class loaders (BOOLEAN, false) .
 .RE
 .TP
-\f[V]VM.system_properties\f[R]
-Prints the system properties.
-.RS
-.PP
-Impact: Low
-.RE
-.TP
 \f[V]VM.uptime\f[R] [\f[I]options\f[R]]
-Prints the VM uptime.
+Print VM uptime.
 .RS
 .PP
 Impact: Low
@@ -1163,7 +1287,7 @@ The following \f[I]options\f[R] must be specified using either
 .RE
 .TP
 \f[V]VM.version\f[R]
-Prints JVM version information.
+Print JVM version information.
 .RS
 .PP
 Impact: Low
