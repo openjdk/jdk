@@ -66,12 +66,12 @@ public class NonICCFilterTest {
 
         @Override
         public float[] toCIEXYZ(float[] colorvalue) {
-            return csRGB.toCIEXYZ(csRGB.toRGB(colorvalue));
+            return csRGB.toCIEXYZ(colorvalue);
         }
 
         @Override
         public float[] fromCIEXYZ(float[] xyzvalue) {
-            return csRGB.fromRGB(csRGB.fromCIEXYZ(xyzvalue));
+            return csRGB.fromCIEXYZ(xyzvalue);
         }
     }
 
