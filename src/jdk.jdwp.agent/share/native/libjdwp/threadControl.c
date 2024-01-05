@@ -2627,20 +2627,20 @@ dumpThreadList(ThreadList *list)
 static void
 setThreadName(ThreadNode *node)
 {
-  /*
-   * Sometimes the debuggee changes the thread name, so we need to fetch
-   * and set it again.
-   */
-  jvmtiThreadInfo info;
-  jvmtiError error;
+    /*
+     * Sometimes the debuggee changes the thread name, so we need to fetch
+     * and set it again.
+     */
+    jvmtiThreadInfo info;
+    jvmtiError error;
 
-  memset(&info, 0, sizeof(info));
-  error = JVMTI_FUNC_PTR(gdata->jvmti,GetThreadInfo)
-    (gdata->jvmti, node->thread, &info);
-  if (info.name != NULL) {
-    strncpy(node->name, info.name, sizeof(node->name) - 1);
-    jvmtiDeallocate(info.name);
-  }
+    memset(&info, 0, sizeof(info));
+    error = JVMTI_FUNC_PTR(gdata->jvmti,GetThreadInfo)
+        (gdata->jvmti, node->thread, &info);
+    if (info.name != NULL) {
+        strncpy(node->name, info.name, sizeof(node->name) - 1);
+        jvmtiDeallocate(info.name);
+    }
 }
 #endif
 
@@ -2648,10 +2648,10 @@ setThreadName(ThreadNode *node)
 static jint
 getThreadState(ThreadNode *node)
 {
-  jint state = 0;
-  jvmtiError error = FUNC_PTR(gdata->jvmti,GetThreadState)
-    (gdata->jvmti, node->thread, &state);
-  return state;
+    jint state = 0;
+    jvmtiError error = FUNC_PTR(gdata->jvmti,GetThreadState)
+        (gdata->jvmti, node->thread, &state);
+    return state;
 }
 #endif
 
