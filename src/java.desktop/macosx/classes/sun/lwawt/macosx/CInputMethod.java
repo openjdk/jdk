@@ -623,7 +623,7 @@ public class CInputMethod extends InputMethodAdapter {
 
                     retString[0] = new String(selectedText);
                 }}
-            }, fAwtFocussedComponent);
+            }, fAwtFocussedComponent, true);
         } catch (InvocationTargetException ite) { ite.printStackTrace(); }
 
         synchronized(retString) { return retString[0]; }
@@ -671,7 +671,7 @@ public class CInputMethod extends InputMethodAdapter {
                     returnValue[1] = theIterator.getEndIndex() - theIterator.getBeginIndex();
 
                 }}
-            }, fAwtFocussedComponent);
+            }, fAwtFocussedComponent, true);
         } catch (InvocationTargetException ite) { ite.printStackTrace(); }
 
         synchronized(returnValue) { return returnValue; }
@@ -696,7 +696,7 @@ public class CInputMethod extends InputMethodAdapter {
                     // insert spot less the length of the composed text.
                     returnValue[0] = fIMContext.getInsertPositionOffset();
                 }}
-            }, fAwtFocussedComponent);
+            }, fAwtFocussedComponent, true);
         } catch (InvocationTargetException ite) { ite.printStackTrace(); }
 
         returnValue[1] = fCurrentTextLength;
@@ -743,7 +743,7 @@ public class CInputMethod extends InputMethodAdapter {
                         }
                     }
                 }}
-            }, fAwtFocussedComponent);
+            }, fAwtFocussedComponent, true);
         } catch (InvocationTargetException ite) { ite.printStackTrace(); }
 
         synchronized(rect) { return rect; }
@@ -763,7 +763,7 @@ public class CInputMethod extends InputMethodAdapter {
                     offsetInfo[0] = fIMContext.getLocationOffset(screenX, screenY);
                     insertPositionOffset[0] = fIMContext.getInsertPositionOffset();
                 }}
-            }, fAwtFocussedComponent);
+            }, fAwtFocussedComponent, true);
         } catch (InvocationTargetException ite) { ite.printStackTrace(); }
 
         // This bit of gymnastics ensures that the returned location is within the composed text.

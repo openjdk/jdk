@@ -720,6 +720,25 @@ public final class LWCToolkit extends LWToolkit {
      */
     public static void invokeAndWait(Runnable runnable, Component component)
             throws InvocationTargetException {
+        invokeAndWait(runnable, component, false);
+    }
+
+    /**
+     * Package-scope version of invokeAndWait that takes a processEvents
+     * flag to decide whether to dispatch native events while in the loop.
+     * Currently, only the IME handlers set processEvents to true. See
+     * the warning in doAWTRunLoop about using this flag.
+     *
+     * Kicks an event over to the appropriate event queue and waits for it to
+     * finish To avoid deadlocking, we manually run the NSRunLoop while waiting
+     * Any selector invoked using ThreadUtilities performOnMainThread will be
+     * processed in doAWTRunLoop The InvocationEvent will call
+     * LWCToolkit.stopAWTRunLoop() when finished, which will stop our manual
+     * run loop. Does not dispatch native events while in the loop unless
+     * the processEvents flag is set to true.
+     */
+    static void invokeAndWait(Runnable runnable, Component component, boolean processEvents)
+            throws InvocationTargetException {
         Objects.requireNonNull(component, "Null component provided to invokeAndWait");
 
         long mediator = createAWTRunLoopMediator();
@@ -737,7 +756,7 @@ public final class LWCToolkit extends LWToolkit {
         SunToolkit.postEvent(appContext, invocationEvent);
         // 3746956 - flush events from PostEventQueue to prevent them from getting stuck and causing a deadlock
         SunToolkit.flushPendingEvents(appContext);
-        doAWTRunLoop(mediator, false);
+        doAWTRunLoop(mediator, processEvents);
 
         checkException(invocationEvent);
     }
@@ -927,7 +946,7 @@ public final class LWCToolkit extends LWToolkit {
      * Method to run a nested run-loop. The nested loop is spinned in the javaRunLoop mode, so selectors sent
      * by [JNFRunLoop performOnMainThreadWaiting] are processed.
      * @param mediator a native pointer to the mediator object created by createAWTRunLoopMediator
-     * @param processEvents if true - dispatches event while in the nested loop. Used in DnD.
+     * @param processEvents if true - dispatches event while in the nested loop. Used in DnD and IME.
      *                      Additional attention is needed when using this feature as we short-circuit normal event
      *                      processing which could break Appkit.
      *                      (One known example is when the window is resized with the mouse)
