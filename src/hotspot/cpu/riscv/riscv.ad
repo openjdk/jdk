@@ -8531,7 +8531,7 @@ instruct MoveF2I_stack_reg(iRegINoSp dst, stackSlotF src) %{
 
   effect(DEF dst, USE src);
 
-  ins_cost(ALU_COST + LOAD_COST);
+  ins_cost(LOAD_COST);
 
   format %{ "lw  $dst, $src\t#@MoveF2I_stack_reg" %}
 
@@ -8549,7 +8549,7 @@ instruct MoveI2F_stack_reg(fRegF dst, stackSlotI src) %{
 
   effect(DEF dst, USE src);
 
-  ins_cost(ALU_COST + LOAD_COST);
+  ins_cost(LOAD_COST);
 
   format %{ "flw  $dst, $src\t#@MoveI2F_stack_reg" %}
 
@@ -8567,7 +8567,7 @@ instruct MoveD2L_stack_reg(iRegLNoSp dst, stackSlotD src) %{
 
   effect(DEF dst, USE src);
 
-  ins_cost(ALU_COST + LOAD_COST);
+  ins_cost(LOAD_COST);
 
   format %{ "ld  $dst, $src\t#@MoveD2L_stack_reg" %}
 
@@ -8585,7 +8585,7 @@ instruct MoveL2D_stack_reg(fRegD dst, stackSlotL src) %{
 
   effect(DEF dst, USE src);
 
-  ins_cost(ALU_COST + LOAD_COST);
+  ins_cost(LOAD_COST);
 
   format %{ "fld  $dst, $src\t#@MoveL2D_stack_reg" %}
 
@@ -8603,7 +8603,7 @@ instruct MoveF2I_reg_stack(stackSlotI dst, fRegF src) %{
 
   effect(DEF dst, USE src);
 
-  ins_cost(ALU_COST + STORE_COST);
+  ins_cost(STORE_COST);
 
   format %{ "fsw  $src, $dst\t#@MoveF2I_reg_stack" %}
 
@@ -8621,7 +8621,7 @@ instruct MoveI2F_reg_stack(stackSlotF dst, iRegI src) %{
 
   effect(DEF dst, USE src);
 
-  ins_cost(ALU_COST + STORE_COST);
+  ins_cost(STORE_COST);
 
   format %{ "sw  $src, $dst\t#@MoveI2F_reg_stack" %}
 
@@ -8639,7 +8639,7 @@ instruct MoveD2L_reg_stack(stackSlotL dst, fRegD src) %{
 
   effect(DEF dst, USE src);
 
-  ins_cost(ALU_COST + STORE_COST);
+  ins_cost(STORE_COST);
 
   format %{ "fsd  $dst, $src\t#@MoveD2L_reg_stack" %}
 
@@ -8657,7 +8657,7 @@ instruct MoveL2D_reg_stack(stackSlotD dst, iRegL src) %{
 
   effect(DEF dst, USE src);
 
-  ins_cost(ALU_COST + STORE_COST);
+  ins_cost(STORE_COST);
 
   format %{ "sd  $src, $dst\t#@MoveL2D_reg_stack" %}
 
