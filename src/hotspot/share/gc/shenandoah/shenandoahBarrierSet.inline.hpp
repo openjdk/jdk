@@ -357,7 +357,7 @@ void ShenandoahBarrierSet::arraycopy_work(T* src, size_t count) {
         if (EVAC && obj == fwd) {
           fwd = _heap->evacuate_object(obj, thread);
         }
-        assert(obj != fwd || _heap->cancelled_gc(), "must be forwarded");
+        shenandoah_assert_forwarded_except(elem_ptr, obj, _heap->cancelled_gc());
         ShenandoahHeap::atomic_update_oop(fwd, elem_ptr, o);
         obj = fwd;
       }

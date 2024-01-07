@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -539,7 +539,7 @@ class ConstantPool : public Metadata {
     int offset = build_int_from_shorts(operands->at(n+0),
                                        operands->at(n+1));
     // The offset itself must point into the second part of the array.
-    assert(offset == 0 || offset >= second_part && offset <= operands->length(), "oob (3)");
+    assert(offset == 0 || (offset >= second_part && offset <= operands->length()), "oob (3)");
     return offset;
   }
   static void operand_offset_at_put(Array<u2>* operands, int bsms_attribute_index, int offset) {
