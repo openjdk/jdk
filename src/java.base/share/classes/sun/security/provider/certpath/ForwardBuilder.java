@@ -47,7 +47,6 @@ import sun.security.x509.AccessDescription;
 import sun.security.x509.AuthorityInfoAccessExtension;
 import sun.security.x509.AuthorityKeyIdentifierExtension;
 import static sun.security.x509.PKIXExtensions.*;
-import sun.security.x509.SubjectAlternativeNameExtension;
 import sun.security.x509.X500Name;
 import sun.security.x509.X509CertImpl;
 
@@ -258,14 +257,6 @@ final class ForwardBuilder extends Builder {
             caSelector.setSubject(currentState.issuerDN);
 
             /*
-             * Match on subjectNamesTraversed (both DNs and AltNames)
-             * (checks that current cert's name constraints permit it
-             * to certify all the DNs and AltNames that have been traversed)
-             */
-            CertPathHelper.setPathToNames
-                (caSelector, currentState.subjectNamesTraversed);
-
-            /*
              * check the validity period
              */
             caSelector.setValidityPeriod(currentState.cert.getNotBefore(),
@@ -288,7 +279,7 @@ final class ForwardBuilder extends Builder {
                     debug.println("ForwardBuilder.getMatchingCACerts: " +
                         "found matching trust anchor." +
                         "\n  SN: " +
-                            Debug.toHexString(trustedCert.getSerialNumber()) +
+                            Debug.toString(trustedCert.getSerialNumber()) +
                         "\n  Subject: " +
                             trustedCert.getSubjectX500Principal() +
                         "\n  Issuer: " +
@@ -687,7 +678,7 @@ final class ForwardBuilder extends Builder {
     {
         if (debug != null) {
             debug.println("ForwardBuilder.verifyCert(SN: "
-                + Debug.toHexString(cert.getSerialNumber())
+                + Debug.toString(cert.getSerialNumber())
                 + "\n  Issuer: " + cert.getIssuerX500Principal() + ")"
                 + "\n  Subject: " + cert.getSubjectX500Principal() + ")");
         }
@@ -696,19 +687,6 @@ final class ForwardBuilder extends Builder {
 
         // Don't bother to verify untrusted certificate more.
         currState.untrustedChecker.check(cert, Collections.emptySet());
-
-        /*
-         * Abort if we encounter the same certificate or a certificate with
-         * the same public key, subject DN, and subjectAltNames as a cert
-         * that is already in path.
-         */
-        for (X509Certificate cpListCert : certPathList) {
-            if (repeated(cpListCert, cert)) {
-                throw new CertPathValidatorException(
-                    "cert with repeated subject, public key, and " +
-                    "subjectAltNames detected");
-            }
-        }
 
         /* check if trusted cert */
         boolean isTrustedCert = trustedCerts.contains(cert);
@@ -784,49 +762,6 @@ final class ForwardBuilder extends Builder {
              * Check keyUsage extension
              */
             KeyChecker.verifyCAKeyUsage(cert);
-        }
-    }
-
-    /**
-     * Return true if two certificates are equal or have the same subject,
-     * public key, and subject alternative names.
-     */
-    private static boolean repeated(
-            X509Certificate currCert, X509Certificate nextCert) {
-        if (currCert.equals(nextCert)) {
-            return true;
-        }
-        return (currCert.getSubjectX500Principal().equals(
-            nextCert.getSubjectX500Principal()) &&
-            currCert.getPublicKey().equals(nextCert.getPublicKey()) &&
-            altNamesEqual(currCert, nextCert));
-    }
-
-    /**
-     * Return true if two certificates have the same subject alternative names.
-     */
-    private static boolean altNamesEqual(
-            X509Certificate currCert, X509Certificate nextCert) {
-        X509CertImpl curr, next;
-        try {
-            curr = X509CertImpl.toImpl(currCert);
-            next = X509CertImpl.toImpl(nextCert);
-        } catch (CertificateException ce) {
-            return false;
-        }
-
-        SubjectAlternativeNameExtension currAltNameExt =
-            curr.getSubjectAlternativeNameExtension();
-        SubjectAlternativeNameExtension nextAltNameExt =
-            next.getSubjectAlternativeNameExtension();
-        if (currAltNameExt != null) {
-            if (nextAltNameExt == null) {
-                return false;
-            }
-            return Arrays.equals(currAltNameExt.getExtensionValue(),
-                nextAltNameExt.getExtensionValue());
-        } else {
-            return (nextAltNameExt == null);
         }
     }
 

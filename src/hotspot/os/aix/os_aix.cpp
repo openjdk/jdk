@@ -81,7 +81,7 @@
 #include "utilities/growableArray.hpp"
 #include "utilities/vmError.hpp"
 #if INCLUDE_JFR
-#include "jfr/jfrEvents.hpp"
+#include "jfr/support/jfrNativeLibraryLoadEvent.hpp"
 #endif
 
 // put OS-includes here (sorted alphabetically)
@@ -769,7 +769,8 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
 
   // Init thread attributes.
   pthread_attr_t attr;
-  pthread_attr_init(&attr);
+  int rslt = pthread_attr_init(&attr);
+  guarantee(rslt == 0, "pthread_attr_init has to return 0");
   guarantee(pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED) == 0, "???");
 
   // Make sure we run in 1:1 kernel-user-thread mode.
@@ -803,6 +804,7 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
                             stack_size / K);
     thread->set_osthread(nullptr);
     delete osthread;
+    pthread_attr_destroy(&attr);
     return false;
   }
 
@@ -1015,6 +1017,10 @@ int os::current_process_id() {
 // directory not the java application's temp directory, ala java.io.tmpdir.
 const char* os::get_temp_directory() { return "/tmp"; }
 
+void os::prepare_native_symbols() {
+  LoadedLibraries::reload();
+}
+
 // Check if addr is inside libjvm.so.
 bool os::address_is_in_vm(address addr) {
 
@@ -1116,11 +1122,6 @@ void *os::dll_load(const char *filename, char *ebuf, int ebuflen) {
     return nullptr;
   }
 
-#if INCLUDE_JFR
-  EventNativeLibraryLoad event;
-  event.set_name(filename);
-#endif
-
   // RTLD_LAZY has currently the same behavior as RTLD_NOW
   // The dl is loaded immediately with all its dependants.
   int dflags = RTLD_LAZY;
@@ -1131,19 +1132,14 @@ void *os::dll_load(const char *filename, char *ebuf, int ebuflen) {
     dflags |= RTLD_MEMBER;
   }
 
-  void * result= ::dlopen(filename, dflags);
+  void* result;
+  JFR_ONLY(NativeLibraryLoadEvent load_event(filename, &result);)
+  result = ::dlopen(filename, dflags);
   if (result != nullptr) {
     Events::log_dll_message(nullptr, "Loaded shared library %s", filename);
     // Reload dll cache. Don't do this in signal handling.
     LoadedLibraries::reload();
     log_info(os)("shared library load of %s was successful", filename);
-
-#if INCLUDE_JFR
-    event.set_success(true);
-    event.set_errorMessage(nullptr);
-    event.commit();
-#endif
-
     return result;
   } else {
     // error analysis when dlopen fails
@@ -1157,12 +1153,7 @@ void *os::dll_load(const char *filename, char *ebuf, int ebuflen) {
     }
     Events::log_dll_message(nullptr, "Loading shared library %s failed, %s", filename, error_report);
     log_info(os)("shared library load of %s failed, %s", filename, error_report);
-
-#if INCLUDE_JFR
-    event.set_success(false);
-    event.set_errorMessage(error_report);
-    event.commit();
-#endif
+    JFR_ONLY(load_event.set_error_msg(error_report);)
   }
   return nullptr;
 }
@@ -1927,10 +1918,6 @@ bool os::numa_get_group_ids_for_range(const void** addresses, int* lgrp_ids, siz
   return false;
 }
 
-char *os::scan_pages(char *start, char* end, page_info* page_expected, page_info* page_found) {
-  return end;
-}
-
 // Reserves and attaches a shared memory segment.
 char* os::pd_reserve_memory(size_t bytes, bool exec) {
   // Always round to os::vm_page_size(), which may be larger than 4K.
@@ -2121,11 +2108,6 @@ size_t os::large_page_size() {
 }
 
 bool os::can_commit_large_page_memory() {
-  // Does not matter, we do not support huge pages.
-  return false;
-}
-
-bool os::can_execute_large_page_memory() {
   // Does not matter, we do not support huge pages.
   return false;
 }

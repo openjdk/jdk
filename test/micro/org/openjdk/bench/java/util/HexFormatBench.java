@@ -93,6 +93,25 @@ public class HexFormatBench {
         return UPPER_FORMATTER.formatHex(builder, bytes);
     }
 
+    @Benchmark
+    public String formatLower() {
+        return HexFormat.of().formatHex(bytes);
+    }
+
+    @Benchmark
+    public String formatUpper() {
+        return HexFormat.of().withUpperCase().formatHex(bytes);
+    }
+
+    @Benchmark
+    public String formatLowerCached() {
+        return LOWER_FORMATTER.formatHex(bytes);
+    }
+
+    @Benchmark
+    public String formatUpperCached() {
+        return UPPER_FORMATTER.formatHex(bytes);
+    }
 
     @Benchmark
     public void toHexLower(Blackhole bh) {

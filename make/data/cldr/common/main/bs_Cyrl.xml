@@ -12,11 +12,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<script type="Cyrl"/>
 	</identity>
 	<localeDisplayNames>
-		<localeDisplayPattern>
-			<localePattern>{0} ({1})</localePattern>
-			<localeSeparator>{0}, {1}</localeSeparator>
-			<localeKeyTypePattern>{0}: {1}</localeKeyTypePattern>
-		</localeDisplayPattern>
 		<languages>
 			<language type="aa">афарски</language>
 			<language type="ab">абказијски</language>
@@ -143,8 +138,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="el">грчки</language>
 			<language type="elx">еламитски</language>
 			<language type="en">енглески</language>
-			<language type="en_GB" alt="short">енглески (УК)</language>
-			<language type="en_US" alt="short">енглески (САД)</language>
 			<language type="enm">средњи енглески</language>
 			<language type="eo">есперанто</language>
 			<language type="es">шпански</language>
@@ -549,7 +542,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="zh" alt="menu">кинески (мандарински)</language>
 			<language type="zh_Hans">кинески (поједностављен)</language>
 			<language type="zh_Hans" alt="long">кинески мандариснки поједностављен</language>
-			<language type="zh_Hant">кинески (традиционални)</language>
 			<language type="zh_Hant" alt="long">кинески мандарински (традиционални)</language>
 			<language type="zu">зулу</language>
 			<language type="zun">зуни</language>
@@ -908,7 +900,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="IL">Израел</territory>
 			<territory type="IM">Острво Мен</territory>
 			<territory type="IN">Индија</territory>
-			<territory type="IO">Британска територија у Индијском океану</territory>
+			<territory type="IO" draft="provisional">Британска територија у Индијском океану</territory>
 			<territory type="IQ">Ирак</territory>
 			<territory type="IR">Иран</territory>
 			<territory type="IS">Исланд</territory>
@@ -1144,8 +1136,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="calendar" type="gregorian">грегоријански календар</type>
 			<type key="calendar" type="hebrew">хебрејски календар</type>
 			<type key="calendar" type="indian">Индијски национални календар</type>
-			<type key="calendar" type="islamic">исламски календар</type>
-			<type key="calendar" type="islamic-civil">Исламски цивилни календар</type>
+			<type key="calendar" type="islamic" draft="provisional">исламски календар</type>
+			<type key="calendar" type="islamic-civil" draft="provisional">Исламски цивилни календар</type>
 			<type key="calendar" type="iso8601">ISO-8601 календар</type>
 			<type key="calendar" type="japanese">јапански календар</type>
 			<type key="calendar" type="persian">персијски календар</type>
@@ -1221,19 +1213,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<measurementSystemName type="UK">империјални</measurementSystemName>
 			<measurementSystemName type="US">САД</measurementSystemName>
 		</measurementSystemNames>
-		<codePatterns>
-			<codePattern type="language">{0}</codePattern>
-			<codePattern type="script">{0}</codePattern>
-			<codePattern type="territory">{0}</codePattern>
-		</codePatterns>
 	</localeDisplayNames>
 	<characters>
 		<exemplarCharacters>[а б в г д ђ е ж з и ј к л љ м н њ о п р с т ћ у ф х ц ч џ ш]</exemplarCharacters>
-		<exemplarCharacters type="auxiliary">[]</exemplarCharacters>
 		<exemplarCharacters type="index" draft="contributed">[А Б В Г Д Ђ Е Ж З И Ј К Л Љ М Н Њ О П Р С Т Ћ У Ф Х Ц Ч Џ Ш]</exemplarCharacters>
-		<exemplarCharacters type="numbers">[\- ‑ , . % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
-		<ellipsis type="final">{0}…</ellipsis>
-		<ellipsis type="initial">…{0}</ellipsis>
 	</characters>
 	<delimiters>
 		<quotationStart>„</quotationStart>
@@ -1341,7 +1324,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<availableFormats>
-						<dateFormatItem id="d">d</dateFormatItem>
 						<dateFormatItem id="Ed">E, d.</dateFormatItem>
 						<dateFormatItem id="Gy">y. G</dateFormatItem>
 						<dateFormatItem id="GyMMM">MMM y. G</dateFormatItem>
@@ -1349,16 +1331,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="GyMMMEd">E, dd. MMM y. G</dateFormatItem>
 						<dateFormatItem id="h">hh a</dateFormatItem>
 						<dateFormatItem id="hm">hh:mm a</dateFormatItem>
-						<dateFormatItem id="Hm">HH:mm</dateFormatItem>
 						<dateFormatItem id="hms">hh:mm:ss a</dateFormatItem>
-						<dateFormatItem id="Hms">HH:mm:ss</dateFormatItem>
-						<dateFormatItem id="M">L</dateFormatItem>
 						<dateFormatItem id="Md">dd.MM.</dateFormatItem>
 						<dateFormatItem id="MEd">E, dd.MM.</dateFormatItem>
-						<dateFormatItem id="MMM">LLL</dateFormatItem>
 						<dateFormatItem id="MMMd">dd. MMM</dateFormatItem>
 						<dateFormatItem id="MMMEd">E, dd. MMM</dateFormatItem>
-						<dateFormatItem id="ms">mm:ss</dateFormatItem>
 						<dateFormatItem id="y">y. G</dateFormatItem>
 						<dateFormatItem id="yyyy">y. G</dateFormatItem>
 						<dateFormatItem id="yyyyM">MM.y. G</dateFormatItem>
@@ -1367,44 +1344,25 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="yyyyMMM">MMM y. G</dateFormatItem>
 						<dateFormatItem id="yyyyMMMd">dd. MMM y. G</dateFormatItem>
 						<dateFormatItem id="yyyyMMMEd">E, dd. MMM y. G</dateFormatItem>
-						<dateFormatItem id="yyyyQQQ">G y QQQ</dateFormatItem>
-						<dateFormatItem id="yyyyQQQQ">G y QQQQ</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
-						<intervalFormatItem id="d">
-							<greatestDifference id="d">d–d</greatestDifference>
-						</intervalFormatItem>
 						<intervalFormatItem id="h">
 							<greatestDifference id="a">hh a – hh a</greatestDifference>
 							<greatestDifference id="h">hh–hh a</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="H">
-							<greatestDifference id="H">HH–HH</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hm">
 							<greatestDifference id="a">hh:mm a – hh:mm a</greatestDifference>
 							<greatestDifference id="h">hh:mm–hh:mm a</greatestDifference>
 							<greatestDifference id="m">hh:mm–hh:mm a</greatestDifference>
 						</intervalFormatItem>
-						<intervalFormatItem id="Hm">
-							<greatestDifference id="H">HH:mm–HH:mm</greatestDifference>
-							<greatestDifference id="m">HH:mm–HH:mm</greatestDifference>
-						</intervalFormatItem>
 						<intervalFormatItem id="hmv">
 							<greatestDifference id="a">hh:mm a – hh:mm a v</greatestDifference>
 							<greatestDifference id="h">hh:mm–hh:mm a v</greatestDifference>
 							<greatestDifference id="m">hh:mm–hh:mm a v</greatestDifference>
 						</intervalFormatItem>
-						<intervalFormatItem id="Hmv">
-							<greatestDifference id="H">HH:mm–HH:mm v</greatestDifference>
-							<greatestDifference id="m">HH:mm–HH:mm v</greatestDifference>
-						</intervalFormatItem>
 						<intervalFormatItem id="hv">
 							<greatestDifference id="a">hh a – hh a v</greatestDifference>
 							<greatestDifference id="h">hh–hh a v</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="Hv">
-							<greatestDifference id="H">HH–HH v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="M">
 							<greatestDifference id="M">M–M</greatestDifference>
@@ -1483,20 +1441,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<month type="11">нов</month>
 							<month type="12">дец</month>
 						</monthWidth>
-						<monthWidth type="narrow">
-							<month type="1">ј</month>
-							<month type="2">ф</month>
-							<month type="3">м</month>
-							<month type="4">а</month>
-							<month type="5">м</month>
-							<month type="6">ј</month>
-							<month type="7">ј</month>
-							<month type="8">а</month>
-							<month type="9">с</month>
-							<month type="10">о</month>
-							<month type="11">н</month>
-							<month type="12">д</month>
-						</monthWidth>
 						<monthWidth type="wide">
 							<month type="1">јануар</month>
 							<month type="2">фебруар</month>
@@ -1513,20 +1457,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</monthWidth>
 					</monthContext>
 					<monthContext type="stand-alone">
-						<monthWidth type="abbreviated">
-							<month type="1">јан</month>
-							<month type="2">феб</month>
-							<month type="3">мар</month>
-							<month type="4">апр</month>
-							<month type="5">мај</month>
-							<month type="6">јун</month>
-							<month type="7">јул</month>
-							<month type="8">ауг</month>
-							<month type="9">сеп</month>
-							<month type="10">окт</month>
-							<month type="11">нов</month>
-							<month type="12">дец</month>
-						</monthWidth>
 						<monthWidth type="narrow">
 							<month type="1">ј</month>
 							<month type="2">ф</month>
@@ -1541,43 +1471,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<month type="11">н</month>
 							<month type="12">д</month>
 						</monthWidth>
-						<monthWidth type="wide">
-							<month type="1">јануар</month>
-							<month type="2">фебруар</month>
-							<month type="3">март</month>
-							<month type="4">април</month>
-							<month type="5">мај</month>
-							<month type="6">јуни</month>
-							<month type="7">јули</month>
-							<month type="8">аугуст</month>
-							<month type="9">септембар</month>
-							<month type="10">октобар</month>
-							<month type="11">новембар</month>
-							<month type="12">децембар</month>
-						</monthWidth>
 					</monthContext>
 				</months>
 				<days>
 					<dayContext type="format">
 						<dayWidth type="abbreviated">
-							<day type="sun">нед</day>
-							<day type="mon">пон</day>
-							<day type="tue">уто</day>
-							<day type="wed">сри</day>
-							<day type="thu">чет</day>
-							<day type="fri">пет</day>
-							<day type="sat">суб</day>
-						</dayWidth>
-						<dayWidth type="narrow">
-							<day type="sun">н</day>
-							<day type="mon">п</day>
-							<day type="tue">у</day>
-							<day type="wed">с</day>
-							<day type="thu">ч</day>
-							<day type="fri">п</day>
-							<day type="sat">с</day>
-						</dayWidth>
-						<dayWidth type="short">
 							<day type="sun">нед</day>
 							<day type="mon">пон</day>
 							<day type="tue">уто</day>
@@ -1597,15 +1495,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</dayWidth>
 					</dayContext>
 					<dayContext type="stand-alone">
-						<dayWidth type="abbreviated">
-							<day type="sun">нед</day>
-							<day type="mon">пон</day>
-							<day type="tue">уто</day>
-							<day type="wed">сри</day>
-							<day type="thu">чет</day>
-							<day type="fri">пет</day>
-							<day type="sat">суб</day>
-						</dayWidth>
 						<dayWidth type="narrow">
 							<day type="sun">н</day>
 							<day type="mon">п</day>
@@ -1614,24 +1503,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<day type="thu">ч</day>
 							<day type="fri">п</day>
 							<day type="sat">с</day>
-						</dayWidth>
-						<dayWidth type="short">
-							<day type="sun">нед</day>
-							<day type="mon">пон</day>
-							<day type="tue">уто</day>
-							<day type="wed">сри</day>
-							<day type="thu">чет</day>
-							<day type="fri">пет</day>
-							<day type="sat">суб</day>
-						</dayWidth>
-						<dayWidth type="wide">
-							<day type="sun">недјеља</day>
-							<day type="mon">понедјељак</day>
-							<day type="tue">уторак</day>
-							<day type="wed">сриједа</day>
-							<day type="thu">четвртак</day>
-							<day type="fri">петак</day>
-							<day type="sat">субота</day>
 						</dayWidth>
 					</dayContext>
 				</days>
@@ -1643,12 +1514,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<quarter type="3">К3</quarter>
 							<quarter type="4">К4</quarter>
 						</quarterWidth>
-						<quarterWidth type="narrow">
-							<quarter type="1">1.</quarter>
-							<quarter type="2">2.</quarter>
-							<quarter type="3">3.</quarter>
-							<quarter type="4">4.</quarter>
-						</quarterWidth>
 						<quarterWidth type="wide">
 							<quarter type="1">Прво тромесечје</quarter>
 							<quarter type="2">Друго тромесечје</quarter>
@@ -1657,23 +1522,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</quarterWidth>
 					</quarterContext>
 					<quarterContext type="stand-alone">
-						<quarterWidth type="abbreviated">
-							<quarter type="1">К1</quarter>
-							<quarter type="2">К2</quarter>
-							<quarter type="3">К3</quarter>
-							<quarter type="4">К4</quarter>
-						</quarterWidth>
 						<quarterWidth type="narrow">
 							<quarter type="1">1.</quarter>
 							<quarter type="2">2.</quarter>
 							<quarter type="3">3.</quarter>
 							<quarter type="4">4.</quarter>
-						</quarterWidth>
-						<quarterWidth type="wide">
-							<quarter type="1">Прво тромесечје</quarter>
-							<quarter type="2">Друго тромесечје</quarter>
-							<quarter type="3">Треће тромесечје</quarter>
-							<quarter type="4">Четврто тромесечје</quarter>
 						</quarterWidth>
 					</quarterContext>
 				</quarters>
@@ -1689,66 +1542,28 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<dayPeriod type="evening1">увече</dayPeriod>
 							<dayPeriod type="night1">ноћу</dayPeriod>
 						</dayPeriodWidth>
-						<dayPeriodWidth type="narrow">
-							<dayPeriod type="midnight">поноћ</dayPeriod>
-							<dayPeriod type="am">пре подне</dayPeriod>
-							<dayPeriod type="noon">подне</dayPeriod>
-							<dayPeriod type="pm">поподне</dayPeriod>
-							<dayPeriod type="morning1">ујутру</dayPeriod>
-							<dayPeriod type="afternoon1">у подне</dayPeriod>
-							<dayPeriod type="evening1">увече</dayPeriod>
-							<dayPeriod type="night1">ноћу</dayPeriod>
-						</dayPeriodWidth>
 						<dayPeriodWidth type="wide">
-							<dayPeriod type="midnight">поноћ</dayPeriod>
 							<dayPeriod type="am">прије подне</dayPeriod>
-							<dayPeriod type="noon">подне</dayPeriod>
 							<dayPeriod type="pm">послије подне</dayPeriod>
-							<dayPeriod type="morning1">ујутру</dayPeriod>
-							<dayPeriod type="afternoon1">у подне</dayPeriod>
-							<dayPeriod type="evening1">увече</dayPeriod>
-							<dayPeriod type="night1">ноћу</dayPeriod>
 						</dayPeriodWidth>
 					</dayPeriodContext>
 					<dayPeriodContext type="stand-alone">
 						<dayPeriodWidth type="abbreviated">
-							<dayPeriod type="midnight">поноћ</dayPeriod>
-							<dayPeriod type="am">пре подне</dayPeriod>
-							<dayPeriod type="noon">подне</dayPeriod>
-							<dayPeriod type="pm">поподне</dayPeriod>
-							<dayPeriod type="morning1">јутро</dayPeriod>
-							<dayPeriod type="afternoon1">послийеподне</dayPeriod>
-							<dayPeriod type="evening1">вече</dayPeriod>
-							<dayPeriod type="night1">ноћ</dayPeriod>
-						</dayPeriodWidth>
-						<dayPeriodWidth type="narrow">
-							<dayPeriod type="midnight">поноћ</dayPeriod>
-							<dayPeriod type="am">пре подне</dayPeriod>
-							<dayPeriod type="noon">подне</dayPeriod>
-							<dayPeriod type="pm">поподне</dayPeriod>
 							<dayPeriod type="morning1">јутро</dayPeriod>
 							<dayPeriod type="afternoon1">послийеподне</dayPeriod>
 							<dayPeriod type="evening1">вече</dayPeriod>
 							<dayPeriod type="night1">ноћ</dayPeriod>
 						</dayPeriodWidth>
 						<dayPeriodWidth type="wide">
-							<dayPeriod type="midnight">поноћ</dayPeriod>
 							<dayPeriod type="am">прије подне</dayPeriod>
-							<dayPeriod type="noon">подне</dayPeriod>
 							<dayPeriod type="pm">послије подне</dayPeriod>
-							<dayPeriod type="morning1">јутро</dayPeriod>
-							<dayPeriod type="afternoon1">послийеподне</dayPeriod>
-							<dayPeriod type="evening1">вече</dayPeriod>
-							<dayPeriod type="night1">ноћ</dayPeriod>
 						</dayPeriodWidth>
 					</dayPeriodContext>
 				</dayPeriods>
 				<eras>
 					<eraNames>
 						<era type="0">прије нове ере</era>
-						<era type="0" alt="variant">п. н. е.</era>
 						<era type="1">нове ере</era>
-						<era type="1" alt="variant">н. е.</era>
 					</eraNames>
 					<eraAbbr>
 						<era type="0">п. н. е.</era>
@@ -1789,25 +1604,21 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<timeFormatLength type="full">
 						<timeFormat>
 							<pattern>HH:mm:ss zzzz</pattern>
-							<datetimeSkeleton>HHmmsszzzz</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="long">
 						<timeFormat>
 							<pattern>HH:mm:ss z</pattern>
-							<datetimeSkeleton>HHmmssz</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="medium">
 						<timeFormat>
 							<pattern>HH:mm:ss</pattern>
-							<datetimeSkeleton>HHmmss</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="short">
 						<timeFormat>
 							<pattern>HH:mm</pattern>
-							<datetimeSkeleton>HHmm</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 				</timeFormats>
@@ -1833,25 +1644,19 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<availableFormats>
-						<dateFormatItem id="d">d</dateFormatItem>
 						<dateFormatItem id="Ed">E, d.</dateFormatItem>
 						<dateFormatItem id="Gy">y. G</dateFormatItem>
 						<dateFormatItem id="GyMMM">MMM y. G</dateFormatItem>
 						<dateFormatItem id="GyMMMd">dd. MMM y. G</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">E, dd. MMM y. G</dateFormatItem>
-						<dateFormatItem id="Hm">HH:mm</dateFormatItem>
-						<dateFormatItem id="Hms">HH:mm:ss</dateFormatItem>
-						<dateFormatItem id="M">L</dateFormatItem>
 						<dateFormatItem id="Md">dd.MM.</dateFormatItem>
 						<dateFormatItem id="MEd">E, dd.MM.</dateFormatItem>
-						<dateFormatItem id="MMM">LLL</dateFormatItem>
 						<dateFormatItem id="MMMd">dd. MMM</dateFormatItem>
 						<dateFormatItem id="MMMEd">E, dd. MMM</dateFormatItem>
 						<dateFormatItem id="MMMMd">d. MMMM</dateFormatItem>
 						<dateFormatItem id="MMMMW" count="one">'седмица' W 'мјесец' MMMM</dateFormatItem>
 						<dateFormatItem id="MMMMW" count="few">'седмица' W 'мјесец' MMMM</dateFormatItem>
 						<dateFormatItem id="MMMMW" count="other">'седмица' W 'мјесец' MMMM</dateFormatItem>
-						<dateFormatItem id="ms">mm:ss</dateFormatItem>
 						<dateFormatItem id="y">y.</dateFormatItem>
 						<dateFormatItem id="yM">MM.y.</dateFormatItem>
 						<dateFormatItem id="yMd">dd.MM.y.</dateFormatItem>
@@ -1860,47 +1665,28 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="yMMMd">dd. MMM y.</dateFormatItem>
 						<dateFormatItem id="yMMMEd">E, dd. MMM y.</dateFormatItem>
 						<dateFormatItem id="yMMMM">MMMM y.</dateFormatItem>
-						<dateFormatItem id="yQQQ">y QQQ</dateFormatItem>
-						<dateFormatItem id="yQQQQ">y QQQQ</dateFormatItem>
 						<dateFormatItem id="yw" count="one">'седмица' w 'година' Y</dateFormatItem>
 						<dateFormatItem id="yw" count="few">'седмица' w 'година' Y</dateFormatItem>
 						<dateFormatItem id="yw" count="other">'седмица' w 'година' Y</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
-						<intervalFormatItem id="d">
-							<greatestDifference id="d">d–d</greatestDifference>
-						</intervalFormatItem>
 						<intervalFormatItem id="h">
 							<greatestDifference id="a">hh a – hh a</greatestDifference>
 							<greatestDifference id="h">hh–hh a</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="H">
-							<greatestDifference id="H">HH–HH</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hm">
 							<greatestDifference id="a">hh:mm a – hh:mm a</greatestDifference>
 							<greatestDifference id="h">hh:mm–hh:mm a</greatestDifference>
 							<greatestDifference id="m">hh:mm–hh:mm a</greatestDifference>
 						</intervalFormatItem>
-						<intervalFormatItem id="Hm">
-							<greatestDifference id="H">HH:mm–HH:mm</greatestDifference>
-							<greatestDifference id="m">HH:mm–HH:mm</greatestDifference>
-						</intervalFormatItem>
 						<intervalFormatItem id="hmv">
 							<greatestDifference id="a">hh:mm a – hh:mm a v</greatestDifference>
 							<greatestDifference id="h">hh:mm–hh:mm a v</greatestDifference>
 							<greatestDifference id="m">hh:mm–hh:mm a v</greatestDifference>
 						</intervalFormatItem>
-						<intervalFormatItem id="Hmv">
-							<greatestDifference id="H">HH:mm–HH:mm v</greatestDifference>
-							<greatestDifference id="m">HH:mm–HH:mm v</greatestDifference>
-						</intervalFormatItem>
 						<intervalFormatItem id="hv">
 							<greatestDifference id="a">hh a – hh a v</greatestDifference>
 							<greatestDifference id="h">hh–hh a v</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="Hv">
-							<greatestDifference id="H">HH–HH v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="M">
 							<greatestDifference id="M">M–M</greatestDifference>
@@ -1923,9 +1709,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<intervalFormatItem id="MMMEd">
 							<greatestDifference id="d">E, dd. – E, dd. MMM</greatestDifference>
 							<greatestDifference id="M">E, dd. MMM – E, dd. MMM</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="y">
-							<greatestDifference id="y">y–y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yM">
 							<greatestDifference id="M">MM.–MM. y.</greatestDifference>
@@ -2067,19 +1850,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<dateFormatLength type="full">
 						<dateFormat>
 							<pattern>EEEE, dd. MMMM y. G</pattern>
-							<datetimeSkeleton>GyMMMMEEEEdd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
 						<dateFormat>
 							<pattern>dd. MMMM y. G</pattern>
-							<datetimeSkeleton>GyMMMMdd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="medium">
 						<dateFormat>
 							<pattern>dd.MM.y. G</pattern>
-							<datetimeSkeleton>GyMMdd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="short">
@@ -2091,20 +1871,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</dateFormats>
 				<dateTimeFormats>
 					<availableFormats>
-						<dateFormatItem id="d">d</dateFormatItem>
 						<dateFormatItem id="Ed">E, dd.</dateFormatItem>
-						<dateFormatItem id="hm">hh:mm a</dateFormatItem>
-						<dateFormatItem id="Hm">HH:mm</dateFormatItem>
-						<dateFormatItem id="hms">hh:mm:ss a</dateFormatItem>
-						<dateFormatItem id="Hms">HH:mm:ss</dateFormatItem>
-						<dateFormatItem id="M">L</dateFormatItem>
-						<dateFormatItem id="Md">dd.MM.</dateFormatItem>
-						<dateFormatItem id="MEd">E, dd.MM.</dateFormatItem>
-						<dateFormatItem id="MMM">LLL</dateFormatItem>
-						<dateFormatItem id="MMMd">dd. MMM</dateFormatItem>
-						<dateFormatItem id="MMMEd">E, dd. MMM</dateFormatItem>
-						<dateFormatItem id="ms">mm:ss</dateFormatItem>
-						<dateFormatItem id="y">y. G</dateFormatItem>
 						<dateFormatItem id="yM">MM.y. G</dateFormatItem>
 						<dateFormatItem id="yMd">dd.MM.y. G</dateFormatItem>
 						<dateFormatItem id="yMEd">E, dd.MM.y. G</dateFormatItem>
@@ -2423,12 +2190,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<field type="era">
 				<displayName>ера</displayName>
 			</field>
-			<field type="era-short">
-				<displayName>ера</displayName>
-			</field>
-			<field type="era-narrow">
-				<displayName>ера</displayName>
-			</field>
 			<field type="year">
 				<displayName>година</displayName>
 				<relative type="-1">прошле године</relative>
@@ -2450,74 +2211,21 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="-1">прош. године</relative>
 				<relative type="0">ове год.</relative>
 				<relative type="1">сљед. године</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">за {0} годину</relativeTimePattern>
-					<relativeTimePattern count="few">за {0} године</relativeTimePattern>
-					<relativeTimePattern count="other">за {0} година</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">прије {0} годину</relativeTimePattern>
-					<relativeTimePattern count="few">прије {0} године</relativeTimePattern>
-					<relativeTimePattern count="other">прије {0} година</relativeTimePattern>
-				</relativeTime>
 			</field>
 			<field type="year-narrow">
 				<displayName>год.</displayName>
-				<relative type="-1">прош. године</relative>
-				<relative type="0">ове год.</relative>
-				<relative type="1">сљед. године</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">за {0} годину</relativeTimePattern>
-					<relativeTimePattern count="few">за {0} године</relativeTimePattern>
-					<relativeTimePattern count="other">за {0} година</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">прије {0} годину</relativeTimePattern>
-					<relativeTimePattern count="few">прије {0} године</relativeTimePattern>
-					<relativeTimePattern count="other">прије {0} година</relativeTimePattern>
-				</relativeTime>
 			</field>
 			<field type="quarter">
 				<displayName>тромјесечје</displayName>
 				<relative type="-1">прошло тромјесечје</relative>
 				<relative type="0">ово тромјесечје</relative>
 				<relative type="1">сљедеће тромјесечје</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">+{0} Q</relativeTimePattern>
-					<relativeTimePattern count="few">+{0} Q</relativeTimePattern>
-					<relativeTimePattern count="other">+{0} Q</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">-{0} Q</relativeTimePattern>
-					<relativeTimePattern count="few">-{0} Q</relativeTimePattern>
-					<relativeTimePattern count="other">-{0} Q</relativeTimePattern>
-				</relativeTime>
 			</field>
 			<field type="quarter-short">
 				<displayName>тромје.</displayName>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">+{0} Q</relativeTimePattern>
-					<relativeTimePattern count="few">+{0} Q</relativeTimePattern>
-					<relativeTimePattern count="other">+{0} Q</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">-{0} Q</relativeTimePattern>
-					<relativeTimePattern count="few">-{0} Q</relativeTimePattern>
-					<relativeTimePattern count="other">-{0} Q</relativeTimePattern>
-				</relativeTime>
 			</field>
 			<field type="quarter-narrow">
 				<displayName>qtr.</displayName>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">+{0} Q</relativeTimePattern>
-					<relativeTimePattern count="few">+{0} Q</relativeTimePattern>
-					<relativeTimePattern count="other">+{0} Q</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">-{0} Q</relativeTimePattern>
-					<relativeTimePattern count="few">-{0} Q</relativeTimePattern>
-					<relativeTimePattern count="other">-{0} Q</relativeTimePattern>
-				</relativeTime>
 			</field>
 			<field type="month">
 				<displayName>мјесец</displayName>
@@ -2540,19 +2248,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="-1">прош. мјесеца</relative>
 				<relative type="0">овог мјес.</relative>
 				<relative type="1">сљед. мјесеца</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">за {0} мјесец</relativeTimePattern>
-					<relativeTimePattern count="few">за {0} мјесеца</relativeTimePattern>
-					<relativeTimePattern count="other">за {0} мјесеци</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">прије {0} мјесец</relativeTimePattern>
-					<relativeTimePattern count="few">прије {0} мјесеца</relativeTimePattern>
-					<relativeTimePattern count="other">прије {0} мјесеци</relativeTimePattern>
-				</relativeTime>
 			</field>
 			<field type="month-narrow">
-				<displayName>мјес.</displayName>
 				<relative type="-1">прош. мјес.</relative>
 				<relative type="0">ов. мјес.</relative>
 				<relative type="1">сљ. мјес.</relative>
@@ -2599,24 +2296,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<relativeTimePattern count="few">прије {0} седм.</relativeTimePattern>
 					<relativeTimePattern count="other">прије {0} седм.</relativeTimePattern>
 				</relativeTime>
-				<relativePeriod>седмица {0}</relativePeriod>
-			</field>
-			<field type="week-narrow">
-				<displayName>седм.</displayName>
-				<relative type="-1">прош. седм.</relative>
-				<relative type="0">ове седм.</relative>
-				<relative type="1">сљ. седм.</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">за {0} седм.</relativeTimePattern>
-					<relativeTimePattern count="few">за {0} седм.</relativeTimePattern>
-					<relativeTimePattern count="other">за {0} седм.</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">прије {0} седм.</relativeTimePattern>
-					<relativeTimePattern count="few">прије {0} седм.</relativeTimePattern>
-					<relativeTimePattern count="other">прије {0} седм.</relativeTimePattern>
-				</relativeTime>
-				<relativePeriod>седмица {0}</relativePeriod>
 			</field>
 			<field type="weekOfMonth">
 				<displayName>седмица у мјесецу</displayName>
@@ -2645,54 +2324,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<relativeTimePattern count="other">прије {0} дана</relativeTimePattern>
 				</relativeTime>
 			</field>
-			<field type="day-short">
-				<displayName>дан</displayName>
-				<relative type="-1">јуче</relative>
-				<relative type="0">данас</relative>
-				<relative type="1">сутра</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">за {0} дан</relativeTimePattern>
-					<relativeTimePattern count="few">за {0} дана</relativeTimePattern>
-					<relativeTimePattern count="other">за {0} дана</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">прије {0} дан</relativeTimePattern>
-					<relativeTimePattern count="few">прије {0} дана</relativeTimePattern>
-					<relativeTimePattern count="other">прије {0} дана</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="day-narrow">
-				<displayName>дан</displayName>
-				<relative type="-1">јуче</relative>
-				<relative type="0">данас</relative>
-				<relative type="1">сутра</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">за {0} дан</relativeTimePattern>
-					<relativeTimePattern count="few">за {0} дана</relativeTimePattern>
-					<relativeTimePattern count="other">за {0} дана</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">прије {0} дан</relativeTimePattern>
-					<relativeTimePattern count="few">прије {0} дана</relativeTimePattern>
-					<relativeTimePattern count="other">прије {0} дана</relativeTimePattern>
-				</relativeTime>
-			</field>
 			<field type="dayOfYear">
 				<displayName>дан у години</displayName>
 			</field>
 			<field type="dayOfYear-short">
 				<displayName>дан у год.</displayName>
 			</field>
-			<field type="dayOfYear-narrow">
-				<displayName>дан у год.</displayName>
-			</field>
 			<field type="weekday">
 				<displayName>дан у седмици</displayName>
 			</field>
 			<field type="weekday-short">
-				<displayName>дан у седм.</displayName>
-			</field>
-			<field type="weekday-narrow">
 				<displayName>дан у седм.</displayName>
 			</field>
 			<field type="weekdayOfMonth">
@@ -2708,355 +2349,113 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="-1">прошле недјеље</relative>
 				<relative type="0">ове недјеље</relative>
 				<relative type="1">сљедеће недјеље</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">+{0} Sundays</relativeTimePattern>
-					<relativeTimePattern count="few">+{0} Sundays</relativeTimePattern>
-					<relativeTimePattern count="other">+{0} Sundays</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">-{0} Sundays</relativeTimePattern>
-					<relativeTimePattern count="few">-{0} Sundays</relativeTimePattern>
-					<relativeTimePattern count="other">-{0} Sundays</relativeTimePattern>
-				</relativeTime>
 			</field>
 			<field type="sun-short">
 				<relative type="-1">прошл. недјеље</relative>
 				<relative type="0">ове недјеље</relative>
 				<relative type="1">сљ. недјеље</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">+{0} Sundays</relativeTimePattern>
-					<relativeTimePattern count="few">+{0} Sundays</relativeTimePattern>
-					<relativeTimePattern count="other">+{0} Sundays</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">-{0} Sundays</relativeTimePattern>
-					<relativeTimePattern count="few">-{0} Sundays</relativeTimePattern>
-					<relativeTimePattern count="other">-{0} Sundays</relativeTimePattern>
-				</relativeTime>
 			</field>
 			<field type="sun-narrow">
 				<relative type="-1">пр. недјеље</relative>
 				<relative type="0">ове недј.</relative>
 				<relative type="1">сљ. недјеље</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">+{0} Sundays</relativeTimePattern>
-					<relativeTimePattern count="few">+{0} Sundays</relativeTimePattern>
-					<relativeTimePattern count="other">+{0} Sundays</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">-{0} Sundays</relativeTimePattern>
-					<relativeTimePattern count="few">-{0} Sundays</relativeTimePattern>
-					<relativeTimePattern count="other">-{0} Sundays</relativeTimePattern>
-				</relativeTime>
 			</field>
 			<field type="mon">
 				<relative type="-1">прошлог понедјељка</relative>
 				<relative type="0">овог понедјељка</relative>
 				<relative type="1">сљедећег понедјељка</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">+{0} Mondays</relativeTimePattern>
-					<relativeTimePattern count="few">+{0} Mondays</relativeTimePattern>
-					<relativeTimePattern count="other">+{0} Mondays</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">-{0} Mondays</relativeTimePattern>
-					<relativeTimePattern count="few">-{0} Mondays</relativeTimePattern>
-					<relativeTimePattern count="other">-{0} Mondays</relativeTimePattern>
-				</relativeTime>
 			</field>
 			<field type="mon-short">
 				<relative type="-1">прошл. понедјељка</relative>
 				<relative type="0">овог понедј.</relative>
 				<relative type="1">сљ. понедјељка</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">+{0} Mondays</relativeTimePattern>
-					<relativeTimePattern count="few">+{0} Mondays</relativeTimePattern>
-					<relativeTimePattern count="other">+{0} Mondays</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">-{0} Mondays</relativeTimePattern>
-					<relativeTimePattern count="few">-{0} Mondays</relativeTimePattern>
-					<relativeTimePattern count="other">-{0} Mondays</relativeTimePattern>
-				</relativeTime>
 			</field>
 			<field type="mon-narrow">
 				<relative type="-1">пр. понедј.</relative>
 				<relative type="0">овог понедј.</relative>
 				<relative type="1">сљ. понедј.</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">+{0} Mondays</relativeTimePattern>
-					<relativeTimePattern count="few">+{0} Mondays</relativeTimePattern>
-					<relativeTimePattern count="other">+{0} Mondays</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">-{0} Mondays</relativeTimePattern>
-					<relativeTimePattern count="few">-{0} Mondays</relativeTimePattern>
-					<relativeTimePattern count="other">-{0} Mondays</relativeTimePattern>
-				</relativeTime>
 			</field>
 			<field type="tue">
 				<relative type="-1">прошлог уторка</relative>
 				<relative type="0">овог уторка</relative>
 				<relative type="1">сљедећег уторка</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">+{0} Tuesdays</relativeTimePattern>
-					<relativeTimePattern count="few">+{0} Tuesdays</relativeTimePattern>
-					<relativeTimePattern count="other">+{0} Tuesdays</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">-{0} Tuesdays</relativeTimePattern>
-					<relativeTimePattern count="few">-{0} Tuesdays</relativeTimePattern>
-					<relativeTimePattern count="other">-{0} Tuesdays</relativeTimePattern>
-				</relativeTime>
 			</field>
 			<field type="tue-short">
 				<relative type="-1">прошл. уторка</relative>
 				<relative type="0">овог утор.</relative>
 				<relative type="1">сљед. уторка</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">+{0} Tuesdays</relativeTimePattern>
-					<relativeTimePattern count="few">+{0} Tuesdays</relativeTimePattern>
-					<relativeTimePattern count="other">+{0} Tuesdays</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">-{0} Tuesdays</relativeTimePattern>
-					<relativeTimePattern count="few">-{0} Tuesdays</relativeTimePattern>
-					<relativeTimePattern count="other">-{0} Tuesdays</relativeTimePattern>
-				</relativeTime>
 			</field>
 			<field type="tue-narrow">
 				<relative type="-1">пр. уторка</relative>
 				<relative type="0">овог утор.</relative>
 				<relative type="1">сљ. уторка</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">+{0} Tuesdays</relativeTimePattern>
-					<relativeTimePattern count="few">+{0} Tuesdays</relativeTimePattern>
-					<relativeTimePattern count="other">+{0} Tuesdays</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">-{0} Tuesdays</relativeTimePattern>
-					<relativeTimePattern count="few">-{0} Tuesdays</relativeTimePattern>
-					<relativeTimePattern count="other">-{0} Tuesdays</relativeTimePattern>
-				</relativeTime>
 			</field>
 			<field type="wed">
 				<relative type="-1">прошле сриједе</relative>
 				<relative type="0">ове сриједе</relative>
 				<relative type="1">сљедеће сриједе</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">+{0} Wednesdays</relativeTimePattern>
-					<relativeTimePattern count="few">+{0} Wednesdays</relativeTimePattern>
-					<relativeTimePattern count="other">+{0} Wednesdays</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">-{0} Wednesdays</relativeTimePattern>
-					<relativeTimePattern count="few">-{0} Wednesdays</relativeTimePattern>
-					<relativeTimePattern count="other">-{0} Wednesdays</relativeTimePattern>
-				</relativeTime>
 			</field>
 			<field type="wed-short">
 				<relative type="-1">прошл. сриједе</relative>
 				<relative type="0">ове сриједе</relative>
 				<relative type="1">сљед. сриједе</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">+{0} Wednesdays</relativeTimePattern>
-					<relativeTimePattern count="few">+{0} Wednesdays</relativeTimePattern>
-					<relativeTimePattern count="other">+{0} Wednesdays</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">-{0} Wednesdays</relativeTimePattern>
-					<relativeTimePattern count="few">-{0} Wednesdays</relativeTimePattern>
-					<relativeTimePattern count="other">-{0} Wednesdays</relativeTimePattern>
-				</relativeTime>
 			</field>
 			<field type="wed-narrow">
 				<relative type="-1">пр. сриједе</relative>
 				<relative type="0">ове сриј.</relative>
 				<relative type="1">сљ. сриједе</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">+{0} Wednesdays</relativeTimePattern>
-					<relativeTimePattern count="few">+{0} Wednesdays</relativeTimePattern>
-					<relativeTimePattern count="other">+{0} Wednesdays</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">-{0} Wednesdays</relativeTimePattern>
-					<relativeTimePattern count="few">-{0} Wednesdays</relativeTimePattern>
-					<relativeTimePattern count="other">-{0} Wednesdays</relativeTimePattern>
-				</relativeTime>
 			</field>
 			<field type="thu">
 				<relative type="-1">прошлог четвртка</relative>
 				<relative type="0">овог четвртка</relative>
 				<relative type="1">сљедећег четвртка</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">+{0} Thursdays</relativeTimePattern>
-					<relativeTimePattern count="few">+{0} Thursdays</relativeTimePattern>
-					<relativeTimePattern count="other">+{0} Thursdays</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">-{0} Thursdays</relativeTimePattern>
-					<relativeTimePattern count="few">-{0} Thursdays</relativeTimePattern>
-					<relativeTimePattern count="other">-{0} Thursdays</relativeTimePattern>
-				</relativeTime>
 			</field>
 			<field type="thu-short">
 				<relative type="-1">прошл. чет.</relative>
 				<relative type="0">овог чет.</relative>
 				<relative type="1">сљед. чет.</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">+{0} Thursdays</relativeTimePattern>
-					<relativeTimePattern count="few">+{0} Thursdays</relativeTimePattern>
-					<relativeTimePattern count="other">+{0} Thursdays</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">-{0} Thursdays</relativeTimePattern>
-					<relativeTimePattern count="few">-{0} Thursdays</relativeTimePattern>
-					<relativeTimePattern count="other">-{0} Thursdays</relativeTimePattern>
-				</relativeTime>
 			</field>
 			<field type="thu-narrow">
 				<relative type="-1">пр. чет.</relative>
 				<relative type="0">овог чет.</relative>
 				<relative type="1">сљ. чет.</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">+{0} Thursdays</relativeTimePattern>
-					<relativeTimePattern count="few">+{0} Thursdays</relativeTimePattern>
-					<relativeTimePattern count="other">+{0} Thursdays</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">-{0} Thursdays</relativeTimePattern>
-					<relativeTimePattern count="few">-{0} Thursdays</relativeTimePattern>
-					<relativeTimePattern count="other">-{0} Thursdays</relativeTimePattern>
-				</relativeTime>
 			</field>
 			<field type="fri">
 				<relative type="-1">прошлог петка</relative>
 				<relative type="0">овог петка</relative>
 				<relative type="1">сљедећег петка</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">+{0} Fridays</relativeTimePattern>
-					<relativeTimePattern count="few">+{0} Fridays</relativeTimePattern>
-					<relativeTimePattern count="other">+{0} Fridays</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">-{0} Fridays</relativeTimePattern>
-					<relativeTimePattern count="few">-{0} Fridays</relativeTimePattern>
-					<relativeTimePattern count="other">-{0} Fridays</relativeTimePattern>
-				</relativeTime>
 			</field>
 			<field type="fri-short">
 				<relative type="-1">прошл. петка</relative>
 				<relative type="0">овог пет.</relative>
 				<relative type="1">сљед. петка</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">+{0} Fridays</relativeTimePattern>
-					<relativeTimePattern count="few">+{0} Fridays</relativeTimePattern>
-					<relativeTimePattern count="other">+{0} Fridays</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">-{0} Fridays</relativeTimePattern>
-					<relativeTimePattern count="few">-{0} Fridays</relativeTimePattern>
-					<relativeTimePattern count="other">-{0} Fridays</relativeTimePattern>
-				</relativeTime>
 			</field>
 			<field type="fri-narrow">
 				<relative type="-1">пр. петка</relative>
 				<relative type="0">овог пет.</relative>
 				<relative type="1">сљ. петка</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">+{0} Fridays</relativeTimePattern>
-					<relativeTimePattern count="few">+{0} Fridays</relativeTimePattern>
-					<relativeTimePattern count="other">+{0} Fridays</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">-{0} Fridays</relativeTimePattern>
-					<relativeTimePattern count="few">-{0} Fridays</relativeTimePattern>
-					<relativeTimePattern count="other">-{0} Fridays</relativeTimePattern>
-				</relativeTime>
 			</field>
 			<field type="sat">
 				<relative type="-1">прошле суботе</relative>
 				<relative type="0">ове суботе</relative>
 				<relative type="1">сљедеће суботе</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">+{0} Saturdays</relativeTimePattern>
-					<relativeTimePattern count="few">+{0} Saturdays</relativeTimePattern>
-					<relativeTimePattern count="other">+{0} Saturdays</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">-{0} Saturdays</relativeTimePattern>
-					<relativeTimePattern count="few">-{0} Saturdays</relativeTimePattern>
-					<relativeTimePattern count="other">-{0} Saturdays</relativeTimePattern>
-				</relativeTime>
 			</field>
 			<field type="sat-short">
 				<relative type="-1">прошл. суботе</relative>
 				<relative type="0">ове суб.</relative>
 				<relative type="1">сљед. суботе</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">+{0} Saturdays</relativeTimePattern>
-					<relativeTimePattern count="few">+{0} Saturdays</relativeTimePattern>
-					<relativeTimePattern count="other">+{0} Saturdays</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">-{0} Saturdays</relativeTimePattern>
-					<relativeTimePattern count="few">-{0} Saturdays</relativeTimePattern>
-					<relativeTimePattern count="other">-{0} Saturdays</relativeTimePattern>
-				</relativeTime>
 			</field>
 			<field type="sat-narrow">
 				<relative type="-1">пр. суботе</relative>
 				<relative type="0">ове суб.</relative>
 				<relative type="1">сљ. суботе</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">+{0} Saturdays</relativeTimePattern>
-					<relativeTimePattern count="few">+{0} Saturdays</relativeTimePattern>
-					<relativeTimePattern count="other">+{0} Saturdays</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">-{0} Saturdays</relativeTimePattern>
-					<relativeTimePattern count="few">-{0} Saturdays</relativeTimePattern>
-					<relativeTimePattern count="other">-{0} Saturdays</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="dayperiod-short">
-				<displayName>прије подне/послије подне</displayName>
 			</field>
 			<field type="dayperiod">
-				<displayName>прије подне/послије подне</displayName>
-			</field>
-			<field type="dayperiod-narrow">
 				<displayName>прије подне/послије подне</displayName>
 			</field>
 			<field type="hour">
 				<displayName>сат</displayName>
 				<relative type="0">овог сата</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">за {0} сат</relativeTimePattern>
-					<relativeTimePattern count="few">за {0} сата</relativeTimePattern>
-					<relativeTimePattern count="other">за {0} сати</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">прије {0} сат</relativeTimePattern>
-					<relativeTimePattern count="few">прије {0} сата</relativeTimePattern>
-					<relativeTimePattern count="other">прије {0} сати</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="hour-short">
-				<displayName>сат</displayName>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">за {0} сат</relativeTimePattern>
-					<relativeTimePattern count="few">за {0} сата</relativeTimePattern>
-					<relativeTimePattern count="other">за {0} сати</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">прије {0} сат</relativeTimePattern>
-					<relativeTimePattern count="few">прије {0} сата</relativeTimePattern>
-					<relativeTimePattern count="other">прије {0} сати</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="hour-narrow">
-				<displayName>сат</displayName>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">за {0} сат</relativeTimePattern>
 					<relativeTimePattern count="few">за {0} сата</relativeTimePattern>
@@ -3084,24 +2483,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="minute-short">
 				<displayName>мин.</displayName>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">за {0} минут</relativeTimePattern>
-					<relativeTimePattern count="few">за {0} минута</relativeTimePattern>
-					<relativeTimePattern count="other">за {0} минута</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">прије {0} минут</relativeTimePattern>
-					<relativeTimePattern count="few">прије {0} минута</relativeTimePattern>
-					<relativeTimePattern count="other">прије {0} минута</relativeTimePattern>
-				</relativeTime>
 			</field>
 			<field type="minute-narrow">
 				<displayName>мин</displayName>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">за {0} минут</relativeTimePattern>
-					<relativeTimePattern count="few">за {0} минута</relativeTimePattern>
-					<relativeTimePattern count="other">за {0} минута</relativeTimePattern>
-				</relativeTime>
 				<relativeTime type="past">
 					<relativeTimePattern count="one">прије {0} мин.</relativeTimePattern>
 					<relativeTimePattern count="few">прије {0} мин.</relativeTimePattern>
@@ -3137,31 +2521,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="second-narrow">
 				<displayName>сек</displayName>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">за {0} сек.</relativeTimePattern>
-					<relativeTimePattern count="few">за {0} секунде</relativeTimePattern>
-					<relativeTimePattern count="other">за {0} секунди</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">прије {0} сек.</relativeTimePattern>
-					<relativeTimePattern count="few">прије {0} сек.</relativeTimePattern>
-					<relativeTimePattern count="other">прије {0} сек.</relativeTimePattern>
-				</relativeTime>
 			</field>
 			<field type="zone">
 				<displayName>зона</displayName>
 			</field>
-			<field type="zone-short">
-				<displayName>зона</displayName>
-			</field>
-			<field type="zone-narrow">
-				<displayName>зона</displayName>
-			</field>
 		</fields>
 		<timeZoneNames>
-			<gmtFormat>GMT{0}</gmtFormat>
 			<regionFormat>Време: {0}</regionFormat>
-			<fallbackFormat>{1} ({0})</fallbackFormat>
 			<zone type="Etc/UTC">
 				<long>
 					<standard>Координисано универзално вријеме</standard>
@@ -5419,22 +4785,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<symbols numberSystem="latn">
 			<decimal>,</decimal>
 			<group>.</group>
-			<list>;</list>
-			<percentSign>%</percentSign>
-			<plusSign>+</plusSign>
-			<minusSign>-</minusSign>
-			<exponential>E</exponential>
-			<superscriptingExponent>×</superscriptingExponent>
-			<perMille>‰</perMille>
-			<infinity>∞</infinity>
-			<nan>NaN</nan>
 		</symbols>
 		<decimalFormats numberSystem="latn">
-			<decimalFormatLength>
-				<decimalFormat>
-					<pattern>#,##0.###</pattern>
-				</decimalFormat>
-			</decimalFormatLength>
 			<decimalFormatLength type="long">
 				<decimalFormat>
 					<pattern type="1000" count="one">0</pattern>
@@ -5478,65 +4830,35 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<decimalFormatLength type="short">
 				<decimalFormat>
 					<pattern type="1000" count="one">0</pattern>
-					<pattern type="1000" count="few">0</pattern>
 					<pattern type="1000" count="other">0</pattern>
 					<pattern type="10000" count="one">00 хиљ</pattern>
-					<pattern type="10000" count="few">00 хиљ</pattern>
 					<pattern type="10000" count="other">00 хиљ</pattern>
 					<pattern type="100000" count="one">000 хиљ</pattern>
-					<pattern type="100000" count="few">000 хиљ</pattern>
 					<pattern type="100000" count="other">000 хиљ</pattern>
 					<pattern type="1000000" count="one">0 мил</pattern>
-					<pattern type="1000000" count="few">0 мил</pattern>
 					<pattern type="1000000" count="other">0 мил</pattern>
 					<pattern type="10000000" count="one">00 мил</pattern>
-					<pattern type="10000000" count="few">00 мил</pattern>
 					<pattern type="10000000" count="other">00 мил</pattern>
 					<pattern type="100000000" count="one">000 мил</pattern>
-					<pattern type="100000000" count="few">000 мил</pattern>
 					<pattern type="100000000" count="other">000 мил</pattern>
 					<pattern type="1000000000" count="one">0 млрд</pattern>
-					<pattern type="1000000000" count="few">0 млрд</pattern>
 					<pattern type="1000000000" count="other">0 млрд</pattern>
 					<pattern type="10000000000" count="one">00 млрд</pattern>
-					<pattern type="10000000000" count="few">00 млрд</pattern>
 					<pattern type="10000000000" count="other">00 млрд</pattern>
 					<pattern type="100000000000" count="one">000 млрд</pattern>
-					<pattern type="100000000000" count="few">000 млрд</pattern>
 					<pattern type="100000000000" count="other">000 млрд</pattern>
 					<pattern type="1000000000000" count="one">0 бил</pattern>
-					<pattern type="1000000000000" count="few">0 бил</pattern>
 					<pattern type="1000000000000" count="other">0 бил</pattern>
 					<pattern type="10000000000000" count="one">00 бил</pattern>
-					<pattern type="10000000000000" count="few">00 бил</pattern>
 					<pattern type="10000000000000" count="other">00 бил</pattern>
 					<pattern type="100000000000000" count="one">000 бил</pattern>
-					<pattern type="100000000000000" count="few">000 бил</pattern>
 					<pattern type="100000000000000" count="other">000 бил</pattern>
 				</decimalFormat>
 			</decimalFormatLength>
 		</decimalFormats>
-		<scientificFormats numberSystem="latn">
-			<scientificFormatLength>
-				<scientificFormat>
-					<pattern>#E0</pattern>
-				</scientificFormat>
-			</scientificFormatLength>
-		</scientificFormats>
-		<percentFormats numberSystem="latn">
-			<percentFormatLength>
-				<percentFormat>
-					<pattern>#,##0%</pattern>
-				</percentFormat>
-			</percentFormatLength>
-		</percentFormats>
 		<currencyFormats numberSystem="latn">
 			<currencyFormatLength>
 				<currencyFormat type="standard">
-					<pattern>#,##0.00 ¤</pattern>
-					<pattern alt="noCurrency" draft="provisional">#,##0.00</pattern>
-				</currencyFormat>
-				<currencyFormat type="accounting">
 					<pattern>#,##0.00 ¤</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
@@ -5907,7 +5229,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName count="one">белоруска рубља</displayName>
 				<displayName count="few">белоруске рубље</displayName>
 				<displayName count="other">белоруских рубаља</displayName>
-				<symbol alt="narrow" draft="contributed">BYN</symbol>
 			</currency>
 			<currency type="BYR">
 				<displayName>Белоруска рубља (2000–2016)</displayName>
@@ -6312,9 +5633,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="ILR">
 				<displayName>стари израелски шекели</displayName>
-				<displayName count="one">стари израелски шекели</displayName>
-				<displayName count="few">стари израелски шекели</displayName>
-				<displayName count="other">стари израелски шекели</displayName>
 			</currency>
 			<currency type="ILS">
 				<displayName>Израелски нови шекел</displayName>
@@ -6342,9 +5660,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="ISJ">
 				<displayName>стара исландска круна</displayName>
-				<displayName count="one">стара исландска круна</displayName>
-				<displayName count="few">стара исландска круна</displayName>
-				<displayName count="other">стара исландска круна</displayName>
 			</currency>
 			<currency type="ISK">
 				<displayName>Исландска круна</displayName>
@@ -6914,11 +6229,17 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName count="few">словачке круне</displayName>
 				<displayName count="other">словачких круна</displayName>
 			</currency>
-			<currency type="SLL">
+			<currency type="SLE">
 				<displayName>Сијералеонски леоне</displayName>
 				<displayName count="one">сијералеонски леоне</displayName>
 				<displayName count="few">сијералеонска леона</displayName>
 				<displayName count="other">сијералеонских леона</displayName>
+			</currency>
+			<currency type="SLL">
+				<displayName>Сијералеонски леоне (1964—2022)</displayName>
+				<displayName count="one">сијералеонски леоне (1964—2022)</displayName>
+				<displayName count="few">сијералеонска леона (1964—2022)</displayName>
+				<displayName count="other">сијералеонских леона (1964—2022)</displayName>
 			</currency>
 			<currency type="SOS">
 				<displayName>Сомалијски шилинг</displayName>
@@ -7384,7 +6705,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<perUnitPattern>{0} по квадратном километру</perUnitPattern>
 			</unit>
 			<unit type="area-hectare">
-				<displayName>хектари</displayName>
 				<unitPattern count="one">{0} хектар</unitPattern>
 				<unitPattern count="few">{0} хектара</unitPattern>
 				<unitPattern count="other">{0} хектара</unitPattern>
@@ -7411,7 +6731,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<perUnitPattern>{0} по квадратној миљи</perUnitPattern>
 			</unit>
 			<unit type="area-acre">
-				<displayName>акре</displayName>
 				<unitPattern count="one">{0} акра</unitPattern>
 				<unitPattern count="few">{0} акре</unitPattern>
 				<unitPattern count="other">{0} акри</unitPattern>
@@ -7424,22 +6743,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</unit>
 			<unit type="area-square-foot">
 				<displayName>квадратне стопе</displayName>
-				<unitPattern count="one">{0} ft²</unitPattern>
-				<unitPattern count="few">{0} ft²</unitPattern>
-				<unitPattern count="other">{0} ft²</unitPattern>
 			</unit>
 			<unit type="area-square-inch">
 				<displayName>квадратни инчи</displayName>
-				<unitPattern count="one">{0} in²</unitPattern>
-				<unitPattern count="few">{0} in²</unitPattern>
-				<unitPattern count="other">{0} in²</unitPattern>
-				<perUnitPattern>{0}/in²</perUnitPattern>
-			</unit>
-			<unit type="area-dunam">
-				<displayName>dunam</displayName>
-				<unitPattern count="one">{0} dunam</unitPattern>
-				<unitPattern count="few">{0} dunam</unitPattern>
-				<unitPattern count="other">{0} dunam</unitPattern>
 			</unit>
 			<unit type="duration-century">
 				<displayName>вијекови</displayName>
@@ -7454,7 +6760,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} деценија</unitPattern>
 			</unit>
 			<unit type="duration-year">
-				<displayName>година</displayName>
 				<unitPattern count="one">{0} година</unitPattern>
 				<unitPattern count="few">{0} године</unitPattern>
 				<unitPattern count="other">{0} година</unitPattern>
@@ -7468,25 +6773,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<perUnitPattern>{0} мјесечно</perUnitPattern>
 			</unit>
 			<unit type="duration-week">
-				<displayName>седмице</displayName>
 				<unitPattern count="one">{0} седмица</unitPattern>
 				<unitPattern count="few">{0} седмице</unitPattern>
 				<unitPattern count="other">{0} седмица</unitPattern>
 				<perUnitPattern>{0} седмично</perUnitPattern>
 			</unit>
 			<unit type="duration-day">
-				<displayName>дани</displayName>
 				<unitPattern count="one">{0} дан</unitPattern>
 				<unitPattern count="few">{0} дана</unitPattern>
 				<unitPattern count="other">{0} дана</unitPattern>
 				<perUnitPattern>{0} дневно</perUnitPattern>
-			</unit>
-			<unit type="duration-hour">
-				<displayName>сати</displayName>
-				<unitPattern count="one">{0} сат</unitPattern>
-				<unitPattern count="few">{0} сата</unitPattern>
-				<unitPattern count="other">{0} сати</unitPattern>
-				<perUnitPattern>{0} по сату</perUnitPattern>
 			</unit>
 			<unit type="duration-minute">
 				<displayName>минути</displayName>
@@ -7496,7 +6792,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<perUnitPattern>{0} у минуту</perUnitPattern>
 			</unit>
 			<unit type="duration-second">
-				<displayName>секунде</displayName>
 				<unitPattern count="one">{0} секунда</unitPattern>
 				<unitPattern count="few">{0} секунде</unitPattern>
 				<unitPattern count="other">{0} секунди</unitPattern>
@@ -7520,47 +6815,17 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="few">{0} наносекунде</unitPattern>
 				<unitPattern count="other">{0} наносекунди</unitPattern>
 			</unit>
-			<unit type="graphics-em">
-				<displayName>em</displayName>
-				<unitPattern count="one">{0} em</unitPattern>
-				<unitPattern count="few">{0} em</unitPattern>
-				<unitPattern count="other">{0} em</unitPattern>
-			</unit>
 			<unit type="graphics-pixel">
 				<displayName>пиксели</displayName>
-				<unitPattern count="one">{0} px</unitPattern>
-				<unitPattern count="few">{0} px</unitPattern>
-				<unitPattern count="other">{0} px</unitPattern>
 			</unit>
 			<unit type="graphics-megapixel">
 				<displayName>мегапиксели</displayName>
-				<unitPattern count="one">{0} MP</unitPattern>
-				<unitPattern count="few">{0} MP</unitPattern>
-				<unitPattern count="other">{0} MP</unitPattern>
-			</unit>
-			<unit type="graphics-pixel-per-centimeter">
-				<displayName>ppcm</displayName>
-				<unitPattern count="one">{0} ppcm</unitPattern>
-				<unitPattern count="few">{0} ppcm</unitPattern>
-				<unitPattern count="other">{0} ppcm</unitPattern>
-			</unit>
-			<unit type="graphics-pixel-per-inch">
-				<displayName>ppi</displayName>
-				<unitPattern count="one">{0} ppi</unitPattern>
-				<unitPattern count="few">{0} ppi</unitPattern>
-				<unitPattern count="other">{0} ppi</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>тачке по центиметру</displayName>
-				<unitPattern count="one">{0} ppcm</unitPattern>
-				<unitPattern count="few">{0} ppcm</unitPattern>
-				<unitPattern count="other">{0} ppcm</unitPattern>
+				<displayName draft="provisional">тачке по центиметру</displayName>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>тачке по инчу</displayName>
-				<unitPattern count="one">{0} ppi</unitPattern>
-				<unitPattern count="few">{0} ppi</unitPattern>
-				<unitPattern count="other">{0} ppi</unitPattern>
+				<displayName draft="provisional">тачке по инчу</displayName>
 			</unit>
 			<unit type="length-kilometer">
 				<displayName>километри</displayName>
@@ -7607,12 +6872,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="few">{0} нанометра</unitPattern>
 				<unitPattern count="other">{0} нанометара</unitPattern>
 			</unit>
-			<unit type="length-picometer">
-				<displayName>pm</displayName>
-				<unitPattern count="one">{0} pm</unitPattern>
-				<unitPattern count="few">{0} pm</unitPattern>
-				<unitPattern count="other">{0} pm</unitPattern>
-			</unit>
 			<unit type="length-mile">
 				<displayName>миље</displayName>
 				<unitPattern count="one">{0} миља</unitPattern>
@@ -7624,26 +6883,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} јард</unitPattern>
 				<unitPattern count="few">{0} јарда</unitPattern>
 				<unitPattern count="other">{0} јарди</unitPattern>
-			</unit>
-			<unit type="length-foot">
-				<displayName>ft</displayName>
-				<unitPattern count="one">{0} ft</unitPattern>
-				<unitPattern count="few">{0} ft</unitPattern>
-				<unitPattern count="other">{0} ft</unitPattern>
-				<perUnitPattern>{0}/ft</perUnitPattern>
-			</unit>
-			<unit type="length-inch">
-				<displayName>in</displayName>
-				<unitPattern count="one">{0} in</unitPattern>
-				<unitPattern count="few">{0} in</unitPattern>
-				<unitPattern count="other">{0} in</unitPattern>
-				<perUnitPattern>{0}/in</perUnitPattern>
-			</unit>
-			<unit type="length-parsec">
-				<displayName>pc</displayName>
-				<unitPattern count="one">{0} pc</unitPattern>
-				<unitPattern count="few">{0} pc</unitPattern>
-				<unitPattern count="other">{0} pc</unitPattern>
 			</unit>
 			<unit type="length-light-year">
 				<displayName>свјетлосне године</displayName>
@@ -7663,152 +6902,28 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="few">{0} наутичке миље</unitPattern>
 				<unitPattern count="other">{0} наутичких миља</unitPattern>
 			</unit>
-			<unit type="length-mile-scandinavian">
-				<displayName>smi</displayName>
-				<unitPattern count="one">{0} smi</unitPattern>
-				<unitPattern count="few">{0} smi</unitPattern>
-				<unitPattern count="other">{0} smi</unitPattern>
-			</unit>
 			<unit type="length-point">
 				<displayName>тачке</displayName>
 				<unitPattern count="one">{0} тачка</unitPattern>
 				<unitPattern count="few">{0} тачке</unitPattern>
 				<unitPattern count="other">{0} тачака</unitPattern>
 			</unit>
-			<unit type="length-solar-radius">
-				<displayName>R☉</displayName>
-				<unitPattern count="one">{0} R☉</unitPattern>
-				<unitPattern count="few">{0} R☉</unitPattern>
-				<unitPattern count="other">{0} R☉</unitPattern>
-			</unit>
-			<unit type="volume-cubic-kilometer">
-				<displayName>km³</displayName>
-				<unitPattern count="one">{0} km³</unitPattern>
-				<unitPattern count="few">{0} km³</unitPattern>
-				<unitPattern count="other">{0} km³</unitPattern>
-			</unit>
 			<unit type="volume-cubic-meter">
 				<displayName>кубни метри</displayName>
-				<unitPattern count="one">{0} m³</unitPattern>
-				<unitPattern count="few">{0} m³</unitPattern>
-				<unitPattern count="other">{0} m³</unitPattern>
-				<perUnitPattern>{0}/m³</perUnitPattern>
 			</unit>
 			<unit type="volume-cubic-centimeter">
 				<displayName>кубни центиметри</displayName>
-				<unitPattern count="one">{0} cm³</unitPattern>
-				<unitPattern count="few">{0} cm³</unitPattern>
-				<unitPattern count="other">{0} cm³</unitPattern>
-				<perUnitPattern>{0}/cm³</perUnitPattern>
-			</unit>
-			<unit type="volume-cubic-mile">
-				<displayName>mi³</displayName>
-				<unitPattern count="one">{0} mi³</unitPattern>
-				<unitPattern count="few">{0} mi³</unitPattern>
-				<unitPattern count="other">{0} mi³</unitPattern>
-			</unit>
-			<unit type="volume-cubic-yard">
-				<displayName>yd³</displayName>
-				<unitPattern count="one">{0} yd³</unitPattern>
-				<unitPattern count="few">{0} yd³</unitPattern>
-				<unitPattern count="other">{0} yd³</unitPattern>
-			</unit>
-			<unit type="volume-cubic-foot">
-				<displayName>ft³</displayName>
-				<unitPattern count="one">{0} ft³</unitPattern>
-				<unitPattern count="few">{0} ft³</unitPattern>
-				<unitPattern count="other">{0} ft³</unitPattern>
-			</unit>
-			<unit type="volume-cubic-inch">
-				<displayName>in³</displayName>
-				<unitPattern count="one">{0} in³</unitPattern>
-				<unitPattern count="few">{0} in³</unitPattern>
-				<unitPattern count="other">{0} in³</unitPattern>
-			</unit>
-			<unit type="volume-megaliter">
-				<displayName>ML</displayName>
-				<unitPattern count="one">{0} ML</unitPattern>
-				<unitPattern count="few">{0} ML</unitPattern>
-				<unitPattern count="other">{0} ML</unitPattern>
-			</unit>
-			<unit type="volume-hectoliter">
-				<displayName>hL</displayName>
-				<unitPattern count="one">{0} hL</unitPattern>
-				<unitPattern count="few">{0} hL</unitPattern>
-				<unitPattern count="other">{0} hL</unitPattern>
 			</unit>
 			<unit type="volume-liter">
 				<displayName>литри</displayName>
-				<unitPattern count="one">{0} l</unitPattern>
-				<unitPattern count="few">{0} l</unitPattern>
-				<unitPattern count="other">{0} l</unitPattern>
-				<perUnitPattern>{0}/l</perUnitPattern>
-			</unit>
-			<unit type="volume-deciliter">
-				<displayName>dL</displayName>
-				<unitPattern count="one">{0} dL</unitPattern>
-				<unitPattern count="few">{0} dL</unitPattern>
-				<unitPattern count="other">{0} dL</unitPattern>
-			</unit>
-			<unit type="volume-centiliter">
-				<displayName>cL</displayName>
-				<unitPattern count="one">{0} cL</unitPattern>
-				<unitPattern count="few">{0} cL</unitPattern>
-				<unitPattern count="other">{0} cL</unitPattern>
 			</unit>
 		</unitLength>
 		<unitLength type="short">
-			<unit type="area-square-kilometer">
-				<unitPattern count="one">{0} km²</unitPattern>
-				<unitPattern count="few">{0} km²</unitPattern>
-				<unitPattern count="other">{0} km²</unitPattern>
-			</unit>
 			<unit type="area-hectare">
 				<displayName>хектари</displayName>
-				<unitPattern count="one">{0} ha</unitPattern>
-				<unitPattern count="few">{0} ha</unitPattern>
-				<unitPattern count="other">{0} ha</unitPattern>
-			</unit>
-			<unit type="area-square-meter">
-				<unitPattern count="one">{0} m²</unitPattern>
-				<unitPattern count="few">{0} m²</unitPattern>
-				<unitPattern count="other">{0} m²</unitPattern>
-			</unit>
-			<unit type="area-square-centimeter">
-				<unitPattern count="one">{0} cm²</unitPattern>
-				<unitPattern count="few">{0} cm²</unitPattern>
-				<unitPattern count="other">{0} cm²</unitPattern>
-			</unit>
-			<unit type="area-square-mile">
-				<unitPattern count="one">{0} mi²</unitPattern>
-				<unitPattern count="few">{0} mi²</unitPattern>
-				<unitPattern count="other">{0} mi²</unitPattern>
 			</unit>
 			<unit type="area-acre">
 				<displayName>акре</displayName>
-				<unitPattern count="one">{0} ac</unitPattern>
-				<unitPattern count="few">{0} ac</unitPattern>
-				<unitPattern count="other">{0} ac</unitPattern>
-			</unit>
-			<unit type="area-square-yard">
-				<unitPattern count="one">{0} yd²</unitPattern>
-				<unitPattern count="few">{0} yd²</unitPattern>
-				<unitPattern count="other">{0} yd²</unitPattern>
-			</unit>
-			<unit type="area-square-foot">
-				<unitPattern count="one">{0} ft²</unitPattern>
-				<unitPattern count="few">{0} ft²</unitPattern>
-				<unitPattern count="other">{0} ft²</unitPattern>
-			</unit>
-			<unit type="area-square-inch">
-				<unitPattern count="one">{0} in²</unitPattern>
-				<unitPattern count="few">{0} in²</unitPattern>
-				<unitPattern count="other">{0} in²</unitPattern>
-			</unit>
-			<unit type="area-dunam">
-				<unitPattern count="one">{0} dunam</unitPattern>
-				<unitPattern count="few">{0} dunam</unitPattern>
-				<unitPattern count="other">{0} dunam</unitPattern>
 			</unit>
 			<unit type="duration-century">
 				<displayName>в.</displayName>
@@ -7877,288 +6992,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="few">{0} мс</unitPattern>
 				<unitPattern count="other">{0} мс</unitPattern>
 			</unit>
-			<unit type="duration-microsecond">
-				<unitPattern count="one">{0} μs</unitPattern>
-				<unitPattern count="few">{0} μs</unitPattern>
-				<unitPattern count="other">{0} μs</unitPattern>
-			</unit>
-			<unit type="duration-nanosecond">
-				<unitPattern count="one">{0} ns</unitPattern>
-				<unitPattern count="few">{0} ns</unitPattern>
-				<unitPattern count="other">{0} ns</unitPattern>
-			</unit>
-			<unit type="graphics-em">
-				<unitPattern count="one">{0} em</unitPattern>
-				<unitPattern count="few">{0} em</unitPattern>
-				<unitPattern count="other">{0} em</unitPattern>
-			</unit>
-			<unit type="graphics-pixel">
-				<unitPattern count="one">{0} px</unitPattern>
-				<unitPattern count="few">{0} px</unitPattern>
-				<unitPattern count="other">{0} px</unitPattern>
-			</unit>
-			<unit type="graphics-megapixel">
-				<unitPattern count="one">{0} MP</unitPattern>
-				<unitPattern count="few">{0} MP</unitPattern>
-				<unitPattern count="other">{0} MP</unitPattern>
-			</unit>
-			<unit type="graphics-pixel-per-centimeter">
-				<unitPattern count="one">{0} ppcm</unitPattern>
-				<unitPattern count="few">{0} ppcm</unitPattern>
-				<unitPattern count="other">{0} ppcm</unitPattern>
-			</unit>
-			<unit type="graphics-pixel-per-inch">
-				<unitPattern count="one">{0} ppi</unitPattern>
-				<unitPattern count="few">{0} ppi</unitPattern>
-				<unitPattern count="other">{0} ppi</unitPattern>
-			</unit>
-			<unit type="graphics-dot-per-centimeter">
-				<displayName>ppcm</displayName>
-				<unitPattern count="one">{0} ppcm</unitPattern>
-				<unitPattern count="few">{0} ppcm</unitPattern>
-				<unitPattern count="other">{0} ppcm</unitPattern>
-			</unit>
-			<unit type="graphics-dot-per-inch">
-				<displayName>ppi</displayName>
-				<unitPattern count="one">{0} ppi</unitPattern>
-				<unitPattern count="few">{0} ppi</unitPattern>
-				<unitPattern count="other">{0} ppi</unitPattern>
-			</unit>
-			<unit type="length-kilometer">
-				<unitPattern count="one">{0} km</unitPattern>
-				<unitPattern count="few">{0} km</unitPattern>
-				<unitPattern count="other">{0} km</unitPattern>
-			</unit>
 			<unit type="length-meter">
 				<displayName>m</displayName>
-				<unitPattern count="one">{0} m</unitPattern>
-				<unitPattern count="few">{0} m</unitPattern>
-				<unitPattern count="other">{0} m</unitPattern>
-			</unit>
-			<unit type="length-decimeter">
-				<unitPattern count="one">{0} dm</unitPattern>
-				<unitPattern count="few">{0} dm</unitPattern>
-				<unitPattern count="other">{0} dm</unitPattern>
-			</unit>
-			<unit type="length-centimeter">
-				<unitPattern count="one">{0} cm</unitPattern>
-				<unitPattern count="few">{0} cm</unitPattern>
-				<unitPattern count="other">{0} cm</unitPattern>
-			</unit>
-			<unit type="length-millimeter">
-				<unitPattern count="one">{0} mm</unitPattern>
-				<unitPattern count="few">{0} mm</unitPattern>
-				<unitPattern count="other">{0} mm</unitPattern>
-			</unit>
-			<unit type="length-micrometer">
-				<unitPattern count="one">{0} μm</unitPattern>
-				<unitPattern count="few">{0} μm</unitPattern>
-				<unitPattern count="other">{0} μm</unitPattern>
-			</unit>
-			<unit type="length-nanometer">
-				<unitPattern count="one">{0} nm</unitPattern>
-				<unitPattern count="few">{0} nm</unitPattern>
-				<unitPattern count="other">{0} nm</unitPattern>
-			</unit>
-			<unit type="length-picometer">
-				<unitPattern count="one">{0} pm</unitPattern>
-				<unitPattern count="few">{0} pm</unitPattern>
-				<unitPattern count="other">{0} pm</unitPattern>
-			</unit>
-			<unit type="length-mile">
-				<unitPattern count="one">{0} mi</unitPattern>
-				<unitPattern count="few">{0} mi</unitPattern>
-				<unitPattern count="other">{0} mi</unitPattern>
-			</unit>
-			<unit type="length-yard">
-				<unitPattern count="one">{0} yd</unitPattern>
-				<unitPattern count="few">{0} yd</unitPattern>
-				<unitPattern count="other">{0} yd</unitPattern>
-			</unit>
-			<unit type="length-foot">
-				<unitPattern count="one">{0} ft</unitPattern>
-				<unitPattern count="few">{0} ft</unitPattern>
-				<unitPattern count="other">{0} ft</unitPattern>
-			</unit>
-			<unit type="length-inch">
-				<unitPattern count="one">{0} in</unitPattern>
-				<unitPattern count="few">{0} in</unitPattern>
-				<unitPattern count="other">{0} in</unitPattern>
-			</unit>
-			<unit type="length-parsec">
-				<unitPattern count="one">{0} pc</unitPattern>
-				<unitPattern count="few">{0} pc</unitPattern>
-				<unitPattern count="other">{0} pc</unitPattern>
-			</unit>
-			<unit type="length-light-year">
-				<unitPattern count="one">{0} ly</unitPattern>
-				<unitPattern count="few">{0} ly</unitPattern>
-				<unitPattern count="other">{0} ly</unitPattern>
-			</unit>
-			<unit type="length-astronomical-unit">
-				<unitPattern count="one">{0} au</unitPattern>
-				<unitPattern count="few">{0} au</unitPattern>
-				<unitPattern count="other">{0} au</unitPattern>
-			</unit>
-			<unit type="length-nautical-mile">
-				<unitPattern count="one">{0} nmi</unitPattern>
-				<unitPattern count="few">{0} nmi</unitPattern>
-				<unitPattern count="other">{0} nmi</unitPattern>
-			</unit>
-			<unit type="length-mile-scandinavian">
-				<unitPattern count="one">{0} smi</unitPattern>
-				<unitPattern count="few">{0} smi</unitPattern>
-				<unitPattern count="other">{0} smi</unitPattern>
-			</unit>
-			<unit type="length-point">
-				<unitPattern count="one">{0} pt</unitPattern>
-				<unitPattern count="few">{0} pt</unitPattern>
-				<unitPattern count="other">{0} pt</unitPattern>
-			</unit>
-			<unit type="length-solar-radius">
-				<unitPattern count="one">{0} R☉</unitPattern>
-				<unitPattern count="few">{0} R☉</unitPattern>
-				<unitPattern count="other">{0} R☉</unitPattern>
-			</unit>
-			<unit type="volume-cubic-kilometer">
-				<unitPattern count="one">{0} km³</unitPattern>
-				<unitPattern count="few">{0} km³</unitPattern>
-				<unitPattern count="other">{0} km³</unitPattern>
-			</unit>
-			<unit type="volume-cubic-meter">
-				<unitPattern count="one">{0} m³</unitPattern>
-				<unitPattern count="few">{0} m³</unitPattern>
-				<unitPattern count="other">{0} m³</unitPattern>
-			</unit>
-			<unit type="volume-cubic-centimeter">
-				<unitPattern count="one">{0} cm³</unitPattern>
-				<unitPattern count="few">{0} cm³</unitPattern>
-				<unitPattern count="other">{0} cm³</unitPattern>
-			</unit>
-			<unit type="volume-cubic-mile">
-				<unitPattern count="one">{0} mi³</unitPattern>
-				<unitPattern count="few">{0} mi³</unitPattern>
-				<unitPattern count="other">{0} mi³</unitPattern>
-			</unit>
-			<unit type="volume-cubic-yard">
-				<unitPattern count="one">{0} yd³</unitPattern>
-				<unitPattern count="few">{0} yd³</unitPattern>
-				<unitPattern count="other">{0} yd³</unitPattern>
-			</unit>
-			<unit type="volume-cubic-foot">
-				<unitPattern count="one">{0} ft³</unitPattern>
-				<unitPattern count="few">{0} ft³</unitPattern>
-				<unitPattern count="other">{0} ft³</unitPattern>
-			</unit>
-			<unit type="volume-cubic-inch">
-				<unitPattern count="one">{0} in³</unitPattern>
-				<unitPattern count="few">{0} in³</unitPattern>
-				<unitPattern count="other">{0} in³</unitPattern>
-			</unit>
-			<unit type="volume-megaliter">
-				<unitPattern count="one">{0} ML</unitPattern>
-				<unitPattern count="few">{0} ML</unitPattern>
-				<unitPattern count="other">{0} ML</unitPattern>
-			</unit>
-			<unit type="volume-hectoliter">
-				<unitPattern count="one">{0} hL</unitPattern>
-				<unitPattern count="few">{0} hL</unitPattern>
-				<unitPattern count="other">{0} hL</unitPattern>
-			</unit>
-			<unit type="volume-liter">
-				<unitPattern count="one">{0} l</unitPattern>
-				<unitPattern count="few">{0} l</unitPattern>
-				<unitPattern count="other">{0} l</unitPattern>
-			</unit>
-			<unit type="volume-deciliter">
-				<unitPattern count="one">{0} dL</unitPattern>
-				<unitPattern count="few">{0} dL</unitPattern>
-				<unitPattern count="other">{0} dL</unitPattern>
-			</unit>
-			<unit type="volume-centiliter">
-				<unitPattern count="one">{0} cL</unitPattern>
-				<unitPattern count="few">{0} cL</unitPattern>
-				<unitPattern count="other">{0} cL</unitPattern>
 			</unit>
 		</unitLength>
 		<unitLength type="narrow">
-			<unit type="duration-year">
-				<displayName>година</displayName>
-				<unitPattern count="one">{0} год</unitPattern>
-				<unitPattern count="few">{0} год</unitPattern>
-				<unitPattern count="other">{0} год</unitPattern>
-			</unit>
 			<unit type="duration-month">
 				<displayName>мјесец</displayName>
-				<unitPattern count="one">{0} мјес.</unitPattern>
-				<unitPattern count="few">{0} мјес.</unitPattern>
-				<unitPattern count="other">{0} мјес.</unitPattern>
 			</unit>
 			<unit type="duration-week">
 				<displayName>седмица</displayName>
-				<unitPattern count="one">{0} сед.</unitPattern>
-				<unitPattern count="few">{0} сед.</unitPattern>
-				<unitPattern count="other">{0} сед.</unitPattern>
-			</unit>
-			<unit type="duration-day">
-				<displayName>дани</displayName>
-				<unitPattern count="one">{0} дан</unitPattern>
-				<unitPattern count="few">{0} дана</unitPattern>
-				<unitPattern count="other">{0} дан</unitPattern>
-			</unit>
-			<unit type="duration-hour">
-				<displayName>сати</displayName>
-				<unitPattern count="one">{0} сат</unitPattern>
-				<unitPattern count="few">{0} сата</unitPattern>
-				<unitPattern count="other">{0} сати</unitPattern>
-			</unit>
-			<unit type="duration-minute">
-				<displayName>минут</displayName>
-				<unitPattern count="one">{0} мин.</unitPattern>
-				<unitPattern count="few">{0} мин.</unitPattern>
-				<unitPattern count="other">{0} мин.</unitPattern>
-			</unit>
-			<unit type="duration-second">
-				<displayName>секунде</displayName>
-				<unitPattern count="one">{0} сек.</unitPattern>
-				<unitPattern count="few">{0} сек.</unitPattern>
-				<unitPattern count="other">{0} сек.</unitPattern>
-			</unit>
-			<unit type="duration-millisecond">
-				<displayName>мс</displayName>
-				<unitPattern count="one">{0} мс</unitPattern>
-				<unitPattern count="few">{0} мс</unitPattern>
-				<unitPattern count="other">{0} мс</unitPattern>
-			</unit>
-			<unit type="length-kilometer">
-				<displayName>km</displayName>
-				<unitPattern count="one">{0} km</unitPattern>
-				<unitPattern count="few">{0} km</unitPattern>
-				<unitPattern count="other">{0} km</unitPattern>
-			</unit>
-			<unit type="length-meter">
-				<displayName>m</displayName>
-				<unitPattern count="one">{0} m</unitPattern>
-				<unitPattern count="few">{0} m</unitPattern>
-				<unitPattern count="other">{0} m</unitPattern>
-			</unit>
-			<unit type="length-centimeter">
-				<displayName>cm</displayName>
-				<unitPattern count="one">{0} cm</unitPattern>
-				<unitPattern count="few">{0} cm</unitPattern>
-				<unitPattern count="other">{0} cm</unitPattern>
-			</unit>
-			<unit type="length-millimeter">
-				<displayName>mm</displayName>
-				<unitPattern count="one">{0} mm</unitPattern>
-				<unitPattern count="few">{0} mm</unitPattern>
-				<unitPattern count="other">{0} mm</unitPattern>
-			</unit>
-			<unit type="volume-liter">
-				<displayName>liter</displayName>
-				<unitPattern count="one">{0} l</unitPattern>
-				<unitPattern count="few">{0} l</unitPattern>
-				<unitPattern count="other">{0} l</unitPattern>
 			</unit>
 		</unitLength>
 	</units>

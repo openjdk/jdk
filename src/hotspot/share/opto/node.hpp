@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,6 +70,7 @@ class CodeBuffer;
 class ConstraintCastNode;
 class ConNode;
 class ConINode;
+class ConvertNode;
 class CompareAndSwapNode;
 class CompareAndExchangeNode;
 class CountedLoopNode;
@@ -447,7 +448,7 @@ protected:
   }
   // Light version of set_req() to init inputs after node creation.
   void init_req( uint i, Node *n ) {
-    assert( i == 0 && this == n ||
+    assert( (i == 0 && this == n) ||
             is_not_dead(n), "can not use dead node");
     assert( i < _cnt, "oob");
     assert( !VerifyHashTableKeys || _hash_lock == 0,
@@ -731,6 +732,7 @@ public:
       DEFINE_CLASS_ID(Con, Type, 8)
           DEFINE_CLASS_ID(ConI, Con, 0)
       DEFINE_CLASS_ID(SafePointScalarMerge, Type, 9)
+      DEFINE_CLASS_ID(Convert, Type, 10)
 
 
     DEFINE_CLASS_ID(Proj,  Node, 3)
@@ -889,6 +891,7 @@ public:
   DEFINE_CLASS_QUERY(ClearArray)
   DEFINE_CLASS_QUERY(CMove)
   DEFINE_CLASS_QUERY(Cmp)
+  DEFINE_CLASS_QUERY(Convert)
   DEFINE_CLASS_QUERY(CountedLoop)
   DEFINE_CLASS_QUERY(CountedLoopEnd)
   DEFINE_CLASS_QUERY(DecodeNarrowPtr)
@@ -1124,6 +1127,13 @@ public:
 
   // Set control or add control as precedence edge
   void ensure_control_or_add_prec(Node* c);
+
+  // Visit boundary uses of the node and apply a callback function for each.
+  // Recursively traverse uses, stopping and applying the callback when
+  // reaching a boundary node, defined by is_boundary. Note: the function
+  // definition appears after the complete type definition of Node_List.
+  template <typename Callback, typename Check>
+  void visit_uses(Callback callback, Check is_boundary) const;
 
 //----------------- Code Generation
 
@@ -1624,6 +1634,35 @@ public:
   void dump() const;
   void dump_simple() const;
 };
+
+// Definition must appear after complete type definition of Node_List
+template <typename Callback, typename Check>
+void Node::visit_uses(Callback callback, Check is_boundary) const {
+  ResourceMark rm;
+  VectorSet visited;
+  Node_List worklist;
+
+  // The initial worklist consists of the direct uses
+  for (DUIterator_Fast kmax, k = fast_outs(kmax); k < kmax; k++) {
+    Node* out = fast_out(k);
+    if (!visited.test_set(out->_idx)) { worklist.push(out); }
+  }
+
+  while (worklist.size() > 0) {
+    Node* use = worklist.pop();
+    // Apply callback on boundary nodes
+    if (is_boundary(use)) {
+      callback(use);
+    } else {
+      // Not a boundary node, continue search
+      for (DUIterator_Fast kmax, k = use->fast_outs(kmax); k < kmax; k++) {
+        Node* out = use->fast_out(k);
+        if (!visited.test_set(out->_idx)) { worklist.push(out); }
+      }
+    }
+  }
+}
+
 
 //------------------------------Unique_Node_List-------------------------------
 class Unique_Node_List : public Node_List {

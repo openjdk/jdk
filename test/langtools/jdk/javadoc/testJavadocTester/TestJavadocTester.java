@@ -73,9 +73,9 @@ public class TestJavadocTester extends JavadocTester {
      * @param message a short description of the outcome
      */
     @Override
-    public void passed(String message) {
-        super.passed(message);
-        messages.add("Passed: " + message);
+    public void passed(String message, String... details) {
+        super.passed(message, details);
+        messages.add("Passed: " + join(message, details));
     }
 
     /**
@@ -85,9 +85,13 @@ public class TestJavadocTester extends JavadocTester {
      * @param message a short description of the outcome
      */
     @Override
-    public void failed(String message) {
-        super.failed(message);
-        messages.add("FAILED: " + message);
+    public void failed(String message, String... details) {
+        super.failed(message, details);
+        messages.add("FAILED: " + join(message, details));
+    }
+
+    private String join(String message, String... details) {
+        return details.length == 0 ? message : message + "\n" + String.join("\n", details);
     }
 
     /**
@@ -138,6 +142,8 @@ public class TestJavadocTester extends JavadocTester {
                 testErrors++;
             }
         }
+
+        messages.forEach(m -> out.println("MESSAGES: " + m));
     }
 
     /**
@@ -153,7 +159,7 @@ public class TestJavadocTester extends JavadocTester {
      * @param message the message to be reported.
      */
     private void report(String message) {
-        message.lines().forEachOrdered(l -> out.println(">>> " + l));
+        message.lines().forEachOrdered(l -> out.println(">>>> " + l));
     }
 
     //-------------------------------------------------
@@ -202,13 +208,13 @@ public class TestJavadocTester extends JavadocTester {
         messages.forEach(this::report);
         checkMessages(
                 """
-                    Passed: out/p/C.html: following text found:
+                    Passed: out/p/C.html: the following text was found:
                     Second sentence""",
                 """
-                    Passed: out/p/C.html: following text found:
+                    Passed: out/p/C.html: the following text was found:
                     abc123""",
                 """
-                    Passed: out/p/C.html: following text found:
+                    Passed: out/p/C.html: the following text was found:
                     def456""");
     }
 
@@ -220,7 +226,7 @@ public class TestJavadocTester extends JavadocTester {
                 .check("Third sentence.");
         checkMessages(
                 """
-                    Passed: out/p/C.html: following text not found:
+                    Passed: out/p/C.html: the following text was not found:
                     Third sentence""");
     }
 
@@ -231,7 +237,8 @@ public class TestJavadocTester extends JavadocTester {
                 .check("Third sentence.");
         checkMessages(
                 """
-                    FAILED: out/p/C.html: following text not found:
+                    FAILED: out/p/C.html: output not as expected
+                    >> the following text was not found:
                     Third sentence""");
     }
 
@@ -244,13 +251,13 @@ public class TestJavadocTester extends JavadocTester {
                         Pattern.compile("d.f4.6"));
         checkMessages(
                 """
-                    Passed: out/p/C.html: following pattern found:
+                    Passed: out/p/C.html: the following pattern was found:
                     S.cond s.nt.nc.""",
                 """
-                    Passed: out/p/C.html: following pattern found:
+                    Passed: out/p/C.html: the following pattern was found:
                     [abc]{3}[123]{3}""",
                 """
-                    Passed: out/p/C.html: following pattern found:
+                    Passed: out/p/C.html: the following pattern was found:
                     d.f4.6""");
     }
 
@@ -271,28 +278,28 @@ public class TestJavadocTester extends JavadocTester {
 
         checkMessages(
                 """
-                    Passed: out/p/C.html: following text found:
+                    Passed: out/p/C.html: the following text was found:
                     <h2>Method Summary</h2>""",
                 """
-                    Passed: out/p/C.html: following text found:
+                    Passed: out/p/C.html: the following text was found:
                     <a href="#m1()" class="member-name-link">m1</a>""",
                 """
-                    Passed: out/p/C.html: following text found:
+                    Passed: out/p/C.html: the following text was found:
                     <a href="#m2()" class="member-name-link">m2</a>""",
                 """
-                    Passed: out/p/C.html: following text found:
+                    Passed: out/p/C.html: the following text was found:
                     <a href="#m3()" class="member-name-link">m3</a>""",
                 """
-                    Passed: out/p/C.html: following text found:
+                    Passed: out/p/C.html: the following text was found:
                     <h2>Method Details</h2>""",
                 """
-                    Passed: out/p/C.html: following text found:
+                    Passed: out/p/C.html: the following text was found:
                     <section class="detail" id="m3()">""",
                 """
-                    Passed: out/p/C.html: following text found:
+                    Passed: out/p/C.html: the following text was found:
                     <section class="detail" id="m2()">""",
                 """
-                    Passed: out/p/C.html: following text found:
+                    Passed: out/p/C.html: the following text was found:
                     <section class="detail" id="m1()">"""
         );
     }
@@ -306,10 +313,10 @@ public class TestJavadocTester extends JavadocTester {
                         "First sentence");
         checkMessages(
                 """
-                    Passed: out/p/C.html: following text found:
+                    Passed: out/p/C.html: the following text was found:
                     Second sentence""",
                 """
-                    Passed: out/p/C.html: following text found:
+                    Passed: out/p/C.html: the following text was found:
                     First sentence""");
     }
 
@@ -321,10 +328,11 @@ public class TestJavadocTester extends JavadocTester {
                         "First sentence");
         checkMessages(
                 """
-                    Passed: out/p/C.html: following text found:
+                    Passed: out/p/C.html: the following text was found:
                     Second sentence""",
                 """
-                    FAILED: out/p/C.html: following text was found on line""");
+                    FAILED: out/p/C.html: output not as expected
+                    >> the following text was found on line""");
     }
 
     @Test

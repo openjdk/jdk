@@ -34,15 +34,16 @@
 #include "compiler/oopMap.hpp"
 #include "gc/serial/cardTableRS.hpp"
 #include "gc/serial/defNewGeneration.hpp"
+#include "gc/serial/generation.hpp"
 #include "gc/serial/genMarkSweep.hpp"
 #include "gc/serial/serialGcRefProcProxyTask.hpp"
 #include "gc/serial/serialHeap.hpp"
+#include "gc/shared/classUnloadingContext.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "gc/shared/gcHeapSummary.hpp"
 #include "gc/shared/gcTimer.hpp"
 #include "gc/shared/gcTrace.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
-#include "gc/shared/generation.hpp"
 #include "gc/shared/modRefBarrierSet.hpp"
 #include "gc/shared/preservedMarks.inline.hpp"
 #include "gc/shared/referencePolicy.hpp"
@@ -199,19 +200,39 @@ void GenMarkSweep::mark_sweep_phase1(bool clear_all_softrefs) {
 
   {
     GCTraceTime(Debug, gc, phases) tm_m("Class Unloading", gc_timer());
-    CodeCache::UnloadingScope scope(&is_alive);
 
-    // Unload classes and purge the SystemDictionary.
-    bool purged_class = SystemDictionary::do_unloading(gc_timer());
+    ClassUnloadingContext* ctx = ClassUnloadingContext::context();
 
-    // Unload nmethods.
-    CodeCache::do_unloading(purged_class);
+    bool unloading_occurred;
+    {
+      CodeCache::UnlinkingScope scope(&is_alive);
+
+      // Unload classes and purge the SystemDictionary.
+      unloading_occurred = SystemDictionary::do_unloading(gc_timer());
+
+      // Unload nmethods.
+      CodeCache::do_unloading(unloading_occurred);
+    }
+
+    {
+      GCTraceTime(Debug, gc, phases) t("Purge Unlinked NMethods", gc_timer());
+      // Release unloaded nmethod's memory.
+      ctx->purge_nmethods();
+    }
+    {
+      GCTraceTime(Debug, gc, phases) ur("Unregister NMethods", gc_timer());
+      gch->prune_unlinked_nmethods();
+    }
+    {
+      GCTraceTime(Debug, gc, phases) t("Free Code Blobs", gc_timer());
+      ctx->free_code_blobs();
+    }
 
     // Prune dead klasses from subklass/sibling/implementor lists.
-    Klass::clean_weak_klass_links(purged_class);
+    Klass::clean_weak_klass_links(unloading_occurred);
 
     // Clean JVMCI metadata handles.
-    JVMCI_ONLY(JVMCI::do_unloading(purged_class));
+    JVMCI_ONLY(JVMCI::do_unloading(unloading_occurred));
   }
 
   {

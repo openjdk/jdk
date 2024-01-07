@@ -31,7 +31,7 @@ import javax.swing.text.html.StyleSheet;
 
 /*
  * @test
- * @bug 7083187
+ * @bug 7083187 8318113
  * @summary  Verifies if CSS.CSSValue attribute is same
  * @run main CSSAttributeEqualityBug
  */
@@ -70,6 +70,11 @@ public class CSSAttributeEqualityBug {
             "background-position: 0 0",
             "background-position: 1cm 2cm",
             "background-position: 1em 2em",
+
+            "border-width: medium",
+
+            "background-image: none",
+            "background-image: url(image.png)",
     };
 
     /**
@@ -84,6 +89,16 @@ public class CSSAttributeEqualityBug {
             {"margin-top: 42px", "margin-top: 22px"},
             {"margin-top: 42px", "margin-top: 42pt"},
             {"margin-top: 100%", "margin-top: 50%"},
+
+            {"background-image: none", "background-image: url(image.png)"},
+    };
+
+    private static final String[][] EQUALS_WITH_SPACE = {
+            {"font-size: 42px", "font-size: 42 px"},
+            {"font-size: 100%", "font-size: 100 %"},
+
+            {"width: 42px", "width: 42 px"},
+            {"width: 100%", "width: 100 %"},
     };
 
     public static void main(String[] args) {
@@ -97,10 +112,14 @@ public class CSSAttributeEqualityBug {
               .map(CSSAttributeEqualityBug::negativeTest)
               .filter(Objects::nonNull)
               .forEach(failures::add);
+        Arrays.stream(EQUALS_WITH_SPACE)
+              .map(CSSAttributeEqualityBug::positiveTest)
+              .filter(Objects::nonNull)
+              .forEach(failures::add);
 
         if (!failures.isEmpty()) {
             failures.forEach(System.err::println);
-            throw new RuntimeException(failures.size()
+            throw new RuntimeException("The test failed: " + failures.size()
                                        + " failure(s) detected: "
                                        + failures.get(0));
         }
@@ -111,6 +130,15 @@ public class CSSAttributeEqualityBug {
 
         AttributeSet a = ss.getDeclaration(cssDeclaration);
         AttributeSet b = ss.getDeclaration(cssDeclaration);
+
+        return assertEquals(a, b);
+    }
+
+    private static String positiveTest(String[] cssDeclaration) {
+        StyleSheet ss = new StyleSheet();
+
+        AttributeSet a = ss.getDeclaration(cssDeclaration[0]);
+        AttributeSet b = ss.getDeclaration(cssDeclaration[1]);
 
         return assertEquals(a, b);
     }
@@ -145,4 +173,3 @@ public class CSSAttributeEqualityBug {
     }
 
 }
-

@@ -22,13 +22,13 @@
  */
 package compiler.c2.irTests;
 
-import compiler.lib.ir_framework.*;
 import jdk.test.lib.Asserts;
+import compiler.lib.ir_framework.*;
 
 /*
  * @test
- * @bug 8315066
- * @summary Test that Ideal transformations of RShiftINode* are being performed as expected.
+ * @bug 8320330 8315066
+ * @summary Test that RShiftINode optimizations are being performed as expected.
  * @library /test/lib /
  * @run driver compiler.c2.irTests.RShiftINodeIdealizationTests
  */
@@ -37,42 +37,77 @@ public class RShiftINodeIdealizationTests {
         TestFramework.run();
     }
 
-    @Run(test = {"test1", "test2", "test3"})
+    @Run(test = { "test1", "test2", "test3", "test4", "test5", "test6", "test7" })
     public void runMethod() {
         int a = RunInfo.getRandom().nextInt();
         int b = RunInfo.getRandom().nextInt();
+        int c = RunInfo.getRandom().nextInt();
+        int d = RunInfo.getRandom().nextInt();
 
         int min = Integer.MIN_VALUE;
         int max = Integer.MAX_VALUE;
 
-        assertResult(0, 0);
+        assertResult(a, 0);
         assertResult(a, b);
+        assertResult(b, a);
+        assertResult(c, d);
+        assertResult(d, c);
+        assertResult(min, max);
+        assertResult(max, min);
         assertResult(min, min);
         assertResult(max, max);
     }
 
     @DontCompile
-    public void assertResult(int a, int b) {
-        Asserts.assertEQ(1, test1(a, b));
-        Asserts.assertEQ(1, test2(a, b));
-        Asserts.assertEQ(Integer.MIN_VALUE >> 4, test3(a, b));
+    public void assertResult(int x, int y) {
+        Asserts.assertEQ((x >> y) >= 0 ? 0 : 1, test1(x, y));
+        Asserts.assertEQ(((x & 127) >> y) >= 0 ? 0 : 1, test2(x, y));
+        Asserts.assertEQ(((-(x & 127) - 1) >> y) >= 0 ? 0 : 1, test3(x, y));
+        Asserts.assertEQ((x >> 30) > 4 ? 0 : 1, test4(x, y));
+        Asserts.assertEQ(1, test5(x, y));
+        Asserts.assertEQ(1, test6(x, y));
+        Asserts.assertEQ(Integer.MIN_VALUE >> 4, test7(x, y));
+    }
+
+    @Test
+    @IR(counts = { IRNode.RSHIFT, "1" })
+    public int test1(int x, int y) {
+        return (x >> y) >= 0 ? 0 : 1;
+    }
+
+    @Test
+    @IR(failOn = { IRNode.RSHIFT })
+    public int test2(int x, int y) {
+        return ((x & 127) >> y) >= 0 ? 0 : 1;
+    }
+
+    @Test
+    @IR(failOn = { IRNode.RSHIFT })
+    public int test3(int x, int y) {
+        return ((-(x & 127) - 1) >> y) >= 0 ? 0 : 1;
+    }
+
+    @Test
+    @IR(failOn = { IRNode.RSHIFT })
+    public int test4(int x, int y) {
+        return (x >> 30) > 4 ? 0 : 1;
     }
 
     @Test
     @IR(failOn = {IRNode.RSHIFT_I})
-    public int test1(int x, int y) {
+    public int test5(int x, int y) {
         return (Math.max(x, -100) >> (y | 3)) >= (-100 >> 3) ? 1 : 0;
     }
 
     @Test
     @IR(failOn = {IRNode.RSHIFT_I})
-    public int test2(int x, int y) {
+    public int test6(int x, int y) {
         return Integer.compareUnsigned((x >>> 1) >> (y | 8), (Integer.MAX_VALUE >> 8) + 1) < 0 ? 1 : 0;
     }
 
     @Test
     @IR(failOn = {IRNode.RSHIFT_I})
-    public int test3(int x, int y) {
+    public int test7(int x, int y) {
         return ((x | Integer.MIN_VALUE) >> (y | 8)) & (Integer.MIN_VALUE >> 4);
     }
 }

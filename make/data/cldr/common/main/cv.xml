@@ -32,6 +32,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="fr_CA">канадӑн франци</language>
 			<language type="fr_CH">швейцарӗн франци</language>
 			<language type="hi">хинди</language>
+			<language type="hi_Latn" draft="unconfirmed">хинди чĕлхи (латин)</language>
+			<language type="hi_Latn" alt="variant" draft="unconfirmed">хинди (латин)</language>
 			<language type="id">индонези</language>
 			<language type="it">итали</language>
 			<language type="ja">япони</language>
@@ -215,7 +217,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="IL">Израиль</territory>
 			<territory type="IM">Мэн утравӗ</territory>
 			<territory type="IN">Инди</territory>
-			<territory type="IO">Британин территори Инди океанӗре</territory>
+			<territory type="IO" draft="provisional">Британин территори Инди океанӗре</territory>
+			<territory type="IO" alt="biot" draft="unconfirmed">Британи территори Инди океанӗре</territory>
+			<territory type="IO" alt="chagos" draft="unconfirmed">Чагос архипелаге</territory>
 			<territory type="IQ">Ирак</territory>
 			<territory type="IR">Иран</territory>
 			<territory type="IS">Исланди</territory>
@@ -390,33 +394,21 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<codePattern type="territory">Регион: {0}</codePattern>
 		</codePatterns>
 	</localeDisplayNames>
-	<layout>
-		<orientation>
-			<characterOrder>left-to-right</characterOrder>
-			<lineOrder>top-to-bottom</lineOrder>
-		</orientation>
-	</layout>
 	<characters>
-		<exemplarCharacters>[а ӑ б в г д е ӗ ё ж з и й к л м н о п р с ҫ т у ӳ ф х ц ч ш щ ъ ы ь э ю я]</exemplarCharacters>
-		<exemplarCharacters type="auxiliary" draft="contributed">[{а\u0301} {е\u0301} {и\u0301} {о\u0301} {у\u0301} {ы\u0301} {э\u0301} {ю\u0301} {я\u0301}]</exemplarCharacters>
-		<exemplarCharacters type="index">[А Ӑ Б В Г Д Е Ӗ Ё Ж З И Й К Л М Н О П Р С Ҫ Т У Ӳ Ф Х Ц Ч Ш Щ Ъ Ы Ь Э Ю Я]</exemplarCharacters>
+		<exemplarCharacters>[аӑ б в г д еӗё ж з и й к л м н о п р с ҫ т уӳ ф х ц ч ш щ ъ ы ь э ю я]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary" draft="contributed">[{а́} {е́} {и́} {о́} {у́} {ы́} {э́} {ю́} {я́}]</exemplarCharacters>
+		<exemplarCharacters type="index">[АӐ Б В Г Д ЕӖЁ Ж З И Й К Л М Н О П Р С Ҫ Т УӲ Ф Х Ц Ч Ш Щ Ъ Ы Ь Э Ю Я]</exemplarCharacters>
 		<exemplarCharacters type="numbers" draft="contributed">[\- ‑ , % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
-		<exemplarCharacters type="punctuation">[\- ‐ ‑ – — , ; \: ! ? . … ' ‘ ‚ &quot; “ „ « » ( ) \[ \] \{ \} § @ * / \&amp; #]</exemplarCharacters>
+		<exemplarCharacters type="punctuation">[\- ‐‑ – — , ; \: ! ? . … '‘‚ &quot;“„ « » ( ) \[ \] \{ \} § @ * / \&amp; #]</exemplarCharacters>
 		<parseLenients scope="date" level="lenient">
-			<parseLenient sample="-" draft="contributed">[\--/]</parseLenient>
-			<parseLenient sample=":" draft="contributed">[\:∶]</parseLenient>
+			<parseLenient sample=":" draft="contributed">[\: ∶]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="general" level="lenient">
-			<parseLenient sample="." draft="contributed">[.․。︒﹒．｡]</parseLenient>
-			<parseLenient sample="’" draft="contributed">['ʼ՚᾽᾿’＇]</parseLenient>
-			<parseLenient sample="%" draft="contributed">[%٪﹪％]</parseLenient>
-			<parseLenient sample="‰" draft="contributed">[؉‰]</parseLenient>
-			<parseLenient sample="$" draft="contributed">[\$﹩＄$]</parseLenient>
-			<parseLenient sample="£" draft="contributed">[£₤]</parseLenient>
+			<parseLenient sample="£" draft="contributed">[£ ₤]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="number" level="lenient">
-			<parseLenient sample="-" draft="contributed">[\-‒⁻₋−➖﹣－]</parseLenient>
-			<parseLenient sample="," draft="contributed">[,،٫、︐︑﹐﹑，､]</parseLenient>
+			<parseLenient sample="-" draft="contributed">[\-－﹣ ‑ ‒ −⁻₋ ➖]</parseLenient>
+			<parseLenient sample="," draft="contributed">[,，﹐︐ ، ٫ 、﹑､︑]</parseLenient>
 		</parseLenients>
 	</characters>
 	<delimiters>
@@ -455,15 +447,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateTimeFormat>
 							<pattern>{1}, {0}</pattern>
 						</dateTimeFormat>
-						<dateTimeFormat type="atTime">
-							<pattern>{1}, {0}</pattern>
-						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="long">
 						<dateTimeFormat>
-							<pattern>{1}, {0}</pattern>
-						</dateTimeFormat>
-						<dateTimeFormat type="atTime">
 							<pattern>{1}, {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
@@ -471,15 +457,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateTimeFormat>
 							<pattern>{1}, {0}</pattern>
 						</dateTimeFormat>
-						<dateTimeFormat type="atTime">
-							<pattern>{1}, {0}</pattern>
-						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="short">
 						<dateTimeFormat>
-							<pattern>{1}, {0}</pattern>
-						</dateTimeFormat>
-						<dateTimeFormat type="atTime">
 							<pattern>{1}, {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
@@ -624,20 +604,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<month type="11">чӳк</month>
 							<month type="12">раш.</month>
 						</monthWidth>
-						<monthWidth type="narrow">
-							<month type="1">К</month>
-							<month type="2">Н</month>
-							<month type="3">П</month>
-							<month type="4">А</month>
-							<month type="5">Ҫ</month>
-							<month type="6">Ҫ</month>
-							<month type="7">У</month>
-							<month type="8">Ҫ</month>
-							<month type="9">А</month>
-							<month type="10">Ю</month>
-							<month type="11">Ч</month>
-							<month type="12">Р</month>
-						</monthWidth>
 						<monthWidth type="wide">
 							<month type="1">кӑрлач</month>
 							<month type="2">нарӑс</month>
@@ -654,20 +620,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</monthWidth>
 					</monthContext>
 					<monthContext type="stand-alone">
-						<monthWidth type="abbreviated">
-							<month type="1">кӑр.</month>
-							<month type="2">нар.</month>
-							<month type="3">пуш</month>
-							<month type="4">ака</month>
-							<month type="5">ҫу</month>
-							<month type="6">ҫӗр.</month>
-							<month type="7">утӑ</month>
-							<month type="8">ҫур.</month>
-							<month type="9">авӑн</month>
-							<month type="10">юпа</month>
-							<month type="11">чӳк</month>
-							<month type="12">раш.</month>
-						</monthWidth>
 						<monthWidth type="narrow">
 							<month type="1">К</month>
 							<month type="2">Н</month>
@@ -682,43 +634,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<month type="11">Ч</month>
 							<month type="12">Р</month>
 						</monthWidth>
-						<monthWidth type="wide">
-							<month type="1">кӑрлач</month>
-							<month type="2">нарӑс</month>
-							<month type="3">пуш</month>
-							<month type="4">ака</month>
-							<month type="5">ҫу</month>
-							<month type="6">ҫӗртме</month>
-							<month type="7">утӑ</month>
-							<month type="8">ҫурла</month>
-							<month type="9">авӑн</month>
-							<month type="10">юпа</month>
-							<month type="11">чӳк</month>
-							<month type="12">раштав</month>
-						</monthWidth>
 					</monthContext>
 				</months>
 				<days>
 					<dayContext type="format">
 						<dayWidth type="abbreviated">
-							<day type="sun">выр.</day>
-							<day type="mon">тун.</day>
-							<day type="tue">ытл.</day>
-							<day type="wed">юн.</day>
-							<day type="thu">кӗҫ.</day>
-							<day type="fri">эр.</day>
-							<day type="sat">шӑм.</day>
-						</dayWidth>
-						<dayWidth type="narrow">
-							<day type="sun">В</day>
-							<day type="mon">Т</day>
-							<day type="tue">Ы</day>
-							<day type="wed">Ю</day>
-							<day type="thu">К</day>
-							<day type="fri">Э</day>
-							<day type="sat">Ш</day>
-						</dayWidth>
-						<dayWidth type="short">
 							<day type="sun">выр.</day>
 							<day type="mon">тун.</day>
 							<day type="tue">ытл.</day>
@@ -738,15 +658,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</dayWidth>
 					</dayContext>
 					<dayContext type="stand-alone">
-						<dayWidth type="abbreviated">
-							<day type="sun">выр.</day>
-							<day type="mon">тун.</day>
-							<day type="tue">ытл.</day>
-							<day type="wed">юн.</day>
-							<day type="thu">кӗҫ.</day>
-							<day type="fri">эр.</day>
-							<day type="sat">шӑм.</day>
-						</dayWidth>
 						<dayWidth type="narrow">
 							<day type="sun">В</day>
 							<day type="mon">Т</day>
@@ -756,48 +667,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<day type="fri">Э</day>
 							<day type="sat">Ш</day>
 						</dayWidth>
-						<dayWidth type="short">
-							<day type="sun">выр.</day>
-							<day type="mon">тун.</day>
-							<day type="tue">ытл.</day>
-							<day type="wed">юн.</day>
-							<day type="thu">кӗҫ.</day>
-							<day type="fri">эр.</day>
-							<day type="sat">шӑм.</day>
-						</dayWidth>
-						<dayWidth type="wide">
-							<day type="sun">вырсарникун</day>
-							<day type="mon">тунтикун</day>
-							<day type="tue">ытларикун</day>
-							<day type="wed">юнкун</day>
-							<day type="thu">кӗҫнерникун</day>
-							<day type="fri">эрнекун</day>
-							<day type="sat">шӑматкун</day>
-						</dayWidth>
 					</dayContext>
 				</days>
 				<quarters>
 					<quarterContext type="format">
-						<quarterWidth type="abbreviated">
-							<quarter type="1">1-мӗш кв.</quarter>
-							<quarter type="2">2-мӗш кв.</quarter>
-							<quarter type="3">3-мӗш кв.</quarter>
-							<quarter type="4">4-мӗш кв.</quarter>
-						</quarterWidth>
-						<quarterWidth type="narrow">
-							<quarter type="1">1</quarter>
-							<quarter type="2">2</quarter>
-							<quarter type="3">3</quarter>
-							<quarter type="4">4</quarter>
-						</quarterWidth>
-						<quarterWidth type="wide">
-							<quarter type="1">1-мӗш квартал</quarter>
-							<quarter type="2">2-мӗш квартал</quarter>
-							<quarter type="3">3-мӗш квартал</quarter>
-							<quarter type="4">4-мӗш квартал</quarter>
-						</quarterWidth>
-					</quarterContext>
-					<quarterContext type="stand-alone">
 						<quarterWidth type="abbreviated">
 							<quarter type="1">1-мӗш кв.</quarter>
 							<quarter type="2">2-мӗш кв.</quarter>
@@ -812,32 +685,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</quarterWidth>
 					</quarterContext>
 				</quarters>
-				<dayPeriods>
-					<dayPeriodContext type="format">
-						<dayPeriodWidth type="narrow">
-							<dayPeriod type="am">AM</dayPeriod>
-							<dayPeriod type="pm">PM</dayPeriod>
-						</dayPeriodWidth>
-						<dayPeriodWidth type="wide">
-							<dayPeriod type="am">AM</dayPeriod>
-							<dayPeriod type="pm">PM</dayPeriod>
-						</dayPeriodWidth>
-					</dayPeriodContext>
-					<dayPeriodContext type="stand-alone">
-						<dayPeriodWidth type="abbreviated">
-							<dayPeriod type="am">AM</dayPeriod>
-							<dayPeriod type="pm">PM</dayPeriod>
-						</dayPeriodWidth>
-						<dayPeriodWidth type="narrow">
-							<dayPeriod type="am">AM</dayPeriod>
-							<dayPeriod type="pm">PM</dayPeriod>
-						</dayPeriodWidth>
-						<dayPeriodWidth type="wide">
-							<dayPeriod type="am">AM</dayPeriod>
-							<dayPeriod type="pm">PM</dayPeriod>
-						</dayPeriodWidth>
-					</dayPeriodContext>
-				</dayPeriods>
 				<eras>
 					<eraNames>
 						<era type="0">Христос ҫуралнӑ кунччен</era>
@@ -899,15 +746,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateTimeFormat>
 							<pattern>{1}, {0}</pattern>
 						</dateTimeFormat>
-						<dateTimeFormat type="atTime">
-							<pattern>{1}, {0}</pattern>
-						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="long">
 						<dateTimeFormat>
-							<pattern>{1}, {0}</pattern>
-						</dateTimeFormat>
-						<dateTimeFormat type="atTime">
 							<pattern>{1}, {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
@@ -915,15 +756,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateTimeFormat>
 							<pattern>{1}, {0}</pattern>
 						</dateTimeFormat>
-						<dateTimeFormat type="atTime">
-							<pattern>{1}, {0}</pattern>
-						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="short">
 						<dateTimeFormat>
-							<pattern>{1}, {0}</pattern>
-						</dateTimeFormat>
-						<dateTimeFormat type="atTime">
 							<pattern>{1}, {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
@@ -1067,19 +902,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="0">кӑҫал</relative>
 				<relative type="1">ҫитес ҫ.</relative>
 			</field>
-			<field type="year-narrow">
-				<displayName>ҫ.</displayName>
-				<relative type="-1">пӗлтӗр</relative>
-				<relative type="0">кӑҫал</relative>
-				<relative type="1">ҫитес ҫ.</relative>
-			</field>
 			<field type="quarter">
 				<displayName>квартал</displayName>
 			</field>
 			<field type="quarter-short">
-				<displayName>кв.</displayName>
-			</field>
-			<field type="quarter-narrow">
 				<displayName>кв.</displayName>
 			</field>
 			<field type="month">
@@ -1089,12 +915,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="1">ҫитес уйӑхра</relative>
 			</field>
 			<field type="month-short">
-				<displayName>уй.</displayName>
-				<relative type="-1">иртнӗ уй.</relative>
-				<relative type="0">ку уй.</relative>
-				<relative type="1">ҫитес уй.</relative>
-			</field>
-			<field type="month-narrow">
 				<displayName>уй.</displayName>
 				<relative type="-1">иртнӗ уй.</relative>
 				<relative type="0">ку уй.</relative>
@@ -1112,14 +932,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="-1">иртнӗ эр.</relative>
 				<relative type="0">ҫак эр.</relative>
 				<relative type="1">ҫитес эр.</relative>
-				<relativePeriod>эрнере {0}</relativePeriod>
-			</field>
-			<field type="week-narrow">
-				<displayName>эр.</displayName>
-				<relative type="-1">иртнӗ эр.</relative>
-				<relative type="0">ҫак эр.</relative>
-				<relative type="1">ҫитес эр.</relative>
-				<relativePeriod>эрнере {0}</relativePeriod>
 			</field>
 			<field type="day">
 				<displayName>кун</displayName>
@@ -1129,15 +941,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="day-short">
 				<displayName>кн.</displayName>
-				<relative type="-1">ӗнер</relative>
-				<relative type="0">паян</relative>
-				<relative type="1">ыран</relative>
-			</field>
-			<field type="day-narrow">
-				<displayName>кн.</displayName>
-				<relative type="-1">ӗнер</relative>
-				<relative type="0">паян</relative>
-				<relative type="1">ыран</relative>
 			</field>
 			<field type="weekday">
 				<displayName>эрнери кун</displayName>
@@ -3358,20 +3161,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<decimal>,</decimal>
 			<group> </group>
 		</symbols>
-		<decimalFormats numberSystem="latn">
-			<decimalFormatLength>
-				<decimalFormat>
-					<pattern>#,##0.###</pattern>
-				</decimalFormat>
-			</decimalFormatLength>
-		</decimalFormats>
-		<scientificFormats numberSystem="latn">
-			<scientificFormatLength>
-				<scientificFormat>
-					<pattern>#E0</pattern>
-				</scientificFormat>
-			</scientificFormatLength>
-		</scientificFormats>
 		<percentFormats numberSystem="latn">
 			<percentFormatLength>
 				<percentFormat>
@@ -3384,105 +3173,78 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<currencyFormat type="standard">
 					<pattern>#,##0.00 ¤</pattern>
 				</currencyFormat>
-				<currencyFormat type="accounting">
-					<pattern>#,##0.00 ¤</pattern>
-					<pattern alt="noCurrency">#,##0.00</pattern>
-				</currencyFormat>
 			</currencyFormatLength>
+			<unitPattern count="other">{0} {1}</unitPattern>
 		</currencyFormats>
 		<currencies>
 			<currency type="AED">
 				<displayName>АПЭ дирхамӗ</displayName>
-				<displayName count="other">АПЭ дирхамӗ</displayName>
 			</currency>
 			<currency type="AFN">
 				<displayName>афганийӗ</displayName>
-				<displayName count="other">афганийӗ</displayName>
 			</currency>
 			<currency type="ALL">
 				<displayName>Албани лекӗ</displayName>
-				<displayName count="other">Албани лекӗ</displayName>
 			</currency>
 			<currency type="AMD">
 				<displayName>Армяни драмӗ</displayName>
-				<displayName count="other">Армяни драмӗ</displayName>
 			</currency>
 			<currency type="ANG">
 				<displayName>Нидерланд Антиллиан гульденӗ</displayName>
-				<displayName count="other">Нидерланд Антиллиан гульденӗ</displayName>
 			</currency>
 			<currency type="AOA">
 				<displayName>Ангола кванзӗ</displayName>
-				<displayName count="other">Ангола кванзӗ</displayName>
 			</currency>
 			<currency type="ARS">
 				<displayName>Аргентина песийӗ</displayName>
-				<displayName count="other">Аргентина песийӗ</displayName>
 			</currency>
 			<currency type="AUD">
 				<displayName>Австрали долларӗ</displayName>
-				<displayName count="other">Австрали долларӗ</displayName>
 			</currency>
 			<currency type="AWG">
 				<displayName>Аруба флоринӗ</displayName>
-				<displayName count="other">Аруба флоринӗ</displayName>
 			</currency>
 			<currency type="AZN">
 				<displayName>Азербайджан маначӗ</displayName>
-				<displayName count="other">Азербайджан маначӗ</displayName>
 			</currency>
 			<currency type="BAM">
 				<displayName>Боснипе Герцеговина конвертланакан марки</displayName>
-				<displayName count="other">Боснипе Герцеговина конвертланакан марки</displayName>
 			</currency>
 			<currency type="BBD">
 				<displayName>Барбадос долларӗ</displayName>
-				<displayName count="other">Барбадос долларӗ</displayName>
 			</currency>
 			<currency type="BDT">
 				<displayName>Бангладеш таки</displayName>
-				<displayName count="other">Бангладеш таки</displayName>
 			</currency>
 			<currency type="BGN">
 				<displayName>Болгари левӗ</displayName>
-				<displayName count="other">Болгари левӗ</displayName>
 			</currency>
 			<currency type="BHD">
 				<displayName>Бахрейн динарӗ</displayName>
-				<displayName count="other">Бахрейн динарӗ</displayName>
 			</currency>
 			<currency type="BIF">
 				<displayName>Бурунди франкӗ</displayName>
-				<displayName count="other">Бурунди франкӗ</displayName>
 			</currency>
 			<currency type="BMD">
 				<displayName>Бермуд долларӗ</displayName>
-				<displayName count="other">Бермуд долларӗ</displayName>
-				<symbol draft="contributed">BMD</symbol>
 			</currency>
 			<currency type="BND">
 				<displayName>Бруней долларӗ</displayName>
-				<displayName count="other">Бруней долларӗ</displayName>
 			</currency>
 			<currency type="BOB">
 				<displayName>Боливи боливианӗ</displayName>
-				<displayName count="other">Боливи боливианӗ</displayName>
 			</currency>
 			<currency type="BRL">
 				<displayName>Бразили реалӗ</displayName>
-				<displayName count="other">Бразили реалӗ</displayName>
 			</currency>
 			<currency type="BSD">
 				<displayName>Багам долларӗ</displayName>
-				<displayName count="other">Багам долларӗ</displayName>
 			</currency>
 			<currency type="BTN">
 				<displayName>Бутан нгултрумӗ</displayName>
-				<displayName count="other">Бутан нгултрумӗ</displayName>
 			</currency>
 			<currency type="BWP">
 				<displayName>Ботсвана пули</displayName>
-				<displayName count="other">Ботсвана пули</displayName>
 			</currency>
 			<currency type="BYN">
 				<displayName>Беларуҫ тенкӗ</displayName>
@@ -3490,538 +3252,408 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="BZD">
 				<displayName>Белиз долларӗ</displayName>
-				<displayName count="other">Белиз долларӗ</displayName>
 			</currency>
 			<currency type="CAD">
 				<displayName>Канада долларӗ</displayName>
-				<displayName count="other">Канада долларӗ</displayName>
 			</currency>
 			<currency type="CDF">
 				<displayName>Конголези франкӗ</displayName>
-				<displayName count="other">Конголези франкӗ</displayName>
 			</currency>
 			<currency type="CHF">
 				<displayName>Швейцари франкӗ</displayName>
-				<displayName count="other">Швейцари франкӗ</displayName>
 			</currency>
 			<currency type="CLP">
 				<displayName>Чили песийӗ</displayName>
-				<displayName count="other">Чили песийӗ</displayName>
 			</currency>
 			<currency type="CNH">
 				<displayName>Китай офшор юанӗ</displayName>
-				<displayName count="other">Китай офшор юанӗ</displayName>
 			</currency>
 			<currency type="CNY">
 				<displayName>Китай юанӗ</displayName>
-				<displayName count="other">Китай юанӗ</displayName>
 			</currency>
 			<currency type="COP">
 				<displayName>Колумби песийӗ</displayName>
-				<displayName count="other">Колумби песийӗ</displayName>
 			</currency>
 			<currency type="CRC">
 				<displayName>Коста-Рика колонӗ</displayName>
-				<displayName count="other">Коста-Рика колонӗ</displayName>
 			</currency>
 			<currency type="CUC">
 				<displayName>Куба конвертланакан песийӗ</displayName>
-				<displayName count="other">Куба конвертланакан песийӗ</displayName>
 			</currency>
 			<currency type="CUP">
 				<displayName>Куба песийӗ</displayName>
-				<displayName count="other">Куба песийӗ</displayName>
 			</currency>
 			<currency type="CVE">
 				<displayName>Кабо-Верде эскудӗ</displayName>
-				<displayName count="other">Кабо-Верде эскудӗ</displayName>
 			</currency>
 			<currency type="CZK">
 				<displayName>Чехи кронӗ</displayName>
-				<displayName count="other">Чехи кронӗ</displayName>
 			</currency>
 			<currency type="DJF">
 				<displayName>Джибути франкӗ</displayName>
-				<displayName count="other">Джибути франкӗ</displayName>
 			</currency>
 			<currency type="DKK">
 				<displayName>Дани кронӗ</displayName>
-				<displayName count="other">Дани кронӗ</displayName>
 			</currency>
 			<currency type="DOP">
 				<displayName>Доминикан песийӗ</displayName>
-				<displayName count="other">Доминикан песийӗ</displayName>
 			</currency>
 			<currency type="DZD">
 				<displayName>Алжир динарӗ</displayName>
-				<displayName count="other">Алжир динарӗ</displayName>
 			</currency>
 			<currency type="EGP">
 				<displayName>Египет фунчӗ</displayName>
-				<displayName count="other">Египет фунчӗ</displayName>
 			</currency>
 			<currency type="ERN">
 				<displayName>Эритрей накфӗ</displayName>
-				<displayName count="other">Эритрей накфӗ</displayName>
 			</currency>
 			<currency type="ETB">
 				<displayName>Эфиопи бырӗ</displayName>
-				<displayName count="other">Эфиопи бырӗ</displayName>
 			</currency>
 			<currency type="EUR">
 				<displayName>евро</displayName>
-				<displayName count="other">евро</displayName>
 			</currency>
 			<currency type="FJD">
 				<displayName>Фиджи долларӗ</displayName>
-				<displayName count="other">Фиджи долларӗ</displayName>
 			</currency>
 			<currency type="FKP">
 				<displayName>Факланд утравӗсен фунчӗ</displayName>
-				<displayName count="other">Факланд утравӗсен фунчӗ</displayName>
 			</currency>
 			<currency type="GBP">
 				<displayName>Британи фунчӗ</displayName>
-				<displayName count="other">Британи фунчӗ</displayName>
 			</currency>
 			<currency type="GEL">
 				<displayName>Грузи ларийӗ</displayName>
-				<displayName count="other">Грузи ларийӗ</displayName>
 			</currency>
 			<currency type="GHS">
 				<displayName>Гана седийӗ</displayName>
-				<displayName count="other">Гана седийӗ</displayName>
 			</currency>
 			<currency type="GIP">
 				<displayName>Гибралтар фунчӗ</displayName>
-				<displayName count="other">Гибралтар фунчӗ</displayName>
 			</currency>
 			<currency type="GMD">
 				<displayName>Гамби даласийӗ</displayName>
-				<displayName count="other">Гамби даласийӗ</displayName>
 			</currency>
 			<currency type="GNF">
 				<displayName>Гвиней франкӗ</displayName>
-				<displayName count="other">Гвиней франкӗ</displayName>
 			</currency>
 			<currency type="GTQ">
 				<displayName>Гватемала кетсалӗ</displayName>
-				<displayName count="other">Гватемала кетсалӗ</displayName>
 			</currency>
 			<currency type="GYD">
 				<displayName>Гайана долларӗ</displayName>
-				<displayName count="other">Гайана долларӗ</displayName>
 			</currency>
 			<currency type="HKD">
 				<displayName>Гонконг долларӗ</displayName>
-				<displayName count="other">Гонконг долларӗ</displayName>
 			</currency>
 			<currency type="HNL">
 				<displayName>Гондурас лемпирӗ</displayName>
-				<displayName count="other">Гондурас лемпирӗ</displayName>
 			</currency>
 			<currency type="HRK">
 				<displayName>Хорвати куни</displayName>
-				<displayName count="other">Хорвати куни</displayName>
 			</currency>
 			<currency type="HTG">
 				<displayName>Гаити гурдӗ</displayName>
-				<displayName count="other">Гаити гурдӗ</displayName>
 			</currency>
 			<currency type="HUF">
 				<displayName>Венгри форинчӗ</displayName>
-				<displayName count="other">Венгри форинчӗ</displayName>
 			</currency>
 			<currency type="IDR">
 				<displayName>Индонези рупийӗ</displayName>
-				<displayName count="other">Индонези рупийӗ</displayName>
 			</currency>
 			<currency type="ILS">
 				<displayName>Ҫӗнӗ Израиль шекелӗ</displayName>
-				<displayName count="other">Ҫӗнӗ Израиль шекелӗ</displayName>
 			</currency>
 			<currency type="INR">
 				<displayName>Инди рупийӗ</displayName>
-				<displayName count="other">Инди рупийӗ</displayName>
 			</currency>
 			<currency type="IQD">
 				<displayName>Ирак динарӗ</displayName>
-				<displayName count="other">Ирак динарӗ</displayName>
 			</currency>
 			<currency type="IRR">
 				<displayName>Иран риалӗ</displayName>
-				<displayName count="other">Иран риалӗ</displayName>
 			</currency>
 			<currency type="ISK">
 				<displayName>Исланди кронӗ</displayName>
-				<displayName count="other">Исланди кронӗ</displayName>
 			</currency>
 			<currency type="JMD">
 				<displayName>Ямайка долларӗ</displayName>
-				<displayName count="other">Ямайка долларӗ</displayName>
 			</currency>
 			<currency type="JOD">
 				<displayName>Иордан динарӗ</displayName>
-				<displayName count="other">Иордан динарӗ</displayName>
 			</currency>
 			<currency type="JPY">
 				<displayName>Япони иени</displayName>
-				<displayName count="other">Япони иени</displayName>
 			</currency>
 			<currency type="KES">
 				<displayName>Кени шиллингӗ</displayName>
-				<displayName count="other">Кени шиллингӗ</displayName>
 			</currency>
 			<currency type="KGS">
 				<displayName>Киргиз сомӗ</displayName>
-				<displayName count="other">Киргиз сомӗ</displayName>
 			</currency>
 			<currency type="KHR">
 				<displayName>Камбоджа риелӗ</displayName>
-				<displayName count="other">Камбоджа риелӗ</displayName>
 			</currency>
 			<currency type="KMF">
 				<displayName>Комора франкӗ</displayName>
-				<displayName count="other">Комора франкӗ</displayName>
 			</currency>
 			<currency type="KPW">
 				<displayName>КХДР вони</displayName>
-				<displayName count="other">КХДР вони</displayName>
 			</currency>
 			<currency type="KRW">
 				<displayName>Корей вони</displayName>
-				<displayName count="other">Корей вони</displayName>
 			</currency>
 			<currency type="KWD">
 				<displayName>Кувейт динарӗ</displayName>
-				<displayName count="other">Кувейт динарӗ</displayName>
 			</currency>
 			<currency type="KYD">
 				<displayName>Кайман утравӗсен долларӗ</displayName>
-				<displayName count="other">Кайман утравӗсен долларӗ</displayName>
 			</currency>
 			<currency type="KZT">
 				<displayName>Казах тенгейӗ</displayName>
-				<displayName count="other">Казах тенгейӗ</displayName>
 			</currency>
 			<currency type="LAK">
 				<displayName>Лаос кипӗ</displayName>
-				<displayName count="other">Лаос кипӗ</displayName>
 			</currency>
 			<currency type="LBP">
 				<displayName>Ливан фунчӗ</displayName>
-				<displayName count="other">Ливан фунчӗ</displayName>
 			</currency>
 			<currency type="LKR">
 				<displayName>Шри-ланка рупийӗ</displayName>
-				<displayName count="other">Шри-ланка рупийӗ</displayName>
 			</currency>
 			<currency type="LRD">
 				<displayName>Либери долларӗ</displayName>
-				<displayName count="other">Либери долларӗ</displayName>
 			</currency>
 			<currency type="LSL">
 				<displayName>Лесото лотийӗ</displayName>
-				<displayName count="other">Лесото лотийӗ</displayName>
 			</currency>
 			<currency type="LYD">
 				<displayName>Ливи динарӗ</displayName>
-				<displayName count="other">Ливи динарӗ</displayName>
 			</currency>
 			<currency type="MAD">
 				<displayName>Марокко дирхамӗ</displayName>
-				<displayName count="other">Марокко дирхамӗ</displayName>
 			</currency>
 			<currency type="MDL">
 				<displayName>Молдова лайӗ</displayName>
-				<displayName count="other">Молдова лайӗ</displayName>
 			</currency>
 			<currency type="MGA">
 				<displayName>Малагаси ариарийӗ</displayName>
-				<displayName count="other">Малагаси ариарийӗ</displayName>
 			</currency>
 			<currency type="MKD">
 				<displayName>Македони денарӗ</displayName>
-				<displayName count="other">Македони денарӗ</displayName>
 			</currency>
 			<currency type="MMK">
 				<displayName>Мьянман кьятӗ</displayName>
-				<displayName count="other">Мьянман кьятӗ</displayName>
 			</currency>
 			<currency type="MNT">
 				<displayName>Монголи тугрикӗ</displayName>
-				<displayName count="other">Монголи тугрикӗ</displayName>
 			</currency>
 			<currency type="MOP">
 				<displayName>Макао патаки</displayName>
-				<displayName count="other">Макао патаки</displayName>
 			</currency>
 			<currency type="MRU">
 				<displayName>Мавритани угийӗ</displayName>
-				<displayName count="other">Мавритани угийӗ</displayName>
 			</currency>
 			<currency type="MUR">
 				<displayName>Маврики рупийӗ</displayName>
-				<displayName count="other">Маврики рупийӗ</displayName>
 			</currency>
 			<currency type="MVR">
 				<displayName>Мальдивсен руфийӗ</displayName>
-				<displayName count="other">Мальдивсен руфийӗ</displayName>
 			</currency>
 			<currency type="MWK">
 				<displayName>Малави квачӗ</displayName>
-				<displayName count="other">Малави квачӗ</displayName>
 			</currency>
 			<currency type="MXN">
 				<displayName>Мексика песийӗ</displayName>
-				<displayName count="other">Мексика песийӗ</displayName>
 			</currency>
 			<currency type="MYR">
 				<displayName>Малайзи ринггичӗ</displayName>
-				<displayName count="other">Малайзи ринггичӗ</displayName>
 			</currency>
 			<currency type="MZN">
 				<displayName>Мозамбик метикалӗ</displayName>
-				<displayName count="other">Мозамбик метикалӗ</displayName>
 			</currency>
 			<currency type="NAD">
 				<displayName>Намиби долларӗ</displayName>
-				<displayName count="other">Намиби долларӗ</displayName>
 			</currency>
 			<currency type="NGN">
 				<displayName>Нигери найрӗ</displayName>
-				<displayName count="other">Нигери найрӗ</displayName>
 			</currency>
 			<currency type="NIO">
 				<displayName>Никарагуа кордобӗ</displayName>
-				<displayName count="other">Никарагуа кордобӗ</displayName>
 			</currency>
 			<currency type="NOK">
 				<displayName>Норвеги кронӗ</displayName>
-				<displayName count="other">Норвеги кронӗ</displayName>
 			</currency>
 			<currency type="NPR">
 				<displayName>Непал рупийӗ</displayName>
-				<displayName count="other">Непал рупийӗ</displayName>
 			</currency>
 			<currency type="NZD">
 				<displayName>Ҫӗнӗ Зеланди долларӗ</displayName>
-				<displayName count="other">Ҫӗнӗ Зеланди долларӗ</displayName>
 			</currency>
 			<currency type="OMR">
 				<displayName>Оман риалӗ</displayName>
-				<displayName count="other">Оман риалӗ</displayName>
 			</currency>
 			<currency type="PAB">
 				<displayName>Панама бальбоа</displayName>
-				<displayName count="other">Панама бальбоа</displayName>
 			</currency>
 			<currency type="PEN">
 				<displayName>Перу солӗ</displayName>
-				<displayName count="other">Перу солӗ</displayName>
 			</currency>
 			<currency type="PGK">
 				<displayName>Папуа – Ҫӗнӗ Гвиней кини</displayName>
-				<displayName count="other">Папуа – Ҫӗнӗ Гвиней кини</displayName>
 			</currency>
 			<currency type="PHP">
 				<displayName>Филиппин песийӗ</displayName>
-				<displayName count="other">Филиппин песийӗ</displayName>
 			</currency>
 			<currency type="PKR">
 				<displayName>пакистан рупийӗ</displayName>
-				<displayName count="other">пакистан рупийӗ</displayName>
 			</currency>
 			<currency type="PLN">
 				<displayName>Польша злотыйӗ</displayName>
-				<displayName count="other">Польша злотыйӗ</displayName>
 			</currency>
 			<currency type="PYG">
 				<displayName>Парагвай гуаранӗ</displayName>
-				<displayName count="other">Парагвай гуаранӗ</displayName>
 			</currency>
 			<currency type="QAR">
 				<displayName>Катар риалӗ</displayName>
-				<displayName count="other">Катар риалӗ</displayName>
 			</currency>
 			<currency type="RON">
 				<displayName>Румыни лейӗ</displayName>
-				<displayName count="other">Румыни лейӗ</displayName>
 			</currency>
 			<currency type="RSD">
 				<displayName>Серби динарӗ</displayName>
-				<displayName count="other">Серби динарӗ</displayName>
 			</currency>
 			<currency type="RUB">
 				<displayName>Раҫҫей тенкӗ</displayName>
 				<displayName count="other">Раҫҫей тенки</displayName>
 				<symbol draft="contributed">₽</symbol>
-				<symbol alt="narrow" draft="contributed">₽</symbol>
 			</currency>
 			<currency type="RWF">
 				<displayName>Руанда франкӗ</displayName>
-				<displayName count="other">Руанда франкӗ</displayName>
 			</currency>
 			<currency type="SAR">
 				<displayName>Сауд риялӗ</displayName>
-				<displayName count="other">Сауд риялӗ</displayName>
 			</currency>
 			<currency type="SBD">
 				<displayName>Соломон утравӗсен долларӗ</displayName>
-				<displayName count="other">Соломон утравӗсен долларӗ</displayName>
 			</currency>
 			<currency type="SCR">
 				<displayName>Сейшел рупийӗ</displayName>
-				<displayName count="other">Сейшел рупийӗ</displayName>
 			</currency>
 			<currency type="SDG">
 				<displayName>Судан фунчӗ</displayName>
-				<displayName count="other">Судан фунчӗ</displayName>
 			</currency>
 			<currency type="SEK">
 				<displayName>Швеци кронӗ</displayName>
-				<displayName count="other">Швеци кронӗ</displayName>
 			</currency>
 			<currency type="SGD">
 				<displayName>Сингапур долларӗ</displayName>
-				<displayName count="other">Сингапур долларӗ</displayName>
 			</currency>
 			<currency type="SHP">
 				<displayName>Сӑваплӑ Елена утравӗн фунчӗ</displayName>
-				<displayName count="other">Сӑваплӑ Елена утравӗн фунчӗ</displayName>
+			</currency>
+			<currency type="SLE">
+				<displayName>леонӗ</displayName>
 			</currency>
 			<currency type="SLL">
-				<displayName>леонӗ</displayName>
-				<displayName count="other">леонӗ</displayName>
+				<displayName>леонӗ (1964—2022)</displayName>
 			</currency>
 			<currency type="SOS">
 				<displayName>Сомали шиллингӗ</displayName>
-				<displayName count="other">Сомали шиллингӗ</displayName>
 			</currency>
 			<currency type="SRD">
 				<displayName>Суринам долларӗ</displayName>
-				<displayName count="other">Суринам долларӗ</displayName>
 			</currency>
 			<currency type="SSP">
 				<displayName>Кӑнтӑр Судан фунчӗ</displayName>
-				<displayName count="other">Кӑнтӑр Судан фунчӗ</displayName>
 			</currency>
 			<currency type="STN">
 				<displayName>Сан-Томе тата Принсипи добрӗ</displayName>
-				<displayName count="other">Сан-Томе тата Принсипи добрӗ</displayName>
 			</currency>
 			<currency type="SYP">
 				<displayName>Сири фунчӗ</displayName>
-				<displayName count="other">Сири фунчӗ</displayName>
 			</currency>
 			<currency type="SZL">
 				<displayName>Свази лилангенийӗ</displayName>
-				<displayName count="other">Свази лилангенийӗ</displayName>
 			</currency>
 			<currency type="THB">
 				<displayName>Таиланд барӗ</displayName>
-				<displayName count="other">Таиланд барӗ</displayName>
 			</currency>
 			<currency type="TJS">
 				<displayName>Таджик сомонийӗ</displayName>
-				<displayName count="other">Таджик сомонийӗ</displayName>
 			</currency>
 			<currency type="TMT">
 				<displayName>Туркмен маначӗ</displayName>
-				<displayName count="other">Туркмен маначӗ</displayName>
 			</currency>
 			<currency type="TND">
 				<displayName>Тунези динарӗ</displayName>
-				<displayName count="other">Тунези динарӗ</displayName>
 			</currency>
 			<currency type="TOP">
 				<displayName>Тонган паанги</displayName>
-				<displayName count="other">Тонган паанги</displayName>
 			</currency>
 			<currency type="TRY">
 				<displayName>Турци лири</displayName>
-				<displayName count="other">Турци лири</displayName>
 			</currency>
 			<currency type="TTD">
 				<displayName>Тринидад тата Тобаго долларӗ</displayName>
-				<displayName count="other">Тринидад тата Тобаго долларӗ</displayName>
 			</currency>
 			<currency type="TWD">
 				<displayName>Ҫӗнӗ Тайван долларӗ</displayName>
-				<displayName count="other">Ҫӗнӗ Тайван долларӗ</displayName>
 			</currency>
 			<currency type="TZS">
 				<displayName>Танзани шиллингӗ</displayName>
-				<displayName count="other">Танзани шиллингӗ</displayName>
 			</currency>
 			<currency type="UAH">
 				<displayName>Украина гривни</displayName>
-				<displayName count="other">Украина гривни</displayName>
 			</currency>
 			<currency type="UGX">
 				<displayName>Уганда шиллингӗ</displayName>
-				<displayName count="other">Уганда шиллингӗ</displayName>
 			</currency>
 			<currency type="USD">
 				<displayName>АПШ долларӗ</displayName>
-				<displayName count="other">АПШ долларӗ</displayName>
 				<symbol draft="contributed">$</symbol>
 			</currency>
 			<currency type="UYU">
 				<displayName>Уругвай песийӗ</displayName>
-				<displayName count="other">Уругвай песийӗ</displayName>
 			</currency>
 			<currency type="UZS">
 				<displayName>Узбек сумӗ</displayName>
-				<displayName count="other">Узбек сумӗ</displayName>
 			</currency>
 			<currency type="VES">
 				<displayName>Венесуэла боливарӗ</displayName>
-				<displayName count="other">Венесуэла боливарӗ</displayName>
 			</currency>
 			<currency type="VND">
 				<displayName>Вьетнам донгӗ</displayName>
-				<displayName count="other">Вьетнам донгӗ</displayName>
 			</currency>
 			<currency type="VUV">
 				<displayName>Вануату ватуйӗ</displayName>
-				<displayName count="other">Вануату ватуйӗ</displayName>
 			</currency>
 			<currency type="WST">
 				<displayName>Самоа тали</displayName>
-				<displayName count="other">Самоа тали</displayName>
 			</currency>
 			<currency type="XAF">
 				<displayName>Тӗп Африка КФА франкӗ</displayName>
-				<displayName count="other">Тӗп Африка КФА франкӗ</displayName>
 			</currency>
 			<currency type="XCD">
 				<displayName>Хӗвелтухӑҫ Карибсем долларӗ</displayName>
-				<displayName count="other">Хӗвелтухӑҫ Карибсем долларӗ</displayName>
 			</currency>
 			<currency type="XOF">
 				<displayName>КФА ВСЕАО франкӗ</displayName>
-				<displayName count="other">КФА ВСЕАО франкӗ</displayName>
 			</currency>
 			<currency type="XPF">
 				<displayName>Франци Лӑпкӑ океан франкӗ</displayName>
-				<displayName count="other">Франци Лӑпкӑ океан франкӗ</displayName>
 			</currency>
 			<currency type="XXX">
 				<displayName>паллӑ мар валюта</displayName>
-				<displayName count="other">паллӑ мар валюта</displayName>
 			</currency>
 			<currency type="YER">
 				<displayName>Йемен риалӗ</displayName>
-				<displayName count="other">Йемен риалӗ</displayName>
 			</currency>
 			<currency type="ZAR">
 				<displayName>Кӑнтӑр Африка рэндӗ</displayName>
-				<displayName count="other">Кӑнтӑр Африка рэндӗ</displayName>
 			</currency>
 			<currency type="ZMW">
 				<displayName>Замби квачи</displayName>
-				<displayName count="other">Замби квачи</displayName>
 			</currency>
 		</currencies>
 		<miscPatterns numberSystem="latn">
@@ -4034,14 +3666,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	</numbers>
 	<units>
 		<unitLength type="long">
-			<compoundUnit type="per">
-				<compoundUnitPattern>{0}/{1}</compoundUnitPattern>
-			</compoundUnit>
-			<compoundUnit type="times">
-				<compoundUnitPattern>{0}⋅{1}</compoundUnitPattern>
-			</compoundUnit>
 			<coordinateUnit>
-				<displayName>енӗ</displayName>
 				<coordinateUnitPattern type="east">{0} хӗвелтухӑҫ тӑрӑхӗ</coordinateUnitPattern>
 				<coordinateUnitPattern type="north">{0} ҫурҫӗр тӑрӑхӗ</coordinateUnitPattern>
 				<coordinateUnitPattern type="south">{0} кӑнтӑр тӑрӑхӗ</coordinateUnitPattern>
@@ -4049,21 +3674,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</coordinateUnit>
 		</unitLength>
 		<unitLength type="short">
-			<coordinateUnit>
-				<displayName>енӗ</displayName>
-				<coordinateUnitPattern type="east">{0} х. т.</coordinateUnitPattern>
-				<coordinateUnitPattern type="north">{0} ҫ. т.</coordinateUnitPattern>
-				<coordinateUnitPattern type="south">{0} к. т.</coordinateUnitPattern>
-				<coordinateUnitPattern type="west">{0} а. т.</coordinateUnitPattern>
-			</coordinateUnit>
-		</unitLength>
-		<unitLength type="narrow">
-			<compoundUnit type="per">
-				<compoundUnitPattern>{0}/{1}</compoundUnitPattern>
-			</compoundUnit>
-			<compoundUnit type="times">
-				<compoundUnitPattern>{0}⋅{1}</compoundUnitPattern>
-			</compoundUnit>
 			<coordinateUnit>
 				<displayName>енӗ</displayName>
 				<coordinateUnitPattern type="east">{0} х. т.</coordinateUnitPattern>
@@ -4082,41 +3692,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<listPatternPart type="end">{0} е {1}</listPatternPart>
 			<listPatternPart type="2">{0} е {1}</listPatternPart>
 		</listPattern>
-		<listPattern type="or-narrow">
-			<listPatternPart type="start">{0}, {1}</listPatternPart>
-			<listPatternPart type="middle">{0}, {1}</listPatternPart>
-			<listPatternPart type="end">{0} е {1}</listPatternPart>
-			<listPatternPart type="2">{0} е {1}</listPatternPart>
-		</listPattern>
-		<listPattern type="or-short">
-			<listPatternPart type="start">{0}, {1}</listPatternPart>
-			<listPatternPart type="middle">{0}, {1}</listPatternPart>
-			<listPatternPart type="end">{0} е {1}</listPatternPart>
-			<listPatternPart type="2">{0} е {1}</listPatternPart>
-		</listPattern>
 		<listPattern type="standard-narrow">
-			<listPatternPart type="start">{0}, {1}</listPatternPart>
-			<listPatternPart type="middle">{0}, {1}</listPatternPart>
 			<listPatternPart type="end">{0}, {1}</listPatternPart>
 			<listPatternPart type="2">{0}, {1}</listPatternPart>
-		</listPattern>
-		<listPattern type="standard-short">
-			<listPatternPart type="start">{0}, {1}</listPatternPart>
-			<listPatternPart type="middle">{0}, {1}</listPatternPart>
-			<listPatternPart type="end">{0} тата {1}</listPatternPart>
-			<listPatternPart type="2">{0} тата {1}</listPatternPart>
-		</listPattern>
-		<listPattern type="unit">
-			<listPatternPart type="start">{0} {1}</listPatternPart>
-			<listPatternPart type="middle">{0} {1}</listPatternPart>
-			<listPatternPart type="end">{0} {1}</listPatternPart>
-			<listPatternPart type="2">{0} {1}</listPatternPart>
-		</listPattern>
-		<listPattern type="unit-narrow">
-			<listPatternPart type="start">{0} {1}</listPatternPart>
-			<listPatternPart type="middle">{0} {1}</listPatternPart>
-			<listPatternPart type="end">{0} {1}</listPatternPart>
-			<listPatternPart type="2">{0} {1}</listPatternPart>
 		</listPattern>
 		<listPattern type="unit-short">
 			<listPatternPart type="start">{0} {1}</listPatternPart>
@@ -4125,4 +3703,154 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<listPatternPart type="2">{0} {1}</listPatternPart>
 		</listPattern>
 	</listPatterns>
+	<characterLabels>
+		<characterLabelPattern type="all" draft="unconfirmed">{0} — пурте</characterLabelPattern>
+		<characterLabelPattern type="compatibility" draft="unconfirmed">{0} — пӗрлӗх</characterLabelPattern>
+		<characterLabelPattern type="enclosed" draft="unconfirmed">{0} — хупӑ</characterLabelPattern>
+		<characterLabelPattern type="extended" draft="unconfirmed">{0} — анлӑлан</characterLabelPattern>
+		<characterLabelPattern type="facing-left" draft="unconfirmed">{0} сулахаялла</characterLabelPattern>
+		<characterLabelPattern type="facing-right" draft="unconfirmed">{0} сылтӑмалла</characterLabelPattern>
+		<characterLabelPattern type="historic" draft="unconfirmed">{0} — истори</characterLabelPattern>
+		<characterLabelPattern type="miscellaneous" draft="unconfirmed">{0} — тӗрлӗрен</characterLabelPattern>
+		<characterLabelPattern type="other" draft="unconfirmed">{0} — ыттисем</characterLabelPattern>
+		<characterLabelPattern type="scripts" draft="unconfirmed">сӗрме купӑссем — {0}</characterLabelPattern>
+		<characterLabelPattern type="strokes" count="other" draft="unconfirmed">{0} штриха</characterLabelPattern>
+		<characterLabelPattern type="subscript" draft="unconfirmed">сроклӑ индекс {0}</characterLabelPattern>
+		<characterLabelPattern type="superscript" draft="unconfirmed">ҫӳлти индекс {0}</characterLabelPattern>
+		<characterLabel type="activities" draft="unconfirmed">активлӑх</characterLabel>
+		<characterLabel type="african_scripts" draft="unconfirmed">Африка ҫырулӑхӗ</characterLabel>
+		<characterLabel type="american_scripts" draft="unconfirmed">Америка ҫырулӑхӗ</characterLabel>
+		<characterLabel type="animal" draft="unconfirmed">выльӑх</characterLabel>
+		<characterLabel type="animals_nature" draft="unconfirmed">выльӑх е ҫутҫанталӑк</characterLabel>
+		<characterLabel type="arrows" draft="unconfirmed">стрелка</characterLabel>
+		<characterLabel type="body" draft="unconfirmed">ӳт-пӳ</characterLabel>
+		<characterLabel type="box_drawing" draft="unconfirmed">тӳркӗтеслӗх</characterLabel>
+		<characterLabel type="braille" draft="unconfirmed">Брайль шрифчӗпе</characterLabel>
+		<characterLabel type="building" draft="unconfirmed">ҫурт</characterLabel>
+		<characterLabel type="bullets_stars" draft="unconfirmed">пуля е ҫӑлтӑр</characterLabel>
+		<characterLabel type="consonantal_jamo" draft="unconfirmed">хупӑ та уҫӑ сасӑсем</characterLabel>
+		<characterLabel type="currency_symbols" draft="unconfirmed">валюта символӗ</characterLabel>
+		<characterLabel type="dash_connector" draft="unconfirmed">тире е соединитель</characterLabel>
+		<characterLabel type="digits" draft="unconfirmed">цифра</characterLabel>
+		<characterLabel type="dingbats" draft="unconfirmed">дингбат</characterLabel>
+		<characterLabel type="divination_symbols" draft="unconfirmed">юмӑҫ символӗ</characterLabel>
+		<characterLabel type="downwards_arrows" draft="unconfirmed">йӗппи аялалла</characterLabel>
+		<characterLabel type="downwards_upwards_arrows" draft="unconfirmed">йӗппи аялалла ҫӳлелле</characterLabel>
+		<characterLabel type="east_asian_scripts" draft="unconfirmed">Тухӑҫ алфавичӗ</characterLabel>
+		<characterLabel type="emoji" draft="unconfirmed">эмодзи</characterLabel>
+		<characterLabel type="european_scripts" draft="unconfirmed">Европа ҫырулӑхӗ</characterLabel>
+		<characterLabel type="female" draft="unconfirmed">хӗрарӑм</characterLabel>
+		<characterLabel type="flag" draft="unconfirmed">ялав</characterLabel>
+		<characterLabel type="flags" draft="unconfirmed">ялавсем</characterLabel>
+		<characterLabel type="food_drink" draft="unconfirmed">ҫимелли</characterLabel>
+		<characterLabel type="format" draft="unconfirmed">формат</characterLabel>
+		<characterLabel type="format_whitespace" draft="unconfirmed">форматпа пробелӑсем</characterLabel>
+		<characterLabel type="full_width_form_variant" draft="unconfirmed">экран сарлакӑшӗ</characterLabel>
+		<characterLabel type="geometric_shapes" draft="unconfirmed">геометри форми</characterLabel>
+		<characterLabel type="half_width_form_variant" draft="unconfirmed">сарлакӑшӗ ҫурри</characterLabel>
+		<characterLabel type="han_characters" draft="unconfirmed">Хань иероглифӗсем</characterLabel>
+		<characterLabel type="han_radicals" draft="unconfirmed">Радикал (китай иероглифӗсем)</characterLabel>
+		<characterLabel type="hanja" draft="unconfirmed">ханча</characterLabel>
+		<characterLabel type="hanzi_simplified" draft="unconfirmed">Ханзи (ансатланнӑ)</characterLabel>
+		<characterLabel type="hanzi_traditional" draft="unconfirmed">Ханзи (йӑлана кӗнӗ)</characterLabel>
+		<characterLabel type="heart" draft="unconfirmed">чӗре</characterLabel>
+		<characterLabel type="historic_scripts" draft="unconfirmed">историлле шрифт</characterLabel>
+		<characterLabel type="ideographic_desc_characters" draft="unconfirmed">идеографи сӑнав палли</characterLabel>
+		<characterLabel type="japanese_kana" draft="unconfirmed">Япони канӗ</characterLabel>
+		<characterLabel type="kanbun" draft="unconfirmed">камбун (китай ҫырӑвӗ)</characterLabel>
+		<characterLabel type="kanji" draft="unconfirmed">кандзи (иероглиф)</characterLabel>
+		<characterLabel type="keycap" draft="unconfirmed">брелок</characterLabel>
+		<characterLabel type="leftwards_arrows" draft="unconfirmed">стрелка сулахаялла</characterLabel>
+		<characterLabel type="leftwards_rightwards_arrows" draft="unconfirmed">стрелка сулахаялла сылтӑмалла</characterLabel>
+		<characterLabel type="letterlike_symbols" draft="unconfirmed">саспалли символӗ</characterLabel>
+		<characterLabel type="limited_use" draft="unconfirmed">пӳлӗнчӗк усӑ курни</characterLabel>
+		<characterLabel type="male" draft="unconfirmed">арҫын</characterLabel>
+		<characterLabel type="math_symbols" draft="unconfirmed">математика символӗ</characterLabel>
+		<characterLabel type="middle_eastern_scripts" draft="unconfirmed">Ҫывӑх Хӗвелтухӑҫ чӗлхисем</characterLabel>
+		<characterLabel type="miscellaneous" draft="unconfirmed">тӗрлӗрен</characterLabel>
+		<characterLabel type="modern_scripts" draft="unconfirmed">хальхи шрифт</characterLabel>
+		<characterLabel type="modifier" draft="unconfirmed">модификатор</characterLabel>
+		<characterLabel type="musical_symbols" draft="unconfirmed">музыка символӗ</characterLabel>
+		<characterLabel type="nature" draft="unconfirmed">ҫутҫанталӑк</characterLabel>
+		<characterLabel type="nonspacing" draft="unconfirmed">пробелӑсӑр</characterLabel>
+		<characterLabel type="numbers" draft="unconfirmed">цифрӑсем</characterLabel>
+		<characterLabel type="objects" draft="unconfirmed">объект</characterLabel>
+		<characterLabel type="other" draft="unconfirmed">урӑх</characterLabel>
+		<characterLabel type="paired" draft="unconfirmed">мӑшӑр</characterLabel>
+		<characterLabel type="person" draft="unconfirmed">ҫын</characterLabel>
+		<characterLabel type="phonetic_alphabet" draft="unconfirmed">фонетика алфавичӗ</characterLabel>
+		<characterLabel type="pictographs" draft="unconfirmed">пиктограмма</characterLabel>
+		<characterLabel type="place" draft="unconfirmed">вырӑн</characterLabel>
+		<characterLabel type="plant" draft="unconfirmed">ӳсентӑран</characterLabel>
+		<characterLabel type="punctuation" draft="unconfirmed">пунктуаци</characterLabel>
+		<characterLabel type="rightwards_arrows" draft="unconfirmed">стрелка сылтӑмалла</characterLabel>
+		<characterLabel type="sign_standard_symbols" draft="unconfirmed">символ е паллӑ</characterLabel>
+		<characterLabel type="small_form_variant" draft="unconfirmed">пӗчӗк вариантсем</characterLabel>
+		<characterLabel type="smiley" draft="unconfirmed">смайлик</characterLabel>
+		<characterLabel type="smileys_people" draft="unconfirmed">смайлик е ҫын</characterLabel>
+		<characterLabel type="south_asian_scripts" draft="unconfirmed">Кӑнтӑр Азири чӗлхесем</characterLabel>
+		<characterLabel type="southeast_asian_scripts" draft="unconfirmed">Кӑнтӑр-Хӗвелтухӑҫ Ази чӗлхисем</characterLabel>
+		<characterLabel type="spacing" draft="unconfirmed">интервал</characterLabel>
+		<characterLabel type="sport" draft="unconfirmed">спорт</characterLabel>
+		<characterLabel type="symbols" draft="unconfirmed">символ</characterLabel>
+		<characterLabel type="technical_symbols" draft="unconfirmed">техника символӗ</characterLabel>
+		<characterLabel type="tone_marks" draft="unconfirmed">тонна палли</characterLabel>
+		<characterLabel type="travel" draft="unconfirmed">ҫулҫӳрев</characterLabel>
+		<characterLabel type="travel_places" draft="unconfirmed">ҫулҫӳрев е вырӑн</characterLabel>
+		<characterLabel type="upwards_arrows" draft="unconfirmed">стрелоксем ҫӳлелле</characterLabel>
+		<characterLabel type="variant_forms" draft="unconfirmed">вариант</characterLabel>
+		<characterLabel type="vocalic_jamo" draft="unconfirmed">уҫӑ сасӑ</characterLabel>
+		<characterLabel type="weather" draft="unconfirmed">ҫанталӑк</characterLabel>
+		<characterLabel type="western_asian_scripts" draft="unconfirmed">Хӗвеланӑҫ Азири чӗлхесем</characterLabel>
+		<characterLabel type="whitespace" draft="unconfirmed">пробел</characterLabel>
+	</characterLabels>
+	<typographicNames>
+		<axisName type="ital" draft="unconfirmed">тайлӑк</axisName>
+		<axisName type="opsz" draft="unconfirmed">оптика виҫи</axisName>
+		<axisName type="slnt" draft="unconfirmed">тайлӑм</axisName>
+		<axisName type="wdth" draft="unconfirmed">сарлакӑшӗ</axisName>
+		<axisName type="wght" draft="unconfirmed">йывăрăш</axisName>
+		<styleName type="ital" subtype="1" draft="unconfirmed">тайлӑк</styleName>
+		<styleName type="opsz" subtype="8" draft="unconfirmed">алӑ пусни</styleName>
+		<styleName type="opsz" subtype="12" draft="unconfirmed">текст</styleName>
+		<styleName type="opsz" subtype="18" draft="unconfirmed">титовани</styleName>
+		<styleName type="opsz" subtype="72" draft="unconfirmed">экран (дисплей)</styleName>
+		<styleName type="opsz" subtype="144" draft="unconfirmed">плакат</styleName>
+		<styleName type="slnt" subtype="-12" draft="unconfirmed">тайлӑк каялла</styleName>
+		<styleName type="slnt" subtype="0" draft="unconfirmed">вертикальлӗ</styleName>
+		<styleName type="slnt" subtype="12" draft="unconfirmed">тайлӑк (наклонный)</styleName>
+		<styleName type="slnt" subtype="24" draft="unconfirmed">экстра-тайлӑк</styleName>
+		<styleName type="wdth" subtype="50" draft="unconfirmed">ультрӑна чӑмӑртанӑ</styleName>
+		<styleName type="wdth" subtype="62.5" draft="unconfirmed">экстра чӑмӑртанӑ</styleName>
+		<styleName type="wdth" subtype="75" draft="unconfirmed">чӑмӑртанӑ</styleName>
+		<styleName type="wdth" subtype="87.5" draft="unconfirmed">ҫурри чӑмӑртанӑ</styleName>
+		<styleName type="wdth" subtype="100" draft="unconfirmed">йĕркеллĕ</styleName>
+		<styleName type="wdth" subtype="112.5" draft="unconfirmed">ҫурри сарлакарах</styleName>
+		<styleName type="wdth" subtype="125" draft="unconfirmed">сарлакарах</styleName>
+		<styleName type="wdth" subtype="150" draft="unconfirmed">экстра сарлакарах</styleName>
+		<styleName type="wdth" subtype="200" draft="unconfirmed">ультрӑна сарлакарах</styleName>
+		<styleName type="wght" subtype="100" draft="unconfirmed">ҫинҫешке</styleName>
+		<styleName type="wght" subtype="200" draft="unconfirmed">ҫӑп-ҫӑмӑл</styleName>
+		<styleName type="wght" subtype="300" draft="unconfirmed">ҫӑмӑл</styleName>
+		<styleName type="wght" subtype="350" draft="unconfirmed">ҫурри ҫӑмӑл</styleName>
+		<styleName type="wght" subtype="380" draft="unconfirmed">книги</styleName>
+		<styleName type="wght" subtype="400" draft="unconfirmed">регуляр</styleName>
+		<styleName type="wght" subtype="500" draft="unconfirmed">вӑтам</styleName>
+		<styleName type="wght" subtype="600" draft="unconfirmed">ҫурри ҫуллӑ</styleName>
+		<styleName type="wght" subtype="700" draft="unconfirmed">ҫуллӑ</styleName>
+		<styleName type="wght" subtype="800" draft="unconfirmed">экстра ҫуллӑ</styleName>
+		<styleName type="wght" subtype="900" draft="unconfirmed">хура</styleName>
+		<styleName type="wght" subtype="950" draft="unconfirmed">питӗ хураскер</styleName>
+		<featureName type="afrc" draft="unconfirmed">вертикаль вак</featureName>
+		<featureName type="cpsp" draft="unconfirmed">тӗп интервал</featureName>
+		<featureName type="dlig" draft="unconfirmed">хушма лигатурӑсем</featureName>
+		<featureName type="frac" draft="unconfirmed">диагональ вак</featureName>
+		<featureName type="lnum" draft="unconfirmed">аҫлӑк номерӗсем</featureName>
+		<featureName type="onum" draft="unconfirmed">кивӗ стиль цифрисем</featureName>
+		<featureName type="ordn" draft="unconfirmed">йӗрке номерӗсем</featureName>
+		<featureName type="pnum" draft="unconfirmed">пропорци хисепӗсем</featureName>
+		<featureName type="smcp" draft="unconfirmed">пӗчӗккисем тӗп саспаллисем</featureName>
+		<featureName type="tnum" draft="unconfirmed">таблица хисепӗсем</featureName>
+		<featureName type="zero" draft="unconfirmed">каснӑ ноль</featureName>
+	</typographicNames>
 </ldml>
