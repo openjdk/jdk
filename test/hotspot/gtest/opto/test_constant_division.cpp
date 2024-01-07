@@ -40,14 +40,14 @@ static UT random();
 
 template <>
 juint random<jint, juint>() {
-  juint bits = juint(os::random()) % 31 + 1;
+  juint bits = (juint(os::random()) % 31) + 1;
   juint mask = (juint(1) << bits) - 1;
   return os::random() & mask;
 }
 
 template <>
 juint random<juint, juint>() {
-  juint bits = juint(os::random()) % 32 + 1;
+  juint bits = (juint(os::random()) % 32) + 1;
   juint mask = bits == 32 ? std::numeric_limits<juint>::max() : (juint(1) << bits) - 1;
   return os::random() & mask;
 }
@@ -55,7 +55,7 @@ juint random<juint, juint>() {
 #ifdef __SIZEOF_INT128__
 template <>
 julong random<jlong, julong>() {
-  juint bits = juint(os::random()) % 63 + 1;
+  juint bits = (juint(os::random()) % 63) + 1;
   julong mask = (julong(1) << bits) - 1;
   julong full = (julong(os::random()) << 32) | os::random();
   return full & mask;
@@ -63,7 +63,7 @@ julong random<jlong, julong>() {
 
 template <>
 julong random<julong, julong>() {
-  juint bits = juint(os::random()) % 64 + 1;
+  juint bits = (juint(os::random()) % 64) + 1;
   julong mask = bits == 64 ? std::numeric_limits<julong>::max() : (julong(1) << bits) - 1;
   julong full = (julong(os::random()) << 32) | os::random();
   return full & mask;
