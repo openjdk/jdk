@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "utilities/powerOfTwo.hpp"
+
 #include <limits>
 #include <type_traits>
 

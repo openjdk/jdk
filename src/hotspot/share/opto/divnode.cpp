@@ -23,8 +23,6 @@
  */
 
 #include "precompiled.hpp"
-#include <limits>
-#include <type_traits>
 #include "memory/allocation.inline.hpp"
 #include "opto/addnode.hpp"
 #include "opto/connode.hpp"
@@ -39,6 +37,8 @@
 #include "opto/subnode.hpp"
 #include "utilities/powerOfTwo.hpp"
 
+#include <limits>
+#include <type_traits>
 
 // Portions of code courtesy of Clifford Click
 

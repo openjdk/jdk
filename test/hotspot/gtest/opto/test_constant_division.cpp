@@ -26,11 +26,15 @@
 #include "opto/divconstants.hpp"
 #include "runtime/os.hpp"
 #include "utilities/growableArray.hpp"
+
 #include <type_traits>
 #include "unittest.hpp"
 
 // Generate a random positive integer of type T in a way that biases
 // towards smaller values
+// We are dealing with inputs of divisions so it makes more sense
+// to have inputs following approximately a reciprocal (log-uniform)
+// distribution
 template <class T, class UT>
 static UT random();
 
@@ -97,6 +101,7 @@ template <class UT, class U>
 static void test_division(UT d, UT N_neg, UT N_pos, juint min_s) {
   constexpr juint W = sizeof(UT) * 8;
 
+  // This also filters out d = 0 so don't use is_power_of_2
   if ((N_neg < d && N_pos < d) || (d & (d - 1)) == 0) {
     return;
   }
@@ -130,13 +135,13 @@ static void test_division_random() {
   for (int i = 0; i < iter_num;) {
     UT d = random<T, UT>();
     if ((d & (d - 1)) == 0) {
-      continue;
+      d = 7;
     }
 
     UT N_neg = std::is_signed<T>::value ? random<T, UT>() + 1 : 0;
     UT N_pos = random<T, UT>();
     if (N_neg < d && N_pos < d) {
-      continue;
+      N_pos = d;
     }
 
     juint min_s = juint(os::random()) % (sizeof(T) * 8 + 1);
@@ -172,13 +177,13 @@ static void test_division_round_down() {
     constexpr juint W = 32;
     juint d = random<juint, juint>();
     if ((d & (d - 1)) == 0) {
-      continue;
+      d = 7;
     }
     juint s = log2i_graceful(d) + W;
     julong t = (julong(1) << s) / julong(d);
     julong r = ((t + 1) * julong(d)) & julong(max_juint);
     if (r <= (julong(1) << (s - W))) {
-      continue;
+      d = 7;
     }
 
     juint c;
