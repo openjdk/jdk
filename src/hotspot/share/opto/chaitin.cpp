@@ -1791,7 +1791,7 @@ void PhaseChaitin::fixup_spills() {
 // to be recursive for derived Phis.
 Node* PhaseChaitin::find_base_for_derived(Node** derived_base_map, Node* derived, uint& maxlrg) {
   // See if already computed; if so return it
-  if(derived_base_map[derived->_idx]) {
+  if (derived_base_map[derived->_idx]) {
     return derived_base_map[derived->_idx];
   }
 

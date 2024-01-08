@@ -1699,7 +1699,7 @@ void SuperWord::filter_packs_for_alignment() {
   assert(!current->is_empty(), "solution must be non-empty");
   if (current->is_constrained()) {
     // Solution is constrained (not trivial)
-    // -> must change pre-limit to acheive alignment
+    // -> must change pre-limit to achieve alignment
     set_align_to_ref(current->as_constrained()->mem_ref());
   }
 

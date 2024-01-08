@@ -753,7 +753,7 @@ AlignmentSolution* AlignmentSolver::solve() const {
   //
   // We describe the 6 terms:
   //   1) The "base" of the address is the address of a Java object (e.g. array),
-  //      and as such  ObjectAlignmentInBytes (a power of 2) aligned. We have
+  //      and as such ObjectAlignmentInBytes (a power of 2) aligned. We have
   //      defined aw = MIN(vector_width, ObjectAlignmentInBytes), which is also
   //      a power of 2. And hence we know that "base" is thus also aw-aligned:
   //
@@ -931,7 +931,7 @@ AlignmentSolution* AlignmentSolver::solve() const {
   //          for any m: pre_iter_C_const = m * x - z
   //
   //        Hence, pre_iter_C_const has a non-trivial (because x > 1) periodic (periodicity x)
-  //        solution, i.e it has a constrained solution.
+  //        solution, i.e. it has a constrained solution.
   //
   //      C_const % abs(C_pre) != 0:
   //        There exists integer x > 1: aw = abs(C_pre) * x
@@ -944,7 +944,7 @@ AlignmentSolution* AlignmentSolver::solve() const {
   //          ==>
   //          (C_const + C_pre * pre_iter_C_const) % aw               != 0
   //
-  //        This is in constradiction with (4a), and therefore there cannot be any solution,
+  //        This is in contradiction with (4a), and therefore there cannot be any solution,
   //        i.e. we have an empty solution.
   //
   // In summary, for (4a):
@@ -1035,7 +1035,7 @@ AlignmentSolution* AlignmentSolver::solve() const {
   //
   //   sign(C_pre) = C_pre / abs(C_pre) = (C_pre > 0) ? 1 : -1,                  (7)
   //
-  // We know that abs(C_pre) as well as aw are a powers of 2, and since (5) we can define integer q:
+  // We know that abs(C_pre) as well as aw are powers of 2, and since (5) we can define integer q:
   //
   //   q = aw / abs(C_pre)                                                       (8)
   //
