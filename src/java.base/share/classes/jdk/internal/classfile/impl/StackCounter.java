@@ -335,7 +335,7 @@ public final class StackCounter {
         maxStack += rets * maxStack;
     }
 
-    private static int countMethodSlots(Utf8Entry descriptor, boolean subReturn) {
+    private static int countMethodSlots(Utf8Entry descriptor, boolean asStackDelta) {
         int cur = 0, end = descriptor.length();
         if (cur >= end || descriptor.charAt(cur) != '(')
             throw new IllegalArgumentException("Bad method descriptor: " + descriptor);
@@ -362,7 +362,7 @@ public final class StackCounter {
                 }
                 case ')' -> {
                     if (cur < end) {
-                        if (subReturn) {
+                        if (asStackDelta) {
                             return switch (descriptor.charAt(cur++)) {
                                 case 'Z', 'B', 'C', 'S', 'I', 'F', '[', 'L' -> count - 1;
                                 case 'J', 'D' -> count - 2;
