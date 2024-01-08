@@ -40,6 +40,7 @@
 #include "jfr/recorder/storage/jfrStorage.hpp"
 #include "jfr/recorder/storage/jfrStorageControl.hpp"
 #include "jfr/recorder/stringpool/jfrStringPool.hpp"
+#include "jfr/support/jfrDeprecationManager.hpp"
 #include "jfr/utilities/jfrAllocation.hpp"
 #include "jfr/utilities/jfrThreadIterator.hpp"
 #include "jfr/utilities/jfrTime.hpp"
@@ -431,6 +432,7 @@ static void start_recorder() {
 
 static void stop_recorder() {
   assert(JfrRotationLock::is_owner(), "invariant");
+  JfrDeprecationManager::on_recorder_stop();
   set_recorder_state(RUNNING, STOPPED);
   log_debug(jfr, system)("Recording service STOPPED");
 }
@@ -478,6 +480,7 @@ void JfrRecorderService::safepoint_clear() {
   _checkpoint_manager.begin_epoch_shift();
   _storage.clear();
   _chunkwriter.set_time_stamp();
+  JfrDeprecationManager::on_safepoint_clear();
   JfrStackTraceRepository::clear();
   _checkpoint_manager.end_epoch_shift();
 }
@@ -506,6 +509,7 @@ void JfrRecorderService::vm_error_rotation() {
     Thread* const thread = Thread::current();
     _storage.flush_regular_buffer(thread->jfr_thread_local()->native_buffer(), thread);
     _chunkwriter.mark_chunk_final();
+    JfrDeprecationManager::write_edges(_chunkwriter, thread, true);
     invoke_flush();
     _chunkwriter.set_time_stamp();
     _repository.close_chunk();
@@ -588,6 +592,7 @@ void JfrRecorderService::safepoint_write() {
   _checkpoint_manager.on_rotation();
   _storage.write_at_safepoint();
   _chunkwriter.set_time_stamp();
+  JfrDeprecationManager::on_safepoint_write();
   write_stacktrace(_stack_trace_repository, _chunkwriter, true);
   _checkpoint_manager.end_epoch_shift();
 }

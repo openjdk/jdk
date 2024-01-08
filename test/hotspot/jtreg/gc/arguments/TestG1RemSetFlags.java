@@ -48,8 +48,7 @@ public class TestG1RemSetFlags {
     flagList.add("-XX:+PrintFlagsFinal");
     flagList.add("-version");
 
-    ProcessBuilder pb = GCArguments.createTestJvm(flagList);
-    OutputAnalyzer output = new OutputAnalyzer(pb.start());
+    OutputAnalyzer output = GCArguments.executeTestJava(flagList);
     output.shouldHaveExitValue(exitValue);
   }
 

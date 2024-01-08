@@ -25,7 +25,7 @@
 // key: compiler.misc.bad.class.file.header
 // key: compiler.err.cant.access
 // options: -processor CreateBadClassFile
-// run: exec --add-exports java.base/jdk.internal.classfile=ALL-UNNAMED --add-exports java.base/jdk.internal.classfile.attribute=ALL-UNNAMED --add-exports java.base/jdk.internal.classfile.constantpool=ALL-UNNAMED  --add-exports java.base/jdk.internal.classfile.instruction=ALL-UNNAMED --add-exports java.base/jdk.internal.classfile.components=ALL-UNNAMED
+// run: exec --enable-preview
 
 /* The annotation processor will create an invalid classfile with version 51.0
  * and a static method in an interface. Loading the classfile will produce

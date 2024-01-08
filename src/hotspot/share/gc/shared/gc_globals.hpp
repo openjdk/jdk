@@ -408,11 +408,6 @@
           "Allowed collection cost difference between generations")         \
           range(0, 100)                                                     \
                                                                             \
-  product(uint, AdaptiveSizePolicyCollectionCostMargin, 50,                 \
-          "If collection costs are within margin, reduce both by full "     \
-          "delta")                                                          \
-          range(0, 100)                                                     \
-                                                                            \
   product(uint, YoungGenerationSizeIncrement, 20,                           \
           "Adaptive size percentage change in young generation")            \
           range(0, 100)                                                     \
