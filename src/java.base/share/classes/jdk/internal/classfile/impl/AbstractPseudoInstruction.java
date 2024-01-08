@@ -26,15 +26,15 @@ package jdk.internal.classfile.impl;
 
 import java.util.Optional;
 
-import jdk.internal.classfile.BufWriter;
-import jdk.internal.classfile.constantpool.ClassEntry;
-import jdk.internal.classfile.constantpool.Utf8Entry;
-import jdk.internal.classfile.instruction.CharacterRange;
-import jdk.internal.classfile.instruction.ExceptionCatch;
-import jdk.internal.classfile.instruction.LocalVariable;
-import jdk.internal.classfile.instruction.LocalVariableType;
-import jdk.internal.classfile.Label;
-import jdk.internal.classfile.PseudoInstruction;
+import java.lang.classfile.BufWriter;
+import java.lang.classfile.constantpool.ClassEntry;
+import java.lang.classfile.constantpool.Utf8Entry;
+import java.lang.classfile.instruction.CharacterRange;
+import java.lang.classfile.instruction.ExceptionCatch;
+import java.lang.classfile.instruction.LocalVariable;
+import java.lang.classfile.instruction.LocalVariableType;
+import java.lang.classfile.Label;
+import java.lang.classfile.PseudoInstruction;
 
 public abstract sealed class AbstractPseudoInstruction
         extends AbstractElement

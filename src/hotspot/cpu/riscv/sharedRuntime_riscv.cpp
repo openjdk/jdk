@@ -266,7 +266,7 @@ int SharedRuntime::java_calling_convention(const BasicType *sig_bt,
 
   uint int_args = 0;
   uint fp_args = 0;
-  uint stk_args = 0; // inc by 2 each time
+  uint stk_args = 0;
 
   for (int i = 0; i < total_args_passed; i++) {
     switch (sig_bt[i]) {
@@ -278,8 +278,9 @@ int SharedRuntime::java_calling_convention(const BasicType *sig_bt,
         if (int_args < Argument::n_int_register_parameters_j) {
           regs[i].set1(INT_ArgReg[int_args++]->as_VMReg());
         } else {
+          stk_args = align_up(stk_args, 2);
           regs[i].set1(VMRegImpl::stack2reg(stk_args));
-          stk_args += 2;
+          stk_args += 1;
         }
         break;
       case T_VOID:
@@ -295,6 +296,7 @@ int SharedRuntime::java_calling_convention(const BasicType *sig_bt,
         if (int_args < Argument::n_int_register_parameters_j) {
           regs[i].set2(INT_ArgReg[int_args++]->as_VMReg());
         } else {
+          stk_args = align_up(stk_args, 2);
           regs[i].set2(VMRegImpl::stack2reg(stk_args));
           stk_args += 2;
         }
@@ -303,8 +305,9 @@ int SharedRuntime::java_calling_convention(const BasicType *sig_bt,
         if (fp_args < Argument::n_float_register_parameters_j) {
           regs[i].set1(FP_ArgReg[fp_args++]->as_VMReg());
         } else {
+          stk_args = align_up(stk_args, 2);
           regs[i].set1(VMRegImpl::stack2reg(stk_args));
-          stk_args += 2;
+          stk_args += 1;
         }
         break;
       case T_DOUBLE:
@@ -312,6 +315,7 @@ int SharedRuntime::java_calling_convention(const BasicType *sig_bt,
         if (fp_args < Argument::n_float_register_parameters_j) {
           regs[i].set2(FP_ArgReg[fp_args++]->as_VMReg());
         } else {
+          stk_args = align_up(stk_args, 2);
           regs[i].set2(VMRegImpl::stack2reg(stk_args));
           stk_args += 2;
         }
@@ -321,7 +325,7 @@ int SharedRuntime::java_calling_convention(const BasicType *sig_bt,
     }
   }
 
-  return align_up(stk_args, 2);
+  return stk_args;
 }
 
 // Patch the callers callsite with entry to compiled code if it exists.
@@ -344,12 +348,7 @@ static void patch_callers_callsite(MacroAssembler *masm) {
 
   __ mv(c_rarg0, xmethod);
   __ mv(c_rarg1, ra);
-  RuntimeAddress target(CAST_FROM_FN_PTR(address, SharedRuntime::fixup_callers_callsite));
-  __ relocate(target.rspec(), [&] {
-    int32_t offset;
-    __ la_patchable(t0, target, offset);
-    __ jalr(x1, t0, offset);
-  });
+  __ rt_call(CAST_FROM_FN_PTR(address, SharedRuntime::fixup_callers_callsite));
 
   __ pop_CPU_state();
   // restore sp
@@ -694,9 +693,7 @@ int SharedRuntime::vector_calling_convention(VMRegPair *regs,
 
 int SharedRuntime::c_calling_convention(const BasicType *sig_bt,
                                          VMRegPair *regs,
-                                         VMRegPair *regs2,
                                          int total_args_passed) {
-  assert(regs2 == nullptr, "not needed on riscv");
 
   // We return the amount of VMRegImpl stack slots we need to reserve for all
   // the arguments NOT counting out_preserve_stack_slots.
@@ -1345,7 +1342,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
   // Now figure out where the args must be stored and how much stack space
   // they require.
-  int out_arg_slots = c_calling_convention(out_sig_bt, out_regs, nullptr, total_c_args);
+  int out_arg_slots = c_calling_convention(out_sig_bt, out_regs, total_c_args);
 
   // Compute framesize for the wrapper.  We need to handlize all oops in
   // incoming registers
@@ -1624,7 +1621,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     ExternalAddress target((address)&DTraceMethodProbes);
     __ relocate(target.rspec(), [&] {
       int32_t offset;
-      __ la_patchable(t0, target, offset);
+      __ la(t0, target.target(), offset);
       __ lbu(t0, Address(t0, offset));
     });
     __ bnez(t0, dtrace_method_entry);
@@ -1650,6 +1647,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   const Register obj_reg  = x9;  // Will contain the oop
   const Register lock_reg = x30;  // Address of compiler lock object (BasicLock)
   const Register old_hdr  = x30;  // value of old header at unlock time
+  const Register lock_tmp = x31;  // Temporary used by lightweight_lock/unlock
   const Register tmp      = ra;
 
   Label slow_path_lock;
@@ -1681,7 +1679,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
       __ sd(swap_reg, Address(lock_reg, mark_word_offset));
 
       // src -> dest if dest == x10 else x10 <- dest
-      __ cmpxchg_obj_header(x10, lock_reg, obj_reg, t0, count, /*fallthrough*/nullptr);
+      __ cmpxchg_obj_header(x10, lock_reg, obj_reg, lock_tmp, count, /*fallthrough*/nullptr);
 
       // Test if the oopMark is an obvious stack pointer, i.e.,
       //  1) (mark & 3) == 0, and
@@ -1701,7 +1699,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     } else {
       assert(LockingMode == LM_LIGHTWEIGHT, "");
       __ ld(swap_reg, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
-      __ lightweight_lock(obj_reg, swap_reg, tmp, t0, slow_path_lock);
+      __ lightweight_lock(obj_reg, swap_reg, tmp, lock_tmp, slow_path_lock);
     }
 
     __ bind(count);
@@ -1821,7 +1819,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
       // Atomic swap old header if oop still contains the stack lock
       Label count;
-      __ cmpxchg_obj_header(x10, old_hdr, obj_reg, t0, count, &slow_path_unlock);
+      __ cmpxchg_obj_header(x10, old_hdr, obj_reg, lock_tmp, count, &slow_path_unlock);
       __ bind(count);
       __ decrement(Address(xthread, JavaThread::held_monitor_count_offset()));
     } else {
@@ -1829,7 +1827,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
       __ ld(old_hdr, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
       __ test_bit(t0, old_hdr, exact_log2(markWord::monitor_value));
       __ bnez(t0, slow_path_unlock);
-      __ lightweight_unlock(obj_reg, old_hdr, swap_reg, t0, slow_path_unlock);
+      __ lightweight_unlock(obj_reg, old_hdr, swap_reg, lock_tmp, slow_path_unlock);
       __ decrement(Address(xthread, JavaThread::held_monitor_count_offset()));
     }
 
@@ -1847,7 +1845,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     ExternalAddress target((address)&DTraceMethodProbes);
     __ relocate(target.rspec(), [&] {
       int32_t offset;
-      __ la_patchable(t0, target, offset);
+      __ la(t0, target.target(), offset);
       __ lbu(t0, Address(t0, offset));
     });
     __ bnez(t0, dtrace_method_exit);
@@ -1980,12 +1978,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 #ifndef PRODUCT
     assert(frame::arg_reg_save_area_bytes == 0, "not expecting frame reg save area");
 #endif
-    RuntimeAddress target(CAST_FROM_FN_PTR(address, JavaThread::check_special_condition_for_native_trans));
-    __ relocate(target.rspec(), [&] {
-      int32_t offset;
-      __ la_patchable(t0, target, offset);
-      __ jalr(x1, t0, offset);
-    });
+    __ rt_call(CAST_FROM_FN_PTR(address, JavaThread::check_special_condition_for_native_trans));
 
     // Restore any method result value
     restore_native_result(masm, ret_type, stack_slots);
@@ -2157,12 +2150,7 @@ void SharedRuntime::generate_deopt_blob() {
     __ mv(xcpool, Deoptimization::Unpack_reexecute);
     __ mv(c_rarg0, xthread);
     __ orrw(c_rarg2, zr, xcpool); // exec mode
-    RuntimeAddress target(CAST_FROM_FN_PTR(address, Deoptimization::uncommon_trap));
-    __ relocate(target.rspec(), [&] {
-      int32_t offset;
-      __ la_patchable(t0, target, offset);
-      __ jalr(x1, t0, offset);
-    });
+    __ rt_call(CAST_FROM_FN_PTR(address, Deoptimization::uncommon_trap));
     __ bind(retaddr);
     oop_maps->add_gc_map( __ pc()-start, map->deep_copy());
 
@@ -2254,12 +2242,7 @@ void SharedRuntime::generate_deopt_blob() {
 #endif // ASSERT
   __ mv(c_rarg0, xthread);
   __ mv(c_rarg1, xcpool);
-  RuntimeAddress target(CAST_FROM_FN_PTR(address, Deoptimization::fetch_unroll_info));
-  __ relocate(target.rspec(), [&] {
-    int32_t offset;
-    __ la_patchable(t0, target, offset);
-    __ jalr(x1, t0, offset);
-  });
+  __ rt_call(CAST_FROM_FN_PTR(address, Deoptimization::fetch_unroll_info));
   __ bind(retaddr);
 
   // Need to have an oopmap that tells fetch_unroll_info where to
@@ -2401,12 +2384,7 @@ void SharedRuntime::generate_deopt_blob() {
 
   __ mv(c_rarg0, xthread);
   __ mv(c_rarg1, xcpool); // second arg: exec_mode
-  target = RuntimeAddress(CAST_FROM_FN_PTR(address, Deoptimization::unpack_frames));
-  __ relocate(target.rspec(), [&] {
-    int32_t offset;
-    __ la_patchable(t0, target, offset);
-    __ jalr(x1, t0, offset);
-  });
+  __ rt_call(CAST_FROM_FN_PTR(address, Deoptimization::unpack_frames));
 
   // Set an oopmap for the call site
   // Use the same PC we used for the last java frame
@@ -2496,12 +2474,7 @@ void SharedRuntime::generate_uncommon_trap_blob() {
 
   __ mv(c_rarg0, xthread);
   __ mv(c_rarg2, Deoptimization::Unpack_uncommon_trap);
-  RuntimeAddress target(CAST_FROM_FN_PTR(address, Deoptimization::uncommon_trap));
-  __ relocate(target.rspec(), [&] {
-    int32_t offset;
-    __ la_patchable(t0, target, offset);
-    __ jalr(x1, t0, offset);
-  });
+  __ rt_call(CAST_FROM_FN_PTR(address, Deoptimization::uncommon_trap));
   __ bind(retaddr);
 
   // Set an oopmap for the call site
@@ -2623,12 +2596,7 @@ void SharedRuntime::generate_uncommon_trap_blob() {
   // sp should already be aligned
   __ mv(c_rarg0, xthread);
   __ mv(c_rarg1, Deoptimization::Unpack_uncommon_trap);
-  target = RuntimeAddress(CAST_FROM_FN_PTR(address, Deoptimization::unpack_frames));
-  __ relocate(target.rspec(), [&] {
-    int32_t offset;
-    __ la_patchable(t0, target, offset);
-    __ jalr(x1, t0, offset);
-  });
+  __ rt_call(CAST_FROM_FN_PTR(address, Deoptimization::unpack_frames));
 
   // Set an oopmap for the call site
   // Use the same PC we used for the last java frame
@@ -2697,12 +2665,7 @@ SafepointBlob* SharedRuntime::generate_handler_blob(address call_ptr, int poll_t
 
   // Do the call
   __ mv(c_rarg0, xthread);
-  RuntimeAddress target(call_ptr);
-  __ relocate(target.rspec(), [&] {
-    int32_t offset;
-    __ la_patchable(t0, target, offset);
-    __ jalr(x1, t0, offset);
-  });
+  __ rt_call(call_ptr);
   __ bind(retaddr);
 
   // Set an oopmap for the call site.  This oopmap will map all
@@ -2810,12 +2773,7 @@ RuntimeStub* SharedRuntime::generate_resolve_blob(address destination, const cha
     __ set_last_Java_frame(sp, noreg, retaddr, t0);
 
     __ mv(c_rarg0, xthread);
-    RuntimeAddress target(destination);
-    __ relocate(target.rspec(), [&] {
-      int32_t offset;
-      __ la_patchable(t0, target, offset);
-      __ jalr(x1, t0, offset);
-    });
+    __ rt_call(destination);
     __ bind(retaddr);
   }
 
@@ -2944,13 +2902,7 @@ void OptoRuntime::generate_exception_blob() {
   address the_pc = __ pc();
   __ set_last_Java_frame(sp, noreg, the_pc, t0);
   __ mv(c_rarg0, xthread);
-  RuntimeAddress target(CAST_FROM_FN_PTR(address, OptoRuntime::handle_exception_C));
-  __ relocate(target.rspec(), [&] {
-    int32_t offset;
-    __ la_patchable(t0, target, offset);
-    __ jalr(x1, t0, offset);
-  });
-
+  __ rt_call(CAST_FROM_FN_PTR(address, OptoRuntime::handle_exception_C));
 
   // handle_exception_C is a special VM call which does not require an explicit
   // instruction sync afterwards.

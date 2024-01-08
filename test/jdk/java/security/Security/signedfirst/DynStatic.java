@@ -76,7 +76,7 @@ public class DynStatic {
         CompilerUtils.compile(DYN_SRC, TEST_CLASSES, "-classpath", "exp.jar");
 
         // Run the DynSignedProvFirst test program
-        ProcessTools.executeTestJvm("-classpath",
+        ProcessTools.executeTestJava("-classpath",
             TEST_CLASSES.toString() + File.pathSeparator + "exp.jar",
             "DynSignedProvFirst")
             .shouldContain("test passed");
@@ -85,7 +85,7 @@ public class DynStatic {
         CompilerUtils.compile(STATIC_SRC, TEST_CLASSES, "-classpath", "exp.jar");
 
         // Run the StaticSignedProvFirst test program
-        ProcessTools.executeTestJvm("-classpath",
+        ProcessTools.executeTestJava("-classpath",
             TEST_CLASSES.toString() + File.pathSeparator + "exp.jar",
             "-Djava.security.properties=" + STATIC_PROPS.toUri(),
             "StaticSignedProvFirst")

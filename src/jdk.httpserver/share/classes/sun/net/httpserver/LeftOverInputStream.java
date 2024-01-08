@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,6 +46,7 @@ abstract class LeftOverInputStream extends FilterInputStream {
     protected boolean closed = false;
     protected boolean eof = false;
     byte[] one = new byte [1];
+    private static final int MAX_SKIP_BUFFER_SIZE = 2048;
 
     public LeftOverInputStream (ExchangeImpl t, InputStream src) {
         super (src);
@@ -99,6 +100,32 @@ abstract class LeftOverInputStream extends FilterInputStream {
         return readImpl (b, off, len);
     }
 
+    @Override
+    public synchronized long skip(long n) throws IOException {
+        long remaining = n;
+        int nr;
+
+        if (n <= 0) {
+            return 0;
+        }
+
+        int size = (int)Math.min(MAX_SKIP_BUFFER_SIZE, remaining);
+        byte[] skipBuffer = new byte[size];
+        while (remaining > 0) {
+            if (server.isFinishing()) {
+                break;
+            }
+            nr = readImpl(skipBuffer, 0, (int)Math.min(size, remaining));
+            if (nr < 0) {
+                eof = true;
+                break;
+            }
+            remaining -= nr;
+        }
+
+        return n - remaining;
+    }
+
     /**
      * read and discard up to l bytes or "eof" occurs,
      * (whichever is first). Then return true if the stream
@@ -106,20 +133,11 @@ abstract class LeftOverInputStream extends FilterInputStream {
      * (still bytes to be read)
      */
     public boolean drain (long l) throws IOException {
-        int bufSize = 2048;
-        byte[] db = new byte [bufSize];
         while (l > 0) {
-            if (server.isFinishing()) {
-                break;
-            }
-            long len = readImpl (db, 0, bufSize);
-            if (len == -1) {
-                eof = true;
-                return true;
-            } else {
-                l = l - len;
-            }
+            long skip = skip(l);
+            if (skip <= 0) break; // might return 0 if isFinishing or EOF
+            l -= skip;
         }
-        return false;
+        return eof;
     }
 }
