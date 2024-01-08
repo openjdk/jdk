@@ -123,9 +123,6 @@ Mutex*   JfrBuffer_lock               = nullptr;
 Monitor* JfrThreadSampler_lock        = nullptr;
 #endif
 
-#ifndef SUPPORTS_NATIVE_CX8
-Mutex*   UnsafeJlong_lock             = nullptr;
-#endif
 Mutex*   CodeHeapStateAnalytics_lock  = nullptr;
 
 Monitor* ContinuationRelativize_lock  = nullptr;
@@ -296,10 +293,6 @@ void mutex_init() {
   MUTEX_DEFN(JfrMsg_lock                     , PaddedMonitor, event);
   MUTEX_DEFN(JfrStacktrace_lock              , PaddedMutex  , event);
   MUTEX_DEFN(JfrThreadSampler_lock           , PaddedMonitor, nosafepoint);
-#endif
-
-#ifndef SUPPORTS_NATIVE_CX8
-  MUTEX_DEFN(UnsafeJlong_lock                , PaddedMutex  , nosafepoint);
 #endif
 
   MUTEX_DEFN(ContinuationRelativize_lock     , PaddedMonitor, nosafepoint-3);

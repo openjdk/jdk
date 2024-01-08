@@ -216,6 +216,10 @@ define_pd_global(uint, SecondarySuperMissBackoff, 1000);
   product(bool, UseLibmIntrinsic, true, DIAGNOSTIC,                         \
           "Use Libm Intrinsics")                                            \
                                                                             \
+  /* Autodetected, see vm_version_x86.cpp */                                \
+  product(bool, EnableX86ECoreOpts, false, DIAGNOSTIC,                      \
+          "Perform Ecore Optimization")                                     \
+                                                                            \
   /* Minimum array size in bytes to use AVX512 intrinsics */                \
   /* for copy, inflate and fill which don't bail out early based on any */  \
   /* condition. When this value is set to zero compare operations like */   \

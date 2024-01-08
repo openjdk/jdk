@@ -79,7 +79,7 @@ public class ProviderTest {
                 "-classpath",
                 classpath,
                 "ProviderTest$TestMain" };
-        OutputAnalyzer output = ProcessTools.executeTestJvm(args);
+        OutputAnalyzer output = ProcessTools.executeTestJava(args);
         output.shouldHaveExitValue(0);
     }
 

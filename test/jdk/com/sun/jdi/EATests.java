@@ -42,6 +42,7 @@
  *                 -XX:+WhiteBoxAPI
  *                 -Xbatch
  *                 -XX:+DoEscapeAnalysis -XX:+EliminateAllocations -XX:+EliminateLocks -XX:+EliminateNestedLocks
+ *                 -XX:LockingMode=1
  * @run driver EATests
  *                 -XX:+UnlockDiagnosticVMOptions
  *                 -Xms256m -Xmx256m
@@ -50,6 +51,7 @@
  *                 -XX:+WhiteBoxAPI
  *                 -Xbatch
  *                 -XX:+DoEscapeAnalysis -XX:+EliminateAllocations -XX:-EliminateLocks -XX:+EliminateNestedLocks
+ *                 -XX:LockingMode=1
  * @run driver EATests
  *                 -XX:+UnlockDiagnosticVMOptions
  *                 -Xms256m -Xmx256m
@@ -58,6 +60,7 @@
  *                 -XX:+WhiteBoxAPI
  *                 -Xbatch
  *                 -XX:+DoEscapeAnalysis -XX:-EliminateAllocations -XX:+EliminateLocks -XX:+EliminateNestedLocks
+ *                 -XX:LockingMode=1
  * @run driver EATests
  *                 -XX:+UnlockDiagnosticVMOptions
  *                 -Xms256m -Xmx256m
@@ -66,6 +69,44 @@
  *                 -XX:+WhiteBoxAPI
  *                 -Xbatch
  *                 -XX:-DoEscapeAnalysis -XX:-EliminateAllocations -XX:+EliminateLocks -XX:+EliminateNestedLocks
+ *                 -XX:LockingMode=1
+ *
+ * @run driver EATests
+ *                 -XX:+UnlockDiagnosticVMOptions
+ *                 -Xms256m -Xmx256m
+ *                 -Xbootclasspath/a:.
+ *                 -XX:CompileCommand=dontinline,*::dontinline_*
+ *                 -XX:+WhiteBoxAPI
+ *                 -Xbatch
+ *                 -XX:+DoEscapeAnalysis -XX:+EliminateAllocations -XX:+EliminateLocks -XX:+EliminateNestedLocks
+ *                 -XX:LockingMode=2
+ * @run driver EATests
+ *                 -XX:+UnlockDiagnosticVMOptions
+ *                 -Xms256m -Xmx256m
+ *                 -Xbootclasspath/a:.
+ *                 -XX:CompileCommand=dontinline,*::dontinline_*
+ *                 -XX:+WhiteBoxAPI
+ *                 -Xbatch
+ *                 -XX:+DoEscapeAnalysis -XX:+EliminateAllocations -XX:-EliminateLocks -XX:+EliminateNestedLocks
+ *                 -XX:LockingMode=2
+ * @run driver EATests
+ *                 -XX:+UnlockDiagnosticVMOptions
+ *                 -Xms256m -Xmx256m
+ *                 -Xbootclasspath/a:.
+ *                 -XX:CompileCommand=dontinline,*::dontinline_*
+ *                 -XX:+WhiteBoxAPI
+ *                 -Xbatch
+ *                 -XX:+DoEscapeAnalysis -XX:-EliminateAllocations -XX:+EliminateLocks -XX:+EliminateNestedLocks
+ *                 -XX:LockingMode=2
+ * @run driver EATests
+ *                 -XX:+UnlockDiagnosticVMOptions
+ *                 -Xms256m -Xmx256m
+ *                 -Xbootclasspath/a:.
+ *                 -XX:CompileCommand=dontinline,*::dontinline_*
+ *                 -XX:+WhiteBoxAPI
+ *                 -Xbatch
+ *                 -XX:-DoEscapeAnalysis -XX:-EliminateAllocations -XX:+EliminateLocks -XX:+EliminateNestedLocks
+ *                 -XX:LockingMode=2
  *
  * @comment Excercise -XX:+DeoptimizeObjectsALot. Mostly to prevent bit-rot because the option is meant to stress object deoptimization
  *          with non-synthetic workloads.
@@ -208,11 +249,13 @@ class EATestsTarget {
 
         // Relocking test cases
         new EARelockingSimpleTarget()                                                       .run();
+        new EARelockingSimpleWithAccessInOtherThreadTarget()                                .run();
         new EARelockingRecursiveTarget()                                                    .run();
         new EARelockingNestedInflatedTarget()                                               .run();
         new EARelockingNestedInflated_02Target()                                            .run();
         new EARelockingArgEscapeLWLockedInCalleeFrameTarget()                               .run();
         new EARelockingArgEscapeLWLockedInCalleeFrame_2Target()                             .run();
+        new EARelockingArgEscapeLWLockedInCalleeFrameNoRecursiveTarget()                    .run();
         new EAGetOwnedMonitorsTarget()                                                      .run();
         new EAEntryCountTarget()                                                            .run();
         new EARelockingObjectCurrentlyWaitingOnTarget()                                     .run();
@@ -328,11 +371,13 @@ public class EATests extends TestScaffold {
 
         // Relocking test cases
         new EARelockingSimple()                                                       .run(this);
+        new EARelockingSimpleWithAccessInOtherThread()                                .run(this);
         new EARelockingRecursive()                                                    .run(this);
         new EARelockingNestedInflated()                                               .run(this);
         new EARelockingNestedInflated_02()                                            .run(this);
         new EARelockingArgEscapeLWLockedInCalleeFrame()                               .run(this);
         new EARelockingArgEscapeLWLockedInCalleeFrame_2()                             .run(this);
+        new EARelockingArgEscapeLWLockedInCalleeFrameNoRecursive()                    .run(this);
         new EAGetOwnedMonitors()                                                      .run(this);
         new EAEntryCount()                                                            .run(this);
         new EARelockingObjectCurrentlyWaitingOn()                                     .run(this);
@@ -1707,6 +1752,62 @@ class EARelockingSimpleTarget extends EATestCaseBaseTarget {
 
 /////////////////////////////////////////////////////////////////////////////
 
+// The debugger reads and publishes an object with eliminated locking to an instance field.
+// A 2nd thread in the debuggee finds it there and changes its state using a synchronized method.
+// Without eager relocking the accesses are unsynchronized which can be observed.
+class EARelockingSimpleWithAccessInOtherThread extends EATestCaseBaseDebugger {
+
+    public void runTestCase() throws Exception {
+        BreakpointEvent bpe = resumeTo(TARGET_TESTCASE_BASE_NAME, "dontinline_brkpt", "()V");
+        printStack(bpe.thread());
+        String l1ClassName = EARelockingSimpleWithAccessInOtherThreadTarget.SyncCounter.class.getName();
+        ObjectReference ctr = getLocalRef(bpe.thread().frame(1), l1ClassName, "l1");
+        setField(testCase, "sharedCounter", ctr);
+        terminateEndlessLoop();
+    }
+}
+
+class EARelockingSimpleWithAccessInOtherThreadTarget extends EATestCaseBaseTarget {
+
+    public static class SyncCounter {
+        private int val;
+        public synchronized int inc() { return val++; }
+    }
+
+    public volatile SyncCounter sharedCounter;
+
+    @Override
+    public void setUp() {
+        super.setUp();
+        doLoop = true;
+        Thread.ofPlatform().daemon().start(() -> {
+                while (doLoop) {
+                    SyncCounter ctr = sharedCounter;
+                    if (ctr != null) {
+                        ctr.inc();
+                    }
+                }
+            });
+    }
+
+    public void dontinline_testMethod() {
+        SyncCounter l1 = new SyncCounter();
+        synchronized (l1) {      // Eliminated locking
+            l1.inc();
+            dontinline_brkpt();  // Debugger publishes l1 to sharedCounter.
+            iResult = l1.inc();  // Changes by the 2nd thread will be observed if l1
+                                 // was not relocked before passing it to the debugger.
+        }
+    }
+
+    @Override
+    public int getExpectedIResult() {
+        return 1;
+    }
+}
+
+/////////////////////////////////////////////////////////////////////////////
+
 // Test recursive locking
 class EARelockingRecursiveTarget extends EATestCaseBaseTarget {
 
@@ -1892,6 +1993,48 @@ class EARelockingArgEscapeLWLockedInCalleeFrame_2Target extends EATestCaseBaseTa
         synchronized (l1) {                   // eliminated
             synchronized (l2) {               // eliminated
                 l1.dontinline_sync_method(this);  // l1 escapes
+            }
+        }
+        iResult = l2.x + l2.y;
+    }
+
+    @Override
+    public int getExpectedIResult() {
+        return 6;
+    }
+}
+
+/////////////////////////////////////////////////////////////////////////////
+
+/**
+ * Similar to {@link EARelockingArgEscapeLWLockedInCalleeFrame_2Target}. It does
+ * not use recursive locking and exposed a bug in the lightweight-locking implementation.
+ */
+class EARelockingArgEscapeLWLockedInCalleeFrameNoRecursive extends EATestCaseBaseDebugger {
+
+    public void runTestCase() throws Exception {
+        BreakpointEvent bpe = resumeTo(TARGET_TESTCASE_BASE_NAME, "dontinline_brkpt", "()V");
+        printStack(bpe.thread());
+        @SuppressWarnings("unused")
+        ObjectReference o = getLocalRef(bpe.thread().frame(2), XYVAL_NAME, "l1");
+    }
+}
+
+class EARelockingArgEscapeLWLockedInCalleeFrameNoRecursiveTarget extends EATestCaseBaseTarget {
+
+    @Override
+    public void setUp() {
+        super.setUp();
+        testMethodDepth = 2;
+    }
+
+    public void dontinline_testMethod() {
+        XYVal l1 = new XYVal(1, 1);       // NoEscape, scalar replaced
+        XYVal l2 = new XYVal(4, 2);       // NoEscape, scalar replaced
+        XYVal l3 = new XYVal(5, 3);       // ArgEscape
+        synchronized (l1) {                   // eliminated
+            synchronized (l2) {               // eliminated
+                l3.dontinline_sync_method(this);  // l3 escapes
             }
         }
         iResult = l2.x + l2.y;

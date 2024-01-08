@@ -24,6 +24,7 @@
 /**
  * @test
  * @bug 4956397
+ * @key printer
  * @run main/manual PageDlgPrnButton
  */
 

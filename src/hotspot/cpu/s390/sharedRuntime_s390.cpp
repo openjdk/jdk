@@ -755,14 +755,12 @@ int SharedRuntime::java_calling_convention(const BasicType *sig_bt,
         ShouldNotReachHere();
     }
   }
-  return align_up(stk, 2);
+  return stk;
 }
 
 int SharedRuntime::c_calling_convention(const BasicType *sig_bt,
                                         VMRegPair *regs,
-                                        VMRegPair *regs2,
                                         int total_args_passed) {
-  assert(regs2 == nullptr, "second VMRegPair array not used on this platform");
 
   // Calling conventions for C runtime calls and calls to JNI native methods.
   const VMReg z_iarg_reg[5] = {
@@ -1457,7 +1455,7 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
   // *_slot_offset indicates offset from SP in #stack slots
   // *_offset      indicates offset from SP in #bytes
 
-  int stack_slots = c_calling_convention(out_sig_bt, out_regs, /*regs2=*/nullptr, total_c_args) + // 1+2
+  int stack_slots = c_calling_convention(out_sig_bt, out_regs, total_c_args) + // 1+2
                     SharedRuntime::out_preserve_stack_slots(); // see c_calling_convention
 
   // Now the space for the inbound oop handle area.

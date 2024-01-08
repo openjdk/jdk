@@ -136,24 +136,108 @@ private:
     G1TaskQueueEntry data[EntriesPerChunk];
   };
 
-  size_t _max_chunk_capacity;    // Maximum number of TaskQueueEntryChunk elements on the stack.
+  class ChunkAllocator {
+    // The chunk allocator relies on a growable array data structure that allows resizing without the
+    // need to copy existing items. The basic approach involves organizing the array into chunks,
+    // essentially creating an "array of arrays"; referred to as buckets in this implementation. To
+    // facilitate efficient indexing, the size of the first bucket is set to a power of 2. This choice
+    // allows for quick conversion of an array index into a bucket index and the corresponding offset
+    // within the bucket. Additionally, each new bucket added to the growable array doubles the capacity of
+    // the growable array.
+    //
+    // Illustration of the Growable Array data structure.
+    //
+    //        +----+        +----+----+
+    //        |    |------->|    |    |
+    //        |    |        +----+----+
+    //        +----+        +----+----+
+    //        |    |------->|    |    |
+    //        |    |        +----+----+
+    //        +----+        +-----+-----+-----+-----+
+    //        |    |------->|     |     |     |     |
+    //        |    |        +-----+-----+-----+-----+
+    //        +----+        +-----+-----+-----+-----+-----+-----+-----+----+
+    //        |    |------->|     |     |     |     |     |     |     |    |
+    //        |    |        +-----+-----+-----+-----+-----+-----+-----+----+
+    //        +----+
+    //
+    size_t _min_capacity;
+    size_t _max_capacity;
+    size_t _capacity;
+    size_t _num_buckets;
+    bool _should_grow;
+    TaskQueueEntryChunk* volatile* _buckets;
+    char _pad0[DEFAULT_PADDING_SIZE];
+    volatile size_t _size;
+    char _pad4[DEFAULT_PADDING_SIZE - sizeof(size_t)];
 
-  TaskQueueEntryChunk* _base;    // Bottom address of allocated memory area.
-  size_t _chunk_capacity;        // Current maximum number of TaskQueueEntryChunk elements.
+    size_t bucket_size(size_t bucket) {
+      return (bucket == 0) ?
+              _min_capacity :
+              _min_capacity * ( 1ULL << (bucket -1));
+    }
 
-  char _pad0[DEFAULT_CACHE_LINE_SIZE];
+    static unsigned int find_highest_bit(uintptr_t mask) {
+      return count_leading_zeros(mask) ^ (BitsPerWord - 1U);
+    }
+
+    size_t get_bucket(size_t array_idx) {
+      if (array_idx < _min_capacity) {
+        return 0;
+      }
+
+      return find_highest_bit(array_idx) - find_highest_bit(_min_capacity) + 1;
+    }
+
+    size_t get_bucket_index(size_t array_idx) {
+      if (array_idx < _min_capacity) {
+        return array_idx;
+      }
+      return array_idx - (1ULL << find_highest_bit(array_idx));
+    }
+
+    bool reserve(size_t new_capacity);
+
+  public:
+    ChunkAllocator();
+
+    ~ChunkAllocator();
+
+    bool initialize(size_t initial_capacity, size_t max_capacity);
+
+    void reset() {
+      _size = 0;
+      _should_grow = false;
+    }
+
+    // During G1CMConcurrentMarkingTask or finalize_marking phases, we prefer to restart the marking when
+    // the G1CMMarkStack overflows. Attempts to expand the G1CMMarkStack should be followed with a restart
+    // of the marking. On failure to allocate a new chuck, the caller just returns and forces a restart.
+    // This approach offers better memory utilization for the G1CMMarkStack, as each iteration of the
+    // marking potentially involves traversing fewer unmarked nodes in the graph.
+
+    // However, during the reference processing phase, instead of restarting the marking process, the
+    // G1CMMarkStack is expanded upon failure to allocate a new chunk. The decision between these two
+    // modes of expansion is determined by the _should_grow parameter.
+    void set_should_grow() {
+      _should_grow = true;
+    }
+
+    size_t capacity() const { return _capacity; }
+
+    bool expand();
+
+    TaskQueueEntryChunk* allocate_new_chunk();
+  };
+
+  ChunkAllocator _chunk_allocator;
+
+  char _pad0[DEFAULT_PADDING_SIZE];
   TaskQueueEntryChunk* volatile _free_list;  // Linked list of free chunks that can be allocated by users.
-  char _pad1[DEFAULT_CACHE_LINE_SIZE - sizeof(TaskQueueEntryChunk*)];
+  char _pad1[DEFAULT_PADDING_SIZE - sizeof(TaskQueueEntryChunk*)];
   TaskQueueEntryChunk* volatile _chunk_list; // List of chunks currently containing data.
   volatile size_t _chunks_in_chunk_list;
-  char _pad2[DEFAULT_CACHE_LINE_SIZE - sizeof(TaskQueueEntryChunk*) - sizeof(size_t)];
-
-  volatile size_t _hwm;          // High water mark within the reserved space.
-  char _pad4[DEFAULT_CACHE_LINE_SIZE - sizeof(size_t)];
-
-  // Allocate a new chunk from the reserved memory, using the high water mark. Returns
-  // null if out of memory.
-  TaskQueueEntryChunk* allocate_new_chunk();
+  char _pad2[DEFAULT_PADDING_SIZE - sizeof(TaskQueueEntryChunk*) - sizeof(size_t)];
 
   // Atomically add the given chunk to the list.
   void add_chunk_to_list(TaskQueueEntryChunk* volatile* list, TaskQueueEntryChunk* elem);
@@ -167,19 +251,15 @@ private:
   TaskQueueEntryChunk* remove_chunk_from_chunk_list();
   TaskQueueEntryChunk* remove_chunk_from_free_list();
 
-  // Resizes the mark stack to the given new capacity. Releases any previous
-  // memory if successful.
-  bool resize(size_t new_capacity);
-
  public:
   G1CMMarkStack();
-  ~G1CMMarkStack();
+  ~G1CMMarkStack() = default;
 
   // Alignment and minimum capacity of this mark stack in number of oops.
   static size_t capacity_alignment();
 
-  // Allocate and initialize the mark stack with the given number of oops.
-  bool initialize(size_t initial_capacity, size_t max_capacity);
+  // Allocate and initialize the mark stack.
+  bool initialize();
 
   // Pushes the given buffer containing at most EntriesPerChunk elements on the mark
   // stack. If less than EntriesPerChunk elements are to be pushed, the array must
@@ -197,7 +277,11 @@ private:
   // _chunk_list.
   bool is_empty() const { return _chunk_list == nullptr; }
 
-  size_t capacity() const  { return _chunk_capacity; }
+  size_t capacity() const  { return _chunk_allocator.capacity(); }
+
+  void set_should_grow() {
+    _chunk_allocator.set_should_grow();
+  }
 
   // Expand the stack, typically in response to an overflow condition
   void expand();
@@ -702,8 +786,6 @@ private:
   double                      _elapsed_time_ms;
   // Termination time of this task
   double                      _termination_time_ms;
-  // When this task got into the termination protocol
-  double                      _termination_start_time_ms;
 
   TruncatedSeq                _marking_step_diff_ms;
 

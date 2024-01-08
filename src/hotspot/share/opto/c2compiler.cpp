@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@
 #include "opto/output.hpp"
 #include "opto/runtime.hpp"
 #include "runtime/stubRoutines.hpp"
+#include "runtime/globals_extension.hpp"
 #include "utilities/macros.hpp"
 
 
@@ -63,6 +64,13 @@ const char* C2Compiler::retry_no_superword() {
 void compiler_stubs_init(bool in_compiler_thread);
 
 bool C2Compiler::init_c2_runtime() {
+
+#ifdef ASSERT
+  if (!AlignVector && VerifyAlignVector) {
+    warning("VerifyAlignVector disabled because AlignVector is not enabled.");
+    FLAG_SET_CMDLINE(VerifyAlignVector, false);
+  }
+#endif
 
   // Check assumptions used while running ADLC
   Compile::adlc_verification();
@@ -822,6 +830,7 @@ bool C2Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   case vmIntrinsics::_notifyJvmtiVThreadMount:
   case vmIntrinsics::_notifyJvmtiVThreadUnmount:
   case vmIntrinsics::_notifyJvmtiVThreadHideFrames:
+  case vmIntrinsics::_notifyJvmtiVThreadDisableSuspend:
 #endif
     break;
 

@@ -38,12 +38,6 @@ ShenandoahAggressiveHeuristics::ShenandoahAggressiveHeuristics(ShenandoahSpaceIn
 
   // Aggressive evacuates everything, so it needs as much evac space as it can get
   SHENANDOAH_ERGO_ENABLE_FLAG(ShenandoahEvacReserveOverflow);
-
-  // If class unloading is globally enabled, aggressive does unloading even with
-  // concurrent cycles.
-  if (ClassUnloading) {
-    SHENANDOAH_ERGO_OVERRIDE_DEFAULT(ShenandoahUnloadClassesFrequency, 1);
-  }
 }
 
 void ShenandoahAggressiveHeuristics::choose_collection_set_from_regiondata(ShenandoahCollectionSet* cset,
@@ -63,7 +57,7 @@ bool ShenandoahAggressiveHeuristics::should_start_gc() {
 }
 
 bool ShenandoahAggressiveHeuristics::should_unload_classes() {
-  if (!can_unload_classes_normal()) return false;
+  if (!can_unload_classes()) return false;
   if (has_metaspace_oom()) return true;
   // Randomly unload classes with 50% chance.
   return (os::random() & 1) == 1;
