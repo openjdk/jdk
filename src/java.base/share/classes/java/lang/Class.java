@@ -314,13 +314,10 @@ public final class Class<T> implements java.io.Serializable,
                     sb.append(' ');
                 }
 
-                // A class cannot be strictfp and sealed so it is
-                // sufficient to check for sealed-ness after all
+                // A class cannot be strictfp and sealed/non-sealed so
+                // it is sufficient to check for sealed-ness after all
                 // modifiers are printed.
-                boolean isSealed = isSealed();
-                if (isSealed) {
-                    sb.append("sealed ");
-                }
+                addSealingInfo(modifiers, sb);
 
                 if (isAnnotation()) {
                     sb.append('@');
@@ -350,6 +347,38 @@ public final class Class<T> implements java.io.Serializable,
 
             return sb.toString();
         }
+    }
+
+    private void addSealingInfo(int modifiers, StringBuilder sb) {
+        // A class can be final XOR sealed XOR non-sealed.
+        if (Modifier.isFinal(modifiers)) {
+            return; // no-op
+        } else {
+            boolean isSealed = isSealed();
+            if (isSealed) {
+                sb.append("sealed ");
+                return;
+            } else {
+                // Check for sealed ancestor, which implies this class
+                // is non-sealed.
+                if (hasSealedAncestor(this)) {
+                    sb.append("non-sealed ");
+                }
+            }
+        }
+    }
+
+    private boolean hasSealedAncestor(Class<?> clazz) {
+        var superclass = clazz.getSuperclass();
+        if (superclass != null) {
+            if (superclass.isSealed() || hasSealedAncestor(superclass))
+                return true;
+        }
+        for (var superinterface : clazz.getInterfaces()) {
+            if (superinterface.isSealed() || hasSealedAncestor(superinterface))
+                return true;
+        }
+        return false;
     }
 
     static String typeVarBounds(TypeVariable<?> typeVar) {

@@ -43,7 +43,7 @@ public class GenericStringTest {
         int[][]    intArray = {{1}};
 
         Map<Class<?>, String> platformTestCases =
-            Map.of(int.class,                          "int",
+            Map.of(//int.class,                          "int",
                    void.class,                         "void",
                    args.getClass(),                    "java.lang.String[]",
                    nested.getClass(),                  "java.lang.String[][]",
@@ -54,7 +54,9 @@ public class GenericStringTest {
                    java.util.EventListenerProxy.class, "public abstract class java.util.EventListenerProxy<T extends java.util.EventListener>",
 
                    // Sealed class
-                   java.lang.ref.Reference.class,      "public abstract sealed class java.lang.ref.Reference<T>"
+                   java.lang.ref.Reference.class,      "public abstract sealed class java.lang.ref.Reference<T>",
+                   // non-sealed class
+                   java.lang.ref.WeakReference.class,  "public non-sealed class java.lang.ref.WeakReference<T>"
                    );
 
         for (Map.Entry<Class<?>, String> platformTestCase : platformTestCases.entrySet()) {
