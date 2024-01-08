@@ -36,7 +36,7 @@ import java.util.Set;
 public class DefineModuleApp {
     public static void main(String[] args) throws Throwable {
         if (args.length != 2) {
-            throw new RuntimeException("DefineModuleApp expects 2 args but saw only " + args.length);
+            throw new RuntimeException("DefineModuleApp expects 2 args but saw " + args.length);
         }
         final Path MODS = Path.of(args[0]);
         final String MODULE_NAME = args[1];
