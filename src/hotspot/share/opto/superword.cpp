@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -557,13 +557,21 @@ bool SuperWord::SLP_extract() {
   // Attempt vectorization
   find_adjacent_refs();
 
-  if (align_to_ref() == nullptr) {
-    return false; // Did not find memory reference to align vectors
+  if (_packset.length() == 0) {
+#ifndef PRODUCT
+    if (TraceSuperWord) {
+      tty->print_cr("\nNo pair packs generated, abort SuperWord.");
+      tty->cr();
+    }
+#endif
+    return false;
   }
 
   extend_packlist();
 
   combine_packs();
+
+  filter_packs_for_alignment();
 
   construct_my_pack_map();
 
@@ -578,9 +586,9 @@ bool SuperWord::SLP_extract() {
 
 //------------------------------find_adjacent_refs---------------------------
 // Find the adjacent memory references and create pack pairs for them.
-// This is the initial set of packs that will then be extended by
-// following use->def and def->use links.  The align positions are
-// assigned relative to the reference "align_to_ref"
+// We can find adjacent memory references by comparing their relative
+// alignment. Whether the final vectors can be aligned is determined later
+// once all vectors are extended and combined.
 void SuperWord::find_adjacent_refs() {
   // Get list of memory operations
   Node_List memops;
@@ -598,25 +606,22 @@ void SuperWord::find_adjacent_refs() {
     tty->print_cr("\nfind_adjacent_refs found %d memops", memops.size());
   }
 
-  Node_List align_to_refs;
   int max_idx;
-  int best_iv_adjustment = 0;
-  MemNode* best_align_to_mem_ref = nullptr;
+
+  // Take the first mem_ref as the reference to align to. The pre-loop trip count is
+  // modified to align this reference to a vector-aligned address. If strict alignment
+  // is required, we may change the reference later (see filter_packs_for_alignment()).
+  MemNode* align_to_mem_ref = nullptr;
 
   while (memops.size() != 0) {
     // Find a memory reference to align to.
     MemNode* mem_ref = find_align_to_ref(memops, max_idx);
     if (mem_ref == nullptr) break;
-    align_to_refs.push(mem_ref);
     int iv_adjustment = get_iv_adjustment(mem_ref);
 
-    if (best_align_to_mem_ref == nullptr) {
-      // Set memory reference which is the best from all memory operations
-      // to be used for alignment. The pre-loop trip count is modified to align
-      // this reference to a vector-aligned address.
-      best_align_to_mem_ref = mem_ref;
-      best_iv_adjustment = iv_adjustment;
-      NOT_PRODUCT(find_adjacent_refs_trace_1(best_align_to_mem_ref, best_iv_adjustment);)
+    if (align_to_mem_ref == nullptr) {
+      align_to_mem_ref = mem_ref;
+      set_align_to_ref(align_to_mem_ref);
     }
 
     VPointer align_to_ref_p(mem_ref, phase(), lpt(), nullptr, false);
@@ -633,90 +638,26 @@ void SuperWord::find_adjacent_refs() {
       }
     }
 
-    if (mem_ref_has_no_alignment_violation(mem_ref, iv_adjustment, align_to_ref_p,
-                                           best_align_to_mem_ref, best_iv_adjustment,
-                                           align_to_refs)) {
-      // Create initial pack pairs of memory operations for which alignment was set.
-      for (uint i = 0; i < memops.size(); i++) {
-        Node* s1 = memops.at(i);
-        int align = alignment(s1);
-        if (align == top_align) continue;
-        for (uint j = 0; j < memops.size(); j++) {
-          Node* s2 = memops.at(j);
-          if (alignment(s2) == top_align) continue;
-          if (s1 != s2 && are_adjacent_refs(s1, s2)) {
-            if (stmts_can_pack(s1, s2, align)) {
-              Node_List* pair = new Node_List();
-              pair->push(s1);
-              pair->push(s2);
-              if (!_do_vector_loop || same_origin_idx(s1, s2)) {
-                _packset.append(pair);
-              }
+    // Create initial pack pairs of memory operations for which alignment was set.
+    for (uint i = 0; i < memops.size(); i++) {
+      Node* s1 = memops.at(i);
+      int align = alignment(s1);
+      if (align == top_align) continue;
+      for (uint j = 0; j < memops.size(); j++) {
+        Node* s2 = memops.at(j);
+        if (alignment(s2) == top_align) continue;
+        if (s1 != s2 && are_adjacent_refs(s1, s2)) {
+          if (stmts_can_pack(s1, s2, align)) {
+            Node_List* pair = new Node_List();
+            pair->push(s1);
+            pair->push(s2);
+            if (!_do_vector_loop || same_origin_idx(s1, s2)) {
+              _packset.append(pair);
             }
           }
         }
       }
-    } else {
-      // Cannot create pairs for mem_ref. Reject all related memops forever.
-
-      // First, remove remaining memory ops of the same memory slice from the list.
-      for (int i = memops.size() - 1; i >= 0; i--) {
-        MemNode* s = memops.at(i)->as_Mem();
-        if (same_memory_slice(s, mem_ref) || same_velt_type(s, mem_ref)) {
-          memops.remove(i);
-        }
-      }
-
-      // Second, remove already constructed packs of the same memory slice.
-      for (int i = _packset.length() - 1; i >= 0; i--) {
-        Node_List* p = _packset.at(i);
-        MemNode* s = p->at(0)->as_Mem();
-        if (same_memory_slice(s, mem_ref) || same_velt_type(s, mem_ref)) {
-          remove_pack_at(i);
-        }
-      }
-
-      // If needed find the best memory reference for loop alignment again.
-      if (same_memory_slice(mem_ref, best_align_to_mem_ref) || same_velt_type(mem_ref, best_align_to_mem_ref)) {
-        // Put memory ops from remaining packs back on memops list for
-        // the best alignment search.
-        uint orig_msize = memops.size();
-        for (int i = 0; i < _packset.length(); i++) {
-          Node_List* p = _packset.at(i);
-          MemNode* s = p->at(0)->as_Mem();
-          assert(!same_velt_type(s, mem_ref), "sanity");
-          memops.push(s);
-        }
-        best_align_to_mem_ref = find_align_to_ref(memops, max_idx);
-        if (best_align_to_mem_ref == nullptr) {
-          if (TraceSuperWord) {
-            tty->print_cr("SuperWord::find_adjacent_refs(): best_align_to_mem_ref == nullptr");
-          }
-          // best_align_to_mem_ref will be used for adjusting the pre-loop limit in
-          // SuperWord::align_initial_loop_index. Find one with the biggest vector size,
-          // smallest data size and smallest iv offset from memory ops from remaining packs.
-          if (_packset.length() > 0) {
-            if (orig_msize == 0) {
-              best_align_to_mem_ref = memops.at(max_idx)->as_Mem();
-            } else {
-              for (uint i = 0; i < orig_msize; i++) {
-                memops.remove(0);
-              }
-              best_align_to_mem_ref = find_align_to_ref(memops, max_idx);
-              assert(best_align_to_mem_ref == nullptr, "sanity");
-              best_align_to_mem_ref = memops.at(max_idx)->as_Mem();
-            }
-            assert(best_align_to_mem_ref != nullptr, "sanity");
-          }
-          break;
-        }
-        best_iv_adjustment = get_iv_adjustment(best_align_to_mem_ref);
-        NOT_PRODUCT(find_adjacent_refs_trace_1(best_align_to_mem_ref, best_iv_adjustment);)
-        // Restore list.
-        while (memops.size() > orig_msize)
-          (void)memops.pop();
-      }
-    } // unaligned memory accesses
+    }
 
     // Remove used mem nodes.
     for (int i = memops.size() - 1; i >= 0; i--) {
@@ -725,66 +666,17 @@ void SuperWord::find_adjacent_refs() {
         memops.remove(i);
       }
     }
+  } // while (memops.size() != 0)
 
-  } // while (memops.size() != 0
-  set_align_to_ref(best_align_to_mem_ref);
+  assert(_packset.is_empty() || align_to_mem_ref != nullptr,
+         "packset empty or we find the alignment reference");
 
+#ifndef PRODUCT
   if (TraceSuperWord) {
     tty->print_cr("\nAfter find_adjacent_refs");
     print_packset();
   }
-}
-
-#ifndef PRODUCT
-void SuperWord::find_adjacent_refs_trace_1(Node* best_align_to_mem_ref, int best_iv_adjustment) {
-  if (is_trace_adjacent()) {
-    tty->print("SuperWord::find_adjacent_refs best_align_to_mem_ref = %d, best_iv_adjustment = %d",
-       best_align_to_mem_ref->_idx, best_iv_adjustment);
-       best_align_to_mem_ref->dump();
-  }
-}
 #endif
-
-// If strict memory alignment is required (vectors_should_be_aligned), then check if
-// mem_ref is aligned with best_align_to_mem_ref.
-bool SuperWord::mem_ref_has_no_alignment_violation(MemNode* mem_ref, int iv_adjustment, VPointer& align_to_ref_p,
-                                                   MemNode* best_align_to_mem_ref, int best_iv_adjustment,
-                                                   Node_List &align_to_refs) {
-  if (!vectors_should_be_aligned()) {
-    // Alignment is not required by the hardware. No violation possible.
-    return true;
-  }
-
-  // All vectors need to be memory aligned, modulo their vector_width. This is more strict
-  // than the hardware probably requires. Most hardware at most requires 4-byte alignment.
-  //
-  // In the pre-loop, we align best_align_to_mem_ref to its vector_length. To ensure that
-  // all mem_ref's are memory aligned modulo their vector_width, we only need to check that
-  // they are all aligned to best_align_to_mem_ref, modulo their vector_width. For that,
-  // we check the following 3 conditions.
-
-  // (1) All packs are aligned with best_align_to_mem_ref.
-  if (memory_alignment(mem_ref, best_iv_adjustment) != 0) {
-    return false;
-  }
-  // (2) All other vectors have vector_size less or equal to that of best_align_to_mem_ref.
-  int vw = vector_width(mem_ref);
-  int vw_best = vector_width(best_align_to_mem_ref);
-  if (vw > vw_best) {
-    // We only align to vector_width of best_align_to_mem_ref during pre-loop.
-    // A mem_ref with a larger vector_width might thus not be vector_width aligned.
-    return false;
-  }
-  // (3) Ensure that all vectors have the same invariant. We model memory accesses like this
-  //     address = base + k*iv + constant [+ invar]
-  //     memory_alignment ignores the invariant.
-  VPointer p2(best_align_to_mem_ref, phase(), lpt(), nullptr, false);
-  if (!align_to_ref_p.invar_equals(p2)) {
-    // Do not vectorize memory accesses with different invariants
-    // if unaligned memory accesses are not allowed.
-    return false;
-  }
-  return true;
 }
 
 //------------------------------find_align_to_ref---------------------------
@@ -798,12 +690,6 @@ MemNode* SuperWord::find_align_to_ref(Node_List &memops, int &idx) {
   for (uint i = 0; i < memops.size(); i++) {
     MemNode* s1 = memops.at(i)->as_Mem();
     VPointer p1(s1, phase(), lpt(), nullptr, false);
-    // Only discard unalignable memory references if vector memory references
-    // should be aligned on this platform.
-    if (vectors_should_be_aligned() && !ref_is_alignable(p1)) {
-      *cmp_ct.adr_at(i) = 0;
-      continue;
-    }
     for (uint j = i+1; j < memops.size(); j++) {
       MemNode* s2 = memops.at(j)->as_Mem();
       if (isomorphic(s1, s2)) {
@@ -892,95 +778,6 @@ MemNode* SuperWord::find_align_to_ref(Node_List &memops, int &idx) {
   return nullptr;
 }
 
-//------------------span_works_for_memory_size-----------------------------
-static bool span_works_for_memory_size(MemNode* mem, int span, int mem_size, int offset) {
-  bool span_matches_memory = false;
-  if ((mem_size == type2aelembytes(T_BYTE) || mem_size == type2aelembytes(T_SHORT))
-    && ABS(span) == type2aelembytes(T_INT)) {
-    // There is a mismatch on span size compared to memory.
-    for (DUIterator_Fast jmax, j = mem->fast_outs(jmax); j < jmax; j++) {
-      Node* use = mem->fast_out(j);
-      if (!VectorNode::is_type_transition_to_int(use)) {
-        return false;
-      }
-    }
-    // If all uses transition to integer, it means that we can successfully align even on mismatch.
-    return true;
-  }
-  else {
-    span_matches_memory = ABS(span) == mem_size;
-  }
-  return span_matches_memory && (ABS(offset) % mem_size) == 0;
-}
-
-//------------------------------ref_is_alignable---------------------------
-// Can the preloop align the reference to position zero in the vector?
-bool SuperWord::ref_is_alignable(VPointer& p) {
-  if (!p.has_iv()) {
-    return true;   // no induction variable
-  }
-  CountedLoopEndNode* pre_end = lp()->pre_loop_end();
-  assert(pre_end->stride_is_con(), "pre loop stride is constant");
-  int preloop_stride = pre_end->stride_con();
-
-  int span = preloop_stride * p.scale_in_bytes();
-  int mem_size = p.memory_size();
-  int offset   = p.offset_in_bytes();
-  // Stride one accesses are alignable if offset is aligned to memory operation size.
-  // Offset can be unaligned when UseUnalignedAccesses is used.
-  if (span_works_for_memory_size(p.mem(), span, mem_size, offset)) {
-    return true;
-  }
-  // If the initial offset from start of the object is computable,
-  // check if the pre-loop can align the final offset accordingly.
-  //
-  // In other words: Can we find an i such that the offset
-  // after i pre-loop iterations is aligned to vw?
-  //   (init_offset + pre_loop) % vw == 0              (1)
-  // where
-  //   pre_loop = i * span
-  // is the number of bytes added to the offset by i pre-loop iterations.
-  //
-  // For this to hold we need pre_loop to increase init_offset by
-  //   pre_loop = vw - (init_offset % vw)
-  //
-  // This is only possible if pre_loop is divisible by span because each
-  // pre-loop iteration increases the initial offset by 'span' bytes:
-  //   (vw - (init_offset % vw)) % span == 0
-  //
-  int vw = vector_width_in_bytes(p.mem());
-  assert(vw > 1, "sanity");
-  Node* init_nd = pre_end->init_trip();
-  if (init_nd->is_Con() && p.invar() == nullptr) {
-    int init = init_nd->bottom_type()->is_int()->get_con();
-    int init_offset = init * p.scale_in_bytes() + offset;
-    if (init_offset < 0) { // negative offset from object start?
-      return false;        // may happen in dead loop
-    }
-    if (vw % span == 0) {
-      // If vm is a multiple of span, we use formula (1).
-      if (span > 0) {
-        return (vw - (init_offset % vw)) % span == 0;
-      } else {
-        assert(span < 0, "nonzero stride * scale");
-        return (init_offset % vw) % -span == 0;
-      }
-    } else if (span % vw == 0) {
-      // If span is a multiple of vw, we can simplify formula (1) to:
-      //   (init_offset + i * span) % vw == 0
-      //     =>
-      //   (init_offset % vw) + ((i * span) % vw) == 0
-      //     =>
-      //   init_offset % vw == 0
-      //
-      // Because we add a multiple of vw to the initial offset, the final
-      // offset is a multiple of vw if and only if init_offset is a multiple.
-      //
-      return (init_offset % vw) == 0;
-    }
-  }
-  return false;
-}
 //---------------------------get_vw_bytes_special------------------------
 int SuperWord::get_vw_bytes_special(MemNode* s) {
   // Get the vector width in bytes.
@@ -1026,10 +823,6 @@ int SuperWord::get_iv_adjustment(MemNode* mem_ref) {
     // several iterations are needed to align memory operations in main-loop even
     // if offset is 0.
     int iv_adjustment_in_bytes = (stride_sign * vw - (offset % vw));
-    // iv_adjustment_in_bytes must be a multiple of elt_size if vector memory
-    // references should be aligned on this platform.
-    assert((ABS(iv_adjustment_in_bytes) % elt_size) == 0 || !vectors_should_be_aligned(),
-           "(%d) should be divisible by (%d)", iv_adjustment_in_bytes, elt_size);
     iv_adjustment = iv_adjustment_in_bytes/elt_size;
   } else {
     // This memory op is not dependent on iv (scale == 0)
@@ -1707,6 +1500,12 @@ int SuperWord::unpack_cost(int ct) { return ct; }
 //------------------------------combine_packs---------------------------
 // Combine packs A and B with A.last == B.first into A.first..,A.last,B.second,..B.last
 void SuperWord::combine_packs() {
+#ifdef ASSERT
+  for (int i = 0; i < _packset.length(); i++) {
+    assert(_packset.at(i) != nullptr, "no nullptr in packset");
+  }
+#endif
+
   bool changed = true;
   // Combine packs regardless max vector size.
   while (changed) {
@@ -1802,18 +1601,123 @@ void SuperWord::combine_packs() {
     }
   }
 
-  // Compress list.
-  for (int i = _packset.length() - 1; i >= 0; i--) {
-    Node_List* p1 = _packset.at(i);
-    if (p1 == nullptr) {
-      _packset.remove_at(i);
-    }
-  }
+  // Remove all nullptr from packset
+  compress_packset();
 
+#ifndef PRODUCT
   if (TraceSuperWord) {
     tty->print_cr("\nAfter combine_packs");
     print_packset();
   }
+#endif
+}
+
+// Find the set of alignment solutions for load/store pack.
+const AlignmentSolution* SuperWord::pack_alignment_solution(Node_List* pack) {
+  assert(pack != nullptr && (pack->at(0)->is_Load() || pack->at(0)->is_Store()), "only load/store packs");
+
+  const MemNode* mem_ref = pack->at(0)->as_Mem();
+  VPointer mem_ref_p(mem_ref, phase(), lpt(), nullptr, false);
+  const CountedLoopEndNode* pre_end = lp()->pre_loop_end();
+  assert(pre_end->stride_is_con(), "pre loop stride is constant");
+
+  AlignmentSolver solver(pack->at(0)->as_Mem(),
+                         pack->size(),
+                         mem_ref_p.base(),
+                         mem_ref_p.offset_in_bytes(),
+                         mem_ref_p.invar(),
+                         mem_ref_p.invar_factor(),
+                         mem_ref_p.scale_in_bytes(),
+                         pre_end->init_trip(),
+                         pre_end->stride_con(),
+                         iv_stride()
+                         DEBUG_ONLY(COMMA is_trace_align_vector()));
+  return solver.solve();
+}
+
+// Ensure all packs are aligned, if AlignVector is on.
+// Find an alignment solution: find the set of pre_iter that memory align all packs.
+// Start with the maximal set (pre_iter >= 0) and filter it with the constraints
+// that the packs impose. Remove packs that do not have a compatible solution.
+void SuperWord::filter_packs_for_alignment() {
+  // We do not need to filter if no alignment is required.
+  if (!vectors_should_be_aligned()) {
+    return;
+  }
+
+#ifndef PRODUCT
+  if (TraceSuperWord || is_trace_align_vector()) {
+    tty->print_cr("\nfilter_packs_for_alignment:");
+  }
+#endif
+
+  ResourceMark rm;
+
+  // Start with trivial (unconstrained) solution space
+  AlignmentSolution const* current = new TrivialAlignmentSolution();
+  int mem_ops_count = 0;
+  int mem_ops_rejected = 0;
+  for (int i = 0; i < _packset.length(); i++) {
+    Node_List* p = _packset.at(i);
+    if (p != nullptr) {
+      if (p->at(0)->is_Load() || p->at(0)->is_Store()) {
+        mem_ops_count++;
+        // Find solution for pack p, and filter with current solution.
+        const AlignmentSolution* s = pack_alignment_solution(p);
+        const AlignmentSolution* intersect = current->filter(s);
+
+#ifndef PRODUCT
+        if (is_trace_align_vector()) {
+          tty->print("  solution for pack:         ");
+          s->print();
+          tty->print("  intersection with current: ");
+          intersect->print();
+        }
+#endif
+
+        if (intersect->is_empty()) {
+          // Solution failed or is not compatible, remove pack i.
+          _packset.at_put(i, nullptr);
+          mem_ops_rejected++;
+        } else {
+          // Solution is compatible.
+          current = intersect;
+        }
+      }
+    }
+  }
+
+#ifndef PRODUCT
+  if (TraceSuperWord || is_trace_align_vector()) {
+    tty->print("\n final solution: ");
+    current->print();
+    tty->print_cr(" rejected mem_ops packs: %d of %d", mem_ops_rejected, mem_ops_count);
+    tty->cr();
+  }
+#endif
+
+  assert(!current->is_empty(), "solution must be non-empty");
+  if (current->is_constrained()) {
+    // Solution is constrained (not trivial)
+    // -> must change pre-limit to achieve alignment
+    set_align_to_ref(current->as_constrained()->mem_ref());
+  }
+
+  // Remove all nullptr from packset
+  compress_packset();
+}
+
+// Compress packset, such that it has no nullptr entries
+void SuperWord::compress_packset() {
+  int j = 0;
+  for (int i = 0; i < _packset.length(); i++) {
+    Node_List* p = _packset.at(i);
+    if (p != nullptr) {
+      _packset.at_put(j, p);
+      j++;
+    }
+  }
+  _packset.trunc_to(j);
 }
 
 //-----------------------------construct_my_pack_map--------------------------
@@ -2493,9 +2397,7 @@ bool SuperWord::output() {
 #endif
   _phase->C->print_method(PHASE_SUPERWORD2_BEFORE_OUTPUT, 4, cl);
 
-  // Ensure main loop's initial value is properly aligned
-  //  (iv_initial_value + min_iv_offset) % vector_width_in_bytes() == 0
-  align_initial_loop_index(align_to_ref());
+  adjust_pre_loop_limit_to_align_main_loop_vectors();
 
   // Insert extract (unpack) operations for scalar uses
   for (int i = 0; i < _packset.length(); i++) {
@@ -2767,6 +2669,17 @@ bool SuperWord::output() {
         C->record_failure(C2Compiler::retry_no_superword());
         return false; // bailout
       }
+
+#ifdef ASSERT
+      // Mark Load/Store Vector for alignment verification
+      if (VerifyAlignVector) {
+        if (vn->Opcode() == Op_LoadVector) {
+          vn->as_LoadVector()->set_must_verify_alignment();
+        } else if (vn->Opcode() == Op_StoreVector) {
+          vn->as_StoreVector()->set_must_verify_alignment();
+        }
+      }
+#endif
 
       _block.at_put(i, vn);
       _igvn.register_new_node_with_optimizer(vn);
@@ -3553,167 +3466,337 @@ LoadNode::ControlDependency SuperWord::control_dependency(Node_List* p) {
   return dep;
 }
 
+#define TRACE_ALIGN_VECTOR_NODE(node) { \
+  DEBUG_ONLY(                           \
+    if (is_trace_align_vector()) {      \
+      tty->print("  " #node ": ");      \
+      node->dump();                     \
+    }                                   \
+  )                                     \
+}                                       \
 
-//----------------------------align_initial_loop_index---------------------------
-// Adjust pre-loop limit so that in main loop, a load/store reference
-// to align_to_ref will be a position zero in the vector.
-//   (iv + k) mod vector_align == 0
-void SuperWord::align_initial_loop_index(MemNode* align_to_ref) {
-  assert(lp()->is_main_loop(), "");
-  CountedLoopEndNode* pre_end = lp()->pre_loop_end();
-  Node* pre_opaq1 = pre_end->limit();
-  assert(pre_opaq1->Opcode() == Op_Opaque1, "");
-  Opaque1Node* pre_opaq = (Opaque1Node*)pre_opaq1;
-  Node* lim0 = pre_opaq->in(1);
+// Ensure that the main loop vectors are aligned by adjusting the pre loop limit. We memory-align
+// the address of "align_to_ref" to the maximal possible vector width. We adjust the pre-loop
+// iteration count by adjusting the pre-loop limit.
+void SuperWord::adjust_pre_loop_limit_to_align_main_loop_vectors() {
+  const MemNode* align_to_ref = _align_to_ref;
+  assert(align_to_ref != nullptr, "align_to_ref must be set");
+  assert(lp()->is_main_loop(), "can only do alignment for main loop");
 
-  // Where we put new limit calculations
+  // The opaque node for the limit, where we adjust the input
+  Opaque1Node* pre_opaq = lp()->pre_loop_end()->limit()->as_Opaque1();
+
+  // Current pre-loop limit.
+  Node* old_limit = pre_opaq->in(1);
+
+  // Where we put new limit calculations.
   Node* pre_ctrl = lp()->pre_loop_head()->in(LoopNode::EntryControl);
 
-  // Ensure the original loop limit is available from the
-  // pre-loop Opaque1 node.
+  // Ensure the original loop limit is available from the pre-loop Opaque1 node.
   Node* orig_limit = pre_opaq->original_loop_limit();
   assert(orig_limit != nullptr && _igvn.type(orig_limit) != Type::TOP, "");
 
   VPointer align_to_ref_p(align_to_ref, phase(), lpt(), nullptr, false);
   assert(align_to_ref_p.valid(), "sanity");
 
-  // Given:
-  //     lim0 == original pre loop limit
-  //     V == v_align (power of 2)
-  //     invar == extra invariant piece of the address expression
-  //     e == offset [ +/- invar ]
+  // For the main-loop, we want the address of align_to_ref to be memory aligned
+  // with some alignment width (aw, a power of 2). When we enter the main-loop,
+  // we know that iv is equal to the pre-loop limit. If we adjust the pre-loop
+  // limit by executing adjust_pre_iter many extra iterations, we can change the
+  // alignment of the address.
   //
-  // When reassociating expressions involving '%' the basic rules are:
-  //     (a - b) % k == 0   =>  a % k == b % k
-  // and:
-  //     (a + b) % k == 0   =>  a % k == (k - b) % k
+  //   adr = base + offset + invar + scale * iv                               (1)
+  //   adr % aw = 0                                                           (2)
   //
-  // For stride > 0 && scale > 0,
-  //   Derive the new pre-loop limit "lim" such that the two constraints:
-  //     (1) lim = lim0 + N           (where N is some positive integer < V)
-  //     (2) (e + lim) % V == 0
-  //   are true.
+  // Note, that we are defining the modulo operator "%" such that the remainder is
+  // always positive, see AlignmentSolution::mod(i, q). Since we are only computing
+  // modulo with powers of 2, we can instead simply use the last log2(q) bits of
+  // a number i, to get "i % q". This is performed with a bitmask.
   //
-  //   Substituting (1) into (2),
-  //     (e + lim0 + N) % V == 0
-  //   solve for N:
-  //     N = (V - (e + lim0)) % V
-  //   substitute back into (1), so that new limit
-  //     lim = lim0 + (V - (e + lim0)) % V
+  // The limit of the pre-loop needs to be adjusted:
   //
-  // For stride > 0 && scale < 0
-  //   Constraints:
-  //     lim = lim0 + N
-  //     (e - lim) % V == 0
-  //   Solving for lim:
-  //     (e - lim0 - N) % V == 0
-  //     N = (e - lim0) % V
-  //     lim = lim0 + (e - lim0) % V
+  //   old_limit:       current pre-loop limit
+  //   new_limit:       new pre-loop limit
+  //   adjust_pre_iter: additional pre-loop iterations for alignment adjustment
   //
-  // For stride < 0 && scale > 0
-  //   Constraints:
-  //     lim = lim0 - N
-  //     (e + lim) % V == 0
-  //   Solving for lim:
-  //     (e + lim0 - N) % V == 0
-  //     N = (e + lim0) % V
-  //     lim = lim0 - (e + lim0) % V
+  // We want to find adjust_pre_iter, such that the address is aligned when entering
+  // the main-loop:
   //
-  // For stride < 0 && scale < 0
-  //   Constraints:
-  //     lim = lim0 - N
-  //     (e - lim) % V == 0
-  //   Solving for lim:
-  //     (e - lim0 + N) % V == 0
-  //     N = (V - (e - lim0)) % V
-  //     lim = lim0 - (V - (e - lim0)) % V
+  //   iv = new_limit = old_limit + adjust_pre_iter                           (3a, stride > 0)
+  //   iv = new_limit = old_limit - adjust_pre_iter                           (3b, stride < 0)
+  //
+  // We define boi as:
+  //
+  //   boi = base + offset + invar                                            (4)
+  //
+  // And now we can simplify the address using (1), (3), and (4):
+  //
+  //   adr = boi + scale * new_limit
+  //   adr = boi + scale * (old_limit + adjust_pre_iter)                      (5a, stride > 0)
+  //   adr = boi + scale * (old_limit - adjust_pre_iter)                      (5b, stride < 0)
+  //
+  // And hence we can restate (2) with (5), and solve the equation for adjust_pre_iter:
+  //
+  //   (boi + scale * (old_limit + adjust_pre_iter) % aw = 0                  (6a, stride > 0)
+  //   (boi + scale * (old_limit - adjust_pre_iter) % aw = 0                  (6b, stride < 0)
+  //
+  // In most cases, scale is the element size, for example:
+  //
+  //   for (i = 0; i < a.length; i++) { a[i] = ...; }
+  //
+  // It is thus reasonable to assume that both abs(scale) and abs(stride) are
+  // strictly positive powers of 2. Further, they can be assumed to be non-zero,
+  // otherwise the address does not depend on iv, and the alignment cannot be
+  // affected by adjusting the pre-loop limit.
+  //
+  // Further, if abs(scale) >= aw, then adjust_pre_iter has no effect on alignment, and
+  // we are not able to affect the alignment at all. Hence, we require abs(scale) < aw.
+  //
+  // Moreover, for alignment to be achievable, boi must be a multiple of scale. If strict
+  // alignment is required (i.e. -XX:+AlignVector), this is guaranteed by the filtering
+  // done with the AlignmentSolver / AlignmentSolution. If strict alignment is not
+  // required, then alignment is still preferable for performance, but not necessary.
+  // In many cases boi will be a multiple of scale, but if it is not, then the adjustment
+  // does not guarantee alignment, but the code is still correct.
+  //
+  // Hence, in what follows we assume that boi is a multiple of scale, and in fact all
+  // terms in (6) are multiples of scale. Therefore we divide all terms by scale:
+  //
+  //   AW = aw / abs(scale)            (power of 2)                           (7)
+  //   BOI = boi / abs(scale)                                                 (8)
+  //
+  // and restate (6), using (7) and (8), i.e. we divide (6) by abs(scale):
+  //
+  //   (BOI + sign(scale) * (old_limit + adjust_pre_iter) % AW = 0           (9a, stride > 0)
+  //   (BOI + sign(scale) * (old_limit - adjust_pre_iter) % AW = 0           (9b, stride < 0)
+  //
+  //   where: sign(scale) = scale / abs(scale) = (scale > 0 ? 1 : -1)
+  //
+  // Note, (9) allows for periodic solutions of adjust_pre_iter, with periodicity AW.
+  // But we would like to spend as few iterations in the pre-loop as possible,
+  // hence we want the smallest adjust_pre_iter, and so:
+  //
+  //   0 <= adjust_pre_iter < AW                                              (10)
+  //
+  // We solve (9) for adjust_pre_iter, in the following 4 cases:
+  //
+  // Case A: scale > 0 && stride > 0 (i.e. sign(scale) =  1)
+  //   (BOI + old_limit + adjust_pre_iter) % AW = 0
+  //   adjust_pre_iter = (-BOI - old_limit) % AW                              (11a)
+  //
+  // Case B: scale < 0 && stride > 0 (i.e. sign(scale) = -1)
+  //   (BOI - old_limit - adjust_pre_iter) % AW = 0
+  //   adjust_pre_iter = (BOI - old_limit) % AW                               (11b)
+  //
+  // Case C: scale > 0 && stride < 0 (i.e. sign(scale) =  1)
+  //   (BOI + old_limit - adjust_pre_iter) % AW = 0
+  //   adjust_pre_iter = (BOI + old_limit) % AW                               (11c)
+  //
+  // Case D: scale < 0 && stride < 0 (i.e. sign(scale) = -1)
+  //   (BOI - old_limit + adjust_pre_iter) % AW = 0
+  //   adjust_pre_iter = (-BOI + old_limit) % AW                              (11d)
+  //
+  // We now generalize the equations (11*) by using:
+  //
+  //   OP:   (stride         > 0) ? SUB   : ADD
+  //   XBOI: (stride * scale > 0) ? -BOI  : BOI
+  //
+  // which gives us the final pre-loop limit adjustment:
+  //
+  //   adjust_pre_iter = (XBOI OP old_limit) % AW                             (12)
+  //
+  // We can construct XBOI by additionally defining:
+  //
+  //   xboi = (stride * scale > 0) ? -boi              : boi                  (13)
+  //
+  // which gives us:
+  //
+  //   XBOI = (stride * scale > 0) ? -BOI              : BOI
+  //        = (stride * scale > 0) ? -boi / abs(scale) : boi / abs(scale)
+  //        = xboi / abs(scale)                                               (14)
+  //
+  // When we have computed adjust_pre_iter, we update the pre-loop limit
+  // with (3a, b). However, we have to make sure that the adjust_pre_iter
+  // additional pre-loop iterations do not lead the pre-loop to execute
+  // iterations that would step over the original limit (orig_limit) of
+  // the loop. Hence, we must constrain the updated limit as follows:
+  //
+  // constrained_limit = MIN(old_limit + adjust_pre_iter, orig_limit)
+  //                   = MIN(new_limit,                   orig_limit)         (15a, stride > 0)
+  // constrained_limit = MAX(old_limit - adjust_pre_iter, orig_limit)
+  //                   = MAX(new_limit,                   orig_limit)         (15a, stride < 0)
 
-  int vw = vector_width_in_bytes(align_to_ref);
-  int stride   = iv_stride();
-  int scale    = align_to_ref_p.scale_in_bytes();
-  int elt_size = align_to_ref_p.memory_size();
-  int v_align  = vw / elt_size;
-  assert(v_align > 1, "sanity");
-  int offset   = align_to_ref_p.offset_in_bytes() / elt_size;
-  Node *offsn  = _igvn.intcon(offset);
+  // We chose an aw that is the maximal possible vector width for the type of
+  // align_to_ref.
+  const int aw       = vector_width_in_bytes(align_to_ref);
+  const int stride   = iv_stride();
+  const int scale    = align_to_ref_p.scale_in_bytes();
+  const int offset   = align_to_ref_p.offset_in_bytes();
+  Node* base         = align_to_ref_p.adr();
+  Node* invar        = align_to_ref_p.invar();
 
-  Node *e = offsn;
-  if (align_to_ref_p.invar() != nullptr) {
-    // incorporate any extra invariant piece producing (offset +/- invar) >>> log2(elt)
-    Node* log2_elt = _igvn.intcon(exact_log2(elt_size));
-    Node* invar = align_to_ref_p.invar();
+#ifdef ASSERT
+  if (is_trace_align_vector()) {
+    tty->print_cr("\nadjust_pre_loop_limit_to_align_main_loop_vectors:");
+    tty->print("  align_to_ref:");
+    align_to_ref->dump();
+    tty->print_cr("  aw:       %d", aw);
+    tty->print_cr("  stride:   %d", stride);
+    tty->print_cr("  scale:    %d", scale);
+    tty->print_cr("  offset:   %d", offset);
+    tty->print("  base:");
+    base->dump();
+    if (invar == nullptr) {
+      tty->print_cr("  invar:     null");
+    } else {
+      tty->print("  invar:");
+      invar->dump();
+    }
+    tty->print("  old_limit: ");
+    old_limit->dump();
+    tty->print("  orig_limit: ");
+    orig_limit->dump();
+  }
+#endif
+
+  if (stride == 0 || !is_power_of_2(abs(stride)) ||
+      scale  == 0 || !is_power_of_2(abs(scale))  ||
+      abs(scale) >= aw) {
+#ifdef ASSERT
+    if (is_trace_align_vector()) {
+      tty->print_cr(" Alignment cannot be affected by changing pre-loop limit because");
+      tty->print_cr(" stride or scale are not power of 2, or abs(scale) >= aw.");
+    }
+#endif
+    // Cannot affect alignment, abort.
+    return;
+  }
+
+  assert(stride != 0 && is_power_of_2(abs(stride)) &&
+         scale  != 0 && is_power_of_2(abs(scale))  &&
+         abs(scale) < aw, "otherwise we cannot affect alignment with pre-loop");
+
+  const int AW = aw / abs(scale);
+
+#ifdef ASSERT
+  if (is_trace_align_vector()) {
+    tty->print_cr("  AW = aw(%d) / abs(scale(%d)) = %d", aw, scale, AW);
+  }
+#endif
+
+  // 1: Compute (13a, b):
+  //    xboi = -boi = (-base - offset - invar)         (stride * scale > 0)
+  //    xboi = +boi = (+base + offset + invar)         (stride * scale < 0)
+  const bool is_sub = scale * stride > 0;
+
+  // 1.1: offset
+  Node* xboi = _igvn.intcon(is_sub ? -offset : offset);
+  TRACE_ALIGN_VECTOR_NODE(xboi);
+
+  // 1.2: invar (if it exists)
+  if (invar != nullptr) {
     if (_igvn.type(invar)->isa_long()) {
       // Computations are done % (vector width/element size) so it's
       // safe to simply convert invar to an int and loose the upper 32
       // bit half.
       invar = new ConvL2INode(invar);
       _igvn.register_new_node_with_optimizer(invar);
+      TRACE_ALIGN_VECTOR_NODE(invar);
+   }
+    if (is_sub) {
+      xboi = new SubINode(xboi, invar);
+    } else {
+      xboi = new AddINode(xboi, invar);
     }
-    Node* aref = new URShiftINode(invar, log2_elt);
-    _igvn.register_new_node_with_optimizer(aref);
-    _phase->set_ctrl(aref, pre_ctrl);
-    e =  new AddINode(e, aref);
-    _igvn.register_new_node_with_optimizer(e);
-    _phase->set_ctrl(e, pre_ctrl);
+    _igvn.register_new_node_with_optimizer(xboi);
+    _phase->set_ctrl(xboi, pre_ctrl);
+    TRACE_ALIGN_VECTOR_NODE(xboi);
   }
-  if (vw > ObjectAlignmentInBytes || align_to_ref_p.base()->is_top()) {
-    // incorporate base e +/- base && Mask >>> log2(elt)
-    Node* xbase = new CastP2XNode(nullptr, align_to_ref_p.adr());
+
+  // 1.3: base (unless base is guaranteed aw aligned)
+  if (aw > ObjectAlignmentInBytes || align_to_ref_p.base()->is_top()) {
+    // The base is only aligned with ObjectAlignmentInBytes with arrays.
+    // When the base() is top, we have no alignment guarantee at all.
+    // Hence, we must now take the base into account for the calculation.
+    Node* xbase = new CastP2XNode(nullptr, base);
     _igvn.register_new_node_with_optimizer(xbase);
+    TRACE_ALIGN_VECTOR_NODE(xbase);
 #ifdef _LP64
     xbase  = new ConvL2INode(xbase);
     _igvn.register_new_node_with_optimizer(xbase);
+    TRACE_ALIGN_VECTOR_NODE(xbase);
 #endif
-    Node* mask = _igvn.intcon(vw-1);
-    Node* masked_xbase  = new AndINode(xbase, mask);
-    _igvn.register_new_node_with_optimizer(masked_xbase);
-    Node* log2_elt = _igvn.intcon(exact_log2(elt_size));
-    Node* bref     = new URShiftINode(masked_xbase, log2_elt);
-    _igvn.register_new_node_with_optimizer(bref);
-    _phase->set_ctrl(bref, pre_ctrl);
-    e = new AddINode(e, bref);
-    _igvn.register_new_node_with_optimizer(e);
-    _phase->set_ctrl(e, pre_ctrl);
+    if (is_sub) {
+      xboi = new SubINode(xboi, xbase);
+    } else {
+      xboi = new AddINode(xboi, xbase);
+    }
+    _igvn.register_new_node_with_optimizer(xboi);
+    _phase->set_ctrl(xboi, pre_ctrl);
+    TRACE_ALIGN_VECTOR_NODE(xboi);
   }
 
-  // compute e +/- lim0
-  if (scale < 0) {
-    e = new SubINode(e, lim0);
+  // 2: Compute (14):
+  //    XBOI = xboi / abs(scale)
+  //    The division is executed as shift
+  Node* log2_abs_scale = _igvn.intcon(exact_log2(abs(scale)));
+  Node* XBOI = new URShiftINode(xboi, log2_abs_scale);
+  _igvn.register_new_node_with_optimizer(XBOI);
+  _phase->set_ctrl(XBOI, pre_ctrl);
+  TRACE_ALIGN_VECTOR_NODE(log2_abs_scale);
+  TRACE_ALIGN_VECTOR_NODE(XBOI);
+
+  // 3: Compute (12):
+  //    adjust_pre_iter = (XBOI OP old_limit) % AW
+  //
+  // 3.1: XBOI_OP_old_limit = XBOI OP old_limit
+  Node* XBOI_OP_old_limit = nullptr;
+  if (stride > 0) {
+    XBOI_OP_old_limit = new SubINode(XBOI, old_limit);
   } else {
-    e = new AddINode(e, lim0);
+    XBOI_OP_old_limit = new AddINode(XBOI, old_limit);
   }
-  _igvn.register_new_node_with_optimizer(e);
-  _phase->set_ctrl(e, pre_ctrl);
+  _igvn.register_new_node_with_optimizer(XBOI_OP_old_limit);
+  _phase->set_ctrl(XBOI_OP_old_limit, pre_ctrl);
+  TRACE_ALIGN_VECTOR_NODE(XBOI_OP_old_limit);
 
-  if (stride * scale > 0) {
-    // compute V - (e +/- lim0)
-    Node* va  = _igvn.intcon(v_align);
-    e = new SubINode(va, e);
-    _igvn.register_new_node_with_optimizer(e);
-    _phase->set_ctrl(e, pre_ctrl);
-  }
-  // compute N = (exp) % V
-  Node* va_msk = _igvn.intcon(v_align - 1);
-  Node* N = new AndINode(e, va_msk);
-  _igvn.register_new_node_with_optimizer(N);
-  _phase->set_ctrl(N, pre_ctrl);
+  // 3.2: Compute:
+  //    adjust_pre_iter = (XBOI OP old_limit) % AW
+  //                    = XBOI_OP_old_limit % AW
+  //                    = XBOI_OP_old_limit AND (AW - 1)
+  //    Since AW is a power of 2, the modulo operation can be replaced with
+  //    a bitmask operation.
+  Node* mask_AW = _igvn.intcon(AW-1);
+  Node* adjust_pre_iter = new AndINode(XBOI_OP_old_limit, mask_AW);
+  _igvn.register_new_node_with_optimizer(adjust_pre_iter);
+  _phase->set_ctrl(adjust_pre_iter, pre_ctrl);
+  TRACE_ALIGN_VECTOR_NODE(mask_AW);
+  TRACE_ALIGN_VECTOR_NODE(adjust_pre_iter);
 
-  //   substitute back into (1), so that new limit
-  //     lim = lim0 + N
-  Node* lim;
+  // 4: Compute (3a, b):
+  //    new_limit = old_limit + adjust_pre_iter     (stride > 0)
+  //    new_limit = old_limit - adjust_pre_iter     (stride < 0)
+  Node* new_limit = nullptr;
   if (stride < 0) {
-    lim = new SubINode(lim0, N);
+    new_limit = new SubINode(old_limit, adjust_pre_iter);
   } else {
-    lim = new AddINode(lim0, N);
+    new_limit = new AddINode(old_limit, adjust_pre_iter);
   }
-  _igvn.register_new_node_with_optimizer(lim);
-  _phase->set_ctrl(lim, pre_ctrl);
-  Node* constrained =
-    (stride > 0) ? (Node*) new MinINode(lim, orig_limit)
-                 : (Node*) new MaxINode(lim, orig_limit);
-  _igvn.register_new_node_with_optimizer(constrained);
-  _phase->set_ctrl(constrained, pre_ctrl);
-  _igvn.replace_input_of(pre_opaq, 1, constrained);
+  _igvn.register_new_node_with_optimizer(new_limit);
+  _phase->set_ctrl(new_limit, pre_ctrl);
+  TRACE_ALIGN_VECTOR_NODE(new_limit);
+
+  // 5: Compute (15a, b):
+  //    Prevent pre-loop from going past the original limit of the loop.
+  Node* constrained_limit =
+    (stride > 0) ? (Node*) new MinINode(new_limit, orig_limit)
+                 : (Node*) new MaxINode(new_limit, orig_limit);
+  _igvn.register_new_node_with_optimizer(constrained_limit);
+  _phase->set_ctrl(constrained_limit, pre_ctrl);
+  TRACE_ALIGN_VECTOR_NODE(constrained_limit);
+
+  // 6: Hack the pre-loop limit
+  _igvn.replace_input_of(pre_opaq, 1, constrained_limit);
 }
 
 //------------------------------init---------------------------
