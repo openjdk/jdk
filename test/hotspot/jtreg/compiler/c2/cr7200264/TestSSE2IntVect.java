@@ -52,6 +52,19 @@ public class TestSSE2IntVect {
     private static long[] p2 = new long[ARRLEN/2];
     private static int gold_sum;
 
+    static{
+        gold_sum = 0;
+        // Initialize
+        for (int i=0; i<ARRLEN; i++) {
+            int val = (int)(ADD_INIT+i);
+            gold_sum += val;
+            a1[i] = val;
+            a2[i] = (int)VALUE;
+            a3[i] = (int)-VALUE;
+            a4[i] = (int)BIT_MASK;
+        }
+    }
+
     public static void main(String[] args) {
         TestFramework.runWithFlags("-XX:+IgnoreUnrecognizedVMOptions", "-XX:StressLongCountedLoop=0");
     }
@@ -78,16 +91,6 @@ public class TestSSE2IntVect {
 
     @ForceInline
     static int testInner() {
-        gold_sum = 0;
-        // Initialize
-        for (int i=0; i<ARRLEN; i++) {
-            int val = (int)(ADD_INIT+i);
-            gold_sum += val;
-            a1[i] = val;
-            a2[i] = (int)VALUE;
-            a3[i] = (int)-VALUE;
-            a4[i] = (int)BIT_MASK;
-        }
         // Test and verify results
         System.out.println("Verification");
         int errn = 0;
