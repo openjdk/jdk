@@ -46,6 +46,7 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.IntFunction;
 
 /**
  * ProxyGenerator contains the code to generate a dynamic proxy class
@@ -108,98 +109,106 @@ final class ProxyGenerator {
     private static final ClassModel TEMPLATE;
 
     private static final ClassEntry CE_Class;
-    private static final ClassEntry CE_Object;
-    private static final ClassEntry CE_NoSuchMethodError;
-    private static final ClassEntry CE_NoClassDefFoundError;
-    private static final ClassEntry CE_UndeclaredThrowableException;
-    private static final ClassEntry CE_Throwable;
-    private static final ClassEntry CE_NoSuchMethodException;
     private static final ClassEntry CE_ClassNotFoundException;
+    private static final ClassEntry CE_NoClassDefFoundError;
+    private static final ClassEntry CE_NoSuchMethodError;
+    private static final ClassEntry CE_NoSuchMethodException;
+    private static final ClassEntry CE_Object;
+    private static final ClassEntry CE_Throwable;
+    private static final ClassEntry CE_UndeclaredThrowableException;
 
     private static final FieldRefEntry FRE_Proxy_h;
 
     private static final InterfaceMethodRefEntry IMRE_InvocationHandler_invoke;
 
-    private static final MethodRefEntry MRE_Class_getClassLoader;
-    private static final MethodRefEntry MRE_NoSuchMethodError_init;
-    private static final MethodRefEntry MRE_NoClassDefFoundError_init;
-    private static final MethodRefEntry MRE_Throwable_getMessage;
     private static final MethodRefEntry MRE_Class_forName;
+    private static final MethodRefEntry MRE_Class_getClassLoader;
     private static final MethodRefEntry MRE_Class_getMethod;
+    private static final MethodRefEntry MRE_NoClassDefFoundError_init;
+    private static final MethodRefEntry MRE_NoSuchMethodError_init;
+    private static final MethodRefEntry MRE_Throwable_getMessage;
     private static final MethodRefEntry MRE_UndeclaredThrowableException_init;
 
     private static final Utf8Entry UE_Method;
 
     private static final List<StackMapFrameInfo.VerificationTypeInfo> THROWABLE_STACK;
 
+    @SuppressWarnings("unchecked")
+    private static <T extends PoolEntry> T entryByIndex(int index) {
+        return (T) TEMPLATE.constantPool().entryByIndex(index);
+    }
+
     static {
-        var cc = ClassFile.of();
-        var q = new Object() {
-            PoolEntry[] entries;
-            int i;
-            @SuppressWarnings("unchecked")
-            <T extends PoolEntry> T next() {
-                return (T) TEMPLATE.constantPool().entryByIndex(entries[i++].index());
-            }
-        };
         //static template ClassModel holds pre-defined constant pool entries
         //proxy transformed from the template shares the template constant pool
         //each direct use of the template pool entry is significantly faster
+        var cc = ClassFile.of();
+        var ei = new int[21];
         TEMPLATE = cc.parse(cc.build(CD_Proxy, clb -> {
             clb.withSuperclass(CD_Proxy);
             generateConstructor(clb);
             generateLookupAccessor(clb);
             var cp = clb.constantPool();
-            q.entries = new PoolEntry[] {
-                cp.utf8Entry("m0"),
-                cp.utf8Entry("m1"),
-                cp.utf8Entry("m2"),
-                cp.utf8Entry(CD_Method),
-                cp.methodRefEntry(CD_Class, "getClassLoader", MTD_ClassLoader),
-                cp.classEntry(CD_NoSuchMethodError),
-                cp.methodRefEntry(CD_NoSuchMethodError, INIT_NAME, MTD_void_String),
-                cp.fieldRefEntry(CD_Proxy, handlerFieldName, CD_InvocationHandler),
-                cp.classEntry(CD_NoClassDefFoundError),
-                cp.methodRefEntry(CD_NoClassDefFoundError, INIT_NAME, MTD_void_String),
-                cp.methodRefEntry(CD_Throwable, "getMessage", MTD_String),
-                cp.methodRefEntry(CD_Class, "forName", MTD_Class_String_boolean_ClassLoader),
-                cp.classEntry(CD_Class),
-                cp.methodRefEntry(CD_Class, "getMethod", MTD_Method_String_ClassArray),
-                cp.classEntry(CD_Object),
-                cp.interfaceMethodRefEntry(CD_InvocationHandler, "invoke", MTD_Object_Object_Method_ObjectArray),
-                cp.methodRefEntry(CD_UndeclaredThrowableException, INIT_NAME, MTD_void_Throwable),
-                cp.classEntry(CD_UndeclaredThrowableException),
-                cp.classEntry(CD_NoSuchMethodException),
-                cp.classEntry(CD_ClassNotFoundException),
-                cp.classEntry(CD_Throwable)
-            };
+
+            ei[0] = cp.classEntry(CD_Class).index();
+            ei[1] = cp.classEntry(CD_ClassNotFoundException).index();
+            ei[2] = cp.classEntry(CD_NoClassDefFoundError).index();
+            ei[3] = cp.classEntry(CD_NoSuchMethodError).index();
+            ei[4] = cp.classEntry(CD_NoSuchMethodException).index();
+            ei[5] = cp.classEntry(CD_Object).index();
+            ei[6] = cp.classEntry(CD_Throwable).index();
+            ei[7] = cp.classEntry(CD_UndeclaredThrowableException).index();
+
+            ei[8] = cp.fieldRefEntry(CD_Proxy, handlerFieldName, CD_InvocationHandler).index();
+
+            ei[9] = cp.interfaceMethodRefEntry(CD_InvocationHandler, "invoke", MTD_Object_Object_Method_ObjectArray).index();
+
+            ei[10] = cp.methodRefEntry(CD_Class, "forName", MTD_Class_String_boolean_ClassLoader).index();
+            ei[11] = cp.methodRefEntry(CD_Class, "getClassLoader", MTD_ClassLoader).index();
+            ei[12] = cp.methodRefEntry(CD_Class, "getMethod", MTD_Method_String_ClassArray).index();
+            ei[13] = cp.methodRefEntry(CD_NoClassDefFoundError, INIT_NAME, MTD_void_String).index();
+            ei[14] = cp.methodRefEntry(CD_NoSuchMethodError, INIT_NAME, MTD_void_String).index();
+            ei[15] = cp.methodRefEntry(CD_Throwable, "getMessage", MTD_String).index();
+            ei[16] = cp.methodRefEntry(CD_UndeclaredThrowableException, INIT_NAME, MTD_void_Throwable).index();
+
+            ei[17] = cp.utf8Entry(CD_Method).index();
+
+            ei[18] = cp.utf8Entry("m0").index();
+            ei[19] = cp.utf8Entry("m1").index();
+            ei[20] = cp.utf8Entry("m2").index();
         }));
 
+        CE_Class = entryByIndex(ei[0]);
+        CE_ClassNotFoundException = entryByIndex(ei[1]);
+        CE_NoClassDefFoundError = entryByIndex(ei[2]);
+        CE_NoSuchMethodError = entryByIndex(ei[3]);
+        CE_NoSuchMethodException = entryByIndex(ei[4]);
+        CE_Object = entryByIndex(ei[5]);
+        CE_Throwable = entryByIndex(ei[6]);
+        CE_UndeclaredThrowableException = entryByIndex(ei[7]);
+
+        FRE_Proxy_h = entryByIndex(ei[8]);
+
+        IMRE_InvocationHandler_invoke = entryByIndex(ei[9]);
+
+        MRE_Class_forName = entryByIndex(ei[10]);
+        MRE_Class_getClassLoader = entryByIndex(ei[11]);
+        MRE_Class_getMethod = entryByIndex(ei[12]);
+        MRE_NoClassDefFoundError_init = entryByIndex(ei[13]);
+        MRE_NoSuchMethodError_init = entryByIndex(ei[14]);
+        MRE_Throwable_getMessage = entryByIndex(ei[15]);
+        MRE_UndeclaredThrowableException_init = entryByIndex(ei[16]);
+
+        UE_Method = entryByIndex(ei[17]);
+
         try {
-            hashCodeMethod = new ProxyMethod(Object.class.getMethod("hashCode"), q.next());
-            equalsMethod = new ProxyMethod(Object.class.getMethod("equals", Object.class), q.next());
-            toStringMethod = new ProxyMethod(Object.class.getMethod("toString"), q.next());
+            hashCodeMethod = new ProxyMethod(Object.class.getMethod("hashCode"), entryByIndex(ei[18]));
+            equalsMethod = new ProxyMethod(Object.class.getMethod("equals", Object.class), entryByIndex(ei[19]));
+            toStringMethod = new ProxyMethod(Object.class.getMethod("toString"), entryByIndex(ei[20]));
         } catch (NoSuchMethodException e) {
             throw new NoSuchMethodError(e.getMessage());
         }
-        UE_Method = q.next();
-        MRE_Class_getClassLoader = q.next();
-        CE_NoSuchMethodError = q.next();
-        MRE_NoSuchMethodError_init = q.next();
-        FRE_Proxy_h = q.next();
-        CE_NoClassDefFoundError = q.next();
-        MRE_NoClassDefFoundError_init = q.next();
-        MRE_Throwable_getMessage = q.next();
-        MRE_Class_forName = q.next();
-        CE_Class = q.next();
-        MRE_Class_getMethod = q.next();
-        CE_Object = q.next();
-        IMRE_InvocationHandler_invoke = q.next();
-        MRE_UndeclaredThrowableException_init = q.next();
-        CE_UndeclaredThrowableException = q.next();
-        CE_NoSuchMethodException = q.next();
-        CE_ClassNotFoundException = q.next();
-        CE_Throwable = q.next();
+
         THROWABLE_STACK = List.of(StackMapFrameInfo.ObjectVerificationTypeInfo.of(CE_Throwable));
     }
 
