@@ -107,7 +107,12 @@ public class TestInheritFD {
 
     // Wait for the sub-process pids identified in commFile to finish executing.
     // Returns true if RETAINS_FD was found in the commFile and false otherwise.
-    private static boolean waitForSubPids(File commFile) throws Exception {
+    enum Result {
+        FOUND_LEAKS_FD,
+        FOUND_RETAINS_FD,
+        FOUND_NONE // Unexpected.
+    };
+    private static Result waitForSubPids(File commFile) throws Exception {
         String out = "";
         int sleepCnt = 0;
         long secondVMPID = -1;
@@ -214,8 +219,13 @@ public class TestInheritFD {
             System.out.println(out);
             System.out.println("<END commFile contents>");
         }
-
-        return out.contains(RETAINS_FD);
+        if (out.contains(RETAINS_FD)) {
+            return Result.FOUND_RETAINS_FD;
+        } else if (out.contains(FOUND_LEAKS_FD)) {
+            return Result.FOUND_LEAKS_FD;
+        } else {
+            return Result.FOUND_NONE;
+        }
     }
 
     // first VM
@@ -238,10 +248,13 @@ public class TestInheritFD {
         pb.redirectOutput(commFile); // use temp file to communicate between processes
         pb.start();
 
-        if (waitForSubPids(commFile)) {
+        Result result = waitForSubPids(commFile);
+        if (result == Result.FOUND_RETAINS_FD) {
             System.out.println("Log file was not inherited by third VM.");
-        } else {
+        } else if (Result.FOUND_LEAKS_FD) {
             throw new RuntimeException("Log file was leaked to the third VM.");
+        } else {
+            throw new RuntimeException("Found neither message, I am confused!");
         }
         System.out.println("First VM ends.");
     }
@@ -290,8 +303,10 @@ public class TestInheritFD {
                 if (false) {  // Enable to simulate a timeout in the third VM.
                     Thread.sleep(300 * 1000);
                 }
+            } catch (TimeoutException te) {
+                System.out.println("(Third VM) Timed out waiting for : " + e.toString());
             } catch (Exception e) {
-                System.out.println("Exception was thrown: " + e.toString());
+                System.out.println("(Third VM) Exception was thrown: " + e.toString());
                 throw e;
             } finally {
                 System.out.println(EXIT);
