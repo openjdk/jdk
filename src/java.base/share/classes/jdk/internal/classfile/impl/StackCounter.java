@@ -105,7 +105,7 @@ public final class StackCounter {
         maxStack = stack = rets = 0;
         for (var h : handlers) targets.add(new Target(labelContext.labelToBci(h.handler), 1));
         maxLocals = isStatic ? 0 : 1;
-        maxLocals += countMethodStack(methodDesc, false);
+        maxLocals += countMethodSlots(methodDesc, false);
         bcs = new RawBytecodeHelper(bytecode);
         visited = new BitSet(bcs.endBci);
         targets.add(new Target(0, 0));
@@ -303,7 +303,7 @@ public final class StackCounter {
                     case INVOKEVIRTUAL, INVOKESPECIAL, INVOKESTATIC, INVOKEINTERFACE, INVOKEDYNAMIC -> {
                         var cpe = cp.entryByIndex(bcs.getIndexU2());
                         var nameAndType = opcode == INVOKEDYNAMIC ? ((DynamicConstantPoolEntry)cpe).nameAndType() : ((MemberRefEntry)cpe).nameAndType();
-                        addStackSlot(-countMethodStack(nameAndType.type(), true));
+                        addStackSlot(-countMethodSlots(nameAndType.type(), true));
                         if (opcode != INVOKESTATIC && opcode != INVOKEDYNAMIC) {
                             addStackSlot(-1);
                         }
@@ -335,7 +335,7 @@ public final class StackCounter {
         maxStack += rets * maxStack;
     }
 
-    private static int countMethodStack(Utf8Entry descriptor, boolean subReturn) {
+    private static int countMethodSlots(Utf8Entry descriptor, boolean subReturn) {
         int cur = 0, end = descriptor.length();
         if (cur >= end || descriptor.charAt(cur) != '(')
             throw new IllegalArgumentException("Bad method descriptor: " + descriptor);
