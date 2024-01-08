@@ -423,7 +423,7 @@ Parse::Parse(JVMState* caller, ciMethod* parse_method, float expected_uses)
     C->set_has_reserved_stack_access(true);
   }
 
-  if (parse_method->is_synchronized()) {
+  if (parse_method->is_synchronized() || parse_method->has_monitor_bytecodes()) {
     C->set_has_monitors(true);
   }
 
