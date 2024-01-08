@@ -120,7 +120,7 @@ $(CLASSES):
 mkdirs: $(DIST) $(CLASSES)
 
 $(CLASSES)/j2dbench/%.class: $(SOURCEPATH)/j2dbench/%.java
-	javac -g:none -source 1.7 -target 1.7 -d $(CLASSES) -sourcepath $(SOURCEPATH) $<
+	javac -g:none -source 9 -target 9 -d $(CLASSES) -sourcepath $(SOURCEPATH) $<
 
 clean:
 	rm -rf $(CLASSES)
