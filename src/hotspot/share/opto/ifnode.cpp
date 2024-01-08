@@ -2038,18 +2038,18 @@ Node* RangeCheckNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       // nodes must not float above the n-1 other RangeCheck in the sequence. We pin the array load nodes here to
       // guarantee it doesn't happen.
       //
-      // RangeCheck#1                 RangeCheck#1           
-      //    |      \                     |      \            
+      // RangeCheck#1                 RangeCheck#1
+      //    |      \                     |      \
       //    |      uncommon trap         |      uncommon trap
-      //    ..                           ..                  
-      // RangeCheck#n              -> RangeCheck#n           
-      //    |      \                     |      \            
+      //    ..                           ..
+      // RangeCheck#n              -> RangeCheck#n
+      //    |      \                     |      \
       //    |      uncommon trap        CastII  uncommon trap
       // RangeCheck                     Load
       //    |      \
       //   CastII  uncommon trap
       //   Load
-      
+
       return dominated_by(prev_dom, igvn, true);
     }
   } else {
