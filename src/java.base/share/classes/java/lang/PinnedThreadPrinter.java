@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,10 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import static java.lang.StackWalker.Option.*;
+import jdk.internal.access.JavaIOPrintStreamAccess;
+import jdk.internal.access.SharedSecrets;
+import jdk.internal.misc.InternalLock;
+import jdk.internal.vm.Continuation;
 
 /**
  * Helper class to print the virtual thread stack trace when pinned.
@@ -42,7 +46,8 @@ import static java.lang.StackWalker.Option.*;
  * code in that Class. This is used to avoid printing the same stack trace many times.
  */
 class PinnedThreadPrinter {
-    static final StackWalker STACK_WALKER;
+    private static final JavaIOPrintStreamAccess JIOPSA = SharedSecrets.getJavaIOPrintStreamAccess();
+    private static final StackWalker STACK_WALKER;
     static {
         var options = Set.of(SHOW_REFLECT_FRAMES, RETAIN_CLASS_REFERENCE);
         PrivilegedAction<StackWalker> pa = () ->
@@ -86,45 +91,59 @@ class PinnedThreadPrinter {
     }
 
     /**
-     * Prints the continuation stack trace.
+     * Returns true if the frame is native, a class initializer, or holds monitors.
+     */
+    private static boolean isInterestingFrame(LiveStackFrame f) {
+        return f.isNativeMethod()
+                || "<clinit>".equals(f.getMethodName())
+                || (f.getMonitors().length > 0);
+    }
+
+    /**
+     * Prints the current thread's stack trace.
      *
      * @param printAll true to print all stack frames, false to only print the
      *        frames that are native or holding a monitor
      */
-    static void printStackTrace(PrintStream out, boolean printAll) {
+    static void printStackTrace(PrintStream out, Continuation.Pinned reason, boolean printAll) {
         List<LiveStackFrame> stack = STACK_WALKER.walk(s ->
             s.map(f -> (LiveStackFrame) f)
                     .filter(f -> f.getDeclaringClass() != PinnedThreadPrinter.class)
                     .collect(Collectors.toList())
         );
+        Object lockObj = JIOPSA.lock(out);
+        if (lockObj instanceof InternalLock lock && lock.tryLock()) {
+            try {
+                // find the closest frame that is causing the thread to be pinned
+                stack.stream()
+                    .filter(f -> isInterestingFrame(f))
+                    .map(LiveStackFrame::getDeclaringClass)
+                    .findFirst()
+                    .ifPresentOrElse(klass -> {
+                        // print the stack trace if not already seen
+                        int hash = hash(stack);
+                        if (HASHES.get(klass).add(hash)) {
+                            printStackTrace(out, reason, stack, printAll);
+                        }
+                    }, () -> printStackTrace(out, reason, stack, true));  // not found
 
-        // find the closest frame that is causing the thread to be pinned
-        stack.stream()
-            .filter(f -> (f.isNativeMethod() || f.getMonitors().length > 0))
-            .map(LiveStackFrame::getDeclaringClass)
-            .findFirst()
-            .ifPresentOrElse(klass -> {
-                int hash = hash(stack);
-                Hashes hashes = HASHES.get(klass);
-                synchronized (hashes) {
-                    // print the stack trace if not already seen
-                    if (hashes.add(hash)) {
-                        printStackTrace(stack, out, printAll);
-                    }
-                }
-            }, () -> printStackTrace(stack, out, true));  // not found
+            } finally {
+                lock.unlock();
+            }
+        }
     }
 
-    private static void printStackTrace(List<LiveStackFrame> stack,
-                                        PrintStream out,
+    private static void printStackTrace(PrintStream out,
+                                        Continuation.Pinned reason,
+                                        List<LiveStackFrame> stack,
                                         boolean printAll) {
-        out.println(Thread.currentThread());
+        out.format("%s reason:%s%n", Thread.currentThread(), reason);
         for (LiveStackFrame frame : stack) {
             var ste = frame.toStackTraceElement();
             int monitorCount = frame.getMonitors().length;
             if (monitorCount > 0) {
                 out.format("    %s <== monitors:%d%n", ste, monitorCount);
-            } else if (frame.isNativeMethod() || printAll) {
+            } else if (printAll || isInterestingFrame(frame)) {
                 out.format("    %s%n", ste);
             }
         }

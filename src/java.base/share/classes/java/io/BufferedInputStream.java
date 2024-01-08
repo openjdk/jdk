@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -643,9 +643,13 @@ public class BufferedInputStream extends FilterInputStream {
         if (getClass() == BufferedInputStream.class && markpos == -1) {
             int avail = count - pos;
             if (avail > 0) {
-                // Prevent poisoning and leaking of buf
-                byte[] buffer = Arrays.copyOfRange(getBufIfOpen(), pos, count);
-                out.write(buffer);
+                if (isTrusted(out)) {
+                    out.write(getBufIfOpen(), pos, avail);
+                } else {
+                    // Prevent poisoning and leaking of buf
+                    byte[] buffer = Arrays.copyOfRange(getBufIfOpen(), pos, count);
+                    out.write(buffer);
+                }
                 pos = count;
             }
             try {
@@ -656,6 +660,24 @@ public class BufferedInputStream extends FilterInputStream {
         } else {
             return super.transferTo(out);
         }
+    }
+
+    /**
+     * Returns true if this class satisfies the following conditions:
+     * <ul>
+     * <li>does not retain a reference to the {@code byte[]}</li>
+     * <li>does not leak a reference to the {@code byte[]} to non-trusted classes</li>
+     * <li>does not modify the contents of the {@code byte[]}</li>
+     * <li>{@code write()} method does not read the contents outside of the offset/length bounds</li>
+     * </ul>
+     *
+     * @return true if this class is trusted
+     */
+    private static boolean isTrusted(OutputStream os) {
+        var clazz = os.getClass();
+        return clazz == ByteArrayOutputStream.class
+                || clazz == FileOutputStream.class
+                || clazz == PipedOutputStream.class;
     }
 
 }

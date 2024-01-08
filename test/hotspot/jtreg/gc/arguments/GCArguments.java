@@ -27,6 +27,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import jdk.test.lib.Platform;
+import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 
 /**
@@ -80,5 +81,21 @@ public final class GCArguments {
 
     static public ProcessBuilder createTestJavaProcessBuilder(String... arguments) {
         return ProcessTools.createTestJavaProcessBuilder(withDefaults(arguments));
+    }
+
+    static public OutputAnalyzer executeLimitedTestJava(List<String> arguments) throws Exception {
+        return executeLimitedTestJava(arguments.toArray(String[]::new));
+    }
+
+    static public OutputAnalyzer executeLimitedTestJava(String... arguments) throws Exception {
+        return ProcessTools.executeLimitedTestJava(withDefaults(arguments));
+    }
+
+    static public OutputAnalyzer executeTestJava(List<String> arguments) throws Exception {
+        return executeTestJava(arguments.toArray(String[]::new));
+    }
+
+    static public OutputAnalyzer executeTestJava(String... arguments) throws Exception {
+        return ProcessTools.executeTestJava(withDefaults(arguments));
     }
 }
