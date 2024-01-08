@@ -25,28 +25,28 @@
  */
 package jdk.internal.classfile.impl;
 
+import java.lang.constant.ClassDesc;
+import java.lang.constant.MethodTypeDesc;
 import java.nio.ByteBuffer;
 import java.util.BitSet;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.stream.Collectors;
 import java.lang.classfile.TypeKind;
 import java.lang.classfile.constantpool.ConstantDynamicEntry;
 import java.lang.classfile.constantpool.DynamicConstantPoolEntry;
 import java.lang.classfile.constantpool.MemberRefEntry;
 import static java.lang.classfile.ClassFile.*;
-import java.lang.classfile.constantpool.Utf8Entry;
-import java.lang.constant.MethodTypeDesc;
-import java.util.LinkedList;
 
 
 public final class StackCounter {
 
-    private record Target(int bci, int stack) {}
-
     static StackCounter of(DirectCodeBuilder dcb, BufWriterImpl buf) {
         return new StackCounter(
                 dcb,
-                dcb.methodInfo.methodName(),
-                dcb.methodInfo.methodType(),
+                buf.thisClass().asSymbol(),
+                dcb.methodInfo.methodName().stringValue(),
+                dcb.methodInfo.methodTypeSymbol(),
                 (dcb.methodInfo.methodFlags() & ACC_STATIC) != 0,
                 dcb.bytecodesBufWriter.asByteBuffer().slice(0, dcb.bytecodesBufWriter.size()),
                 dcb.constantPool,
@@ -56,15 +56,15 @@ public final class StackCounter {
     private int stack, maxStack, maxLocals, rets;
 
     private final RawBytecodeHelper bcs;
-    private final Utf8Entry methodName;
-    private final Utf8Entry methodDesc;
+    private final String methodName;
+    private final MethodTypeDesc methodDesc;
     private final SplitConstantPool cp;
-    private final LinkedList<Target> targets;
+    private final LinkedHashMap<Integer, Integer> map;
     private final BitSet visited;
 
     private void jump(int targetBci) {
         if (!visited.get(targetBci)) {
-            targets.add(new Target(targetBci, stack));
+            map.put(targetBci, stack);
         }
     }
 
@@ -78,13 +78,13 @@ public final class StackCounter {
     }
 
     private boolean next() {
-        var it = targets.iterator();
+        var it = map.entrySet().iterator();
         while (it.hasNext()) {
             var en = it.next();
             it.remove();
-            if (!visited.get(en.bci)) {
-                bcs.nextBci = en.bci;
-                stack = en.stack;
+            if (!visited.get(en.getKey())) {
+                bcs.nextBci = en.getKey();
+                stack = en.getValue();
                 return true;
             }
         }
@@ -93,8 +93,9 @@ public final class StackCounter {
     }
 
     public StackCounter(LabelContext labelContext,
-                     Utf8Entry methodName,
-                     Utf8Entry methodDesc,
+                     ClassDesc thisClass,
+                     String methodName,
+                     MethodTypeDesc methodDesc,
                      boolean isStatic,
                      ByteBuffer bytecode,
                      SplitConstantPool cp,
@@ -102,14 +103,16 @@ public final class StackCounter {
         this.methodName = methodName;
         this.methodDesc = methodDesc;
         this.cp = cp;
-        targets = new LinkedList<>();
+        map = new LinkedHashMap<>();
         maxStack = stack = rets = 0;
-        for (var h : handlers) targets.add(new Target(labelContext.labelToBci(h.handler), 1));
+        for (var h : handlers) map.put(labelContext.labelToBci(h.handler), 1);
         maxLocals = isStatic ? 0 : 1;
-        maxLocals += countMethodStack(methodDesc, false);
+        for (var cd : methodDesc.parameterList()) {
+            maxLocals += Util.slotSize(cd);
+        }
         bcs = new RawBytecodeHelper(bytecode);
         visited = new BitSet(bcs.endBci);
-        targets.add(new Target(0, 0));
+        map.put(0, 0);
         while (next()) {
             while (!bcs.isLastBytecode()) {
                 bcs.rawNext();
@@ -304,10 +307,14 @@ public final class StackCounter {
                     case INVOKEVIRTUAL, INVOKESPECIAL, INVOKESTATIC, INVOKEINTERFACE, INVOKEDYNAMIC -> {
                         var cpe = cp.entryByIndex(bcs.getIndexU2());
                         var nameAndType = opcode == INVOKEDYNAMIC ? ((DynamicConstantPoolEntry)cpe).nameAndType() : ((MemberRefEntry)cpe).nameAndType();
-                        addStackSlot(-countMethodStack(nameAndType.type(), true));
+                        var mDesc = MethodTypeDesc.ofDescriptor(nameAndType.type().stringValue());
+                        for (var arg : mDesc.parameterList()) {
+                            addStackSlot(-TypeKind.from(arg).slotSize());
+                        }
                         if (opcode != INVOKESTATIC && opcode != INVOKEDYNAMIC) {
                             addStackSlot(-1);
                         }
+                        addStackSlot(TypeKind.from(mDesc.returnType()).slotSize());
                     }
                     case MULTIANEWARRAY ->
                         addStackSlot (1 - bcs.getU1(bcs.bci + 3));
@@ -334,51 +341,6 @@ public final class StackCounter {
         //correction of maxStack when subroutines are present by calculation of upper bounds
         //the worst scenario is that all subroutines are chained and each subroutine also requires maxStack for its own code
         maxStack += rets * maxStack;
-    }
-
-    private static int countMethodStack(Utf8Entry descriptor, boolean subReturn) {
-        int cur = 0, end = descriptor.length();
-        if (cur >= end || descriptor.charAt(cur) != '(')
-            throw new IllegalArgumentException("Bad method descriptor: " + descriptor);
-        ++cur;  // skip '('
-        int count = 0;
-        boolean inArray = false;
-        while (cur < end) {
-            switch (descriptor.charAt(cur++)) {
-                case 'Z', 'B', 'C', 'S', 'I', 'F' -> {
-                    count++;
-                    inArray = false;
-                }
-                case 'J', 'D' -> {
-                    count += inArray ? 1 : 2;
-                    inArray = false;
-                }
-                case 'L' -> {
-                    while (cur < end && descriptor.charAt(cur++) != ';');
-                    count++;
-                    inArray = false;
-                }
-                case '[' -> {
-                    inArray = true;
-                }
-                case ')' -> {
-                    if (cur < end) {
-                        if (subReturn) {
-                            return switch (descriptor.charAt(cur++)) {
-                                case 'Z', 'B', 'C', 'S', 'I', 'F', '[', 'L' -> count - 1;
-                                case 'J', 'D' -> count - 2;
-                                case 'V' -> count;
-                                default -> throw new IllegalArgumentException("Bad method descriptor: " + descriptor);
-                            };
-                        } else {
-                            return count;
-                        }
-                    }
-                }
-                default -> throw new IllegalArgumentException("Bad method descriptor: " + descriptor);
-            }
-        }
-        throw new IllegalArgumentException("Bad method descriptor: " + descriptor);
     }
 
     /**
@@ -415,6 +377,6 @@ public final class StackCounter {
                 msg,
                 bcs.bci,
                 methodName,
-                MethodTypeDesc.ofDescriptor(methodDesc.stringValue()).displayDescriptor()));
+                methodDesc.displayDescriptor()));
     }
 }
