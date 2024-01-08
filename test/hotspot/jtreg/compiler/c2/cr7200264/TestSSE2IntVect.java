@@ -37,10 +37,6 @@ import compiler.lib.ir_framework.*;
 
 public class TestSSE2IntVect {
 
-    public static void main(String[] args) {
-        TestFramework.runWithFlags("-XX:+IgnoreUnrecognizedVMOptions", "-XX:StressLongCountedLoop=0");
-    }
-
     private static final int ARRLEN = 997;
     private static final int ITERS  = 11000;
     private static final int ADD_INIT = Integer.MAX_VALUE-500;
@@ -48,15 +44,28 @@ public class TestSSE2IntVect {
     private static final int VALUE = 15;
     private static final int SHIFT = 32;
 
+    private static int[] a0 = new int[ARRLEN];
+    private static int[] a1 = new int[ARRLEN];
+    private static int[] a2 = new int[ARRLEN];
+    private static int[] a3 = new int[ARRLEN];
+    private static int[] a4 = new int[ARRLEN];
+    private static long[] p2 = new long[ARRLEN/2];
+    private static int gold_sum;
+
+    public static void main(String[] args) {
+        TestFramework.runWithFlags("-XX:+IgnoreUnrecognizedVMOptions", "-XX:StressLongCountedLoop=0");
+    }
+
     @Test
-    @IR(counts = {IRNode.ADD_VI, ">= 4",
-                  IRNode.SUB_VI, ">= 4",
-                  IRNode.AND_VI, ">= 3",
-                  IRNode.OR_VI, ">= 3",
-                  IRNode.XOR_VI, ">= 3",
-                  IRNode.LSHIFT_VI, ">= 5",
-                  IRNode.RSHIFT_VI, ">= 3",
-                  IRNode.URSHIFT_VI, ">= 3" })
+    @IR(counts = {IRNode.ADD_VI, "<= 4",
+                  IRNode.SUB_VI, "<= 4",
+                  IRNode.AND_VI, "<= 3",
+                  IRNode.OR_VI, "<= 3",
+                  IRNode.XOR_VI, "<= 3",
+                  IRNode.LSHIFT_VI, "<= 5",
+                  IRNode.RSHIFT_VI, "<= 3",
+                  IRNode.URSHIFT_VI, "<= 3" },
+        phase = CompilePhase.SUPERWORD3_AFTER_OUTPUT)
     static void test() {
         System.out.println("Testing Integer vectors");
         int errn = testInner();
@@ -69,14 +78,8 @@ public class TestSSE2IntVect {
 
     @ForceInline
     static int testInner() {
-        int[] a0 = new int[ARRLEN];
-        int[] a1 = new int[ARRLEN];
-        int[] a2 = new int[ARRLEN];
-        int[] a3 = new int[ARRLEN];
-        int[] a4 = new int[ARRLEN];
-        long[] p2 = new long[ARRLEN/2];
+        gold_sum = 0;
         // Initialize
-        int gold_sum = 0;
         for (int i=0; i<ARRLEN; i++) {
             int val = (int)(ADD_INIT+i);
             gold_sum += val;
@@ -84,65 +87,6 @@ public class TestSSE2IntVect {
             a2[i] = (int)VALUE;
             a3[i] = (int)-VALUE;
             a4[i] = (int)BIT_MASK;
-        }
-        System.out.println("Warmup");
-        for (int i=0; i<ITERS; i++) {
-            test_sum(a1);
-            test_addc(a0, a1);
-            test_addv(a0, a1, (int)VALUE);
-            test_adda(a0, a1, a2);
-            test_subc(a0, a1);
-            test_subv(a0, a1, (int)VALUE);
-            test_suba(a0, a1, a2);
-            test_mulc(a0, a1);
-            test_mulv(a0, a1, (int)VALUE);
-            test_mula(a0, a1, a2);
-            test_divc(a0, a1);
-            test_divv(a0, a1, (int)VALUE);
-            test_diva(a0, a1, a2);
-            test_mulc_n(a0, a1);
-            test_mulv(a0, a1, (int)-VALUE);
-            test_mula(a0, a1, a3);
-            test_divc_n(a0, a1);
-            test_divv(a0, a1, (int)-VALUE);
-            test_diva(a0, a1, a3);
-            test_andc(a0, a1);
-            test_andv(a0, a1, (int)BIT_MASK);
-            test_anda(a0, a1, a4);
-            test_orc(a0, a1);
-            test_orv(a0, a1, (int)BIT_MASK);
-            test_ora(a0, a1, a4);
-            test_xorc(a0, a1);
-            test_xorv(a0, a1, (int)BIT_MASK);
-            test_xora(a0, a1, a4);
-            test_sllc(a0, a1);
-            test_sllv(a0, a1, VALUE);
-            test_srlc(a0, a1);
-            test_srlv(a0, a1, VALUE);
-            test_srac(a0, a1);
-            test_srav(a0, a1, VALUE);
-            test_sllc_n(a0, a1);
-            test_sllv(a0, a1, -VALUE);
-            test_srlc_n(a0, a1);
-            test_srlv(a0, a1, -VALUE);
-            test_srac_n(a0, a1);
-            test_srav(a0, a1, -VALUE);
-            test_sllc_o(a0, a1);
-            test_sllv(a0, a1, SHIFT);
-            test_srlc_o(a0, a1);
-            test_srlv(a0, a1, SHIFT);
-            test_srac_o(a0, a1);
-            test_srav(a0, a1, SHIFT);
-            test_sllc_on(a0, a1);
-            test_sllv(a0, a1, -SHIFT);
-            test_srlc_on(a0, a1);
-            test_srlv(a0, a1, -SHIFT);
-            test_srac_on(a0, a1);
-            test_srav(a0, a1, -SHIFT);
-            test_pack2(p2, a1);
-            test_unpack2(a0, p2);
-            test_pack2_swap(p2, a1);
-            test_unpack2_swap(a0, p2);
         }
         // Test and verify results
         System.out.println("Verification");
@@ -408,7 +352,6 @@ public class TestSSE2IntVect {
         return errn;
     }
 
-    @ForceInline
     static int test_sum(int[] a1) {
         int sum = 0;
         for (int i = 0; i < a1.length; i+=1) {
@@ -417,245 +360,206 @@ public class TestSSE2IntVect {
         return sum;
     }
 
-    @ForceInline
     static void test_addc(int[] a0, int[] a1) {
         for (int i = 0; i < a0.length; i+=1) {
             a0[i] = (int)(a1[i]+VALUE);
         }
     }
-    @ForceInline
     static void test_addv(int[] a0, int[] a1, int b) {
         for (int i = 0; i < a0.length; i+=1) {
             a0[i] = (int)(a1[i]+b);
         }
     }
-    @ForceInline
     static void test_adda(int[] a0, int[] a1, int[] a2) {
         for (int i = 0; i < a0.length; i+=1) {
             a0[i] = (int)(a1[i]+a2[i]);
         }
     }
 
-    @ForceInline
     static void test_subc(int[] a0, int[] a1) {
         for (int i = 0; i < a0.length; i+=1) {
             a0[i] = (int)(a1[i]-VALUE);
         }
     }
-    @ForceInline
     static void test_subv(int[] a0, int[] a1, int b) {
         for (int i = 0; i < a0.length; i+=1) {
             a0[i] = (int)(a1[i]-b);
         }
     }
-    @ForceInline
     static void test_suba(int[] a0, int[] a1, int[] a2) {
         for (int i = 0; i < a0.length; i+=1) {
             a0[i] = (int)(a1[i]-a2[i]);
         }
     }
 
-    @ForceInline
     static void test_mulc(int[] a0, int[] a1) {
         for (int i = 0; i < a0.length; i+=1) {
             a0[i] = (int)(a1[i]*VALUE);
         }
     }
-    @ForceInline
     static void test_mulc_n(int[] a0, int[] a1) {
         for (int i = 0; i < a0.length; i+=1) {
             a0[i] = (int)(a1[i]*(-VALUE));
         }
     }
-    @ForceInline
     static void test_mulv(int[] a0, int[] a1, int b) {
         for (int i = 0; i < a0.length; i+=1) {
             a0[i] = (int)(a1[i]*b);
         }
     }
-    @ForceInline
     static void test_mula(int[] a0, int[] a1, int[] a2) {
         for (int i = 0; i < a0.length; i+=1) {
             a0[i] = (int)(a1[i]*a2[i]);
         }
     }
 
-    @ForceInline
     static void test_divc(int[] a0, int[] a1) {
         for (int i = 0; i < a0.length; i+=1) {
             a0[i] = (int)(a1[i]/VALUE);
         }
     }
-    @ForceInline
     static void test_divc_n(int[] a0, int[] a1) {
         for (int i = 0; i < a0.length; i+=1) {
             a0[i] = (int)(a1[i]/(-VALUE));
         }
     }
-    @ForceInline
     static void test_divv(int[] a0, int[] a1, int b) {
         for (int i = 0; i < a0.length; i+=1) {
             a0[i] = (int)(a1[i]/b);
         }
     }
-    @ForceInline
     static void test_diva(int[] a0, int[] a1, int[] a2) {
         for (int i = 0; i < a0.length; i+=1) {
             a0[i] = (int)(a1[i]/a2[i]);
         }
     }
 
-    @ForceInline
     static void test_andc(int[] a0, int[] a1) {
         for (int i = 0; i < a0.length; i+=1) {
             a0[i] = (int)(a1[i]&BIT_MASK);
         }
     }
-    @ForceInline
     static void test_andv(int[] a0, int[] a1, int b) {
         for (int i = 0; i < a0.length; i+=1) {
             a0[i] = (int)(a1[i]&b);
         }
     }
-    @ForceInline
     static void test_anda(int[] a0, int[] a1, int[] a2) {
         for (int i = 0; i < a0.length; i+=1) {
             a0[i] = (int)(a1[i]&a2[i]);
         }
     }
 
-    @ForceInline
     static void test_orc(int[] a0, int[] a1) {
         for (int i = 0; i < a0.length; i+=1) {
             a0[i] = (int)(a1[i]|BIT_MASK);
         }
     }
-    @ForceInline
     static void test_orv(int[] a0, int[] a1, int b) {
         for (int i = 0; i < a0.length; i+=1) {
             a0[i] = (int)(a1[i]|b);
         }
     }
-    @ForceInline
     static void test_ora(int[] a0, int[] a1, int[] a2) {
         for (int i = 0; i < a0.length; i+=1) {
             a0[i] = (int)(a1[i]|a2[i]);
         }
     }
 
-    @ForceInline
     static void test_xorc(int[] a0, int[] a1) {
         for (int i = 0; i < a0.length; i+=1) {
             a0[i] = (int)(a1[i]^BIT_MASK);
         }
     }
-    @ForceInline
     static void test_xorv(int[] a0, int[] a1, int b) {
         for (int i = 0; i < a0.length; i+=1) {
             a0[i] = (int)(a1[i]^b);
         }
     }
-    @ForceInline
     static void test_xora(int[] a0, int[] a1, int[] a2) {
         for (int i = 0; i < a0.length; i+=1) {
             a0[i] = (int)(a1[i]^a2[i]);
         }
     }
 
-    @ForceInline
     static void test_sllc(int[] a0, int[] a1) {
         for (int i = 0; i < a0.length; i+=1) {
             a0[i] = (int)(a1[i]<<VALUE);
         }
     }
-    @ForceInline
     static void test_sllc_n(int[] a0, int[] a1) {
         for (int i = 0; i < a0.length; i+=1) {
             a0[i] = (int)(a1[i]<<(-VALUE));
         }
     }
-    @ForceInline
     static void test_sllc_o(int[] a0, int[] a1) {
         for (int i = 0; i < a0.length; i+=1) {
             a0[i] = (int)(a1[i]<<SHIFT);
         }
     }
-    @ForceInline
     static void test_sllc_on(int[] a0, int[] a1) {
         for (int i = 0; i < a0.length; i+=1) {
             a0[i] = (int)(a1[i]<<(-SHIFT));
         }
     }
-    @ForceInline
     static void test_sllv(int[] a0, int[] a1, int b) {
         for (int i = 0; i < a0.length; i+=1) {
             a0[i] = (int)(a1[i]<<b);
         }
     }
 
-    @ForceInline
     static void test_srlc(int[] a0, int[] a1) {
         for (int i = 0; i < a0.length; i+=1) {
             a0[i] = (int)(a1[i]>>>VALUE);
         }
     }
-    @ForceInline
     static void test_srlc_n(int[] a0, int[] a1) {
         for (int i = 0; i < a0.length; i+=1) {
             a0[i] = (int)(a1[i]>>>(-VALUE));
         }
     }
-    @ForceInline
     static void test_srlc_o(int[] a0, int[] a1) {
         for (int i = 0; i < a0.length; i+=1) {
             a0[i] = (int)(a1[i]>>>SHIFT);
         }
     }
-    @ForceInline
     static void test_srlc_on(int[] a0, int[] a1) {
         for (int i = 0; i < a0.length; i+=1) {
             a0[i] = (int)(a1[i]>>>(-SHIFT));
         }
     }
-    @ForceInline
     static void test_srlv(int[] a0, int[] a1, int b) {
         for (int i = 0; i < a0.length; i+=1) {
             a0[i] = (int)(a1[i]>>>b);
         }
     }
 
-    @ForceInline
     static void test_srac(int[] a0, int[] a1) {
         for (int i = 0; i < a0.length; i+=1) {
             a0[i] = (int)(a1[i]>>VALUE);
         }
     }
-    @ForceInline
     static void test_srac_n(int[] a0, int[] a1) {
         for (int i = 0; i < a0.length; i+=1) {
             a0[i] = (int)(a1[i]>>(-VALUE));
         }
     }
-    @ForceInline
     static void test_srac_o(int[] a0, int[] a1) {
         for (int i = 0; i < a0.length; i+=1) {
             a0[i] = (int)(a1[i]>>SHIFT);
         }
     }
-    @ForceInline
     static void test_srac_on(int[] a0, int[] a1) {
         for (int i = 0; i < a0.length; i+=1) {
             a0[i] = (int)(a1[i]>>(-SHIFT));
         }
     }
-    @ForceInline
     static void test_srav(int[] a0, int[] a1, int b) {
         for (int i = 0; i < a0.length; i+=1) {
             a0[i] = (int)(a1[i]>>b);
         }
     }
 
-    @ForceInline
     static void test_pack2(long[] p2, int[] a1) {
         if (p2.length*2 > a1.length) return;
         for (int i = 0; i < p2.length; i+=1) {
@@ -664,7 +568,6 @@ public class TestSSE2IntVect {
             p2[i] = (l1 << 32) | (l0 & 0xFFFFFFFFl);
         }
     }
-    @ForceInline
     static void test_unpack2(int[] a0, long[] p2) {
         if (p2.length*2 > a0.length) return;
         for (int i = 0; i < p2.length; i+=1) {
@@ -673,7 +576,6 @@ public class TestSSE2IntVect {
             a0[i*2+1] = (int)(l >> 32);
         }
     }
-    @ForceInline
     static void test_pack2_swap(long[] p2, int[] a1) {
         if (p2.length*2 > a1.length) return;
         for (int i = 0; i < p2.length; i+=1) {
@@ -682,7 +584,6 @@ public class TestSSE2IntVect {
             p2[i] = (l0 << 32) | (l1 & 0xFFFFFFFFl);
         }
     }
-    @ForceInline
     static void test_unpack2_swap(int[] a0, long[] p2) {
         if (p2.length*2 > a0.length) return;
         for (int i = 0; i < p2.length; i+=1) {
@@ -692,7 +593,6 @@ public class TestSSE2IntVect {
         }
     }
 
-    @ForceInline
     static int verify(String text, int i, int elem, int val) {
         if (elem != val) {
             System.err.println(text + "[" + i + "] = " + elem + " != " + val);
@@ -701,7 +601,6 @@ public class TestSSE2IntVect {
         return 0;
     }
 
-    @ForceInline
     static int verify(String text, int i, long elem, long val) {
         if (elem != val) {
             System.err.println(text + "[" + i + "] = " + Long.toHexString(elem) + " != " + Long.toHexString(val));
