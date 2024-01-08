@@ -28,47 +28,95 @@
  * @summary Testing PEM decodings
  */
 
-import java.io.CharArrayReader;
 import java.io.IOException;
-import java.security.Key;
+import java.rmi.RemoteException;
 import java.security.PEMDecoder;
 import java.security.PublicKey;
 import java.security.SecurityObject;
+import java.security.interfaces.ECPrivateKey;
+import java.security.interfaces.ECPublicKey;
 import java.security.interfaces.RSAPublicKey;
+import java.util.*;
 import java.util.Arrays;
-import java.util.HexFormat;
 
-class PEMDecoderTest {
+public class PEMDecoderTest {
 
     static HexFormat hex = HexFormat.of();
 
     PEMDecoderTest() {
     }
 
-    public static void main(String[] args) throws Exception{
-        testSecurityObject();
-        testClass();
+    public static void main(String[] args) throws IOException {
+        PEMCerts.entryList.stream().forEach(entry -> test(entry));
+        PEMCerts.entryList.stream().forEach(entry -> testSecurityObject(entry));
         testTwoKeys();
-
+        testFailure(PEMCerts.getEntry("ecprivpem"), ECPublicKey.class, false);
+        testFailure(PEMCerts.getEntry(PEMCerts.failureEntryList, "rsaOpenSSL"), RSAPublicKey.class, false);
     }
 
-    static void testSecurityObject() throws IOException {
-        SecurityObject so;
-
-        so = new PEMDecoder().decode(PEMCerts.pubrsapem);
-        if (!(so instanceof RSAPublicKey)) {
-            throw new AssertionError("pubrsapem failed. Should be " +
-                "RSAPublicKey: " +  so.getClass());
+    static void testFailure(PEMCerts.Entry entry, Class c, boolean expected) {
+        try {
+            test(entry.pem(), c, expected);
+            throw new AssertionError("Failure with " +
+                entry.name() + ":  Not supposed to succeed.");
+        } catch (Exception e) {
+            System.out.println("PASS (" + entry.name() + "):  " + e.getMessage());
         }
     }
 
-    static void testClass() throws IOException {
-        var pk = new PEMDecoder().decode(PEMCerts.pubrsapem,
-            RSAPublicKey.class);
-        if (!(pk instanceof RSAPublicKey)) {
-            throw new AssertionError("pubrsapem failed. Should be " +
-                "RSAPublicKey: " + pk.getClass());
+    static void test(String pem) {
+        try {
+            new PEMDecoder().decode(pem);
+        } catch (IOException e) {
+            throw new AssertionError(e);
         }
+    }
+
+    static void test(PEMCerts.Entry entry) {
+        try {
+            test(entry.pem(), entry.type(), true);
+            System.out.println("PASS (" + entry.name() + ")");
+        } catch (Exception|AssertionError e) {
+            throw new RuntimeException("Error with PEM (" + entry.name() +
+                "):  " + e.getMessage(), e);
+        }
+    }
+
+    static void test(String pem, Class c) throws IOException {
+            test(pem, c, true);
+    }
+
+    static void testSecurityObject(PEMCerts.Entry entry) {
+        try {
+            test(entry.pem(), SecurityObject.class, true);
+        } catch (Exception|AssertionError e) {
+            throw new RuntimeException("Error with " + entry.name() + ":  " +
+                e.getMessage(), e);
+        }
+    }
+
+
+    static List getInterfaceList(Class<?> so) {
+        Class<?>[] clist = so.getInterfaces();
+        ArrayList<Class> list = new ArrayList<>();
+        list.addAll(Arrays.asList(clist));
+        if (clist.length > 0) {
+            for (Class cc : clist) {
+                list.addAll(getInterfaceList(cc));
+            }
+        }
+        return list;
+    }
+
+    static void test(String pem, Class c, boolean expected) throws IOException {
+        var pk = new PEMDecoder().decode(pem);
+        List<Class> list = getInterfaceList(pk.getClass());
+        for(Class cc : list) {
+            if (cc.equals(c)) {
+                return;
+            }
+        }
+        throw new RuntimeException("Entry did not contain expected: " + c);
     }
 
     // Run the same key twice through the same decoder and make sure the
@@ -85,9 +133,5 @@ class PEMDecoderTest {
             throw new AssertionError("Two decoding of the same key failed to" +
                 " match: ");
         }
-    }
-
-    SecurityObject decodeKey(String pem) throws IOException {
-        return new PEMDecoder().decode(pem);
     }
 }

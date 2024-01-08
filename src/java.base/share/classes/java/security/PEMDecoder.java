@@ -97,7 +97,7 @@ final public class PEMDecoder implements Decoder<SecurityObject> {
             footer.equalsIgnoreCase(Pem.CRLFOOTER)) {
             keyType = Pem.KeyType.CRL;
         } else {
-            return null;
+            throw new IOException("Unsupported PEM header/footer");
         }
 
         if (password != null) {

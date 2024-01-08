@@ -23,6 +23,8 @@
  * questions.
  */
 
+import java.security.SecurityObject;
+import java.security.interfaces.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -56,22 +58,22 @@ WqcWcoJqfdLEyBT+\
 """;
 
     public static final String privpembc = """
------BEGIN PRIVATE KEY-----
-MIICeAIBADANBgkqhkiG9w0BAQEFAASCAmIwggJeAgEAAoGBAOtjMnCzPy4jCeZb
-OdOvmvU3jl7+cvPFgL5MfqDCM5a8yI0yImg/hzibJJHLk3emUVBSnekgHvCqyGLW
-3qGR2DuBEaMy0mkg8hfKcSpHLaYjDYaspO27d2qtb6d1qtsPoPjJFjWFYeW6K463
-OHG654K5/2FcJgQdlLVyp3zCiQU/AgMBAAECgYEAwNkDkTv5rlX8nWLuLJV5kh/T
-H9a93SRZxw8qy5Bv7bZ7ZNrHP7uUkHbi7iPojKWRhwo43692SdzR0dCSk7LGgN9q
-CYvndsYR6gifVGBi0WF+St4+NdtcQ3VlNdsojy2BdIx0oC+r7i3bn+zc968O/kI+
-EgdgrMcjjFqyx6tMHpECQQD8TYPKGHyN7Jdy28llCoUX/sL/yZ2vIi5mnDAFE5ae
-KZQSkNAXG+8i9Qbs/Wdd5S3oZDqu+6DBn9gib80pYY05AkEA7tY59Oy8ka7nBlGP
-g6Wo1usF2bKqk8vjko9ioZQay7f86aB10QFcAjCr+cCUm16Lc9DwzWl02nNggRZa
-Jz8eNwJBAO+1zfLjFOPa14F/JHdlaVKE8EwKCFDuztsapd0M4Vtf8Zk6ERsDpU63
-Ml9T2zOwnM9g+whpdjDAZ59ATdJ1JrECQQDReJQ2SxeL0lGPCiOLu9RcQp7L81aF
-79G1bgp8WlAyEjlAkloiqEWRKiz7DDuKFR7Lwhognng9S+n87aS+PS57AkBh75t8
-6onPAs4hkm+63dfzCojvEkALevO8J3OVX7YS5q9J1r75wDn60Ob0Zh+iiorpx8Ob
-WqcWcoJqfdLEyBT+
------END PRIVATE KEY-----
+-----BEGIN PRIVATE KEY-----\
+MIICeAIBADANBgkqhkiG9w0BAQEFAASCAmIwggJeAgEAAoGBAOtjMnCzPy4jCeZb\
+OdOvmvU3jl7+cvPFgL5MfqDCM5a8yI0yImg/hzibJJHLk3emUVBSnekgHvCqyGLW\
+3qGR2DuBEaMy0mkg8hfKcSpHLaYjDYaspO27d2qtb6d1qtsPoPjJFjWFYeW6K463\
+OHG654K5/2FcJgQdlLVyp3zCiQU/AgMBAAECgYEAwNkDkTv5rlX8nWLuLJV5kh/T\
+H9a93SRZxw8qy5Bv7bZ7ZNrHP7uUkHbi7iPojKWRhwo43692SdzR0dCSk7LGgN9q\
+CYvndsYR6gifVGBi0WF+St4+NdtcQ3VlNdsojy2BdIx0oC+r7i3bn+zc968O/kI+\
+EgdgrMcjjFqyx6tMHpECQQD8TYPKGHyN7Jdy28llCoUX/sL/yZ2vIi5mnDAFE5ae\
+KZQSkNAXG+8i9Qbs/Wdd5S3oZDqu+6DBn9gib80pYY05AkEA7tY59Oy8ka7nBlGP\
+g6Wo1usF2bKqk8vjko9ioZQay7f86aB10QFcAjCr+cCUm16Lc9DwzWl02nNggRZa\
+Jz8eNwJBAO+1zfLjFOPa14F/JHdlaVKE8EwKCFDuztsapd0M4Vtf8Zk6ERsDpU63\
+Ml9T2zOwnM9g+whpdjDAZ59ATdJ1JrECQQDReJQ2SxeL0lGPCiOLu9RcQp7L81aF\
+79G1bgp8WlAyEjlAkloiqEWRKiz7DDuKFR7Lwhognng9S+n87aS+PS57AkBh75t8\
+6onPAs4hkm+63dfzCojvEkALevO8J3OVX7YS5q9J1r75wDn60Ob0Zh+iiorpx8Ob\
+WqcWcoJqfdLEyBT+\
+-----END PRIVATE KEY-----\
 """;
 
     public static final String privpemed25519 = """
@@ -90,12 +92,12 @@ XCYEHZS1cqd8wokFPwIDAQAB\
 """;
 
     public static final String pubrsapembc = """
------BEGIN PUBLIC KEY-----
-MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDrYzJwsz8uIwnmWznTr5r1N45e
-/nLzxYC+TH6gwjOWvMiNMiJoP4c4mySRy5N3plFQUp3pIB7wqshi1t6hkdg7gRGj
-MtJpIPIXynEqRy2mIw2GrKTtu3dqrW+ndarbD6D4yRY1hWHluiuOtzhxuueCuf9h
-XCYEHZS1cqd8wokFPwIDAQAB
------END PUBLIC KEY-----
+-----BEGIN PUBLIC KEY-----\
+MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDrYzJwsz8uIwnmWznTr5r1N45e\
+/nLzxYC+TH6gwjOWvMiNMiJoP4c4mySRy5N3plFQUp3pIB7wqshi1t6hkdg7gRGj\
+MtJpIPIXynEqRy2mIw2GrKTtu3dqrW+ndarbD6D4yRY1hWHluiuOtzhxuueCuf9h\
+XCYEHZS1cqd8wokFPwIDAQAB\
+-----END PUBLIC KEY-----\
 """;
 
     public static final String pubrsaold =
@@ -244,42 +246,74 @@ XnpbZ9Cfa0c1Z4z37O290LY=\
     """;
 
     public static final String rsaOpenSSL = """
-       -----BEGIN RSA PRIVATE KEY-----
-       MIIEowIBAAKCAQEAqozTLan1qFcOCWnS63jXQn5lLyGOKDv3GM11n2zkGGrChayj
-       cSzB2KTlDmN9NgOyFdqGNWbSgdmXR5ToHGHYwaKubJoQIoPQcsipWDI156d3+X/8
-       BxCGY8l5nYwvS4olOXc+2kEjeFF1eamnm9IQ5DHZfaFPl0ri4Yfm1YHBAbt/7HvF
-       3MBjgBj1xSsSFLW4O6ws6guRVGDfKBVyyRNUhRTbSua/nEz0wAjxF2PWT+ZTHS6M
-       0siYwVTuPI4/n4ItoYoahvGb9JskkXP+bc/QZJCTFYdyxF5tKqVMSdYaJTxop02p
-       Jo3oeafVKSlBrr0K731xgNBKqBud44aKT5R96QIDAQABAoIBAQCD9Q/T7gOvayPm
-       LqXOISJURV1emRTXloX5/8Y5QtQ8/CVjrg6Lm3ikefjsKBgR+cwJUpmyqcrIQyXk
-       cZchlqdSMt/IEW/YdKqMlStJnRfOE+ok9lx2ztdcT9+0AWn6hXmFu/i6f9nE1yoQ
-       py6SxnbhSJyhsnTVd1CR9Uep/InsHvYW/15WlVMD1VuCSIt9sefqXwavbAfBaqbn
-       mjwBB/ulsqKhHSuRq/QWqlj+jyGqhhYmTguC1Qwt0woDbThiHtK+suCTAlGBj/A+
-       IZ1U9d+VsHBcWDKBkxmlKWcJAGR3xXiKKy9vfzC+DU7L99kgay80VZarDyXgiy78
-       9xMMzRMBAoGBANoxnZhu1bUFtLqTJ1HfDm6UB+1zVd2Mu4DXYdy/AHjoaCLp05OQ
-       0ZeyhO/eXPT+eGpzCxkWD7465KO/QDfnp54p/NS73jaJVdWQHBhzJx1MymqURy3N
-       JQeW4+ojzwSmVXcrs7Og6EBa4L+PWLpMLW2kODniCY+vp9f5LS6m8UPJAoGBAMgZ
-       4rBw7B9YFZZW/EE4eos4Q7KtA5tEP6wvCq04oxfiSytWXifYX0ToPp0CHhZlWOxk
-       v9a/BDGqM7AxAQJs7mmIvT5AT2V1w7oTbFPnnAo6pQtLcfaxdFFqr0h6t0sXSOKC
-       rQeZAqqFqwuOyP7vT0goGlBruHkwS21NKkzCyzkhAoGAc2JjhbWu+8Cdt0CUPX5o
-       ol9T5eTlFnkSuuqrTNIQzN+SGkxu341o2QDFvhdoLwLW6OwXhVeeUanROSqtKiMu
-       B70Kf/EtbMephXtk8CUNHTh7nmr1TSo8F8xakHoJQts3PQL2T9qal1W3nnWOpU4d
-       g+qg9TMsfTiV2OdjVlVgJskCgYBSnjV1qjojuue22hVvDFW0c7en5z2M9wHfItEi
-       sjbMnrdwnklj5Dd5qPZpNz2a+59ag0Kd9OJTazXKMoF7MeTCGB4ivMTLXHNCudBJ
-       WGCZ7JrGbhEQzTX8g7L5lwlk7KlANLoiX++03lm//OVKNR6j6ULsH33cM6+A4pJr
-       fSYRYQKBgCr9iMTmL0x+n6AmMNecR+MhDxi99Oy0s2EBAYqN9g/8yNgwM4KR0cjz
-       EcgIOtkvoTrJ9Cquvuj+O7/d2yNoH0SZQ4IYJKq47/Z4kKhwXzJnBCCCBKgkjfub
-       RTQSNnSEgTaBD29l7FrhNRHX9lIKFZ23caCTBS6o3q3+KgPbq7ao
-       -----END RSA PRIVATE KEY-----
+       -----BEGIN RSA PRIVATE KEY-----\
+       MIIEowIBAAKCAQEAqozTLan1qFcOCWnS63jXQn5lLyGOKDv3GM11n2zkGGrChayj\
+       cSzB2KTlDmN9NgOyFdqGNWbSgdmXR5ToHGHYwaKubJoQIoPQcsipWDI156d3+X/8\
+       BxCGY8l5nYwvS4olOXc+2kEjeFF1eamnm9IQ5DHZfaFPl0ri4Yfm1YHBAbt/7HvF\
+       3MBjgBj1xSsSFLW4O6ws6guRVGDfKBVyyRNUhRTbSua/nEz0wAjxF2PWT+ZTHS6M\
+       0siYwVTuPI4/n4ItoYoahvGb9JskkXP+bc/QZJCTFYdyxF5tKqVMSdYaJTxop02p\
+       Jo3oeafVKSlBrr0K731xgNBKqBud44aKT5R96QIDAQABAoIBAQCD9Q/T7gOvayPm\
+       LqXOISJURV1emRTXloX5/8Y5QtQ8/CVjrg6Lm3ikefjsKBgR+cwJUpmyqcrIQyXk\
+       cZchlqdSMt/IEW/YdKqMlStJnRfOE+ok9lx2ztdcT9+0AWn6hXmFu/i6f9nE1yoQ\
+       py6SxnbhSJyhsnTVd1CR9Uep/InsHvYW/15WlVMD1VuCSIt9sefqXwavbAfBaqbn\
+       mjwBB/ulsqKhHSuRq/QWqlj+jyGqhhYmTguC1Qwt0woDbThiHtK+suCTAlGBj/A+\
+       IZ1U9d+VsHBcWDKBkxmlKWcJAGR3xXiKKy9vfzC+DU7L99kgay80VZarDyXgiy78\
+       9xMMzRMBAoGBANoxnZhu1bUFtLqTJ1HfDm6UB+1zVd2Mu4DXYdy/AHjoaCLp05OQ\
+       0ZeyhO/eXPT+eGpzCxkWD7465KO/QDfnp54p/NS73jaJVdWQHBhzJx1MymqURy3N\
+       JQeW4+ojzwSmVXcrs7Og6EBa4L+PWLpMLW2kODniCY+vp9f5LS6m8UPJAoGBAMgZ\
+       4rBw7B9YFZZW/EE4eos4Q7KtA5tEP6wvCq04oxfiSytWXifYX0ToPp0CHhZlWOxk\
+       v9a/BDGqM7AxAQJs7mmIvT5AT2V1w7oTbFPnnAo6pQtLcfaxdFFqr0h6t0sXSOKC\
+       rQeZAqqFqwuOyP7vT0goGlBruHkwS21NKkzCyzkhAoGAc2JjhbWu+8Cdt0CUPX5o\
+       ol9T5eTlFnkSuuqrTNIQzN+SGkxu341o2QDFvhdoLwLW6OwXhVeeUanROSqtKiMu\
+       B70Kf/EtbMephXtk8CUNHTh7nmr1TSo8F8xakHoJQts3PQL2T9qal1W3nnWOpU4d\
+       g+qg9TMsfTiV2OdjVlVgJskCgYBSnjV1qjojuue22hVvDFW0c7en5z2M9wHfItEi\
+       sjbMnrdwnklj5Dd5qPZpNz2a+59ag0Kd9OJTazXKMoF7MeTCGB4ivMTLXHNCudBJ\
+       WGCZ7JrGbhEQzTX8g7L5lwlk7KlANLoiX++03lm//OVKNR6j6ULsH33cM6+A4pJr\
+       fSYRYQKBgCr9iMTmL0x+n6AmMNecR+MhDxi99Oy0s2EBAYqN9g/8yNgwM4KR0cjz\
+       EcgIOtkvoTrJ9Cquvuj+O7/d2yNoH0SZQ4IYJKq47/Z4kKhwXzJnBCCCBKgkjfub\
+       RTQSNnSEgTaBD29l7FrhNRHX9lIKFZ23caCTBS6o3q3+KgPbq7ao\
+       -----END RSA PRIVATE KEY-----\
        """;
 
     static List<String> pubList = new ArrayList<>(Arrays.asList(pubrsapem,
         pubrsapembc, pubecpem));
     static List<String> privList = new ArrayList<>(Arrays.asList(privpem,
-        privpembc, ecprivpem, privpemed25519, rsaOpenSSL));
+        privpembc, ecprivpem, privpemed25519));
     static List<String> oasList = new ArrayList<>(Arrays.asList(oasrfc8410,
         oasbcpem));
 
 
-    PEMCerts() {}
+    public record Entry(String name, String pem, Class type) {
+    }
+
+    static List<Entry> entryList = new ArrayList<>();
+    static List<Entry> failureEntryList = new ArrayList<>();
+
+    static public Entry getEntry(String varname) {
+        return getEntry(entryList, varname);
+    }
+
+    static public Entry getEntry(List<Entry> list, String varname) {
+        for (Entry entry : list) {
+            if (entry.name.compareToIgnoreCase(varname) == 0) {
+                return entry;
+            }
+        }
+        return null;
+    }
+
+
+    static {
+        entryList.add(new Entry("pubrsapem", pubrsapem, RSAPublicKey.class));
+        entryList.add(new Entry("pubrsapembc", pubrsapembc, RSAPublicKey.class));
+        entryList.add(new Entry("pubecpem", pubecpem, ECPublicKey.class));
+        entryList.add(new Entry("privpem", privpem, RSAPrivateKey.class));
+        entryList.add(new Entry("privpembc", privpembc, RSAPrivateKey.class));
+        entryList.add(new Entry("ecprivpem", ecprivpem, ECPrivateKey.class));
+        entryList.add(new Entry("privpemed25519", privpemed25519, EdECPrivateKey.class));
+        entryList.add(new Entry("oasrfc8410", oasrfc8410, SecurityObject.class));
+        entryList.add(new Entry("oasbcpem", oasbcpem, SecurityObject.class));
+
+        failureEntryList.add(new Entry("rsaOpenSSL", rsaOpenSSL, RSAPrivateKey.class));
+    }
 }

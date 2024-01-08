@@ -68,17 +68,7 @@ public class Pem {
     public static final String CRLHEADER = "-----BEGIN CRL-----";
     public static final String CRLFOOTER = "-----END CRL-----";
 
-    /**
-     * OpenSSL PKCS1 RSA Header
-     */
-    public static final String PKCS1HEADER = "-----BEGIN RSA PRIVATE KEY-----";
-    public static final String PKCS1FOOTER = "-----END RSA PRIVATE KEY-----";
-
     public static final String LINESEPARATOR = "\r\n";
-
-    private static final String STARTHEADER = "-----BEGIN ";
-    private static final String ENDFOOTER = "-----END ";
-
 
     public enum KeyType {
         UNKNOWN, PRIVATE, PUBLIC, ENCRYPTED_PRIVATE, CERTIFICATE, CRL
