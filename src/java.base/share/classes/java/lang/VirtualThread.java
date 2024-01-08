@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1156,10 +1156,10 @@ final class VirtualThread extends BaseVirtualThread {
 
     @IntrinsicCandidate
     @JvmtiMountTransition
-    private native void notifyJvmtiHideFrames(boolean hide);
+    private static native void notifyJvmtiHideFrames(boolean hide);
 
     @IntrinsicCandidate
-    private native void notifyJvmtiDisableSuspend(boolean enter);
+    private static native void notifyJvmtiDisableSuspend(boolean enter);
 
     private static native void registerNatives();
     static {

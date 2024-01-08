@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2941,7 +2941,7 @@ bool LibraryCallKit::inline_native_notify_jvmti_hide() {
   {
     // unconditionally update the temporary VTMS transition bit in current JavaThread
     Node* thread = ideal.thread();
-    Node* hide = _gvn.transform(argument(1)); // hide argument for temporary VTMS transition notification
+    Node* hide = _gvn.transform(argument(0)); // hide argument for temporary VTMS transition notification
     Node* addr = basic_plus_adr(thread, in_bytes(JavaThread::is_in_tmp_VTMS_transition_offset()));
     const TypePtr *addr_type = _gvn.type(addr)->isa_ptr();
 
@@ -2964,7 +2964,7 @@ bool LibraryCallKit::inline_native_notify_jvmti_sync() {
   {
     // unconditionally update the is_disable_suspend bit in current JavaThread
     Node* thread = ideal.thread();
-    Node* arg = _gvn.transform(argument(1)); // argument for notification
+    Node* arg = _gvn.transform(argument(0)); // argument for notification
     Node* addr = basic_plus_adr(thread, in_bytes(JavaThread::is_disable_suspend_offset()));
     const TypePtr *addr_type = _gvn.type(addr)->isa_ptr();
 
