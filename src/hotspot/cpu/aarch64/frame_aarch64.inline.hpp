@@ -195,7 +195,7 @@ inline bool frame::equal(frame other) const {
               && unextended_sp() == other.unextended_sp()
               && fp() == other.fp()
               && pc() == other.pc();
-  assert(!ret || (ret && cb() == other.cb() && _deopt_state == other._deopt_state), "inconsistent construction");
+  assert(!ret || (cb() == other.cb() && _deopt_state == other._deopt_state), "inconsistent construction");
   return ret;
 }
 
