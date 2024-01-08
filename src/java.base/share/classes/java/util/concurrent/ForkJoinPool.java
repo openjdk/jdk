@@ -1236,14 +1236,15 @@ public class ForkJoinPool extends AbstractExecutorService {
             for (int i = r, step = (r << 1) | 1, l = n; l > 0; --l, i += step) {
                 int j; WorkQueue q;
                 if ((q = qs[j = i & (n - 1)]) != null) {
-                    boolean stolen = false;
+                    boolean taken = false;
                     for (int b = q.base, miss = b - 1;;) {
-                        ForkJoinTask<?>[] a; int cap; Object o;
+                        ForkJoinTask<?>[] a; int cap;
                         if ((a = q.array) == null || (cap = a.length) <= 0)
                             break;
                         int nb = b + 1, nk = nb & (cap - 1), k =  b & (cap - 1);
                         if (k < 0 || k >= cap || nk < 0 || nk >= cap)
                             break;              // always false; help compiler
+                        long kp = slotOffset(k);
                         ForkJoinTask<?> t = a[k];
                         U.loadFence();          // re-read
                         if (b != (b = q.base))
@@ -1261,34 +1262,33 @@ public class ForkJoinPool extends AbstractExecutorService {
                                 rescan = true;
                             else if (!reactivating)
                                 break;          // prescanning
-                            else if ((int)(c = ctl) != active || a[k] == null ||
-                                     !compareAndSetCtl(
-                                         c, sp | ((c + RC_UNIT) & UMASK)))
+                            else if ((int)(c = ctl) != active)
                                 break;          // ineligible
-                            else {
-                                rescan = true;
+                            else if (a[k] == null)
+                                break;          // already taken
+                            else if (compareAndSetCtl(
+                                         c, sp | ((c + RC_UNIT) & UMASK))) {
+                                rescan = true;  // self-signalled
                                 w.phase = p = active;
                             }
                         }
-                        else if ((o = U.compareAndExchangeReference(
-                                      a, slotOffset(k), t, null)) == t) {
+                        else if (U.compareAndSetReference(a, kp, t, null)) {
                             q.base = b = nb;
                             w.source = j;
                             boolean signal = !running;
-                            stolen = running = true;
+                            taken = running = true;
                             if (a[nk] != null && signal)
                                 signalWork(a, nk);
                             w.topLevelExec(t, cfg);
                             if (q.base != b)
-                                break;          // broken run
+                                break;          // interference
                         }
-                        else if (o == null) {
-                            if (rescan)
-                                break;
+                        else if (!rescan)
                             miss = b = q.base;  // for rescan check
-                        }
+                        else
+                            break;              // retry later
                     }
-                    if (stolen)                 // restart
+                    if (taken)                  // restart
                         return ((long)r << 32) | (p & LMASK);
                 }
             }
