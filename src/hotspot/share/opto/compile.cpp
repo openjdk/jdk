@@ -29,9 +29,11 @@
 #include "classfile/javaClasses.hpp"
 #include "code/exceptionHandlerTable.hpp"
 #include "code/nmethod.hpp"
+#include "compiler/compilationFailureInfo.hpp"
 #include "compiler/compilationMemoryStatistic.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/compileLog.hpp"
+#include "compiler/compiler_globals.hpp"
 #include "compiler/disassembler.hpp"
 #include "compiler/oopMap.hpp"
 #include "gc/shared/barrierSet.hpp"
@@ -637,6 +639,7 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
                   _directive(directive),
                   _log(ci_env->log()),
                   _failure_reason(nullptr),
+                  _first_failure_details(nullptr),
                   _intrinsics        (comp_arena(), 0, 0, nullptr),
                   _macro_nodes       (comp_arena(), 8, 0, nullptr),
                   _parse_predicates  (comp_arena(), 8, 0, nullptr),
@@ -926,6 +929,7 @@ Compile::Compile( ciEnv* ci_env,
     _directive(directive),
     _log(ci_env->log()),
     _failure_reason(nullptr),
+    _first_failure_details(nullptr),
     _congraph(nullptr),
     NOT_PRODUCT(_igv_printer(nullptr) COMMA)
     _unique(0),
@@ -988,6 +992,11 @@ Compile::Compile( ciEnv* ci_env,
 
   Code_Gen();
 }
+
+Compile::~Compile() {
+  delete _print_inlining_stream;
+  delete _first_failure_details;
+};
 
 //------------------------------Init-------------------------------------------
 // Prepare for a single compilation
@@ -4358,6 +4367,9 @@ void Compile::record_failure(const char* reason) {
   if (_failure_reason == nullptr) {
     // Record the first failure reason.
     _failure_reason = reason;
+    if (CaptureBailoutInformation) {
+      _first_failure_details = new CompilationFailureInfo(reason);
+    }
   }
 
   if (!C->failure_reason_is(C2Compiler::retry_no_subsuming_loads())) {
