@@ -59,7 +59,7 @@ public final class StackCounter {
     private final Utf8Entry methodName;
     private final Utf8Entry methodDesc;
     private final SplitConstantPool cp;
-    private final Queue<Target> targets;
+    private final ArrayDeque<Target> targets;
     private final BitSet visited;
 
     private void jump(int targetBci) {
