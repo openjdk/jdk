@@ -458,7 +458,7 @@ public class TestMarkdown extends JavadocTester {
                     <ul class="tag-list">
                     <li>"A reference"</li>
                     <li><a href="http://www.example.com">Example</a></li>
-                    <li><a href="D.html" title="class in p"><code>a <em>Markdown</em> description</code></a></li>
+                    <li><a href="D.html" title="class in p">a <em>Markdown</em> description</a></li>
                     </ul>
                     </dd>""");
 
