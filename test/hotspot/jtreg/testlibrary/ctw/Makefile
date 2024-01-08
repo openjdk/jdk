@@ -42,7 +42,7 @@ JAVAC = $(JDK_HOME)/bin/javac
 JAR = $(JDK_HOME)/bin/jar
 
 SRC_FILES = $(shell find $(SRC_DIR) -name '*.java')
-# Exclude ModuleInfoWriter.java to circumvent '--enable-preview'.
+# Exclude files that need '--enable-preview' to compile.
 LIB_FILES = $(filter-out %ModuleInfoWriter.java, $(shell find $(TESTLIBRARY_DIR)/jdk/test/lib/ \
     $(TESTLIBRARY_DIR)/jdk/test/lib/process \
     $(TESTLIBRARY_DIR)/jdk/test/lib/util \
@@ -53,11 +53,7 @@ WB_CLASS_FILES := $(subst $(TESTLIBRARY_DIR)/,,$(WB_SRC_FILES))
 WB_CLASS_FILES := $(patsubst %.java,%.class,$(WB_CLASS_FILES))
 EXPORTS=--add-exports java.base/jdk.internal.jimage=ALL-UNNAMED \
 	--add-exports java.base/jdk.internal.misc=ALL-UNNAMED \
-	--add-exports java.base/jdk.internal.module=ALL-UNNAMED \
 	--add-exports java.base/jdk.internal.reflect=ALL-UNNAMED \
-	--add-exports java.base/jdk.internal.classfile=ALL-UNNAMED \
-	--add-exports java.base/jdk.internal.classfile.attribute=ALL-UNNAMED \
-	--add-exports java.base/jdk.internal.classfile.constantpool=ALL-UNNAMED \
 	--add-exports java.base/jdk.internal.access=ALL-UNNAMED
 
 CTW_MAIN_CLASS = sun.hotspot.tools.ctw.CompileTheWorld
