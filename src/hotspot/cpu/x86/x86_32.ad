@@ -1,5 +1,5 @@
 //
-// Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -13161,7 +13161,7 @@ instruct cmovPP_reg_LTGE_U(cmpOpU cmp, flagsReg_ulong_LTGE flags, eRegP dst, eRe
 
 // Compare 2 longs and CMOVE doubles
 instruct cmovDDPR_reg_LTGE(cmpOp cmp, flagsReg_long_LTGE flags, regDPR dst, regDPR src) %{
-  predicate( UseSSE<=1 && _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::lt || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::ge );
+  predicate( UseSSE<=1 && ( _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::lt || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::ge ));
   match(Set dst (CMoveD (Binary cmp flags) (Binary dst src)));
   ins_cost(200);
   expand %{
@@ -13171,7 +13171,7 @@ instruct cmovDDPR_reg_LTGE(cmpOp cmp, flagsReg_long_LTGE flags, regDPR dst, regD
 
 // Compare 2 longs and CMOVE doubles
 instruct cmovDD_reg_LTGE(cmpOp cmp, flagsReg_long_LTGE flags, regD dst, regD src) %{
-  predicate( UseSSE>=2 && _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::lt || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::ge );
+  predicate( UseSSE>=2 && ( _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::lt || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::ge ));
   match(Set dst (CMoveD (Binary cmp flags) (Binary dst src)));
   ins_cost(200);
   expand %{
@@ -13180,7 +13180,7 @@ instruct cmovDD_reg_LTGE(cmpOp cmp, flagsReg_long_LTGE flags, regD dst, regD src
 %}
 
 instruct cmovFFPR_reg_LTGE(cmpOp cmp, flagsReg_long_LTGE flags, regFPR dst, regFPR src) %{
-  predicate( UseSSE==0 && _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::lt || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::ge );
+  predicate( UseSSE==0 && ( _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::lt || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::ge ));
   match(Set dst (CMoveF (Binary cmp flags) (Binary dst src)));
   ins_cost(200);
   expand %{
@@ -13189,7 +13189,7 @@ instruct cmovFFPR_reg_LTGE(cmpOp cmp, flagsReg_long_LTGE flags, regFPR dst, regF
 %}
 
 instruct cmovFF_reg_LTGE(cmpOp cmp, flagsReg_long_LTGE flags, regF dst, regF src) %{
-  predicate( UseSSE>=1 && _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::lt || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::ge );
+  predicate( UseSSE>=1 && ( _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::lt || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::ge ));
   match(Set dst (CMoveF (Binary cmp flags) (Binary dst src)));
   ins_cost(200);
   expand %{
@@ -13352,7 +13352,7 @@ instruct cmovPP_reg_EQNE_U(cmpOpU cmp, flagsReg_ulong_EQNE flags, eRegP dst, eRe
 
 // Compare 2 longs and CMOVE doubles
 instruct cmovDDPR_reg_EQNE(cmpOp cmp, flagsReg_long_EQNE flags, regDPR dst, regDPR src) %{
-  predicate( UseSSE<=1 && _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::eq || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::ne );
+  predicate( UseSSE<=1 && ( _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::eq || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::ne ));
   match(Set dst (CMoveD (Binary cmp flags) (Binary dst src)));
   ins_cost(200);
   expand %{
@@ -13362,7 +13362,7 @@ instruct cmovDDPR_reg_EQNE(cmpOp cmp, flagsReg_long_EQNE flags, regDPR dst, regD
 
 // Compare 2 longs and CMOVE doubles
 instruct cmovDD_reg_EQNE(cmpOp cmp, flagsReg_long_EQNE flags, regD dst, regD src) %{
-  predicate( UseSSE>=2 && _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::eq || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::ne );
+  predicate( UseSSE>=2 && ( _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::eq || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::ne ));
   match(Set dst (CMoveD (Binary cmp flags) (Binary dst src)));
   ins_cost(200);
   expand %{
@@ -13371,7 +13371,7 @@ instruct cmovDD_reg_EQNE(cmpOp cmp, flagsReg_long_EQNE flags, regD dst, regD src
 %}
 
 instruct cmovFFPR_reg_EQNE(cmpOp cmp, flagsReg_long_EQNE flags, regFPR dst, regFPR src) %{
-  predicate( UseSSE==0 && _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::eq || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::ne );
+  predicate( UseSSE==0 && ( _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::eq || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::ne ));
   match(Set dst (CMoveF (Binary cmp flags) (Binary dst src)));
   ins_cost(200);
   expand %{
@@ -13380,7 +13380,7 @@ instruct cmovFFPR_reg_EQNE(cmpOp cmp, flagsReg_long_EQNE flags, regFPR dst, regF
 %}
 
 instruct cmovFF_reg_EQNE(cmpOp cmp, flagsReg_long_EQNE flags, regF dst, regF src) %{
-  predicate( UseSSE>=1 && _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::eq || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::ne );
+  predicate( UseSSE>=1 && ( _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::eq || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::ne ));
   match(Set dst (CMoveF (Binary cmp flags) (Binary dst src)));
   ins_cost(200);
   expand %{
@@ -13571,7 +13571,7 @@ instruct cmovPP_reg_LEGT_U(cmpOpU_commute cmp, flagsReg_ulong_LEGT flags, eRegP 
 
 // Compare 2 longs and CMOVE doubles
 instruct cmovDDPR_reg_LEGT(cmpOp_commute cmp, flagsReg_long_LEGT flags, regDPR dst, regDPR src) %{
-  predicate( UseSSE<=1 && _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::le || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::gt );
+  predicate( UseSSE<=1 && ( _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::le || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::gt ));
   match(Set dst (CMoveD (Binary cmp flags) (Binary dst src)));
   ins_cost(200);
   expand %{
@@ -13581,7 +13581,7 @@ instruct cmovDDPR_reg_LEGT(cmpOp_commute cmp, flagsReg_long_LEGT flags, regDPR d
 
 // Compare 2 longs and CMOVE doubles
 instruct cmovDD_reg_LEGT(cmpOp_commute cmp, flagsReg_long_LEGT flags, regD dst, regD src) %{
-  predicate( UseSSE>=2 && _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::le || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::gt );
+  predicate( UseSSE>=2 && ( _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::le || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::gt ));
   match(Set dst (CMoveD (Binary cmp flags) (Binary dst src)));
   ins_cost(200);
   expand %{
@@ -13590,7 +13590,7 @@ instruct cmovDD_reg_LEGT(cmpOp_commute cmp, flagsReg_long_LEGT flags, regD dst, 
 %}
 
 instruct cmovFFPR_reg_LEGT(cmpOp_commute cmp, flagsReg_long_LEGT flags, regFPR dst, regFPR src) %{
-  predicate( UseSSE==0 && _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::le || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::gt );
+  predicate( UseSSE==0 && ( _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::le || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::gt ));
   match(Set dst (CMoveF (Binary cmp flags) (Binary dst src)));
   ins_cost(200);
   expand %{
@@ -13600,7 +13600,7 @@ instruct cmovFFPR_reg_LEGT(cmpOp_commute cmp, flagsReg_long_LEGT flags, regFPR d
 
 
 instruct cmovFF_reg_LEGT(cmpOp_commute cmp, flagsReg_long_LEGT flags, regF dst, regF src) %{
-  predicate( UseSSE>=1 && _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::le || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::gt );
+  predicate( UseSSE>=1 && ( _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::le || _kids[0]->_kids[0]->_leaf->as_Bool()->_test._test == BoolTest::gt ));
   match(Set dst (CMoveF (Binary cmp flags) (Binary dst src)));
   ins_cost(200);
   expand %{
