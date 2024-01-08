@@ -42,12 +42,12 @@ JAVAC = $(JDK_HOME)/bin/javac
 JAR = $(JDK_HOME)/bin/jar
 
 SRC_FILES = $(shell find $(SRC_DIR) -name '*.java')
-LIB_FILES_ORIG= $(shell find $(TESTLIBRARY_DIR)/jdk/test/lib/ \
+# Exclude ModuleInfoWriter.java to circumvent '--enable-preview'.
+LIB_FILES = $(filter-out %ModuleInfoWriter.java, $(shell find $(TESTLIBRARY_DIR)/jdk/test/lib/ \
     $(TESTLIBRARY_DIR)/jdk/test/lib/process \
     $(TESTLIBRARY_DIR)/jdk/test/lib/util \
     $(TESTLIBRARY_DIR)/jtreg \
-    -maxdepth 1 -name '*.java')
-LIB_FILES=$(filter-out %ModuleInfoWriter.java, $(LIB_FILES_ORIG))
+    -maxdepth 1 -name '*.java'))
 WB_SRC_FILES = $(shell find $(TESTLIBRARY_DIR)/jdk/test/lib/compiler $(TESTLIBRARY_DIR)/jdk/test/whitebox -name '*.java')
 WB_CLASS_FILES := $(subst $(TESTLIBRARY_DIR)/,,$(WB_SRC_FILES))
 WB_CLASS_FILES := $(patsubst %.java,%.class,$(WB_CLASS_FILES))
