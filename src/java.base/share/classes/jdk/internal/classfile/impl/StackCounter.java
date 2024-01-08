@@ -35,7 +35,7 @@ import java.lang.classfile.constantpool.MemberRefEntry;
 import static java.lang.classfile.ClassFile.*;
 import java.lang.classfile.constantpool.Utf8Entry;
 import java.lang.constant.MethodTypeDesc;
-import java.util.ArrayDeque;
+import java.util.LinkedList;
 
 
 public final class StackCounter {
@@ -59,7 +59,7 @@ public final class StackCounter {
     private final Utf8Entry methodName;
     private final Utf8Entry methodDesc;
     private final SplitConstantPool cp;
-    private final ArrayDeque<Target> targets;
+    private final LinkedList<Target> targets;
     private final BitSet visited;
 
     private void jump(int targetBci) {
@@ -102,7 +102,7 @@ public final class StackCounter {
         this.methodName = methodName;
         this.methodDesc = methodDesc;
         this.cp = cp;
-        targets = new ArrayDeque<>();
+        targets = new LinkedList<>();
         maxStack = stack = rets = 0;
         for (var h : handlers) targets.add(new Target(labelContext.labelToBci(h.handler), 1));
         maxLocals = isStatic ? 0 : 1;
