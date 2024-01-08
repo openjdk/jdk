@@ -492,7 +492,7 @@ static void rescale(SIZE *size) {
     }
 }
 
-jobject newInsets(JNIEnv *env, jint top, jint left, jint bottom, jint right) {
+static jobject newInsets(JNIEnv *env, jint top, jint left, jint bottom, jint right) {
     if (env->EnsureLocalCapacity(2) < 0) {
         return NULL;
     }
