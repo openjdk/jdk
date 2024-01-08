@@ -265,10 +265,10 @@ public interface Arena extends SegmentAllocator, AutoCloseable {
      * aligned according the provided alignment constraint.
      *
      * @implSpec
-     * Implementations of this method must return a native segment featuring the
-     * requested size, and that is compatible with the provided alignment constraint.
-     * Furthermore, for any two segments {@code S1, S2} returned by this method, the
-     * following invariant must hold:
+     * Implementations of this method must return a native, zero-initialized segment
+     * featuring the requested size, and that is compatible with the provided alignment
+     * constraint. Furthermore, for any two segments {@code S1, S2} returned by
+     * this method, the following invariant must hold:
      *
      * {@snippet lang = java:
      *     S1.asOverlappingSlice(S2).isEmpty() == true
