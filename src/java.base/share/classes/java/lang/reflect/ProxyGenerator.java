@@ -31,6 +31,9 @@ import java.lang.classfile.attribute.ExceptionsAttribute;
 import sun.security.action.GetBooleanAction;
 
 import java.io.IOException;
+import static java.lang.classfile.ClassFile.*;
+import java.lang.classfile.attribute.StackMapFrameInfo;
+import java.lang.classfile.attribute.StackMapTableAttribute;
 import java.lang.constant.ClassDesc;
 import static java.lang.constant.ConstantDescs.*;
 import java.lang.constant.MethodTypeDesc;
@@ -43,11 +46,6 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 import java.util.Objects;
-
-import static java.lang.classfile.ClassFile.*;
-import java.lang.classfile.attribute.StackMapFrameInfo;
-import java.lang.classfile.attribute.StackMapTableAttribute;
-import java.util.StringJoiner;
 
 /**
  * ProxyGenerator contains the code to generate a dynamic proxy class
@@ -109,29 +107,33 @@ final class ProxyGenerator {
 
     private static final ClassModel TEMPLATE;
 
-    private static final Utf8Entry UE_Method;
-    private static final MethodRefEntry MRE_Class_getClassLoader;
-    private static final MethodRefEntry MRE_NoSuchMethodError_init;
-    private static final ClassEntry CE_NoSuchMethodError;
-    private static final FieldRefEntry FRE_Proxy_h;
-    private static final ClassEntry CE_NoClassDefFoundError;
-    private static final MethodRefEntry MRE_NoClassDefFoundError_init;
-    private static final MethodRefEntry MRE_Throwable_getMessage;
-    private static final MethodRefEntry MRE_Class_forName;
     private static final ClassEntry CE_Class;
-    private static final MethodRefEntry MRE_Class_getMethod;
     private static final ClassEntry CE_Object;
-    private static final InterfaceMethodRefEntry IMRE_InvocationHandler_invoke;
-    private static final MethodRefEntry MRE_UndeclaredThrowableException_init;
+    private static final ClassEntry CE_NoSuchMethodError;
+    private static final ClassEntry CE_NoClassDefFoundError;
     private static final ClassEntry CE_UndeclaredThrowableException;
     private static final ClassEntry CE_Throwable;
     private static final ClassEntry CE_NoSuchMethodException;
     private static final ClassEntry CE_ClassNotFoundException;
+
+    private static final FieldRefEntry FRE_Proxy_h;
+
+    private static final InterfaceMethodRefEntry IMRE_InvocationHandler_invoke;
+
+    private static final MethodRefEntry MRE_Class_getClassLoader;
+    private static final MethodRefEntry MRE_NoSuchMethodError_init;
+    private static final MethodRefEntry MRE_NoClassDefFoundError_init;
+    private static final MethodRefEntry MRE_Throwable_getMessage;
+    private static final MethodRefEntry MRE_Class_forName;
+    private static final MethodRefEntry MRE_Class_getMethod;
+    private static final MethodRefEntry MRE_UndeclaredThrowableException_init;
+
+    private static final Utf8Entry UE_Method;
+
     private static final List<StackMapFrameInfo.VerificationTypeInfo> THROWABLE_STACK;
 
     static {
         var cc = ClassFile.of();
-        var entries = new ArrayList<PoolEntry>(20);
         var q = new Object() {
             PoolEntry[] entries;
             int i;
@@ -140,6 +142,9 @@ final class ProxyGenerator {
                 return (T) TEMPLATE.constantPool().entryByIndex(entries[i++].index());
             }
         };
+        //static template ClassModel holds pre-defined constant pool entries
+        //proxy transformed from the template shares the template constant pool
+        //each direct use of the template pool entry is significantly faster
         TEMPLATE = cc.parse(cc.build(CD_Proxy, clb -> {
             clb.withSuperclass(CD_Proxy);
             generateConstructor(clb);
@@ -734,14 +739,12 @@ final class ProxyGenerator {
          */
         private void generateMethod(ClassBuilder clb, ClassEntry className) {
             var cp = clb.constantPool();
-            var desc = new StringJoiner("", "(", ")" + returnType.descriptorString());
-            for (var pt : parameterTypes) {
-                desc.add(pt.descriptorString());
-            }
+            MethodTypeDesc desc = MethodTypeDesc.of(toClassDesc(returnType),
+                    Arrays.stream(parameterTypes).map(ProxyGenerator::toClassDesc).toArray(ClassDesc[]::new));
             int accessFlags = (method.isVarArgs()) ? ACC_VARARGS | ACC_PUBLIC | ACC_FINAL
                                                    : ACC_PUBLIC | ACC_FINAL;
             var catchList = computeUniqueCatchList(exceptionTypes);
-            clb.withMethod(cp.utf8Entry(method.getName()), cp.utf8Entry(desc.toString()), accessFlags, mb ->
+            clb.withMethod(method.getName(), desc, accessFlags, mb ->
                   mb.with(ExceptionsAttribute.of(toClassEntries(cp, List.of(exceptionTypes))))
                     .withCode(cob -> {
                         cob.aload(cob.receiverSlot())
