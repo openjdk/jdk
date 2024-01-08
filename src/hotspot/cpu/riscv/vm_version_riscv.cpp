@@ -266,7 +266,7 @@ void VM_Version::initialize() {
     if (FLAG_IS_DEFAULT(UseChaCha20Intrinsics)) {
       FLAG_SET_DEFAULT(UseChaCha20Intrinsics, true);
     }
-  } if (UseChaCha20Intrinsics) {
+  } else if (UseChaCha20Intrinsics) {
     if (!FLAG_IS_DEFAULT(UseChaCha20Intrinsics)) {
       warning("Chacha20 intrinsic requires RVV instructions (not available on this CPU)");
     }
