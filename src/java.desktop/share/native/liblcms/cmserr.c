@@ -101,7 +101,7 @@ long int CMSEXPORT cmsfilelength(FILE* f)
 //
 // This is the interface to low-level memory management routines. By default a simple
 // wrapping to malloc/free/realloc is provided, although there is a limit on the max
-// amount of memoy that can be reclaimed. This is mostly as a safety feature to prevent
+// amount of memory that can be reclaimed. This is mostly as a safety feature to prevent
 // bogus or evil code to allocate huge blocks that otherwise lcms would never need.
 
 #define MAX_MEMORY_FOR_ALLOC  ((cmsUInt32Number)(1024U*1024U*512U))
@@ -121,7 +121,8 @@ cmsBool   _cmsRegisterMemHandlerPlugin(cmsContext ContextID, cmsPluginBase* Plug
 static
 void* _cmsMallocDefaultFn(cmsContext ContextID, cmsUInt32Number size)
 {
-    if (size > MAX_MEMORY_FOR_ALLOC) return NULL;  // Never allow over maximum
+    // Never allow 0 or over maximum
+    if (size == 0 || size > MAX_MEMORY_FOR_ALLOC) return NULL;
 
     return (void*) malloc(size);
 
@@ -263,7 +264,7 @@ cmsBool  _cmsRegisterMemHandlerPlugin(cmsContext ContextID, cmsPluginBase *Data)
 
     // NULL forces to reset to defaults. In this special case, the defaults are stored in the context structure.
     // Remaining plug-ins does NOT have any copy in the context structure, but this is somehow special as the
-    // context internal data should be malloce'd by using those functions.
+    // context internal data should be malloc'ed by using those functions.
     if (Data == NULL) {
 
        struct _cmsContext_struct* ctx = ( struct _cmsContext_struct*) ContextID;

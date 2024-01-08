@@ -177,6 +177,7 @@ JNIEXPORT jlong JNICALL Java_sun_java2d_cmm_lcms_LCMS_createNativeTransform
         }
     }
 
+    printf("inFormatter: %d  outformatter: %d\n", inFormatter, outFormatter);
     sTrans = cmsCreateMultiprofileTransform(iccArray, j,
         inFormatter, outFormatter, renderingIntent, cmsFLAGS_COPY_ALPHA);
 
