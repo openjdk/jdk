@@ -301,11 +301,11 @@ final class ProxyGenerator {
 
     /**
      * {@return the entries of the given type}
-     * @param type the {@code Class} objects, no primitives nor arrays
+     * @param types the {@code Class} objects, not primitive types nor array types
      */
     private static ClassEntry[] toClassEntries(ConstantPoolBuilder cp, List<Class<?>> types) {
         var ces = new ClassEntry[types.size()];
-        for (int i = 0; i< ces.length; i++)
+        for (int i = 0; i < ces.length; i++)
             ces[i] = cp.classEntry(cp.utf8Entry(types.get(i).getName().replace('.', '/')));
         return ces;
     }
