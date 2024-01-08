@@ -125,8 +125,6 @@ final class ProxyGenerator {
     private static final MethodRefEntry MRE_UndeclaredThrowableException_init;
     private static final ClassEntry CE_UndeclaredThrowableException;
     private static final ClassEntry CE_Throwable;
-    private static final ClassEntry CE_NoSuchMethodException;
-    private static final ClassEntry CE_ClassNotFoundException;
     private static final List<StackMapFrameInfo.VerificationTypeInfo> THROWABLE_STACK;
 
     static {
@@ -164,8 +162,6 @@ final class ProxyGenerator {
                 cp.interfaceMethodRefEntry(CD_InvocationHandler, "invoke", MTD_Object_Object_Method_ObjectArray),
                 cp.methodRefEntry(CD_UndeclaredThrowableException, INIT_NAME, MTD_void_Throwable),
                 cp.classEntry(CD_UndeclaredThrowableException),
-                cp.classEntry(CD_NoSuchMethodException),
-                cp.classEntry(CD_ClassNotFoundException),
                 cp.classEntry(CD_Throwable)
             };
         }));
@@ -192,8 +188,6 @@ final class ProxyGenerator {
         IMRE_InvocationHandler_invoke = q.next();
         MRE_UndeclaredThrowableException_init = q.next();
         CE_UndeclaredThrowableException = q.next();
-        CE_NoSuchMethodException = q.next();
-        CE_ClassNotFoundException = q.next();
         CE_Throwable = q.next();
         THROWABLE_STACK = List.of(StackMapFrameInfo.ObjectVerificationTypeInfo.of(CE_Throwable));
     }
@@ -615,39 +609,42 @@ final class ProxyGenerator {
      * Generate the static initializer method for the proxy class.
      */
     private void generateStaticInitializer(ClassBuilder clb) {
-        clb.withMethodBody(CLASS_INIT_NAME, MTD_void, ACC_STATIC, cob -> {
-            // Put ClassLoader at local variable index 0, used by
-            // Class.forName(String, boolean, ClassLoader) calls
-            cob.ldc(classEntry)
-               .invokevirtual(MRE_Class_getClassLoader)
-               .astore(0);
-            var ts = cob.newBoundLabel();
-            for (List<ProxyMethod> sigmethods : proxyMethods.values()) {
-                for (ProxyMethod pm : sigmethods) {
-                    pm.codeFieldInitialization(cob, classEntry);
-                }
-            }
-            cob.return_();
-            var c1 = cob.newBoundLabel();
-            cob.exceptionCatch(ts, c1, c1, CE_NoSuchMethodException)
-               .new_(CE_NoSuchMethodError)
-               .dup_x1()
-               .swap()
-               .invokevirtual(MRE_Throwable_getMessage)
-               .invokespecial(MRE_NoSuchMethodError_init)
-               .athrow();
-            var c2 = cob.newBoundLabel();
-            cob.exceptionCatch(ts, c1, c2, CE_ClassNotFoundException)
-               .new_(CE_NoClassDefFoundError)
-               .dup_x1()
-               .swap()
-               .invokevirtual(MRE_Throwable_getMessage)
-               .invokespecial(MRE_NoClassDefFoundError_init)
-               .athrow()
-               .with(StackMapTableAttribute.of(List.of(
-                     StackMapFrameInfo.of(c1, List.of(), THROWABLE_STACK),
-                     StackMapFrameInfo.of(c2, List.of(), THROWABLE_STACK))));
-        });
+        clb.withMethodBody(CLASS_INIT_NAME, MTD_void, ACC_STATIC, cob -> cob
+                // Put ClassLoader at local variable index 0, used by
+                // Class.forName(String, boolean, ClassLoader) calls
+                .ldc(classEntry)
+                .invokevirtual(MRE_Class_getClassLoader)
+                .astore(0)
+                .trying(tryb -> {
+                    for (List<ProxyMethod> sigmethods : proxyMethods.values()) {
+                        for (ProxyMethod pm : sigmethods) {
+                            pm.codeFieldInitialization(tryb, classEntry);
+                        }
+                    }
+                    tryb.return_();
+                }, cb -> {
+                    var c1 = cob.newLabel();
+                    cb.catching(CD_NoSuchMethodException, nsmb -> nsmb
+                            .labelBinding(c1)
+                            .new_(CE_NoSuchMethodError)
+                            .dup_x1()
+                            .swap()
+                            .invokevirtual(MRE_Throwable_getMessage)
+                            .invokespecial(MRE_NoSuchMethodError_init)
+                            .athrow());
+                    var c2 = cob.newLabel();
+                    cb.catching(CD_ClassNotFoundException, cnfb -> cnfb
+                            .labelBinding(c2)
+                            .new_(CE_NoClassDefFoundError)
+                            .dup_x1()
+                            .swap()
+                            .invokevirtual(MRE_Throwable_getMessage)
+                            .invokespecial(MRE_NoClassDefFoundError_init)
+                            .athrow());
+                    cob.with(StackMapTableAttribute.of(List.of(
+                            StackMapFrameInfo.of(c1, List.of(), THROWABLE_STACK),
+                            StackMapFrameInfo.of(c2, List.of(), THROWABLE_STACK))));
+                }));
     }
 
     /**
@@ -737,52 +734,54 @@ final class ProxyGenerator {
                         .map(cp::classEntry)
                         .toList();
                 mb.with(ExceptionsAttribute.of(exceptionClassEntries));
-                mb.withCode(cob -> {
-                    cob.aload(cob.receiverSlot())
-                       .getfield(FRE_Proxy_h)
-                       .aload(cob.receiverSlot())
-                       .getstatic(cp.fieldRefEntry(className, cp.nameAndTypeEntry(methodFieldName, UE_Method)));
+                mb.withCode(cob ->
+                    cob.trying(tryb -> {
+                        tryb.aload(tryb.receiverSlot())
+                            .getfield(FRE_Proxy_h)
+                            .aload(tryb.receiverSlot())
+                            .getstatic(cp.fieldRefEntry(className, cp.nameAndTypeEntry(methodFieldName, UE_Method)));
 
-                    if (parameterTypes.length > 0) {
-                        // Create an array and fill with the parameters converting primitives to wrappers
-                        cob.constantInstruction(parameterTypes.length)
-                           .anewarray(CE_Object);
-                        for (int i = 0; i < parameterTypes.length; i++) {
-                            cob.dup()
-                               .constantInstruction(i);
-                            codeWrapArgument(cob, parameterTypes[i], cob.parameterSlot(i));
-                            cob.aastore();
+                        if (parameterTypes.length > 0) {
+                            // Create an array and fill with the parameters converting primitives to wrappers
+                            tryb.constantInstruction(parameterTypes.length)
+                                .anewarray(CE_Object);
+                            for (int i = 0; i < parameterTypes.length; i++) {
+                                tryb.dup()
+                                    .constantInstruction(i);
+                                codeWrapArgument(tryb, parameterTypes[i], tryb.parameterSlot(i));
+                                tryb.aastore();
+                            }
+                        } else {
+                            tryb.aconst_null();
                         }
-                    } else {
-                        cob.aconst_null();
-                    }
 
-                    cob.invokeinterface(IMRE_InvocationHandler_invoke);
+                        tryb.invokeinterface(IMRE_InvocationHandler_invoke);
 
-                    if (returnType == void.class) {
-                        cob.pop()
-                           .return_();
-                    } else {
-                        codeUnwrapReturnValue(cob, returnType);
-                    }
-                    if (!catchList.isEmpty()) {
-                        var c1 = cob.newBoundLabel();
-                        for (var exc : catchList) {
-                            cob.exceptionCatch(cob.startLabel(), c1, c1, exc);
+                        if (returnType == void.class) {
+                            tryb.pop()
+                                .return_();
+                        } else {
+                            codeUnwrapReturnValue(tryb, returnType);
                         }
-                        cob.athrow();   // just rethrow the exception
-                        var c2 = cob.newBoundLabel();
-                        cob.exceptionCatchAll(cob.startLabel(), c1, c2)
-                           .new_(CE_UndeclaredThrowableException)
-                           .dup_x1()
-                           .swap()
-                           .invokespecial(MRE_UndeclaredThrowableException_init)
-                           .athrow()
-                           .with(StackMapTableAttribute.of(List.of(
-                                StackMapFrameInfo.of(c1, List.of(), THROWABLE_STACK),
-                                StackMapFrameInfo.of(c2, List.of(), THROWABLE_STACK))));
-                    }
-                });
+                    }, catchBuilder -> {
+                        if (!catchList.isEmpty()) {
+                            var c1 = cob.newLabel();
+                            catchBuilder.catchingMulti(catchList, ehb -> ehb
+                                    .labelBinding(c1)
+                                    .athrow());   // just rethrow the exception
+                            var c2 = cob.newLabel();
+                            catchBuilder.catching(CD_Throwable, ehb -> ehb
+                                    .labelBinding(c2)
+                                    .new_(CE_UndeclaredThrowableException)
+                                    .dup_x1()
+                                    .swap()
+                                    .invokespecial(MRE_UndeclaredThrowableException_init)
+                                    .athrow());
+                            cob.with(StackMapTableAttribute.of(List.of(
+                                    StackMapFrameInfo.of(c1, List.of(), THROWABLE_STACK),
+                                    StackMapFrameInfo.of(c2, List.of(), THROWABLE_STACK))));
+                        }
+                    }));
             });
         }
 
