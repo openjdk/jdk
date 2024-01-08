@@ -4439,7 +4439,8 @@ class StubGenerator: public StubCodeGenerator {
   // W't =
   //    M't,                                      0 <=  t <= 15
   //    ROTL'1(W't-3 ^ W't-8 ^ W't-14 ^ W't-16),  16 <= t <= 79
-  void sha1_prepare_w(int round, Register cur_w, Register ws[], Register buf, Register tmp) {
+  void sha1_prepare_w(int round, Register cur_w, Register ws[], Register buf,
+                      Register tmp1, Register tmp2, Register tmp3) {
     assert(round >= 0 && round < 80, "must be");
 
     if (round < 16) {
@@ -4463,14 +4464,16 @@ class StubGenerator: public StubCodeGenerator {
     if ((round % 2) == 0) {
       int idx = 16;
       // W't = ROTL'1(W't-3 ^ W't-8 ^ W't-14 ^ W't-16),  16 <= t <= 79
-      __ mv(cur_w, ws[(idx-3)/2]);
-      __ srli(tmp, ws[(idx-8)/2], 32);
-      __ xorr(cur_w, cur_w, tmp);
-      __ srli(tmp, ws[(idx-14)/2], 32);
-      __ xorr(cur_w, cur_w, tmp);
-      __ srli(tmp, ws[(idx-16)/2], 32);
-      __ xorr(cur_w, cur_w, tmp);
-      __ rolw_imm(cur_w, cur_w, 1, tmp);
+      __ mv(tmp1, ws[(idx-3)/2]);
+      __ srli(tmp2, ws[(idx-8)/2], 32);
+      __ xorr(tmp1, tmp1, tmp2);
+
+      __ srli(tmp3, ws[(idx-14)/2], 32);
+      __ srli(cur_w, ws[(idx-16)/2], 32);
+      __ xorr(cur_w, cur_w, tmp3);
+
+      __ xorr(cur_w, cur_w, tmp1);
+      __ rolw_imm(cur_w, cur_w, 1, tmp1);
 
       // copy the cur_w value to ws[8].
       // now, valid w't values are at:
@@ -4484,14 +4487,16 @@ class StubGenerator: public StubCodeGenerator {
 
     int idx = 17;
     // W't = ROTL'1(W't-3 ^ W't-8 ^ W't-14 ^ W't-16),  16 <= t <= 79
-    __ srli(cur_w, ws[(idx-3)/2], 32);
-    __ mv(tmp, ws[(idx-8)/2]);
-    __ xorr(cur_w, cur_w, tmp);
-    __ mv(tmp, ws[(idx-14)/2]);
-    __ xorr(cur_w, cur_w, tmp);
-    __ mv(tmp, ws[(idx-16)/2]);
-    __ xorr(cur_w, cur_w, tmp);
-    __ rolw_imm(cur_w, cur_w, 1, tmp);
+    __ srli(tmp1, ws[(idx-3)/2], 32);
+    __ mv(tmp2, ws[(idx-8)/2]);
+    __ xorr(tmp1, tmp1, tmp2);
+
+    __ mv(tmp3, ws[(idx-14)/2]);
+    __ mv(cur_w, ws[(idx-16)/2]);
+    __ xorr(cur_w, cur_w, tmp3);
+
+    __ xorr(cur_w, cur_w, tmp1);
+    __ rolw_imm(cur_w, cur_w, 1, tmp1);
 
     // copy the cur_w value to ws[8]
     __ zero_extend(cur_w, cur_w, 32);
@@ -4512,22 +4517,23 @@ class StubGenerator: public StubCodeGenerator {
   //    Parity(x, y, z) = x ^ y ^ z                     , 20 <= t <= 39
   //    Maj(x, y, z)    = (x & y) ^ (x & z) ^ (y & z)   , 40 <= t <= 59
   //    Parity(x, y, z) = x ^ y ^ z                     , 60 <= t <= 79
-  void sha1_f(int round, Register dst, Register x, Register y, Register z, Register tmp) {
+  void sha1_f(int round, Register dst, Register x, Register y, Register z,
+              Register tmp1, Register tmp2) {
     assert(round >= 0 && round < 80, "must be");
-    assert_different_registers(dst, x, y, z, tmp);
+    assert_different_registers(dst, x, y, z, tmp1, tmp2);
 
     if (round < 20) {
       // (x & y) ^ (~x & z)
-      __ andr(dst, x, y);
-      __ andn(tmp, z, x);
-      __ xorr(dst, dst, tmp);
+      __ andr(tmp1, x, y);
+      __ andn(dst, z, x);
+      __ xorr(dst, dst, tmp1);
     } else if (round >= 40 && round < 60) {
       // (x & y) ^ (x & z) ^ (y & z)
-      __ andr(tmp, x, y);
-      __ andr(dst, x, z);
-      __ xorr(dst, dst, tmp);
-      __ andr(tmp, y, z);
-      __ xorr(dst, dst, tmp);
+      __ andr(tmp1, x, y);
+      __ andr(tmp2, x, z);
+      __ andr(dst, y, z);
+      __ xorr(dst, dst, tmp1);
+      __ xorr(dst, dst, tmp2);
     } else {
       // x ^ y ^ z
       __ xorr(dst, x, y);
@@ -4542,22 +4548,24 @@ class StubGenerator: public StubCodeGenerator {
   // b = a
   // a = T
   void sha1_process_round(int round, Register a, Register b, Register c, Register d, Register e,
-                          Register cur_k, Register cur_w, Register tmp) {
+                          Register cur_k, Register cur_w,
+                          Register tmp1, Register tmp2, Register tmp3) {
     assert(round >= 0 && round < 80, "must be");
-    assert_different_registers(a, b, c, d, e, cur_w, cur_k, tmp);
+    assert_different_registers(a, b, c, d, e, cur_w, cur_k, tmp1, tmp2, tmp3);
 
     // T = ROTL'5(a) + f't(b, c, d) + e + K't + W't
     {
+      // reuse e as a temporary register, as we will mv new value into it later
       Register t = e;
-      __ add(t, t, cur_k);
-      __ add(t, t, cur_w);
-      // cur_w will be recalculated at the beginning of another round,
+      // cur_w will be recalculated at the beginning of each round,
       // so, we can reuse it as a temp register here.
-      __ rolw_imm(tmp, a, 5, cur_w);
-      __ add(t, t, tmp);
+      __ add(cur_w, cur_k, cur_w);
+      __ add(t, t, cur_w);
+      __ rolw_imm(tmp1, a, 5, tmp2);
       // as pointed above, we can use cur_w as temporary register here.
-      sha1_f(round, tmp, b, c, d, cur_w);
-      __ add(tmp, t, tmp);
+      sha1_f(round, tmp3, b, c, d, cur_w, tmp2);
+      __ add(tmp1, tmp1, tmp3);
+      __ add(tmp1, tmp1, t);
     }
 
     // e = d
@@ -4570,7 +4578,7 @@ class StubGenerator: public StubCodeGenerator {
     // as pointed above, we can use cur_w as temporary register here.
     __ rolw_imm(c, b, 30, cur_w);
     __ mv(b, a);
-    __ mv(a, tmp);
+    __ mv(a, tmp1);
   }
 
   // H(i)0 = a + H(i-1)0
@@ -4618,12 +4626,12 @@ class StubGenerator: public StubCodeGenerator {
   // Inputs:
   //   c_rarg0: byte[]  src array + offset
   //   c_rarg1: int[]   SHA.state
-  //   - - - - - - below are for implCompressMultiBlock0 - - - - - -
+  //   - - - - - - below are only for implCompressMultiBlock0 - - - - - -
   //   c_rarg2: int     offset
   //   c_rarg3: int     limit
   //
   // Outpus:
-  //   - - - - - - below are for implCompressMultiBlock0 - - - - - -
+  //   - - - - - - below are only for implCompressMultiBlock0 - - - - - -
   //   c_rarg0: int offset, when (multi_block == true)
   //
   address generate_sha1_implCompress(bool multi_block, const char *name) {
@@ -4668,12 +4676,12 @@ class StubGenerator: public StubCodeGenerator {
     // current w't's value
     const Register cur_w = x25;
     // values of a, b, c, d, e in the previous round
-    const Register prev_ab = x26, prev_cd = x27, prev_e = t1;
+    const Register prev_ab = x26, prev_cd = x27, prev_e = tp;
 
-    const Register mask32 = t2;
+    const Register mask32 = gp;
 
     RegSet saved_regs = RegSet::range(x18, x27);
-    saved_regs += RegSet::of(tp);
+    saved_regs += RegSet::of(tp, gp);
     __ push_reg(saved_regs, sp);
 
     __ mv(mask32, 0xffffffff);
@@ -4708,10 +4716,10 @@ class StubGenerator: public StubCodeGenerator {
       sha1_prepare_k(round, cur_k);
 
       // prepare W't value
-      sha1_prepare_w(round, cur_w, ws, buf, t0);
+      sha1_prepare_w(round, cur_w, ws, buf, t0, t1, t2);
 
       // one round process
-      sha1_process_round(round, a, b, c, d, e, cur_k, cur_w, t0);
+      sha1_process_round(round, a, b, c, d, e, cur_k, cur_w, t0, t1, t2);
     }
 
     // compute the intermediate hash value
@@ -4719,7 +4727,7 @@ class StubGenerator: public StubCodeGenerator {
 
     if (multi_block) {
       __ addi(offset, offset, 64);
-      __ ble(offset, limit, L_sha1_loop, true);
+      __ bge(limit, offset, L_sha1_loop, true);
       // return offset
       __ mv(c_rarg0, offset);
     }
