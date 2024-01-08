@@ -187,6 +187,15 @@ public:
     }
   }
 
+  // Removes dead/unlinked entries.
+  void bulk_remove() {
+    auto delete_check = [&] (nmethod** value) {
+      return (*value)->is_unlinked();
+    };
+
+    clean(delete_check);
+  }
+
   // Calculate the log2 of the table size we want to shrink to.
   size_t log2_target_shrink_size(size_t current_size) const {
     // A table with the new size should be at most filled by this factor. Otherwise
@@ -253,6 +262,11 @@ G1CodeRootSet::~G1CodeRootSet() {
 bool G1CodeRootSet::remove(nmethod* method) {
   assert(!_is_iterating, "should not mutate while iterating the table");
   return _table->remove(method);
+}
+
+void G1CodeRootSet::bulk_remove() {
+  assert(!_is_iterating, "should not mutate while iterating the table");
+  _table->bulk_remove();
 }
 
 bool G1CodeRootSet::contains(nmethod* method) {

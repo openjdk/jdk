@@ -50,27 +50,25 @@ public class TestAllocLargerThanHeap {
         }
 
         {
-            ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+            OutputAnalyzer analyzer = ProcessTools.executeLimitedTestJava(
                     "-Xmx16m",
                     "-XX:+UnlockExperimentalVMOptions",
                     "-XX:+UseShenandoahGC",
                     TestAllocLargerThanHeap.class.getName(),
                     "test");
 
-            OutputAnalyzer analyzer = new OutputAnalyzer(pb.start());
             analyzer.shouldHaveExitValue(1);
             analyzer.shouldContain("java.lang.OutOfMemoryError: Java heap space");
         }
 
         {
-            ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+            OutputAnalyzer analyzer = ProcessTools.executeLimitedTestJava(
                     "-Xmx1g",
                     "-XX:+UnlockExperimentalVMOptions",
                     "-XX:+UseShenandoahGC",
                     TestAllocLargerThanHeap.class.getName(),
                     "test");
 
-            OutputAnalyzer analyzer = new OutputAnalyzer(pb.start());
             analyzer.shouldHaveExitValue(0);
             analyzer.shouldNotContain("java.lang.OutOfMemoryError: Java heap space");
         }

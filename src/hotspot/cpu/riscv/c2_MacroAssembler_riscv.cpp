@@ -43,8 +43,8 @@
 
 #define BIND(label) bind(label); BLOCK_COMMENT(#label ":")
 
-void C2_MacroAssembler::fast_lock(Register objectReg, Register boxReg, Register tmp1Reg,
-                                  Register tmp2Reg) {
+void C2_MacroAssembler::fast_lock(Register objectReg, Register boxReg,
+                                  Register tmp1Reg, Register tmp2Reg, Register tmp3Reg) {
   // Use cr register to indicate the fast_lock result: zero for success; non-zero for failure.
   Register flag = t1;
   Register oop = objectReg;
@@ -55,7 +55,7 @@ void C2_MacroAssembler::fast_lock(Register objectReg, Register boxReg, Register 
   Label object_has_monitor;
   Label count, no_count;
 
-  assert_different_registers(oop, box, tmp, disp_hdr, t0);
+  assert_different_registers(oop, box, tmp, disp_hdr, flag, tmp3Reg, t0);
 
   // Load markWord from object into displaced_header.
   ld(disp_hdr, Address(oop, oopDesc::mark_offset_in_bytes()));
@@ -109,7 +109,7 @@ void C2_MacroAssembler::fast_lock(Register objectReg, Register boxReg, Register 
   } else {
     assert(LockingMode == LM_LIGHTWEIGHT, "");
     Label slow;
-    lightweight_lock(oop, disp_hdr, tmp, t0, slow);
+    lightweight_lock(oop, disp_hdr, tmp, tmp3Reg, slow);
 
     // Indicate success on completion.
     mv(flag, zr);
@@ -157,8 +157,8 @@ void C2_MacroAssembler::fast_lock(Register objectReg, Register boxReg, Register 
   bind(no_count);
 }
 
-void C2_MacroAssembler::fast_unlock(Register objectReg, Register boxReg, Register tmp1Reg,
-                                    Register tmp2Reg) {
+void C2_MacroAssembler::fast_unlock(Register objectReg, Register boxReg,
+                                    Register tmp1Reg, Register tmp2Reg) {
   // Use cr register to indicate the fast_unlock result: zero for success; non-zero for failure.
   Register flag = t1;
   Register oop = objectReg;
@@ -169,7 +169,7 @@ void C2_MacroAssembler::fast_unlock(Register objectReg, Register boxReg, Registe
   Label object_has_monitor;
   Label count, no_count;
 
-  assert_different_registers(oop, box, tmp, disp_hdr, flag);
+  assert_different_registers(oop, box, tmp, disp_hdr, flag, t0);
 
   if (LockingMode == LM_LEGACY) {
     // Find the lock address and load the displaced header from the stack.
@@ -1036,12 +1036,13 @@ void C2_MacroAssembler::string_indexof_linearscan(Register haystack, Register ne
 
 // Compare strings.
 void C2_MacroAssembler::string_compare(Register str1, Register str2,
-                                    Register cnt1, Register cnt2, Register result, Register tmp1, Register tmp2,
-                                    Register tmp3, int ae)
+                                       Register cnt1, Register cnt2, Register result,
+                                       Register tmp1, Register tmp2, Register tmp3,
+                                       int ae)
 {
   Label DONE, SHORT_LOOP, SHORT_STRING, SHORT_LAST, TAIL, STUB,
-      DIFFERENCE, NEXT_WORD, SHORT_LOOP_TAIL, SHORT_LAST2, SHORT_LAST_INIT,
-      SHORT_LOOP_START, TAIL_CHECK, L;
+        DIFFERENCE, NEXT_WORD, SHORT_LOOP_TAIL, SHORT_LAST2, SHORT_LAST_INIT,
+        SHORT_LOOP_START, TAIL_CHECK, L;
 
   const int STUB_THRESHOLD = 64 + 8;
   bool isLL = ae == StrIntrinsicNode::LL;
@@ -1458,6 +1459,112 @@ void C2_MacroAssembler::string_equals(Register a1, Register a2,
   BLOCK_COMMENT("} string_equals");
 }
 
+// jdk.internal.util.ArraysSupport.vectorizedHashCode
+void C2_MacroAssembler::arrays_hashcode(Register ary, Register cnt, Register result,
+                                        Register tmp1, Register tmp2, Register tmp3,
+                                        Register tmp4, Register tmp5, Register tmp6,
+                                        BasicType eltype)
+{
+  assert_different_registers(ary, cnt, result, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6, t0, t1);
+
+  const int elsize = arrays_hashcode_elsize(eltype);
+  const int chunks_end_shift = exact_log2(elsize);
+
+  switch (eltype) {
+  case T_BOOLEAN: BLOCK_COMMENT("arrays_hashcode(unsigned byte) {"); break;
+  case T_CHAR:    BLOCK_COMMENT("arrays_hashcode(char) {");          break;
+  case T_BYTE:    BLOCK_COMMENT("arrays_hashcode(byte) {");          break;
+  case T_SHORT:   BLOCK_COMMENT("arrays_hashcode(short) {");         break;
+  case T_INT:     BLOCK_COMMENT("arrays_hashcode(int) {");           break;
+  default:
+    ShouldNotReachHere();
+  }
+
+  const int stride = 4;
+  const Register pow31_4 = tmp1;
+  const Register pow31_3 = tmp2;
+  const Register pow31_2 = tmp3;
+  const Register chunks  = tmp4;
+  const Register chunks_end = chunks;
+
+  Label DONE, TAIL, TAIL_LOOP, WIDE_LOOP;
+
+  // result has a value initially
+
+  beqz(cnt, DONE);
+
+  andi(chunks, cnt, ~(stride-1));
+  beqz(chunks, TAIL);
+
+  mv(pow31_4, 923521);           // [31^^4]
+  mv(pow31_3,  29791);           // [31^^3]
+  mv(pow31_2,    961);           // [31^^2]
+
+  slli(chunks_end, chunks, chunks_end_shift);
+  add(chunks_end, ary, chunks_end);
+  andi(cnt, cnt, stride-1);      // don't forget about tail!
+
+  bind(WIDE_LOOP);
+  mulw(result, result, pow31_4); // 31^^4 * h
+  arrays_hashcode_elload(t0,   Address(ary, 0 * elsize), eltype);
+  arrays_hashcode_elload(t1,   Address(ary, 1 * elsize), eltype);
+  arrays_hashcode_elload(tmp5, Address(ary, 2 * elsize), eltype);
+  arrays_hashcode_elload(tmp6, Address(ary, 3 * elsize), eltype);
+  mulw(t0, t0, pow31_3);         // 31^^3 * ary[i+0]
+  addw(result, result, t0);
+  mulw(t1, t1, pow31_2);         // 31^^2 * ary[i+1]
+  addw(result, result, t1);
+  slli(t0, tmp5, 5);             // optimize 31^^1 * ary[i+2]
+  subw(tmp5, t0, tmp5);          // with ary[i+2]<<5 - ary[i+2]
+  addw(result, result, tmp5);
+  addw(result, result, tmp6);    // 31^^4 * h + 31^^3 * ary[i+0] + 31^^2 * ary[i+1]
+                                 //           + 31^^1 * ary[i+2] + 31^^0 * ary[i+3]
+  addi(ary, ary, elsize * stride);
+  bne(ary, chunks_end, WIDE_LOOP);
+  beqz(cnt, DONE);
+
+  bind(TAIL);
+  slli(chunks_end, cnt, chunks_end_shift);
+  add(chunks_end, ary, chunks_end);
+
+  bind(TAIL_LOOP);
+  arrays_hashcode_elload(t0, Address(ary), eltype);
+  slli(t1, result, 5);           // optimize 31 * result
+  subw(result, t1, result);      // with result<<5 - result
+  addw(result, result, t0);
+  addi(ary, ary, elsize);
+  bne(ary, chunks_end, TAIL_LOOP);
+
+  bind(DONE);
+  BLOCK_COMMENT("} // arrays_hashcode");
+}
+
+int C2_MacroAssembler::arrays_hashcode_elsize(BasicType eltype) {
+  switch (eltype) {
+  case T_BOOLEAN: return sizeof(jboolean);
+  case T_BYTE:    return sizeof(jbyte);
+  case T_SHORT:   return sizeof(jshort);
+  case T_CHAR:    return sizeof(jchar);
+  case T_INT:     return sizeof(jint);
+  default:
+    ShouldNotReachHere();
+    return -1;
+  }
+}
+
+void C2_MacroAssembler::arrays_hashcode_elload(Register dst, Address src, BasicType eltype) {
+  switch (eltype) {
+  // T_BOOLEAN used as surrogate for unsigned byte
+  case T_BOOLEAN: lbu(dst, src);   break;
+  case T_BYTE:     lb(dst, src);   break;
+  case T_SHORT:    lh(dst, src);   break;
+  case T_CHAR:    lhu(dst, src);   break;
+  case T_INT:      lw(dst, src);   break;
+  default:
+    ShouldNotReachHere();
+  }
+}
+
 typedef void (Assembler::*conditional_branch_insn)(Register op1, Register op2, Label& label, bool is_far);
 typedef void (MacroAssembler::*float_conditional_branch_insn)(FloatRegister op1, FloatRegister op2, Label& label,
                                                               bool is_far, bool is_unordered);
@@ -1676,6 +1783,19 @@ void C2_MacroAssembler::signum_fp(FloatRegister dst, FloatRegister one, bool is_
   bind(done);
 }
 
+void C2_MacroAssembler::signum_fp_v(VectorRegister dst, VectorRegister one, BasicType bt, int vlen) {
+  vsetvli_helper(bt, vlen);
+
+  // check if input is -0, +0, signaling NaN or quiet NaN
+  vfclass_v(v0, dst);
+  mv(t0, fclass_mask::zero | fclass_mask::nan);
+  vand_vx(v0, v0, t0);
+  vmseq_vi(v0, v0, 0);
+
+  // use floating-point 1.0 with a sign of input
+  vfsgnj_vv(dst, one, dst, v0_t);
+}
+
 void C2_MacroAssembler::compress_bits_v(Register dst, Register src, Register mask, bool is_long) {
   Assembler::SEW sew = is_long ? Assembler::e64 : Assembler::e32;
   // intrinsic is enabled when MaxVectorSize >= 16
@@ -1712,6 +1832,45 @@ void C2_MacroAssembler::compress_bits_i_v(Register dst, Register src, Register m
 
 void C2_MacroAssembler::compress_bits_l_v(Register dst, Register src, Register mask) {
   compress_bits_v(dst, src, mask, /* is_long */ true);
+}
+
+void C2_MacroAssembler::expand_bits_v(Register dst, Register src, Register mask, bool is_long) {
+  Assembler::SEW sew = is_long ? Assembler::e64 : Assembler::e32;
+  // intrinsic is enabled when MaxVectorSize >= 16
+  Assembler::LMUL lmul = is_long ? Assembler::m4 : Assembler::m2;
+  long len = is_long ? 64 : 32;
+
+  // load the src data(in bits) to be expanded.
+  vsetivli(x0, 1, sew, Assembler::m1);
+  vmv_s_x(v0, src);
+  // reset the src data(in bytes) to zero.
+  mv(t0, len);
+  vsetvli(x0, t0, Assembler::e8, lmul);
+  vmv_v_i(v4, 0);
+  // convert the src data from bits to bytes.
+  vmerge_vim(v4, v4, 1); // v0 as implicit mask register
+  // reset the dst data(in bytes) to zero.
+  vmv_v_i(v12, 0);
+  // load the mask data(in bits).
+  vsetivli(x0, 1, sew, Assembler::m1);
+  vmv_s_x(v0, mask);
+  // expand the src data(in bytes) to dst(in bytes).
+  vsetvli(x0, t0, Assembler::e8, lmul);
+  viota_m(v8, v0);
+  vrgather_vv(v12, v4, v8, VectorMask::v0_t); // v0 as implicit mask register
+  // convert the dst data from bytes to bits.
+  vmseq_vi(v0, v12, 1);
+  // store result back.
+  vsetivli(x0, 1, sew, Assembler::m1);
+  vmv_x_s(dst, v0);
+}
+
+void C2_MacroAssembler::expand_bits_i_v(Register dst, Register src, Register mask) {
+  expand_bits_v(dst, src, mask, /* is_long */ false);
+}
+
+void C2_MacroAssembler::expand_bits_l_v(Register dst, Register src, Register mask) {
+  expand_bits_v(dst, src, mask, /* is_long */ true);
 }
 
 void C2_MacroAssembler::element_compare(Register a1, Register a2, Register result, Register cnt, Register tmp1, Register tmp2,
@@ -1893,14 +2052,12 @@ void C2_MacroAssembler::byte_array_inflate_v(Register src, Register dst, Registe
 }
 
 // Compress char[] array to byte[].
-// result: the array length if every element in array can be encoded; 0, otherwise.
+// Intrinsic for java.lang.StringUTF16.compress(char[] src, int srcOff, byte[] dst, int dstOff, int len)
+// result: the array length if every element in array can be encoded,
+// otherwise, the index of first non-latin1 (> 0xff) character.
 void C2_MacroAssembler::char_array_compress_v(Register src, Register dst, Register len,
                                               Register result, Register tmp) {
-  Label done;
   encode_iso_array_v(src, dst, len, result, tmp, false);
-  beqz(len, done);
-  mv(result, zr);
-  bind(done);
 }
 
 // Intrinsic for
@@ -1908,7 +2065,7 @@ void C2_MacroAssembler::char_array_compress_v(Register src, Register dst, Regist
 // - sun/nio/cs/ISO_8859_1$Encoder.implEncodeISOArray
 //     return the number of characters copied.
 // - java/lang/StringUTF16.compress
-//     return zero (0) if copy fails, otherwise 'len'.
+//     return index of non-latin1 character if copy fails, otherwise 'len'.
 //
 // This version always returns the number of characters copied. A successful
 // copy will complete with the post-condition: 'res' == 'len', while an

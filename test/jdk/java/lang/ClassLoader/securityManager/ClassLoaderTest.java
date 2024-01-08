@@ -26,10 +26,8 @@
  * @bug 8168423
  * @summary Different types of ClassLoader running with(out) SecurityManager and
  *          (in)valid security policy file.
- * @modules java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.constantpool
- *          java.base/jdk.internal.module
+ * @enablePreview
+ * @modules java.base/jdk.internal.module
  * @library /test/lib
  * @build jdk.test.lib.util.JarUtils
  *        jdk.test.lib.util.ModuleInfoWriter
@@ -241,7 +239,7 @@ public class ClassLoaderTest {
                     if (s.contains(" ")) { throw new RuntimeException("No spaces in args");}
                     return !s.isEmpty();
                 }).toArray(String[]::new);
-        String out = ProcessTools.executeTestJvm(safeArgs).getOutput();
+        String out = ProcessTools.executeTestJava(safeArgs).getOutput();
         // Handle response.
         if ("PASS".equals(status) && out.contains(msg)) {
             System.out.println("PASS: Expected Result: " + msg);

@@ -21,8 +21,8 @@
  * questions.
  */
 
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.AnnotationValue;
+import java.lang.classfile.*;
+import java.lang.classfile.AnnotationValue;
 
 import java.lang.annotation.RetentionPolicy;
 import java.util.*;

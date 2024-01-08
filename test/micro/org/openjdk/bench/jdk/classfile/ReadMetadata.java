@@ -23,10 +23,10 @@
 package org.openjdk.bench.jdk.classfile;
 
 import java.lang.reflect.AccessFlag;
-import jdk.internal.classfile.ClassElement;
-import jdk.internal.classfile.ClassModel;
-import jdk.internal.classfile.Classfile;
-import jdk.internal.classfile.FieldModel;
+import java.lang.classfile.ClassElement;
+import java.lang.classfile.ClassModel;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.FieldModel;
 import jdk.internal.org.objectweb.asm.*;
 import jdk.internal.org.objectweb.asm.tree.*;
 import org.openjdk.jmh.annotations.*;
@@ -66,7 +66,7 @@ public class ReadMetadata extends AbstractCorpusBenchmark {
     @Benchmark
     @BenchmarkMode(Mode.Throughput)
     public void jdkReadName(Blackhole bh) {
-        var cc = Classfile.of();
+        var cc = ClassFile.of();
         for (byte[] bytes : classes) {
             bh.consume(cc.parse(bytes).thisClass().asInternalName());
         }
@@ -75,7 +75,7 @@ public class ReadMetadata extends AbstractCorpusBenchmark {
     @Benchmark
     @BenchmarkMode(Mode.Throughput)
     public void jdkReadMemberNames(Blackhole bh) {
-        var cc = Classfile.of();
+        var cc = ClassFile.of();
         for (byte[] bytes : classes) {
             var cm = cc.parse(bytes);
             bh.consume(cm.thisClass().asInternalName());
@@ -130,7 +130,7 @@ public class ReadMetadata extends AbstractCorpusBenchmark {
     @Benchmark
     @BenchmarkMode(Mode.Throughput)
     public void jdkTreeCountFields(Blackhole bh) {
-        var cc = Classfile.of();
+        var cc = ClassFile.of();
         for (byte[] bytes : classes) {
             int count = 0;
             ClassModel cm = cc.parse(bytes);
@@ -145,7 +145,7 @@ public class ReadMetadata extends AbstractCorpusBenchmark {
     @Benchmark
     @BenchmarkMode(Mode.Throughput)
     public void jdkCountFields(Blackhole bh) {
-        var cc = Classfile.of();
+        var cc = ClassFile.of();
         for (byte[] bytes : classes) {
             int count = 0;
             ClassModel cm = cc.parse(bytes);

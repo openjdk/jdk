@@ -31,135 +31,6 @@
 
 // Implementation of class atomic
 
-#ifdef M68K
-
-/*
- * __m68k_cmpxchg
- *
- * Atomically store newval in *ptr if *ptr is equal to oldval for user space.
- * Returns newval on success and oldval if no exchange happened.
- * This implementation is processor specific and works on
- * 68020 68030 68040 and 68060.
- *
- * It will not work on ColdFire, 68000 and 68010 since they lack the CAS
- * instruction.
- * Using a kernelhelper would be better for arch complete implementation.
- *
- */
-
-static inline int __m68k_cmpxchg(int oldval, int newval, volatile int *ptr) {
-  int ret;
-  __asm __volatile ("cas%.l %0,%2,%1"
-                   : "=d" (ret), "+m" (*(ptr))
-                   : "d" (newval), "0" (oldval));
-  return ret;
-}
-
-/* Perform an atomic compare and swap: if the current value of `*PTR'
-   is OLDVAL, then write NEWVAL into `*PTR'.  Return the contents of
-   `*PTR' before the operation.*/
-static inline int m68k_compare_and_swap(int newval,
-                                        volatile int *ptr,
-                                        int oldval) {
-  for (;;) {
-      int prev = *ptr;
-      if (prev != oldval)
-        return prev;
-
-      if (__m68k_cmpxchg (prev, newval, ptr) == newval)
-        // Success.
-        return prev;
-
-      // We failed even though prev == oldval.  Try again.
-    }
-}
-
-/* Atomically add an int to memory.  */
-static inline int m68k_add_then_fetch(int add_value, volatile int *ptr) {
-  for (;;) {
-      // Loop until success.
-
-      int prev = *ptr;
-
-      if (__m68k_cmpxchg (prev, prev + add_value, ptr) == prev + add_value)
-        return prev + add_value;
-    }
-}
-
-/* Atomically write VALUE into `*PTR' and returns the previous
-   contents of `*PTR'.  */
-static inline int m68k_lock_test_and_set(int newval, volatile int *ptr) {
-  for (;;) {
-      // Loop until success.
-      int prev = *ptr;
-
-      if (__m68k_cmpxchg (prev, newval, ptr) == prev)
-        return prev;
-    }
-}
-#endif // M68K
-
-#ifdef ARM
-
-/*
- * __kernel_cmpxchg
- *
- * Atomically store newval in *ptr if *ptr is equal to oldval for user space.
- * Return zero if *ptr was changed or non-zero if no exchange happened.
- * The C flag is also set if *ptr was changed to allow for assembly
- * optimization in the calling code.
- *
- */
-
-typedef int (__kernel_cmpxchg_t)(int oldval, int newval, volatile int *ptr);
-#define __kernel_cmpxchg (*(__kernel_cmpxchg_t *) 0xffff0fc0)
-
-
-
-/* Perform an atomic compare and swap: if the current value of `*PTR'
-   is OLDVAL, then write NEWVAL into `*PTR'.  Return the contents of
-   `*PTR' before the operation.*/
-static inline int arm_compare_and_swap(int newval,
-                                       volatile int *ptr,
-                                       int oldval) {
-  for (;;) {
-      int prev = *ptr;
-      if (prev != oldval)
-        return prev;
-
-      if (__kernel_cmpxchg (prev, newval, ptr) == 0)
-        // Success.
-        return prev;
-
-      // We failed even though prev == oldval.  Try again.
-    }
-}
-
-/* Atomically add an int to memory.  */
-static inline int arm_add_then_fetch(int add_value, volatile int *ptr) {
-  for (;;) {
-      // Loop until a __kernel_cmpxchg succeeds.
-
-      int prev = *ptr;
-
-      if (__kernel_cmpxchg (prev, prev + add_value, ptr) == 0)
-        return prev + add_value;
-    }
-}
-
-/* Atomically write VALUE into `*PTR' and returns the previous
-   contents of `*PTR'.  */
-static inline int arm_lock_test_and_set(int newval, volatile int *ptr) {
-  for (;;) {
-      // Loop until a __kernel_cmpxchg succeeds.
-      int prev = *ptr;
-
-      if (__kernel_cmpxchg (prev, newval, ptr) == 0)
-        return prev;
-    }
-}
-#endif // ARM
-
 template<size_t byte_size>
 struct Atomic::PlatformAdd {
   template<typename D, typename I>
@@ -178,17 +49,9 @@ inline D Atomic::PlatformAdd<4>::add_then_fetch(D volatile* dest, I add_value,
   STATIC_ASSERT(4 == sizeof(I));
   STATIC_ASSERT(4 == sizeof(D));
 
-#ifdef ARM
-  return add_using_helper<int>(arm_add_then_fetch, dest, add_value);
-#else
-#ifdef M68K
-  return add_using_helper<int>(m68k_add_then_fetch, dest, add_value);
-#else
   D res = __atomic_add_fetch(dest, add_value, __ATOMIC_RELEASE);
   FULL_MEM_BARRIER;
   return res;
-#endif // M68K
-#endif // ARM
 }
 
 template<>
@@ -209,26 +72,10 @@ inline T Atomic::PlatformXchg<4>::operator()(T volatile* dest,
                                              T exchange_value,
                                              atomic_memory_order order) const {
   STATIC_ASSERT(4 == sizeof(T));
-#ifdef ARM
-  return xchg_using_helper<int>(arm_lock_test_and_set, dest, exchange_value);
-#else
-#ifdef M68K
-  return xchg_using_helper<int>(m68k_lock_test_and_set, dest, exchange_value);
-#else
-  // __sync_lock_test_and_set is a bizarrely named atomic exchange
-  // operation.  Note that some platforms only support this with the
-  // limitation that the only valid value to store is the immediate
-  // constant 1.  There is a test for this in JNI_CreateJavaVM().
-  T result = __sync_lock_test_and_set (dest, exchange_value);
-  // All atomic operations are expected to be full memory barriers
-  // (see atomic.hpp). However, __sync_lock_test_and_set is not
-  // a full memory barrier, but an acquire barrier. Hence, this added
-  // barrier. Some platforms (notably ARM) have peculiarities with
-  // their barrier implementations, delegate it to OrderAccess.
-  OrderAccess::fence();
+  FULL_MEM_BARRIER;
+  T result = __atomic_exchange_n(dest, exchange_value, __ATOMIC_RELAXED);
+  FULL_MEM_BARRIER;
   return result;
-#endif // M68K
-#endif // ARM
 }
 
 template<>
@@ -237,8 +84,9 @@ inline T Atomic::PlatformXchg<8>::operator()(T volatile* dest,
                                              T exchange_value,
                                              atomic_memory_order order) const {
   STATIC_ASSERT(8 == sizeof(T));
-  T result = __sync_lock_test_and_set (dest, exchange_value);
-  OrderAccess::fence();
+  FULL_MEM_BARRIER;
+  T result = __atomic_exchange_n(dest, exchange_value, __ATOMIC_RELAXED);
+  FULL_MEM_BARRIER;
   return result;
 }
 
@@ -253,20 +101,12 @@ inline T Atomic::PlatformCmpxchg<4>::operator()(T volatile* dest,
                                                 T exchange_value,
                                                 atomic_memory_order order) const {
   STATIC_ASSERT(4 == sizeof(T));
-#ifdef ARM
-  return cmpxchg_using_helper<int>(arm_compare_and_swap, dest, compare_value, exchange_value);
-#else
-#ifdef M68K
-  return cmpxchg_using_helper<int>(m68k_compare_and_swap, dest, compare_value, exchange_value);
-#else
   T value = compare_value;
   FULL_MEM_BARRIER;
   __atomic_compare_exchange(dest, &value, &exchange_value, /*weak*/false,
                             __ATOMIC_RELAXED, __ATOMIC_RELAXED);
   FULL_MEM_BARRIER;
   return value;
-#endif // M68K
-#endif // ARM
 }
 
 template<>
