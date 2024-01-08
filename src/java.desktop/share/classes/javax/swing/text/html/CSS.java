@@ -2627,7 +2627,7 @@ public class CSS implements Serializable {
                 case 1:
                     // %
                     lv = new LengthValue();
-                    lv.span = Math.max(0, Math.min(1, lu.value));
+                    lv.span = Math.max(0, lu.value);
                     lv.percentage = true;
                     break;
                 default:
