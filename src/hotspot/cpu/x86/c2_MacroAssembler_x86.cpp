@@ -1089,7 +1089,8 @@ void C2_MacroAssembler::vminmax_fp(int opcode, BasicType elem_bt,
   assert(opcode == Op_MinV || opcode == Op_MinReductionV ||
          opcode == Op_MaxV || opcode == Op_MaxReductionV, "sanity");
   assert(elem_bt == T_FLOAT || elem_bt == T_DOUBLE, "sanity");
-  assert_different_registers(a, b, tmp, atmp, btmp);
+  assert_different_registers(a, tmp, atmp, btmp);
+  assert_different_registers(b, tmp, atmp, btmp);
 
   bool is_min = (opcode == Op_MinV || opcode == Op_MinReductionV);
   bool is_double_word = is_double_word_type(elem_bt);
@@ -1176,7 +1177,8 @@ void C2_MacroAssembler::evminmax_fp(int opcode, BasicType elem_bt,
   assert(opcode == Op_MinV || opcode == Op_MinReductionV ||
          opcode == Op_MaxV || opcode == Op_MaxReductionV, "sanity");
   assert(elem_bt == T_FLOAT || elem_bt == T_DOUBLE, "sanity");
-  assert_different_registers(dst, a, b, atmp, btmp);
+  assert_different_registers(dst, a, atmp, btmp);
+  assert_different_registers(dst, b, atmp, btmp);
 
   bool is_min = (opcode == Op_MinV || opcode == Op_MinReductionV);
   bool is_double_word = is_double_word_type(elem_bt);
