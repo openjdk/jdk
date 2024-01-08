@@ -115,10 +115,10 @@ TRACE_REQUEST_FUNC(JVMInformation) {
 
 TRACE_REQUEST_FUNC(OSInformation) {
   ResourceMark rm;
-  char* os_name = NEW_RESOURCE_ARRAY(char, 2048);
-  JfrOSInterface::os_version(&os_name);
+  char* os_version = nullptr;
+  JfrOSInterface::os_version(&os_version);
   EventOSInformation event;
-  event.set_osVersion(os_name);
+  event.set_osVersion(os_version);
   event.commit();
 }
 
