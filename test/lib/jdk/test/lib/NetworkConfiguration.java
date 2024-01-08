@@ -451,6 +451,7 @@ public class NetworkConfiguration {
     }
 
     /** Prints all the system interface information to the give stream. */
+    @SuppressWarnings("removal")
     public static void printSystemConfiguration(PrintStream out) {
         PrivilegedAction<Void> pa = () -> {
         try {

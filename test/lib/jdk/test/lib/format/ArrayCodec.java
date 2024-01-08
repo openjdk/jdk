@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -141,7 +141,7 @@ public class ArrayCodec<E> {
      * @throws IllegalArgumentException if {@code array}'s component type is not supported
      * @return an ArrayCodec for the provided array
      */
-    public static ArrayCodec of(Object array) {
+    public static ArrayCodec<?> of(Object array) {
         var type = array.getClass().getComponentType();
         if (type == byte.class) {
             return ArrayCodec.of((byte[])array);

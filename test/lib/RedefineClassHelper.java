@@ -47,7 +47,7 @@ public class RedefineClassHelper {
      * @param clazz Class to redefine
      * @param javacode String with the new java code for the class to be redefined
      */
-    public static void redefineClass(Class clazz, String javacode) throws Exception {
+    public static void redefineClass(Class<?> clazz, String javacode) throws Exception {
         byte[] bytecode = InMemoryJavaCompiler.compile(clazz.getName(), javacode);
         redefineClass(clazz, bytecode);
     }
@@ -58,7 +58,7 @@ public class RedefineClassHelper {
      * @param clazz Class to redefine
      * @param bytecode byte[] with the new class
      */
-    public static void redefineClass(Class clazz, byte[] bytecode) throws Exception {
+    public static void redefineClass(Class<?> clazz, byte[] bytecode) throws Exception {
         instrumentation.redefineClasses(new ClassDefinition(clazz, bytecode));
     }
 
