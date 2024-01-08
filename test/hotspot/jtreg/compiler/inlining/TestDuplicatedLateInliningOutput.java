@@ -21,13 +21,12 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 8320237
- * @summary late inlining output should produce both failure and success messages
+ * @summary late inlining output shouldn't produce both failure and success messages
  * @library /test/lib
  * @requires vm.compiler2.enabled
- * @requires vm.flagless
  * @run driver compiler.inlining.TestDuplicatedLateInliningOutput
  */
 
@@ -60,7 +59,7 @@ public class TestDuplicatedLateInliningOutput {
         ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
                 "-XX:+UnlockDiagnosticVMOptions",
                 "-XX:+PrintInlining",
-                "-XX:CICompilerCount=2",
+                "-XX:CICompilerCount=1",
                 "-XX:-TieredCompilation",
                 launcher.getName());
 
