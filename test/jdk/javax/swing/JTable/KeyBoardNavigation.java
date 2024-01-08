@@ -191,7 +191,6 @@ public class KeyBoardNavigation {
     }
 
     public static void main(String[] args) throws Exception {
-        UIManager.setLookAndFeel("javax.swing.plaf.metal.MetalLookAndFeel");
         SwingUtilities.invokeAndWait(() -> {
             try {
                 initTest();
