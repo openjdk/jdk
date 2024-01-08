@@ -174,8 +174,9 @@ class BitMap {
   void      clear_large_range_of_words (idx_t beg, idx_t end);
 
   static void clear_range_of_words(bm_word_t* map, idx_t beg, idx_t end);
-
-  idx_t count_one_bits_within_word(idx_t beg, idx_t end) const;
+public:
+  inline idx_t count_one_bits_within_word(idx_t beg, idx_t end) const;
+protected:
   idx_t count_one_bits_in_range_of_words(idx_t beg_full_word, idx_t end_full_word) const;
 
   // Set the map and size.
@@ -354,6 +355,8 @@ class BitMap {
   // Like "find_last_set_bit", except requires that "beg" is
   // aligned to bitsizeof(bm_word_t).
   idx_t find_last_set_bit_aligned_left(idx_t beg, idx_t end) const;
+
+  inline idx_t count_one_bits_within_aligned_word(idx_t beg) const;
 
   // Returns the number of bits set in the bitmap.
   idx_t count_one_bits() const;

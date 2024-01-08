@@ -52,6 +52,12 @@ inline void MarkBitMap::mark(oop obj) {
   return mark(cast_from_oop<HeapWord*>(obj));
 }
 
+inline void MarkBitMap::mark_range(HeapWord* addr, size_t num_words) {
+  size_t beg = addr_to_offset(addr);
+  size_t end = addr_to_offset(addr + num_words);
+  _bm.set_range(beg, end);
+}
+
 inline void MarkBitMap::clear(HeapWord* addr) {
   check_mark(addr);
   _bm.clear_bit(addr_to_offset(addr));
@@ -72,6 +78,14 @@ inline bool MarkBitMap::is_marked(oop obj) const{
 
 inline void MarkBitMap::clear(oop obj) {
   clear(cast_from_oop<HeapWord*>(obj));
+}
+
+inline size_t MarkBitMap::count_marked_words_64(HeapWord* start) const {
+  return _bm.count_one_bits_within_aligned_word(addr_to_offset(start));
+}
+
+inline size_t MarkBitMap::count_marked_words(HeapWord* start, HeapWord* end) const {
+  return _bm.count_one_bits_within_word(addr_to_offset(start), addr_to_offset(end));
 }
 
 #endif // SHARE_GC_SHARED_MARKBITMAP_INLINE_HPP

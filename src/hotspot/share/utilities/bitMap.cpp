@@ -29,7 +29,6 @@
 #include "utilities/bitMap.inline.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/debug.hpp"
-#include "utilities/population_count.hpp"
 
 using bm_word_t = BitMap::bm_word_t;
 using idx_t = BitMap::idx_t;
@@ -602,17 +601,6 @@ BitMap::idx_t BitMap::count_one_bits_in_range_of_words(idx_t beg_full_word, idx_
     sum += population_count(w);
   }
   return sum;
-}
-
-BitMap::idx_t BitMap::count_one_bits_within_word(idx_t beg, idx_t end) const {
-  if (beg != end) {
-    assert(end > beg, "must be");
-    bm_word_t mask = ~inverted_bit_mask_for_range(beg, end);
-    bm_word_t w = *word_addr(beg);
-    w &= mask;
-    return population_count(w);
-  }
-  return 0;
 }
 
 BitMap::idx_t BitMap::count_one_bits() const {

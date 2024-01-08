@@ -26,6 +26,7 @@
 #include "gc/serial/cardTableRS.hpp"
 #include "gc/serial/genMarkSweep.hpp"
 #include "gc/serial/serialBlockOffsetTable.inline.hpp"
+#include "gc/serial/serialCompressor.hpp"
 #include "gc/serial/serialHeap.hpp"
 #include "gc/serial/tenuredGeneration.inline.hpp"
 #include "gc/shared/collectorCounters.hpp"
@@ -434,7 +435,12 @@ void TenuredGeneration::collect(bool   full,
 
   gch->pre_full_gc_dump(gc_timer);
 
-  GenMarkSweep::invoke_at_safepoint(clear_all_soft_refs);
+  if (UseCompressorFullGC) {
+    SerialCompressor full_gc = SerialCompressor(gc_timer);
+    full_gc.invoke_at_safepoint(clear_all_soft_refs);
+  } else {
+    GenMarkSweep::invoke_at_safepoint(clear_all_soft_refs);
+  }
 
   gch->post_full_gc_dump(gc_timer);
 
