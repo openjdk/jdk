@@ -39,16 +39,6 @@ public class TestSSE2IntVect {
 
     public static void main(String[] args) {
         TestFramework.runWithFlags("-XX:+IgnoreUnrecognizedVMOptions", "-XX:StressLongCountedLoop=0");
-        // TestDriver test = new TestDriver();
-        // test.addExpectedVectorization("AddVI", 4);
-        // test.addExpectedVectorization("SubVI", 4);
-        // test.addExpectedVectorization("AndV", 3);
-        // test.addExpectedVectorization("OrV", 3);
-        // test.addExpectedVectorization("XorV", 3);
-        // test.addExpectedVectorization("LShiftVI", 5);
-        // test.addExpectedVectorization("RShiftVI", 3);
-        // test.addExpectedVectorization("URShiftVI", 3);
-        // test.run();
     }
 
     private static final int ARRLEN = 997;
@@ -58,24 +48,15 @@ public class TestSSE2IntVect {
     private static final int VALUE = 15;
     private static final int SHIFT = 32;
 
-
-    // test.addExpectedVectorization("AddVI", 4);
-    // test.addExpectedVectorization("SubVI", 4);
-    // test.addExpectedVectorization("AndV", 3);
-    // test.addExpectedVectorization("OrV", 3);
-    // test.addExpectedVectorization("XorV", 3);
-    // test.addExpectedVectorization("LShiftVI", 5);
-    // test.addExpectedVectorization("RShiftVI", 3);
-    // test.addExpectedVectorization("URShiftVI", 3);
     @Test
-    @IR(counts = {IRNode.ADD_VI, "< 10",
-                IRNode.SUB_VI, "< 10",
-                IRNode.AND_VI, "< 10",
-                IRNode.OR_VI, "< 10",
-                IRNode.XOR_VI, "< 10",
-                IRNode.LSHIFT_VI, "< 10",
-                IRNode.RSHIFT_VI, "< 10",
-                IRNode.URSHIFT_VI, "< 10" })
+    @IR(counts = {IRNode.ADD_VI, ">= 4",
+                  IRNode.SUB_VI, ">= 4",
+                  IRNode.AND_VI, ">= 3",
+                  IRNode.OR_VI, ">= 3",
+                  IRNode.XOR_VI, ">= 3",
+                  IRNode.LSHIFT_VI, ">= 5",
+                  IRNode.RSHIFT_VI, ">= 3",
+                  IRNode.URSHIFT_VI, ">= 3" })
     static void test() {
         System.out.println("Testing Integer vectors");
         int errn = testInner();
