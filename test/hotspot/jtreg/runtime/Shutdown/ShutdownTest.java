@@ -66,7 +66,7 @@ public class ShutdownTest {
 
     private static void startVM(String... options) throws Throwable {
         // Combine VM flags given from command-line and your additional options
-        OutputAnalyzer output = ProcessTools.executeTestJvm(options);
+        OutputAnalyzer output = ProcessTools.executeTestJava(options);
         output.shouldContain("- ShutdownTest -");
         output.shouldHaveExitValue(0);
 

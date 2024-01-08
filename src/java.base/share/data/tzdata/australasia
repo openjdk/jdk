@@ -414,8 +414,14 @@ Zone Antarctica/Macquarie 0	-	-00	1899 Nov
 # Please note that there will not be any daylight savings time change
 # in Fiji for 2022-2023....
 # https://www.facebook.com/FijianGovernment/posts/pfbid0mmWVTYmTibn66ybpFda75pDcf34SSpoSaskJW5gXwaKo5Sgc7273Q4fXWc6kQV6Hl
+
+# From Almaz Mingaleev (2023-10-06):
+# Cabinet approved the suspension of Daylight Saving and appropriate
+# legislative changes will be considered including the repeal of the
+# Daylight Saving Act 1998
+# https://www.fiji.gov.fj/Media-Centre/Speeches/English/CABINET-DECISIONS-3-OCTOBER-2023
 #
-# From Paul Eggert (2022-10-27):
+# From Paul Eggert (2023-10-06):
 # For now, assume DST is suspended indefinitely.
 
 # Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S

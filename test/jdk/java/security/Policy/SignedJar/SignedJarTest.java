@@ -121,7 +121,7 @@ public class SignedJarTest {
         System.out.println("Test Case 1");
         //copy policy file into current directory
         String[] cmd = constructCMD("first.jar", POLICY1, "false", "true");
-        ProcessTools.executeTestJvm(cmd).shouldHaveExitValue(0);
+        ProcessTools.executeTestJava(cmd).shouldHaveExitValue(0);
 
         //test case 2, test with both.jar
         //setIO permission granted to code that was signed by first signer
@@ -131,7 +131,7 @@ public class SignedJarTest {
         //Expect no AccessControlException
         System.out.println("Test Case 2");
         cmd = constructCMD("both.jar", POLICY1, "false", "false");
-        ProcessTools.executeTestJvm(cmd).shouldHaveExitValue(0);
+        ProcessTools.executeTestJava(cmd).shouldHaveExitValue(0);
 
         //test case 3
         //setIO permission granted to code that was signed by first signer
@@ -141,7 +141,7 @@ public class SignedJarTest {
         //Expect AccessControlException for setFactory permission
         System.out.println("Test Case 3");
         cmd = constructCMD("both.jar", POLICY2, "false", "true");
-        ProcessTools.executeTestJvm(cmd).shouldHaveExitValue(0);
+        ProcessTools.executeTestJava(cmd).shouldHaveExitValue(0);
 
     }
 
