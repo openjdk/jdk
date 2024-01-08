@@ -31,16 +31,16 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
 
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.attribute.*;
-import jdk.internal.classfile.constantpool.ClassEntry;
-import jdk.internal.classfile.constantpool.ConstantPool;
-import jdk.internal.classfile.constantpool.ConstantValueEntry;
-import jdk.internal.classfile.constantpool.LoadableConstantEntry;
-import jdk.internal.classfile.constantpool.ModuleEntry;
-import jdk.internal.classfile.constantpool.NameAndTypeEntry;
-import jdk.internal.classfile.constantpool.PackageEntry;
-import jdk.internal.classfile.constantpool.Utf8Entry;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.*;
+import java.lang.classfile.constantpool.ClassEntry;
+import java.lang.classfile.constantpool.ConstantPool;
+import java.lang.classfile.constantpool.ConstantValueEntry;
+import java.lang.classfile.constantpool.LoadableConstantEntry;
+import java.lang.classfile.constantpool.ModuleEntry;
+import java.lang.classfile.constantpool.NameAndTypeEntry;
+import java.lang.classfile.constantpool.PackageEntry;
+import java.lang.classfile.constantpool.Utf8Entry;
 import jdk.internal.access.SharedSecrets;
 
 public abstract sealed class BoundAttribute<T extends Attribute<T>>

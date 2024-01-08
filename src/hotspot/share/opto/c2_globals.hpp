@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -92,6 +92,10 @@
                                                                             \
   product(bool, AlignVector, true,                                          \
           "Perform vector store/load alignment in loop")                    \
+                                                                            \
+  develop(bool, VerifyAlignVector, false,                                   \
+          "Check that vector stores/loads are aligned if AlignVector"       \
+          "is enabled.")                                                    \
                                                                             \
   product(intx, NumberOfLoopInstrToAlign, 4,                                \
           "Number of first instructions in a loop to align")                \
@@ -365,10 +369,10 @@
           "Level of detail of the ideal graph printout. "                   \
           "System-wide value, -1=printing is disabled, "                    \
           "0=print nothing except IGVPrintLevel directives, "               \
-          "5=all details printed. "                                         \
+          "6=all details printed. "                                         \
           "Level of detail of printouts can be set on a per-method level "  \
           "as well by using CompileCommand=option.")                        \
-          range(-1, 5)                                                      \
+          range(-1, 6)                                                      \
                                                                             \
   notproduct(intx, PrintIdealGraphPort, 4444,                               \
           "Ideal graph printer to network port")                            \

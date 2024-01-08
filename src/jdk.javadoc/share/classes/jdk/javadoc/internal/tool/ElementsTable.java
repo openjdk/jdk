@@ -73,6 +73,7 @@ import com.sun.tools.javac.util.Name;
 import com.sun.tools.javac.util.Names;
 import jdk.javadoc.doclet.DocletEnvironment;
 import jdk.javadoc.doclet.DocletEnvironment.ModuleMode;
+import jdk.javadoc.internal.doclets.toolkit.WorkArounds;
 
 import static com.sun.tools.javac.code.Scope.LookupKind.NON_RECURSIVE;
 
@@ -986,14 +987,14 @@ public class ElementsTable {
      * @return true if the element is visible
      */
     public boolean isSelected(Element e) {
-        if (toolEnv.isSynthetic((Symbol) e) && !toolEnv.isUnnamed((Symbol) e)) {
+        if (toolEnv.isSynthetic((Symbol) e)) {
             return false;
         }
         if (visibleElementVisitor == null) {
             visibleElementVisitor = new SimpleElementVisitor14<>() {
                 @Override
                 public Boolean visitType(TypeElement e, Void p) {
-                    if (!accessFilter.checkModifier(e)) {
+                    if (!accessFilter.checkModifier(e) && !WorkArounds.isImplicitlyDeclaredClass(e)) {
                         return false; // it is not allowed
                     }
                     Element encl = e.getEnclosingElement();
@@ -1012,7 +1013,13 @@ public class ElementsTable {
 
                 @Override
                 protected Boolean defaultAction(Element e, Void p) {
-                    return accessFilter.checkModifier(e);
+                    if (accessFilter.checkModifier(e)) {
+                        return true;
+                    } else {
+                        return WorkArounds.isImplicitlyDeclaredClass(e.getEnclosingElement())
+                                && e.getKind() != ElementKind.CONSTRUCTOR /* nothing interesting in that ctor */
+                                && AccessLevel.of(e.getModifiers()).compareTo(AccessLevel.PACKAGE) >= 0;
+                    }
                 }
 
                 @Override

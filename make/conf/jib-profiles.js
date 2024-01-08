@@ -407,6 +407,8 @@ var getJibProfilesCommon = function (input, data) {
  * @returns {{}} Profiles part of the configuration
  */
 var getJibProfilesProfiles = function (input, common, data) {
+    var cross_compiling = input.build_platform != input.target_platform;
+
     // Main SE profiles
     var profiles = {
 
@@ -484,14 +486,12 @@ var getJibProfilesProfiles = function (input, common, data) {
         "linux-aarch64": {
             target_os: "linux",
             target_cpu: "aarch64",
-            build_cpu: "x64",
             dependencies: ["devkit", "gtest", "build_devkit", "pandoc"],
             configure_args: [
-                "--openjdk-target=aarch64-linux-gnu",
                 "--with-zlib=system",
                 "--disable-dtrace",
 		"--enable-compatible-cds-alignment",
-            ],
+	    ].concat(cross_compiling ? ["--openjdk-target=aarch64-linux-gnu"] : []),
         },
 
         "linux-arm32": {
@@ -1206,7 +1206,7 @@ var getJibProfilesDependencies = function (input, common) {
 
         jcov: {
             organization: common.organization,
-            revision: "3.0-15-jdk-asm+1.0",
+            revision: "3.0-16-jdk-asm+1.0",
             ext: "zip",
             environment_name: "JCOV_HOME",
         },

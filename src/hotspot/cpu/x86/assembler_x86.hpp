@@ -316,7 +316,7 @@ class Address {
   }
 
   bool xmmindex_needs_rex() const {
-    return _xmmindex->is_valid() && _xmmindex->encoding() >= 8;
+    return _xmmindex->is_valid() && ((_xmmindex->encoding() & 8) == 8);
   }
 
   relocInfo::relocType reloc() const { return _rspec.type(); }
@@ -1527,6 +1527,8 @@ private:
   void korwl(KRegister dst, KRegister src1, KRegister src2);
   void kordl(KRegister dst, KRegister src1, KRegister src2);
   void korql(KRegister dst, KRegister src1, KRegister src2);
+
+  void kxnorwl(KRegister dst, KRegister src1, KRegister src2);
 
   void kxorbl(KRegister dst, KRegister src1, KRegister src2);
   void kxorwl(KRegister dst, KRegister src1, KRegister src2);
