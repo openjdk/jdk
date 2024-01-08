@@ -21,30 +21,17 @@
  * questions.
  */
 
-package compiler.lib.ir_framework.driver.irmatching.parser.hotspot;
+#include <stdio.h>
 
-import compiler.lib.ir_framework.TestFramework;
+#ifdef _WIN64
+#define EXPORT __declspec(dllexport)
+#else
+#define EXPORT
+#endif
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
-/**
- * This class keeps track of all {@link WriterThread} instances.
+/*
+ * Call a function with the given function pointer.
  */
-class WriterThreads {
-    private final Map<Integer, WriterThread> mapIdToThread = new HashMap<>();
-
-    WriterThread parse(String line) {
-        int writerThreadId = parseWriterThreadId(line);
-        return mapIdToThread.computeIfAbsent(writerThreadId, c -> new WriterThread());
-    }
-
-    private static int parseWriterThreadId(String line) {
-        Pattern pattern = Pattern.compile("='(\\d+)'");
-        Matcher matcher = pattern.matcher(line);
-        TestFramework.check(matcher.find(), "should find writer thread id");
-        return Integer.parseInt(matcher.group(1));
-    }
+EXPORT void call(void *(*f)(void)) {
+    (*f)();
 }

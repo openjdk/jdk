@@ -173,12 +173,8 @@ void PSPromotionManager::reset_stats() {
 #endif // TASKQUEUE_STATS
 
 PSPromotionManager::PSPromotionManager() {
-  ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
-
   // We set the old lab's start array.
   _old_lab.set_start_array(old_gen()->start_array());
-
-  uint queue_size = claimed_stack_depth()->max_elems();
 
   if (ParallelGCThreads == 1) {
     _target_stack_size = 0;

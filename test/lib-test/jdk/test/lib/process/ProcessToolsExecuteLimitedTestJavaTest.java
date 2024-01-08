@@ -21,31 +21,25 @@
  * questions.
  */
 
-package compiler.lib.ir_framework.driver.irmatching.parser.hotspot;
-
-/**
- * This class represents a writer thread that emits log messages with LogCompilation. It saves and restores a currently
- * parsed {@link LoggedMethod} if a {@link CompilePhaseBlock} was interrupted before reaching the block end tag.
- *
- * @see LoggedMethod
- * @see CompilePhaseBlock
+/*
+ * @test
+ * @summary Unit test for ProcessTools.executeLimitedTestJava()
+ * @library /test/lib
+ * @run main/othervm -Dtest.java.opts=-XX:MaxMetaspaceSize=123456789 ProcessToolsExecuteLimitedTestJavaTest
  */
-class WriterThread {
-    private LoggedMethod loggedMethod = LoggedMethod.DONT_CARE;
 
-    public static boolean isWriterThreadLine(String line) {
-        return line.startsWith("<writer");
-    }
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
 
-    public void saveLoggedMethod(LoggedMethod loggedMethod) {
-        this.loggedMethod = loggedMethod;
-    }
-
-    public LoggedMethod restoreLoggedMethod() {
-        LoggedMethod restoredLoggedMethod = loggedMethod;
-        if (restoredLoggedMethod != LoggedMethod.DONT_CARE) {
-            loggedMethod = LoggedMethod.DONT_CARE;
+public class ProcessToolsExecuteLimitedTestJavaTest {
+    public static void main(String[] args) throws Exception {
+        if (args.length > 0) {
+            // Do nothing. Just let the JVM log its output.
+        } else {
+            // In comparison to executeTestJava, executeLimitedTestJava should not add the
+            // -Dtest.java.opts flags. Check that it doesn't.
+            OutputAnalyzer output = ProcessTools.executeLimitedTestJava("-XX:+PrintFlagsFinal", "-version");
+            output.stdoutShouldNotMatch(".*MaxMetaspaceSize.* = 123456789.*");
         }
-        return restoredLoggedMethod;
     }
 }
