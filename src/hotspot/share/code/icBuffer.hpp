@@ -159,8 +159,6 @@ class InlineCacheBuffer: public AllStatic {
 
   static StubQueue* buffer()                         { return _buffer;         }
 
-  static ICStub* new_ic_stub();
-
   // Machine-dependent implementation of ICBuffer
   static void    assemble_ic_buffer_code(address code_begin, void* cached_value, address entry_point);
   static address ic_buffer_entry_point  (address code_begin);

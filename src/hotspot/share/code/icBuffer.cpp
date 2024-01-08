@@ -146,11 +146,6 @@ void InlineCacheBuffer::initialize() {
 }
 
 
-ICStub* InlineCacheBuffer::new_ic_stub() {
-  return (ICStub*)buffer()->request_committed(ic_stub_code_size());
-}
-
-
 void InlineCacheBuffer::refill_ic_stubs() {
 #ifdef ASSERT
   ICRefillVerifier* verifier = current_ic_refill_verifier();
@@ -210,7 +205,7 @@ bool InlineCacheBuffer::create_transition_stub(CompiledIC *ic, void* cached_valu
   }
 
   // allocate and initialize new "out-of-line" inline-cache
-  ICStub* ic_stub = new_ic_stub();
+  ICStub* ic_stub = (ICStub*) buffer()->request_committed(ic_stub_code_size());
   if (ic_stub == nullptr) {
 #ifdef ASSERT
     ICRefillVerifier* verifier = current_ic_refill_verifier();
