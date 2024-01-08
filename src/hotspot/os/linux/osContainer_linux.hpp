@@ -45,7 +45,7 @@ class OSContainer: AllStatic {
  public:
   static void init();
   static void print_version_specific_info(outputStream* st);
-  static void print_container_helper(outputStream* st, jlong j, const char* metrics);
+  static void print_container_helper(outputStream* st, jlong j, const char* metrics, boolean limit = false);
 
   static inline bool is_containerized();
   static const char * container_type();

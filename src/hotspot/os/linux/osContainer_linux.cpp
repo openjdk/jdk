@@ -137,9 +137,9 @@ jlong OSContainer::pids_current() {
   return cgroup_subsystem->pids_current();
 }
 
-void OSContainer::print_container_helper(outputStream* st, jlong j, const char* metrics) {
+void OSContainer::print_container_helper(outputStream* st, jlong j, const char* metrics, boolean limit) {
   st->print("%s: ", metrics);
-  if (j > 0) {
+  if ((j > 0) || ((j == 0) && (limit == false))) {
     if (j >= 1024) {
       st->print_cr(UINT64_FORMAT " k", uint64_t(j) / K);
     } else {

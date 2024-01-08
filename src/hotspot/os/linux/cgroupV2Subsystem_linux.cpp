@@ -216,7 +216,7 @@ void CgroupV2Subsystem::print_version_specific_info(outputStream* st) {
   jlong swap_limit = limit_from_str(mem_swp_limit_str);
 
   OSContainer::print_container_helper(st, swap_current, "memory_swap_current_in_bytes");
-  OSContainer::print_container_helper(st, swap_limit, "memory_swap_max_limit_in_bytes");
+  OSContainer::print_container_helper(st, swap_limit, "memory_swap_max_limit_in_bytes", true);
 }
 
 char* CgroupV2Controller::construct_path(char* mount_path, char *cgroup_path) {
