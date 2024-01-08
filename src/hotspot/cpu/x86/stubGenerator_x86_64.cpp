@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -5966,7 +5966,7 @@ address generate_avx_ghash_processBlocks() {
     const Register isURL = c_rarg5;// Base64 or URL character set
     __ movl(isMIME, Address(rbp, 2 * wordSize));
 #else
-    const Address  dp_mem(rbp, 6 * wordSize);  // length is on stack on Win64
+    const Address dp_mem(rbp, 6 * wordSize);  // length is on stack on Win64
     const Address isURL_mem(rbp, 7 * wordSize);
     const Register isURL = r10;      // pick the volatile windows register
     const Register dp = r12;
@@ -6188,10 +6188,12 @@ address generate_avx_ghash_processBlocks() {
       // output_size in r13
 
       // Strip pad characters, if any, and adjust length and mask
+      __ addq(length, start_offset);
       __ cmpb(Address(source, length, Address::times_1, -1), '=');
       __ jcc(Assembler::equal, L_padding);
 
       __ BIND(L_donePadding);
+      __ subq(length, start_offset);
 
       // Output size is (64 - output_size), output mask is (all 1s >> output_size).
       __ kmovql(input_mask, rax);
