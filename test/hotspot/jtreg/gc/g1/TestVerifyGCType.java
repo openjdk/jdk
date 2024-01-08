@@ -178,10 +178,7 @@ public class TestVerifyGCType {
 
         basicOpts.add(TriggerGCs.class.getName());
 
-        ProcessBuilder procBuilder =  ProcessTools.createLimitedTestJavaProcessBuilder(basicOpts);
-        OutputAnalyzer analyzer = new OutputAnalyzer(procBuilder.start());
-
-        return analyzer;
+        return ProcessTools.executeLimitedTestJava(basicOpts);
     }
 
     private static void verifyCollection(String name, boolean expectBefore, boolean expectDuring, boolean expectAfter, String data) {

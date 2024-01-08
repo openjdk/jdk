@@ -48,9 +48,7 @@ public class TestPLABAdaptToMinTLABSize {
         Collections.addAll(testArguments, extraArgs);
         testArguments.add("-version");
 
-        ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(testArguments);
-
-        OutputAnalyzer output = new OutputAnalyzer(pb.start());
+        OutputAnalyzer output = ProcessTools.executeTestJava(testArguments);
 
         System.out.println(output.getStderr());
 
