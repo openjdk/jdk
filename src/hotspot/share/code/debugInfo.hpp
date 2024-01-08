@@ -232,7 +232,7 @@ public:
   ScopeValue*                 field_at(int i) const           { ShouldNotReachHere(); return nullptr; }
   int                         field_size()                    { ShouldNotReachHere(); return -1; }
 
-  Handle                      value() const                   { assert(_selected != nullptr, "Should call select() first."); return _selected->value(); }
+  Handle                      value() const;
   void                        set_value(oop value)            { assert(_selected != nullptr, "Should call select() first."); _selected->set_value(value); }
 
   // Serialization of debugging information

@@ -65,15 +65,6 @@ HeapWord* TenuredGeneration::par_allocate(size_t word_size,
   return _the_space->par_allocate(word_size);
 }
 
-size_t TenuredGeneration::block_size(const HeapWord* addr) const {
-  if (addr < _the_space->top()) {
-    return cast_to_oop(addr)->size();
-  } else {
-    assert(addr == _the_space->top(), "non-block head arg to block_size");
-    return _the_space->end() - _the_space->top();
-  }
-}
-
 bool TenuredGeneration::block_is_obj(const HeapWord* addr) const {
   return addr < _the_space  ->top();
 }

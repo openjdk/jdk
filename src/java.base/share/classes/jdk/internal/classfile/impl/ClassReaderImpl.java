@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,35 +31,27 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
 
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.attribute.BootstrapMethodsAttribute;
-import jdk.internal.classfile.constantpool.ClassEntry;
-import jdk.internal.classfile.constantpool.ConstantPoolException;
-import jdk.internal.classfile.constantpool.LoadableConstantEntry;
-import jdk.internal.classfile.constantpool.PoolEntry;
-import jdk.internal.classfile.constantpool.Utf8Entry;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.BootstrapMethodsAttribute;
+import java.lang.classfile.constantpool.*;
 
-import static jdk.internal.classfile.Classfile.TAG_CLASS;
-import static jdk.internal.classfile.Classfile.TAG_CONSTANTDYNAMIC;
-import static jdk.internal.classfile.Classfile.TAG_DOUBLE;
-import static jdk.internal.classfile.Classfile.TAG_FIELDREF;
-import static jdk.internal.classfile.Classfile.TAG_FLOAT;
-import static jdk.internal.classfile.Classfile.TAG_INTEGER;
-import static jdk.internal.classfile.Classfile.TAG_INTERFACEMETHODREF;
-import static jdk.internal.classfile.Classfile.TAG_INVOKEDYNAMIC;
-import static jdk.internal.classfile.Classfile.TAG_LONG;
-import static jdk.internal.classfile.Classfile.TAG_METHODHANDLE;
-import static jdk.internal.classfile.Classfile.TAG_METHODREF;
-import static jdk.internal.classfile.Classfile.TAG_METHODTYPE;
-import static jdk.internal.classfile.Classfile.TAG_MODULE;
-import static jdk.internal.classfile.Classfile.TAG_NAMEANDTYPE;
-import static jdk.internal.classfile.Classfile.TAG_PACKAGE;
-import static jdk.internal.classfile.Classfile.TAG_STRING;
-import static jdk.internal.classfile.Classfile.TAG_UTF8;
-import jdk.internal.classfile.constantpool.MethodHandleEntry;
-import jdk.internal.classfile.constantpool.ModuleEntry;
-import jdk.internal.classfile.constantpool.NameAndTypeEntry;
-import jdk.internal.classfile.constantpool.PackageEntry;
+import static java.lang.classfile.ClassFile.TAG_CLASS;
+import static java.lang.classfile.ClassFile.TAG_CONSTANTDYNAMIC;
+import static java.lang.classfile.ClassFile.TAG_DOUBLE;
+import static java.lang.classfile.ClassFile.TAG_FIELDREF;
+import static java.lang.classfile.ClassFile.TAG_FLOAT;
+import static java.lang.classfile.ClassFile.TAG_INTEGER;
+import static java.lang.classfile.ClassFile.TAG_INTERFACEMETHODREF;
+import static java.lang.classfile.ClassFile.TAG_INVOKEDYNAMIC;
+import static java.lang.classfile.ClassFile.TAG_LONG;
+import static java.lang.classfile.ClassFile.TAG_METHODHANDLE;
+import static java.lang.classfile.ClassFile.TAG_METHODREF;
+import static java.lang.classfile.ClassFile.TAG_METHODTYPE;
+import static java.lang.classfile.ClassFile.TAG_MODULE;
+import static java.lang.classfile.ClassFile.TAG_NAMEANDTYPE;
+import static java.lang.classfile.ClassFile.TAG_PACKAGE;
+import static java.lang.classfile.ClassFile.TAG_STRING;
+import static java.lang.classfile.ClassFile.TAG_UTF8;
 
 public final class ClassReaderImpl
         implements ClassReader {
@@ -76,7 +68,7 @@ public final class ClassReaderImpl
     private final int constantPoolCount;
     private final int[] cpOffset;
 
-    final ClassfileImpl context;
+    final ClassFileImpl context;
     final int interfacesPos;
     final PoolEntry[] cp;
 
@@ -85,13 +77,16 @@ public final class ClassReaderImpl
     private BootstrapMethodsAttribute bootstrapMethodsAttribute;
 
     ClassReaderImpl(byte[] classfileBytes,
-                    ClassfileImpl context) {
+                    ClassFileImpl context) {
         this.buffer = classfileBytes;
         this.classfileLength = classfileBytes.length;
         this.context = context;
         this.attributeMapper = this.context.attributeMapperOption().attributeMapper();
         if (classfileLength < 4 || readInt(0) != 0xCAFEBABE) {
             throw new IllegalArgumentException("Bad magic number");
+        }
+        if (readU2(6) > ClassFile.latestMajorVersion()) {
+            throw new IllegalArgumentException("Unsupported class file version: " + readU2(6));
         }
         int constantPoolCount = readU2(8);
         int[] cpOffset = new int[constantPoolCount];
@@ -133,7 +128,7 @@ public final class ClassReaderImpl
         this.interfacesPos = p;
     }
 
-    public ClassfileImpl context() {
+    public ClassFileImpl context() {
         return context;
     }
 
@@ -194,45 +189,73 @@ public final class ClassReaderImpl
         return bsmEntries().get(index);
     }
 
+    private static IllegalArgumentException outOfBoundsError(IndexOutOfBoundsException cause) {
+        return new IllegalArgumentException("Reading beyond classfile bounds", cause);
+    }
+
     @Override
     public int readU1(int p) {
-        return buffer[p] & 0xFF;
+        try {
+            return buffer[p] & 0xFF;
+        } catch (IndexOutOfBoundsException e) {
+            throw outOfBoundsError(e);
+        }
     }
 
     @Override
     public int readU2(int p) {
-        int b1 = buffer[p] & 0xFF;
-        int b2 = buffer[p + 1] & 0xFF;
-        return (b1 << 8) + b2;
+        try {
+            int b1 = buffer[p] & 0xFF;
+            int b2 = buffer[p + 1] & 0xFF;
+            return (b1 << 8) + b2;
+        } catch (IndexOutOfBoundsException e) {
+            throw outOfBoundsError(e);
+        }
     }
 
     @Override
     public int readS1(int p) {
-        return buffer[p];
+        try {
+            return buffer[p];
+        } catch (IndexOutOfBoundsException e) {
+            throw outOfBoundsError(e);
+        }
     }
 
     @Override
     public int readS2(int p) {
-        int b1 = buffer[p];
-        int b2 = buffer[p + 1] & 0xFF;
-        return (b1 << 8) + b2;
+        try {
+            int b1 = buffer[p];
+            int b2 = buffer[p + 1] & 0xFF;
+            return (b1 << 8) + b2;
+        } catch (IndexOutOfBoundsException e) {
+            throw outOfBoundsError(e);
+        }
     }
 
     @Override
     public int readInt(int p) {
-        int ch1 = buffer[p] & 0xFF;
-        int ch2 = buffer[p + 1] & 0xFF;
-        int ch3 = buffer[p + 2] & 0xFF;
-        int ch4 = buffer[p + 3] & 0xFF;
-        return (ch1 << 24) + (ch2 << 16) + (ch3 << 8) + ch4;
+        try {
+            int ch1 = buffer[p] & 0xFF;
+            int ch2 = buffer[p + 1] & 0xFF;
+            int ch3 = buffer[p + 2] & 0xFF;
+            int ch4 = buffer[p + 3] & 0xFF;
+            return (ch1 << 24) + (ch2 << 16) + (ch3 << 8) + ch4;
+        } catch (IndexOutOfBoundsException e) {
+            throw outOfBoundsError(e);
+        }
     }
 
     @Override
     public long readLong(int p) {
-        return ((long) buffer[p + 0] << 56) + ((long) (buffer[p + 1] & 255) << 48) +
-               ((long) (buffer[p + 2] & 255) << 40) + ((long) (buffer[p + 3] & 255) << 32) +
-               ((long) (buffer[p + 4] & 255) << 24) + ((buffer[p + 5] & 255) << 16) + ((buffer[p + 6] & 255) << 8) +
-               (buffer[p + 7] & 255);
+        try {
+            return ((long) buffer[p + 0] << 56) + ((long) (buffer[p + 1] & 255) << 48) +
+                   ((long) (buffer[p + 2] & 255) << 40) + ((long) (buffer[p + 3] & 255) << 32) +
+                   ((long) (buffer[p + 4] & 255) << 24) + ((buffer[p + 5] & 255) << 16) + ((buffer[p + 6] & 255) << 8) +
+                   (buffer[p + 7] & 255);
+        } catch (IndexOutOfBoundsException e) {
+            throw outOfBoundsError(e);
+        }
     }
 
     @Override
@@ -247,12 +270,20 @@ public final class ClassReaderImpl
 
     @Override
     public byte[] readBytes(int p, int len) {
-        return Arrays.copyOfRange(buffer, p, p + len);
+        try {
+            return Arrays.copyOfRange(buffer, p, p + len);
+        } catch (IndexOutOfBoundsException e) {
+            throw outOfBoundsError(e);
+        }
     }
 
     @Override
     public void copyBytesTo(BufWriter buf, int p, int len) {
-        buf.writeBytes(buffer, p, len);
+        try {
+            buf.writeBytes(buffer, p, len);
+        } catch (IndexOutOfBoundsException e) {
+            throw outOfBoundsError(e);
+        }
     }
 
     BootstrapMethodsAttribute bootstrapMethodsAttribute() {
@@ -451,8 +482,12 @@ public final class ClassReaderImpl
                            int bufWriterOffset,
                            int classReaderOffset,
                            int length) {
-        return Arrays.equals(((BufWriterImpl) bufWriter).elems,
-                             bufWriterOffset, bufWriterOffset + length,
-                             buffer, classReaderOffset, classReaderOffset + length);
+        try {
+            return Arrays.equals(((BufWriterImpl) bufWriter).elems,
+                                 bufWriterOffset, bufWriterOffset + length,
+                                 buffer, classReaderOffset, classReaderOffset + length);
+        } catch (IndexOutOfBoundsException e) {
+            throw outOfBoundsError(e);
+        }
     }
 }

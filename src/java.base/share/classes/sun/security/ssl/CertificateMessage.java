@@ -130,12 +130,16 @@ final class CertificateMessage {
                     byte[] encodedCert = Record.getBytes24(m);
                     listLen -= (3 + encodedCert.length);
                     encodedCerts.add(encodedCert);
-                    if (encodedCerts.size() > SSLConfiguration.maxCertificateChainLength) {
+                    int maxAllowedChainLength = handshakeContext.sslConfig.isClientMode ?
+                            SSLConfiguration.maxInboundServerCertChainLen :
+                            SSLConfiguration.maxInboundClientCertChainLen;
+
+                    if (encodedCerts.size() > maxAllowedChainLength) {
                         throw new SSLProtocolException(
                                 "The certificate chain length ("
                                 + encodedCerts.size()
                                 + ") exceeds the maximum allowed length ("
-                                + SSLConfiguration.maxCertificateChainLength
+                                + maxAllowedChainLength
                                 + ")");
                     }
 
@@ -861,12 +865,16 @@ final class CertificateMessage {
                 SSLExtensions extensions =
                         new SSLExtensions(this, m, enabledExtensions);
                 certList.add(new CertificateEntry(encodedCert, extensions));
-                if (certList.size() > SSLConfiguration.maxCertificateChainLength) {
+                int maxAllowedChainLength = handshakeContext.sslConfig.isClientMode ?
+                        SSLConfiguration.maxInboundServerCertChainLen :
+                        SSLConfiguration.maxInboundClientCertChainLen;
+
+                if (certList.size() > maxAllowedChainLength) {
                     throw new SSLProtocolException(
                             "The certificate chain length ("
                             + certList.size()
                             + ") exceeds the maximum allowed length ("
-                            + SSLConfiguration.maxCertificateChainLength
+                            + maxAllowedChainLength
                             + ")");
                 }
             }

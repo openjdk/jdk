@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,62 +22,46 @@
  */
 
 /* @test
- * @bug 4937962
+ * @bug 4937962 8318150
  * @summary ProxySelector.connectFailed and .select never throw IllegalArgumentException
+ * @run junit NullArguments
  */
 import java.net.*;
-import java.util.List;
 import java.io.IOException;
+import java.util.stream.Stream;
+
+import org.junit.jupiter.api.Assumptions;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 public class NullArguments {
-    public static void main(String[] args) {
-        ProxySelector ps = ProxySelector.getDefault();
-        List p = null;
-        boolean ok = false;
-        if (ps != null) {
-            try {
-                p = ps.select(null);
-            } catch (IllegalArgumentException iae) {
-                System.out.println("OK");
-                ok = true;
-            }
-            if (!ok)
-                throw new RuntimeException("Expected IllegalArgumentException!");
-            URI uri = null;
-            try {
-                uri = new URI("http://java.sun.com");
-            } catch (java.net.URISyntaxException use) {
-                // can't happen
-            }
-            SocketAddress sa = new InetSocketAddress("localhost", 80);
-            IOException ioe = new IOException("dummy IOE");
-            ok = false;
-            try {
-                ps.connectFailed(uri, sa, null);
-            } catch (IllegalArgumentException iae) {
-                System.out.println("OK");
-                ok = true;
-            }
-            if (!ok)
-                throw new RuntimeException("Expected IllegalArgumentException!");
-            ok = false;
-            try {
-                ps.connectFailed(uri, null, ioe);
-            } catch (IllegalArgumentException iae) {
-                System.out.println("OK");
-                ok = true;
-            }
-            if (!ok)
-                throw new RuntimeException("Expected IllegalArgumentException!");
-            ok = false;
-            try {
-                ps.connectFailed(null, sa, ioe);
-            } catch (IllegalArgumentException iae) {
-                System.out.println("OK");
-                ok = true;
-            }
-            if (!ok)
-                throw new RuntimeException("Expected IllegalArgumentException!");
-        }
+
+    public static Stream<ProxySelector> testProxies() {
+        return Stream.of(
+                ProxySelector.getDefault(),
+                ProxySelector.of(new InetSocketAddress(1234)));
+    }
+
+    @ParameterizedTest
+    @MethodSource("testProxies")
+    void testNullArguments(ProxySelector ps) throws URISyntaxException {
+        Assumptions.assumeTrue(ps != null, "Skipping null selector");
+        assertThrows(IllegalArgumentException.class,
+                () -> ps.select(null),
+                "Expected IllegalArgumentException!");
+        URI uri = new URI("http://java.sun.com");
+        SocketAddress sa = new InetSocketAddress("localhost", 80);
+        IOException ioe = new IOException("dummy IOE");
+        assertThrows(IllegalArgumentException.class,
+                () -> ps.connectFailed(uri, sa, null),
+                "Expected IllegalArgumentException!");
+        assertThrows(IllegalArgumentException.class,
+                () -> ps.connectFailed(uri, null, ioe),
+                "Expected IllegalArgumentException!");
+        assertThrows(IllegalArgumentException.class,
+                () -> ps.connectFailed(null, sa, ioe),
+                "Expected IllegalArgumentException!");
     }
 }

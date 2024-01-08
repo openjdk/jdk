@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "classfile/vmClasses.hpp"
+#include "compiler/compilationMemoryStatistic.hpp"
 #include "compiler/compilerDefinitions.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "jfr/support/jfrIntrinsics.hpp"
@@ -33,6 +34,7 @@
 #include "opto/output.hpp"
 #include "opto/runtime.hpp"
 #include "runtime/stubRoutines.hpp"
+#include "runtime/globals_extension.hpp"
 #include "utilities/macros.hpp"
 
 
@@ -62,6 +64,13 @@ const char* C2Compiler::retry_no_superword() {
 void compiler_stubs_init(bool in_compiler_thread);
 
 bool C2Compiler::init_c2_runtime() {
+
+#ifdef ASSERT
+  if (!AlignVector && VerifyAlignVector) {
+    warning("VerifyAlignVector disabled because AlignVector is not enabled.");
+    FLAG_SET_CMDLINE(VerifyAlignVector, false);
+  }
+#endif
 
   // Check assumptions used while running ADLC
   Compile::adlc_verification();
@@ -109,6 +118,8 @@ void C2Compiler::initialize() {
 void C2Compiler::compile_method(ciEnv* env, ciMethod* target, int entry_bci, bool install_code, DirectiveSet* directive) {
   assert(is_initialized(), "Compiler thread must be initialized");
 
+  CompilationMemoryStatisticMark cmsm(directive);
+
   bool subsume_loads = SubsumeLoads;
   bool do_escape_analysis = DoEscapeAnalysis;
   bool do_iterative_escape_analysis = DoEscapeAnalysis;
@@ -118,6 +129,7 @@ void C2Compiler::compile_method(ciEnv* env, ciMethod* target, int entry_bci, boo
   bool do_superword = UseSuperWord;
 
   while (!env->failing()) {
+    ResourceMark rm;
     // Attempt to compile while subsuming loads into machine instructions.
     Options options(subsume_loads,
                     do_escape_analysis,
@@ -818,6 +830,7 @@ bool C2Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   case vmIntrinsics::_notifyJvmtiVThreadMount:
   case vmIntrinsics::_notifyJvmtiVThreadUnmount:
   case vmIntrinsics::_notifyJvmtiVThreadHideFrames:
+  case vmIntrinsics::_notifyJvmtiVThreadDisableSuspend:
 #endif
     break;
 

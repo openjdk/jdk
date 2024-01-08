@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,10 +86,6 @@ public class X509CertSelector implements CertSelector {
 
     private static final ObjectIdentifier ANY_EXTENDED_KEY_USAGE =
         ObjectIdentifier.of(KnownOIDs.anyExtendedKeyUsage);
-
-    static {
-        CertPathHelperImpl.initialize();
-    }
 
     private BigInteger serialNumber;
     private X500Principal issuer;
@@ -1127,14 +1123,6 @@ public class X509CertSelector implements CertSelector {
         }
     }
 
-    // called from CertPathHelper
-    void setPathToNamesInternal(Set<GeneralNameInterface> names) {
-        // set names to non-null dummy value
-        // this breaks getPathToNames()
-        pathToNames = Collections.<List<?>>emptySet();
-        pathToGeneralNames = names;
-    }
-
     /**
      * Adds a name to the pathToNames criterion. The {@code X509Certificate}
      * must not include name constraints that would prohibit building a
@@ -1941,10 +1929,10 @@ public class X509CertSelector implements CertSelector {
         }
 
         if (debug != null) {
-            debug.println("X509CertSelector.match(SN: "
-                + (xcert.getSerialNumber()).toString(16) + "\n  Issuer: "
-                + xcert.getIssuerX500Principal() + "\n  Subject: " + xcert.getSubjectX500Principal()
-                + ")");
+            debug.println("X509CertSelector.match(Serial number: "
+                + Debug.toString(xcert.getSerialNumber())
+                + "\n  Issuer: " + xcert.getIssuerX500Principal() + "\n  Subject: "
+                + xcert.getSubjectX500Principal() + ")");
         }
 
         /* match on X509Certificate */

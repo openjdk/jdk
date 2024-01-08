@@ -183,6 +183,7 @@ public class VThreadInHeapDump {
 
             List<String> extraVMArgs = new ArrayList<>();
             extraVMArgs.add("-Djdk.virtualThreadScheduler.parallelism=1");
+            extraVMArgs.add("-Xlog:heapdump");
             extraVMArgs.addAll(Arrays.asList(extraOptions));
             LingeredApp.startApp(theApp, extraVMArgs.toArray(new String[0]));
 
@@ -252,8 +253,7 @@ public class VThreadInHeapDump {
             // Verify objects from thread stacks are dumped.
             test(snapshot, VThreadInHeapDumpTarg.VThreadMountedReferenced.class);
             test(snapshot, VThreadInHeapDumpTarg.PThreadReferenced.class);
-            // Dumping of unmounted vthreads is not implemented yet
-            //test(snapshot, VThreadInHeapDumpTarg.VThreadUnmountedReferenced.class);
+            test(snapshot, VThreadInHeapDumpTarg.VThreadUnmountedReferenced.class);
         }
 
     }
@@ -261,7 +261,7 @@ public class VThreadInHeapDump {
     private static List<Root> findStackRoot(List<Root> roots, ThreadObject thread) {
         List<Root> result = new ArrayList<>();
         for (Root root: roots) {
-            if (root.getRefererId() == thread.getId()) {
+            if (root.getReferrerId() == thread.getId()) {
                 result.add(root);
             }
         }
@@ -286,7 +286,7 @@ public class VThreadInHeapDump {
             throw new RuntimeException("No root for " + className + " instance");
         }
         log("  root: " + root.getDescription());
-        JavaHeapObject referrer = root.getReferer();
+        JavaHeapObject referrer = root.getReferrer();
         log("  referrer: " + referrer);
     }
 

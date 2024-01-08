@@ -273,8 +273,10 @@ SplashCreateThread(Splash * splash) {
     pthread_attr_t attr;
     int rc;
 
-    pthread_attr_init(&attr);
+    int rslt = pthread_attr_init(&attr);
+    if (rslt != 0) return;
     rc = pthread_create(&thr, &attr, SplashScreenThread, (void *) splash);
+    pthread_attr_destroy(&attr);
 }
 
 void

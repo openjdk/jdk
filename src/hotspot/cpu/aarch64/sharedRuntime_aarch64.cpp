@@ -310,7 +310,7 @@ int SharedRuntime::java_calling_convention(const BasicType *sig_bt,
 
   uint int_args = 0;
   uint fp_args = 0;
-  uint stk_args = 0; // inc by 2 each time
+  uint stk_args = 0;
 
   for (int i = 0; i < total_args_passed; i++) {
     switch (sig_bt[i]) {
@@ -322,8 +322,9 @@ int SharedRuntime::java_calling_convention(const BasicType *sig_bt,
       if (int_args < Argument::n_int_register_parameters_j) {
         regs[i].set1(INT_ArgReg[int_args++]->as_VMReg());
       } else {
+        stk_args = align_up(stk_args, 2);
         regs[i].set1(VMRegImpl::stack2reg(stk_args));
-        stk_args += 2;
+        stk_args += 1;
       }
       break;
     case T_VOID:
@@ -340,6 +341,7 @@ int SharedRuntime::java_calling_convention(const BasicType *sig_bt,
       if (int_args < Argument::n_int_register_parameters_j) {
         regs[i].set2(INT_ArgReg[int_args++]->as_VMReg());
       } else {
+        stk_args = align_up(stk_args, 2);
         regs[i].set2(VMRegImpl::stack2reg(stk_args));
         stk_args += 2;
       }
@@ -348,8 +350,9 @@ int SharedRuntime::java_calling_convention(const BasicType *sig_bt,
       if (fp_args < Argument::n_float_register_parameters_j) {
         regs[i].set1(FP_ArgReg[fp_args++]->as_VMReg());
       } else {
+        stk_args = align_up(stk_args, 2);
         regs[i].set1(VMRegImpl::stack2reg(stk_args));
-        stk_args += 2;
+        stk_args += 1;
       }
       break;
     case T_DOUBLE:
@@ -357,6 +360,7 @@ int SharedRuntime::java_calling_convention(const BasicType *sig_bt,
       if (fp_args < Argument::n_float_register_parameters_j) {
         regs[i].set2(FP_ArgReg[fp_args++]->as_VMReg());
       } else {
+        stk_args = align_up(stk_args, 2);
         regs[i].set2(VMRegImpl::stack2reg(stk_args));
         stk_args += 2;
       }
@@ -367,7 +371,7 @@ int SharedRuntime::java_calling_convention(const BasicType *sig_bt,
     }
   }
 
-  return align_up(stk_args, 2);
+  return stk_args;
 }
 
 // Patch the callers callsite with entry to compiled code if it exists.
@@ -801,9 +805,7 @@ AdapterHandlerEntry* SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm
 
 static int c_calling_convention_priv(const BasicType *sig_bt,
                                          VMRegPair *regs,
-                                         VMRegPair *regs2,
                                          int total_args_passed) {
-  assert(regs2 == nullptr, "not needed on AArch64");
 
 // We return the amount of VMRegImpl stack slots we need to reserve for all
 // the arguments NOT counting out_preserve_stack_slots.
@@ -897,10 +899,9 @@ int SharedRuntime::vector_calling_convention(VMRegPair *regs,
 
 int SharedRuntime::c_calling_convention(const BasicType *sig_bt,
                                          VMRegPair *regs,
-                                         VMRegPair *regs2,
                                          int total_args_passed)
 {
-  int result = c_calling_convention_priv(sig_bt, regs, regs2, total_args_passed);
+  int result = c_calling_convention_priv(sig_bt, regs, total_args_passed);
   guarantee(result >= 0, "Unsupported arguments configuration");
   return result;
 }
@@ -1457,7 +1458,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   // Now figure out where the args must be stored and how much stack space
   // they require.
   int out_arg_slots;
-  out_arg_slots = c_calling_convention_priv(out_sig_bt, out_regs, nullptr, total_c_args);
+  out_arg_slots = c_calling_convention_priv(out_sig_bt, out_regs, total_c_args);
 
   if (out_arg_slots < 0) {
     return nullptr;
@@ -1840,6 +1841,9 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
   intptr_t return_pc = (intptr_t) __ pc();
   oop_maps->add_gc_map(return_pc - start, map);
+
+  // Verify or restore cpu control state after JNI call
+  __ restore_cpu_control_state_after_jni(rscratch1, rscratch2);
 
   // Unpack native results.
   switch (ret_type) {

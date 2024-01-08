@@ -143,8 +143,11 @@ public:
   }
 
   void clear() {
-    _table.unsafe_reset();
-    Atomic::store(&_num_entries, (size_t)0);
+    // Remove all entries.
+    auto always_true = [] (nmethod** value) {
+                         return true;
+                       };
+    clean(always_true);
   }
 
   void iterate_at_safepoint(CodeBlobClosure* blk) {
@@ -182,6 +185,15 @@ public:
       size_t current_size = Atomic::sub(&_num_entries, num_deleted);
       shrink_to_match(current_size);
     }
+  }
+
+  // Removes dead/unlinked entries.
+  void bulk_remove() {
+    auto delete_check = [&] (nmethod** value) {
+      return (*value)->is_unlinked();
+    };
+
+    clean(delete_check);
   }
 
   // Calculate the log2 of the table size we want to shrink to.
@@ -250,6 +262,11 @@ G1CodeRootSet::~G1CodeRootSet() {
 bool G1CodeRootSet::remove(nmethod* method) {
   assert(!_is_iterating, "should not mutate while iterating the table");
   return _table->remove(method);
+}
+
+void G1CodeRootSet::bulk_remove() {
+  assert(!_is_iterating, "should not mutate while iterating the table");
+  _table->bulk_remove();
 }
 
 bool G1CodeRootSet::contains(nmethod* method) {

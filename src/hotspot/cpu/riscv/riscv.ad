@@ -934,6 +934,26 @@ reg_class v11_reg(
     V11, V11_H, V11_J, V11_K
 );
 
+// class for vector register v12
+reg_class v12_reg(
+    V12, V12_H, V12_J, V12_K
+);
+
+// class for vector register v13
+reg_class v13_reg(
+    V13, V13_H, V13_J, V13_K
+);
+
+// class for vector register v14
+reg_class v14_reg(
+    V14, V14_H, V14_J, V14_K
+);
+
+// class for vector register v15
+reg_class v15_reg(
+    V15, V15_H, V15_J, V15_K
+);
+
 // class for condition codes
 reg_class reg_flags(RFLAGS);
 
@@ -981,10 +1001,11 @@ definitions %{
   int_def LOAD_COST            (  300,  3 * DEFAULT_COST);          // load, fpload
   int_def STORE_COST           (  100,  1 * DEFAULT_COST);          // store, fpstore
   int_def XFER_COST            (  300,  3 * DEFAULT_COST);          // mfc, mtc, fcvt, fmove, fcmp
+  int_def FMVX_COST            (  100,  1 * DEFAULT_COST);          // shuffles with no conversion
   int_def BRANCH_COST          (  200,  2 * DEFAULT_COST);          // branch, jmp, call
   int_def IMUL_COST            ( 1000, 10 * DEFAULT_COST);          // imul
-  int_def IDIVSI_COST          ( 3400, 34 * DEFAULT_COST);          // idivdi
-  int_def IDIVDI_COST          ( 6600, 66 * DEFAULT_COST);          // idivsi
+  int_def IDIVSI_COST          ( 3400, 34 * DEFAULT_COST);          // idivsi
+  int_def IDIVDI_COST          ( 6600, 66 * DEFAULT_COST);          // idivdi
   int_def FMUL_SINGLE_COST     (  500,  5 * DEFAULT_COST);          // fmul, fmadd
   int_def FMUL_DOUBLE_COST     (  700,  7 * DEFAULT_COST);          // fmul, fmadd
   int_def FDIV_COST            ( 2000, 20 * DEFAULT_COST);          // fdiv
@@ -1828,10 +1849,8 @@ uint MachUEPNode::size(PhaseRegAlloc* ra_) const
 // Emit exception handler code.
 int HandlerImpl::emit_exception_handler(CodeBuffer& cbuf)
 {
-  // la_patchable t0, #exception_blob_entry_point
+  // auipc t0, #exception_blob_entry_point
   // jr (offset)t0
-  // or
-  // j #exception_blob_entry_point
   // Note that the code buffer's insts_mark is always relative to insts.
   // That's why we must use the macroassembler to generate a handler.
   C2_MacroAssembler _masm(&cbuf);
@@ -1888,13 +1907,14 @@ bool Matcher::match_rule_supported(int opcode) {
       }
       break;
 
+    case Op_ExpandBits:        // fall through
+    case Op_CompressBits:      // fall through
+      guarantee(UseRVV == (MaxVectorSize >= 16), "UseRVV and MaxVectorSize not matched");
     case Op_StrCompressedCopy: // fall through
     case Op_StrInflatedCopy:   // fall through
-    case Op_CountPositives:
-      return UseRVV;
-
+    case Op_CountPositives:    // fall through
     case Op_EncodeISOArray:
-      return UseRVV && SpecialEncodeISOArray;
+      return UseRVV;
 
     case Op_PopCountI:
     case Op_PopCountL:
@@ -2357,6 +2377,11 @@ encode %{
         ciEnv::current()->record_failure("CodeCache is full");
         return;
       }
+    } else if (_method->intrinsic_id() == vmIntrinsicID::_ensureMaterializedForStackWalk) {
+      // The NOP here is purely to ensure that eliding a call to
+      // JVM_EnsureMaterializedForStackWalk doesn't change the code size.
+      __ nop();
+      __ block_comment("call JVM_EnsureMaterializedForStackWalk (elided)");
     } else {
       int method_index = resolved_method_index(cbuf);
       RelocationHolder rspec = _optimized_virtual ? opt_virtual_call_Relocation::spec(method_index)
@@ -2443,7 +2468,15 @@ encode %{
     Register dst_reg = as_Register($dst$$reg);
     Register src1_reg = as_Register($src1$$reg);
     Register src2_reg = as_Register($src2$$reg);
-    __ corrected_idivl(dst_reg, src1_reg, src2_reg, false);
+    __ corrected_idivl(dst_reg, src1_reg, src2_reg, /* want_remainder */ false, /* is_signed */ true);
+  %}
+
+  enc_class riscv_enc_divuw(iRegI dst, iRegI src1, iRegI src2) %{
+    C2_MacroAssembler _masm(&cbuf);
+    Register dst_reg = as_Register($dst$$reg);
+    Register src1_reg = as_Register($src1$$reg);
+    Register src2_reg = as_Register($src2$$reg);
+    __ corrected_idivl(dst_reg, src1_reg, src2_reg, /* want_remainder */ false, /* is_signed */ false);
   %}
 
   enc_class riscv_enc_div(iRegI dst, iRegI src1, iRegI src2) %{
@@ -2451,7 +2484,15 @@ encode %{
     Register dst_reg = as_Register($dst$$reg);
     Register src1_reg = as_Register($src1$$reg);
     Register src2_reg = as_Register($src2$$reg);
-    __ corrected_idivq(dst_reg, src1_reg, src2_reg, false);
+    __ corrected_idivq(dst_reg, src1_reg, src2_reg, /* want_remainder */ false, /* is_signed */ true);
+  %}
+
+  enc_class riscv_enc_divu(iRegI dst, iRegI src1, iRegI src2) %{
+    C2_MacroAssembler _masm(&cbuf);
+    Register dst_reg = as_Register($dst$$reg);
+    Register src1_reg = as_Register($src1$$reg);
+    Register src2_reg = as_Register($src2$$reg);
+    __ corrected_idivq(dst_reg, src1_reg, src2_reg, /* want_remainder */ false, /* is_signed */ false);
   %}
 
   enc_class riscv_enc_modw(iRegI dst, iRegI src1, iRegI src2) %{
@@ -2459,7 +2500,15 @@ encode %{
     Register dst_reg = as_Register($dst$$reg);
     Register src1_reg = as_Register($src1$$reg);
     Register src2_reg = as_Register($src2$$reg);
-    __ corrected_idivl(dst_reg, src1_reg, src2_reg, true);
+    __ corrected_idivl(dst_reg, src1_reg, src2_reg, /* want_remainder */ true, /* is_signed */ true);
+  %}
+
+  enc_class riscv_enc_moduw(iRegI dst, iRegI src1, iRegI src2) %{
+    C2_MacroAssembler _masm(&cbuf);
+    Register dst_reg = as_Register($dst$$reg);
+    Register src1_reg = as_Register($src1$$reg);
+    Register src2_reg = as_Register($src2$$reg);
+    __ corrected_idivl(dst_reg, src1_reg, src2_reg, /* want_remainder */ true, /* is_signed */ false);
   %}
 
   enc_class riscv_enc_mod(iRegI dst, iRegI src1, iRegI src2) %{
@@ -2467,7 +2516,15 @@ encode %{
     Register dst_reg = as_Register($dst$$reg);
     Register src1_reg = as_Register($src1$$reg);
     Register src2_reg = as_Register($src2$$reg);
-    __ corrected_idivq(dst_reg, src1_reg, src2_reg, true);
+    __ corrected_idivq(dst_reg, src1_reg, src2_reg, /* want_remainder */ true, /* is_signed */ true);
+  %}
+
+  enc_class riscv_enc_modu(iRegI dst, iRegI src1, iRegI src2) %{
+    C2_MacroAssembler _masm(&cbuf);
+    Register dst_reg = as_Register($dst$$reg);
+    Register src1_reg = as_Register($src1$$reg);
+    Register src2_reg = as_Register($src2$$reg);
+    __ corrected_idivq(dst_reg, src1_reg, src2_reg, /* want_remainder */ true, /* is_signed */ false);
   %}
 
   enc_class riscv_enc_tail_call(iRegP jump_target) %{
@@ -3469,6 +3526,46 @@ operand vReg_V10()
 operand vReg_V11()
 %{
   constraint(ALLOC_IN_RC(v11_reg));
+  match(VecA);
+  match(vReg);
+  op_cost(0);
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+operand vReg_V12()
+%{
+  constraint(ALLOC_IN_RC(v12_reg));
+  match(VecA);
+  match(vReg);
+  op_cost(0);
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+operand vReg_V13()
+%{
+  constraint(ALLOC_IN_RC(v13_reg));
+  match(VecA);
+  match(vReg);
+  op_cost(0);
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+operand vReg_V14()
+%{
+  constraint(ALLOC_IN_RC(v14_reg));
+  match(VecA);
+  match(vReg);
+  op_cost(0);
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+operand vReg_V15()
+%{
+  constraint(ALLOC_IN_RC(v15_reg));
   match(VecA);
   match(vReg);
   op_cost(0);
@@ -6673,6 +6770,15 @@ instruct divI(iRegINoSp dst, iRegIorL2I src1, iRegIorL2I src2) %{
   ins_pipe(idiv_reg_reg);
 %}
 
+instruct UdivI(iRegINoSp dst, iRegIorL2I src1, iRegIorL2I src2) %{
+  match(Set dst (UDivI src1 src2));
+  ins_cost(IDIVSI_COST);
+  format %{ "divuw  $dst, $src1, $src2\t#@UdivI"%}
+
+  ins_encode(riscv_enc_divuw(dst, src1, src2));
+  ins_pipe(idiv_reg_reg);
+%}
+
 instruct signExtract(iRegINoSp dst, iRegIorL2I src1, immI_31 div1, immI_31 div2) %{
   match(Set dst (URShiftI (RShiftI src1 div1) div2));
   ins_cost(ALU_COST);
@@ -6692,6 +6798,16 @@ instruct divL(iRegLNoSp dst, iRegL src1, iRegL src2) %{
   format %{ "div  $dst, $src1, $src2\t#@divL" %}
 
   ins_encode(riscv_enc_div(dst, src1, src2));
+  ins_pipe(ldiv_reg_reg);
+%}
+
+instruct UdivL(iRegLNoSp dst, iRegL src1, iRegL src2) %{
+  match(Set dst (UDivL src1 src2));
+  ins_cost(IDIVDI_COST);
+
+  format %{ "divu $dst, $src1, $src2\t#@UdivL" %}
+
+  ins_encode(riscv_enc_divu(dst, src1, src2));
   ins_pipe(ldiv_reg_reg);
 %}
 
@@ -6717,6 +6833,15 @@ instruct modI(iRegINoSp dst, iRegIorL2I src1, iRegIorL2I src2) %{
   ins_pipe(ialu_reg_reg);
 %}
 
+instruct UmodI(iRegINoSp dst, iRegIorL2I src1, iRegIorL2I src2) %{
+  match(Set dst (UModI src1 src2));
+  ins_cost(IDIVSI_COST);
+  format %{ "remuw  $dst, $src1, $src2\t#@UmodI" %}
+
+  ins_encode(riscv_enc_moduw(dst, src1, src2));
+  ins_pipe(ialu_reg_reg);
+%}
+
 // Long Remainder
 
 instruct modL(iRegLNoSp dst, iRegL src1, iRegL src2) %{
@@ -6725,6 +6850,15 @@ instruct modL(iRegLNoSp dst, iRegL src1, iRegL src2) %{
   format %{ "rem  $dst, $src1, $src2\t#@modL" %}
 
   ins_encode(riscv_enc_mod(dst, src1, src2));
+  ins_pipe(ialu_reg_reg);
+%}
+
+instruct UmodL(iRegLNoSp dst, iRegL src1, iRegL src2) %{
+  match(Set dst (UModL src1 src2));
+  ins_cost(IDIVDI_COST);
+  format %{ "remu  $dst, $src1, $src2\t#@UmodL" %}
+
+  ins_encode(riscv_enc_modu(dst, src1, src2));
   ins_pipe(ialu_reg_reg);
 %}
 
@@ -7292,7 +7426,7 @@ instruct isInfiniteF_reg_reg(iRegINoSp dst, fRegF src)
   format %{ "isInfinite $dst, $src" %}
   ins_encode %{
     __ fclass_s(as_Register($dst$$reg), as_FloatRegister($src$$reg));
-    __ andi(as_Register($dst$$reg), as_Register($dst$$reg), 0b0010000001);
+    __ andi(as_Register($dst$$reg), as_Register($dst$$reg), Assembler::fclass_mask::inf);
     __ slt(as_Register($dst$$reg), zr, as_Register($dst$$reg));
   %}
 
@@ -7307,7 +7441,7 @@ instruct isInfiniteD_reg_reg(iRegINoSp dst, fRegD src)
   format %{ "isInfinite $dst, $src" %}
   ins_encode %{
     __ fclass_d(as_Register($dst$$reg), as_FloatRegister($src$$reg));
-    __ andi(as_Register($dst$$reg), as_Register($dst$$reg), 0b0010000001);
+    __ andi(as_Register($dst$$reg), as_Register($dst$$reg), Assembler::fclass_mask::inf);
     __ slt(as_Register($dst$$reg), zr, as_Register($dst$$reg));
   %}
 
@@ -7322,7 +7456,7 @@ instruct isFiniteF_reg_reg(iRegINoSp dst, fRegF src)
   format %{ "isFinite $dst, $src" %}
   ins_encode %{
     __ fclass_s(as_Register($dst$$reg), as_FloatRegister($src$$reg));
-    __ andi(as_Register($dst$$reg), as_Register($dst$$reg), 0b0001111110);
+    __ andi(as_Register($dst$$reg), as_Register($dst$$reg), Assembler::fclass_mask::finite);
     __ slt(as_Register($dst$$reg), zr, as_Register($dst$$reg));
   %}
 
@@ -7337,7 +7471,7 @@ instruct isFiniteD_reg_reg(iRegINoSp dst, fRegD src)
   format %{ "isFinite $dst, $src" %}
   ins_encode %{
     __ fclass_d(as_Register($dst$$reg), as_FloatRegister($src$$reg));
-    __ andi(as_Register($dst$$reg), as_Register($dst$$reg), 0b0001111110);
+    __ andi(as_Register($dst$$reg), as_Register($dst$$reg), Assembler::fclass_mask::finite);
     __ slt(as_Register($dst$$reg), zr, as_Register($dst$$reg));
   %}
 
@@ -7502,6 +7636,50 @@ instruct roundD_reg(fRegD dst, fRegD src, immI rmode, iRegLNoSp tmp1, iRegLNoSp 
   ins_encode %{
     __ round_double_mode(as_FloatRegister($dst$$reg),
                as_FloatRegister($src$$reg), $rmode$$constant, $tmp1$$Register, $tmp2$$Register, $tmp3$$Register);
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+// Copysign and signum intrinsics
+
+instruct copySignD_reg(fRegD dst, fRegD src1, fRegD src2, immD zero) %{
+  match(Set dst (CopySignD src1 (Binary src2 zero)));
+  format %{ "CopySignD  $dst $src1 $src2" %}
+  ins_encode %{
+    FloatRegister dst = as_FloatRegister($dst$$reg),
+                  src1 = as_FloatRegister($src1$$reg),
+                  src2 = as_FloatRegister($src2$$reg);
+    __ fsgnj_d(dst, src1, src2);
+  %}
+  ins_pipe(fp_dop_reg_reg_d);
+%}
+
+instruct copySignF_reg(fRegF dst, fRegF src1, fRegF src2) %{
+  match(Set dst (CopySignF src1 src2));
+  format %{ "CopySignF  $dst $src1 $src2" %}
+  ins_encode %{
+    FloatRegister dst = as_FloatRegister($dst$$reg),
+                  src1 = as_FloatRegister($src1$$reg),
+                  src2 = as_FloatRegister($src2$$reg);
+    __ fsgnj_s(dst, src1, src2);
+  %}
+  ins_pipe(fp_dop_reg_reg_s);
+%}
+
+instruct signumD_reg(fRegD dst, immD zero, fRegD one) %{
+  match(Set dst (SignumD dst (Binary zero one)));
+  format %{ "signumD  $dst, $dst" %}
+  ins_encode %{
+    __ signum_fp(as_FloatRegister($dst$$reg), as_FloatRegister($one$$reg), true /* is_double */);
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct signumF_reg(fRegF dst, immF zero, fRegF one) %{
+  match(Set dst (SignumF dst (Binary zero one)));
+  format %{ "signumF  $dst, $dst" %}
+  ins_encode %{
+    __ signum_fp(as_FloatRegister($dst$$reg), as_FloatRegister($one$$reg), false /* is_double */);
   %}
   ins_pipe(pipe_class_default);
 %}
@@ -8240,6 +8418,34 @@ instruct convN2I(iRegINoSp dst, iRegN src)
   ins_pipe(ialu_reg);
 %}
 
+instruct round_double_reg(iRegLNoSp dst, fRegD src, fRegD ftmp) %{
+  match(Set dst (RoundD src));
+
+  ins_cost(XFER_COST + BRANCH_COST);
+  effect(TEMP ftmp);
+  format %{ "java_round_double $dst, $src\t#@round_double_reg" %}
+
+  ins_encode %{
+    __ java_round_double($dst$$Register, as_FloatRegister($src$$reg), as_FloatRegister($ftmp$$reg));
+  %}
+
+  ins_pipe(pipe_slow);
+%}
+
+instruct round_float_reg(iRegINoSp dst, fRegF src, fRegF ftmp) %{
+  match(Set dst (RoundF src));
+
+  ins_cost(XFER_COST + BRANCH_COST);
+  effect(TEMP ftmp);
+  format %{ "java_round_float $dst, $src\t#@round_float_reg" %}
+
+  ins_encode %{
+    __ java_round_float($dst$$Register, as_FloatRegister($src$$reg), as_FloatRegister($ftmp$$reg));
+  %}
+
+  ins_pipe(pipe_slow);
+%}
+
 // Convert oop pointer into compressed form
 instruct encodeHeapOop(iRegNNoSp dst, iRegP src) %{
   match(Set dst (EncodeP src));
@@ -8469,9 +8675,9 @@ instruct MoveF2I_reg_reg(iRegINoSp dst, fRegF src) %{
 
   effect(DEF dst, USE src);
 
-  ins_cost(XFER_COST);
+  ins_cost(FMVX_COST);
 
-  format %{ "fmv.x.w  $dst, $src\t#@MoveL2D_reg_stack" %}
+  format %{ "fmv.x.w  $dst, $src\t#@MoveF2I_reg_reg" %}
 
   ins_encode %{
     __ fmv_x_w(as_Register($dst$$reg), as_FloatRegister($src$$reg));
@@ -8487,7 +8693,7 @@ instruct MoveI2F_reg_reg(fRegF dst, iRegI src) %{
 
   effect(DEF dst, USE src);
 
-  ins_cost(XFER_COST);
+  ins_cost(FMVX_COST);
 
   format %{ "fmv.w.x  $dst, $src\t#@MoveI2F_reg_reg" %}
 
@@ -8505,7 +8711,7 @@ instruct MoveD2L_reg_reg(iRegLNoSp dst, fRegD src) %{
 
   effect(DEF dst, USE src);
 
-  ins_cost(XFER_COST);
+  ins_cost(FMVX_COST);
 
   format %{ "fmv.x.d $dst, $src\t#@MoveD2L_reg_reg" %}
 
@@ -8523,9 +8729,9 @@ instruct MoveL2D_reg_reg(fRegD dst, iRegL src) %{
 
   effect(DEF dst, USE src);
 
-  ins_cost(XFER_COST);
+  ins_cost(FMVX_COST);
 
-  format %{ "fmv.d.x  $dst, $src\t#@MoveD2L_reg_reg" %}
+  format %{ "fmv.d.x  $dst, $src\t#@MoveL2D_reg_reg" %}
 
   ins_encode %{
     __ fmv_d_x(as_FloatRegister($dst$$reg), as_Register($src$$reg));
@@ -8546,7 +8752,8 @@ instruct cmpF3_reg_reg(iRegINoSp dst, fRegF op1, fRegF op2)
   format %{ "flt.s  $dst, $op2, $op1\t#@cmpF3_reg_reg\n\t"
             "bgtz   $dst, done\n\t"
             "feq.s  $dst, $op1, $op2\n\t"
-            "addi   $dst, $dst, -1\t#@cmpF3_reg_reg"
+            "addi   $dst, $dst, -1\n\t"
+            "done:"
   %}
 
   ins_encode %{
@@ -8566,7 +8773,8 @@ instruct cmpD3_reg_reg(iRegINoSp dst, fRegD op1, fRegD op2)
   format %{ "flt.d  $dst, $op2, $op1\t#@cmpD3_reg_reg\n\t"
             "bgtz   $dst, done\n\t"
             "feq.d  $dst, $op1, $op2\n\t"
-            "addi   $dst, $dst, -1\t#@cmpD3_reg_reg"
+            "addi   $dst, $dst, -1\n\t"
+            "done:"
   %}
 
   ins_encode %{
@@ -8584,11 +8792,50 @@ instruct cmpL3_reg_reg(iRegINoSp dst, iRegL op1, iRegL op2)
   ins_cost(ALU_COST * 3 + BRANCH_COST);
   format %{ "slt   $dst, $op2, $op1\t#@cmpL3_reg_reg\n\t"
             "bnez  $dst, done\n\t"
-            "slt  $dst, $op1, $op2\n\t"
-            "neg   $dst, $dst\t#@cmpL3_reg_reg"
+            "slt   $dst, $op1, $op2\n\t"
+            "neg   $dst, $dst\n\t"
+            "done:"
   %}
   ins_encode %{
     __ cmp_l2i(t0, as_Register($op1$$reg), as_Register($op2$$reg));
+    __ mv(as_Register($dst$$reg), t0);
+  %}
+
+  ins_pipe(pipe_class_default);
+%}
+
+instruct cmpUL3_reg_reg(iRegINoSp dst, iRegL op1, iRegL op2)
+%{
+  match(Set dst (CmpUL3 op1 op2));
+
+  ins_cost(ALU_COST * 3 + BRANCH_COST);
+  format %{ "sltu  $dst, $op2, $op1\t#@cmpUL3_reg_reg\n\t"
+            "bnez  $dst, done\n\t"
+            "sltu  $dst, $op1, $op2\n\t"
+            "neg   $dst, $dst\n\t"
+            "done:"
+  %}
+  ins_encode %{
+    __ cmp_ul2i(t0, as_Register($op1$$reg), as_Register($op2$$reg));
+    __ mv(as_Register($dst$$reg), t0);
+  %}
+
+  ins_pipe(pipe_class_default);
+%}
+
+instruct cmpU3_reg_reg(iRegINoSp dst, iRegI op1, iRegI op2)
+%{
+  match(Set dst (CmpU3 op1 op2));
+
+  ins_cost(ALU_COST * 3 + BRANCH_COST);
+  format %{ "sltu  $dst, $op2, $op1\t#@cmpU3_reg_reg\n\t"
+            "bnez  $dst, done\n\t"
+            "sltu  $dst, $op1, $op2\n\t"
+            "neg   $dst, $dst\n\t"
+            "done:"
+  %}
+  ins_encode %{
+    __ cmp_uw2i(t0, as_Register($op1$$reg), as_Register($op2$$reg));
     __ mv(as_Register($dst$$reg), t0);
   %}
 
@@ -8730,12 +8977,12 @@ instruct minI_rReg(iRegINoSp dst, iRegI src1, iRegI src2)
 
   ins_cost(BRANCH_COST + ALU_COST * 2);
   format %{
-    "ble $src1, $src2, Lsrc1.\t#@minI_rReg\n\t"
+    "ble $src1, $src2, Lsrc1\t#@minI_rReg\n\t"
     "mv $dst, $src2\n\t"
     "j Ldone\n\t"
-    "bind Lsrc1\n\t"
+    "Lsrc1:\n\t"
     "mv $dst, $src1\n\t"
-    "bind\t#@minI_rReg"
+    "Ldone:"
   %}
 
   ins_encode %{
@@ -8762,9 +9009,9 @@ instruct maxI_rReg(iRegINoSp dst, iRegI src1, iRegI src2)
     "bge $src1, $src2, Lsrc1\t#@maxI_rReg\n\t"
     "mv $dst, $src2\n\t"
     "j Ldone\n\t"
-    "bind Lsrc1\n\t"
+    "Lsrc1:\n\t"
     "mv $dst, $src1\n\t"
-    "bind\t#@maxI_rReg"
+    "Ldone:"
   %}
 
   ins_encode %{
@@ -10153,6 +10400,26 @@ instruct array_equalsC(iRegP_R11 ary1, iRegP_R12 ary2, iRegI_R10 result,
   ins_pipe(pipe_class_memory);
 %}
 
+// fast ArraysSupport.vectorizedHashCode
+instruct arrays_hashcode(iRegP_R11 ary, iRegI_R12 cnt, iRegI_R10 result, immI basic_type,
+                         iRegLNoSp tmp1, iRegLNoSp tmp2,
+                         iRegLNoSp tmp3, iRegLNoSp tmp4,
+                         iRegLNoSp tmp5, iRegLNoSp tmp6, rFlagsReg cr)
+%{
+  match(Set result (VectorizedHashCode (Binary ary cnt) (Binary result basic_type)));
+  effect(TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4, TEMP tmp5, TEMP tmp6,
+         USE_KILL ary, USE_KILL cnt, USE basic_type, KILL cr);
+
+  format %{ "Array HashCode array[] $ary,$cnt,$result,$basic_type -> $result   // KILL all" %}
+  ins_encode %{
+    __ arrays_hashcode($ary$$Register, $cnt$$Register, $result$$Register,
+                       $tmp1$$Register, $tmp2$$Register, $tmp3$$Register,
+                       $tmp4$$Register, $tmp5$$Register, $tmp6$$Register,
+                       (BasicType)$basic_type$$constant);
+  %}
+  ins_pipe(pipe_class_memory);
+%}
+
 // ============================================================================
 // Safepoint Instructions
 
@@ -10191,16 +10458,16 @@ instruct tlsLoadP(javaThread_RegP dst)
 
 // inlined locking and unlocking
 // using t1 as the 'flag' register to bridge the BoolNode producers and consumers
-instruct cmpFastLock(rFlagsReg cr, iRegP object, iRegP box, iRegPNoSp tmp1, iRegPNoSp tmp2)
+instruct cmpFastLock(rFlagsReg cr, iRegP object, iRegP box, iRegPNoSp tmp1, iRegPNoSp tmp2, iRegPNoSp tmp3)
 %{
   match(Set cr (FastLock object box));
-  effect(TEMP tmp1, TEMP tmp2);
+  effect(TEMP tmp1, TEMP tmp2, TEMP tmp3);
 
   ins_cost(LOAD_COST * 2 + STORE_COST * 3 + ALU_COST * 6 + BRANCH_COST * 3);
-  format %{ "fastlock $object,$box\t! kills $tmp1,$tmp2, #@cmpFastLock" %}
+  format %{ "fastlock $object,$box\t! kills $tmp1,$tmp2,$tmp3, #@cmpFastLock" %}
 
   ins_encode %{
-    __ fast_lock($object$$Register, $box$$Register, $tmp1$$Register, $tmp2$$Register);
+    __ fast_lock($object$$Register, $box$$Register, $tmp1$$Register, $tmp2$$Register, $tmp3$$Register);
   %}
 
   ins_pipe(pipe_serial);

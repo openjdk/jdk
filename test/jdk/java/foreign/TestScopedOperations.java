@@ -23,12 +23,11 @@
 
 /*
  * @test
- * @enablePreview
- * @requires jdk.foreign.linker != "UNSUPPORTED"
  * @run testng/othervm --enable-native-access=ALL-UNNAMED TestScopedOperations
  */
 
 import java.lang.foreign.Arena;
+import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
 
@@ -122,21 +121,23 @@ public class TestScopedOperations {
         ScopedOperation.ofScope(a -> a.allocate(1), "Arena::allocate/size");
         ScopedOperation.ofScope(a -> a.allocate(1, 1), "Arena::allocate/size/align");
         ScopedOperation.ofScope(a -> a.allocate(JAVA_BYTE), "Arena::allocate/layout");
-        ScopedOperation.ofScope(a -> a.allocate(JAVA_BYTE, (byte) 0), "Arena::allocate/byte");
-        ScopedOperation.ofScope(a -> a.allocate(ValueLayout.JAVA_CHAR, (char) 0), "Arena::allocate/char");
-        ScopedOperation.ofScope(a -> a.allocate(ValueLayout.JAVA_SHORT, (short) 0), "Arena::allocate/short");
-        ScopedOperation.ofScope(a -> a.allocate(ValueLayout.JAVA_INT, 0), "Arena::allocate/int");
-        ScopedOperation.ofScope(a -> a.allocate(ValueLayout.JAVA_FLOAT, 0f), "Arena::allocate/float");
-        ScopedOperation.ofScope(a -> a.allocate(ValueLayout.JAVA_LONG, 0L), "Arena::allocate/long");
-        ScopedOperation.ofScope(a -> a.allocate(ValueLayout.JAVA_DOUBLE, 0d), "Arena::allocate/double");
-        ScopedOperation.ofScope(a -> a.allocateArray(JAVA_BYTE, 1L), "Arena::allocateArray/size");
-        ScopedOperation.ofScope(a -> a.allocateArray(JAVA_BYTE, new byte[]{0}), "Arena::allocateArray/byte");
-        ScopedOperation.ofScope(a -> a.allocateArray(ValueLayout.JAVA_CHAR, new char[]{0}), "Arena::allocateArray/char");
-        ScopedOperation.ofScope(a -> a.allocateArray(ValueLayout.JAVA_SHORT, new short[]{0}), "Arena::allocateArray/short");
-        ScopedOperation.ofScope(a -> a.allocateArray(ValueLayout.JAVA_INT, new int[]{0}), "Arena::allocateArray/int");
-        ScopedOperation.ofScope(a -> a.allocateArray(ValueLayout.JAVA_FLOAT, new float[]{0}), "Arena::allocateArray/float");
-        ScopedOperation.ofScope(a -> a.allocateArray(ValueLayout.JAVA_LONG, new long[]{0}), "Arena::allocateArray/long");
-        ScopedOperation.ofScope(a -> a.allocateArray(ValueLayout.JAVA_DOUBLE, new double[]{0}), "Arena::allocateArray/double");
+        ScopedOperation.ofScope(a -> a.allocateFrom(JAVA_BYTE, (byte) 0), "Arena::allocate/byte");
+        ScopedOperation.ofScope(a -> a.allocateFrom(ValueLayout.JAVA_CHAR, (char) 0), "Arena::allocate/char");
+        ScopedOperation.ofScope(a -> a.allocateFrom(ValueLayout.JAVA_SHORT, (short) 0), "Arena::allocate/short");
+        ScopedOperation.ofScope(a -> a.allocateFrom(ValueLayout.JAVA_INT, 0), "Arena::allocate/int");
+        ScopedOperation.ofScope(a -> a.allocateFrom(ValueLayout.JAVA_FLOAT, 0f), "Arena::allocate/float");
+        ScopedOperation.ofScope(a -> a.allocateFrom(ValueLayout.JAVA_LONG, 0L), "Arena::allocate/long");
+        ScopedOperation.ofScope(a -> a.allocateFrom(ValueLayout.JAVA_DOUBLE, 0d), "Arena::allocate/double");
+        ScopedOperation.ofScope(a -> a.allocate(JAVA_BYTE, 1L), "Arena::allocate/size");
+        ScopedOperation.ofScope(a -> a.allocateFrom(JAVA_BYTE, new byte[]{0}), "Arena::allocateFrom/byte");
+        ScopedOperation.ofScope(a -> a.allocateFrom(ValueLayout.JAVA_CHAR, new char[]{0}), "Arena::allocateFrom/char");
+        ScopedOperation.ofScope(a -> a.allocateFrom(ValueLayout.JAVA_SHORT, new short[]{0}), "Arena::allocateFrom/short");
+        ScopedOperation.ofScope(a -> a.allocateFrom(ValueLayout.JAVA_INT, new int[]{0}), "Arena::allocateFrom/int");
+        ScopedOperation.ofScope(a -> a.allocateFrom(ValueLayout.JAVA_FLOAT, new float[]{0}), "Arena::allocateFrom/float");
+        ScopedOperation.ofScope(a -> a.allocateFrom(ValueLayout.JAVA_LONG, new long[]{0}), "Arena::allocateFrom/long");
+        ScopedOperation.ofScope(a -> a.allocateFrom(ValueLayout.JAVA_DOUBLE, new double[]{0}), "Arena::allocateFrom/double");
+        var source = MemorySegment.ofArray(new byte[]{});
+        ScopedOperation.ofScope(a -> a.allocateFrom(ValueLayout.JAVA_INT, source, JAVA_BYTE, 0, 1), "Arena::allocateFrom/5arg");
     };
 
     @DataProvider(name = "scopedOperations")
