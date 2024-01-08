@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -381,7 +381,7 @@ final class CertificateMessage {
                 if (shc.sslConfig.clientAuthType !=
                         ClientAuthType.CLIENT_AUTH_REQUESTED) {
                     // unexpected or require client authentication
-                    throw shc.conContext.fatal(Alert.BAD_CERTIFICATE,
+                    throw shc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
                         "Empty server certificate chain");
                 } else {
                     return;
@@ -1154,7 +1154,7 @@ final class CertificateMessage {
                 shc.handshakeConsumers.remove(
                         SSLHandshake.CERTIFICATE_VERIFY.id);
                 if (shc.sslConfig.clientAuthType == CLIENT_AUTH_REQUIRED) {
-                    throw shc.conContext.fatal(Alert.BAD_CERTIFICATE,
+                    throw shc.conContext.fatal(Alert.CERTIFICATE_REQUIRED,
                         "Empty client certificate chain");
                 } else {
                     // optional client authentication
@@ -1178,7 +1178,7 @@ final class CertificateMessage {
                 T13CertificateMessage certificateMessage )throws IOException {
             if (certificateMessage.certEntries == null ||
                     certificateMessage.certEntries.isEmpty()) {
-                throw chc.conContext.fatal(Alert.BAD_CERTIFICATE,
+                throw chc.conContext.fatal(Alert.DECODE_ERROR,
                     "Empty server certificate chain");
             }
 
