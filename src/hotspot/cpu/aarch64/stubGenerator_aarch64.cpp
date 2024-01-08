@@ -54,6 +54,7 @@
 #include "utilities/align.hpp"
 #include "utilities/checkedCast.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/intpow.hpp"
 #include "utilities/powerOfTwo.hpp"
 #ifdef COMPILER2
 #include "opto/runtime.hpp"
@@ -5311,6 +5312,205 @@ class StubGenerator: public StubCodeGenerator {
     return entry;
   }
 
+  // result = r0 - return value. Contains initial hashcode value on entry.
+  // ary = r1 - array address
+  // cnt = r2 - elements count
+  // Clobbers: v0-v13, rscratch1, rscratch2
+  address generate_large_arrays_hashcode(BasicType eltype) {
+    Register result = r0, ary = r1, cnt = r2;
+    FloatRegister vdata0 = v3, vdata1 = v2, vdata2 = v1, vdata3 = v0;
+    FloatRegister vhalf0 = v13, vhalf1 = v12, vhalf2 = v11, vhalf3 = v10;
+    FloatRegister vmul0 = v4, vmul1 = v5, vmul2 = v6, vmul3 = v7;
+    FloatRegister vpow = v8;  // <31^(4*k+3), ..., 31^(4*k+0)>
+    FloatRegister vpowm = v9; // multiple of loop factor power of 31,
+                              // i.e. <31^16, ..., 31^16> for ints
+
+    assert_different_registers(ary, cnt, result);
+    assert_different_registers(vdata0, vdata1, vdata2, vdata3, vhalf0, vhalf1, vhalf2, vhalf3,
+                               vmul0, vmul1, vmul2, vmul3, vpow, vpowm);
+
+    Label LOOP;
+
+    const size_t loop_factor = eltype == T_BOOLEAN || eltype == T_BYTE ? 32
+                               : eltype == T_CHAR || eltype == T_SHORT ? 16
+                               : eltype == T_INT                       ? 16
+                                                                       : 0;
+    guarantee(loop_factor, "unsupported eltype");
+
+    __ align(CodeEntryAlignment);
+
+    auto unreachable_mark_name = [this](BasicType eltype) -> const char * {
+      __ should_not_reach_here();
+      static const char *mark_name = "_large_arrays_hashcode_incorrect_type";
+      return mark_name;
+    };
+    StubCodeMark mark(this, "StubRoutines",
+                      eltype == T_BOOLEAN ? "_large_arrays_hashcode_boolean"
+                      : eltype == T_BYTE  ? "_large_arrays_hashcode_byte"
+                      : eltype == T_CHAR  ? "_large_arrays_hashcode_char"
+                      : eltype == T_SHORT ? "_large_arrays_hashcode_short"
+                      : eltype == T_INT   ? "_large_arrays_hashcode_int"
+                                          : unreachable_mark_name(eltype));
+
+    address entry = __ pc();
+    __ enter();
+
+    size_t bytes_per_iteration = loop_factor * type2aelembytes(eltype);
+    Assembler::SIMD_Arrangement load_arrangement =
+        eltype == T_BOOLEAN || eltype == T_BYTE ? Assembler::T8B
+        : eltype == T_CHAR || eltype == T_SHORT ? Assembler::T4H
+        : eltype == T_INT                       ? Assembler::T4S
+                                                : Assembler::INVALID_ARRANGEMENT;
+    guarantee(load_arrangement != Assembler::INVALID_ARRANGEMENT, "invalid arrangement");
+
+    if (eltype == T_INT || eltype == T_CHAR || eltype == T_SHORT) {
+      // 31^16
+      __ movw(rscratch1, intpow<uint32_t, 31, 16>::value);
+      __ dup(vpowm, Assembler::T4S, rscratch1);
+    } else if (eltype == T_BOOLEAN || eltype == T_BYTE) {
+      // 31^4 - multiplier between lower and upper parts of a register
+      __ movw(rscratch1, intpow<uint32_t, 31, 4>::value);
+      __ dup(vpow, Assembler::T4S, rscratch1);
+      // 31^28 - remainder of the iteraion multiplier, 28 = 32 - 4
+      __ movw(rscratch1, intpow<uint32_t, 31, 28>::value);
+      __ dup(vpowm, Assembler::T4S, rscratch1);
+    } else {
+      __ should_not_reach_here();
+    }
+
+    __ mov(vmul3, Assembler::T16B, 0);
+    __ mov(vmul2, Assembler::T16B, 0);
+    __ mov(vmul1, Assembler::T16B, 0);
+    __ mov(vmul0, Assembler::T16B, 0);
+    __ mov(vmul0, Assembler::S, 3, result);
+
+    __ bind(LOOP);
+
+    __ mulv(vmul3, Assembler::T4S, vmul3, vpowm);
+    __ mulv(vmul2, Assembler::T4S, vmul2, vpowm);
+    __ mulv(vmul1, Assembler::T4S, vmul1, vpowm);
+    __ mulv(vmul0, Assembler::T4S, vmul0, vpowm);
+
+    __ ld1(vdata3, vdata2, vdata1, vdata0, load_arrangement,
+           Address(__ post(ary, bytes_per_iteration)));
+
+    if (eltype == T_BOOLEAN || eltype == T_BYTE) {
+      // Extend 8B to 8H to be able to use vector multiply
+      // instructions
+      assert(load_arrangement == Assembler::T8B, "expected to extend 8B to 8H");
+      if (is_signed_subword_type(eltype)) {
+        __ sxtl(vdata3, Assembler::T8H, vdata3, load_arrangement);
+        __ sxtl(vdata2, Assembler::T8H, vdata2, load_arrangement);
+        __ sxtl(vdata1, Assembler::T8H, vdata1, load_arrangement);
+        __ sxtl(vdata0, Assembler::T8H, vdata0, load_arrangement);
+      } else {
+        __ uxtl(vdata3, Assembler::T8H, vdata3, load_arrangement);
+        __ uxtl(vdata2, Assembler::T8H, vdata2, load_arrangement);
+        __ uxtl(vdata1, Assembler::T8H, vdata1, load_arrangement);
+        __ uxtl(vdata0, Assembler::T8H, vdata0, load_arrangement);
+      }
+    }
+
+    if (load_arrangement == Assembler::T4S) {
+      __ addv(vmul3, load_arrangement, vmul3, vdata3);
+      __ addv(vmul2, load_arrangement, vmul2, vdata2);
+      __ addv(vmul1, load_arrangement, vmul1, vdata1);
+      __ addv(vmul0, load_arrangement, vmul0, vdata0);
+    } else if (load_arrangement == Assembler::T4H || load_arrangement == Assembler::T8B) {
+      assert(is_subword_type(eltype), "subword type expected");
+      if (is_signed_subword_type(eltype)) {
+        __ sxtl(vhalf3, Assembler::T4S, vdata3, Assembler::T4H);
+        __ sxtl(vhalf2, Assembler::T4S, vdata2, Assembler::T4H);
+        __ sxtl(vhalf1, Assembler::T4S, vdata1, Assembler::T4H);
+        __ sxtl(vhalf0, Assembler::T4S, vdata0, Assembler::T4H);
+      } else {
+        __ uxtl(vhalf3, Assembler::T4S, vdata3, Assembler::T4H);
+        __ uxtl(vhalf2, Assembler::T4S, vdata2, Assembler::T4H);
+        __ uxtl(vhalf1, Assembler::T4S, vdata1, Assembler::T4H);
+        __ uxtl(vhalf0, Assembler::T4S, vdata0, Assembler::T4H);
+      }
+      __ addv(vmul3, Assembler::T4S, vmul3, vhalf3);
+      __ addv(vmul2, Assembler::T4S, vmul2, vhalf2);
+      __ addv(vmul1, Assembler::T4S, vmul1, vhalf1);
+      __ addv(vmul0, Assembler::T4S, vmul0, vhalf0);
+    } else {
+      __ should_not_reach_here();
+    }
+
+    // Process the upper half of a vector
+    if (load_arrangement == Assembler::T8B) {
+      __ mulv(vmul3, Assembler::T4S, vmul3, vpow);
+      __ mulv(vmul2, Assembler::T4S, vmul2, vpow);
+      __ mulv(vmul1, Assembler::T4S, vmul1, vpow);
+      __ mulv(vmul0, Assembler::T4S, vmul0, vpow);
+      if (is_signed_subword_type(eltype)) {
+        __ sshll2(vhalf3, Assembler::T4S, vdata3, Assembler::T8H, 0);
+        __ sshll2(vhalf2, Assembler::T4S, vdata2, Assembler::T8H, 0);
+        __ sshll2(vhalf1, Assembler::T4S, vdata1, Assembler::T8H, 0);
+        __ sshll2(vhalf0, Assembler::T4S, vdata0, Assembler::T8H, 0);
+      } else {
+        __ ushll2(vhalf3, Assembler::T4S, vdata3, Assembler::T8H, 0);
+        __ ushll2(vhalf2, Assembler::T4S, vdata2, Assembler::T8H, 0);
+        __ ushll2(vhalf1, Assembler::T4S, vdata1, Assembler::T8H, 0);
+        __ ushll2(vhalf0, Assembler::T4S, vdata0, Assembler::T8H, 0);
+      }
+      __ addv(vmul3, Assembler::T4S, vmul3, vhalf3);
+      __ addv(vmul2, Assembler::T4S, vmul2, vhalf2);
+      __ addv(vmul1, Assembler::T4S, vmul1, vhalf1);
+      __ addv(vmul0, Assembler::T4S, vmul0, vhalf0);
+    }
+
+    __ subsw(cnt, cnt, loop_factor);
+    __ br(Assembler::HS, LOOP);
+
+    // Put 0-3'th powers of 31 into a single SIMD register together.
+    __ movw(rscratch1, intpow<uint32_t, 31, 3>::value);
+    __ movw(rscratch2, intpow<uint32_t, 31, 2>::value);
+    __ mov(vpow, Assembler::S, 0, rscratch1);
+    __ mov(vpow, Assembler::S, 1, rscratch2);
+    __ movw(rscratch1, intpow<uint32_t, 31, 1>::value);
+    __ movw(rscratch2, intpow<uint32_t, 31, 0>::value);
+    __ mov(vpow, Assembler::S, 2, rscratch1);
+    __ mov(vpow, Assembler::S, 3, rscratch2);
+
+    __ mulv(vmul0, Assembler::T4S, vmul0, vpow);
+    __ addv(vmul0, Assembler::T4S, vmul0);
+    __ umov(result, vmul0, Assembler::S, 0);
+
+    if (eltype == T_INT || eltype == T_SHORT || eltype == T_CHAR) {
+      // 31^4
+      __ movw(rscratch1, intpow<uint32_t, 31, 4>::value);
+    } else {
+      // 31^8 - the algorithm loads 32 elements to 4 registers per
+      // iteration, so 8 = 32 / 4
+      __ movw(rscratch1, intpow<uint32_t, 31, 8>::value);
+    }
+    __ dup(vpowm, Assembler::T4S, rscratch1);
+
+    // <31^7, ... ,31^4> = <31^3, ... ,31^0> * (31^4 or 31^8)
+    __ mulv(vpow, Assembler::T4S, vpow, vpowm);
+    __ mulv(vmul1, Assembler::T4S, vmul1, vpow);
+    __ addv(vmul1, Assembler::T4S, vmul1);
+    __ umov(rscratch1, vmul1, Assembler::S, 0);
+    __ addw(result, result, rscratch1);
+
+    __ mulv(vpow, Assembler::T4S, vpow, vpowm);
+    __ mulv(vmul2, Assembler::T4S, vmul2, vpow);
+    __ addv(vmul2, Assembler::T4S, vmul2);
+    __ umov(rscratch1, vmul2, Assembler::S, 0);
+    __ addw(result, result, rscratch1);
+
+    __ mulv(vpow, Assembler::T4S, vpow, vpowm);
+    __ mulv(vmul3, Assembler::T4S, vmul3, vpow);
+    __ addv(vmul3, Assembler::T4S, vmul3);
+    __ umov(rscratch1, vmul3, Assembler::S, 0);
+    __ addw(result, result, rscratch1);
+
+    __ leave();
+    __ ret(lr);
+    return entry;
+  }
+
   address generate_dsin_dcos(bool isCos) {
     __ align(CodeEntryAlignment);
     StubCodeMark mark(this, "StubRoutines", isCos ? "libmDcos" : "libmDsin");
@@ -8256,6 +8456,13 @@ class StubGenerator: public StubCodeGenerator {
     if (!UseSimpleArrayEquals) {
       StubRoutines::aarch64::_large_array_equals = generate_large_array_equals();
     }
+
+    // arrays_hascode stub for large arrays.
+    StubRoutines::aarch64::_large_arrays_hashcode_boolean = generate_large_arrays_hashcode(T_BOOLEAN);
+    StubRoutines::aarch64::_large_arrays_hashcode_byte = generate_large_arrays_hashcode(T_BYTE);
+    StubRoutines::aarch64::_large_arrays_hashcode_char = generate_large_arrays_hashcode(T_CHAR);
+    StubRoutines::aarch64::_large_arrays_hashcode_int = generate_large_arrays_hashcode(T_INT);
+    StubRoutines::aarch64::_large_arrays_hashcode_short = generate_large_arrays_hashcode(T_SHORT);
 
     // byte_array_inflate stub for large arrays.
     StubRoutines::aarch64::_large_byte_array_inflate = generate_large_byte_array_inflate();
