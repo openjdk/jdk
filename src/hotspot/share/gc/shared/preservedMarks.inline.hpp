@@ -37,7 +37,6 @@ inline bool PreservedMarks::should_preserve_mark(oop obj, markWord m) const {
 
 inline void PreservedMarks::push_if_necessary(oop obj, markWord m) {
   if (should_preserve_mark(obj, m)) {
-    assert(!m.is_marked(), "must not be forwarded");
     PreservedMark elem(obj, m);
     _stack.push(elem);
   }
