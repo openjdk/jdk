@@ -75,6 +75,8 @@ public class SynthTreeUI extends BasicTreeUI
 
     private Icon expandedIconWrapper = new ExpandedIconWrapper();
 
+    private Icon collapsedIconWrapper = new CollapsedIconWrapper();
+
     /**
      *
      * Constructs a {@code SynthTreeUI}.
@@ -97,6 +99,11 @@ public class SynthTreeUI extends BasicTreeUI
     @Override
     public Icon getExpandedIcon() {
         return expandedIconWrapper;
+    }
+
+    @Override
+    public Icon getCollapsedIcon() {
+        return collapsedIconWrapper;
     }
 
     /**
@@ -814,6 +821,43 @@ public class SynthTreeUI extends BasicTreeUI
             }
             else {
                 height = SynthGraphicsUtils.getIconHeight(expandedIcon, context);
+            }
+            return height;
+        }
+    }
+
+    private class CollapsedIconWrapper implements SynthIcon {
+        public void paintIcon(SynthContext context, Graphics g, int x,
+                              int y, int w, int h) {
+            if (context == null) {
+                context = getContext(tree);
+                SynthGraphicsUtils.paintIcon(collapsedIcon, context, g, x, y, w, h);
+            }
+            else {
+                SynthGraphicsUtils.paintIcon(collapsedIcon, context, g, x, y, w, h);
+            }
+        }
+
+        public int getIconWidth(SynthContext context) {
+            int width;
+            if (context == null) {
+                context = getContext(tree);
+                width = SynthGraphicsUtils.getIconWidth(collapsedIcon, context);
+            }
+            else {
+                width = SynthGraphicsUtils.getIconWidth(collapsedIcon, context);
+            }
+            return width;
+        }
+
+        public int getIconHeight(SynthContext context) {
+            int height;
+            if (context == null) {
+                context = getContext(tree);
+                height = SynthGraphicsUtils.getIconHeight(collapsedIcon, context);
+            }
+            else {
+                height = SynthGraphicsUtils.getIconHeight(collapsedIcon, context);
             }
             return height;
         }
