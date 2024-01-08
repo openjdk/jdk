@@ -104,7 +104,7 @@ public final class NonICCFilterTest {
         };
     }
 
-    private static boolean compareImages(BufferedImage destTest, BufferedImage destGold) {
+    private static boolean areImagesEqual(BufferedImage destTest, BufferedImage destGold) {
         for (int x = 0; x < destTest.getWidth(); x++) {
             for (int y = 0; y < destTest.getHeight(); y++) {
                 int rgb1 = destTest.getRGB(x, y);
@@ -113,11 +113,11 @@ public final class NonICCFilterTest {
                     System.err.println("x = " + x + ", y = " + y);
                     System.err.println("rgb1 = " + Integer.toHexString(rgb1));
                     System.err.println("rgb2 = " + Integer.toHexString(rgb2));
-                    return true;
+                    return false;
                 }
             }
         }
-        return false;
+        return true;
     }
 
     public static void main(String[] args) {
@@ -134,7 +134,7 @@ public final class NonICCFilterTest {
         ColorConvertOp gold = new ColorConvertOp(mid, null);
         gold.filter(srcGold, destGold);
 
-        if (compareImages(destTest, destGold)) {
+        if (!areImagesEqual(destTest, destGold)) {
             throw new RuntimeException("Test failed");
         }
     }
