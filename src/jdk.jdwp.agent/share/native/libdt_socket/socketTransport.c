@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -752,7 +752,7 @@ socketTransport_startListening(jdwpTransportEnv* env, const char* address,
 
         if (isEqualIPv6Addr(listenAddr, mappedAny)) {
             for (ai = addrInfo; ai != NULL; ai = ai->ai_next) {
-                if (isEqualIPv6Addr(listenAddr, in6addr_any)) {
+                if (isEqualIPv6Addr(ai, in6addr_any)) {
                     listenAddr = ai;
                     break;
                 }
