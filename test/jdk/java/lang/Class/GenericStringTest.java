@@ -52,13 +52,13 @@ public class GenericStringTest {
                    new PlatformTestCase(intArray.getClass(), "int[][]"),
 
                    new PlatformTestCase(java.lang.Enum.class,
-                                     "public abstract class java.lang.Enum<E extends java.lang.Enum<E>>"),
+                                        "public abstract class java.lang.Enum<E extends java.lang.Enum<E>>"),
                    new PlatformTestCase(java.util.Map.class,
-                                     "public abstract interface java.util.Map<K,V>"),
+                                        "public abstract interface java.util.Map<K,V>"),
                    new PlatformTestCase(java.util.EnumMap.class,
-                                     "public class java.util.EnumMap<K extends java.lang.Enum<K>,V>"),
+                                        "public class java.util.EnumMap<K extends java.lang.Enum<K>,V>"),
                    new PlatformTestCase(java.util.EventListenerProxy.class,
-                                     "public abstract class java.util.EventListenerProxy<T extends java.util.EventListener>"),
+                                        "public abstract class java.util.EventListenerProxy<T extends java.util.EventListener>"),
 
                    // Sealed class
                    new PlatformTestCase(java.lang.ref.Reference.class,
@@ -85,7 +85,17 @@ public class GenericStringTest {
                                      AnInterface.class,
                                      LocalMap.class,
                                      AnEnum.class,
-                                     AnotherEnum.class)) {
+                                     AnotherEnum.class,
+
+                                     SealedRootClass.class,
+                                     SealedRootClass.ChildA.class,
+                                     SealedRootClass.ChildB.class,
+                                     SealedRootClass.ChildB.GrandChildAB.class,
+                                     SealedRootClass.ChildC.class,
+                                     SealedRootClass.ChildC.GrandChildACA.class,
+                                     SealedRootClass.ChildC.GrandChildACB.class,
+                                     SealedRootClass.ChildC.GrandChildACC.class,
+                                     SealedRootClass.ChildC.GrandChildACC.GreatGrandChildACC.class)) {
             failures += checkToGenericString(clazz, clazz.getAnnotation(ExpectedGenericString.class).value());
         }
 
@@ -128,4 +138,39 @@ enum AnEnum {
 @ExpectedGenericString("sealed enum AnotherEnum")
 enum AnotherEnum {
     BAR{};
+}
+
+@ExpectedGenericString("sealed class SealedRootClass")
+sealed class SealedRootClass
+    permits
+    SealedRootClass.ChildA,
+    SealedRootClass.ChildB,
+    SealedRootClass.ChildC {
+
+    @ExpectedGenericString("final class SealedRootClass$ChildA")
+    final class ChildA extends SealedRootClass {}
+
+    @ExpectedGenericString("sealed class SealedRootClass$ChildB")
+    sealed class ChildB extends SealedRootClass permits SealedRootClass.ChildB.GrandChildAB {
+        @ExpectedGenericString("final class SealedRootClass$ChildB$GrandChildAB")
+        final class GrandChildAB extends ChildB {}
+    }
+
+    // Test cases for sealed/non-sealed hierarchies.
+    @ExpectedGenericString("non-sealed class SealedRootClass$ChildC")
+    non-sealed class ChildC extends SealedRootClass {
+        // The subclasses of ChildC do not themselves have to be
+        // sealed, non-sealed, or final.
+        @ExpectedGenericString("class SealedRootClass$ChildC$GrandChildACA")
+        class GrandChildACA extends ChildC {}
+
+        @ExpectedGenericString("final class SealedRootClass$ChildC$GrandChildACB")
+        final class GrandChildACB extends ChildC {}
+
+        @ExpectedGenericString("sealed class SealedRootClass$ChildC$GrandChildACC")
+        sealed class GrandChildACC extends ChildC {
+            @ExpectedGenericString("final class SealedRootClass$ChildC$GrandChildACC$GreatGrandChildACC")
+            final class GreatGrandChildACC extends GrandChildACC {}
+        }
+    }
 }
