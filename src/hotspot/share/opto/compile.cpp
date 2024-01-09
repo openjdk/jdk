@@ -29,9 +29,11 @@
 #include "classfile/javaClasses.hpp"
 #include "code/exceptionHandlerTable.hpp"
 #include "code/nmethod.hpp"
+#include "compiler/compilationFailureInfo.hpp"
 #include "compiler/compilationMemoryStatistic.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/compileLog.hpp"
+#include "compiler/compiler_globals.hpp"
 #include "compiler/disassembler.hpp"
 #include "compiler/oopMap.hpp"
 #include "gc/shared/barrierSet.hpp"
@@ -637,6 +639,7 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
                   _directive(directive),
                   _log(ci_env->log()),
                   _failure_reason(nullptr),
+                  _first_failure_details(nullptr),
                   _intrinsics        (comp_arena(), 0, 0, nullptr),
                   _macro_nodes       (comp_arena(), 8, 0, nullptr),
                   _parse_predicates  (comp_arena(), 8, 0, nullptr),
@@ -926,6 +929,7 @@ Compile::Compile( ciEnv* ci_env,
     _directive(directive),
     _log(ci_env->log()),
     _failure_reason(nullptr),
+    _first_failure_details(nullptr),
     _congraph(nullptr),
     NOT_PRODUCT(_igv_printer(nullptr) COMMA)
     _unique(0),
@@ -988,6 +992,11 @@ Compile::Compile( ciEnv* ci_env,
 
   Code_Gen();
 }
+
+Compile::~Compile() {
+  delete _print_inlining_stream;
+  delete _first_failure_details;
+};
 
 //------------------------------Init-------------------------------------------
 // Prepare for a single compilation
@@ -1056,7 +1065,7 @@ void Compile::Init(bool aliasing) {
   set_has_monitors(false);
 
   if (AllowVectorizeOnDemand) {
-    if (has_method() && (_directive->VectorizeOption || _directive->VectorizeDebugOption)) {
+    if (has_method() && _directive->VectorizeOption) {
       set_do_vector_loop(true);
       NOT_PRODUCT(if (do_vector_loop() && Verbose) {tty->print("Compile::Init: do vectorized loops (SIMD like) for method %s\n",  method()->name()->as_quoted_ascii());})
     } else if (has_method() && method()->name() != 0 &&
@@ -3698,6 +3707,31 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
 
   case Op_LoadVector:
   case Op_StoreVector:
+#ifdef ASSERT
+    // Add VerifyVectorAlignment node between adr and load / store.
+    if (VerifyAlignVector && Matcher::has_match_rule(Op_VerifyVectorAlignment)) {
+      bool must_verify_alignment = n->is_LoadVector() ? n->as_LoadVector()->must_verify_alignment() :
+                                                        n->as_StoreVector()->must_verify_alignment();
+      if (must_verify_alignment) {
+        jlong vector_width = n->is_LoadVector() ? n->as_LoadVector()->memory_size() :
+                                                  n->as_StoreVector()->memory_size();
+        // The memory access should be aligned to the vector width in bytes.
+        // However, the underlying array is possibly less well aligned, but at least
+        // to ObjectAlignmentInBytes. Hence, even if multiple arrays are accessed in
+        // a loop we can expect at least the following alignment:
+        jlong guaranteed_alignment = MIN2(vector_width, (jlong)ObjectAlignmentInBytes);
+        assert(2 <= guaranteed_alignment && guaranteed_alignment <= 64, "alignment must be in range");
+        assert(is_power_of_2(guaranteed_alignment), "alignment must be power of 2");
+        // Create mask from alignment. e.g. 0b1000 -> 0b0111
+        jlong mask = guaranteed_alignment - 1;
+        Node* mask_con = ConLNode::make(mask);
+        VerifyVectorAlignmentNode* va = new VerifyVectorAlignmentNode(n->in(MemNode::Address), mask_con);
+        n->set_req(MemNode::Address, va);
+      }
+    }
+#endif
+    break;
+
   case Op_LoadVectorGather:
   case Op_StoreVectorScatter:
   case Op_LoadVectorGatherMasked:
@@ -4358,6 +4392,9 @@ void Compile::record_failure(const char* reason) {
   if (_failure_reason == nullptr) {
     // Record the first failure reason.
     _failure_reason = reason;
+    if (CaptureBailoutInformation) {
+      _first_failure_details = new CompilationFailureInfo(reason);
+    }
   }
 
   if (!C->failure_reason_is(C2Compiler::retry_no_subsuming_loads())) {

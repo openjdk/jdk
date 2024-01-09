@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -576,12 +576,14 @@ int FileMapInfo::get_module_shared_path_index(Symbol* location) {
   const char* file = ClassLoader::skip_uri_protocol(location->as_C_string());
   for (int i = ClassLoaderExt::app_module_paths_start_index(); i < get_number_of_shared_paths(); i++) {
     SharedClassPathEntry* ent = shared_path(i);
-    assert(ent->in_named_module(), "must be");
-    bool cond = strcmp(file, ent->name()) == 0;
-    log_debug(class, path)("get_module_shared_path_index (%d) %s : %s = %s", i,
-                           location->as_C_string(), ent->name(), cond ? "same" : "different");
-    if (cond) {
-      return i;
+    if (!ent->is_non_existent()) {
+      assert(ent->in_named_module(), "must be");
+      bool cond = strcmp(file, ent->name()) == 0;
+      log_debug(class, path)("get_module_shared_path_index (%d) %s : %s = %s", i,
+                             location->as_C_string(), ent->name(), cond ? "same" : "different");
+      if (cond) {
+        return i;
+      }
     }
   }
 

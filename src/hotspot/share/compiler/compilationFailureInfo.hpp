@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Red Hat, Inc. and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,33 +20,38 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- */
-
-package compiler.lib.ir_framework.driver.irmatching.parser.hotspot;
-
-/**
- * This class represents a writer thread that emits log messages with LogCompilation. It saves and restores a currently
- * parsed {@link LoggedMethod} if a {@link CompilePhaseBlock} was interrupted before reaching the block end tag.
  *
- * @see LoggedMethod
- * @see CompilePhaseBlock
  */
-class WriterThread {
-    private LoggedMethod loggedMethod = LoggedMethod.DONT_CARE;
 
-    public static boolean isWriterThreadLine(String line) {
-        return line.startsWith("<writer");
-    }
+#ifndef SHARE_COMPILER_COMPILATIONFAILUREINFO_HPP
+#define SHARE_COMPILER_COMPILATIONFAILUREINFO_HPP
 
-    public void saveLoggedMethod(LoggedMethod loggedMethod) {
-        this.loggedMethod = loggedMethod;
-    }
+#if defined(COMPILER1) || defined(COMPILER2)
 
-    public LoggedMethod restoreLoggedMethod() {
-        LoggedMethod restoredLoggedMethod = loggedMethod;
-        if (restoredLoggedMethod != LoggedMethod.DONT_CARE) {
-            loggedMethod = LoggedMethod.DONT_CARE;
-        }
-        return restoredLoggedMethod;
-    }
-}
+#include "memory/allocation.hpp"
+#include "utilities/globalDefinitions.hpp"
+#include "utilities/nativeCallStack.hpp"
+
+class outputStream;
+class Symbol;
+
+class CompilationFailureInfo : public CHeapObj<mtCompiler> {
+  NativeCallStack _stack;
+  char* const _failure_reason;
+  const double _elapsed_seconds;
+  const int _compile_id;
+public:
+  CompilationFailureInfo(const char* failure_reason);
+  ~CompilationFailureInfo();
+  void print_on(outputStream* st) const;
+
+  // Convenience function to print, safely, current compile failure iff
+  // current thread is compiler thread and there is an ongoing compilation
+  // and a pending failure.
+  // Otherwise prints nothing.
+  static bool print_pending_compilation_failure(outputStream* st);
+};
+
+#endif // defined(COMPILER1) || defined(COMPILER2)
+
+#endif // SHARE_COMPILER_COMPILATIONFAILUREINFO_HPP
