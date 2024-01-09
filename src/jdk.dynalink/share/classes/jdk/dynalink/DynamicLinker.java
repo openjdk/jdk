@@ -141,6 +141,7 @@ import jdk.dynalink.support.SimpleRelinkableCallSite;
  * in the above example the {@code parseOperation} method is left unimplemented.</li>
  *
  * </ul>
+ * @since 9
  */
 public final class DynamicLinker {
     private static final String CLASS_NAME = DynamicLinker.class.getName();

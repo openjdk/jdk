@@ -110,12 +110,17 @@ class VM_Version : public Abstract_VM_Version {
   // Zic64b Cache blocks must be 64 bytes in size, naturally aligned in the address space.
   // Zihintpause Pause instruction HINT
   //
+  // Zc  Code Size Reduction - Additional compressed instructions.
+  // Zcb Simple code-size saving instructions
+  //
   // Other features and settings
   // mvendorid Manufactory JEDEC id encoded, ISA vol 2 3.1.2..
   // marchid   Id for microarch. Mvendorid plus marchid uniquely identify the microarch.
   // mimpid    A unique encoding of the version of the processor implementation.
   // unaligned_access Unaligned memory accesses (unknown, unspported, emulated, slow, firmware, fast)
   // satp mode SATP bits (number of virtual addr bits) mbare, sv39, sv48, sv57, sv64
+
+ public:
 
   #define RV_NO_FLAG_BIT (BitsPerWord+1) // nth_bit will return 0 on values larger than BitsPerWord
 
@@ -137,6 +142,7 @@ class VM_Version : public Abstract_VM_Version {
   decl(ext_Zbb         , "Zbb"         , RV_NO_FLAG_BIT, true , UPDATE_DEFAULT(UseZbb))         \
   decl(ext_Zbc         , "Zbc"         , RV_NO_FLAG_BIT, true , NO_UPDATE_DEFAULT)              \
   decl(ext_Zbs         , "Zbs"         , RV_NO_FLAG_BIT, true , UPDATE_DEFAULT(UseZbs))         \
+  decl(ext_Zcb         , "Zcb"         , RV_NO_FLAG_BIT, true , NO_UPDATE_DEFAULT)              \
   decl(ext_Zicsr       , "Zicsr"       , RV_NO_FLAG_BIT, true , NO_UPDATE_DEFAULT)              \
   decl(ext_Zifencei    , "Zifencei"    , RV_NO_FLAG_BIT, true , NO_UPDATE_DEFAULT)              \
   decl(ext_Zic64b      , "Zic64b"      , RV_NO_FLAG_BIT, true , UPDATE_DEFAULT(UseZic64b))      \
@@ -209,6 +215,9 @@ class VM_Version : public Abstract_VM_Version {
   constexpr static bool supports_stack_watermark_barrier() { return true; }
 
   static bool supports_on_spin_wait() { return UseZihintpause; }
+
+  // RISCV64 supports fast class initialization checks
+  static bool supports_fast_class_init_checks() { return true; }
 };
 
 #endif // CPU_RISCV_VM_VERSION_RISCV_HPP

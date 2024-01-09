@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -2532,8 +2532,8 @@ static inline Assembler::ComparisonPredicateFP booltest_pred_to_comparison_pred_
 static void vec_mov_helper(CodeBuffer *cbuf, int src_lo, int dst_lo,
                           int src_hi, int dst_hi, uint ireg, outputStream* st) {
   assert(ireg == Op_VecS || // 32bit vector
-         (src_lo & 1) == 0 && (src_lo + 1) == src_hi &&
-         (dst_lo & 1) == 0 && (dst_lo + 1) == dst_hi,
+         ((src_lo & 1) == 0 && (src_lo + 1) == src_hi &&
+          (dst_lo & 1) == 0 && (dst_lo + 1) == dst_hi),
          "no non-adjacent vector moves" );
   if (cbuf) {
     C2_MacroAssembler _masm(cbuf);
@@ -8965,6 +8965,21 @@ instruct vmasked_store_evex(memory mem, vec src, kReg mask) %{
 %}
 
 #ifdef _LP64
+instruct verify_vector_alignment(rRegP addr, immL32 mask, rFlagsReg cr) %{
+  match(Set addr (VerifyVectorAlignment addr mask));
+  effect(KILL cr);
+  format %{ "verify_vector_alignment $addr $mask \t! verify alignment" %}
+  ins_encode %{
+    Label Lskip;
+    // check if masked bits of addr are zero
+    __ testq($addr$$Register, $mask$$constant);
+    __ jccb(Assembler::equal, Lskip);
+    __ stop("verify_vector_alignment found a misaligned vector memory access");
+    __ bind(Lskip);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
 instruct vmask_cmp_node(rRegI dst, vec src1, vec src2, kReg mask, kReg ktmp1, kReg ktmp2, rFlagsReg cr) %{
   match(Set dst (VectorCmpMasked src1 (Binary src2 mask)));
   effect(TEMP_DEF dst, TEMP ktmp1, TEMP ktmp2, KILL cr);
