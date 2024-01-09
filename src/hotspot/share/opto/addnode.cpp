@@ -257,7 +257,7 @@ bool AddNode::is_not(PhaseGVN* phase, Node* n, BasicType bt) {
   return n->Opcode() == Op_Xor(bt) && phase->type(n->in(2)) == TypeInteger::minus_1(bt);
 }
 
-AddNode* AddNode::make_not(PhaseGVN* phase, Node*n, BasicType bt) {
+AddNode* AddNode::make_not(PhaseGVN* phase, Node* n, BasicType bt) {
   switch (bt) {
     case T_INT:
       return new XorINode(n, phase->intcon(-1));
