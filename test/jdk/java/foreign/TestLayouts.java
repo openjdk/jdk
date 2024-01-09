@@ -371,13 +371,13 @@ public class TestLayouts {
     }
 
     @Test(expectedExceptions=IllegalArgumentException.class,
-        expectedExceptionsMessageRegExp=".*Negative offset.*")
+        expectedExceptionsMessageRegExp=".*offset is negative.*")
     public void testScaleNegativeOffset() {
         JAVA_INT.scale(-1, 0);
     }
 
     @Test(expectedExceptions=IllegalArgumentException.class,
-        expectedExceptionsMessageRegExp=".*Negative index.*")
+        expectedExceptionsMessageRegExp=".*index is negative.*")
     public void testScaleNegativeIndex() {
         JAVA_INT.scale(0, -1);
     }

@@ -121,11 +121,7 @@ class ObjectWaiter : public StackObj {
 //     intptr_t. There's no reason to use a 64-bit type for this field
 //     in a 64-bit JVM.
 
-#ifndef OM_CACHE_LINE_SIZE
-// Use DEFAULT_CACHE_LINE_SIZE if not already specified for
-// the current build platform.
 #define OM_CACHE_LINE_SIZE DEFAULT_CACHE_LINE_SIZE
-#endif
 
 class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
   friend class ObjectSynchronizer;
@@ -357,7 +353,6 @@ private:
   void      ReenterI(JavaThread* current, ObjectWaiter* current_node);
   void      UnlinkAfterAcquire(JavaThread* current, ObjectWaiter* current_node);
   int       TryLock(JavaThread* current);
-  int       NotRunnable(JavaThread* current, JavaThread* Owner);
   int       TrySpin(JavaThread* current);
   void      ExitEpilog(JavaThread* current, ObjectWaiter* Wakee);
 

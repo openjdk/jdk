@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 /*
  * @test
  * @modules jdk.localedata
- * @bug 8303440 8317979
+ * @bug 8303440 8317979 8322647
  * @summary Test parsing "UTC-XX:XX" text works correctly
  */
 package test.java.time.format;
@@ -43,8 +43,8 @@ import static org.testng.Assert.assertEquals;
 public class TestUTCParse {
 
     static {
-        // Assuming CLDR's SHORT name for "America/Juneau"
-        // produces "UTC\u212209:00"
+        // Assuming CLDR's SHORT name for "America/Manaus"
+        // produces "UTC\u221204:00"
         System.setProperty("java.locale.providers", "CLDR");
     }
 
@@ -60,9 +60,9 @@ public class TestUTCParse {
     @Test
     public void testUTCShortNameRoundTrip() {
         var fmt = DateTimeFormatter.ofPattern("z", Locale.FRANCE);
-        var zdt = ZonedDateTime.of(2023, 3, 3, 0, 0, 0, 0, ZoneId.of("America/Juneau"));
+        var zdt = ZonedDateTime.of(2023, 3, 3, 0, 0, 0, 0, ZoneId.of("America/Manaus"));
         var formatted = fmt.format(zdt);
-        assertEquals(formatted, "UTC\u221209:00");
+        assertEquals(formatted, "UTC\u221204:00");
         assertEquals(fmt.parse(formatted).query(TemporalQueries.zoneId()), zdt.getZone());
     }
 

@@ -473,7 +473,11 @@ class MacroAssembler: public Assembler {
   }
 
   inline void notr(Register Rd, Register Rs) {
-    xori(Rd, Rs, -1);
+    if (do_compress_zcb(Rd, Rs) && (Rd == Rs)) {
+      c_not(Rd);
+    } else {
+      xori(Rd, Rs, -1);
+    }
   }
 
   inline void neg(Register Rd, Register Rs) {
@@ -489,7 +493,11 @@ class MacroAssembler: public Assembler {
   }
 
   inline void zext_b(Register Rd, Register Rs) {
-    andi(Rd, Rs, 0xFF);
+    if (do_compress_zcb(Rd, Rs) && (Rd == Rs)) {
+      c_zext_b(Rd);
+    } else {
+      andi(Rd, Rs, 0xFF);
+    }
   }
 
   inline void seqz(Register Rd, Register Rs) {
@@ -511,7 +519,12 @@ class MacroAssembler: public Assembler {
   // Bit-manipulation extension pseudo instructions
   // zero extend word
   inline void zext_w(Register Rd, Register Rs) {
-    add_uw(Rd, Rs, zr);
+    assert(UseZba, "must be");
+    if (do_compress_zcb(Rd, Rs) && (Rd == Rs)) {
+      c_zext_w(Rd);
+    } else {
+      add_uw(Rd, Rs, zr);
+    }
   }
 
   // Floating-point data-processing pseudo instructions
@@ -1361,6 +1374,16 @@ public:
     vmfle_vv(vd, vs1, vs2, vm);
   }
 
+  inline void vmsltu_vi(VectorRegister Vd, VectorRegister Vs2, uint32_t imm, VectorMask vm = unmasked) {
+    guarantee(imm >= 1 && imm <= 16, "imm is invalid");
+    vmsleu_vi(Vd, Vs2, imm-1, vm);
+  }
+
+  inline void vmsgeu_vi(VectorRegister Vd, VectorRegister Vs2, uint32_t imm, VectorMask vm = unmasked) {
+    guarantee(imm >= 1 && imm <= 16, "imm is invalid");
+    vmsgtu_vi(Vd, Vs2, imm-1, vm);
+  }
+
   // Copy mask register
   inline void vmmv_m(VectorRegister vd, VectorRegister vs) {
     vmand_mm(vd, vs, vs);
@@ -1374,6 +1397,10 @@ public:
   // Set mask register
   inline void vmset_m(VectorRegister vd) {
     vmxnor_mm(vd, vd, vd);
+  }
+
+  inline void vnot_v(VectorRegister Vd, VectorRegister Vs, VectorMask vm = unmasked) {
+    vxor_vi(Vd, Vs, -1, vm);
   }
 
   static const int zero_words_block_size;

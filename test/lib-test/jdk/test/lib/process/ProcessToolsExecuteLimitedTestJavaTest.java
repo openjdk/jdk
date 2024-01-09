@@ -21,30 +21,25 @@
  * questions.
  */
 
-package compiler.lib.ir_framework.driver.irmatching.parser.hotspot;
-
-import compiler.lib.ir_framework.TestFramework;
-
-import java.util.HashMap;
-import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
-/**
- * This class keeps track of all {@link WriterThread} instances.
+/*
+ * @test
+ * @summary Unit test for ProcessTools.executeLimitedTestJava()
+ * @library /test/lib
+ * @run main/othervm -Dtest.java.opts=-XX:MaxMetaspaceSize=123456789 ProcessToolsExecuteLimitedTestJavaTest
  */
-class WriterThreads {
-    private final Map<Integer, WriterThread> mapIdToThread = new HashMap<>();
 
-    WriterThread parse(String line) {
-        int writerThreadId = parseWriterThreadId(line);
-        return mapIdToThread.computeIfAbsent(writerThreadId, c -> new WriterThread());
-    }
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
 
-    private static int parseWriterThreadId(String line) {
-        Pattern pattern = Pattern.compile("='(\\d+)'");
-        Matcher matcher = pattern.matcher(line);
-        TestFramework.check(matcher.find(), "should find writer thread id");
-        return Integer.parseInt(matcher.group(1));
+public class ProcessToolsExecuteLimitedTestJavaTest {
+    public static void main(String[] args) throws Exception {
+        if (args.length > 0) {
+            // Do nothing. Just let the JVM log its output.
+        } else {
+            // In comparison to executeTestJava, executeLimitedTestJava should not add the
+            // -Dtest.java.opts flags. Check that it doesn't.
+            OutputAnalyzer output = ProcessTools.executeLimitedTestJava("-XX:+PrintFlagsFinal", "-version");
+            output.stdoutShouldNotMatch(".*MaxMetaspaceSize.* = 123456789.*");
+        }
     }
 }
