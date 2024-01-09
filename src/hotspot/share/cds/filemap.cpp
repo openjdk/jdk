@@ -1580,24 +1580,14 @@ char* FileMapInfo::write_bitmap_region(const CHeapBitMap* ptrmap, ArchiveHeapInf
   size_t written = 0;
   written = write_bitmap(ptrmap, buffer, written);
   header()->set_ptrmap_size_in_bits(ptrmap->size());
-  header()->set_heap_oopmap_leading_zeros(heap_info->oopmap()->find_first_set_bit(0));
-  header()->set_heap_ptrmap_leading_zeros(heap_info->ptrmap()->find_first_set_bit(0));
 
   if (heap_info->is_used()) {
     FileMapRegion* r = region_at(MetaspaceShared::hp);
 
-    if (UseNewCode) {
-      r->init_oopmap(written+header()->heap_oopmap_leading_zeros(), heap_info->oopmap()->size());
-    } else {
-      r->init_oopmap(written, heap_info->oopmap()->size());
-    }
+    r->init_oopmap(written, heap_info->oopmap()->size());
     written = write_bitmap(heap_info->oopmap(), buffer, written);
 
-    if (UseNewCode) {
-      r->init_ptrmap(written+header()->heap_ptrmap_leading_zeros(), heap_info->ptrmap()->size());
-    } else {
-      r->init_ptrmap(written, heap_info->ptrmap()->size());
-    }
+    r->init_ptrmap(written, heap_info->ptrmap()->size());
     written = write_bitmap(heap_info->ptrmap(), buffer, written);
   }
 
@@ -1610,8 +1600,20 @@ size_t FileMapInfo::write_heap_region(ArchiveHeapInfo* heap_info) {
   size_t buffer_size = heap_info->buffer_byte_size();
   write_region(MetaspaceShared::hp, buffer_start, buffer_size, false, false);
   header()->set_heap_roots_offset(heap_info->heap_roots_offset());
-  // header()->set_heap_oopmap_leading_zeros(heap_info->oopmap()->find_first_set_bit(0));
-  // header()->set_heap_ptrmap_leading_zeros(heap_info->ptrmap()->find_first_set_bit(0));
+  header()->set_heap_oopmap_leading_zeros(heap_info->oopmap()->find_first_set_bit(0));
+  header()->set_heap_ptrmap_leading_zeros(heap_info->ptrmap()->find_first_set_bit(0));
+
+  // Remove leading zeroes
+  if (UseNewCode) {
+    size_t old_zeros = header()->heap_oopmap_leading_zeros();
+    heap_info->oopmap()->slice(header()->heap_oopmap_leading_zeros(), heap_info->oopmap()->size());
+    header()->set_heap_oopmap_leading_zeros(heap_info->oopmap()->find_first_set_bit(0));
+    assert(header()->heap_oopmap_leading_zeros() < old_zeros, "Should have removed leading zeroes!!");
+    //tty->print_cr("EE Old zeroes: %ld\nEE New zeroes: %ld", old_zeros, header()->heap_oopmap_leading_zeros());
+
+    heap_info->ptrmap()->slice(header()->heap_ptrmap_leading_zeros(), heap_info->ptrmap()->size());
+    header()->set_heap_ptrmap_leading_zeros(heap_info->ptrmap()->find_first_set_bit(0));
+  }
   return buffer_size;
 }
 

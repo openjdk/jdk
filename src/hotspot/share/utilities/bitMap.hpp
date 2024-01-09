@@ -585,6 +585,7 @@ class GrowableBitMap : public BitMap {
   // Old bits are transferred to the new memory
   // and the extended memory is optionally cleared.
   void resize(idx_t new_size_in_bits, bool clear = true);
+  void slice(idx_t start_bit, idx_t end_bit, bool clear = true);
 };
 
 // A concrete implementation of the "abstract" BitMap class.
