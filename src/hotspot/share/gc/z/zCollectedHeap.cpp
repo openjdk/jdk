@@ -21,7 +21,6 @@
  * questions.
  */
 
-#include "gc/z/zAddress.hpp"
 #include "precompiled.hpp"
 #include "classfile/classLoaderData.hpp"
 #include "gc/shared/gcHeapSummary.hpp"
