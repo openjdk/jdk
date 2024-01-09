@@ -28,7 +28,7 @@ import compiler.lib.ir_framework.*;
 /*
  * @test
  * @bug 8322077
- * @summary Test that Ideal transformations on the De Morgan's Law performe
+ * @summary Test that Ideal transformations on the De Morgan's Law perform
             as expected for int.
  * @library /test/lib /
  * @run driver compiler.c2.irTests.DeMorganLawIntTests
