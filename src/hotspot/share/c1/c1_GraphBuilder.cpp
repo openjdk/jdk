@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1315,8 +1315,8 @@ void GraphBuilder::if_node(Value x, If::Condition cond, Value y, ValueStack* sta
   Instruction *i = append(new If(x, cond, false, y, tsux, fsux, (is_bb || compilation()->is_optimistic()) ? state_before : nullptr, is_bb));
 
   assert(i->as_Goto() == nullptr ||
-         (i->as_Goto()->sux_at(0) == tsux  && i->as_Goto()->is_safepoint() == tsux->bci() < stream()->cur_bci()) ||
-         (i->as_Goto()->sux_at(0) == fsux  && i->as_Goto()->is_safepoint() == fsux->bci() < stream()->cur_bci()),
+         (i->as_Goto()->sux_at(0) == tsux  && i->as_Goto()->is_safepoint() == (tsux->bci() < stream()->cur_bci())) ||
+         (i->as_Goto()->sux_at(0) == fsux  && i->as_Goto()->is_safepoint() == (fsux->bci() < stream()->cur_bci())),
          "safepoint state of Goto returned by canonicalizer incorrect");
 
   if (is_profiling()) {
@@ -1451,7 +1451,7 @@ void GraphBuilder::table_switch() {
     if (res->as_Goto()) {
       for (i = 0; i < l; i++) {
         if (sux->at(i) == res->as_Goto()->sux_at(0)) {
-          assert(res->as_Goto()->is_safepoint() == sw.dest_offset_at(i) < 0, "safepoint state of Goto returned by canonicalizer incorrect");
+          assert(res->as_Goto()->is_safepoint() == (sw.dest_offset_at(i) < 0), "safepoint state of Goto returned by canonicalizer incorrect");
         }
       }
     }
@@ -1500,7 +1500,7 @@ void GraphBuilder::lookup_switch() {
     if (res->as_Goto()) {
       for (i = 0; i < l; i++) {
         if (sux->at(i) == res->as_Goto()->sux_at(0)) {
-          assert(res->as_Goto()->is_safepoint() == sw.pair_at(i).offset() < 0, "safepoint state of Goto returned by canonicalizer incorrect");
+          assert(res->as_Goto()->is_safepoint() == (sw.pair_at(i).offset() < 0), "safepoint state of Goto returned by canonicalizer incorrect");
         }
       }
     }
@@ -2316,7 +2316,6 @@ void GraphBuilder::instance_of(int klass_index) {
 void GraphBuilder::monitorenter(Value x, int bci) {
   // save state before locking in case of deoptimization after a NullPointerException
   ValueStack* state_before = copy_state_for_exception_with_bci(bci);
-  compilation()->set_has_monitors(true);
   append_with_bci(new MonitorEnter(x, state()->lock(x), state_before), bci);
   kill_all();
 }
@@ -3510,6 +3509,15 @@ int GraphBuilder::recursive_inline_level(ciMethod* cur_callee) const {
   return recur_level;
 }
 
+static void set_flags_for_inlined_callee(Compilation* compilation, ciMethod* callee) {
+  if (callee->has_reserved_stack_access()) {
+    compilation->set_has_reserved_stack_access(true);
+  }
+  if (callee->is_synchronized() || callee->has_monitor_bytecodes()) {
+    compilation->set_has_monitors(true);
+  }
+}
+
 bool GraphBuilder::try_inline(ciMethod* callee, bool holder_known, bool ignore_return, Bytecodes::Code bc, Value receiver) {
   const char* msg = nullptr;
 
@@ -3526,9 +3534,7 @@ bool GraphBuilder::try_inline(ciMethod* callee, bool holder_known, bool ignore_r
   // method handle invokes
   if (callee->is_method_handle_intrinsic()) {
     if (try_method_handle_inline(callee, ignore_return)) {
-      if (callee->has_reserved_stack_access()) {
-        compilation()->set_has_reserved_stack_access(true);
-      }
+      set_flags_for_inlined_callee(compilation(), callee);
       return true;
     }
     return false;
@@ -3539,9 +3545,7 @@ bool GraphBuilder::try_inline(ciMethod* callee, bool holder_known, bool ignore_r
       callee->check_intrinsic_candidate()) {
     if (try_inline_intrinsics(callee, ignore_return)) {
       print_inlining(callee, "intrinsic");
-      if (callee->has_reserved_stack_access()) {
-        compilation()->set_has_reserved_stack_access(true);
-      }
+      set_flags_for_inlined_callee(compilation(), callee);
       return true;
     }
     // try normal inlining
@@ -3559,9 +3563,7 @@ bool GraphBuilder::try_inline(ciMethod* callee, bool holder_known, bool ignore_r
     bc = code();
   }
   if (try_inline_full(callee, holder_known, ignore_return, bc, receiver)) {
-    if (callee->has_reserved_stack_access()) {
-      compilation()->set_has_reserved_stack_access(true);
-    }
+    set_flags_for_inlined_callee(compilation(), callee);
     return true;
   }
 
@@ -4468,7 +4470,9 @@ void GraphBuilder::append_unsafe_get_and_set(ciMethod* callee, bool is_add) {
 
 #ifndef PRODUCT
 void GraphBuilder::print_stats() {
-  vmap()->print();
+  if (UseLocalValueNumbering) {
+    vmap()->print();
+  }
 }
 #endif // PRODUCT
 

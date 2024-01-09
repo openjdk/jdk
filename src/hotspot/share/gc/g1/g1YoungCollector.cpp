@@ -34,7 +34,6 @@
 #include "gc/g1/g1CollectorState.hpp"
 #include "gc/g1/g1ConcurrentMark.hpp"
 #include "gc/g1/g1GCPhaseTimes.hpp"
-#include "gc/g1/g1YoungGCEvacFailureInjector.hpp"
 #include "gc/g1/g1EvacFailureRegions.inline.hpp"
 #include "gc/g1/g1EvacInfo.hpp"
 #include "gc/g1/g1HRPrinter.hpp"
@@ -46,6 +45,7 @@
 #include "gc/g1/g1RootProcessor.hpp"
 #include "gc/g1/g1Trace.hpp"
 #include "gc/g1/g1YoungCollector.hpp"
+#include "gc/g1/g1YoungGCAllocationFailureInjector.hpp"
 #include "gc/g1/g1YoungGCPostEvacuateTasks.hpp"
 #include "gc/g1/g1YoungGCPreEvacuateTasks.hpp"
 #include "gc/g1/g1_globals.hpp"
@@ -243,8 +243,8 @@ WorkerThreads* G1YoungCollector::workers() const {
   return _g1h->workers();
 }
 
-G1YoungGCEvacFailureInjector* G1YoungCollector::evac_failure_injector() const {
-  return _g1h->evac_failure_injector();
+G1YoungGCAllocationFailureInjector* G1YoungCollector::allocation_failure_injector() const {
+  return _g1h->allocation_failure_injector();
 }
 
 
@@ -534,7 +534,7 @@ void G1YoungCollector::pre_evacuate_collection_set(G1EvacInfo* evacuation_info) 
   DerivedPointerTable::clear();
 #endif
 
-  evac_failure_injector()->arm_if_needed();
+  allocation_failure_injector()->arm_if_needed();
 }
 
 class G1ParEvacuateFollowersClosure : public VoidClosure {

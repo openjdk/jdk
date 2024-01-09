@@ -333,4 +333,8 @@ public class Debug {
         return HexFormat.ofDelimiter(":").formatHex(b);
     }
 
+    public static String toString(BigInteger b) {
+        return toString(b.toByteArray());
+    }
+
 }

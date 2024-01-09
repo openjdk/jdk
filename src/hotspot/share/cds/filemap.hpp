@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -89,6 +89,7 @@ public:
   bool is_dir()           const { return _type == dir_entry; }
   bool is_modules_image() const { return _type == modules_image_entry; }
   bool is_jar()           const { return _type == jar_entry; }
+  bool is_non_existent()  const { return _type == non_existent_entry; }
   bool from_class_path_attr() { return _from_class_path_attr; }
   time_t timestamp() const { return _timestamp; }
   const char* name() const;
@@ -170,7 +171,7 @@ public:
   BitMapView ptrmap_view();
   bool has_ptrmap()                  { return _ptrmap_size_in_bits != 0; }
 
-  bool check_region_crc() const;
+  bool check_region_crc(char* base) const;
   void print(outputStream* st, int region_index);
 };
 
