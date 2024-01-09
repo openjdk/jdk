@@ -67,6 +67,7 @@ package jdk.dynalink;
  * disappears from their type signature.
  * {@link NamedOperation} can also be used to decorate {@link #CALL} and {@link #NEW} operations with a
  * diagnostic name, and as such it does not affect their type signature.
+ * @since 9
  */
 public enum StandardOperation implements Operation {
     /**

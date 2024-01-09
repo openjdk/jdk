@@ -371,8 +371,10 @@ void JfrDeprecationManager::write_edges(JfrChunkWriter& cw, Thread* thread, bool
 
 void JfrDeprecationManager::on_type_set(JfrCheckpointWriter& writer, JfrChunkWriter* cw, Thread* thread) {
   assert(_pending_list.is_empty(), "invariant");
-  if (writer.has_data() && _pending_head != nullptr) {
+  if (_pending_head != nullptr) {
     save_type_set_blob(writer);
+  } else {
+    writer.cancel();
   }
   if (cw != nullptr) {
     write_edges(*cw, thread);

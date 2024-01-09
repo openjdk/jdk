@@ -178,6 +178,7 @@ class StoreVectorMaskedNode;
 class LoadVectorGatherNode;
 class StoreVectorNode;
 class StoreVectorScatterNode;
+class VerifyVectorAlignmentNode;
 class VectorMaskCmpNode;
 class VectorUnboxNode;
 class VectorSet;
