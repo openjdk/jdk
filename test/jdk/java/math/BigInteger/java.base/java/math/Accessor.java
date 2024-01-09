@@ -29,4 +29,8 @@ public class Accessor {
         return bi.mag;
     }
 
+    public static long divWord(long n, int d) {
+        return MutableBigInteger.divWord(n, d);
+    }
+
 }
