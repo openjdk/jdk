@@ -25,15 +25,11 @@
 
 package java.util.zip;
 
-import java.io.EOFException;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.PushbackInputStream;
+import sun.nio.cs.UTF_8;
+
+import java.io.*;
 import java.nio.charset.Charset;
 import java.util.Objects;
-
-import sun.nio.cs.UTF_8;
 
 import static java.util.zip.ZipConstants64.*;
 import static java.util.zip.ZipUtils.*;
@@ -578,9 +574,9 @@ public class ZipInputStream extends InflaterInputStream implements ZipConstants 
         }
         if ((flag & 8) == 8) {
             /* "Data Descriptor" present */
-            if (hasZip64Extra(e) ||
-                inf.getBytesWritten() > ZIP64_MAGICVAL ||
-                inf.getBytesRead() > ZIP64_MAGICVAL) {
+            if (inf.getBytesWritten() > ZIP64_MAGICVAL ||
+                inf.getBytesRead() > ZIP64_MAGICVAL ||
+                hasZip64Extra(e)) {
                 // ZIP64 format
                 readFully(tmpbuf, 0, ZIP64_EXTHDR);
                 long sig = get32(tmpbuf, 0);
