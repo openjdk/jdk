@@ -193,9 +193,11 @@ void SuperWord::unrolling_analysis(const VLoop &vloop, int &local_loop_unroll_fa
       // stop looking, we already have the max vector to map to.
       if (cur_max_vector < local_loop_unroll_factor) {
         is_slp = false;
+#ifndef PRODUCT
         if (TraceSuperWordLoopUnrollAnalysis) {
           tty->print_cr("slp analysis fails: unroll limit greater than max vector\n");
         }
+#endif
         break;
       }
 
@@ -245,9 +247,11 @@ void SuperWord::unrolling_analysis(const VLoop &vloop, int &local_loop_unroll_fa
     }
     cl->mark_was_slp();
     if (cl->is_main_loop()) {
+#ifndef PRODUCT
       if (TraceSuperWordLoopUnrollAnalysis) {
         tty->print_cr("slp analysis: set max unroll to %d", local_loop_unroll_factor);
       }
+#endif
       cl->set_slp_max_unroll(local_loop_unroll_factor);
     }
   }
@@ -2273,9 +2277,11 @@ const char* SuperWord::output() {
     if (cl->has_passed_slp()) {
       uint slp_max_unroll_factor = cl->slp_max_unroll();
       if (slp_max_unroll_factor == max_vlen) {
+#ifndef PRODUCT
         if (TraceSuperWordLoopUnrollAnalysis) {
           tty->print_cr("vector loop(unroll=%d, len=%d)\n", max_vlen, max_vlen_in_bytes*BitsPerByte);
         }
+#endif
         // For atomic unrolled loops which are vector mapped, instigate more unrolling
         cl->set_notpassed_slp();
         // if vector resources are limited, do not allow additional unrolling
