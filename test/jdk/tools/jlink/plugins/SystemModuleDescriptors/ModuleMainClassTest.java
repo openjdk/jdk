@@ -54,11 +54,11 @@ public class ModuleMainClassTest {
     private static final String JAVA_HOME = System.getProperty("java.home");
     private static final String TEST_SRC = System.getProperty("test.src");
 
-    private static final Path SRC_DIR = Paths.get(TEST_SRC, "src");
-    private static final Path MODS_DIR = Paths.get("mods");
-    private static final Path JMODS_DIR = Paths.get("jmods");
+    private static final Path SRC_DIR = Path.of(TEST_SRC, "src");
+    private static final Path MODS_DIR = Path.of("mods");
+    private static final Path JMODS_DIR = Path.of("jmods");
 
-    private static final Path IMAGE = Paths.get("image");
+    private static final Path IMAGE = Path.of("image");
 
     // the module names are sorted by the plugin and so these names cover
     // the cases that are before and after the elements of `jdk.*` modules
@@ -126,14 +126,10 @@ public class ModuleMainClassTest {
     }
 
     static final ToolProvider JLINK_TOOL = ToolProvider.findFirst("jlink")
-        .orElseThrow(() ->
-                new RuntimeException("jlink tool not found")
-        );
+        .orElseThrow(() -> new RuntimeException("jlink tool not found"));
 
     static final ToolProvider JMOD_TOOL = ToolProvider.findFirst("jmod")
-        .orElseThrow(() ->
-                new RuntimeException("jmod tool not found")
-        );
+        .orElseThrow(() -> new RuntimeException("jmod tool not found"));
 
     private static void createImage(Path outputDir, String... modules) throws Throwable {
         assertTrue(JLINK_TOOL.run(System.out, System.out,
