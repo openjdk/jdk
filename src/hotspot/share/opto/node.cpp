@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1591,11 +1591,6 @@ jdouble Node::getd() const {
 jfloat Node::getf() const {
   assert( Opcode() == Op_ConF, "" );
   return ((ConFNode*)this)->type()->is_float_constant()->getf();
-}
-
-// Check if "this" node is a NOT operation, i.e., this == m ^ (-1).
-bool Node::is_not(PhaseGVN* phase, BasicType bt) const {
-  return Opcode() == Op_Xor(bt) && phase->type(in(2)) == TypeInteger::minus_1(bt);
 }
 
 #ifndef PRODUCT

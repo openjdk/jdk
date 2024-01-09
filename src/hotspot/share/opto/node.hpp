@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1224,9 +1224,6 @@ public:
 
   // Whether this is a memory phi node
   bool is_memory_phi() const { return is_Phi() && bottom_type() == Type::MEMORY; }
-
-  // Check if "this" node is a NOT operation, i.e., this == m ^ (-1).
-  bool is_not(PhaseGVN* phase, BasicType bt) const;
 
 //----------------- Printing, etc
 #ifndef PRODUCT

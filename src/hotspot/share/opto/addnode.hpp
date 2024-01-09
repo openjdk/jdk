@@ -79,7 +79,11 @@ public:
 
   static AddNode* make(Node* in1, Node* in2, BasicType bt);
 
-  // Make a NOT operation, i.e., returning n ^ (-1).
+  // Utility function to check if the given node is a NOT operation,
+  // i.e., n == m ^ (-1).
+  static bool is_not(PhaseGVN* phase, Node* n, BasicType bt);
+
+  // Utility function to make a NOT operation, i.e., returning n ^ (-1).
   static AddNode* make_not(PhaseGVN* phase, Node* n, BasicType bt);
 };
 
