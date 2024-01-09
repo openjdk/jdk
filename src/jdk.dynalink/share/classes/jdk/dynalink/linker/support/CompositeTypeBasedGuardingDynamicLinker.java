@@ -77,6 +77,7 @@ import jdk.dynalink.linker.TypeBasedGuardingDynamicLinker;
  * returning true are then bound to the class, and next time a receiver of same
  * type is encountered, the linking is delegated to those linkers only, speeding
  * up dispatch.
+ * @since 9
  */
 public class CompositeTypeBasedGuardingDynamicLinker implements TypeBasedGuardingDynamicLinker {
     // Using a separate static class instance so there's no strong reference from the class value back to the composite
