@@ -768,7 +768,7 @@ public class ColorConvertOp implements BufferedImageOp, RasterOp {
             }
             float[] srcMinVal = new float[iccSrcNumComp];
             float[] srcInvDiffMinMax = new float[iccSrcNumComp];
-            for (int i = 0; i < srcNumComp; i++) {
+            for (int i = 0; i < iccSrcNumComp; i++) {
                 srcMinVal[i] = cs.getMinValue(i);
                 srcInvDiffMinMax[i] = maxNum / (cs.getMaxValue(i) - srcMinVal[i]);
             }
@@ -782,7 +782,7 @@ public class ColorConvertOp implements BufferedImageOp, RasterOp {
             }
             float[] dstMinVal = new float[iccDstNumComp];
             float[] dstDiffMinMax = new float[iccDstNumComp];
-            for (int i = 0; i < dstNumComp; i++) {
+            for (int i = 0; i < iccDstNumComp; i++) {
                 dstMinVal[i] = cs.getMinValue(i);
                 dstDiffMinMax[i] = (cs.getMaxValue(i) - dstMinVal[i]) / maxNum;
             }
