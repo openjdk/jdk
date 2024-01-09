@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,6 +81,7 @@
 #include <assert.h>
 #include <limits.h>
 #include <stdlib.h>
+#include <stdint.h>
 
 #include "jni.h"
 #include "jni_util.h"
@@ -1195,7 +1196,7 @@ verify_opcode_operands(context_type *context, unsigned int inumber, int offset)
             }
         }
         if (opcode == JVM_OPC_tableswitch) {
-            keys = _ck_ntohl(lpc[2]) -  _ck_ntohl(lpc[1]) + 1;
+            keys = _ck_ntohl(lpc[2]) - _ck_ntohl(lpc[1]) + 1;
             delta = 1;
         } else {
             keys = _ck_ntohl(lpc[1]); /* number of pairs */
@@ -1677,11 +1678,13 @@ static int instruction_length(unsigned char *iptr, unsigned char *end)
     switch (instruction) {
         case JVM_OPC_tableswitch: {
             int *lpc = (int *)UCALIGN(iptr + 1);
-            int index;
             if (lpc + 2 >= (int *)end) {
                 return -1; /* do not read pass the end */
             }
-            index = _ck_ntohl(lpc[2]) - _ck_ntohl(lpc[1]);
+            int64_t low  = _ck_ntohl(lpc[1]);
+            int64_t high = _ck_ntohl(lpc[2]);
+            int64_t index = high - low;
+            // The value of low must be less than or equal to high - i.e. index >= 0
             if ((index < 0) || (index > 65535)) {
                 return -1;      /* illegal */
             } else {
