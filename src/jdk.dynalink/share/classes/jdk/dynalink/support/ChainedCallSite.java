@@ -84,6 +84,7 @@ import jdk.dynalink.linker.support.Lookup;
  * Race conditions in linking are resolved by throwing away the
  * {@link GuardedInvocation} produced on the losing thread without incorporating
  * it into the chain, so it can lead to repeated linking for the same arguments.
+ * @since 9
  */
 public class ChainedCallSite extends AbstractRelinkableCallSite {
     private static final MethodHandle PRUNE_CATCHES;

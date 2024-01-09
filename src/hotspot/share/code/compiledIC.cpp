@@ -128,11 +128,13 @@ void CompiledIC::internal_set_ic_destination(address entry_point, bool is_icstub
     tty->cr();
   }
 
+#ifdef ASSERT
   {
     CodeBlob* cb = CodeCache::find_blob(_call->instruction_address());
     assert(cb != nullptr && cb->is_compiled(), "must be compiled");
-    _call->set_destination_mt_safe(entry_point);
   }
+#endif
+  _call->set_destination_mt_safe(entry_point);
 
   if (is_optimized() || is_icstub) {
     // Optimized call sites don't have a cache value and ICStub call

@@ -60,5 +60,6 @@
 
 /**
  * Contains interfaces and classes that are used to link an {@code invokedynamic} call site.
+ * @since 9
  */
 package jdk.dynalink;

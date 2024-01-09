@@ -173,18 +173,6 @@ HeapWord* Generation::block_start(const void* p) const {
   return blk._start;
 }
 
-class GenerationBlockSizeClosure : public SpaceClosure {
- public:
-  const HeapWord* _p;
-  size_t size;
-  virtual void do_space(Space* s) {
-    if (size == 0 && s->is_in_reserved(_p)) {
-      size = s->block_size(_p);
-    }
-  }
-  GenerationBlockSizeClosure(const HeapWord* p) { _p = p; size = 0; }
-};
-
 class GenerationBlockIsObjClosure : public SpaceClosure {
  public:
   const HeapWord* _p;
@@ -217,35 +205,4 @@ class GenerationObjIterateClosure : public SpaceClosure {
 void Generation::object_iterate(ObjectClosure* cl) {
   GenerationObjIterateClosure blk(cl);
   space_iterate(&blk);
-}
-
-void Generation::prepare_for_compaction(CompactPoint* cp) {
-  // Generic implementation, can be specialized
-  ContiguousSpace* space = first_compaction_space();
-  while (space != nullptr) {
-    space->prepare_for_compaction(cp);
-    space = space->next_compaction_space();
-  }
-}
-
-class AdjustPointersClosure: public SpaceClosure {
- public:
-  void do_space(Space* sp) {
-    sp->adjust_pointers();
-  }
-};
-
-void Generation::adjust_pointers() {
-  // Note that this is done over all spaces, not just the compactible
-  // ones.
-  AdjustPointersClosure blk;
-  space_iterate(&blk, true);
-}
-
-void Generation::compact() {
-  ContiguousSpace* sp = first_compaction_space();
-  while (sp != nullptr) {
-    sp->compact();
-    sp = sp->next_compaction_space();
-  }
 }
