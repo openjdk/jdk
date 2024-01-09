@@ -253,6 +253,18 @@ AddNode* AddNode::make(Node* in1, Node* in2, BasicType bt) {
   return nullptr;
 }
 
+AddNode* AddNode::make_not(PhaseGVN* phase, Node* n, BasicType bt) {
+  switch (bt) {
+    case T_INT:
+      return new XorINode(n, phase->intcon(-1));
+    case T_LONG:
+      return new XorLNode(n, phase->longcon(-1L));
+    default:
+      fatal("Not implemented for %s", type2name(bt));
+  }
+  return nullptr;
+}
+
 //=============================================================================
 //------------------------------Idealize---------------------------------------
 Node* AddNode::IdealIL(PhaseGVN* phase, bool can_reshape, BasicType bt) {
