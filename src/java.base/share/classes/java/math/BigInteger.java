@@ -3995,7 +3995,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
             return 1;
         int i = ArraysSupport.mismatch(m1, m2, len1);
         if (i != -1)
-            return ((m1[i] & LONG_MASK) < (m2[i] & LONG_MASK)) ? -1 : 1;
+            return Integer.compareUnsigned(m1[i], m2[i]) < 0 ? -1 : 1;
         return 0;
     }
 
@@ -4022,7 +4022,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
             int a = m1[0];
             int b = (int)val;
             if (a != b) {
-                return ((a & LONG_MASK) < (b & LONG_MASK))? -1 : 1;
+                return Integer.compareUnsigned(a, b) < 0 ? -1 : 1;
             }
             return 0;
         } else {
@@ -4031,12 +4031,12 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
             int a = m1[0];
             int b = highWord;
             if (a != b) {
-                return ((a & LONG_MASK) < (b & LONG_MASK))? -1 : 1;
+                return Integer.compareUnsigned(a, b) < 0 ? -1 : 1;
             }
             a = m1[1];
             b = (int)val;
             if (a != b) {
-                return ((a & LONG_MASK) < (b & LONG_MASK))? -1 : 1;
+                return Integer.compareUnsigned(a, b) < 0 ? -1 : 1;
             }
             return 0;
         }
