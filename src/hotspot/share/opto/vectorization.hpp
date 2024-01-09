@@ -107,61 +107,32 @@ public:
   }
 
 #ifndef PRODUCT
+  bool is_trace(TraceAutovectorizationTag tag) const {
+    return _trace_tags.at(tag);
+  }
   bool is_trace_precondition() const {
-    return _trace_tags.at(TraceAutovectorizationTag::TAG_PRECONDITION);
+    return is_trace(TraceAutovectorizationTag::PRECONDITION);
   }
   bool is_trace_loop_analyzer() const {
-    return _trace_tags.at(TraceAutovectorizationTag::TAG_LOOP_ANALYZER);
+    return is_trace(TraceAutovectorizationTag::LOOP_ANALYZER);
   }
   bool is_trace_memory_slices() const {
-    return _trace_tags.at(TraceAutovectorizationTag::TAG_MEMORY_SLICES);
+    return is_trace(TraceAutovectorizationTag::MEMORY_SLICES);
   }
   bool is_trace_body() const {
-    return _trace_tags.at(TraceAutovectorizationTag::TAG_BODY);
+    return is_trace(TraceAutovectorizationTag::BODY);
   }
   bool is_trace_dependence_graph() const {
-    return _trace_tags.at(TraceAutovectorizationTag::TAG_DEPENDENCE_GRAPH);
+    return is_trace(TraceAutovectorizationTag::DEPENDENCE_GRAPH);
   }
   bool is_trace_vector_element_type() const {
-    return _trace_tags.at(TraceAutovectorizationTag::TAG_TYPES);
+    return is_trace(TraceAutovectorizationTag::TYPES);
   }
   bool is_trace_pointer_analysis() const {
-    return _trace_tags.at(TraceAutovectorizationTag::TAG_POINTER_ANALYSIS);
-  }
-  bool is_trace_superword_adjacent_memops() const {
-    return TraceSuperWord ||
-           _trace_tags.at(TraceAutovectorizationTag::TAG_SW_ADJACENT_MEMOPS);
-  }
-  bool is_trace_superword_alignment() const {
-    return _trace_tags.at(TraceAutovectorizationTag::TAG_SW_ALIGNMENT);
-  }
-  bool is_trace_superword_rejections() const {
-    return TraceSuperWord ||
-           _trace_tags.at(TraceAutovectorizationTag::TAG_SW_REJECTIONS);
-  }
-  bool is_trace_superword_packset() const {
-    return TraceSuperWord ||
-           _trace_tags.at(TraceAutovectorizationTag::TAG_SW_PACKSET);
-  }
-  bool is_trace_superword_all() const {
-    return TraceSuperWord ||
-           _trace_tags.at(TraceAutovectorizationTag::TAG_SW_ALL);
-  }
-  bool is_trace_superword_info() const {
-    return TraceSuperWord ||
-           _trace_tags.at(TraceAutovectorizationTag::TAG_SW_INFO);
-  }
-  bool is_trace_superword_any() const {
-    return TraceSuperWord ||
-           _trace_tags.at(TraceAutovectorizationTag::TAG_SW_INFO) ||
-           _trace_tags.at(TraceAutovectorizationTag::TAG_SW_ALL) ||
-           _trace_tags.at(TraceAutovectorizationTag::TAG_SW_ADJACENT_MEMOPS) ||
-           _trace_tags.at(TraceAutovectorizationTag::TAG_SW_ALIGNMENT) ||
-           _trace_tags.at(TraceAutovectorizationTag::TAG_SW_REJECTIONS) ||
-           _trace_tags.at(TraceAutovectorizationTag::TAG_SW_PACKSET);
+    return is_trace(TraceAutovectorizationTag::POINTER_ANALYSIS);
   }
   bool is_trace_align_vector() const {
-    return _trace_tags.at(TraceAutovectorizationTag::TAG_ALIGN_VECTOR);
+    return is_trace(TraceAutovectorizationTag::ALIGN_VECTOR);
   }
 #endif
 

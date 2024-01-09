@@ -497,7 +497,7 @@ MemNode* SuperWord::find_align_to_ref(Node_List &memops, int &idx) {
   }
 
 #ifdef ASSERT
-  if (is_trace_superword_all()) {
+  if (is_trace_superword_verbose()) {
     tty->print_cr("\nVector memops after find_align_to_ref");
     for (uint i = 0; i < memops.size(); i++) {
       MemNode* s = memops.at(i)->as_Mem();
@@ -1183,8 +1183,8 @@ const char* SuperWord::filter_packs_for_alignment() {
   }
 
 #ifndef PRODUCT
-  if (TraceSuperWord || is_trace_align_vector()) {
-    tty->print_cr("\nfilter_packs_for_alignment:");
+  if (is_trace_superword_info() || is_trace_align_vector()) {
+    tty->print_cr("\nSuperWord::filter_packs_for_alignment:");
   }
 #endif
 
@@ -1214,6 +1214,12 @@ const char* SuperWord::filter_packs_for_alignment() {
 
         if (intersect->is_empty()) {
           // Solution failed or is not compatible, remove pack i.
+#ifndef PRODUCT
+          if (is_trace_superword_rejections() || is_trace_align_vector()) {
+            tty->print_cr("Rejected by AlignVector:");
+            p->at(0)->dump();
+          }
+#endif
           _packset.at_put(i, nullptr);
           mem_ops_rejected++;
         } else {
@@ -1225,7 +1231,7 @@ const char* SuperWord::filter_packs_for_alignment() {
   }
 
 #ifndef PRODUCT
-  if (TraceSuperWord || is_trace_align_vector()) {
+  if (is_trace_superword_info() || is_trace_align_vector()) {
     tty->print("\n final solution: ");
     current->print();
     tty->print_cr(" rejected mem_ops packs: %d of %d", mem_ops_rejected, mem_ops_count);
@@ -1248,7 +1254,7 @@ const char* SuperWord::filter_packs_for_alignment() {
   }
 
 #ifndef PRODUCT
-  if (TraceSuperWord || is_trace_align_vector()) {
+  if (is_trace_superword_packset() || is_trace_align_vector()) {
     tty->print_cr("\nAfter filter_packs_for_alignment");
     print_packset();
   }
@@ -1305,7 +1311,7 @@ const char* SuperWord::filter_packs() {
     if (!impl) {
 #ifndef PRODUCT
       if (is_trace_superword_rejections()) {
-        tty->print_cr("Unimplemented");
+        tty->print_cr("Unimplemented:");
         pk->at(0)->dump();
       }
 #endif
@@ -1329,7 +1335,7 @@ const char* SuperWord::filter_packs() {
       if (!prof) {
 #ifndef PRODUCT
         if (is_trace_superword_rejections()) {
-          tty->print_cr("Unprofitable");
+          tty->print_cr("Unprofitable:");
           pk->at(0)->dump();
         }
 #endif

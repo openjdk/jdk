@@ -279,28 +279,42 @@ class SuperWord : public ResourceObj {
 #ifndef PRODUCT
   // TraceAutoVectorization
   bool is_trace_superword_adjacent_memops() const {
-    return vla().is_trace_superword_adjacent_memops();
+    return TraceSuperWord ||
+           vla().is_trace(TraceAutovectorizationTag::SW_ADJACENT_MEMOPS);
   }
   bool is_trace_superword_alignment() const {
-    return vla().is_trace_superword_alignment();
+    // Too verbose for TraceSuperWord
+    return vla().is_trace(TraceAutovectorizationTag::SW_ALIGNMENT);
   }
   bool is_trace_superword_rejections() const {
-    return vla().is_trace_superword_rejections();
+    return TraceSuperWord ||
+           vla().is_trace(TraceAutovectorizationTag::SW_REJECTIONS);
   }
   bool is_trace_superword_packset() const {
-    return vla().is_trace_superword_packset();
+    return TraceSuperWord ||
+           vla().is_trace(TraceAutovectorizationTag::SW_PACKSET);
   }
-  bool is_trace_superword_all() const {
-    return vla().is_trace_superword_all();
+  bool is_trace_superword_verbose() const {
+    // Too verbose for TraceSuperWord
+    return vla().is_trace(TraceAutovectorizationTag::SW_VERBOSE);
   }
   bool is_trace_superword_info() const {
-    return vla().is_trace_superword_info();
+    return TraceSuperWord ||
+           vla().is_trace(TraceAutovectorizationTag::SW_INFO);
   }
   bool is_trace_superword_any() const {
-    return vla().is_trace_superword_any();
+    return TraceSuperWord ||
+           is_trace_align_vector() ||
+           vla().is_trace(TraceAutovectorizationTag::SW_ADJACENT_MEMOPS) ||
+           vla().is_trace(TraceAutovectorizationTag::SW_ALIGNMENT) ||
+           vla().is_trace(TraceAutovectorizationTag::SW_REJECTIONS) ||
+           vla().is_trace(TraceAutovectorizationTag::SW_PACKSET) ||
+           vla().is_trace(TraceAutovectorizationTag::SW_INFO) ||
+           vla().is_trace(TraceAutovectorizationTag::SW_VERBOSE);
   }
   bool is_trace_align_vector() const {
-    return vla().is_trace_align_vector();
+    return vla().is_trace_align_vector() ||
+           is_trace_superword_verbose();
   }
 #endif
 

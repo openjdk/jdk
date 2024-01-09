@@ -40,11 +40,11 @@
   flags(SW_REJECTIONS,        "Trace SuperWord rejections (non vectorizations)") \
   flags(SW_PACKSET,           "Trace SuperWord packset at different stages") \
   flags(SW_INFO,              "Trace SuperWord info") \
-  flags(SW_ALL,               "Trace SuperWord all (verbose)") \
+  flags(SW_VERBOSE,           "Trace SuperWord verbose (all)") \
   flags(ALIGN_VECTOR,         "Trace AlignVector") \
   flags(ALL,                  "Trace everything (very verbose)")
 
-#define table_entry(name, description) TAG_##name,
+#define table_entry(name, description) name,
 enum TraceAutovectorizationTag {
   COMPILER_TRACEAUTOVECTORIZATION_TAGS(table_entry)
   TRACEAUTOVECTORIZATION_TAGS_NUM,
@@ -151,20 +151,20 @@ class TraceAutovectorizationTagValidator {
         // shorter, the function fills the remaining bytes with nulls.
         strncpy(_bad, *iter, len);
         _valid = false;
-      } else if (TAG_ALL == tat) {
+      } else if (ALL == tat) {
         _tags.set_range(0, TRACEAUTOVECTORIZATION_TAGS_NUM);
-      } else if (TAG_SW_ALL == tat) {
-        _tags.at_put(TAG_SW_ADJACENT_MEMOPS, set_bit);
-        _tags.at_put(TAG_SW_ALIGNMENT, set_bit);
-        _tags.at_put(TAG_SW_REJECTIONS, set_bit);
-        _tags.at_put(TAG_SW_PACKSET, set_bit);
-        _tags.at_put(TAG_SW_INFO, set_bit);
-        _tags.at_put(TAG_SW_ALL, set_bit);
-      } else if (TAG_SW_INFO == tat) {
-        _tags.at_put(TAG_SW_ADJACENT_MEMOPS, set_bit);
-        _tags.at_put(TAG_SW_REJECTIONS, set_bit);
-        _tags.at_put(TAG_SW_PACKSET, set_bit);
-        _tags.at_put(TAG_SW_INFO, set_bit);
+      } else if (SW_VERBOSE == tat) {
+        _tags.at_put(SW_ADJACENT_MEMOPS, set_bit);
+        _tags.at_put(SW_ALIGNMENT, set_bit);
+        _tags.at_put(SW_REJECTIONS, set_bit);
+        _tags.at_put(SW_PACKSET, set_bit);
+        _tags.at_put(SW_INFO, set_bit);
+        _tags.at_put(SW_VERBOSE, set_bit);
+      } else if (SW_INFO == tat) {
+        _tags.at_put(SW_ADJACENT_MEMOPS, set_bit);
+        _tags.at_put(SW_REJECTIONS, set_bit);
+        _tags.at_put(SW_PACKSET, set_bit);
+        _tags.at_put(SW_INFO, set_bit);
       } else {
         assert(tat < TRACEAUTOVECTORIZATION_TAGS_NUM, "out of bounds");
         _tags.at_put(tat, set_bit);
