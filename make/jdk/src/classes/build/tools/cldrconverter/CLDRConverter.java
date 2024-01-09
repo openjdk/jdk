@@ -128,9 +128,10 @@ public class CLDRConverter {
     static Map<String, String> pluralRules;
     static Map<String, String> dayPeriodRules;
 
-    // TZDB Short Names Map
+    // TZDB maps
     private static final Map<String, String> tzdbShortNamesMap = HashMap.newHashMap(512);
     private static final Map<String, String> tzdbSubstLetters = HashMap.newHashMap(512);
+    private static final Map<String, String> tzdbLinks = HashMap.newHashMap(512);
 
     static enum DraftType {
         UNCONFIRMED,
@@ -767,8 +768,15 @@ public class CLDRConverter {
             // If the tzid is deprecated, get the data for the replacement id
             String tzKey = Optional.ofNullable((String)handlerSupplMeta.get(tzid))
                                    .orElse(tzid);
+            // Follow link, if needed
+            tzKey = tzdbLinks.getOrDefault(tzKey, tzKey);
+
             Object data = map.get(TIMEZONE_ID_PREFIX + tzKey);
 
+//if (id.equals("en") && (tzid.contains("Gambier") || tzid.contains("YST9"))) {
+//if (id.equals("en") && (tzid.contains("Moscow"))) {
+//int ika =5;
+//}
             if (data instanceof String[] tznames) {
                 // Hack for UTC. UTC is an alias to Etc/UTC in CLDR
                 if (tzid.equals("Etc/UTC") && !map.containsKey(TIMEZONE_ID_PREFIX + "UTC")) {
@@ -777,20 +785,41 @@ public class CLDRConverter {
                     names.put("UTC", META_ETCUTC_ZONE_NAME);
                 } else {
                     // TZDB short names
+                    tznames = Arrays.copyOf(tznames, tznames.length);
                     fillTZDBShortNames(tzid, tznames);
                     names.put(tzid, tznames);
                 }
             } else {
                 String meta = handlerMetaZones.get(tzKey);
+//if (id.equals("en") && (tzid.contains("Midway") || tzid.contains("Pago_Pago"))) {
+//int ika =5;
+//}
                 if (meta != null) {
                     String metaKey = METAZONE_ID_PREFIX + meta;
+if (id.equals("en") && (meta.equals("Moscow"))) {
+int ika =5;
+}
                     data = map.get(metaKey);
                     if (data instanceof String[] tznames) {
                         // TZDB short names
+                        tznames = Arrays.copyOf((String[])names.getOrDefault(metaKey, tznames), 6);
                         fillTZDBShortNames(tzid, tznames);
-                        // Keep the metazone prefix here.
-                        names.put(metaKey, data);
-                        names.put(tzid, meta);
+//                        if (tzKey.equals(tzid)) {
+                            // Keep the metazone prefix here.
+                            names.putIfAbsent(metaKey, tznames);
+                            names.put(tzid, meta);
+//                        } else {
+//                            // deprecated tzid. Do not use metazone names as they may be different,
+//                            // e.g. SystemV/YST9 vs. Pacific/Gambier
+//                            names.put(tzid, tznames);
+//                        }
+                    }
+                } else if (id.equals("root")) {
+                    // supply TZDB short names if available
+                    if (tzdbShortNamesMap.containsKey(tzid)) {
+                        var tznames = new String[6];
+                        fillTZDBShortNames(tzid, tznames);
+                        names.put(tzid, tznames);
                     }
                 }
             }
@@ -1263,7 +1292,7 @@ public class CLDRConverter {
     }
 
     /*
-     * Generates two maps from TZ database files, where they have usual abbreviation
+     * Generates three maps from TZ database files, where they have usual abbreviation
      * of the time zone names as "FORMAT".
      *
      * `tzdbShortNamesMap` maps the time zone id, such as "America/Los_Angeles" to
@@ -1273,23 +1302,31 @@ public class CLDRConverter {
      *
      * "America/Los_Angeles" -> "P%sT<NBSP>US"
      *
-     * The other map, `tzdbSubstLetters` maps the Rule to its substitution letters.
+     * The map, `tzdbSubstLetters` maps the Rule to its substitution letters.
      * The key of the map is the Rule name, appended with "<NBSP>std" or "<NBSP>dst"
      * depending on the savings, e.g.,
      *
      * "US<NBSP>std" -> "S"
      * "US<NBSP>dst" -> "D"
      *
-     * These two mappings resolve the short names for time zones in each type,
+     * `tzdbLinks` retains `Link`s of time zones. if the value
+     *
+     * "US/Hawaii" -> "Pacific/Honolulu"
+     *
+     * These mappings resolve the short names for time zones in each type,
      * such as:
      *
      * Standard short name for "America/Los_Angeles" -> "PST"
      * DST short name for "America/Los_Angeles" -> "PDT"
      * Generic short name for "America/Los_Angeles" -> "PT"
+     *
+     * Also the link `US/Pacific` can be resolved to `America/Los_Angeles`
+     * names correctly with the `tzdbLinks`.
      */
     private static void generateTZDBShortNamesMap() throws IOException {
         Files.walk(Path.of(tzDataDir), 1, FileVisitOption.FOLLOW_LINKS)
-            .filter(p -> p.toFile().isFile() && !p.endsWith("jdk11_backward"))
+//            .filter(p -> p.toFile().isFile() && !p.endsWith("jdk11_backward"))
+            .filter(p -> p.toFile().isFile())
             .forEach(p -> {
                 try {
                     String zone = null;
@@ -1337,6 +1374,9 @@ public class CLDRConverter {
                             zone = zl[1];
                             rule = zl[3];
                             format = zl[4];
+if (zone.contains("Moscow")) {
+    int baka = 4;
+}
                         } else {
                             if (zone != null) {
                                 if (line.startsWith("Rule") ||
@@ -1359,6 +1399,20 @@ public class CLDRConverter {
                             tzdbSubstLetters.put(rl[1] + NBSP + (rl[8].equals("0") ? STD : DST),
                                     rl[9].replace(NO_SUBST, ""));
                         }
+
+if (line.contains("Zaporo")) {
+    int baka = 4;
+}
+                        // Link line
+                        if (line.startsWith("Link")) {
+                            var ll = line.split("[ \t]+", -1);
+                            tzdbLinks.put(ll[2], ll[1]);
+                        }
+                    }
+
+                    // Last entry
+                    if (zone != null) {
+                        tzdbShortNamesMap.put(zone, format + NBSP + rule);
                     }
                 } catch (IOException ioe) {
                     throw new UncheckedIOException(ioe);
@@ -1370,7 +1424,7 @@ public class CLDRConverter {
      * Fill the TZDB short names if there is no name provided by the CLDR
      */
     private static void fillTZDBShortNames(String tzid, String[] names) {
-        var val = tzdbShortNamesMap.get(tzid);
+        var val = tzdbShortNamesMap.get(tzdbLinks.getOrDefault(tzid, tzid));
         if (val != null) {
             var format = val.split(NBSP)[0];
             var rule = val.split(NBSP)[1];

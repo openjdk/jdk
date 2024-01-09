@@ -23,7 +23,7 @@
 
  /*
  * @test
- * @bug 8181157 8202537 8234347 8236548 8261279 8322647
+ * @bug 8181157 8202537 8234347 8236548 8261279 8322647 8174269
  * @modules jdk.localedata
  * @summary Checks CLDR time zone names are generated correctly at
  * either build or runtime
@@ -51,7 +51,7 @@ public class TimeZoneNamesTest {
         return new Object[][] {
             // tzid, locale, style, expected
 
-            // This list is as of CLDR version 33, and should be examined
+            // This list is as of CLDR version 44, and should be examined
             // on the CLDR data upgrade.
 
             // no "metazone" zones
@@ -80,17 +80,17 @@ public class TimeZoneNamesTest {
                                                     "heure : Punta Arenas",
                                                     "UTC\u221203:00"},
             {"Asia/Famagusta",          Locale.US, "Famagusta Standard Time",
-                                                    "GMT+02:00",
+                                                    "EET",
                                                     "Famagusta Daylight Time",
-                                                    "GMT+03:00",
+                                                    "EEST",
                                                     "Famagusta Time",
-                                                    "GMT+02:00"},
+                                                    "EET"},
             {"Asia/Famagusta",          Locale.FRANCE, "Famagouste (heure standard)",
-                                                    "UTC+02:00",
+                                                    "EET",
                                                     "Famagouste (heure d\u2019\u00e9t\u00e9)",
-                                                    "UTC+03:00",
+                                                    "EEST",
                                                     "heure : Famagouste",
-                                                    "UTC+02:00"},
+                                                    "EET"},
             {"Europe/Astrakhan",        Locale.US, "Astrakhan Standard Time",
                                                     "GMT+04:00",
                                                     "Astrakhan Daylight Time",
