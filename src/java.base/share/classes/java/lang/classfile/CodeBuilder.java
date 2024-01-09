@@ -519,54 +519,6 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Generate an instruction to create a new array of a primitive type
-     * @param typeKind the primitive component type
-     * @return this builder
-     */
-    default CodeBuilder newPrimitiveArray(TypeKind typeKind) {
-        return with(NewPrimitiveArrayInstruction.of(typeKind));
-    }
-
-    /**
-     * Generate an instruction to create a new array of reference
-     * @param type the component type
-     * @return this builder
-     */
-    default CodeBuilder newReferenceArray(ClassEntry type) {
-        return with(NewReferenceArrayInstruction.of(type));
-    }
-
-    /**
-     * Generate an instruction to create a new array of reference
-     * @param type the component type
-     * @return this builder
-     * @throws IllegalArgumentException if {@code type} represents a primitive type
-     */
-    default CodeBuilder newReferenceArray(ClassDesc type) {
-        return newReferenceArray(constantPool().classEntry(type));
-    }
-
-    /**
-     * Generate an instruction to create a new multidimensional array
-     * @param dimensions the number of dimensions
-     * @param type the array type
-     * @return this builder
-     */
-    default CodeBuilder newMultidimensionalArray(int dimensions, ClassEntry type) {
-        return with(NewMultiArrayInstruction.of(type, dimensions));
-    }
-
-    /**
-     * Generate an instruction to create a new multidimensional array
-     * @param dimensions the number of dimensions
-     * @param type the array type
-     * @return this builder
-     */
-    default CodeBuilder newMultidimensionalArray(int dimensions, ClassDesc type) {
-        return newMultidimensionalArray(dimensions, constantPool().classEntry(type));
-    }
-
-    /**
      * Generate an instruction to load from an array
      * @param tk the array element type
      * @return this builder
@@ -594,16 +546,6 @@ public sealed interface CodeBuilder
      */
     default CodeBuilder conversion(TypeKind fromType, TypeKind toType) {
         return with(ConvertInstruction.of(fromType, toType));
-    }
-
-    /**
-     * Generate an operator instruction
-     * @see Opcode.Kind#OPERATOR
-     * @param opcode the operator instruction opcode
-     * @return this builder
-     */
-    default CodeBuilder operator(Opcode opcode) {
-        return with(OperatorInstruction.of(opcode));
     }
 
     /**
@@ -858,7 +800,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder anewarray(ClassEntry classEntry) {
-        return newReferenceArray(classEntry);
+        return with(NewReferenceArrayInstruction.of(classEntry));
     }
 
     /**
@@ -868,7 +810,7 @@ public sealed interface CodeBuilder
      * @throws IllegalArgumentException if {@code className} represents a primitive type
      */
     default CodeBuilder anewarray(ClassDesc className) {
-        return newReferenceArray(constantPool().classEntry(className));
+        return anewarray(constantPool().classEntry(className));
     }
 
     /**
@@ -884,7 +826,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder arraylength() {
-        return operator(Opcode.ARRAYLENGTH);
+        return with(OperatorInstruction.of(Opcode.ARRAYLENGTH));
     }
 
     /**
@@ -993,7 +935,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder dadd() {
-        return operator(Opcode.DADD);
+        return with(OperatorInstruction.of(Opcode.DADD));
     }
 
     /**
@@ -1017,7 +959,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder dcmpg() {
-        return operator(Opcode.DCMPG);
+        return with(OperatorInstruction.of(Opcode.DCMPG));
     }
 
     /**
@@ -1025,7 +967,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder dcmpl() {
-        return operator(Opcode.DCMPL);
+        return with(OperatorInstruction.of(Opcode.DCMPL));
     }
 
     /**
@@ -1049,7 +991,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder ddiv() {
-        return operator(Opcode.DDIV);
+        return with(OperatorInstruction.of(Opcode.DDIV));
     }
 
     /**
@@ -1066,7 +1008,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder dmul() {
-        return operator(Opcode.DMUL);
+        return with(OperatorInstruction.of(Opcode.DMUL));
     }
 
     /**
@@ -1074,7 +1016,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder dneg() {
-        return operator(Opcode.DNEG);
+        return with(OperatorInstruction.of(Opcode.DNEG));
     }
 
     /**
@@ -1082,7 +1024,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder drem() {
-        return operator(Opcode.DREM);
+        return with(OperatorInstruction.of(Opcode.DREM));
     }
 
     /**
@@ -1107,7 +1049,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder dsub() {
-        return operator(Opcode.DSUB);
+        return with(OperatorInstruction.of(Opcode.DSUB));
     }
 
     /**
@@ -1189,7 +1131,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder fadd() {
-        return operator(Opcode.FADD);
+        return with(OperatorInstruction.of(Opcode.FADD));
     }
 
     /**
@@ -1213,7 +1155,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder fcmpg() {
-        return operator(Opcode.FCMPG);
+        return with(OperatorInstruction.of(Opcode.FCMPG));
     }
 
     /**
@@ -1221,7 +1163,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder fcmpl() {
-        return operator(Opcode.FCMPL);
+        return with(OperatorInstruction.of(Opcode.FCMPL));
     }
 
     /**
@@ -1253,7 +1195,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder fdiv() {
-        return operator(Opcode.FDIV);
+        return with(OperatorInstruction.of(Opcode.FDIV));
     }
 
     /**
@@ -1270,7 +1212,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder fmul() {
-        return operator(Opcode.FMUL);
+        return with(OperatorInstruction.of(Opcode.FMUL));
     }
 
     /**
@@ -1278,7 +1220,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder fneg() {
-        return operator(Opcode.FNEG);
+        return with(OperatorInstruction.of(Opcode.FNEG));
     }
 
     /**
@@ -1286,7 +1228,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder frem() {
-        return operator(Opcode.FREM);
+        return with(OperatorInstruction.of(Opcode.FREM));
     }
 
     /**
@@ -1311,7 +1253,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder fsub() {
-        return operator(Opcode.FSUB);
+        return with(OperatorInstruction.of(Opcode.FSUB));
     }
 
     /**
@@ -1427,7 +1369,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder iadd() {
-        return operator(Opcode.IADD);
+        return with(OperatorInstruction.of(Opcode.IADD));
     }
 
     /**
@@ -1443,7 +1385,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder iand() {
-        return operator(Opcode.IAND);
+        return with(OperatorInstruction.of(Opcode.IAND));
     }
 
     /**
@@ -1515,7 +1457,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder idiv() {
-        return operator(Opcode.IDIV);
+        return with(OperatorInstruction.of(Opcode.IDIV));
     }
 
     /**
@@ -1686,7 +1628,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder imul() {
-        return operator(Opcode.IMUL);
+        return with(OperatorInstruction.of(Opcode.IMUL));
     }
 
     /**
@@ -1694,7 +1636,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder ineg() {
-        return operator(Opcode.INEG);
+        return with(OperatorInstruction.of(Opcode.INEG));
     }
 
     /**
@@ -1879,7 +1821,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder ior() {
-        return operator(Opcode.IOR);
+        return with(OperatorInstruction.of(Opcode.IOR));
     }
 
     /**
@@ -1887,7 +1829,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder irem() {
-        return operator(Opcode.IREM);
+        return with(OperatorInstruction.of(Opcode.IREM));
     }
 
     /**
@@ -1903,7 +1845,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder ishl() {
-        return operator(Opcode.ISHL);
+        return with(OperatorInstruction.of(Opcode.ISHL));
     }
 
     /**
@@ -1911,7 +1853,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder ishr() {
-        return operator(Opcode.ISHR);
+        return with(OperatorInstruction.of(Opcode.ISHR));
     }
 
     /**
@@ -1928,7 +1870,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder isub() {
-        return operator(Opcode.ISUB);
+        return with(OperatorInstruction.of(Opcode.ISUB));
     }
 
     /**
@@ -1936,7 +1878,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder iushr() {
-        return operator(Opcode.IUSHR);
+        return with(OperatorInstruction.of(Opcode.IUSHR));
     }
 
     /**
@@ -1944,7 +1886,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder ixor() {
-        return operator(Opcode.IXOR);
+        return with(OperatorInstruction.of(Opcode.IXOR));
     }
 
     /**
@@ -1986,7 +1928,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder ladd() {
-        return operator(Opcode.LADD);
+        return with(OperatorInstruction.of(Opcode.LADD));
     }
 
     /**
@@ -2002,7 +1944,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder land() {
-        return operator(Opcode.LAND);
+        return with(OperatorInstruction.of(Opcode.LAND));
     }
 
     /**
@@ -2018,7 +1960,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder lcmp() {
-        return operator(Opcode.LCMP);
+        return with(OperatorInstruction.of(Opcode.LCMP));
     }
 
     /**
@@ -2063,7 +2005,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder ldiv() {
-        return operator(Opcode.LDIV);
+        return with(OperatorInstruction.of(Opcode.LDIV));
     }
 
     /**
@@ -2080,7 +2022,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder lmul() {
-        return operator(Opcode.LMUL);
+        return with(OperatorInstruction.of(Opcode.LMUL));
     }
 
     /**
@@ -2088,7 +2030,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder lneg() {
-        return operator(Opcode.LNEG);
+        return with(OperatorInstruction.of(Opcode.LNEG));
     }
 
     /**
@@ -2096,7 +2038,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder lor() {
-        return operator(Opcode.LOR);
+        return with(OperatorInstruction.of(Opcode.LOR));
     }
 
     /**
@@ -2104,7 +2046,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder lrem() {
-        return operator(Opcode.LREM);
+        return with(OperatorInstruction.of(Opcode.LREM));
     }
 
     /**
@@ -2120,7 +2062,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder lshl() {
-        return operator(Opcode.LSHL);
+        return with(OperatorInstruction.of(Opcode.LSHL));
     }
 
     /**
@@ -2128,7 +2070,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder lshr() {
-        return operator(Opcode.LSHR);
+        return with(OperatorInstruction.of(Opcode.LSHR));
     }
 
     /**
@@ -2145,7 +2087,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder lsub() {
-        return operator(Opcode.LSUB);
+        return with(OperatorInstruction.of(Opcode.LSUB));
     }
 
     /**
@@ -2153,7 +2095,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder lushr() {
-        return operator(Opcode.LUSHR);
+        return with(OperatorInstruction.of(Opcode.LUSHR));
     }
 
     /**
@@ -2161,7 +2103,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder lxor() {
-        return operator(Opcode.LXOR);
+        return with(OperatorInstruction.of(Opcode.LXOR));
     }
 
     /**
@@ -2187,7 +2129,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder multianewarray(ClassEntry array, int dims) {
-        return newMultidimensionalArray(dims, array);
+        return with(NewMultiArrayInstruction.of(array, dims));
     }
 
     /**
@@ -2198,7 +2140,7 @@ public sealed interface CodeBuilder
      * @throws IllegalArgumentException if {@code array} represents a primitive type
      */
     default CodeBuilder multianewarray(ClassDesc array, int dims) {
-        return newMultidimensionalArray(dims, constantPool().classEntry(array));
+        return multianewarray(constantPool().classEntry(array), dims);
     }
 
     /**
@@ -2226,7 +2168,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder newarray(TypeKind typeKind) {
-        return newPrimitiveArray(typeKind);
+        return with(NewPrimitiveArrayInstruction.of(typeKind));
     }
 
     /**

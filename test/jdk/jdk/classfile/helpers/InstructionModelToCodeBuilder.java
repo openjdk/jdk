@@ -28,7 +28,6 @@ import java.lang.constant.MethodTypeDesc;
 
 import java.lang.classfile.CodeBuilder;
 import java.lang.classfile.CodeElement;
-import java.lang.classfile.Opcode;
 import java.lang.classfile.instruction.*;
 
 public class InstructionModelToCodeBuilder {
@@ -60,11 +59,11 @@ public class InstructionModelToCodeBuilder {
             case NewObjectInstruction im ->
                 cb.newObject(im.className().asSymbol());
             case NewPrimitiveArrayInstruction im ->
-                cb.newPrimitiveArray(im.typeKind());
+                cb.newarray(im.typeKind());
             case NewReferenceArrayInstruction im ->
-                cb.newReferenceArray(im.componentType());
+                cb.anewarray(im.componentType());
             case NewMultiArrayInstruction im ->
-                cb.newMultidimensionalArray(im.dimensions(), im.arrayType());
+                cb.multianewarray(im.arrayType(), im.dimensions());
             case TypeCheckInstruction im ->
                 cb.with(TypeCheckInstruction.of(im.opcode(), im.type().asSymbol()));
             case ArrayLoadInstruction im ->
