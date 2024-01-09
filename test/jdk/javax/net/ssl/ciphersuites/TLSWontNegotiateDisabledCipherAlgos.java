@@ -21,17 +21,19 @@
  * questions.
  */
 
+import jdk.test.lib.process.ProcessTools;
+
 import javax.net.ssl.*;
 import java.io.IOException;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Path;
 import java.security.Security;
 import java.util.List;
 
 /*
  * @test id=Server
  * @bug 8301379
+ * @library /test/lib
  * @summary Verify that Java will not negotiate disabled cipher suites when the
  * other side of the connection requests them.
  *
@@ -42,6 +44,7 @@ import java.util.List;
 /*
  * @test id=Client
  * @bug 8301379
+ * @library /test/lib
  * @summary Verify that Java will not negotiate disabled cipher suites when the
  * other side of the connection requests them.
  *
@@ -61,13 +64,12 @@ public class TLSWontNegotiateDisabledCipherAlgos {
         if (args[0].equals("server")) {
             try (TLSServer server = new TLSServer(useDisabledAlgo)) {
                 List<String> command = List.of(
-                        Path.of(System.getProperty("java.home"), "bin", "java").toString(),
                         "TLSWontNegotiateDisabledCipherAlgos",
                         "client",
                         Boolean.toString(!useDisabledAlgo),
                         Integer.toString(server.getListeningPort())
                 );
-                ProcessBuilder builder = new ProcessBuilder(command);
+                ProcessBuilder builder = ProcessTools.createTestJavaProcessBuilder(command);
                 Process p = builder.inheritIO().start();
                 server.run();
                 p.destroy();
