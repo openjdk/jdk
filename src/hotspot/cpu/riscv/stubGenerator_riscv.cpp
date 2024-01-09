@@ -4602,16 +4602,16 @@ class StubGenerator: public StubCodeGenerator {
   }
 
   void sha1_preserve_prev_abcde(Register a, Register b, Register c, Register d, Register e,
-                               Register prev_ab, Register prev_cd, Register prev_e,
-                               Register mask32, Register tmp) {
-    assert_different_registers(a, b, c, d, e, prev_ab, prev_cd, prev_e, mask32, tmp);
+                                Register prev_ab, Register prev_cd, Register prev_e,
+                                Register tmp) {
+    assert_different_registers(a, b, c, d, e, prev_ab, prev_cd, prev_e, tmp);
 
     __ slli(tmp, b, 32);
-    __ andr(prev_ab, a, mask32);
+    __ zero_extend(prev_ab, a, 32);
     __ orr(prev_ab, prev_ab, tmp);
 
     __ slli(tmp, d, 32);
-    __ andr(prev_cd, c, mask32);
+    __ zero_extend(prev_cd, c, 32);
     __ orr(prev_cd, prev_cd, tmp);
 
     __ mv(prev_e, e);
@@ -4645,7 +4645,24 @@ class StubGenerator: public StubCodeGenerator {
     Register buf    = c_rarg0;
     Register state  = c_rarg1;
     Register offset = c_rarg2;
+    // use src to contain the original start point of the array,
+    // reuse offset register here.
+    Register src    = offset;
     Register limit  = c_rarg3;
+
+    if (multi_block) {
+      __ sub(limit, limit, offset);
+      __ add(limit, limit, buf);
+      __ sub(src, buf, offset);
+    }
+
+    RegSet saved_regs = RegSet::range(x18, x27);
+    if (multi_block) {
+      // put original start point of the array) on stack,
+      // as we run out of registers.
+      saved_regs += RegSet::of(src);
+    }
+    __ push_reg(saved_regs, sp);
 
     // [args-reg]:  x14 - x17
     // [temp-reg]:  x28 - x31
@@ -4676,15 +4693,8 @@ class StubGenerator: public StubCodeGenerator {
     // current w't's value
     const Register cur_w = x25;
     // values of a, b, c, d, e in the previous round
-    const Register prev_ab = x26, prev_cd = x27, prev_e = tp;
-
-    const Register mask32 = gp;
-
-    RegSet saved_regs = RegSet::range(x18, x27);
-    saved_regs += RegSet::of(tp, gp);
-    __ push_reg(saved_regs, sp);
-
-    __ mv(mask32, 0xffffffff);
+    const Register prev_ab = x26, prev_cd = x27;
+    const Register prev_e = offset; // reuse offset/c_rarg2
 
     // load 5 words state into a, b, c, d, e.
     //
@@ -4709,7 +4719,7 @@ class StubGenerator: public StubCodeGenerator {
       __ BIND(L_sha1_loop);
     }
 
-    sha1_preserve_prev_abcde(a, b, c, d, e, prev_ab, prev_cd, prev_e, mask32, t0);
+    sha1_preserve_prev_abcde(a, b, c, d, e, prev_ab, prev_cd, prev_e, t0);
 
     for (int round = 0; round < 80; round++) {
       // prepare K't value
@@ -4726,12 +4736,11 @@ class StubGenerator: public StubCodeGenerator {
     sha1_calculate_im_hash(a, b, c, d, e, prev_ab, prev_cd, prev_e);
 
     if (multi_block) {
-      __ addi(offset, offset, 64);
-      __ bge(limit, offset, L_sha1_loop, true);
-      // return offset
-      __ mv(c_rarg0, offset);
+      __ bge(limit, buf, L_sha1_loop, true);
     }
 
+    const Register mask32 = t2;
+    __ mv(mask32, 0xffffffff);
     // store back the state.
     __ andr(a, a, mask32);
     __ slli(b, b, 32);
@@ -4744,6 +4753,11 @@ class StubGenerator: public StubCodeGenerator {
     __ sw(e, Address(state, 16));
 
     __ pop_reg(saved_regs, sp);
+
+    // return offset
+    if (multi_block) {
+      __ sub(c_rarg0, buf, src);
+    }
 
     __ leave();
     __ ret();
