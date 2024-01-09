@@ -60,7 +60,9 @@ public class ModuleMainClassTest {
 
     private static final Path IMAGE = Paths.get("image");
 
-    // the names of the modules in this test
+    // the module names are sorted by the plugin and so these names cover
+    // the cases that are before and after the elements of `jdk.*` modules
+    // with main classes
     private static String[] modules = new String[] {"com.foo", "net.foo"};
 
     private static boolean hasJmods() {
