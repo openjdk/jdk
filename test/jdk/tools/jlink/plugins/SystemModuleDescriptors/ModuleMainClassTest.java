@@ -96,6 +96,8 @@ public class ModuleMainClassTest {
                         "--main-class", mn + ".Main",
                         JMODS_DIR.resolve(mn + ".jmod").toString()) == 0)
         );
+
+        // the run-time image created will have 4 modules with main classes
         createImage(IMAGE, "com.foo");
     }
 
