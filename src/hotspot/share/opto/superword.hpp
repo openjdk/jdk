@@ -207,6 +207,7 @@ class SuperWord : public ResourceObj {
   static constexpr char const* FAILURE_NO_ADJACENT_MEM = "no adjacent loads or stores found";
   static constexpr char const* FAILURE_COMBINE_PACKS   = "empty packset after combine_packs";
   static constexpr char const* FAILURE_FILTER_PACKS    = "empty packset after filter_packs";
+  static constexpr char const* FAILURE_ALIGN_VECTOR    = "empty packset after filter_packs_for_alignment";
   static constexpr char const* FAILURE_SCHEDULE_CYCLE  = "schedule found cycle in packset";
   static constexpr char const* FAILURE_OUTPUT_BAILOUT  = "unexpected bailout in output";
 
@@ -378,7 +379,7 @@ class SuperWord : public ResourceObj {
   // Combine packs A and B with A.last == B.first into A.first..,A.last,B.second,..B.last
   const char* combine_packs();
   // Ensure all packs are aligned, if AlignVector is on.
-  void filter_packs_for_alignment();
+  const char* filter_packs_for_alignment();
   // Find the set of alignment solutions for load/store pack.
   const AlignmentSolution* pack_alignment_solution(Node_List* pack);
   // Compress packset, such that it has no nullptr entries.

@@ -293,8 +293,8 @@ const char* SuperWord::transform_loop_helper() {
   state = combine_packs();
   if (state != SuperWord::SUCCESS) { return state; }
 
-  // TODO: error state?
-  filter_packs_for_alignment();
+  state = filter_packs_for_alignment();
+  if (state != SuperWord::SUCCESS) { return state; }
 
   // Construct the map from nodes to packs.
   construct_my_pack_map();
@@ -1029,8 +1029,8 @@ int SuperWord::unpack_cost(int ct) { return ct; }
 //------------------------------combine_packs---------------------------
 // Combine packs A and B with A.last == B.first into A.first..,A.last,B.second,..B.last
 const char* SuperWord::combine_packs() {
-#ifdef ASSERT
   assert(!_packset.is_empty(), "packset must not be empty");
+#ifdef ASSERT
   for (int i = 0; i < _packset.length(); i++) {
     assert(_packset.at(i) != nullptr, "no nullptr in packset");
   }
@@ -1174,10 +1174,12 @@ const AlignmentSolution* SuperWord::pack_alignment_solution(Node_List* pack) {
 // Find an alignment solution: find the set of pre_iter that memory align all packs.
 // Start with the maximal set (pre_iter >= 0) and filter it with the constraints
 // that the packs impose. Remove packs that do not have a compatible solution.
-void SuperWord::filter_packs_for_alignment() {
+const char* SuperWord::filter_packs_for_alignment() {
+  assert(!_packset.is_empty(), "packset must not be empty");
+
   // We do not need to filter if no alignment is required.
   if (!VLoop::vectors_must_be_aligned()) {
-    return;
+    return SuperWord::SUCCESS;
   }
 
 #ifndef PRODUCT
@@ -1240,6 +1242,19 @@ void SuperWord::filter_packs_for_alignment() {
 
   // Remove all nullptr from packset
   compress_packset();
+
+  if (_packset.is_empty()) {
+    return SuperWord::FAILURE_ALIGN_VECTOR;
+  }
+
+#ifndef PRODUCT
+  if (TraceSuperWord || is_trace_align_vector()) {
+    tty->print_cr("\nAfter filter_packs_for_alignment");
+    print_packset();
+  }
+#endif
+
+  return SuperWord::SUCCESS;
 }
 
 // Compress packset, such that it has no nullptr entries
@@ -1513,6 +1528,8 @@ bool SuperWord::profitable(Node_List* p) {
 
 #ifdef ASSERT
 void SuperWord::verify_packs() const {
+  assert(!_packset.is_empty(), "packset must not be empty");
+
   // Verify independence at pack level.
   for (int i = 0; i < _packset.length(); i++) {
     Node_List* p = _packset.at(i);
