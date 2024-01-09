@@ -36,32 +36,41 @@ public class GenericStringTest {
     public Map<String, Integer>[] mixed = null;
     public Map<String, Integer>[][] mixed2 = null;
 
+    private static record PlatformTestCase(Class<?> clazz, String expected) {}
+
     public static void main(String... args) throws ReflectiveOperationException {
         int failures = 0;
 
         String[][] nested = {{""}};
         int[][]    intArray = {{1}};
 
-        Map<Class<?>, String> platformTestCases =
-            Map.of(//int.class,                          "int",
-                   void.class,                         "void",
-                   args.getClass(),                    "java.lang.String[]",
-                   nested.getClass(),                  "java.lang.String[][]",
-                   intArray.getClass(),                "int[][]",
-                   java.lang.Enum.class,               "public abstract class java.lang.Enum<E extends java.lang.Enum<E>>",
-                   java.util.Map.class,                "public abstract interface java.util.Map<K,V>",
-                   java.util.EnumMap.class,            "public class java.util.EnumMap<K extends java.lang.Enum<K>,V>",
-                   java.util.EventListenerProxy.class, "public abstract class java.util.EventListenerProxy<T extends java.util.EventListener>",
+       List<PlatformTestCase> platformTestCases =
+           List.of(new PlatformTestCase(int.class,           "int"),
+                   new PlatformTestCase(void.class,          "void"),
+                   new PlatformTestCase(args.getClass(),     "java.lang.String[]"),
+                   new PlatformTestCase(nested.getClass(),   "java.lang.String[][]"),
+                   new PlatformTestCase(intArray.getClass(), "int[][]"),
+
+                   new PlatformTestCase(java.lang.Enum.class,
+                                     "public abstract class java.lang.Enum<E extends java.lang.Enum<E>>"),
+                   new PlatformTestCase(java.util.Map.class,
+                                     "public abstract interface java.util.Map<K,V>"),
+                   new PlatformTestCase(java.util.EnumMap.class,
+                                     "public class java.util.EnumMap<K extends java.lang.Enum<K>,V>"),
+                   new PlatformTestCase(java.util.EventListenerProxy.class,
+                                     "public abstract class java.util.EventListenerProxy<T extends java.util.EventListener>"),
 
                    // Sealed class
-                   java.lang.ref.Reference.class,      "public abstract sealed class java.lang.ref.Reference<T>",
+                   new PlatformTestCase(java.lang.ref.Reference.class,
+                                     "public abstract sealed class java.lang.ref.Reference<T>"),
                    // non-sealed class
-                   java.lang.ref.WeakReference.class,  "public non-sealed class java.lang.ref.WeakReference<T>"
+                   new PlatformTestCase(java.lang.ref.WeakReference.class,
+                                     "public non-sealed class java.lang.ref.WeakReference<T>")
                    );
 
-        for (Map.Entry<Class<?>, String> platformTestCase : platformTestCases.entrySet()) {
-            failures += checkToGenericString(platformTestCase.getKey(),
-                                             platformTestCase.getValue());
+        for (PlatformTestCase platformTestCase : platformTestCases) {
+            failures += checkToGenericString(platformTestCase.clazz,
+                                             platformTestCase.expected);
         }
 
         Field f = GenericStringTest.class.getDeclaredField("mixed");
