@@ -173,18 +173,6 @@ HeapWord* Generation::block_start(const void* p) const {
   return blk._start;
 }
 
-class GenerationBlockSizeClosure : public SpaceClosure {
- public:
-  const HeapWord* _p;
-  size_t size;
-  virtual void do_space(Space* s) {
-    if (size == 0 && s->is_in_reserved(_p)) {
-      size = s->block_size(_p);
-    }
-  }
-  GenerationBlockSizeClosure(const HeapWord* p) { _p = p; size = 0; }
-};
-
 class GenerationBlockIsObjClosure : public SpaceClosure {
  public:
   const HeapWord* _p;
