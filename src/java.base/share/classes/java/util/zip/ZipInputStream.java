@@ -86,6 +86,9 @@ public class ZipInputStream extends InflaterInputStream implements ZipConstants 
 
     private ZipCoder zc;
 
+    // True if readEND() should expect the data descriptor to have 8 bit size fields
+    private boolean expectEightBitDataDescriptor;
+
     /**
      * Check to make sure that this stream has not been closed
      */
@@ -519,7 +522,10 @@ public class ZipInputStream extends InflaterInputStream implements ZipConstants 
         }
         e.method = get16(tmpbuf, LOCHOW);
         e.xdostime = get32(tmpbuf, LOCTIM);
-        if ((flag & 8) == 8) {
+        // Four-byte data descriptors are the default
+        expectEightBitDataDescriptor = false;
+        boolean dataDescriptorPresent = (flag & 8) == 8;
+        if (dataDescriptorPresent) {
             /* "Data Descriptor" present */
             if (e.method != DEFLATED) {
                 throw new ZipException(
@@ -536,6 +542,8 @@ public class ZipInputStream extends InflaterInputStream implements ZipConstants 
             readFully(extra, 0, len);
             e.setExtra0(extra,
                         e.csize == ZIP64_MAGICVAL || e.size == ZIP64_MAGICVAL, true);
+            // If the LOC has a valid Zip64 extra field, expect 8-byte sizes in the data descriptor
+            expectEightBitDataDescriptor = hasZip64Extra(extra);
         }
         return e;
     }
@@ -576,7 +584,7 @@ public class ZipInputStream extends InflaterInputStream implements ZipConstants 
             /* "Data Descriptor" present */
             if (inf.getBytesWritten() > ZIP64_MAGICVAL ||
                 inf.getBytesRead() > ZIP64_MAGICVAL ||
-                hasZip64Extra(e)) {
+                    expectEightBitDataDescriptor) {
                 // ZIP64 format
                 readFully(tmpbuf, 0, ZIP64_EXTHDR);
                 long sig = get32(tmpbuf, 0);
@@ -647,8 +655,7 @@ public class ZipInputStream extends InflaterInputStream implements ZipConstants 
      * This method returns false for any invalid extra block sizes, as if the extra
      * data contained no Zip64 field.
      */
-    private boolean hasZip64Extra(ZipEntry e)  {
-        byte[] extra = e.extra;
+    private boolean hasZip64Extra(byte[] extra)  {
         int fixedSize = 2 * Short.BYTES; // id + size
         if (extra != null) {
             for (int i = 0; i + fixedSize < extra.length;) {
