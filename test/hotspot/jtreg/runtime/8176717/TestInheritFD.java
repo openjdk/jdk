@@ -41,6 +41,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.Collection;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.TimeUnit;
 import java.util.Optional;
 import java.util.stream.Stream;
@@ -221,7 +222,7 @@ public class TestInheritFD {
         }
         if (out.contains(RETAINS_FD)) {
             return Result.FOUND_RETAINS_FD;
-        } else if (out.contains(FOUND_LEAKS_FD)) {
+        } else if (out.contains(LEAKS_FD)) {
             return Result.FOUND_LEAKS_FD;
         } else {
             return Result.FOUND_NONE;
@@ -251,7 +252,7 @@ public class TestInheritFD {
         Result result = waitForSubPids(commFile);
         if (result == Result.FOUND_RETAINS_FD) {
             System.out.println("Log file was not inherited by third VM.");
-        } else if (Result.FOUND_LEAKS_FD) {
+        } else if (result == Result.FOUND_LEAKS_FD) {
             throw new RuntimeException("Log file was leaked to the third VM.");
         } else {
             throw new RuntimeException("Found neither message, I am confused!");
@@ -303,9 +304,11 @@ public class TestInheritFD {
                 if (false) {  // Enable to simulate a timeout in the third VM.
                     Thread.sleep(300 * 1000);
                 }
-            } catch (TimeoutException te) {
-                System.out.println("(Third VM) Timed out waiting for : " + e.toString());
             } catch (Exception e) {
+                if (e instanceof TimeoutException) {
+                    TimeoutException te = (TimeoutException)e;
+                    System.out.println("(Third VM) Timed out waiting for second VM: " + te.toString());
+                }
                 System.out.println("(Third VM) Exception was thrown: " + e.toString());
                 throw e;
             } finally {
@@ -376,4 +379,3 @@ public class TestInheritFD {
         System.out.println(f.renameTo(f) ? RETAINS_FD : LEAKS_FD); // this parts communicates a closed file descriptor by printing "VM RESULT => RETAINS FD"
     }
 }
-
