@@ -650,8 +650,8 @@ public class ZipInputStream extends InflaterInputStream implements ZipConstants 
     private boolean hasZip64Extra(ZipEntry e)  {
         byte[] extra = e.extra;
         int fixedSize = 2 * Short.BYTES; // id + size
-        if (extra != null && extra.length > fixedSize) {
-            for (int i = 0; i < extra.length;) {
+        if (extra != null) {
+            for (int i = 0; i + fixedSize < extra.length;) {
                 int id = get16(extra, i);
                 int size = get16(extra, i + Short.BYTES);
                 if (i + fixedSize + size > extra.length) {
