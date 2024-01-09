@@ -445,6 +445,9 @@ public abstract class SunToolkit extends Toolkit
         if (event == null) {
             throw new NullPointerException();
         }
+        if (appContext == null) {
+            return;
+        }
 
         AWTAccessor.SequencedEventAccessor sea = AWTAccessor.getSequencedEventAccessor();
         if (sea != null && sea.isSequencedEvent(event)) {
