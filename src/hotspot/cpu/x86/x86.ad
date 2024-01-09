@@ -9160,7 +9160,7 @@ instruct vmask_first_or_last_true_avx(rRegI dst, vec mask, immI size, rRegL tmp,
 // --------------------------------- Compress/Expand Operations ---------------------------
 #ifdef _LP64
 instruct vcompress_reg_avx(vec dst, vec src, vec mask, rRegI rtmp, rRegL rscratch, vec perm, vec xtmp, rFlagsReg cr) %{
-  predicate(!VM_Version::supports_avx512vl() && Matcher::vector_length_in_bytes(n) <= 32);
+  predicate(!EnableX86ECoreOpts && !VM_Version::supports_avx512vl() && Matcher::vector_length_in_bytes(n) <= 32);
   match(Set dst (CompressV src mask));
   match(Set dst (ExpandV src mask));
   effect(TEMP_DEF dst, TEMP perm, TEMP xtmp, TEMP rtmp, TEMP rscratch, KILL cr);
@@ -9170,7 +9170,24 @@ instruct vcompress_reg_avx(vec dst, vec src, vec mask, rRegI rtmp, rRegL rscratc
     int vlen_enc = vector_length_encoding(this);
     BasicType bt  = Matcher::vector_element_basic_type(this);
     __ vector_compress_expand_avx2(opcode, $dst$$XMMRegister, $src$$XMMRegister, $mask$$XMMRegister, $rtmp$$Register,
-                                   $rscratch$$Register, $perm$$XMMRegister, $xtmp$$XMMRegister, bt, vlen_enc);
+                                   $rscratch$$Register, $perm$$XMMRegister, $xtmp$$XMMRegister, xnoreg, bt, vlen_enc);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vcompress_reg_avx_ecore(vec dst, vec src, vec mask, rRegI rtmp, rRegL rscratch, vec perm, vec xtmp, vec xtmp1, rFlagsReg cr) %{
+  predicate(EnableX86ECoreOpts && !VM_Version::supports_avx512vl() && Matcher::vector_length_in_bytes(n) <= 32);
+  match(Set dst (CompressV src mask));
+  match(Set dst (ExpandV src mask));
+  effect(TEMP_DEF dst, TEMP perm, TEMP xtmp, TEMP xtmp1, TEMP rtmp, TEMP rscratch, KILL cr);
+  format %{ "vector_compress $dst, $src, $mask \t!using $xtmp, $rtmp, $rscratch and $perm as TEMP" %}
+  ins_encode %{
+    int opcode = this->ideal_Opcode();
+    int vlen_enc = vector_length_encoding(this);
+    BasicType bt  = Matcher::vector_element_basic_type(this);
+    __ vector_compress_expand_avx2(opcode, $dst$$XMMRegister, $src$$XMMRegister, $mask$$XMMRegister, $rtmp$$Register,
+                                   $rscratch$$Register, $perm$$XMMRegister, $xtmp$$XMMRegister, $xtmp1$$XMMRegister,
+                                   bt, vlen_enc);
   %}
   ins_pipe( pipe_slow );
 %}

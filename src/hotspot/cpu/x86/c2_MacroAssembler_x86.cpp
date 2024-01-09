@@ -5283,12 +5283,12 @@ void C2_MacroAssembler::vector_mask_compress(KRegister dst, KRegister src, Regis
 #ifdef _LP64
 void C2_MacroAssembler::vector_compress_expand_avx2(int opcode, XMMRegister dst, XMMRegister src, XMMRegister mask,
                                                     Register rtmp, Register rscratch, XMMRegister permv,
-                                                    XMMRegister xtmp, BasicType bt, int vec_enc) {
+                                                    XMMRegister xtmp, XMMRegister xtmp1, BasicType bt, int vec_enc) {
   assert(type2aelembytes(bt) >= 4, "");
   assert(opcode == Op_CompressV || opcode == Op_ExpandV, "");
   if (bt == T_INT || bt == T_FLOAT) {
     vmovmskps(rtmp, mask, vec_enc);
-    shlq(rtmp, 5);
+    shlq(rtmp, 5);  // for 32 bit rows (8 ints)
     if (opcode == Op_CompressV) {
       lea(rscratch, ExternalAddress(StubRoutines::x86::compress_perm_table32()));
     } else {
@@ -5302,11 +5302,11 @@ void C2_MacroAssembler::vector_compress_expand_avx2(int opcode, XMMRegister dst,
     // permute table contains either a valid permute index or a -1 (default)
     // value, this can potentially be used as a blending mask after
     // compressing/expanding the source vector lanes.
-    vblendvps(dst, dst, xtmp, permv, vec_enc);
+    vblendvps(dst, dst, xtmp, permv, vec_enc, false, xtmp1);
   } else {
     assert(bt == T_LONG || bt == T_DOUBLE, "");
     vmovmskpd(rtmp, mask, vec_enc);
-    shlq(rtmp, 5);
+    shlq(rtmp, 5); // for 64 bit rows (4 longs)
     if (opcode == Op_CompressV) {
       lea(rscratch, ExternalAddress(StubRoutines::x86::compress_perm_table64()));
     } else {
@@ -5328,7 +5328,7 @@ void C2_MacroAssembler::vector_compress_expand_avx2(int opcode, XMMRegister dst,
     // permute table contains either a valid permute index or a -1 (default)
     // value, this can potentially be used as a blending mask after
     // compressing/expanding the source vector lanes.
-    vblendvps(dst, dst, permv, xtmp, vec_enc);
+    vblendvps(dst, dst, permv, xtmp, vec_enc, false, xtmp1);
   }
 }
 #endif

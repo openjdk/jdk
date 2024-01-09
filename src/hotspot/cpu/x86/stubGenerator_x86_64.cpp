@@ -1015,7 +1015,7 @@ address StubGenerator::generate_expand_perm_table(const char *stub_name, int32_t
     }
   } else {
     assert(esize == 64, "");
-    // Loop to generate 16 x 4 int expand permute index table. A row is accessed
+    // Loop to generate 16 x 4 long expand permute index table. A row is accessed
     // using 4 bit index computed using vector mask. An entry in the row holds either
     // a valid permute index (starting from least significant lane) placed at poisition
     // corresponding to set bit position or a -1 (default) value.
