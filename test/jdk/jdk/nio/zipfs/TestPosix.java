@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, SAP SE. All rights reserved.
+ * Copyright (c) 2019, 2024, SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,17 +28,12 @@ import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.file.*;
-import java.nio.file.attribute.BasicFileAttributes;
-import java.nio.file.attribute.GroupPrincipal;
-import java.nio.file.attribute.PosixFileAttributeView;
-import java.nio.file.attribute.PosixFileAttributes;
-import java.nio.file.attribute.PosixFilePermission;
-import java.nio.file.attribute.PosixFilePermissions;
-import java.nio.file.attribute.UserPrincipal;
+import java.nio.file.attribute.*;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
+import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.jar.JarEntry;
@@ -759,9 +754,19 @@ public class TestPosix {
         // Sanity check that 'external file attributes' has the expected value
         verifyExternalFileAttribute(zip, expectedBits);
 
-        // Exercise Files.setPosixFilePermissions without changing permissions
+
         Path zipFile = Path.of("preserve-symlink.zip");
         Files.write(zipFile, zip);
+
+        // Verify that a read/synch roundtrip preserves the external file attributes
+        try (FileSystem fs = FileSystems.newFileSystem(zipFile, ENV_POSIX)) {
+            Path source = fs.getPath("hello.txt");
+            Files.setLastModifiedTime(source, FileTime.from(Instant.now()));
+        }
+        // Updating last modified time should not modify external file attributes
+        verifyExternalFileAttribute(Files.readAllBytes(zipFile), expectedBits);
+
+        // Verify calling Files.setPosixFilePermissions with current permission set
         try (FileSystem fs = FileSystems.newFileSystem(zipFile, ENV_POSIX)) {
             Path source = fs.getPath("hello.txt");
             // Set permissions to their current value
