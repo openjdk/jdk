@@ -38,6 +38,7 @@
 #include "opto/escape.hpp"
 #include "opto/macro.hpp"
 #include "opto/phaseX.hpp"
+#include "opto/locknode.hpp"
 #include "opto/movenode.hpp"
 #include "opto/rootnode.hpp"
 #include "utilities/macros.hpp"
@@ -2546,17 +2547,15 @@ void ConnectionGraph::optimize_ideal_graph(GrowableArray<Node*>& ptr_cmp_worklis
       Node *n = C->macro_node(i);
       if (n->is_AbstractLock()) { // Lock and Unlock nodes
         AbstractLockNode* alock = n->as_AbstractLock();
-        if (!alock->is_non_esc_obj()) {
-          if (not_global_escape(alock->obj_node())) {
-            assert(!alock->is_eliminated() || alock->is_coarsened(), "sanity");
-            // The lock could be marked eliminated by lock coarsening
-            // code during first IGVN before EA. Replace coarsened flag
-            // to eliminate all associated locks/unlocks.
+        if (!alock->is_non_esc_obj() && can_eliminate_lock(alock)) {
+          assert(!alock->is_eliminated() || alock->is_coarsened(), "sanity");
+          // The lock could be marked eliminated by lock coarsening
+          // code during first IGVN before EA. Replace coarsened flag
+          // to eliminate all associated locks/unlocks.
 #ifdef ASSERT
-            alock->log_lock_optimization(C, "eliminate_lock_set_non_esc3");
+          alock->log_lock_optimization(C, "eliminate_lock_set_non_esc3");
 #endif
-            alock->set_non_esc_obj();
-          }
+          alock->set_non_esc_obj();
         }
       }
     }
@@ -2851,7 +2850,7 @@ bool PointsToNode::non_escaping_allocation() {
 }
 
 // Return true if we know the node does not escape globally.
-bool ConnectionGraph::not_global_escape(Node *n) {
+bool ConnectionGraph::not_global_escape(Node *n) const {
   assert(!_collecting, "should not call during graph construction");
   // If the node was created after the escape computation we can't answer.
   uint idx = n->_idx;
@@ -2880,6 +2879,43 @@ bool ConnectionGraph::not_global_escape(Node *n) {
   return true;
 }
 
+/*
+ * The lock/unlock is unnecessary if we are locking a non-escaped object,
+ * unless synchronized block (defined by BoxLock node) has other escaped objects
+ * (for example, locked object come from Interpreter in OSR compilation).
+ *
+ * Return true if lock/unlock can be eliminated.
+ */
+bool ConnectionGraph::can_eliminate_lock(AbstractLockNode* alock) const {
+  BoxLockNode* box = alock->box_node()->as_BoxLock();
+  if (box->has_escaped_object()) {
+    // Already found that this synchronized block has escaped objects.
+    return false;
+  }
+  bool not_esc_obj = not_global_escape(alock->obj_node());
+  if (not_esc_obj) {
+    // Now check all associated objects in this synchronized block.
+    for (uint i = 0; i < box->outcnt(); i++) {
+      Node* n = box->raw_out(i);
+      assert(!n->is_Phi(), "should not merge BoxLock nodes");
+      if (n->is_AbstractLock()) {
+        alock = n->as_AbstractLock();
+        // Check Lock's box since box could be referenced by other
+        // not related Lock's debug info.
+        if (alock->box_node() == box) {
+          if (!not_global_escape(alock->obj_node())) {
+            not_esc_obj = false;
+            break;
+          }
+        }
+      }
+    }
+  }
+  if (!not_esc_obj) { // has escaped object
+    box->set_has_escaped_object(); // Cache result
+  }
+  return not_esc_obj;
+}
 
 // Helper functions
 

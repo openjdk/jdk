@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,7 @@ class BoxLockNode : public Node {
   const int     _slot; // stack slot
   RegMask     _inmask; // OptoReg corresponding to stack slot
   bool _is_eliminated; // Associated locks were safely eliminated
+  bool _has_esc_obj;   // Associated locks are used for escaped object
 
 public:
   BoxLockNode( int lock );
@@ -60,6 +61,9 @@ public:
   bool is_eliminated() const { return _is_eliminated; }
   // mark lock as eliminated.
   void set_eliminated()      { _is_eliminated = true; }
+
+  bool has_escaped_object() const { return _has_esc_obj; }
+  void set_has_escaped_object()   { _has_esc_obj = true; }
 
   // Is BoxLock node used for one simple lock region?
   bool is_simple_lock_region(LockNode** unique_lock, Node* obj, Node** bad_lock);
