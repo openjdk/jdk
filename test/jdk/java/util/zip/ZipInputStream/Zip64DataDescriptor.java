@@ -160,6 +160,17 @@ public class Zip64DataDescriptor {
         readZipInputStream(invalidZip64);
     }
 
+    /*
+     * Validate that an extra data size exceeding the length of the extra field is ignored
+     */
+    @Test
+    public void shouldIgnoreTrucatedZip64Extra() throws IOException {
+
+        truncateZip64();
+
+        readZipInputStream(invalidZip64);
+    }
+
     /**
      * Updates the 16-bit 'data size' field of the Zip64 extended information field,
      * potentially to an invalid value.
@@ -171,6 +182,28 @@ public class Zip64DataDescriptor {
         short nlen = buffer.getShort(ZipFile.LOCNAM);
         int dataSizeOffset = ZipFile.LOCHDR + nlen + Short.BYTES;
         buffer.putShort(dataSizeOffset, size);
+    }
+
+    /**
+     * Puts a truncated Zip64 field (just the tag) at the end of the LOC extra field.
+     * The beginning of the extra field is filled with a generic extra field containing
+     * just zeros.
+     */
+    private void truncateZip64() {
+        ByteBuffer buffer = ByteBuffer.wrap(invalidZip64).order(ByteOrder.LITTLE_ENDIAN);
+        // Get the LOC name and extra sizes
+        short nlen = buffer.getShort(ZipFile.LOCNAM);
+        short elen = buffer.getShort(ZipFile.LOCEXT);
+        int cenOffset = ZipFile.LOCHDR + nlen + elen;
+
+        // Zero out the extra field
+        int estart = ZipFile.LOCHDR + nlen;
+        buffer.put(estart, new byte[elen]);
+        // Put a generic extra field in the start
+        buffer.putShort(estart, (short) 42);
+        buffer.putShort(estart + Short.BYTES, (short) (elen - 4 - 2));
+        // Put a truncated (just the tag) Zip64 field at the end
+        buffer.putShort(cenOffset - Short.BYTES, (short) 0x0001);
     }
 
     /*
