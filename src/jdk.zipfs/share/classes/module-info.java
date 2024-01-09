@@ -293,22 +293,6 @@ import java.util.Set;
  *            .forEach(System.out::println);
  * }
  * </pre>
- *
- * @implNote
- * While the
- * <a href="https://support.pkware.com/pkzip/appnote">ZIP specification</a>
- * has no restrictions on ZIP entries with duplicate names, the
- * {@link ZipOutputStream} class doesn't allow creation of ZIP archives with
- * duplicate entry names. Therefore, when parsing archives containing duplicate
- * names, unexpected behavior may occur such as metadata or content from the
- * later entry being returned due to internal caching.
- *
- * Additionally, for compatibility with earlier versions of the JDK, files and
- * directories with the same name (such as "foobar" and "foobar/") are
- * considered duplicates, which can result in unexpected behavior such as wrong
- * metadata or content being returned when parsing archives containing
- * duplicate names.
- *
  * @provides java.nio.file.spi.FileSystemProvider
  * @moduleGraph
  * @since 9
