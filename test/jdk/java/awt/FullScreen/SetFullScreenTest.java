@@ -33,8 +33,8 @@ import static java.awt.EventQueue.invokeAndWait;
  * @test
  * @key headful
  * @bug 8312518
- * @summary Setting a fullscreen window using setFullScreenWindow()
- *          shows up as black screen on newer macOS versions (13 & 14).
+ * @summary Setting fullscreen window using setFullScreenWindow() shows up
+ *          as black screen on newer macOS versions (13 & 14).
  */
 
 public class SetFullScreenTest {
