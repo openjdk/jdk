@@ -3662,8 +3662,8 @@ void MacroAssembler::mul_add(Register out, Register in, Register offset,
   bind(L_end);
 }
 
-static const int64_t bits32 = right_n_bits(32);
-static const int64_t bits8 = right_n_bits(8);
+static const int64_t right_32_bits = right_n_bits(32);
+static const int64_t right_8_bits = right_n_bits(8);
 
 /**
  * Emits code to update CRC-32 with a byte value according to constants in table
@@ -3681,7 +3681,7 @@ void MacroAssembler::update_byte_crc32(Register crc, Register val, Register tabl
   assert_different_registers(crc, val, table);
 
   xorr(val, val, crc);
-  andi(val, val, bits8);
+  andi(val, val, right_8_bits);
   slli(val, val, 2);
   add(val, table, val);
   lwu(val, Address(val));
@@ -3712,37 +3712,37 @@ void MacroAssembler::update_word_crc32(Register crc, Register v, Register tmp1, 
     srli(v, v, 32);
   xorr(v, v, crc);
 
-  andi(tmp1, v, bits8);
+  andi(tmp1, v, right_8_bits);
   shadd(tmp1, tmp1, table3, tmp2, 2);
   lwu(crc, Address(tmp1));
 
   // In order to access table elements according to initial algorithm
   // the following actions should be performed (with no Zba enabled):
   //  tmp1 = v >> 8
-  //  tmp1 = tmp1 & bits8
+  //  tmp1 = tmp1 & right_8_bits
   //  tmp1 = tmp1 << 2
   //  tmp1 += table2
   // Which is the same as:
   //  tmp1 = v >> 6
-  //  tmp1 = tmp1 & (bits8 << 2)
+  //  tmp1 = tmp1 & (right_8_bits << 2)
   //  tmp1 += table2
 
   srli(tmp1, v, 6);
-  andi(tmp1, tmp1, (bits8 << 2));
+  andi(tmp1, tmp1, (right_8_bits << 2));
   add(tmp1, tmp1, table2);
   lwu(tmp2, Address(tmp1));
 
   srli(tmp1, v, 14);
   xorr(crc, crc, tmp2);
 
-  andi(tmp1, tmp1, (bits8 << 2));
+  andi(tmp1, tmp1, (right_8_bits << 2));
   add(tmp1, tmp1, table1);
   lwu(tmp2, Address(tmp1));
 
   srli(tmp1, v, 22);
   xorr(crc, crc, tmp2);
 
-  andi(tmp1, tmp1, (bits8 << 2));
+  andi(tmp1, tmp1, (right_8_bits << 2));
   add(tmp1, tmp1, table0);
   lwu(tmp2, Address(tmp1));
   xorr(crc, crc, tmp2);
@@ -3763,7 +3763,7 @@ void MacroAssembler::kernel_crc32(Register crc, Register buf, Register len,
 
   const int64_t unroll = 20;
   const int64_t unroll_words = unroll*wordSize;
-  mv(tmp5, bits32);
+  mv(tmp5, right_32_bits);
   subw(len, len, unroll_words);
   andn(crc, tmp5, crc);
 
