@@ -353,7 +353,9 @@ public final class StackCounter {
                     inArray = false;
                 }
                 case 'L' -> {
-                    while (cur < end && descriptor.charAt(cur++) != ';');
+                    cur = descriptor.indexOf(';', cur) + 1;
+                    if (cur == 0)
+                        throw new IllegalArgumentException("Bad method descriptor: " + descriptor);
                     count++;
                     inArray = false;
                 }
