@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,16 +28,22 @@
  * @requires vm.cpu.features ~= ".*sse4\\.1.*" & vm.debug & vm.flavor == "server"
  * @requires !vm.emulatedClient & !vm.graal.enabled
  * @library /test/lib /
- * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:StressLongCountedLoop=0
- *                   compiler.c2.cr7200264.TestSSE4IntVect
+ * @run driver compiler.c2.cr7200264.TestSSE4IntVect
  */
 
 package compiler.c2.cr7200264;
 
+import compiler.lib.ir_framework.*;
+
 public class TestSSE4IntVect {
-    public static void main(String[] args) throws Throwable {
-        TestDriver test = new TestDriver();
-        test.addExpectedVectorization("MulVI", 2);
-        test.run();
+
+    public static void main(String[] args) {
+        new TestFramework().addHelperClasses(TestIntVect.class).addFlags("-XX:+IgnoreUnrecognizedVMOptions", "-XX:StressLongCountedLoop=0").start();
+    }
+
+    @Test
+    @IR(counts = {IRNode.MUL_VI, ">= 2" })
+    static void test() {
+        TestIntVect.testInner();
     }
 }
