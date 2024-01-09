@@ -651,7 +651,7 @@ public class ZipInputStream extends InflaterInputStream implements ZipConstants 
      * This method returns false for any invalid extra block sizes, as if the extra
      * data contained no Zip64 field.
      */
-    private boolean hasZip64Extra(ZipEntry e) throws IOException {
+    private boolean hasZip64Extra(ZipEntry e)  {
         byte[] extra = e.extra;
         int fixedSize = 2 * Short.BYTES; // id + size
         if (extra != null && extra.length > fixedSize) {
