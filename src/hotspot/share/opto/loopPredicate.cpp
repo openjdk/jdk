@@ -1297,7 +1297,7 @@ bool PhaseIdealLoop::loop_predication_impl_helper(IdealLoopTree* loop, IfProjNod
 
   // Eliminate the old If in the loop body
   // If a range check is eliminated, data dependent nodes (Load and range check CastII nodes) are now dependent on 2
-  // range check predicates (one for the start of the loop, one for the end) but we can only keep track of one control
+  // Hoisted Check Predicates (one for the start of the loop, one for the end) but we can only keep track of one control
   // dependency: pin the data dependent nodes.
   dominated_by(new_predicate_proj, iff, if_success_proj->_con != new_predicate_proj->_con, range_check_predicate);
 
