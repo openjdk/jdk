@@ -539,13 +539,69 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Generate a type converting instruction
+     * Generate instruction(s) to convert {@code fromType} to {@code toType}
      * @param fromType the source type
      * @param toType the target type
      * @return this builder
+     * @throws IllegalArgumentException for conversions of {@code VoidType} or {@code ReferenceType}
      */
     default CodeBuilder conversion(TypeKind fromType, TypeKind toType) {
-        return with(ConvertInstruction.of(fromType, toType));
+        return switch (fromType) {
+            case IntType, ByteType, CharType, ShortType, BooleanType ->
+                    switch (toType) {
+                        case IntType -> this;
+                        case LongType -> i2l();
+                        case DoubleType -> i2d();
+                        case FloatType -> i2f();
+                        case ByteType -> i2b();
+                        case CharType -> i2c();
+                        case ShortType -> i2s();
+                        case BooleanType -> iconst_1().iand();
+                        case VoidType, ReferenceType ->
+                            throw new IllegalArgumentException(String.format("convert %s -> %s", fromType, toType));
+                    };
+            case LongType ->
+                    switch (toType) {
+                        case IntType -> l2i();
+                        case LongType -> this;
+                        case DoubleType -> l2d();
+                        case FloatType -> l2f();
+                        case ByteType -> l2i().i2b();
+                        case CharType -> l2i().i2c();
+                        case ShortType -> l2i().i2s();
+                        case BooleanType -> l2i().iconst_1().iand();
+                        case VoidType, ReferenceType ->
+                            throw new IllegalArgumentException(String.format("convert %s -> %s", fromType, toType));
+                    };
+            case DoubleType ->
+                    switch (toType) {
+                        case IntType -> d2i();
+                        case LongType -> d2l();
+                        case DoubleType -> this;
+                        case FloatType -> d2f();
+                        case ByteType -> d2i().i2b();
+                        case CharType -> d2i().i2c();
+                        case ShortType -> d2i().i2s();
+                        case BooleanType -> d2i().iconst_1().iand();
+                        case VoidType, ReferenceType ->
+                            throw new IllegalArgumentException(String.format("convert %s -> %s", fromType, toType));
+                    };
+            case FloatType ->
+                    switch (toType) {
+                        case IntType -> f2i();
+                        case LongType -> f2l();
+                        case DoubleType -> f2d();
+                        case FloatType -> this;
+                        case ByteType -> f2i().i2b();
+                        case CharType -> f2i().i2c();
+                        case ShortType -> f2i().i2s();
+                        case BooleanType -> f2i().iconst_1().iand();
+                        case VoidType, ReferenceType ->
+                            throw new IllegalArgumentException(String.format("convert %s -> %s", fromType, toType));
+                    };
+            case VoidType, ReferenceType ->
+                throw new IllegalArgumentException(String.format("convert %s -> %s", fromType, toType));
+        };
     }
 
     /**
@@ -911,7 +967,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder d2f() {
-        return conversion(TypeKind.DoubleType, TypeKind.FloatType);
+        return with(ConvertInstruction.of(Opcode.D2F));
     }
 
     /**
@@ -919,7 +975,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder d2i() {
-        return conversion(TypeKind.DoubleType, TypeKind.IntType);
+        return with(ConvertInstruction.of(Opcode.D2I));
     }
 
     /**
@@ -927,7 +983,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder d2l() {
-        return conversion(TypeKind.DoubleType, TypeKind.LongType);
+        return with(ConvertInstruction.of(Opcode.D2L));
     }
 
     /**
@@ -1107,7 +1163,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder f2d() {
-        return conversion(TypeKind.FloatType, TypeKind.DoubleType);
+        return with(ConvertInstruction.of(Opcode.F2D));
     }
 
     /**
@@ -1115,7 +1171,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder f2i() {
-        return conversion(TypeKind.FloatType, TypeKind.IntType);
+        return with(ConvertInstruction.of(Opcode.F2I));
     }
 
     /**
@@ -1123,7 +1179,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder f2l() {
-        return conversion(TypeKind.FloatType, TypeKind.LongType);
+        return with(ConvertInstruction.of(Opcode.F2L));
     }
 
     /**
@@ -1321,7 +1377,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder i2b() {
-        return conversion(TypeKind.IntType, TypeKind.ByteType);
+        return with(ConvertInstruction.of(Opcode.I2B));
     }
 
     /**
@@ -1329,7 +1385,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder i2c() {
-        return conversion(TypeKind.IntType, TypeKind.CharType);
+        return with(ConvertInstruction.of(Opcode.I2C));
     }
 
     /**
@@ -1337,7 +1393,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder i2d() {
-        return conversion(TypeKind.IntType, TypeKind.DoubleType);
+        return with(ConvertInstruction.of(Opcode.I2D));
     }
 
     /**
@@ -1345,7 +1401,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder i2f() {
-        return conversion(TypeKind.IntType, TypeKind.FloatType);
+        return with(ConvertInstruction.of(Opcode.I2F));
     }
 
     /**
@@ -1353,7 +1409,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder i2l() {
-        return conversion(TypeKind.IntType, TypeKind.LongType);
+        return with(ConvertInstruction.of(Opcode.I2L));
     }
 
     /**
@@ -1361,7 +1417,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder i2s() {
-        return conversion(TypeKind.IntType, TypeKind.ShortType);
+        return with(ConvertInstruction.of(Opcode.I2S));
     }
 
     /**
@@ -1904,7 +1960,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder l2d() {
-        return conversion(TypeKind.LongType, TypeKind.DoubleType);
+        return with(ConvertInstruction.of(Opcode.L2D));
     }
 
     /**
@@ -1912,7 +1968,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder l2f() {
-        return conversion(TypeKind.LongType, TypeKind.FloatType);
+        return with(ConvertInstruction.of(Opcode.L2F));
     }
 
     /**
@@ -1920,7 +1976,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder l2i() {
-        return conversion(TypeKind.LongType, TypeKind.IntType);
+        return with(ConvertInstruction.of(Opcode.L2I));
     }
 
     /**
