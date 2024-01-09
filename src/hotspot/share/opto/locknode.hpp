@@ -36,7 +36,7 @@ class BoxLockNode : public Node {
   const int     _slot; // stack slot
   RegMask     _inmask; // OptoReg corresponding to stack slot
   bool _is_eliminated; // Associated locks were safely eliminated
-  bool _has_esc_obj;   // Associated locks are used for escaped object
+  bool   _has_esc_obj; // Associated locks are used for escaped object
 
 public:
   BoxLockNode( int lock );

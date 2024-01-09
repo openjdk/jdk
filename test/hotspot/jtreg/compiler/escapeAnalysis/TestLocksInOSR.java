@@ -32,7 +32,7 @@ public class TestLocksInOSR {
     public static void main(String[] args) throws Exception {
         // Triggers assert(this->held_monitor_count() == this->jni_monitor_count()) failed: held monitor count should be equal to jni: 1 != 0
         test1();
-      
+
         // Triggers assert(current->held_monitor_count() == 0) failed: Should not be possible
         test2();
     }

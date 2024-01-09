@@ -112,7 +112,7 @@
 
 class  Compile;
 class  Node;
-class AbstractLockNode;
+class  AbstractLockNode;
 class  CallNode;
 class  PhiNode;
 class  PhaseTransform;
