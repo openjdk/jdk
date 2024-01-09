@@ -624,6 +624,7 @@ void SerialHeap::do_collection(bool           full,
     CodeCache::on_gc_marking_cycle_start();
 
     ClassUnloadingContext ctx(1 /* num_nmethod_unlink_workers */,
+                              false /* unregister_nmethods_during_purge */,
                               false /* lock_codeblob_free_separately */);
 
     collect_generation(_old_gen,
@@ -682,7 +683,11 @@ void SerialHeap::verify_nmethod(nmethod* nm) {
 }
 
 void SerialHeap::prune_scavengable_nmethods() {
-  ScavengableNMethods::prune_nmethods();
+  ScavengableNMethods::prune_nmethods_not_into_young();
+}
+
+void SerialHeap::prune_unlinked_nmethods() {
+  ScavengableNMethods::prune_unlinked_nmethods();
 }
 
 HeapWord* SerialHeap::satisfy_failed_allocation(size_t size, bool is_tlab) {
@@ -806,10 +811,6 @@ void SerialHeap::process_roots(ScanningOption so,
   // movement by a scavenging collection.
   DEBUG_ONLY(CodeBlobToOopClosure assert_code_is_non_scavengable(&assert_is_non_scavengable_closure, !CodeBlobToOopClosure::FixRelocations));
   DEBUG_ONLY(ScavengableNMethods::asserted_non_scavengable_nmethods_do(&assert_code_is_non_scavengable));
-}
-
-void SerialHeap::gen_process_weak_roots(OopClosure* root_closure) {
-  WeakProcessor::oops_do(root_closure);
 }
 
 bool SerialHeap::no_allocs_since_save_marks() {
@@ -1000,15 +1001,6 @@ void SerialHeap::save_marks() {
   _young_gen->save_marks();
   _old_gen->save_marks();
 }
-
-#if INCLUDE_SERIALGC
-void SerialHeap::prepare_for_compaction() {
-  // Start by compacting into same gen.
-  CompactPoint cp(_old_gen);
-  _old_gen->prepare_for_compaction(&cp);
-  _young_gen->prepare_for_compaction(&cp);
-}
-#endif // INCLUDE_SERIALGC
 
 void SerialHeap::verify(VerifyOption option /* ignored */) {
   log_debug(gc, verify)("%s", _old_gen->name());
