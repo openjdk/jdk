@@ -68,6 +68,7 @@ import jdk.dynalink.DynamicLinkerFactory;
  * Typical usage is for implementing
  * {@link DynamicLinkerFactory#setInternalObjectsFilter(MethodHandleTransformer)
  * internal objects filters}.
+ * @since 9
  */
 @FunctionalInterface
 public interface MethodHandleTransformer {

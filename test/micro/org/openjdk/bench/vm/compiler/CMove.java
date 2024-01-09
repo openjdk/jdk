@@ -20,32 +20,40 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+package org.openjdk.bench.vm.compiler;
 
-package compiler.lib.ir_framework.driver.irmatching.parser.hotspot;
+import java.util.concurrent.TimeUnit;
+import java.util.random.RandomGeneratorFactory;
+import org.openjdk.jmh.annotations.*;
+import org.openjdk.jmh.infra.Blackhole;
 
-/**
- * This class represents a writer thread that emits log messages with LogCompilation. It saves and restores a currently
- * parsed {@link LoggedMethod} if a {@link CompilePhaseBlock} was interrupted before reaching the block end tag.
- *
- * @see LoggedMethod
- * @see CompilePhaseBlock
- */
-class WriterThread {
-    private LoggedMethod loggedMethod = LoggedMethod.DONT_CARE;
+@BenchmarkMode(Mode.AverageTime)
+@OutputTimeUnit(TimeUnit.MICROSECONDS)
+@State(Scope.Thread)
+@Warmup(iterations = 5, time = 1)
+@Measurement(iterations = 5, time = 1)
+@Fork(value = 1)
+public class CMove {
+    static final int SIZE = 1000000;
 
-    public static boolean isWriterThreadLine(String line) {
-        return line.startsWith("<writer");
-    }
+    @Param({"0.003", "0.006", "0.01", "0.02", "0.03", "0.06", "0.1", "0.2", "0.3", "0.6"})
+    double freq;
 
-    public void saveLoggedMethod(LoggedMethod loggedMethod) {
-        this.loggedMethod = loggedMethod;
-    }
+    boolean[] conds;
 
-    public LoggedMethod restoreLoggedMethod() {
-        LoggedMethod restoredLoggedMethod = loggedMethod;
-        if (restoredLoggedMethod != LoggedMethod.DONT_CARE) {
-            loggedMethod = LoggedMethod.DONT_CARE;
+    @Setup(Level.Iteration)
+    public void setup() {
+        var r = RandomGeneratorFactory.getDefault().create(1);
+        conds = new boolean[SIZE];
+        for (int i = 0; i < SIZE; i++) {
+            conds[i] = r.nextDouble() < freq;
         }
-        return restoredLoggedMethod;
+    }
+
+    @Benchmark
+    public void run(Blackhole bh) {
+        for (int i = 0; i < conds.length; i++) {
+            bh.consume(conds[i] ? 2 : 1);
+        }
     }
 }

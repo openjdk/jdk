@@ -27,5 +27,5 @@
 # ##########################################################
 #
 module name jdk.jartool
-header exports jdk/security/jarsigner requires name\u0020;java.base\u0020;flags\u0020;8000,name\u0020;jdk.internal.opt\u0020;flags\u0020;0 provides interface\u0020;java/util/spi/ToolProvider\u0020;impls\u0020;sun/tools/jar/JarToolProvider target linux-amd64 moduleMainClass sun/tools/jar/Main flags 8000
+header exports jdk/security/jarsigner requires name\u0020;java.base\u0020;flags\u0020;8000,name\u0020;jdk.internal.opt\u0020;flags\u0020;0 provides interface\u0020;java/util/spi/ToolProvider\u0020;impls\u0020;sun/tools/jar/JarToolProvider target linux-amd64 moduleMainClass sun/tools/jar/Main flags 8000 classAnnotations @Ljdk/internal/javac/ParticipatesInPreview;
 

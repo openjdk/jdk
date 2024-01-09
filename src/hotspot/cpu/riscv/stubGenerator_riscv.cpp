@@ -3659,7 +3659,393 @@ class StubGenerator: public StubCodeGenerator {
       return entry;
     }
   };
+
 #endif // COMPILER2
+
+#undef __
+#define __ this->
+  class Sha2Generator : public MacroAssembler {
+    StubCodeGenerator* _cgen;
+   public:
+      Sha2Generator(MacroAssembler* masm, StubCodeGenerator* cgen) : MacroAssembler(masm->code()), _cgen(cgen) {}
+      address generate_sha256_implCompress(bool multi_block) {
+        return generate_sha2_implCompress(Assembler::e32, multi_block);
+      }
+      address generate_sha512_implCompress(bool multi_block) {
+        return generate_sha2_implCompress(Assembler::e64, multi_block);
+      }
+   private:
+
+    void vleXX_v(Assembler::SEW vset_sew, VectorRegister vr, Register sr) {
+      if (vset_sew == Assembler::e32) __ vle32_v(vr, sr);
+      else                            __ vle64_v(vr, sr);
+    }
+
+    void vseXX_v(Assembler::SEW vset_sew, VectorRegister vr, Register sr) {
+      if (vset_sew == Assembler::e32) __ vse32_v(vr, sr);
+      else                            __ vse64_v(vr, sr);
+    }
+
+    // Overview of the logic in each "quad round".
+    //
+    // The code below repeats 16/20 times the logic implementing four rounds
+    // of the SHA-256/512 core loop as documented by NIST. 16/20 "quad rounds"
+    // to implementing the 64/80 single rounds.
+    //
+    //    // Load four word (u32/64) constants (K[t+3], K[t+2], K[t+1], K[t+0])
+    //    // Output:
+    //    //   vTmp1 = {K[t+3], K[t+2], K[t+1], K[t+0]}
+    //    vl1reXX.v vTmp1, ofs
+    //
+    //    // Increment word constant address by stride (16/32 bytes, 4*4B/8B, 128b/256b)
+    //    addi ofs, ofs, 16/32
+    //
+    //    // Add constants to message schedule words:
+    //    //  Input
+    //    //    vTmp1 = {K[t+3], K[t+2], K[t+1], K[t+0]}
+    //    //    vW0 = {W[t+3], W[t+2], W[t+1], W[t+0]}; // Vt0 = W[3:0];
+    //    //  Output
+    //    //    vTmp0 = {W[t+3]+K[t+3], W[t+2]+K[t+2], W[t+1]+K[t+1], W[t+0]+K[t+0]}
+    //    vadd.vv vTmp0, vTmp1, vW0
+    //
+    //    //  2 rounds of working variables updates.
+    //    //     vState1[t+4] <- vState1[t], vState0[t], vTmp0[t]
+    //    //  Input:
+    //    //    vState1 = {c[t],d[t],g[t],h[t]}   " = vState1[t] "
+    //    //    vState0 = {a[t],b[t],e[t],f[t]}
+    //    //    vTmp0 = {W[t+3]+K[t+3], W[t+2]+K[t+2], W[t+1]+K[t+1], W[t+0]+K[t+0]}
+    //    //  Output:
+    //    //    vState1 = {f[t+2],e[t+2],b[t+2],a[t+2]}  " = vState0[t+2] "
+    //    //        = {h[t+4],g[t+4],d[t+4],c[t+4]}  " = vState1[t+4] "
+    //    vsha2cl.vv vState1, vState0, vTmp0
+    //
+    //    //  2 rounds of working variables updates.
+    //    //     vState0[t+4] <- vState0[t], vState0[t+2], vTmp0[t]
+    //    //  Input
+    //    //   vState0 = {a[t],b[t],e[t],f[t]}       " = vState0[t] "
+    //    //       = {h[t+2],g[t+2],d[t+2],c[t+2]}   " = vState1[t+2] "
+    //    //   vState1 = {f[t+2],e[t+2],b[t+2],a[t+2]}   " = vState0[t+2] "
+    //    //   vTmp0 = {W[t+3]+K[t+3], W[t+2]+K[t+2], W[t+1]+K[t+1], W[t+0]+K[t+0]}
+    //    //  Output:
+    //    //   vState0 = {f[t+4],e[t+4],b[t+4],a[t+4]}   " = vState0[t+4] "
+    //    vsha2ch.vv vState0, vState1, vTmp0
+    //
+    //    // Combine 2QW into 1QW
+    //    //
+    //    // To generate the next 4 words, "new_vW0"/"vTmp0" from vW0-vW3, vsha2ms needs
+    //    //     vW0[0..3], vW1[0], vW2[1..3], vW3[0, 2..3]
+    //    // and it can only take 3 vectors as inputs. Hence we need to combine
+    //    // vW1[0] and vW2[1..3] in a single vector.
+    //    //
+    //    // vmerge Vt4, Vt1, Vt2, V0
+    //    // Input
+    //    //  V0 = mask // first word from vW2, 1..3 words from vW1
+    //    //  vW2 = {Wt-8, Wt-7, Wt-6, Wt-5}
+    //    //  vW1 = {Wt-12, Wt-11, Wt-10, Wt-9}
+    //    // Output
+    //    //  Vt4 = {Wt-12, Wt-7, Wt-6, Wt-5}
+    //    vmerge.vvm vTmp0, vW2, vW1, v0
+    //
+    //    // Generate next Four Message Schedule Words (hence allowing for 4 more rounds)
+    //    // Input
+    //    //  vW0 = {W[t+ 3], W[t+ 2], W[t+ 1], W[t+ 0]}     W[ 3: 0]
+    //    //  vW3 = {W[t+15], W[t+14], W[t+13], W[t+12]}     W[15:12]
+    //    //  vTmp0 = {W[t+11], W[t+10], W[t+ 9], W[t+ 4]}     W[11: 9,4]
+    //    // Output (next four message schedule words)
+    //    //  vW0 = {W[t+19],  W[t+18],  W[t+17],  W[t+16]}  W[19:16]
+    //    vsha2ms.vv vW0, vTmp0, vW3
+    //
+    // BEFORE
+    //  vW0 - vW3 hold the message schedule words (initially the block words)
+    //    vW0 = W[ 3: 0]   "oldest"
+    //    vW1 = W[ 7: 4]
+    //    vW2 = W[11: 8]
+    //    vW3 = W[15:12]   "newest"
+    //
+    //  vt6 - vt7 hold the working state variables
+    //    vState0 = {a[t],b[t],e[t],f[t]}   // initially {H5,H4,H1,H0}
+    //    vState1 = {c[t],d[t],g[t],h[t]}   // initially {H7,H6,H3,H2}
+    //
+    // AFTER
+    //  vW0 - vW3 hold the message schedule words (initially the block words)
+    //    vW1 = W[ 7: 4]   "oldest"
+    //    vW2 = W[11: 8]
+    //    vW3 = W[15:12]
+    //    vW0 = W[19:16]   "newest"
+    //
+    //  vState0 and vState1 hold the working state variables
+    //    vState0 = {a[t+4],b[t+4],e[t+4],f[t+4]}
+    //    vState1 = {c[t+4],d[t+4],g[t+4],h[t+4]}
+    //
+    //  The group of vectors vW0,vW1,vW2,vW3 is "rotated" by one in each quad-round,
+    //  hence the uses of those vectors rotate in each round, and we get back to the
+    //  initial configuration every 4 quad-rounds. We could avoid those changes at
+    //  the cost of moving those vectors at the end of each quad-rounds.
+    void sha2_quad_round(Assembler::SEW vset_sew, VectorRegister rot1, VectorRegister rot2, VectorRegister rot3, VectorRegister rot4,
+                         Register scalarconst, VectorRegister vtemp, VectorRegister vtemp2, VectorRegister v_abef, VectorRegister v_cdgh,
+                         bool gen_words = true, bool step_const = true) {
+      __ vleXX_v(vset_sew, vtemp, scalarconst);
+      if (step_const) {
+        __ addi(scalarconst, scalarconst, vset_sew == Assembler::e32 ? 16 : 32);
+      }
+      __ vadd_vv(vtemp2, vtemp, rot1);
+      __ vsha2cl_vv(v_cdgh, v_abef, vtemp2);
+      __ vsha2ch_vv(v_abef, v_cdgh, vtemp2);
+      if (gen_words) {
+        __ vmerge_vvm(vtemp2, rot3, rot2);
+        __ vsha2ms_vv(rot1, vtemp2, rot4);
+      }
+    }
+
+    const char* stub_name(Assembler::SEW vset_sew, bool multi_block) {
+      if (vset_sew == Assembler::e32 && !multi_block) return "sha256_implCompress";
+      if (vset_sew == Assembler::e32 &&  multi_block) return "sha256_implCompressMB";
+      if (vset_sew == Assembler::e64 && !multi_block) return "sha512_implCompress";
+      if (vset_sew == Assembler::e64 &&  multi_block) return "sha512_implCompressMB";
+      ShouldNotReachHere();
+      return "bad name lookup";
+    }
+
+    // Arguments:
+    //
+    // Inputs:
+    //   c_rarg0   - byte[]  source+offset
+    //   c_rarg1   - int[]   SHA.state
+    //   c_rarg2   - int     offset
+    //   c_rarg3   - int     limit
+    //
+    address generate_sha2_implCompress(Assembler::SEW vset_sew, bool multi_block) {
+      alignas(64) static const uint32_t round_consts_256[64] = {
+        0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5,
+        0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
+        0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3,
+        0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174,
+        0xe49b69c1, 0xefbe4786, 0x0fc19dc6, 0x240ca1cc,
+        0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da,
+        0x983e5152, 0xa831c66d, 0xb00327c8, 0xbf597fc7,
+        0xc6e00bf3, 0xd5a79147, 0x06ca6351, 0x14292967,
+        0x27b70a85, 0x2e1b2138, 0x4d2c6dfc, 0x53380d13,
+        0x650a7354, 0x766a0abb, 0x81c2c92e, 0x92722c85,
+        0xa2bfe8a1, 0xa81a664b, 0xc24b8b70, 0xc76c51a3,
+        0xd192e819, 0xd6990624, 0xf40e3585, 0x106aa070,
+        0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5,
+        0x391c0cb3, 0x4ed8aa4a, 0x5b9cca4f, 0x682e6ff3,
+        0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208,
+        0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2,
+      };
+      alignas(64) static const uint64_t round_consts_512[80] = {
+        0x428a2f98d728ae22l, 0x7137449123ef65cdl, 0xb5c0fbcfec4d3b2fl,
+        0xe9b5dba58189dbbcl, 0x3956c25bf348b538l, 0x59f111f1b605d019l,
+        0x923f82a4af194f9bl, 0xab1c5ed5da6d8118l, 0xd807aa98a3030242l,
+        0x12835b0145706fbel, 0x243185be4ee4b28cl, 0x550c7dc3d5ffb4e2l,
+        0x72be5d74f27b896fl, 0x80deb1fe3b1696b1l, 0x9bdc06a725c71235l,
+        0xc19bf174cf692694l, 0xe49b69c19ef14ad2l, 0xefbe4786384f25e3l,
+        0x0fc19dc68b8cd5b5l, 0x240ca1cc77ac9c65l, 0x2de92c6f592b0275l,
+        0x4a7484aa6ea6e483l, 0x5cb0a9dcbd41fbd4l, 0x76f988da831153b5l,
+        0x983e5152ee66dfabl, 0xa831c66d2db43210l, 0xb00327c898fb213fl,
+        0xbf597fc7beef0ee4l, 0xc6e00bf33da88fc2l, 0xd5a79147930aa725l,
+        0x06ca6351e003826fl, 0x142929670a0e6e70l, 0x27b70a8546d22ffcl,
+        0x2e1b21385c26c926l, 0x4d2c6dfc5ac42aedl, 0x53380d139d95b3dfl,
+        0x650a73548baf63del, 0x766a0abb3c77b2a8l, 0x81c2c92e47edaee6l,
+        0x92722c851482353bl, 0xa2bfe8a14cf10364l, 0xa81a664bbc423001l,
+        0xc24b8b70d0f89791l, 0xc76c51a30654be30l, 0xd192e819d6ef5218l,
+        0xd69906245565a910l, 0xf40e35855771202al, 0x106aa07032bbd1b8l,
+        0x19a4c116b8d2d0c8l, 0x1e376c085141ab53l, 0x2748774cdf8eeb99l,
+        0x34b0bcb5e19b48a8l, 0x391c0cb3c5c95a63l, 0x4ed8aa4ae3418acbl,
+        0x5b9cca4f7763e373l, 0x682e6ff3d6b2b8a3l, 0x748f82ee5defb2fcl,
+        0x78a5636f43172f60l, 0x84c87814a1f0ab72l, 0x8cc702081a6439ecl,
+        0x90befffa23631e28l, 0xa4506cebde82bde9l, 0xbef9a3f7b2c67915l,
+        0xc67178f2e372532bl, 0xca273eceea26619cl, 0xd186b8c721c0c207l,
+        0xeada7dd6cde0eb1el, 0xf57d4f7fee6ed178l, 0x06f067aa72176fbal,
+        0x0a637dc5a2c898a6l, 0x113f9804bef90dael, 0x1b710b35131c471bl,
+        0x28db77f523047d84l, 0x32caab7b40c72493l, 0x3c9ebe0a15c9bebcl,
+        0x431d67c49c100d4cl, 0x4cc5d4becb3e42b6l, 0x597f299cfc657e2al,
+        0x5fcb6fab3ad6faecl, 0x6c44198c4a475817l
+      };
+      const int const_add = vset_sew == Assembler::e32 ? 16 : 32;
+
+      __ align(CodeEntryAlignment);
+      StubCodeMark mark(_cgen, "StubRoutines", stub_name(vset_sew, multi_block));
+      address start = __ pc();
+
+      Register buf   = c_rarg0;
+      Register state = c_rarg1;
+      Register ofs   = c_rarg2;
+      Register limit = c_rarg3;
+      Register consts =  t2; // caller saved
+      Register state_c = x28; // caller saved
+      VectorRegister vindex = v2;
+      VectorRegister vW0 = v4;
+      VectorRegister vW1 = v6;
+      VectorRegister vW2 = v8;
+      VectorRegister vW3 = v10;
+      VectorRegister vState0 = v12;
+      VectorRegister vState1 = v14;
+      VectorRegister vHash0  = v16;
+      VectorRegister vHash1  = v18;
+      VectorRegister vTmp0   = v20;
+      VectorRegister vTmp1   = v22;
+
+      Label multi_block_loop;
+
+      __ enter();
+
+      address constant_table = vset_sew == Assembler::e32 ? (address)round_consts_256 : (address)round_consts_512;
+      la(consts, ExternalAddress(constant_table));
+
+      // Register use in this function:
+      //
+      // VECTORS
+      //  vW0 - vW3 (512/1024-bits / 4*128/256 bits / 4*4*32/65 bits), hold the message
+      //             schedule words (Wt). They start with the message block
+      //             content (W0 to W15), then further words in the message
+      //             schedule generated via vsha2ms from previous Wt.
+      //   Initially:
+      //     vW0 = W[  3:0] = { W3,  W2,  W1,  W0}
+      //     vW1 = W[  7:4] = { W7,  W6,  W5,  W4}
+      //     vW2 = W[ 11:8] = {W11, W10,  W9,  W8}
+      //     vW3 = W[15:12] = {W15, W14, W13, W12}
+      //
+      //  vState0 - vState1 hold the working state variables (a, b, ..., h)
+      //    vState0 = {f[t],e[t],b[t],a[t]}
+      //    vState1 = {h[t],g[t],d[t],c[t]}
+      //   Initially:
+      //    vState0 = {H5i-1, H4i-1, H1i-1 , H0i-1}
+      //    vState1 = {H7i-i, H6i-1, H3i-1 , H2i-1}
+      //
+      //  v0 = masks for vrgather/vmerge. Single value during the 16 rounds.
+      //
+      //  vTmp0 = temporary, Wt+Kt
+      //  vTmp1 = temporary, Kt
+      //
+      //  vHash0/vHash1 = hold the initial values of the hash, byte-swapped.
+      //
+      // During most of the function the vector state is configured so that each
+      // vector is interpreted as containing four 32/64 bits (e32/e64) elements (128/256 bits).
+
+      // vsha2ch/vsha2cl uses EGW of 4*SEW.
+      // SHA256 SEW = e32, EGW = 128-bits
+      // SHA512 SEW = e64, EGW = 256-bits
+      //
+      // VLEN is required to be at least 128.
+      // For the case of VLEN=128 and SHA512 we need LMUL=2 to work with 4*e64 (EGW = 256)
+      //
+      // m1: LMUL=1/2
+      // ta: tail agnostic (don't care about those lanes)
+      // ma: mask agnostic (don't care about those lanes)
+      // x0 is not written, we known the number of vector elements.
+
+      if (vset_sew == Assembler::e64 && MaxVectorSize == 16) { // SHA512 and VLEN = 128
+        __ vsetivli(x0, 4, vset_sew, Assembler::m2, Assembler::ma, Assembler::ta);
+      } else {
+        __ vsetivli(x0, 4, vset_sew, Assembler::m1, Assembler::ma, Assembler::ta);
+      }
+
+      int64_t indexes = vset_sew == Assembler::e32 ? 0x00041014ul : 0x00082028ul;
+      __ li(t0, indexes);
+      __ vmv_v_x(vindex, t0);
+
+      // Step-over a,b, so we are pointing to c.
+      // const_add is equal to 4x state variable, div by 2 is thus 2, a,b
+      __ addi(state_c, state, const_add/2);
+
+      // Use index-load to get {f,e,b,a},{h,g,d,c}
+      __ vluxei8_v(vState0, state, vindex);
+      __ vluxei8_v(vState1, state_c, vindex);
+
+      __ bind(multi_block_loop);
+
+      // Capture the initial H values in vHash0 and vHash1 to allow for computing
+      // the resulting H', since H' = H+{a',b',c',...,h'}.
+      __ vmv_v_v(vHash0, vState0);
+      __ vmv_v_v(vHash1, vState1);
+
+      // Load the 512/1024-bits of the message block in vW0-vW3 and perform
+      // an endian swap on each 4/8 bytes element.
+      //
+      // If Zvkb is not implemented one can use vrgather
+      // with an index sequence to byte-swap.
+      //  sequence = [3 2 1 0   7 6 5 4  11 10 9 8   15 14 13 12]
+      //   <https://oeis.org/A004444> gives us "N ^ 3" as a nice formula to generate
+      //  this sequence. 'vid' gives us the N.
+      __ vleXX_v(vset_sew, vW0, buf);
+      __ vrev8_v(vW0, vW0);
+      __ addi(buf, buf, const_add);
+      __ vleXX_v(vset_sew, vW1, buf);
+      __ vrev8_v(vW1, vW1);
+      __ addi(buf, buf, const_add);
+      __ vleXX_v(vset_sew, vW2, buf);
+      __ vrev8_v(vW2, vW2);
+      __ addi(buf, buf, const_add);
+      __ vleXX_v(vset_sew, vW3, buf);
+      __ vrev8_v(vW3, vW3);
+      __ addi(buf, buf, const_add);
+
+      // Set v0 up for the vmerge that replaces the first word (idx==0)
+      __ vid_v(v0);
+      __ vmseq_vi(v0, v0, 0x0);  // v0.mask[i] = (i == 0 ? 1 : 0)
+
+      VectorRegister rotation_regs[] = {vW0, vW1, vW2, vW3};
+      int rot_pos = 0;
+      // Quad-round #0 (+0, vW0->vW1->vW2->vW3) ... #11 (+3, vW3->vW0->vW1->vW2)
+      const int qr_end = vset_sew == Assembler::e32 ? 12 : 16;
+      for (int i = 0; i < qr_end; i++) {
+        sha2_quad_round(vset_sew,
+                   rotation_regs[(rot_pos + 0) & 0x3],
+                   rotation_regs[(rot_pos + 1) & 0x3],
+                   rotation_regs[(rot_pos + 2) & 0x3],
+                   rotation_regs[(rot_pos + 3) & 0x3],
+                   consts,
+                   vTmp1, vTmp0, vState0, vState1);
+        ++rot_pos;
+      }
+      // Quad-round #12 (+0, vW0->vW1->vW2->vW3) ... #15 (+3, vW3->vW0->vW1->vW2)
+      // Note that we stop generating new message schedule words (Wt, vW0-13)
+      // as we already generated all the words we end up consuming (i.e., W[63:60]).
+      const int qr_c_end = qr_end + 4;
+      for (int i = qr_end; i < qr_c_end; i++) {
+        sha2_quad_round(vset_sew,
+                   rotation_regs[(rot_pos + 0) & 0x3],
+                   rotation_regs[(rot_pos + 1) & 0x3],
+                   rotation_regs[(rot_pos + 2) & 0x3],
+                   rotation_regs[(rot_pos + 3) & 0x3],
+                   consts,
+                   vTmp1, vTmp0, vState0, vState1, false, i < (qr_c_end-1));
+        ++rot_pos;
+      }
+
+      //--------------------------------------------------------------------------------
+      // Compute the updated hash value H'
+      //   H' = H + {h',g',...,b',a'}
+      //      = {h,g,...,b,a} + {h',g',...,b',a'}
+      //      = {h+h',g+g',...,b+b',a+a'}
+
+      // H' = H+{a',b',c',...,h'}
+      __ vadd_vv(vState0, vHash0, vState0);
+      __ vadd_vv(vState1, vHash1, vState1);
+
+      if (multi_block) {
+        int total_adds = vset_sew == Assembler::e32 ? 240 : 608;
+        __ addi(consts, consts, -total_adds);
+        __ add(ofs, ofs, vset_sew == Assembler::e32 ? 64 : 128);
+        __ ble(ofs, limit, multi_block_loop);
+        __ mv(c_rarg0, ofs); // return ofs
+      }
+
+      // Store H[0..8] = {a,b,c,d,e,f,g,h} from
+      //  vState0 = {f,e,b,a}
+      //  vState1 = {h,g,d,c}
+      __ vsuxei8_v(vState0, state,   vindex);
+      __ vsuxei8_v(vState1, state_c, vindex);
+
+      __ leave();
+      __ ret();
+
+      return start;
+    }
+  };
+#undef __
+#define __ masm->
 
   // Continuation point for throwing of implicit exceptions that are
   // not handled in the current activation. Fabricates an exception
@@ -4155,14 +4541,18 @@ class StubGenerator: public StubCodeGenerator {
 
     // to minimize the number of memory operations:
     // read the 4 state 4-byte values in pairs, with a single ld,
-    // and split them into 2 registers
-    __ mv(t0, mask32);
+    // and split them into 2 registers.
+    //
+    // And, as the core algorithm of md5 works on 32-bits words, so
+    // in the following code, it does not care about the content of
+    // higher 32-bits in state[x]. Based on this observation,
+    // we can apply further optimization, which is to just ignore the
+    // higher 32-bits in state0/state2, rather than set the higher
+    // 32-bits of state0/state2 to zero explicitly with extra instructions.
     __ ld(state0, Address(state));
     __ srli(state1, state0, 32);
-    __ andr(state0, state0, t0);
     __ ld(state2, Address(state, 8));
     __ srli(state3, state2, 32);
-    __ andr(state2, state2, t0);
 
     Label md5_loop;
     __ BIND(md5_loop);
@@ -4857,6 +5247,18 @@ static const int64_t right_3_bits = right_n_bits(3);
       StubRoutines::_bigIntegerRightShiftWorker = generate_bigIntegerRightShift();
     }
 #endif // COMPILER2
+
+    if (UseSHA256Intrinsics) {
+      Sha2Generator sha2(_masm, this);
+      StubRoutines::_sha256_implCompress   = sha2.generate_sha256_implCompress(false);
+      StubRoutines::_sha256_implCompressMB = sha2.generate_sha256_implCompress(true);
+    }
+
+    if (UseSHA512Intrinsics) {
+      Sha2Generator sha2(_masm, this);
+      StubRoutines::_sha512_implCompress   = sha2.generate_sha512_implCompress(false);
+      StubRoutines::_sha512_implCompressMB = sha2.generate_sha512_implCompress(true);
+    }
 
     generate_compare_long_strings();
 

@@ -1444,7 +1444,9 @@ void nmethod::unlink() {
   ClassUnloadingContext::context()->register_unlinked_nmethod(this);
 }
 
-void nmethod::purge(bool free_code_cache_data) {
+void nmethod::purge(bool free_code_cache_data, bool unregister_nmethod) {
+  assert(!free_code_cache_data, "must only call not freeing code cache data");
+
   MutexLocker ml(CodeCache_lock, Mutex::_no_safepoint_check_flag);
 
   // completely deallocate this method
@@ -1464,13 +1466,13 @@ void nmethod::purge(bool free_code_cache_data) {
     ec = next;
   }
 
-  Universe::heap()->unregister_nmethod(this);
+  if (unregister_nmethod) {
+    Universe::heap()->unregister_nmethod(this);
+  }
+
   CodeCache::unregister_old_nmethod(this);
 
-  CodeBlob::purge();
-  if (free_code_cache_data) {
-    CodeCache::free(this);
-  }
+  CodeBlob::purge(free_code_cache_data, unregister_nmethod);
 }
 
 oop nmethod::oop_at(int index) const {
@@ -3017,7 +3019,7 @@ void nmethod::print_nmethod_labels(outputStream* stream, address block_begin, bo
         assert(sig_index == sizeargs, "");
       }
       const char* spname = "sp"; // make arch-specific?
-      intptr_t out_preserve = SharedRuntime::java_calling_convention(sig_bt, regs, sizeargs);
+      SharedRuntime::java_calling_convention(sig_bt, regs, sizeargs);
       int stack_slot_offset = this->frame_size() * wordSize;
       int tab1 = 14, tab2 = 24;
       int sig_index = 0;

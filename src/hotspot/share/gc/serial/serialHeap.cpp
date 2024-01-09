@@ -28,6 +28,7 @@
 #include "gc/serial/tenuredGeneration.inline.hpp"
 #include "gc/shared/gcLocker.inline.hpp"
 #include "gc/shared/genMemoryPools.hpp"
+#include "gc/shared/scavengableNMethods.hpp"
 #include "gc/shared/strongRootsScope.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
 #include "memory/universe.hpp"

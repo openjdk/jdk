@@ -546,10 +546,17 @@ const int ObjectAlignmentInBytes = 8;
           "thrown from JVM")                                                \
                                                                             \
   product(bool, HeapDumpBeforeFullGC, false, MANAGEABLE,                    \
-          "Dump heap to file before any major stop-the-world GC")           \
+          "Dump heap to file before any major stop-the-world GC "           \
+          "(also see FullGCHeapDumpLimit)")                                 \
                                                                             \
   product(bool, HeapDumpAfterFullGC, false, MANAGEABLE,                     \
-          "Dump heap to file after any major stop-the-world GC")            \
+          "Dump heap to file after any major stop-the-world GC "            \
+          "(also see FullGCHeapDumpLimit)")                                 \
+                                                                            \
+  product(uint, FullGCHeapDumpLimit, 0, MANAGEABLE,                         \
+          "Limit the number of heap dumps triggered by "                    \
+          "HeapDumpBeforeFullGC or HeapDumpAfterFullGC "                    \
+          "(0 means no limit)")                                             \
                                                                             \
   product(bool, HeapDumpOnOutOfMemoryError, false, MANAGEABLE,              \
           "Dump heap to file when java.lang.OutOfMemoryError is thrown "    \
@@ -869,9 +876,6 @@ const int ObjectAlignmentInBytes = 8;
                                                                             \
   develop(bool, TraceBytecodes, false,                                      \
           "Trace bytecode execution")                                       \
-                                                                            \
-  develop(bool, TraceICs, false,                                            \
-          "Trace inline cache changes")                                     \
                                                                             \
   notproduct(bool, TraceInvocationCounterOverflow, false,                   \
           "Trace method invocation counter overflow")                       \

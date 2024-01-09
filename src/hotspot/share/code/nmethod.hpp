@@ -522,7 +522,7 @@ public:
   void unlink();
 
   // Deallocate this nmethod - called by the GC
-  void purge(bool free_code_cache_data = true);
+  void purge(bool free_code_cache_data, bool unregister_nmethod);
 
   // See comment at definition of _last_seen_on_stack
   void mark_as_maybe_on_stack();

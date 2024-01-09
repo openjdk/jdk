@@ -51,7 +51,7 @@
 class DefNewGeneration;
 class GCMemoryManager;
 class ContiguousSpace;
-class CompactPoint;
+
 class OopClosure;
 class GCStats;
 
@@ -285,13 +285,6 @@ class Generation: public CHeapObj<mtGC> {
   // the collection of the young generation has completed.
   GCStats* gc_stats() const { return _gc_stats; }
   virtual void update_gc_stats(Generation* current_generation, bool full) {}
-
-  // Mark sweep support phase2
-  virtual void prepare_for_compaction(CompactPoint* cp);
-  // Mark sweep support phase3
-  virtual void adjust_pointers();
-  // Mark sweep support phase4
-  virtual void compact();
 
   // Accessing "marks".
 

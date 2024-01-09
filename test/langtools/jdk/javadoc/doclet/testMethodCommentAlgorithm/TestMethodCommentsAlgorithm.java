@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,13 +31,15 @@
  * @run main TestMethodCommentsAlgorithm
  */
 
+import java.io.IOError;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
-import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.type.TypeKind;
@@ -109,6 +111,12 @@ import static javadoc.tester.JavadocTester.Exit.OK;
  * 3. While documentation for java.lang.Object is currently inaccessible outside
  *    of the JDK, these test mimic what happens when the JDK documentation is
  *    built.
+ *
+ * Note
+ * ====
+ *
+ * If any of these tests cannot find a valid Object.java file in the test
+ * environment, they will throw jtreg.SkippedException.
  */
 public class TestMethodCommentsAlgorithm extends JavadocTester {
 
@@ -136,20 +144,7 @@ public class TestMethodCommentsAlgorithm extends JavadocTester {
      */
     @Test
     public void testMixedHierarchyEquals(Path base) throws Exception {
-        Path p = Path.of(System.getProperty("test.src", ".")).toAbsolutePath();
-        while (!Files.exists(p.resolve("TEST.ROOT"))) {
-            p = p.getParent();
-            if (p == null) {
-                throw new SkippedException("can't find TEST.ROOT");
-            }
-        }
-        out.println("Test suite root: " + p);
-        Path javaBase = p.resolve("../../src/java.base").normalize();
-        if (!Files.exists(javaBase)) {
-            throw new SkippedException("can't find java.base");
-        }
-        out.println("java.base: " + javaBase);
-
+        var javaBase = findJavaBase();
         for (int i = 1; i < 7; i++) {
             mixedHierarchyI(base, javaBase, i);
             new OutputChecker("mymodule/x/T1.html").check("""
@@ -265,20 +260,7 @@ public class TestMethodCommentsAlgorithm extends JavadocTester {
      */
     @Test
     public void testInterfaceHierarchy(Path base) throws Exception {
-        Path p = Path.of(System.getProperty("test.src", ".")).toAbsolutePath();
-        while (!Files.exists(p.resolve("TEST.ROOT"))) {
-            p = p.getParent();
-            if (p == null) {
-                throw new SkippedException("can't find TEST.ROOT");
-            }
-        }
-        System.err.println("Test suite root: " + p);
-        Path javaBase = p.resolve("../../src/java.base").normalize();
-        if (!Files.exists(javaBase)) {
-            throw new SkippedException("can't find java.base");
-        }
-        System.err.println("java.base: " + javaBase);
-
+        var javaBase = findJavaBase();
         for (int i = 1; i < 6; i++) {
             interfaceHierarchyI(base, javaBase, i);
             new OutputChecker("mymodule/x/T1.html").check("""
@@ -306,20 +288,7 @@ public class TestMethodCommentsAlgorithm extends JavadocTester {
      */
     @Test
     public void testRecursiveInheritDocTagsAreProcessedFirst(Path base) throws Exception {
-        Path p = Path.of(System.getProperty("test.src", ".")).toAbsolutePath();
-        while (!Files.exists(p.resolve("TEST.ROOT"))) {
-            p = p.getParent();
-            if (p == null) {
-                throw new SkippedException("can't find TEST.ROOT");
-            }
-        }
-        System.err.println("Test suite root: " + p);
-        Path javaBase = p.resolve("../../src/java.base").normalize();
-        if (!Files.exists(javaBase)) {
-            throw new SkippedException("can't find java.base");
-        }
-        System.err.println("java.base: " + javaBase);
-
+        var javaBase = findJavaBase();
         Path src = base.resolve("src");
         tb.writeJavaFiles(src.resolve("mymodule"), """
                 package x;
@@ -418,41 +387,67 @@ public class TestMethodCommentsAlgorithm extends JavadocTester {
     }
 
     /*
-     * Takes a path to the java.base module, finds the Object.java file in
-     * there, creates a copy of that file _with the modified doc comment_
-     * for Object.equals in the provided destination directory and returns
-     * the path to that created copy.
+     * Locates source of the java.base module.
      */
-    private Path createPatchedJavaLangObject(Path src, Path dst, String newComment)
-            throws IOException {
-        if (!Files.isDirectory(src) || !Files.isDirectory(dst)) {
-            throw new IllegalArgumentException();
+    private Path findJavaBase() {
+        String testSrc = System.getProperty("test.src");
+        if (testSrc == null) {
+            // shouldn't happen
+            throw new SkippedException("test.src is not set");
         }
+        Path start;
+        try {
+            start = Path.of(testSrc).toAbsolutePath();
+        } catch (InvalidPathException | IOError e) {
+            throw new SkippedException("Couldn't make sense of '" + testSrc + "'", e);
+        }
+        Path p = start;
+        while (!Files.exists(p.resolve("TEST.ROOT"))) {
+            p = p.getParent();
+            if (p == null) {
+                // shouldn't happen as jtreg won't even run a test without TEST.ROOT
+                throw new SkippedException("Couldn't find TEST.ROOT above '" + start + "'");
+            }
+        }
+        Path javaBase = p.resolve("../../src/java.base").normalize();
+        out.println("Source for java.base is found at: " + javaBase);
+        return javaBase;
+    }
+
+    /*
+     * Finds java/lang/Object.java rooted at src, creates a copy of that file
+     * _with the modified doc comment_ for Object.equals in dst, and returns
+     * the path to that copy.
+     */
+    private Path createPatchedJavaLangObject(Path src, Path dst, String newComment) {
         var obj = Path.of("java/lang/Object.java");
-        List<Path> files;
-        // ensure Object.java is found and unique
-        try (var s = Files.find(src, Integer.MAX_VALUE,
-                (p, attr) -> attr.isRegularFile() && p.endsWith(obj))) {
-            files = s.limit(2).toList(); // 2 is enough to deduce non-uniqueness
+        try {
+            Optional<Path> files;
+            try (var s = Files.find(src, Integer.MAX_VALUE,
+                    (p, attr) -> attr.isRegularFile() && p.endsWith(obj))) {
+                files = s.findAny();
+            }
+            if (files.isEmpty()) {
+                throw new SkippedException("Couldn't find '" + obj + "' at '" + src + "'");
+            }
+            var original = files.get();
+            out.println("Found '" + obj + "' at " + original.toAbsolutePath());
+            var source = Files.readString(original);
+            var region = findDocCommentRegion(original);
+            var newSource = source.substring(0, region.start)
+                    + newComment
+                    + source.substring(region.end);
+            // create intermediate directories in the destination first, otherwise
+            // writeString will throw java.nio.file.NoSuchFileException
+            var copy = dst.resolve(src.relativize(original));
+            out.println("To be copied to '" + copy + "'");
+            if (Files.notExists(copy.getParent())) {
+                Files.createDirectories(copy.getParent());
+            }
+            return Files.writeString(copy, newSource, StandardOpenOption.CREATE);
+        } catch (IOException e) {
+            throw new SkippedException("Couldn't create patched '" + obj + "'", e);
         }
-        if (files.size() != 1) {
-            throw new IllegalStateException(Arrays.toString(files.toArray()));
-        }
-        var original = files.get(0);
-        out.println("found " + original.toAbsolutePath());
-        var source = Files.readString(original);
-        var region = findDocCommentRegion(original);
-        var newSource = source.substring(0, region.start)
-                + newComment
-                + source.substring(region.end);
-        // create intermediate directories in the destination first, otherwise
-        // writeString will throw java.nio.file.NoSuchFileException
-        var copy = dst.resolve(src.relativize(original));
-        out.println("to be copied to " + copy);
-        if (Files.notExists(copy.getParent())) {
-            Files.createDirectories(copy.getParent());
-        }
-        return Files.writeString(copy, newSource, StandardOpenOption.CREATE);
     }
 
     private static SourceRegion findDocCommentRegion(Path src) throws IOException {
@@ -464,14 +459,18 @@ public class TestMethodCommentsAlgorithm extends JavadocTester {
         var task = (JavacTask) compiler.getTask(null, null, null, null, null, List.of(fileObject));
         Iterator<? extends CompilationUnitTree> iterator = task.parse().iterator();
         if (!iterator.hasNext()) {
-            throw new AssertionError();
+            throw new SkippedException("Couldn't parse '" + src + "'");
         }
         var tree = iterator.next();
         var pathToEqualsMethod = findMethod(tree);
+        if (pathToEqualsMethod == null) {
+            throw new SkippedException("Couldn't find the equals method in '" + src + "'");
+        }
         var trees = DocTrees.instance(task);
         DocCommentTree docCommentTree = trees.getDocCommentTree(pathToEqualsMethod);
-        if (docCommentTree == null)
-            throw new AssertionError("cannot find the doc comment for java.lang.Object#equals");
+        if (docCommentTree == null) {
+            throw new SkippedException("Couldn't find documentation for the equals method at '" + src + "'");
+        }
         var positions = trees.getSourcePositions();
         long start = positions.getStartPosition(null, docCommentTree, docCommentTree);
         long end = positions.getEndPosition(null, docCommentTree, docCommentTree);
@@ -510,7 +509,7 @@ public class TestMethodCommentsAlgorithm extends JavadocTester {
                 List<? extends VariableTree> params = m.getParameters();
                 if (params.size() != 1)
                     return null;
-                var parameterType = params.get(0).getType();
+                var parameterType = params.getFirst().getType();
                 if (parameterType.getKind() == Tree.Kind.IDENTIFIER &&
                         ((IdentifierTree) parameterType).getName().toString().equals("Object")) {
                     throw new Result(getCurrentPath());
