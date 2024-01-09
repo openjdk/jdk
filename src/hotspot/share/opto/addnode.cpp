@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -804,10 +804,10 @@ Node* OrINode::Ideal(PhaseGVN* phase, bool can_reshape) {
   }
 
   // Convert "~a | ~b" into "~(a & b)"
-  if (in(1)->is_not(phase, T_INT) && in(2)->is_not(phase, T_INT)) {
+  if (AddNode::is_not(phase, in(1), T_INT) && AddNode::is_not(phase, in(2), T_INT)) {
     Node* and_a_b = new AndINode(in(1)->in(1), in(2)->in(1));
     Node* tn = phase->transform(and_a_b);
-    return tn->make_not(phase, T_INT);
+    return AddNode::make_not(phase, tn, T_INT);
   }
   return nullptr;
 }
@@ -877,10 +877,10 @@ Node* OrLNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   }
 
   // Convert "~a | ~b" into "~(a & b)"
-  if (in(1)->is_not(phase, T_LONG) && in(2)->is_not(phase, T_LONG)) {
+  if (AddNode::is_not(phase, in(1), T_LONG) && AddNode::is_not(phase, in(2), T_LONG)) {
     Node* and_a_b = new AndLNode(in(1)->in(1), in(2)->in(1));
     Node* tn = phase->transform(and_a_b);
-    return tn->make_not(phase, T_LONG);
+    return AddNode::make_not(phase, tn, T_LONG);
   }
 
   return nullptr;
