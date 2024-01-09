@@ -354,7 +354,7 @@ void PhaseIdealLoop::dominated_by(IfProjNode* prevdom, IfNode* iff, bool flip, b
       _igvn.replace_input_of(cd, 0, prevdom);
       if (pin_array_nodes) {
         // Because of Loop Predication, Loads and range check Cast nodes that are control dependent on this range
-        // check (that is about to be removed) now depend on multiple dominating range check predicates. After the
+        // check (that is about to be removed) now depend on multiple dominating Hoisted Check Predicates. After the
         // removal of this range check, these control dependent nodes end up at the lowest/nearest dominating predicate
         // in the graph. To ensure that these Loads/Casts do not float above any of the dominating checks (even when the
         // lowest dominating check is later replaced by yet another dominating check), we need to pin them at the lowest
