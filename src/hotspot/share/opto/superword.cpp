@@ -3523,7 +3523,6 @@ void SuperWord::packset_sort(int n) {
 
       // only swap when we find something to swap
       if (alignment(q_low->at(0)) > alignment(q_i->at(0))) {
-        Node_List* t = q_i;
         *(_packset.adr_at(i)) = q_low;
         *(_packset.adr_at(i-1)) = q_i;
         max_swap_index = i;
