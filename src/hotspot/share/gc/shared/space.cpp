@@ -74,10 +74,6 @@ void ContiguousSpace::clear(bool mangle_space) {
   }
 }
 
-bool ContiguousSpace::is_free_block(const HeapWord* p) const {
-  return p >= _top;
-}
-
 #ifndef PRODUCT
 
 void ContiguousSpace::set_top_for_allocations(HeapWord* v) {

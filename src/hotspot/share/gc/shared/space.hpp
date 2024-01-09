@@ -133,9 +133,6 @@ class Space: public CHeapObj<mtGC> {
   // given address.
   bool is_in_reserved(const void* p) const { return _bottom <= p && p < _end; }
 
-  // Returns true iff the given block is not allocated.
-  virtual bool is_free_block(const HeapWord* p) const = 0;
-
   // Test whether p is double-aligned
   static bool is_aligned(void* p) {
     return ::is_aligned(p, sizeof(double));
@@ -272,8 +269,6 @@ protected:
   // Size computations: sizes in bytes.
   size_t used() const override   { return byte_size(bottom(), top()); }
   size_t free() const override   { return byte_size(top(),    end()); }
-
-  bool is_free_block(const HeapWord* p) const override;
 
   // In a contiguous space we have a more obvious bound on what parts
   // contain objects.
