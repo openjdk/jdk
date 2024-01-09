@@ -308,8 +308,9 @@ public class TestInheritFD {
                 if (e instanceof TimeoutException) {
                     TimeoutException te = (TimeoutException)e;
                     System.out.println("(Third VM) Timed out waiting for second VM: " + te.toString());
+                } else {
+                    System.out.println("(Third VM) Exception was thrown: " + e.toString());
                 }
-                System.out.println("(Third VM) Exception was thrown: " + e.toString());
                 throw e;
             } finally {
                 System.out.println(EXIT);
