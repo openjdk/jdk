@@ -362,7 +362,7 @@ public:
 
   // The compiler task which has created this env.
   // May be useful to find out compile_id, comp_level, etc.
-  CompileTask* task() { return _task; }
+  CompileTask* task() const { return _task; }
 
   // Handy forwards to the task:
   int comp_level();   // task()->comp_level()
@@ -444,7 +444,7 @@ public:
   static ciEnv* current(CompilerThread *thread) { return thread->env(); }
 
   // Per-compiler data.  (Used by C2 to publish the Compile* pointer.)
-  void* compiler_data() { return _compiler_data; }
+  void* compiler_data() const { return _compiler_data; }
   void set_compiler_data(void* x) { _compiler_data = x; }
 
   // Notice that a method has been inlined in the current compile;

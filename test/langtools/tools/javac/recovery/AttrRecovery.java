@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8301580
+ * @bug 8301580 8322159
  * @summary Verify error recovery w.r.t. Attr
  * @library /tools/lib
  * @enablePreview
@@ -80,6 +80,43 @@ public class AttrRecovery extends TestRunner {
                 "C.java:3:5: compiler.err.expected: '('",
                 "C.java:4:9: compiler.err.ret.outside.meth",
                 "2 errors"
+        );
+
+        if (!Objects.equals(actual, expected)) {
+            error("Expected: " + expected + ", but got: " + actual);
+        }
+    }
+
+    @Test
+    public void testX() throws Exception {
+        String code = """
+                      public class C {
+                          public C() {
+                              Undefined.method();
+                              undefined1();
+                              Runnable r = this::undefined2;
+                              overridable(this); //to verify ThisEscapeAnalyzer has been run
+                          }
+                          public void overridable(C c) {}
+                      }
+                      """;
+        Path curPath = Path.of(".");
+        List<String> actual = new JavacTask(tb)
+                .options("-XDrawDiagnostics", "-XDdev",
+                         "-XDshould-stop.at=FLOW", "-Xlint:this-escape")
+                .sources(code)
+                .outdir(curPath)
+                .run(Expect.FAIL)
+                .writeAll()
+                .getOutputLines(OutputKind.DIRECT);
+
+        List<String> expected = List.of(
+                "C.java:3:9: compiler.err.cant.resolve.location: kindname.variable, Undefined, , , (compiler.misc.location: kindname.class, C, null)",
+                "C.java:4:9: compiler.err.cant.resolve.location.args: kindname.method, undefined1, , , (compiler.misc.location: kindname.class, C, null)",
+                "C.java:5:22: compiler.err.invalid.mref: kindname.method, (compiler.misc.cant.resolve.location.args: kindname.method, undefined2, , , (compiler.misc.location: kindname.class, C, null))",
+                "C.java:6:20: compiler.warn.possible.this.escape",
+                "3 errors",
+                "1 warning"
         );
 
         if (!Objects.equals(actual, expected)) {
