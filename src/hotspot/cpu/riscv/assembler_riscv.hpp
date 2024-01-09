@@ -506,7 +506,7 @@ public:
   INSN(sllw,  0b0111011, 0b001, 0b0000000);
   INSN(sraw,  0b0111011, 0b101, 0b0100000);
   INSN(srlw,  0b0111011, 0b101, 0b0000000);
-  INSN(mul,   0b0110011, 0b000, 0b0000001);
+  INSN(_mul,  0b0110011, 0b000, 0b0000001);
   INSN(mulh,  0b0110011, 0b001, 0b0000001);
   INSN(mulhsu,0b0110011, 0b010, 0b0000001);
   INSN(mulhu, 0b0110011, 0b011, 0b0000001);
@@ -537,9 +537,9 @@ public:
   }
 
   INSN(lb,  0b0000011, 0b000);
-  INSN(lbu, 0b0000011, 0b100);
-  INSN(lh,  0b0000011, 0b001);
-  INSN(lhu, 0b0000011, 0b101);
+  INSN(_lbu, 0b0000011, 0b100);
+  INSN(_lh,  0b0000011, 0b001);
+  INSN(_lhu, 0b0000011, 0b101);
   INSN(_lw, 0b0000011, 0b010);
   INSN(lwu, 0b0000011, 0b110);
   INSN(_ld, 0b0000011, 0b011);
@@ -609,8 +609,8 @@ public:
     emit(insn);                                                                                             \
   }                                                                                                         \
 
-  INSN(sb,   Register,      0b0100011, 0b000);
-  INSN(sh,   Register,      0b0100011, 0b001);
+  INSN(_sb,   Register,      0b0100011, 0b000);
+  INSN(_sh,   Register,      0b0100011, 0b001);
   INSN(_sw,  Register,      0b0100011, 0b010);
   INSN(_sd,  Register,      0b0100011, 0b011);
   INSN(fsw,  FloatRegister, 0b0100111, 0b010);
@@ -1938,9 +1938,9 @@ enum Nf {
   }
 
   INSN(rev8,   0b0010011, 0b101, 0b011010111000);
-  INSN(sext_b, 0b0010011, 0b001, 0b011000000100);
-  INSN(sext_h, 0b0010011, 0b001, 0b011000000101);
-  INSN(zext_h, 0b0111011, 0b100, 0b000010000000);
+  INSN(_sext_b, 0b0010011, 0b001, 0b011000000100);
+  INSN(_sext_h, 0b0010011, 0b001, 0b011000000101);
+  INSN(_zext_h, 0b0111011, 0b100, 0b000010000000);
   INSN(clz,    0b0010011, 0b001, 0b011000000000);
   INSN(clzw,   0b0011011, 0b001, 0b011000000000);
   INSN(ctz,    0b0010011, 0b001, 0b011000000001);
@@ -2652,6 +2652,15 @@ public:
     return UseRVC && in_compressible_region();
   }
 
+  bool do_compress_zcb(Register reg1 = noreg, Register reg2 = noreg) const {
+    return do_compress() && VM_Version::ext_Zcb.enabled() &&
+           (reg1 == noreg || reg1->is_compressed_valid()) && (reg2 == noreg || reg2->is_compressed_valid());
+  }
+
+  bool do_compress_zcb_zbb(Register reg1 = noreg, Register reg2 = noreg) const {
+    return do_compress_zcb(reg1, reg2) && UseZbb;
+  }
+
 // --------------------------
 // Load/store register
 // --------------------------
@@ -2985,6 +2994,238 @@ public:
   INSN(jalr, x1);
 
 #undef INSN
+
+// --------------  ZCB Instruction Definitions  --------------
+// Zcb additional C instructions
+ private:
+  // Format CLH, c.lh/c.lhu
+  template <bool Unsigned>
+  void c_lh_if(Register Rd_Rs2, Register Rs1, uint32_t uimm) {
+    assert_cond(uimm == 0 || uimm == 2);
+    assert_cond(do_compress_zcb(Rd_Rs2, Rs1));
+    uint16_t insn = 0;
+    c_patch((address)&insn, 1, 0, 0b00);
+    c_patch_compressed_reg((address)&insn, 2, Rd_Rs2);
+    c_patch((address)&insn, 5, 5, (uimm & nth_bit(1)) >> 1);
+    c_patch((address)&insn, 6, 6, Unsigned ? 0 : 1);
+    c_patch_compressed_reg((address)&insn, 7, Rs1);
+    c_patch((address)&insn, 12, 10, 0b001);
+    c_patch((address)&insn, 15, 13, 0b100);
+    emit_int16(insn);
+  }
+
+  template <bool Unsigned>
+  void lh_c_mux(Register Rd_Rs2, Register Rs1, const int32_t uimm) {
+    if (do_compress_zcb(Rd_Rs2, Rs1) &&
+        (uimm == 0 || uimm == 2)) {
+      c_lh_if<Unsigned>(Rd_Rs2, Rs1, uimm);
+    } else {
+      if (Unsigned) {
+        _lhu(Rd_Rs2, Rs1, uimm);
+      } else {
+        _lh(Rd_Rs2, Rs1, uimm);
+      }
+    }
+  }
+
+  // Format CU, c.[sz]ext.*, c.not
+  template <uint8_t InstructionType>
+  void c_u_if(Register Rs1) {
+    assert_cond(do_compress_zcb(Rs1));
+    uint16_t insn = 0;
+    c_patch((address)&insn, 1, 0, 0b01);
+    c_patch((address)&insn, 4, 2, InstructionType);
+    c_patch((address)&insn, 6, 5, 0b11);
+    c_patch_compressed_reg((address)&insn, 7, Rs1);
+    c_patch((address)&insn, 12, 10, 0b111);
+    c_patch((address)&insn, 15, 13, 0b100);
+    emit_int16(insn);
+  }
+
+ public:
+
+  // Prerequisites: Zcb
+  void c_lh(Register Rd_Rs2, Register Rs1, const int32_t uimm)  {  c_lh_if<false>(Rd_Rs2, Rs1, uimm); }
+  void lh(Register Rd_Rs2, Register Rs1, const int32_t uimm)    { lh_c_mux<false>(Rd_Rs2, Rs1, uimm); }
+
+  // Prerequisites: Zcb
+  void c_lhu(Register Rd_Rs2, Register Rs1, const int32_t uimm) {  c_lh_if<true>(Rd_Rs2, Rs1, uimm); }
+  void lhu(Register Rd_Rs2, Register Rs1, const int32_t uimm)   { lh_c_mux<true>(Rd_Rs2, Rs1, uimm); }
+
+  // Prerequisites: Zcb
+  // Format CLB, single instruction
+  void c_lbu(Register Rd_Rs2, Register Rs1, uint32_t uimm) {
+    assert_cond(uimm <= 3);
+    assert_cond(do_compress_zcb(Rd_Rs2, Rs1));
+    uint16_t insn = 0;
+    c_patch((address)&insn, 1, 0, 0b00);
+    c_patch_compressed_reg((address)&insn, 2, Rd_Rs2);
+    c_patch((address)&insn, 5, 5, (uimm & nth_bit(1)) >> 1);
+    c_patch((address)&insn, 6, 6, (uimm & nth_bit(0)) >> 0);
+    c_patch_compressed_reg((address)&insn, 7, Rs1);
+    c_patch((address)&insn, 12, 10, 0b000);
+    c_patch((address)&insn, 15, 13, 0b100);
+    emit_int16(insn);
+  }
+
+  void lbu(Register Rd_Rs2, Register Rs1, const int32_t uimm) {
+    if (do_compress_zcb(Rd_Rs2, Rs1) &&
+        uimm >= 0 && uimm <= 3) {
+      c_lbu(Rd_Rs2, Rs1, uimm);
+    } else {
+      _lbu(Rd_Rs2, Rs1, uimm);
+    }
+  }
+
+  // Prerequisites: Zcb
+  // Format CSB, single instruction
+  void c_sb(Register Rd_Rs2, Register Rs1, uint32_t uimm) {
+    assert_cond(uimm <= 3);
+    assert_cond(do_compress_zcb(Rd_Rs2, Rs1));
+    uint16_t insn = 0;
+    c_patch((address)&insn, 1, 0, 0b00);
+    c_patch_compressed_reg((address)&insn, 2, Rd_Rs2);
+    c_patch((address)&insn, 5, 5, (uimm & nth_bit(1)) >> 1);
+    c_patch((address)&insn, 6, 6, (uimm & nth_bit(0)) >> 0);
+    c_patch_compressed_reg((address)&insn, 7, Rs1);
+    c_patch((address)&insn, 12, 10, 0b010);
+    c_patch((address)&insn, 15, 13, 0b100);
+    emit_int16(insn);
+  }
+
+  void sb(Register Rd_Rs2, Register Rs1, const int32_t uimm) {
+    if (do_compress_zcb(Rd_Rs2, Rs1) &&
+        uimm >= 0 && uimm <= 3) {
+      c_sb(Rd_Rs2, Rs1, uimm);
+    } else {
+      _sb(Rd_Rs2, Rs1, uimm);
+    }
+  }
+
+  // Prerequisites: Zcb
+  // Format CSH, single instruction
+  void c_sh(Register Rd_Rs2, Register Rs1, uint32_t uimm) {
+    assert_cond(uimm == 0 || uimm == 2);
+    assert_cond(do_compress_zcb(Rd_Rs2, Rs1));
+    uint16_t insn = 0;
+    c_patch((address)&insn, 1, 0, 0b00);
+    c_patch_compressed_reg((address)&insn, 2, Rd_Rs2);
+    c_patch((address)&insn, 5, 5, (uimm & nth_bit(1)) >> 1);
+    c_patch((address)&insn, 6, 6, 0);
+    c_patch_compressed_reg((address)&insn, 7, Rs1);
+    c_patch((address)&insn, 12, 10, 0b011);
+    c_patch((address)&insn, 15, 13, 0b100);
+    emit_int16(insn);
+  }
+
+  void sh(Register Rd_Rs2, Register Rs1, const int32_t uimm) {
+    if (do_compress_zcb(Rd_Rs2, Rs1) &&
+        (uimm == 0 || uimm == 2)) {
+      c_sh(Rd_Rs2, Rs1, uimm);
+    } else {
+      _sh(Rd_Rs2, Rs1, uimm);
+    }
+  }
+
+  // Prerequisites: Zcb
+  // Format CS
+  void c_zext_b(Register Rs1) {
+    assert_cond(do_compress_zcb(Rs1));
+    c_u_if<0b000>(Rs1);
+  }
+
+  // Prerequisites: Zbb
+  void sext_b(Register Rd_Rs2, Register Rs1) {
+    assert_cond(UseZbb);
+    if (do_compress_zcb_zbb(Rd_Rs2, Rs1) && (Rd_Rs2 == Rs1)) {
+      c_sext_b(Rd_Rs2);
+    } else {
+      _sext_b(Rd_Rs2, Rs1);
+    }
+  }
+
+  // Prerequisites: Zcb, Zbb
+  // Format CS
+  void c_sext_b(Register Rs1) {
+    c_u_if<0b001>(Rs1);
+  }
+
+  // Prerequisites: Zbb
+  void zext_h(Register Rd_Rs2, Register Rs1) {
+    assert_cond(UseZbb);
+    if (do_compress_zcb_zbb(Rd_Rs2, Rs1) && (Rd_Rs2 == Rs1)) {
+      c_zext_h(Rd_Rs2);
+    } else {
+      _zext_h(Rd_Rs2, Rs1);
+    }
+  }
+
+  // Prerequisites: Zcb, Zbb
+  // Format CS
+  void c_zext_h(Register Rs1) {
+    c_u_if<0b010>(Rs1);
+  }
+
+  // Prerequisites: Zbb
+  void sext_h(Register Rd_Rs2, Register Rs1) {
+    assert_cond(UseZbb);
+    if (do_compress_zcb_zbb(Rd_Rs2, Rs1) && (Rd_Rs2 == Rs1)) {
+      c_sext_h(Rd_Rs2);
+    } else {
+      _sext_h(Rd_Rs2, Rs1);
+    }
+  }
+
+  // Prerequisites: Zcb, Zbb
+  // Format CS
+  void c_sext_h(Register Rs1) {
+    c_u_if<0b011>(Rs1);
+  }
+
+  // Prerequisites: Zcb, Zba
+  // Format CS
+  void c_zext_w(Register Rs1) {
+    c_u_if<0b100>(Rs1);
+  }
+
+  // Prerequisites: Zcb
+  // Format CS
+  void c_not(Register Rs1) {
+    c_u_if<0b101>(Rs1);
+  }
+
+  // Prerequisites: Zcb (M or Zmmul)
+  // Format CA, c.mul
+  void c_mul(Register Rd_Rs1, Register Rs2) {
+    uint16_t insn = 0;
+    c_patch((address)&insn, 1, 0, 0b01);
+    c_patch_compressed_reg((address)&insn, 2, Rs2);
+    c_patch((address)&insn, 6, 5, 0b10);
+    c_patch_compressed_reg((address)&insn, 7, Rd_Rs1);
+    c_patch((address)&insn, 12, 10, 0b111);
+    c_patch((address)&insn, 15, 13, 0b100);
+    emit_int16(insn);
+  }
+
+  void mul(Register Rd, Register Rs1, Register Rs2) {
+    if (Rd != Rs1 && Rd != Rs2) {
+      // Three registers needed without a mv, emit uncompressed
+      _mul(Rd, Rs1, Rs2);
+      return;
+    }
+
+    // Rd is either Rs1 or Rs2
+    if (!do_compress_zcb(Rs2, Rs1)) {
+      _mul(Rd, Rs1, Rs2);
+    } else {
+      if (Rd == Rs2) {
+        Rs2 = Rs1;
+      } else {
+        assert(Rd == Rs1, "must be");
+      }
+      c_mul(Rd, Rs2);
+    }
+  }
 
   // Stack overflow checking
   virtual void bang_stack_with_offset(int offset) { Unimplemented(); }
