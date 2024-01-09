@@ -95,7 +95,23 @@ public class GenericStringTest {
                                      SealedRootClass.ChildC.GrandChildACA.class,
                                      SealedRootClass.ChildC.GrandChildACB.class,
                                      SealedRootClass.ChildC.GrandChildACC.class,
-                                     SealedRootClass.ChildC.GrandChildACC.GreatGrandChildACC.class)) {
+                                     SealedRootClass.ChildC.GrandChildACC.GreatGrandChildACCA.class,
+                                     SealedRootClass.ChildC.GrandChildACC.GreatGrandChildACCB.class,
+
+                                     SealedRootIntf.class,
+                                     SealedRootIntf.ChildA.class,
+                                     SealedRootIntf.ChildB.class,
+                                     SealedRootIntf.ChildB.GrandChildAB.class,
+                                     SealedRootIntf.ChildC.class,
+                                     SealedRootIntf.ChildC.GrandChildACA.class,
+                                     SealedRootIntf.ChildC.GrandChildACB.class,
+                                     SealedRootIntf.ChildC.GrandChildACC.class,
+                                     SealedRootIntf.ChildC.GrandChildACC.GreatGrandChildACCA.class,
+                                     SealedRootIntf.ChildC.GrandChildACC.GreatGrandChildACCB.class,
+                                     SealedRootIntf.IntfA.class,
+                                     SealedRootIntf.IntfA.IntfAImpl.class,
+                                     SealedRootIntf.IntfB.class,
+                                     SealedRootIntf.IntfB.IntfAImpl.class)) {
             failures += checkToGenericString(clazz, clazz.getAnnotation(ExpectedGenericString.class).value());
         }
 
@@ -140,6 +156,7 @@ enum AnotherEnum {
     BAR{};
 }
 
+// Test cases for sealed/non-sealed _class_ hierarchy.
 @ExpectedGenericString("sealed class SealedRootClass")
 sealed class SealedRootClass
     permits
@@ -156,7 +173,6 @@ sealed class SealedRootClass
         final class GrandChildAB extends ChildB {}
     }
 
-    // Test cases for sealed/non-sealed hierarchies.
     @ExpectedGenericString("non-sealed class SealedRootClass$ChildC")
     non-sealed class ChildC extends SealedRootClass {
         // The subclasses of ChildC do not themselves have to be
@@ -169,8 +185,65 @@ sealed class SealedRootClass
 
         @ExpectedGenericString("sealed class SealedRootClass$ChildC$GrandChildACC")
         sealed class GrandChildACC extends ChildC {
-            @ExpectedGenericString("final class SealedRootClass$ChildC$GrandChildACC$GreatGrandChildACC")
-            final class GreatGrandChildACC extends GrandChildACC {}
+            @ExpectedGenericString("final class SealedRootClass$ChildC$GrandChildACC$GreatGrandChildACCA")
+            final class GreatGrandChildACCA extends GrandChildACC {}
+
+            @ExpectedGenericString("non-sealed class SealedRootClass$ChildC$GrandChildACC$GreatGrandChildACCB")
+            non-sealed class GreatGrandChildACCB extends GrandChildACC {}
         }
+    }
+}
+
+// Test cases for sealed/non-sealed _interface_ hierarchy.
+@ExpectedGenericString("abstract sealed interface SealedRootIntf")
+sealed interface SealedRootIntf
+    permits
+    SealedRootIntf.ChildA,
+    SealedRootIntf.ChildB,
+    SealedRootIntf.ChildC,
+
+    SealedRootIntf.IntfA,
+    SealedRootIntf.IntfB {
+
+    @ExpectedGenericString("public static final class SealedRootIntf$ChildA")
+    final class ChildA implements SealedRootIntf {}
+
+    @ExpectedGenericString("public static sealed class SealedRootIntf$ChildB")
+    sealed class ChildB implements SealedRootIntf permits SealedRootIntf.ChildB.GrandChildAB {
+        @ExpectedGenericString("final class SealedRootIntf$ChildB$GrandChildAB")
+        final class GrandChildAB extends ChildB {}
+    }
+
+    @ExpectedGenericString("public static non-sealed class SealedRootIntf$ChildC")
+    non-sealed class ChildC implements SealedRootIntf {
+        // The subclasses of ChildC do not themselves have to be
+        // sealed, non-sealed, or final.
+        @ExpectedGenericString("class SealedRootIntf$ChildC$GrandChildACA")
+        class GrandChildACA extends ChildC {}
+
+        @ExpectedGenericString("final class SealedRootIntf$ChildC$GrandChildACB")
+        final class GrandChildACB extends ChildC {}
+
+        @ExpectedGenericString("sealed class SealedRootIntf$ChildC$GrandChildACC")
+        sealed class GrandChildACC extends ChildC {
+            @ExpectedGenericString("final class SealedRootIntf$ChildC$GrandChildACC$GreatGrandChildACCA")
+            final class GreatGrandChildACCA extends GrandChildACC {}
+
+            @ExpectedGenericString("non-sealed class SealedRootIntf$ChildC$GrandChildACC$GreatGrandChildACCB")
+            non-sealed class GreatGrandChildACCB extends GrandChildACC {}
+        }
+    }
+
+    @ExpectedGenericString("public abstract static sealed interface SealedRootIntf$IntfA")
+    sealed interface IntfA extends  SealedRootIntf {
+        @ExpectedGenericString("public static non-sealed class SealedRootIntf$IntfA$IntfAImpl")
+        non-sealed class IntfAImpl implements IntfA {}
+    }
+
+    @ExpectedGenericString("public abstract static non-sealed interface SealedRootIntf$IntfB")
+    non-sealed interface IntfB extends  SealedRootIntf {
+        // Check that non-sealing can be allowed with a second superinterface being sealed.
+        @ExpectedGenericString("public static non-sealed class SealedRootIntf$IntfB$IntfAImpl")
+        non-sealed class IntfAImpl implements IntfB, IntfA  {}
     }
 }
