@@ -354,8 +354,7 @@ public final class Class<T> implements java.io.Serializable,
         if (Modifier.isFinal(modifiers)) {
             return; // no-op
         } else {
-            boolean isSealed = isSealed();
-            if (isSealed) {
+            if (isSealed()) {
                 sb.append("sealed ");
                 return;
             } else {
@@ -369,14 +368,29 @@ public final class Class<T> implements java.io.Serializable,
     }
 
     private boolean hasSealedAncestor(Class<?> clazz) {
+        // From JLS 8.1.1.2:
+        // "It is a compile-time error if a class has a sealed direct
+        // superclass or a sealed direct superinterface, and is not
+        // declared final, sealed, or non-sealed either explicitly or
+        // implicitly.
+        // Thus, an effect of the sealed keyword is to force all
+        // direct subclasses to explicitly declare whether they are
+        // final, sealed, or non-sealed. This avoids accidentally
+        // exposing a sealed class hierarchy to unwanted subclassing.
+        // [...]
+        // Thus, a subclass of a non-sealed class cannot itself be
+        // declared non-sealed."
+
+        // Therefore, will just check direct superclass and
+        // superinterfaces.
         var superclass = clazz.getSuperclass();
-        if (superclass != null) {
-            if (superclass.isSealed() || hasSealedAncestor(superclass))
-                return true;
+        if (superclass != null && superclass.isSealed()) {
+            return true;
         }
         for (var superinterface : clazz.getInterfaces()) {
-            if (superinterface.isSealed() || hasSealedAncestor(superinterface))
+            if (superinterface.isSealed()) {
                 return true;
+            }
         }
         return false;
     }
