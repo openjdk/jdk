@@ -566,7 +566,7 @@ static void adjust_check(IfProjNode* proj, Node* range, Node* index,
   Node* new_bol = gvn->transform(new BoolNode(new_cmp, bol->as_Bool()->_test._test));
   igvn->rehash_node_delayed(iff);
   iff->set_req_X(1, new_bol, igvn);
-  // As part of range check smearing, this range check is widen. Loads and range check Cast nodes that are control
+  // As part of range check smearing, this range check is widened. Loads and range check Cast nodes that are control
   // dependent on this range check now depend on multiple dominating range checks. These control dependent nodes end up
   // at the lowest/nearest dominating check in the graph. To ensure that these Loads/Casts do not float above any of the
   // dominating checks (even when the lowest dominating check is later replaced by yet another dominating check), we
