@@ -129,7 +129,7 @@ public class TestIHOPStatic {
         Collections.addAll(options, COMMON_OPTIONS);
         options.add(AppIHOP.class.getName());
 
-        OutputAnalyzer out = ProcessTools.executeTestJvm(options);
+        OutputAnalyzer out = ProcessTools.executeTestJava(options);
 
         if (out.getExitValue() != 0) {
             System.out.println(out.getOutput());

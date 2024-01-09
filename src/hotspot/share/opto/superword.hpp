@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -198,7 +198,7 @@ class SuperWord : public ResourceObj {
 
   GrowableArray<SWNodeInfo> _node_info;  // Info needed per node
   CloneMap&            _clone_map;       // map of nodes created in cloning
-  MemNode* _align_to_ref;                // Memory reference that pre-loop will align to
+  MemNode const* _align_to_ref;          // Memory reference that pre-loop will align to
 
   // Scratch pads
   Node_Stack   _n_idx_list;    // List of (node,index) pairs
@@ -220,14 +220,14 @@ class SuperWord : public ResourceObj {
   bool transform_loop();
 
   // VLoopAnalyzer
-  const VLoopAnalyzer& vla() const      { return _vla; }
-  IdealLoopTree* lpt() const            { return vla().lpt(); }
-  PhaseIdealLoop* phase() const         { return vla().phase(); }
-  PhaseIterGVN& igvn() const            { return vla().phase()->igvn(); }
-  CountedLoopNode* cl() const           { return vla().cl(); }
-  PhiNode* iv() const                   { return vla().iv(); }
-  int iv_stride() const                 { return vla().iv_stride(); }
-  bool in_body(const Node* n) const     { return vla().in_body(n); }
+  const VLoopAnalyzer& vla()  const { return _vla; }
+  IdealLoopTree* lpt()        const { return vla().lpt(); }
+  PhaseIdealLoop* phase()     const { return vla().phase(); }
+  PhaseIterGVN& igvn()        const { return vla().phase()->igvn(); }
+  CountedLoopNode* cl()       const { return vla().cl(); }
+  PhiNode* iv()               const { return vla().iv(); }
+  int iv_stride()             const { return vla().iv_stride(); }
+  bool in_body(const Node* n) const { return vla().in_body(n); }
 
   // VLoopAnalyzer reductions
   bool is_marked_reduction(const Node* n) const {
@@ -271,7 +271,7 @@ class SuperWord : public ResourceObj {
   int vector_width(Node* n) const {
     return vla().types().vector_width(n);
   }
-  int vector_width_in_bytes(Node* n) const {
+  int vector_width_in_bytes(const Node* n) const {
     return vla().types().vector_width_in_bytes(n);
   }
 
@@ -298,6 +298,9 @@ class SuperWord : public ResourceObj {
   bool is_trace_superword_any() const {
     return vla().is_trace_superword_any();
   }
+  bool is_trace_align_vector() const {
+    return vla().is_trace_align_vector();
+  }
 #endif
 
   bool     do_vector_loop()        { return _do_vector_loop; }
@@ -313,8 +316,8 @@ class SuperWord : public ResourceObj {
   Arena* arena()                   { return _arena; }
 
   int get_vw_bytes_special(MemNode* s);
-  MemNode* align_to_ref()            { return _align_to_ref; }
-  void  set_align_to_ref(MemNode* m) { _align_to_ref = m; }
+  const MemNode* align_to_ref() const { return _align_to_ref; }
+  void set_align_to_ref(const MemNode* m) { _align_to_ref = m; }
 
   // Ensure node_info contains element "i"
   void grow_node_info(int i) { if (i >= _node_info.length()) _node_info.at_put_grow(i, SWNodeInfo::initial); }
@@ -342,21 +345,10 @@ class SuperWord : public ResourceObj {
   const char* transform_loop_helper();
   // Find the adjacent memory references and create pack pairs for them.
   const char* find_adjacent_refs();
-  // Tracing support
-  #ifndef PRODUCT
-  void find_adjacent_refs_trace_1(Node* best_align_to_mem_ref, int best_iv_adjustment);
-  #endif
-  // If strict memory alignment is required (vectors_should_be_aligned), then check if
-  // mem_ref is aligned with best_align_to_mem_ref.
-  bool mem_ref_has_no_alignment_violation(MemNode* mem_ref, int iv_adjustment, VPointer& align_to_ref_p,
-                                          MemNode* best_align_to_mem_ref, int best_iv_adjustment,
-                                          Node_List &align_to_refs);
   // Find a memory reference to align the loop induction variable to.
   MemNode* find_align_to_ref(Node_List &memops, int &idx);
   // Calculate loop's iv adjustment for this memory ops.
   int get_iv_adjustment(MemNode* mem);
-  // Can the preloop align the reference to position zero in the vector?
-  bool ref_is_alignable(VPointer& p);
   // Can s1 and s2 be in a pack with s1 immediately preceding s2 and  s1 aligned at "align"
   bool stmts_can_pack(Node* s1, Node* s2, int align);
   // Does s exist in a pack at position pos?
@@ -385,6 +377,12 @@ class SuperWord : public ResourceObj {
   int unpack_cost(int ct);
   // Combine packs A and B with A.last == B.first into A.first..,A.last,B.second,..B.last
   const char* combine_packs();
+  // Ensure all packs are aligned, if AlignVector is on.
+  void filter_packs_for_alignment();
+  // Find the set of alignment solutions for load/store pack.
+  const AlignmentSolution* pack_alignment_solution(Node_List* pack);
+  // Compress packset, such that it has no nullptr entries.
+  void compress_packset();
   // Construct the map from nodes to packs.
   void construct_my_pack_map();
   // Remove packs that are not implemented or not profitable.
@@ -420,9 +418,8 @@ class SuperWord : public ResourceObj {
   static LoadNode::ControlDependency control_dependency(Node_List* p);
   // Alignment within a vector memory reference
   int memory_alignment(MemNode* s, int iv_adjust);
-  // Adjust pre-loop limit so that in main loop, a load/store reference
-  // to align_to_ref will be a position zero in the vector.
-  void align_initial_loop_index(MemNode* align_to_ref);
+  // Ensure that the main loop vectors are aligned by adjusting the pre loop limit.
+  void adjust_pre_loop_limit_to_align_main_loop_vectors();
   // Is the use of d1 in u1 at the same operand position as d2 in u2?
   bool opnd_positions_match(Node* d1, Node* u1, Node* d2, Node* u2);
   void init();

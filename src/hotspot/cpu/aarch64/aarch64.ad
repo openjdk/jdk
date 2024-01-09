@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
 // Copyright (c) 2014, 2021, Red Hat, Inc. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
@@ -8235,6 +8235,24 @@ instruct popCountL_mem(iRegINoSp dst, memory8 mem, vRegD tmp) %{
   %}
 
   ins_pipe(pipe_class_default);
+%}
+
+// ============================================================================
+// VerifyVectorAlignment Instruction
+
+instruct verify_vector_alignment(iRegP addr, immL_positive_bitmaskI mask, rFlagsReg cr) %{
+  match(Set addr (VerifyVectorAlignment addr mask));
+  effect(KILL cr);
+  format %{ "verify_vector_alignment $addr $mask \t! verify alignment" %}
+  ins_encode %{
+    Label Lskip;
+    // check if masked bits of addr are zero
+    __ tst($addr$$Register, $mask$$constant);
+    __ br(Assembler::EQ, Lskip);
+    __ stop("verify_vector_alignment found a misaligned vector memory access");
+    __ bind(Lskip);
+  %}
+  ins_pipe(pipe_slow);
 %}
 
 // ============================================================================

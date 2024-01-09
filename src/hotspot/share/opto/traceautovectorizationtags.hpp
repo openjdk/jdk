@@ -41,6 +41,7 @@
   flags(SW_PACKSET,           "Trace SuperWord packset at different stages") \
   flags(SW_INFO,              "Trace SuperWord info") \
   flags(SW_ALL,               "Trace SuperWord all (verbose)") \
+  flags(ALIGN_VECTOR,         "Trace AlignVector") \
   flags(ALL,                  "Trace everything (very verbose)")
 
 #define table_entry(name, description) TAG_##name,

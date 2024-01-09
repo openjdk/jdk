@@ -93,10 +93,6 @@ class MutableNUMASpace : public MutableSpace {
       delete _alloc_rate;
     }
 
-    static bool equals(void* lgrp_id_value, LGRPSpace* p) {
-      return *(uint*)lgrp_id_value == p->lgrp_id();
-    }
-
     // Report a failed allocation.
     void set_allocation_failed() { _allocation_failed = true;  }
 
@@ -158,6 +154,8 @@ class MutableNUMASpace : public MutableSpace {
   void select_tails(MemRegion new_region, MemRegion intersection,
                     MemRegion* bottom_region, MemRegion *top_region);
 
+  int lgrp_space_index(int lgrp_id) const;
+
 public:
   GrowableArray<LGRPSpace*>* lgrp_spaces() const     { return _lgrp_spaces;       }
   MutableNUMASpace(size_t alignment);
@@ -185,8 +183,6 @@ public:
   virtual void ensure_parsability();
   virtual size_t used_in_words() const;
   virtual size_t free_in_words() const;
-
-  using MutableSpace::capacity_in_words;
 
   virtual size_t tlab_capacity(Thread* thr) const;
   virtual size_t tlab_used(Thread* thr) const;

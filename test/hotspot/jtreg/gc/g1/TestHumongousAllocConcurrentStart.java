@@ -45,7 +45,7 @@ public class TestHumongousAllocConcurrentStart {
     private static final int initiatingHeapOccupancyPercent = 50;  // %
 
     public static void main(String[] args) throws Exception {
-        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+        OutputAnalyzer output = ProcessTools.executeTestJava(
             "-XX:+UseG1GC",
             "-Xms" + heapSize + "m",
             "-Xmx" + heapSize + "m",
@@ -54,7 +54,6 @@ public class TestHumongousAllocConcurrentStart {
             "-Xlog:gc",
             HumongousObjectAllocator.class.getName());
 
-        OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldContain("Pause Young (Concurrent Start) (G1 Humongous Allocation)");
         output.shouldNotContain("Full GC");
         output.shouldHaveExitValue(0);
