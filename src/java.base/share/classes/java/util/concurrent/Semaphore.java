@@ -46,7 +46,7 @@ import java.util.concurrent.locks.AbstractQueuedSynchronizer;
  * However, no actual permit objects are used; the {@code Semaphore} just
  * keeps a count of the number available and acts accordingly.
  *
- * <p>Semaphores are often used to restrict the number of threads than can
+ * <p>Semaphores are often used to restrict the number of threads that can
  * access some (physical or logical) resource. For example, here is
  * a class that uses a semaphore to control access to a pool of items:
  * <pre> {@code
