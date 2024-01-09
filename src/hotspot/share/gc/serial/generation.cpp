@@ -218,34 +218,3 @@ void Generation::object_iterate(ObjectClosure* cl) {
   GenerationObjIterateClosure blk(cl);
   space_iterate(&blk);
 }
-
-void Generation::prepare_for_compaction(CompactPoint* cp) {
-  // Generic implementation, can be specialized
-  ContiguousSpace* space = first_compaction_space();
-  while (space != nullptr) {
-    space->prepare_for_compaction(cp);
-    space = space->next_compaction_space();
-  }
-}
-
-class AdjustPointersClosure: public SpaceClosure {
- public:
-  void do_space(Space* sp) {
-    sp->adjust_pointers();
-  }
-};
-
-void Generation::adjust_pointers() {
-  // Note that this is done over all spaces, not just the compactible
-  // ones.
-  AdjustPointersClosure blk;
-  space_iterate(&blk, true);
-}
-
-void Generation::compact() {
-  ContiguousSpace* sp = first_compaction_space();
-  while (sp != nullptr) {
-    sp->compact();
-    sp = sp->next_compaction_space();
-  }
-}
