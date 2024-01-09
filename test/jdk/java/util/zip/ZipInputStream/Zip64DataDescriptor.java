@@ -124,6 +124,12 @@ public class Zip64DataDescriptor {
         }
 
         invalidZip64 = baos.toByteArray();
+
+        // Set Zip64 magic values on compressed and uncompressed size fields
+        ByteBuffer.wrap(invalidZip64).order(ByteOrder.LITTLE_ENDIAN)
+                .putInt(ZipFile.LOCSIZ, 0xFFFFFFFF)
+                .putInt(ZipFile.LOCLEN, 0xFFFFFFFF);
+
     }
 
     /*
@@ -155,6 +161,22 @@ public class Zip64DataDescriptor {
     public void shouldIgnoreExcessiveExtraSize() throws IOException {
 
         setExtraSize(Short.MAX_VALUE);
+
+
+        readZipInputStream(invalidZip64);
+    }
+
+    /*
+     * Validate that the Data Descriptor is read with 32-bit fields if neither the
+     * LOC's 'uncompressed size' or 'compressed size' fields have the Zip64 magic value,
+     * even when there is a Zip64 field in the extra field.
+     */
+    @Test
+    public void shouldIgnoreNoMagicMarkers() throws IOException {
+        // Set compressed and uncompressed size fields to zero
+        ByteBuffer.wrap(invalidZip64).order(ByteOrder.LITTLE_ENDIAN)
+                .putInt(ZipFile.LOCSIZ, 0)
+                .putInt(ZipFile.LOCLEN, 0);
 
 
         readZipInputStream(invalidZip64);
