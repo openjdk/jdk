@@ -815,10 +815,9 @@ public final class System {
      * {@code getProperties} operation, it may choose to permit the
      * {@link #getProperty(String)} operation.
      * <p>
-     * In addition to the above set of system properties, locale related
-     * system properties may also be obtained with this method. Refer to
-     * {@link Locale##default_locale Default Locale} section in the
-     * {@code Locale} class description for more detail.
+     * Additional locale-related system properties defined by the
+     * {@link Locale##default_locale Default Locale} section in the {@code Locale}
+     * class description may also be obtained with this method.
      *
      * @apiNote
      * <strong>Changing a standard system property may have unpredictable results
