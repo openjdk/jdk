@@ -39,6 +39,7 @@ import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java.util.Collections;
+import java.util.HexFormat;
 import java.util.Map;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipException;
@@ -229,9 +230,8 @@ public class ReadZip {
     public void readZip64EndZipFs() throws IOException {
 
         // Create zip file with Zip64 end
-        URI uri = URI.create("jar:" + zip.toUri());
         Map<String, Object> env = Map.of("create", "true", "forceZIP64End", "true");
-        try (FileSystem fs = FileSystems.newFileSystem(uri, env)) {
+        try (FileSystem fs = FileSystems.newFileSystem(zip, env)) {
             Files.write(fs.getPath("hello"), "hello".getBytes());
         }
         // Read using ZipFile
@@ -241,35 +241,39 @@ public class ReadZip {
             }
         }
         // Read using ZipFileSystem
-        try (FileSystem fs = FileSystems.newFileSystem(uri, Map.of())) {
+        try (FileSystem fs = FileSystems.newFileSystem(zip, Map.of())) {
             assertEquals("hello", new String(Files.readAllBytes(fs.getPath("hello"))));
         }
     }
 
     /**
-     * Read a zip file created via "echo hello | zip dst.zip -",
-     * which includes a 'Zip64 End of Central Directory header'
+     * Read a zip file created via Info-ZIP in streaming mode,
+     * which includes a 'Zip64 End of Central Directory header'.
      *
      * @throws IOException if an unexpected IOException occurs
      * @throws InterruptedException if an unexpected InterruptedException occurs
      */
     @Test
-    public void readZip64EndZipProcess() throws IOException, InterruptedException {
-        if (Files.notExists(Paths.get("/usr/bin/zip"))) {
-            return;
-        }
+    public void readZip64EndInfoZIPStreaming() throws IOException, InterruptedException {
+        // ZIP created using: "echo -n hello | zip zip64.zip -"
+        // Hex encoded using: "cat zip64.zip | xxd -ps"
+        byte[] zipBytes = HexFormat.of().parseHex("""
+                  504b03042d0000000000c441295886a61036ffffffffffffffff01001400
+                  2d010010000500000000000000050000000000000068656c6c6f504b0102
+                  1e032d0000000000c441295886a610360500000005000000010000000000
+                  000001000000b011000000002d504b06062c000000000000001e032d0000
+                  00000000000000010000000000000001000000000000002f000000000000
+                  003800000000000000504b06070000000067000000000000000100000050
+                  4b050600000000010001002f000000380000000000
+                  """.replaceAll("\n","")
+        );
 
-        Process zip = new ProcessBuilder("zip", this.zip.toString(), "-").start();
-        OutputStream os = zip.getOutputStream();
-        os.write("hello".getBytes(US_ASCII));
-        os.close();
-        zip.waitFor();
-        if (zip.exitValue() == 0 && Files.exists(this.zip)) {
-            try (ZipFile zf = new ZipFile(this.zip.toFile())) {
-                try (InputStream in = zf.getInputStream(zf.getEntry("-"))) {
-                    String contents = new String(in.readAllBytes(), StandardCharsets.US_ASCII);
-                    assertEquals("hello", contents);
-                }
+        Files.write(zip, zipBytes);
+
+        try (ZipFile zf = new ZipFile(this.zip.toFile())) {
+            try (InputStream in = zf.getInputStream(zf.getEntry("-"))) {
+                String contents = new String(in.readAllBytes(), StandardCharsets.US_ASCII);
+                assertEquals("hello", contents);
             }
         }
     }
