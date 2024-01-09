@@ -275,6 +275,12 @@ bool SuperWord::transform_loop() {
   return false;
 }
 
+#define BAILOUT_ON_FAILURE(code) {{                  \
+  char const* state = code();                        \
+  if (state != SuperWord::SUCCESS) { return state; } \
+}}                                                   \
+
+
 const char* SuperWord::transform_loop_helper() {
   assert(phase()->C->do_superword(), "SuperWord option should be enabled");
   assert(cl()->is_main_loop(), "SLP should only work on main loops");
@@ -283,31 +289,26 @@ const char* SuperWord::transform_loop_helper() {
   init();
 
   // Find adjacent loads and stores pairs.
-  char const* state = find_adjacent_refs();
-  if (state != SuperWord::SUCCESS) { return state; }
+  BAILOUT_ON_FAILURE(find_adjacent_refs);
 
   // Extend pairs with non memory ops.
   extend_packlist();
 
   // Combine pairs into vectors sized packs.
-  state = combine_packs();
-  if (state != SuperWord::SUCCESS) { return state; }
+  BAILOUT_ON_FAILURE(combine_packs);
 
-  state = filter_packs_for_alignment();
-  if (state != SuperWord::SUCCESS) { return state; }
+  BAILOUT_ON_FAILURE(filter_packs_for_alignment);
 
   // Construct the map from nodes to packs.
   construct_my_pack_map();
 
   // Remove packs that are not implemented or not profitable.
-  state = filter_packs();
-  if (state != SuperWord::SUCCESS) { return state; }
+  BAILOUT_ON_FAILURE(filter_packs);
 
   DEBUG_ONLY(verify_packs();)
 
   // Adjust the memory graph for the packed operations. And check for cycles.
-  state = schedule();
-  if (state != SuperWord::SUCCESS) { return state; }
+  BAILOUT_ON_FAILURE(schedule);
 
   // Convert packs into vector node operations.
   return output();
