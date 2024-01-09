@@ -1534,7 +1534,7 @@ Node* IfNode::dominated_by(Node* prev_dom, PhaseIterGVN* igvn, bool pin_array_ac
         // For control producers.
         // Do not rewire Div and Mod nodes which could have a zero divisor to avoid skipping their zero check.
         igvn->replace_input_of(s, 0, data_target); // Move child to data-target
-        if (pin_array_nodes && data_target != top) {
+        if (pin_array_access_nodes && data_target != top) {
           // As a result of range check smearing, Loads and range check Cast nodes that are control dependent on this
           // range check (that is about to be removed) now depend on multiple dominating range checks. After the removal
           // of this range check, these control dependent nodes end up at the lowest/nearest dominating check in the
