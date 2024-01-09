@@ -1137,7 +1137,7 @@ public:
 
   // Returns a clone of the current node that's pinned (if the current node is not) for nodes found in array accesses
   // (Load and range check CastII nodes).
-  // This is used when an array access is made dependent on 2 or more range checks (range check smearing or predication).
+  // This is used when an array access is made dependent on 2 or more range checks (range check smearing or Loop Predication).
   virtual Node* pin_array_access_node() const {
     return nullptr;
   }
