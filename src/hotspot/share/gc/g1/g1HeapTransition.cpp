@@ -62,7 +62,7 @@ G1HeapTransition::Data::~Data() {
 
 G1HeapTransition::G1HeapTransition(G1CollectedHeap* g1_heap) : _g1_heap(g1_heap), _before(g1_heap) { }
 
-struct DetailedUsage : public StackObj {
+struct G1HeapTransition::DetailedUsage : public StackObj {
   size_t _eden_used;
   size_t _survivor_used;
   size_t _old_used;
@@ -79,7 +79,7 @@ struct DetailedUsage : public StackObj {
     _humongous_region_count(0) {}
 };
 
-class DetailedUsageClosure: public HeapRegionClosure {
+class G1HeapTransition::DetailedUsageClosure: public HeapRegionClosure {
 public:
   DetailedUsage _usage;
   bool do_heap_region(HeapRegion* r) {
