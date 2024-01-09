@@ -4678,41 +4678,54 @@ void MacroAssembler::shadd(Register Rd, Register Rs1, Register Rs2, Register tmp
 }
 
 void MacroAssembler::zero_extend(Register dst, Register src, int bits) {
-  if (UseZba && bits == 32) {
-    zext_w(dst, src);
-    return;
+  switch (bits) {
+    case 32:
+      if (UseZba) {
+        zext_w(dst, src);
+        return;
+      }
+      break;
+    case 16:
+      if (UseZbb) {
+        zext_h(dst, src);
+        return;
+      }
+      break;
+    case 8:
+      if (UseZbb) {
+        zext_b(dst, src);
+        return;
+      }
+      break;
+    default:
+      break;
   }
-
-  if (UseZbb && bits == 16) {
-    zext_h(dst, src);
-    return;
-  }
-
-  if (bits == 8) {
-    zext_b(dst, src);
-  } else {
-    slli(dst, src, XLEN - bits);
-    srli(dst, dst, XLEN - bits);
-  }
+  slli(dst, src, XLEN - bits);
+  srli(dst, dst, XLEN - bits);
 }
 
 void MacroAssembler::sign_extend(Register dst, Register src, int bits) {
-  if (UseZbb) {
-    if (bits == 8) {
-      sext_b(dst, src);
+  switch (bits) {
+    case 32:
+      sext_w(dst, src);
       return;
-    } else if (bits == 16) {
-      sext_h(dst, src);
-      return;
-    }
+    case 16:
+      if (UseZbb) {
+        sext_h(dst, src);
+        return;
+      }
+      break;
+    case 8:
+      if (UseZbb) {
+        sext_b(dst, src);
+        return;
+      }
+      break;
+    default:
+      break;
   }
-
-  if (bits == 32) {
-    sext_w(dst, src);
-  } else {
-    slli(dst, src, XLEN - bits);
-    srai(dst, dst, XLEN - bits);
-  }
+  slli(dst, src, XLEN - bits);
+  srai(dst, dst, XLEN - bits);
 }
 
 void MacroAssembler::cmp_x2i(Register dst, Register src1, Register src2,

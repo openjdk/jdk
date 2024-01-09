@@ -473,7 +473,11 @@ class MacroAssembler: public Assembler {
   }
 
   inline void notr(Register Rd, Register Rs) {
-    xori(Rd, Rs, -1);
+    if (do_compress_zcb(Rd, Rs) && (Rd == Rs)) {
+      c_not(Rd);
+    } else {
+      xori(Rd, Rs, -1);
+    }
   }
 
   inline void neg(Register Rd, Register Rs) {
@@ -489,7 +493,11 @@ class MacroAssembler: public Assembler {
   }
 
   inline void zext_b(Register Rd, Register Rs) {
-    andi(Rd, Rs, 0xFF);
+    if (do_compress_zcb(Rd, Rs) && (Rd == Rs)) {
+      c_zext_b(Rd);
+    } else {
+      andi(Rd, Rs, 0xFF);
+    }
   }
 
   inline void seqz(Register Rd, Register Rs) {
@@ -511,7 +519,12 @@ class MacroAssembler: public Assembler {
   // Bit-manipulation extension pseudo instructions
   // zero extend word
   inline void zext_w(Register Rd, Register Rs) {
-    add_uw(Rd, Rs, zr);
+    assert(UseZba, "must be");
+    if (do_compress_zcb(Rd, Rs) && (Rd == Rs)) {
+      c_zext_w(Rd);
+    } else {
+      add_uw(Rd, Rs, zr);
+    }
   }
 
   // Floating-point data-processing pseudo instructions
