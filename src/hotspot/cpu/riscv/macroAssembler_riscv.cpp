@@ -3761,7 +3761,7 @@ void MacroAssembler::kernel_crc32(Register crc, Register buf, Register len,
   assert_different_registers(crc, buf, table0, table1, table2, table3, tmp, tmp2, tmp3, tmp4, tmp5);
   Label L_by16_loop, L_unroll_loop, L_unroll_loop_entry, L_by4, L_by4_loop, L_by1, L_by1_loop, L_exit;
 
-  const int64_t unroll = 20;
+  const int64_t unroll = 16;
   const int64_t unroll_words = unroll*wordSize;
   mv(tmp5, right_32_bits);
   subw(len, len, unroll_words);
