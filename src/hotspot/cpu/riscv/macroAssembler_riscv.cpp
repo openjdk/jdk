@@ -3710,7 +3710,7 @@ void MacroAssembler::update_word_crc32(Register crc, Register v, Register tmp1, 
 
   if (upper)
     srli(v, v, 32);
-  xorr(v, crc, v);
+  xorr(v, v, crc);
 
   andi(tmp1, v, bits8);
   shadd(tmp1, tmp1, table3, tmp2, 2);
@@ -3762,6 +3762,7 @@ void MacroAssembler::kernel_crc32(Register crc, Register buf, Register len,
   Label L_by16_loop, L_by16_loop_entry, L_by4, L_by4_loop, L_by1, L_by1_loop, L_exit;
 
   mv(tmp5, bits32);
+  subw(len, len, 16);
   andn(crc, tmp5, crc);
 
   const ExternalAddress table_addr = StubRoutines::crc_table_addr();
@@ -3770,8 +3771,7 @@ void MacroAssembler::kernel_crc32(Register crc, Register buf, Register len,
   add(table2, table0, 2*256*sizeof(juint), tmp);
   add(table3, table2, 1*256*sizeof(juint), tmp);
 
-  subw(len, len, 16);
-  bge(len, zr, L_by16_loop);
+  bge(len, zr, L_by16_loop_entry);
   addiw(len, len, 16-4);
   bge(len, zr, L_by4_loop);
   addiw(len, len, 4);
@@ -3796,16 +3796,22 @@ void MacroAssembler::kernel_crc32(Register crc, Register buf, Register len,
     j(L_exit);
 
     align(CodeEntryAlignment);
+  bind(L_by16_loop_entry);
+    const Register buf_end = x30; // t5
+    add(buf_end, buf, len); // buf_end will be used as endpoint for loop below
+    andi(len, len, 16-1); // len = (len % 16)
+    sub(len, len, 16); // Length after all iterations
   bind(L_by16_loop);
-    subw(len, len, 16);
     ld(tmp, Address(buf));
     update_word_crc32(crc, tmp, tmp2, tmp4, table0, table1, table2, table3, false);
     update_word_crc32(crc, tmp, tmp2, tmp4, table0, table1, table2, table3, true);
+
     ld(tmp, Address(buf, wordSize));
-    addi(buf, buf, 16);
     update_word_crc32(crc, tmp, tmp2, tmp4, table0, table1, table2, table3, false);
+    addi(buf, buf, 16);
     update_word_crc32(crc, tmp, tmp2, tmp4, table0, table1, table2, table3, true);
-    bge(len, zr, L_by16_loop);
+
+    ble(buf, buf_end, L_by16_loop);
     addiw(len, len, 16-4);
     bge(len, zr, L_by4_loop);
     addiw(len, len, 4);
