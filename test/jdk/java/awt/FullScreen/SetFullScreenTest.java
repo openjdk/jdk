@@ -38,7 +38,7 @@ import static java.awt.EventQueue.invokeAndWait;
  */
 
 public class SetFullScreenTest {
-    private static Frame f;
+    private static Frame frame;
     private static GraphicsDevice gd;
     private static volatile int width;
     private static volatile int height;
@@ -47,18 +47,18 @@ public class SetFullScreenTest {
         try {
             Robot robot = new Robot();
             invokeAndWait(() -> {
-                f = new Frame();
-                f.setBackground(Color.RED);
-                f.setSize(100, 100);
-                f.setLocation(10, 10);
-                f.setVisible(true);
+                frame = new Frame();
+                frame.setBackground(Color.RED);
+                frame.setSize(100, 100);
+                frame.setLocation(10, 10);
+                frame.setVisible(true);
             });
             robot.delay(1000);
 
             invokeAndWait(() -> {
                 gd = GraphicsEnvironment.getLocalGraphicsEnvironment().
                                 getDefaultScreenDevice();
-                gd.setFullScreenWindow(f);
+                gd.setFullScreenWindow(frame);
             });
             robot.delay(300);
 
@@ -71,8 +71,8 @@ public class SetFullScreenTest {
                 throw new RuntimeException("Test Failed! Window not in full screen mode");
             }
         } finally {
-            if (f != null) {
-                f.dispose();
+            if (frame != null) {
+                frame.dispose();
             }
         }
     }
