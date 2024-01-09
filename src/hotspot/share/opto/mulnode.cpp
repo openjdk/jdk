@@ -614,7 +614,7 @@ Node *AndINode::Ideal(PhaseGVN *phase, bool can_reshape) {
   if (in(1)->is_not(phase, T_INT) && in(2)->is_not(phase, T_INT)) {
     Node* or_a_b = new OrINode(in(1)->in(1), in(2)->in(1));
     Node* tn = phase->transform(or_a_b);
-    return AddNode::make_not(phase, tn, T_INT);
+    return tn->make_not(phase, T_INT);
   }
 
   // Special case constant AND mask
@@ -761,7 +761,7 @@ Node *AndLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   if (in(1)->is_not(phase, T_LONG) && in(2)->is_not(phase, T_LONG)) {
     Node* or_a_b = new OrLNode(in(1)->in(1), in(2)->in(1));
     Node* tn = phase->transform(or_a_b);
-    return AddNode::make_not(phase, tn, T_LONG);
+    return tn->make_not(phase, T_LONG);
   }
 
   // Special case constant AND mask

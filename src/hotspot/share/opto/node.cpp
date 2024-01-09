@@ -1598,6 +1598,19 @@ bool Node::is_not(PhaseGVN* phase, BasicType bt) const {
   return Opcode() == Op_Xor(bt) && phase->type(in(2)) == TypeInteger::minus_1(bt);
 }
 
+// Make a NOT operation, i.e., returning this ^ (-1).
+AddNode* Node::make_not(PhaseGVN* phase, BasicType bt) {
+  switch (bt) {
+    case T_INT:
+      return new XorINode(this, phase->intcon(-1));
+    case T_LONG:
+      return new XorLNode(this, phase->longcon(-1L));
+    default:
+      fatal("Not implemented for %s", type2name(bt));
+  }
+  return nullptr;
+}
+
 #ifndef PRODUCT
 
 // Call this from debugger:

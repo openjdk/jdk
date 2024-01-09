@@ -1228,6 +1228,9 @@ public:
   // Check if "this" node is a NOT operation, i.e., this == m ^ (-1).
   bool is_not(PhaseGVN* phase, BasicType bt) const;
 
+  // Make a NOT operation, i.e., returning this ^ (-1).
+  AddNode* make_not(PhaseGVN* phase, BasicType bt);
+
 //----------------- Printing, etc
 #ifndef PRODUCT
  public:

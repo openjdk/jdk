@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -247,18 +247,6 @@ AddNode* AddNode::make(Node* in1, Node* in2, BasicType bt) {
       return new AddINode(in1, in2);
     case T_LONG:
       return new AddLNode(in1, in2);
-    default:
-      fatal("Not implemented for %s", type2name(bt));
-  }
-  return nullptr;
-}
-
-AddNode* AddNode::make_not(PhaseGVN* phase, Node* n, BasicType bt) {
-  switch (bt) {
-    case T_INT:
-      return new XorINode(n, phase->intcon(-1));
-    case T_LONG:
-      return new XorLNode(n, phase->longcon(-1L));
     default:
       fatal("Not implemented for %s", type2name(bt));
   }
