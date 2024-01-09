@@ -84,12 +84,6 @@ class Space: public CHeapObj<mtGC> {
 
   void set_saved_mark_word(HeapWord* p) { _saved_mark_word = p; }
 
-  // Returns true if this object has been allocated since a
-  // generation's "save_marks" call.
-  bool obj_allocated_since_save_marks(const oop obj) const {
-    return cast_from_oop<HeapWord*>(obj) >= saved_mark_word();
-  }
-
   // Returns a subregion of the space containing only the allocated objects in
   // the space.
   virtual MemRegion used_region() const = 0;
@@ -304,7 +298,6 @@ protected:
 
   // Addresses for inlined allocation
   HeapWord** top_addr() { return &_top; }
-  HeapWord** end_addr() { return &_end; }
 
   void print_on(outputStream* st) const override;
 
