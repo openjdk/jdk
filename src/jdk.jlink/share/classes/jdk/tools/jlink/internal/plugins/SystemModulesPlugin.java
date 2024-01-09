@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1827,6 +1827,9 @@ public final class SystemModulesPlugin extends AbstractPlugin {
 
         // write the class file to the pool as a resource
         String rn = "/java.base/" + SYSTEM_MODULES_MAP_CLASSNAME + ".class";
+        // sort the map of module name to the class name of the generated SystemModules class
+        List<Map.Entry<String, String>> systemModulesMap = map.entrySet()
+                .stream().sorted(Map.Entry.comparingByKey()).toList();
         ResourcePoolEntry e = ResourcePoolEntry.create(rn, ClassFile.of().build(
                 CD_SYSTEM_MODULES_MAP,
                 clb -> clb.withFlags(ACC_FINAL + ACC_SUPER)
@@ -1877,10 +1880,10 @@ public final class SystemModulesPlugin extends AbstractPlugin {
                                       cob.anewarray(CD_String);
 
                                       int index = 0;
-                                      for (String moduleName : sorted(map.keySet())) {
+                                      for (Map.Entry<String,String> entry : systemModulesMap) {
                                           cob.dup() // arrayref
                                              .constantInstruction(index)
-                                             .constantInstruction(moduleName)
+                                             .constantInstruction(entry.getKey())
                                              .aastore();
                                           index++;
                                       }
@@ -1898,10 +1901,10 @@ public final class SystemModulesPlugin extends AbstractPlugin {
                                          .anewarray(CD_String);
 
                                       int index = 0;
-                                      for (String className : sorted(map.values())) {
+                                      for (Map.Entry<String,String> entry : systemModulesMap) {
                                           cob.dup() // arrayref
                                              .constantInstruction(index)
-                                             .constantInstruction(className.replace('/', '.'))
+                                             .constantInstruction(entry.getValue().replace('/', '.'))
                                              .aastore();
                                           index++;
                                       }
