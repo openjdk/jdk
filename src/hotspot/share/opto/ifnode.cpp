@@ -1499,7 +1499,7 @@ Node* IfNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 }
 
 //------------------------------dominated_by-----------------------------------
-Node* IfNode::dominated_by(Node* prev_dom, PhaseIterGVN* igvn, bool pin_array_nodes) {
+Node* IfNode::dominated_by(Node* prev_dom, PhaseIterGVN* igvn, bool pin_array_access_nodes) {
 #ifndef PRODUCT
   if (TraceIterativeGVN) {
     tty->print("   Removing IfNode: "); this->dump();
