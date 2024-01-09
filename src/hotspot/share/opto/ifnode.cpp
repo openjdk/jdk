@@ -1954,6 +1954,10 @@ Node* RangeCheckNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       if (!phase->C->allow_range_check_smearing())  return nullptr;
 
       if (can_reshape && !phase->C->post_loop_opts_phase()) {
+        // We are about to perform range check smearing (i.e. remove this RangeCheck if it is dominated by
+        // a series of RangeChecks which have a range that covers this RangeCheck). This can cause array access nodes to
+        // be pinned. We want to avoid that and first allow range check elimination a chance to remove the RangeChecks
+        // from loops. Hence, we delay range check smearing until after loop opts.
         phase->C->record_for_post_loop_opts_igvn(this);
         return nullptr;
       }
