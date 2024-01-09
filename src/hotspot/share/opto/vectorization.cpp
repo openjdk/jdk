@@ -702,7 +702,7 @@ void VPointer::Tracer::offset_plus_k_11(Node* n) {
 #endif
 
 AlignmentSolution* AlignmentSolver::solve() const {
-  DEBUG_ONLY( trace_start_solve(); )
+  NOT_PRODUCT( trace_start_solve(); )
 
   // Out of simplicity: non power-of-2 stride not supported.
   if (!is_power_of_2(abs(_pre_stride))) {
@@ -789,7 +789,7 @@ AlignmentSolution* AlignmentSolver::solve() const {
   const int C_pre =  _scale * _pre_stride;
   const int C_main = _scale * _main_stride;
 
-  DEBUG_ONLY( trace_reshaped_form(C_const, C_const_init, C_invar, C_init, C_pre, C_main); )
+  NOT_PRODUCT( trace_reshaped_form(C_const, C_const_init, C_invar, C_init, C_pre, C_main); )
 
   // We must find a pre_iter, such that adr is aw aligned: adr % aw = 0. Note, that we are defining the
   // modulo operator "%" such that the remainder is always positive, see AlignmentSolution::mod(i, q).
@@ -804,7 +804,7 @@ AlignmentSolution* AlignmentSolver::solve() const {
   //
   const int C_main_mod_aw = AlignmentSolution::mod(C_main, _aw);
 
-  DEBUG_ONLY( trace_main_iteration_alignment(C_const, C_invar, C_init, C_pre, C_main, C_main_mod_aw); )
+  NOT_PRODUCT( trace_main_iteration_alignment(C_const, C_invar, C_init, C_pre, C_main, C_main_mod_aw); )
 
   if (C_main_mod_aw != 0) {
     return new EmptyAlignmentSolution("EQ(2) not satisfied (cannot align across main-loop iterations)");
@@ -976,7 +976,7 @@ AlignmentSolution* AlignmentSolver::solve() const {
   const EQ4::State eq4b_state = eq4.eq4b_state();
   const EQ4::State eq4c_state = eq4.eq4c_state();
 
-#ifdef ASSERT
+#ifndef PRODUCT
   if (is_trace()) {
     eq4.trace();
   }
@@ -1129,7 +1129,7 @@ AlignmentSolution* AlignmentSolver::solve() const {
   // However, pre_stride and init are shared by all mem_ref in the loop, hence we do not need to provide
   // them in the solution description.
 
-  DEBUG_ONLY( trace_constrained_solution(C_const, C_invar, C_init, C_pre, q, r); )
+  NOT_PRODUCT( trace_constrained_solution(C_const, C_invar, C_init, C_pre, q, r); )
 
   return new ConstrainedAlignmentSolution(_mem_ref, q, r, _invar, _scale);
 
@@ -1186,7 +1186,7 @@ AlignmentSolution* AlignmentSolver::solve() const {
   // The solution given by (12) does indeed guarantee alignment.
 }
 
-#ifdef ASSERT
+#ifndef PRODUCT
 void print_con_or_idx(const Node* n) {
   if (n == nullptr) {
     tty->print("(0)");

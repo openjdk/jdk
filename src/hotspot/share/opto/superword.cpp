@@ -496,7 +496,7 @@ MemNode* SuperWord::find_align_to_ref(Node_List &memops, int &idx) {
     }
   }
 
-#ifdef ASSERT
+#ifndef PRODUCT
   if (is_trace_superword_verbose()) {
     tty->print_cr("\nVector memops after find_align_to_ref");
     for (uint i = 0; i < memops.size(); i++) {
@@ -508,7 +508,7 @@ MemNode* SuperWord::find_align_to_ref(Node_List &memops, int &idx) {
 
   idx = max_idx;
   if (max_ct > 0) {
-#ifdef ASSERT
+#ifndef PRODUCT
     if (is_trace_superword_adjacent_memops()) {
       tty->print("SuperWord::find_align_to_ref: ");
       memops.at(max_idx)->as_Mem()->dump();
@@ -1166,7 +1166,7 @@ const AlignmentSolution* SuperWord::pack_alignment_solution(Node_List* pack) {
                          pre_end->init_trip(),
                          pre_end->stride_con(),
                          iv_stride()
-                         DEBUG_ONLY(COMMA is_trace_align_vector()));
+                         NOT_PRODUCT(COMMA is_trace_align_vector()));
   return solver.solve();
 }
 
@@ -2684,7 +2684,7 @@ LoadNode::ControlDependency SuperWord::control_dependency(Node_List* p) {
 }
 
 #define TRACE_ALIGN_VECTOR_NODE(node) { \
-  DEBUG_ONLY(                           \
+  NOT_PRODUCT(                          \
     if (is_trace_align_vector()) {      \
       tty->print("  " #node ": ");      \
       node->dump();                     \
@@ -2852,7 +2852,7 @@ void SuperWord::adjust_pre_loop_limit_to_align_main_loop_vectors() {
   Node* base         = align_to_ref_p.adr();
   Node* invar        = align_to_ref_p.invar();
 
-#ifdef ASSERT
+#ifndef PRODUCT
   if (is_trace_align_vector()) {
     tty->print_cr("\nadjust_pre_loop_limit_to_align_main_loop_vectors:");
     tty->print("  align_to_ref:");
@@ -2879,7 +2879,7 @@ void SuperWord::adjust_pre_loop_limit_to_align_main_loop_vectors() {
   if (stride == 0 || !is_power_of_2(abs(stride)) ||
       scale  == 0 || !is_power_of_2(abs(scale))  ||
       abs(scale) >= aw) {
-#ifdef ASSERT
+#ifndef PRODUCT
     if (is_trace_align_vector()) {
       tty->print_cr(" Alignment cannot be affected by changing pre-loop limit because");
       tty->print_cr(" stride or scale are not power of 2, or abs(scale) >= aw.");
@@ -2895,7 +2895,7 @@ void SuperWord::adjust_pre_loop_limit_to_align_main_loop_vectors() {
 
   const int AW = aw / abs(scale);
 
-#ifdef ASSERT
+#ifndef PRODUCT
   if (is_trace_align_vector()) {
     tty->print_cr("  AW = aw(%d) / abs(scale(%d)) = %d", aw, scale, AW);
   }

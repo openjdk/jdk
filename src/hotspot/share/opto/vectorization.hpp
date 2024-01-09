@@ -1156,7 +1156,7 @@ private:
   const int      _pre_stride;     // address increment per pre-loop iteration
   const int      _main_stride;    // address increment per main-loop iteration
 
-  DEBUG_ONLY( const bool _is_trace; );
+  NOT_PRODUCT( const bool _is_trace; )
 
   static const MemNode* mem_ref_not_null(const MemNode* mem_ref) {
     assert(mem_ref != nullptr, "not nullptr");
@@ -1174,8 +1174,7 @@ public:
                   const Node* init_node,
                   const int pre_stride,
                   const int main_stride
-                  DEBUG_ONLY( COMMA const bool is_trace)
-                  ) :
+                  NOT_PRODUCT(COMMA const bool is_trace)) :
       _mem_ref(           mem_ref_not_null(mem_ref)),
       _vector_length(     vector_length),
       _element_size(      _mem_ref->memory_size()),
@@ -1189,7 +1188,7 @@ public:
       _init_node(         init_node),
       _pre_stride(        pre_stride),
       _main_stride(       main_stride)
-      DEBUG_ONLY( COMMA _is_trace(is_trace) )
+      NOT_PRODUCT(COMMA _is_trace(is_trace))
   {
     assert(_mem_ref != nullptr &&
            (_mem_ref->is_Load() || _mem_ref->is_Store()),
@@ -1236,7 +1235,7 @@ private:
     int C_invar_mod_abs_C_pre() const { return AlignmentSolution::mod(_C_invar, abs(_C_pre)); }
     int C_init_mod_abs_C_pre() const  { return AlignmentSolution::mod(_C_init,  abs(_C_pre)); }
 
-#ifdef ASSERT
+#ifndef PRODUCT
    public:
     void trace() const;
 
@@ -1249,7 +1248,7 @@ private:
 #endif
   };
 
-#ifdef ASSERT
+#ifndef PRODUCT
   bool is_trace() const { return _is_trace; }
   void trace_start_solve() const;
   void trace_reshaped_form(const int C_const,
