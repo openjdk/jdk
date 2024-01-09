@@ -612,8 +612,8 @@ Node *AndINode::Ideal(PhaseGVN *phase, bool can_reshape) {
 
   // Convert "(~a) & (~b)" into "~(a | b)"
   if (AddNode::is_not(phase, in(1), T_INT) && AddNode::is_not(phase, in(2), T_INT)) {
-    Node *or_a_b = new OrINode(in(1)->in(1), in(2)->in(1));
-    Node *tn = phase->transform(or_a_b);
+    Node* or_a_b = new OrINode(in(1)->in(1), in(2)->in(1));
+    Node* tn = phase->transform(or_a_b);
     return AddNode::make_not(phase, tn, T_INT);
   }
 
@@ -759,8 +759,8 @@ Node *AndLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 
   // Convert "(~a) & (~b)" into "~(a | b)"
   if (AddNode::is_not(phase, in(1), T_LONG) && AddNode::is_not(phase, in(2), T_LONG)) {
-    Node *or_a_b = new OrLNode(in(1)->in(1), in(2)->in(1));
-    Node *tn = phase->transform(or_a_b);
+    Node* or_a_b = new OrLNode(in(1)->in(1), in(2)->in(1));
+    Node* tn = phase->transform(or_a_b);
     return AddNode::make_not(phase, tn, T_LONG);
   }
 
