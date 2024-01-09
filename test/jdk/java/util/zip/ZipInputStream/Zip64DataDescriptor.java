@@ -34,14 +34,14 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.BeforeEach;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.nio.charset.StandardCharsets;
 import java.util.HexFormat;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipException;
-import java.util.zip.ZipInputStream;
+import java.util.zip.*;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -51,11 +51,11 @@ public class Zip64DataDescriptor {
     // A byte array holding a small-sized Zip64 ZIP file, described below
     private byte[] zip64File;
 
-    // The offset in the ZIP file holding the Zip64 extra block size
-    private static final int ZIP64_BLOCK_SIZE_OFFSET = 33;
+    // A byte array holding a ZIP used for testing invalid Zip64 extra fields
+    private byte[] invalidZip64;
 
     @BeforeEach
-    public void setup() {
+    public void setup() throws IOException {
         /*
          * Structure of the ZIP64 file used below . Note the presence
          * of a Zip64 extended information extra field and the
@@ -106,6 +106,24 @@ public class Zip64DataDescriptor {
                 0000""";
 
         zip64File = HexFormat.of().parseHex(hex.replaceAll("\n", ""));
+
+        // Create the ZIP file used for testing that invalid Zip64 extra fields are ignored
+        // This ZIP has the regular 4-bit data descriptor
+
+        byte[] extra = new byte[Long.BYTES  + Long.BYTES + Short.BYTES * 2]; // Size of a regular Zip64 extra field
+        ByteBuffer buffer = ByteBuffer.wrap(extra).order(ByteOrder.LITTLE_ENDIAN);
+        buffer.putShort(0, (short) 123); // Not processed by ZipEntry.setExtra
+        buffer.putShort(Short.BYTES, (short) (extra.length - 4));
+
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        try (ZipOutputStream zo = new ZipOutputStream(baos)) {
+            ZipEntry ze = new ZipEntry("hello");
+            ze.setExtra(extra);
+            zo.putNextEntry(ze);
+            zo.write("hello\n".getBytes(StandardCharsets.UTF_8));
+        }
+
+        invalidZip64 = baos.toByteArray();
     }
 
     /*
@@ -113,7 +131,7 @@ public class Zip64DataDescriptor {
      */
     @Test
     public void shouldReadZip64Descriptor() throws IOException {
-        readZipInputStream();
+        readZipInputStream(zip64File);
     }
 
     /*
@@ -121,30 +139,25 @@ public class Zip64DataDescriptor {
      * Zip64 extra data sizes should be ignored
      */
     @Test
-    public void shouldIgnoreInvalidExtraSize() {
+    public void shouldIgnoreInvalidExtraSize() throws IOException {
 
         setExtraSize((short) 42);
 
-        ZipException ex = assertThrows(ZipException.class, () -> {
-            readZipInputStream();
-        });
 
-        assertEquals("invalid entry size (expected 0 but got 6 bytes)", ex.getMessage());
+        readZipInputStream(invalidZip64);
+
     }
 
     /*
      * Validate that an extra data size exceeding the length of the extra field is ignored
      */
     @Test
-    public void shouldIgnoreExcessiveExtraSize() {
+    public void shouldIgnoreExcessiveExtraSize() throws IOException {
 
         setExtraSize(Short.MAX_VALUE);
 
-        ZipException ex = assertThrows(ZipException.class, () -> {
-            readZipInputStream();
-        });
 
-        assertEquals("invalid entry size (expected 0 but got 6 bytes)", ex.getMessage());
+        readZipInputStream(invalidZip64);
     }
 
     /**
@@ -153,19 +166,22 @@ public class Zip64DataDescriptor {
      * @param size the value to set in the 'data size' field.
      */
     private void setExtraSize(short size) {
-        ByteBuffer.wrap(zip64File).order(ByteOrder.LITTLE_ENDIAN)
-                .putShort(ZIP64_BLOCK_SIZE_OFFSET, size);
+        ByteBuffer buffer = ByteBuffer.wrap(zip64File).order(ByteOrder.LITTLE_ENDIAN);
+        // Compute the offset to the Zip64 data block size field
+        short nlen = buffer.getShort(ZipFile.LOCNAM);
+        int dataSizeOffset = ZipFile.LOCHDR + nlen + Short.BYTES;
+        buffer.putShort(dataSizeOffset, size);
     }
 
     /*
      * Consume all entries in a ZipInputStream, possibly throwing a
      * ZipException if the reading of any entry stream fails.
      */
-    private void readZipInputStream() throws IOException {
-        try (ZipInputStream in = new ZipInputStream(new ByteArrayInputStream(zip64File))) {
+    private void readZipInputStream(byte[] zip) throws IOException {
+        try (ZipInputStream in = new ZipInputStream(new ByteArrayInputStream(zip))) {
             ZipEntry e;
             while ( (e = in.getNextEntry()) != null) {
-                in.transferTo(OutputStream.nullOutputStream());
+                assertEquals("hello\n", new String(in.readAllBytes(), StandardCharsets.UTF_8));
             }
         }
     }
