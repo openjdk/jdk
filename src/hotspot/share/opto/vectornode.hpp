@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -94,7 +94,6 @@ class VectorNode : public TypeNode {
 
   static int opcode(int sopc, BasicType bt);         // scalar_opc -> vector_opc
   static int scalar_opcode(int vopc, BasicType bt);  // vector_opc -> scalar_opc
-  static int replicate_opcode(BasicType bt);
 
   // Limits on vector size (number of elements) for auto-vectorization.
   static bool vector_size_supported_superword(const BasicType bt, int size);
@@ -109,7 +108,6 @@ class VectorNode : public TypeNode {
   static bool is_vector_rotate_supported(int opc, uint vlen, BasicType bt);
   static bool is_vector_integral_negate_supported(int opc, uint vlen, BasicType bt, bool use_predicate);
   static bool is_populate_index_supported(BasicType bt);
-  static bool is_invariant_vector(Node* n);
   // Return true if every bit in this vector is 1.
   static bool is_all_ones_vector(Node* n);
   // Return true if every bit in this vector is 0.
@@ -849,6 +847,8 @@ class ExpandVNode: public VectorNode {
 //------------------------------LoadVectorNode---------------------------------
 // Load Vector from memory
 class LoadVectorNode : public LoadNode {
+ private:
+  DEBUG_ONLY( bool _must_verify_alignment = false; );
  public:
   LoadVectorNode(Node* c, Node* mem, Node* adr, const TypePtr* at, const TypeVect* vt, ControlDependency control_dependency = LoadNode::DependsOnlyOnTest)
     : LoadNode(c, mem, adr, at, vt, MemNode::unordered, control_dependency) {
@@ -873,6 +873,17 @@ class LoadVectorNode : public LoadNode {
                               uint vlen, BasicType bt,
                               ControlDependency control_dependency = LoadNode::DependsOnlyOnTest);
   uint element_size(void) { return type2aelembytes(vect_type()->element_basic_type()); }
+
+  // Needed for proper cloning.
+  virtual uint size_of() const { return sizeof(*this); }
+
+#ifdef ASSERT
+  // When AlignVector is enabled, SuperWord only creates aligned vector loads and stores.
+  // VerifyAlignVector verifies this. We need to mark the nodes created in SuperWord,
+  // because nodes created elsewhere (i.e. VectorAPI) may still be misaligned.
+  bool must_verify_alignment() const { return _must_verify_alignment; }
+  void set_must_verify_alignment() { _must_verify_alignment = true; }
+#endif
 };
 
 //------------------------------LoadVectorGatherNode------------------------------
@@ -896,6 +907,7 @@ class LoadVectorGatherNode : public LoadVectorNode {
 class StoreVectorNode : public StoreNode {
  private:
   const TypeVect* _vect_type;
+  DEBUG_ONLY( bool _must_verify_alignment = false; );
  public:
   StoreVectorNode(Node* c, Node* mem, Node* adr, const TypePtr* at, Node* val)
     : StoreNode(c, mem, adr, at, val, MemNode::unordered), _vect_type(val->bottom_type()->is_vect()) {
@@ -920,6 +932,14 @@ class StoreVectorNode : public StoreNode {
 
   // Needed for proper cloning.
   virtual uint size_of() const { return sizeof(*this); }
+
+#ifdef ASSERT
+  // When AlignVector is enabled, SuperWord only creates aligned vector loads and stores.
+  // VerifyAlignVector verifies this. We need to mark the nodes created in SuperWord,
+  // because nodes created elsewhere (i.e. VectorAPI) may still be misaligned.
+  bool must_verify_alignment() const { return _must_verify_alignment; }
+  void set_must_verify_alignment() { _must_verify_alignment = true; }
+#endif
 };
 
 //------------------------------StoreVectorScatterNode------------------------------
@@ -1017,6 +1037,25 @@ class StoreVectorScatterMaskedNode : public StoreVectorNode {
                                                     idx == MemNode::ValueIn ||
                                                     idx == MemNode::ValueIn + 1 ||
                                                     idx == MemNode::ValueIn + 2; }
+};
+
+// Verify that memory address (adr) is aligned. The mask specifies the
+// least significant bits which have to be zero in the address.
+//
+// if (adr & mask == 0) {
+//   return adr
+// } else {
+//   stop("verify_vector_alignment found a misaligned vector memory access")
+// }
+//
+// This node is used just before a vector load/store with -XX:+VerifyAlignVector
+class VerifyVectorAlignmentNode : public Node {
+  virtual uint hash() const { return NO_HASH; };
+public:
+  VerifyVectorAlignmentNode(Node* adr, Node* mask) : Node(nullptr, adr, mask) {}
+  virtual int Opcode() const;
+  virtual uint size_of() const { return sizeof(*this); }
+  virtual const Type *bottom_type() const { return in(1)->bottom_type(); }
 };
 
 //------------------------------VectorCmpMaskedNode--------------------------------
@@ -1135,51 +1174,12 @@ class XorVMaskNode : public XorVNode {
 
 //=========================Promote_Scalar_to_Vector============================
 
-//------------------------------ReplicateBNode---------------------------------
-// Replicate byte scalar to be vector
-class ReplicateBNode : public VectorNode {
+class ReplicateNode : public VectorNode {
  public:
-  ReplicateBNode(Node* in1, const TypeVect* vt) : VectorNode(in1, vt) {}
-  virtual int Opcode() const;
-};
-
-//------------------------------ReplicateSNode---------------------------------
-// Replicate short scalar to be vector
-class ReplicateSNode : public VectorNode {
- public:
-  ReplicateSNode(Node* in1, const TypeVect* vt) : VectorNode(in1, vt) {}
-  virtual int Opcode() const;
-};
-
-//------------------------------ReplicateINode---------------------------------
-// Replicate int scalar to be vector
-class ReplicateINode : public VectorNode {
- public:
-  ReplicateINode(Node* in1, const TypeVect* vt) : VectorNode(in1, vt) {}
-  virtual int Opcode() const;
-};
-
-//------------------------------ReplicateLNode---------------------------------
-// Replicate long scalar to be vector
-class ReplicateLNode : public VectorNode {
- public:
-  ReplicateLNode(Node* in1, const TypeVect* vt) : VectorNode(in1, vt) {}
-  virtual int Opcode() const;
-};
-
-//------------------------------ReplicateFNode---------------------------------
-// Replicate float scalar to be vector
-class ReplicateFNode : public VectorNode {
- public:
-  ReplicateFNode(Node* in1, const TypeVect* vt) : VectorNode(in1, vt) {}
-  virtual int Opcode() const;
-};
-
-//------------------------------ReplicateDNode---------------------------------
-// Replicate double scalar to be vector
-class ReplicateDNode : public VectorNode {
- public:
-  ReplicateDNode(Node* in1, const TypeVect* vt) : VectorNode(in1, vt) {}
+  ReplicateNode(Node* in1, const TypeVect* vt) : VectorNode(in1, vt) {
+    assert(vt->element_basic_type() != T_BOOLEAN, "not support");
+    assert(vt->element_basic_type() != T_CHAR, "not support");
+  }
   virtual int Opcode() const;
 };
 
@@ -1614,38 +1614,6 @@ class VectorCastD2XNode : public VectorCastNode {
   virtual int Opcode() const;
 };
 
-class RoundVFNode : public VectorNode {
- public:
-  RoundVFNode(Node* in, const TypeVect* vt) :VectorNode(in, vt) {
-    assert(in->bottom_type()->is_vect()->element_basic_type() == T_FLOAT, "must be float");
-  }
-  virtual int Opcode() const;
-};
-
-class VectorUCastB2XNode : public VectorCastNode {
- public:
-  VectorUCastB2XNode(Node* in, const TypeVect* vt) : VectorCastNode(in, vt) {
-    assert(in->bottom_type()->is_vect()->element_basic_type() == T_BYTE, "must be byte");
-  }
-  virtual int Opcode() const;
-};
-
-class RoundVDNode : public VectorNode {
- public:
-  RoundVDNode(Node* in, const TypeVect* vt) : VectorNode(in, vt) {
-    assert(in->bottom_type()->is_vect()->element_basic_type() == T_DOUBLE, "must be double");
-  }
-  virtual int Opcode() const;
-};
-
-class VectorUCastS2XNode : public VectorCastNode {
- public:
-  VectorUCastS2XNode(Node* in, const TypeVect* vt) : VectorCastNode(in, vt) {
-    assert(in->bottom_type()->is_vect()->element_basic_type() == T_SHORT, "must be short");
-  }
-  virtual int Opcode() const;
-};
-
 class VectorCastHF2FNode : public VectorCastNode {
  public:
   VectorCastHF2FNode(Node* in, const TypeVect* vt) : VectorCastNode(in, vt) {
@@ -1662,10 +1630,50 @@ class VectorCastF2HFNode : public VectorCastNode {
   virtual int Opcode() const;
 };
 
+// So far, VectorUCastNode can only be used in Vector API unsigned extensions
+// between integral types. E.g., extending byte to float is not supported now.
+class VectorUCastB2XNode : public VectorCastNode {
+ public:
+  VectorUCastB2XNode(Node* in, const TypeVect* vt) : VectorCastNode(in, vt) {
+    assert(in->bottom_type()->is_vect()->element_basic_type() == T_BYTE, "must be byte");
+    assert(vt->element_basic_type() == T_SHORT ||
+           vt->element_basic_type() == T_INT ||
+           vt->element_basic_type() == T_LONG, "must be");
+  }
+  virtual int Opcode() const;
+};
+
+class VectorUCastS2XNode : public VectorCastNode {
+ public:
+  VectorUCastS2XNode(Node* in, const TypeVect* vt) : VectorCastNode(in, vt) {
+    assert(in->bottom_type()->is_vect()->element_basic_type() == T_SHORT, "must be short");
+    assert(vt->element_basic_type() == T_INT ||
+           vt->element_basic_type() == T_LONG, "must be");
+  }
+  virtual int Opcode() const;
+};
+
 class VectorUCastI2XNode : public VectorCastNode {
  public:
   VectorUCastI2XNode(Node* in, const TypeVect* vt) : VectorCastNode(in, vt) {
     assert(in->bottom_type()->is_vect()->element_basic_type() == T_INT, "must be int");
+    assert(vt->element_basic_type() == T_LONG, "must be");
+  }
+  virtual int Opcode() const;
+};
+
+class RoundVFNode : public VectorNode {
+ public:
+  RoundVFNode(Node* in, const TypeVect* vt) :VectorNode(in, vt) {
+    assert(in->bottom_type()->is_vect()->element_basic_type() == T_FLOAT, "must be float");
+  }
+  virtual int Opcode() const;
+};
+
+class RoundVDNode : public VectorNode {
+ public:
+  RoundVDNode(Node* in, const TypeVect* vt) : VectorNode(in, vt) {
+    assert(in->bottom_type()->is_vect()->element_basic_type() == T_DOUBLE, "must be double");
   }
   virtual int Opcode() const;
 };

@@ -32,6 +32,7 @@ import java.lang.invoke.VarHandle;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.function.LongFunction;
 import java.util.stream.Stream;
 
@@ -217,6 +218,21 @@ public class TestLayouts {
     }
 
     @Test
+    public void testSequenceLayoutWithZeroLength() {
+        SequenceLayout layout = MemoryLayout.sequenceLayout(0, JAVA_INT);
+        assertEquals(layout.toString().toLowerCase(Locale.ROOT), "[0:i4]");
+
+        SequenceLayout nested = MemoryLayout.sequenceLayout(0, layout);
+        assertEquals(nested.toString().toLowerCase(Locale.ROOT), "[0:[0:i4]]");
+
+        SequenceLayout layout2 = MemoryLayout.sequenceLayout(0, JAVA_INT);
+        assertEquals(layout, layout2);
+
+        SequenceLayout nested2 = MemoryLayout.sequenceLayout(0, layout2);
+        assertEquals(nested, nested2);
+    }
+
+    @Test
     public void testStructOverflow() {
         assertThrows(IllegalArgumentException.class, // negative
                 () -> MemoryLayout.structLayout(MemoryLayout.sequenceLayout(Long.MAX_VALUE, JAVA_BYTE),
@@ -355,13 +371,13 @@ public class TestLayouts {
     }
 
     @Test(expectedExceptions=IllegalArgumentException.class,
-        expectedExceptionsMessageRegExp=".*Negative offset.*")
+        expectedExceptionsMessageRegExp=".*offset is negative.*")
     public void testScaleNegativeOffset() {
         JAVA_INT.scale(-1, 0);
     }
 
     @Test(expectedExceptions=IllegalArgumentException.class,
-        expectedExceptionsMessageRegExp=".*Negative index.*")
+        expectedExceptionsMessageRegExp=".*index is negative.*")
     public void testScaleNegativeIndex() {
         JAVA_INT.scale(0, -1);
     }

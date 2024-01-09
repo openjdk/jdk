@@ -86,7 +86,7 @@ public class PermissionTest {
             "PermissionTest$TestMain",
             Long.toString(pid),
             "true" };
-        OutputAnalyzer output = ProcessTools.executeTestJvm(args);
+        OutputAnalyzer output = ProcessTools.executeTestJava(args);
         output.shouldHaveExitValue(0);
 
         // Use a policy that will allow attach.
@@ -98,7 +98,7 @@ public class PermissionTest {
             "PermissionTest$TestMain",
             Long.toString(pid),
             "false" };
-        output = ProcessTools.executeTestJvm(args);
+        output = ProcessTools.executeTestJava(args);
         output.shouldHaveExitValue(0);
     }
 

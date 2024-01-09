@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1070,23 +1070,6 @@ debugMonitorWait(jrawMonitorID monitor)
     error = ignore_vm_death(error);
     if (error != JVMTI_ERROR_NONE) {
         EXIT_ERROR(error, "on raw monitor wait");
-    }
-}
-
-void
-debugMonitorTimedWait(jrawMonitorID monitor, jlong millis)
-{
-    jvmtiError error;
-    error = JVMTI_FUNC_PTR(gdata->jvmti,RawMonitorWait)
-        (gdata->jvmti, monitor, millis);
-    if (error == JVMTI_ERROR_INTERRUPT) {
-        /* See comment above */
-        handleInterrupt();
-        error = JVMTI_ERROR_NONE;
-    }
-    error = ignore_vm_death(error);
-    if (error != JVMTI_ERROR_NONE) {
-        EXIT_ERROR(error, "on raw monitor timed wait");
     }
 }
 

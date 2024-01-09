@@ -67,6 +67,7 @@ import jdk.dynalink.linker.LinkerServices;
  * exception itself, as the linkage for the missing member is often conditional.
  *
  * @see BeansLinker#BeansLinker(MissingMemberHandlerFactory)
+ * @since 9
  */
 @FunctionalInterface
 public interface MissingMemberHandlerFactory {
