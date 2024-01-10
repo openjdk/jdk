@@ -707,7 +707,7 @@ public class ZipInputStream extends InflaterInputStream implements ZipConstants 
         if (headerId != ZIP64_EXTID) {
             return false; // Not a Zip64 extra field
         }
-        
+
         if (blockSize != 16) {
             return false; // MUST include BOTH original and compressed file size
         }
