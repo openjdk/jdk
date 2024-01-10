@@ -2216,7 +2216,7 @@ void os::Linux::print_system_memory_info(outputStream* st) {
   // https://www.kernel.org/doc/Documentation/vm/transhuge.txt
   _print_ascii_file_h("/sys/kernel/mm/transparent_hugepage/enabled",
                       "/sys/kernel/mm/transparent_hugepage/enabled", st);
-  _print_ascii_file_h("/sys/kernel/mm/transparent_hugepage/hpage_pdm_size",
+  _print_ascii_file_h("/sys/kernel/mm/transparent_hugepage/hpage_pmd_size",
                       "/sys/kernel/mm/transparent_hugepage/hpage_pmd_size", st);
   _print_ascii_file_h("/sys/kernel/mm/transparent_hugepage/shmem_enabled",
                       "/sys/kernel/mm/transparent_hugepage/shmem_enabled", st);
