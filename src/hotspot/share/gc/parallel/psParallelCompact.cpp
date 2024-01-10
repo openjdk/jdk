@@ -1581,9 +1581,74 @@ void PSParallelCompact::summary_phase_msg(SpaceId dst_space_id,
 }
 #endif  // #ifndef PRODUCT
 
+
+class AggregateTask : public WorkerTask {
+private:
+  static constexpr size_t num_regions_in_stripe = 4;
+  uint _num_workers;
+
+  static void account_for_obj(HeapWord* obj_start, size_t obj_size) {
+    ParallelCompactData& data = PSParallelCompact::summary_data();
+    data.add_obj(obj_start, obj_size);
+  }
+
+  static void process_range(HeapWord* const start, HeapWord* const end) {
+    const ParMarkBitMap* const bitmap = PSParallelCompact::mark_bitmap();
+    HeapWord* cur_addr = start;
+
+    do {
+      HeapWord* obj_start = bitmap->find_obj_beg(cur_addr, end);
+      if (obj_start >= end) {
+        return;
+      }
+      // Found an obj-start in this range
+      size_t obj_size = cast_to_oop(obj_start)->size();
+      account_for_obj(obj_start, obj_size);
+      cur_addr = obj_start + obj_size;
+    } while (cur_addr < end);
+  }
+
+public:
+  explicit AggregateTask(ParallelScavengeHeap* heap) :
+    WorkerTask("AggregateLivenessInfoTask"),
+    _num_workers(heap->workers().active_workers())
+    {}
+
+  void work(uint worker_id) override {
+    PSYoungGen* young_gen = ParallelScavengeHeap::young_gen();
+    MutableSpace* space_arr[] = {
+      ParallelScavengeHeap::old_gen()->object_space(),
+      young_gen->eden_space(),
+      young_gen->from_space(),
+      young_gen->to_space(),
+    };
+
+    size_t stripe_len_in_words = num_regions_in_stripe * ParallelCompactData::RegionSize;
+    size_t slice_len_in_words = stripe_len_in_words * _num_workers;
+
+    for (MutableSpace* space : space_arr) {
+      HeapWord* start = space->bottom() + worker_id * stripe_len_in_words;
+      HeapWord* top = space->top();
+      for (/* empty */; start < top; start += slice_len_in_words) {
+        HeapWord* stripe_l = start;
+        HeapWord* stripe_r = MIN2(start + stripe_len_in_words, top);
+
+        process_range(stripe_l, stripe_r);
+      }
+    }
+  }
+};
+
 void PSParallelCompact::summary_phase(bool maximum_compaction)
 {
   GCTraceTime(Info, gc, phases) tm("Summary Phase", &_gc_timer);
+
+  {
+    GCTraceTime(Debug, gc, phases) tm("Aggregate Liveness Info", &_gc_timer);
+    ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
+    AggregateTask task{heap};
+    heap->workers().run_task(&task);
+  }
 
   // Quick summarization of each space into itself, to see how much is live.
   summarize_spaces_quick();

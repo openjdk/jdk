@@ -308,8 +308,9 @@ public:
     inline void set_completed();
     inline bool claim_unsafe();
 
-    // These are atomic.
     inline void add_live_obj(size_t words);
+
+    // These are atomic.
     inline void decrement_destination_count();
     inline bool claim();
 
@@ -408,7 +409,6 @@ public:
   inline size_t     block(const BlockData* block_ptr) const;
 
   void add_obj(HeapWord* addr, size_t len);
-  void add_obj(oop p, size_t len) { add_obj(cast_from_oop<HeapWord*>(p), len); }
 
   // Fill in the regions covering [beg, end) so that no data moves; i.e., the
   // destination of region n is simply the start of region n.  Both arguments
@@ -573,7 +573,7 @@ inline bool ParallelCompactData::RegionData::claim_unsafe()
 inline void ParallelCompactData::RegionData::add_live_obj(size_t words)
 {
   assert(words <= (size_t)los_mask - live_obj_size(), "overflow");
-  Atomic::add(&_dc_and_los, static_cast<region_sz_t>(words));
+  _dc_and_los += static_cast<region_sz_t>(words);
 }
 
 inline bool ParallelCompactData::RegionData::claim()
