@@ -172,11 +172,11 @@ Impact: Low: Depends on code heap size and content.
 Holds CodeCache_lock during analysis step, usually sub-second duration.
 .PP
 \f[I]arguments\f[R]:
-.PP
+.IP \[bu] 2
 \f[I]function\f[R]: (Optional) Function to be performed (aggregate,
 UsedSpace, FreeSpace, MethodCount, MethodSpace, MethodAge, MethodNames,
 discard (STRING, all)
-.PP
+.IP \[bu] 2
 \f[I]granularity\f[R]: (Optional) Detail level - smaller value -> more
 detail (INT, 4096)
 .RE
@@ -202,7 +202,7 @@ Adds compiler directives from a file.
 Impact: Low
 .PP
 \f[I]arguments\f[R]:
-.PP
+.IP \[bu] 2
 \f[I]filename\f[R]: The name of the directives file (STRING, no default
 value)
 .RE
