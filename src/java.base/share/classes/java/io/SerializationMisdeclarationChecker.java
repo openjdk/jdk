@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,30 +52,25 @@ final class SerializationMisdeclarationChecker {
     private static final Class<?>[] WRITE_REPLACE_PARAM_TYPES = {};
     private static final Class<?>[] READ_RESOLVE_PARAM_TYPES = {};
 
-    @SuppressWarnings("removal")
     static void checkMisdeclarations(Class<?> cl) {
-        AccessController.doPrivileged((PrivilegedAction<Object>) () -> {
-            privilegedCheckSerialVersionUID(cl);
-            privilegedCheckSerialPersistentFields(cl);
+        checkSerialVersionUID(cl);
+        checkSerialPersistentFields(cl);
 
-            privilegedCheckPrivateMethod(cl, WRITE_OBJECT_NAME,
-                    WRITE_OBJECT_PARAM_TYPES, Void.TYPE);
-            privilegedCheckPrivateMethod(cl, READ_OBJECT_NAME,
-                    READ_OBJECT_PARAM_TYPES, Void.TYPE);
-            privilegedCheckPrivateMethod(cl, READ_OBJECT_NO_DATA_NAME,
-                    READ_OBJECT_NO_DATA_PARAM_TYPES, Void.TYPE);
+        checkPrivateMethod(cl, WRITE_OBJECT_NAME,
+                WRITE_OBJECT_PARAM_TYPES, Void.TYPE);
+        checkPrivateMethod(cl, READ_OBJECT_NAME,
+                READ_OBJECT_PARAM_TYPES, Void.TYPE);
+        checkPrivateMethod(cl, READ_OBJECT_NO_DATA_NAME,
+                READ_OBJECT_NO_DATA_PARAM_TYPES, Void.TYPE);
 
-            privilegedCheckAccessibleMethod(cl, WRITE_REPLACE_NAME,
-                    WRITE_REPLACE_PARAM_TYPES, Object.class);
-            privilegedCheckAccessibleMethod(cl, READ_RESOLVE_NAME,
-                    READ_RESOLVE_PARAM_TYPES, Object.class);
-
-            return null;
-        });
+        checkAccessibleMethod(cl, WRITE_REPLACE_NAME,
+                WRITE_REPLACE_PARAM_TYPES, Object.class);
+        checkAccessibleMethod(cl, READ_RESOLVE_NAME,
+                READ_RESOLVE_PARAM_TYPES, Object.class);
     }
 
-    private static void privilegedCheckSerialVersionUID(Class<?> cl) {
-        Field f = declaredField(cl, SUID_NAME);
+    private static void checkSerialVersionUID(Class<?> cl) {
+        Field f = privilegedDeclaredField(cl, SUID_NAME);
         if (f == null) {
             if (isOrdinaryClass(cl)) {
                 commitEvent(cl, SUID_NAME + " should be declared explicitly" +
@@ -84,7 +79,7 @@ final class SerializationMisdeclarationChecker {
             return;
         }
         if (cl.isEnum()) {
-            commitEvent(cl, SUID_NAME + " in an enum class is not effective");
+            commitEvent(cl, SUID_NAME + " should not be declared in an enum class");
         }
         if (!isPrivate(f)) {
             commitEvent(cl, SUID_NAME + " should be private");
@@ -100,17 +95,17 @@ final class SerializationMisdeclarationChecker {
         }
     }
 
-    private static void privilegedCheckSerialPersistentFields(Class<?> cl) {
-        Field f = declaredField(cl, SERIAL_PERSISTENT_FIELDS_NAME);
+    private static void checkSerialPersistentFields(Class<?> cl) {
+        Field f = privilegedDeclaredField(cl, SERIAL_PERSISTENT_FIELDS_NAME);
         if (f == null) {
             return;
         }
         if (cl.isRecord()) {
             commitEvent(cl, SERIAL_PERSISTENT_FIELDS_NAME +
-                    " in a record class is not effective");
+                    " should not be declared in a record class");
         } else if (cl.isEnum()) {
             commitEvent(cl, SERIAL_PERSISTENT_FIELDS_NAME +
-                    " in an enum class is not effective");
+                    " should not be declared in an enum class");
         }
         if (!isPrivate(f)) {
             commitEvent(cl, SERIAL_PERSISTENT_FIELDS_NAME + " must be private");
@@ -140,21 +135,21 @@ final class SerializationMisdeclarationChecker {
         }
     }
 
-    private static void privilegedCheckPrivateMethod(Class<?> cl,
+    private static void checkPrivateMethod(Class<?> cl,
             String name, Class<?>[] paramTypes, Class<?> retType) {
-        for (Method m : cl.getDeclaredMethods()) {
+        for (Method m : privilegedDeclaredMethods(cl)) {
             if (m.getName().equals(name)) {
-                privilegedCheckPrivateMethod(cl,m, paramTypes, retType);
+                checkPrivateMethod(cl, m, paramTypes, retType);
             }
         }
     }
 
-    private static void privilegedCheckPrivateMethod(Class<?> cl,
+    private static void checkPrivateMethod(Class<?> cl,
             Method m, Class<?>[] paramTypes, Class<?> retType) {
         if (cl.isEnum()) {
-            commitEvent(cl, "method " + m + " on an enum class is not effective");
+            commitEvent(cl, "method " + m + " should not be declared in an enum class");
         } else if (cl.isRecord()) {
-            commitEvent(cl, "method " + m + " on a record class is not effective");
+            commitEvent(cl, "method " + m + " should not be declared in a record class");
         }
         if (!isPrivate(m)) {
             commitEvent(cl, "method " + m + " must be private");
@@ -170,21 +165,21 @@ final class SerializationMisdeclarationChecker {
         }
     }
 
-    private static void privilegedCheckAccessibleMethod(Class<?> cl,
+    private static void checkAccessibleMethod(Class<?> cl,
             String name, Class<?>[] paramTypes, Class<?> retType) {
         for (Class<?> superCl = cl; superCl != null; superCl = superCl.getSuperclass()) {
-            for (Method m : superCl.getDeclaredMethods()) {
+            for (Method m : privilegedDeclaredMethods(superCl)) {
                 if (m.getName().equals(name)) {
-                    privilegedCheckAccessibleMethod(cl, superCl, m, paramTypes, retType);
+                    checkAccessibleMethod(cl, superCl, m, paramTypes, retType);
                 }
             }
         }
     }
 
-    private static void privilegedCheckAccessibleMethod(Class<?> cl,
+    private static void checkAccessibleMethod(Class<?> cl,
             Class<?> superCl, Method m, Class<?>[] paramTypes, Class<?> retType) {
         if (superCl.isEnum()) {
-            commitEvent(cl, "method " + m + " on an enum class is not effective");
+            commitEvent(cl, "method " + m + " should not be declared in an enum class");
         }
         if (isAbstract(m)) {
             commitEvent(cl, "method " + m + " must be non-abstract");
@@ -236,12 +231,30 @@ final class SerializationMisdeclarationChecker {
         return (m.getModifiers() & STATIC) != 0;
     }
 
+    @SuppressWarnings("removal")
+    private static Field privilegedDeclaredField(Class<?> cl, String name) {
+        if (System.getSecurityManager() == null) {
+            return declaredField(cl, name);
+        }
+        return AccessController.doPrivileged((PrivilegedAction<Field>) () ->
+                declaredField(cl, name));
+    }
+
     private static Field declaredField(Class<?> cl, String name) {
         try {
             return cl.getDeclaredField(name);
         } catch (NoSuchFieldException ignored) {
         }
         return null;
+    }
+
+    @SuppressWarnings("removal")
+    private static Method[] privilegedDeclaredMethods(Class<?> cl) {
+        if (System.getSecurityManager() == null) {
+            return cl.getDeclaredMethods();
+        }
+        return AccessController.doPrivileged(
+                (PrivilegedAction<Method[]>) cl::getDeclaredMethods);
     }
 
     private static Object objectFromStatic(Field f) {
