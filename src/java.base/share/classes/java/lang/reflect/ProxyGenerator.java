@@ -139,9 +139,9 @@ final class ProxyGenerator {
     }
 
     static {
-        //static template ClassModel holds pre-defined constant pool entries
-        //proxy transformed from the template shares the template constant pool
-        //each direct use of the template pool entry is significantly faster
+        // static template ClassModel holds pre-defined constant pool entries
+        // proxy transformed from the template shares the template constant pool
+        // each direct use of the template pool entry is significantly faster
         var cc = ClassFile.of();
         var ei = new int[21];
         TEMPLATE = cc.parse(cc.build(CD_Proxy, clb -> {
