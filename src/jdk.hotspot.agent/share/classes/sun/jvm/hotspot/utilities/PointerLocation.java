@@ -253,11 +253,13 @@ public class PointerLocation {
             tty.print(" + 0x" + Long.toHexString(diff));
         }
         tty.println();
-    } else if (isInHeap() && isInTLAB()) {
+    } else if (isInHeap()) {
+      if (isInTLAB()) {
         tty.print("In thread-local allocation buffer for thread (");
         getTLABThread().printThreadInfoOn(tty);
         tty.print(") ");
         getTLAB().printOn(tty); // includes "\n"
+      }
     } else if (isInInterpreter()) {
       tty.print("In interpreter codelet: ");
       interpreterCodelet.printOn(tty); // includes "\n"
