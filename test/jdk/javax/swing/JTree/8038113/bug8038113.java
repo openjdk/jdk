@@ -21,132 +21,100 @@
  * questions.
  */
 
-import java.awt.BasicStroke;
-import java.awt.BorderLayout;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.Graphics;
+import java.io.File;
+import java.io.IOException;
+import java.awt.Color;
 import java.awt.Graphics2D;
-import java.awt.GridLayout;
-import javax.swing.AbstractAction;
+import java.awt.image.BufferedImage;
+import javax.imageio.ImageIO;
 import javax.swing.Icon;
-import javax.swing.JButton;
-import javax.swing.JFrame;
-import javax.swing.JPanel;
+import javax.swing.JLabel;
 import javax.swing.JTree;
 import javax.swing.SwingUtilities;
 import javax.swing.plaf.basic.BasicTreeUI;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 
+import static java.awt.image.BufferedImage.TYPE_INT_RGB;
+
 /* @test
  * @key headful
  * @bug 8038113 8258979
  * @summary [macosx] JTree icon is not rendered in high resolution on Retina,
  *          collapsed icon is not rendered for GTK LAF as well.
- * @library /java/awt/regtesthelpers
- * @build PassFailJFrame
- * @run main/manual bug8038113
+ * @run main bug8038113
  */
 
 public class bug8038113 {
-    private static JFrame frame;
-    private static final String INSTRUCTIONS = """
-                Verify that scaled icons are rendered smoothly.
-                Check that Collapsed  and Expanded JTree icons are drawn smoothly.
-                Check for different LAFs.
-                If so, press PASS, else press FAIL.
-            """;
-
     public static void main(String[] args) throws Exception {
-        PassFailJFrame passFailJFrame = new PassFailJFrame.Builder()
-                .title("JTree Expanded/Collapsed Icon Test Instructions")
-                .instructions(INSTRUCTIONS)
-                .testTimeOut(5)
-                .rows(6)
-                .columns(40)
-                .screenCapture()
-                .build();
-        SwingUtilities.invokeAndWait(
-                bug8038113::createAndShowUI);
-        passFailJFrame.awaitAndCheck();
+        for (UIManager.LookAndFeelInfo laf :
+                UIManager.getInstalledLookAndFeels()) {
+            if (!laf.getName().contains("Motif")) {
+                System.out.println("Testing LAF: " + laf.getName());
+                SwingUtilities.invokeAndWait(() -> test(laf));
+            }
+        }
     }
 
-    public static void createAndShowUI() {
+    public static void test(UIManager.LookAndFeelInfo laf) {
+        setLookAndFeel(laf);
         final JTree tree = new JTree();
         final BasicTreeUI treeUI = (BasicTreeUI) tree.getUI();
-        frame = new JFrame("Test Tree Icon Rendering");
 
-        final JPanel panel = new JPanel() {
+        Icon collapsedIcon = treeUI.getCollapsedIcon();
+        Icon expandedIcon = treeUI.getExpandedIcon();
+        BufferedImage img1 = paintToImage(expandedIcon);
+        BufferedImage img2 = paintToImage(collapsedIcon);
 
-            @Override
-            public void paint(Graphics g) {
-                super.paint(g);
-                Graphics2D g2 = (Graphics2D) g;
-                g2.setStroke(new BasicStroke(0.5f));
-                g2.scale(2, 2);
-
-                int x = 10;
-                int y = 10;
-                Icon collapsedIcon = treeUI.getCollapsedIcon();
-                Icon expandeIcon = treeUI.getExpandedIcon();
-                int w = collapsedIcon.getIconWidth();
-                int h = collapsedIcon.getIconHeight();
-                collapsedIcon.paintIcon(this, g, x, y);
-                g.drawRect(x, y, w, h);
-
-                y += 10 + h;
-                w = expandeIcon.getIconWidth();
-                h = expandeIcon.getIconHeight();
-                expandeIcon.paintIcon(this, g, x, y);
-                g.drawRect(x, y, w, h);
+        if (!isImgRendered(img1)) {
+            try {
+                ImageIO.write(img1, "png", new File("Expanded_Icon_" + laf.getName() + ".png"));
+            } catch (IOException ignored) {
             }
-        };
-
-        UIManager.LookAndFeelInfo[] laf = UIManager.getInstalledLookAndFeels();
-        JPanel buttonPanel = new JPanel();
-        for (int i = 0; i < laf.length; i++) {
-            if (laf[i].getName().contains("Motif")) {
-                continue;
-            }
-            JButton button = new JButton(laf[i].getName());
-            button.setText(laf[i].getName());
-            button.addActionListener(new MyAction());
-            buttonPanel.add(button);
+            throw new RuntimeException("Test Failed, Expanded not rendered for: "+laf.getName());
         }
-        PassFailJFrame.addTestWindow(frame);
-        PassFailJFrame.positionTestWindow(
-                frame, PassFailJFrame.Position.HORIZONTAL);
-        frame.getContentPane().setLayout(new BorderLayout());
-        frame.getContentPane().add(panel, BorderLayout.CENTER);
-        frame.getContentPane().add(buttonPanel, BorderLayout.SOUTH);
-        frame.setSize(300, 250);
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.setVisible(true);
+
+        if (!isImgRendered(img2)) {
+            try {
+                ImageIO.write(img2, "png", new File("Collapsed_Icon_" + laf.getName() + ".png"));
+            } catch (IOException ignored) {
+            }
+            throw new RuntimeException("Test Failed, Collapsed Icon not rendered for: "+laf.getName());
+        }
+        System.out.println("Test Passed");
     }
 
-    public static class MyAction implements ActionListener {
-        public void actionPerformed(ActionEvent ae) {
-            String lafClassName = null;
-            UIManager.LookAndFeelInfo lafs[] = UIManager.getInstalledLookAndFeels();
-            for (int i = 0; i < lafs.length; i++) {
-                if (ae.getActionCommand().equals(lafs[i].getName())) {
-                    lafClassName = lafs[i].getClassName();
-                    break;
+    private static void setLookAndFeel(UIManager.LookAndFeelInfo laf) {
+        try {
+            UIManager.setLookAndFeel(laf.getClassName());
+        } catch (UnsupportedLookAndFeelException ignored) {
+            System.out.println("Unsupported LAF: " + laf.getClassName());
+        } catch (ClassNotFoundException | InstantiationException
+                 | IllegalAccessException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static BufferedImage paintToImage(Icon content) {
+        BufferedImage im = new BufferedImage(content.getIconWidth(),
+                content.getIconHeight(), TYPE_INT_RGB);
+        Graphics2D g = (Graphics2D) im.getGraphics();
+        g.setBackground(Color.WHITE);
+        g.clearRect(0, 0, content.getIconWidth(), content.getIconHeight());
+        content.paintIcon(new JLabel(), g, 0, 0);
+        g.dispose();
+        return im;
+    }
+    
+    private static boolean isImgRendered(BufferedImage img) {
+        Color white = new Color(255, 255, 255);
+        for (int x = 0; x < img.getWidth(); ++x) {
+            for (int y = 0; y < img.getHeight(); ++y) {
+                if (img.getRGB(x, y) != white.getRGB()) {
+                    return true;
                 }
-            }
-            try {
-                UIManager.setLookAndFeel(lafClassName);
-                if (frame != null) {
-                    frame.dispose();
-                }
-                createAndShowUI();
-            } catch (UnsupportedLookAndFeelException ignored) {
-                System.out.println("Unsupported LAF: " + lafClassName);
-            } catch (ClassNotFoundException | InstantiationException
-                     | IllegalAccessException e) {
-                throw new RuntimeException(e);
             }
         }
+        return false;
     }
 }
