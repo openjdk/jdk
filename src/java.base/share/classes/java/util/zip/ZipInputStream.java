@@ -705,7 +705,7 @@ public class ZipInputStream extends InflaterInputStream implements ZipConstants 
      */
     private static boolean isZip64DataDescriptorField(int headerId, byte[] extra, int blockStart, int blockSize) {
         if (headerId != ZIP64_EXTID) {
-            return false; // Not a Zip64 extra field 
+            return false; // Not a Zip64 extra field
         }
         
         if (blockSize != 16) {
