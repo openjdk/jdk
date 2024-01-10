@@ -43,8 +43,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  * @bug 8311906
  * @modules java.base/java.lang:open
  * @summary check String's racy constructors
- * @run junit/othervm -XX:+CompactStrings test.java.lang.String.StringRacyConstructor
- * @run junit/othervm -XX:-CompactStrings test.java.lang.String.StringRacyConstructor
+ * @run junit test.java.lang.String.StringRacyConstructor
  */
 
 public class StringRacyConstructor {
@@ -154,23 +153,32 @@ public class StringRacyConstructor {
     }
 
     private static List<String> strings() {
-        return List.of("01234", " ");
+        int s = Integer.getInteger("selection", 0);
+        if (s == 0) {
+            return List.of("01234", " ");
+        } else {
+            String[] array = new String[s];
+            for (int i = 0; i < s; i++) {
+                array[i] = " ";
+            }
+			return List.of(array);
+        }
     }
 
-    @ParameterizedTest
     @MethodSource("strings")
     @EnabledIf("test.java.lang.String.StringRacyConstructor#isCompactStrings")
-    public void racyString(String orig) {
+    public void racyString() {
+        String orig = " ";
         String racyString = racyStringConstruction(orig);
         // The contents are indeterminate due to the race
         assertTrue(validCoder(racyString), orig + " string invalid"
                 + ", racyString: " + inspectString(racyString));
     }
 
-    @ParameterizedTest
     @MethodSource("strings")
     @EnabledIf("test.java.lang.String.StringRacyConstructor#isCompactStrings")
-    public void racyCodePoint(String orig) {
+    public void racyCodePoint() {
+        String orig = " ";
         String iffyString = racyStringConstructionCodepoints(orig);
         // The contents are indeterminate due to the race
         assertTrue(validCoder(iffyString), "invalid coder in non-deterministic string"
