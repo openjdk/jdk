@@ -495,8 +495,8 @@ public abstract sealed class Reference<T>
      * {@code enqueue} <b><i>successfully</i></b>
      * <a href="{@docRoot}/java.base/java/util/concurrent/package-summary.html#MemoryVisibility"><i>happen-before</i></a>
      * the reference is removed from the queue by {@link ReferenceQueue#poll}
-     * or {@link ReferenceQueue#remove}. An <b><i>unsuccessful</i></b>
-     * {@code enqueue} call has no memory consistency effects.
+     * or {@link ReferenceQueue#remove}. <b><i>Unsuccessful</i></b>
+     * {@code enqueue} calls have no specified memory consistency effects.
      *
      * <p>When the garbage collector
      * clears and enqueues references it does so directly, without invoking this
