@@ -2298,12 +2298,6 @@ public class RMIConnector implements JMXConnector, Serializable, JMXAddressable 
 
     private transient ClientCommunicatorAdmin communicatorAdmin;
 
-    /**
-     * A static WeakReference to an {@link org.omg.CORBA.ORB ORB} to
-     * connect unconnected stubs.
-     **/
-    private static volatile WeakReference<Object> orb = null;
-
     // TRACES & DEBUG
     //---------------
     private static String objects(final Object[] objs) {

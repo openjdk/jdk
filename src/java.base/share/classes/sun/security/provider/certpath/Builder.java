@@ -429,8 +429,7 @@ abstract class Builder {
                 if (debug != null) {
                     debug.println("Builder.addMatchingCerts: " +
                         "adding target cert" +
-                        "\n  SN: " + Debug.toHexString(
-                                            targetCert.getSerialNumber()) +
+                        "\n  SN: " + Debug.toString(targetCert.getSerialNumber()) +
                         "\n  Subject: " + targetCert.getSubjectX500Principal() +
                         "\n  Issuer: " + targetCert.getIssuerX500Principal());
                 }

@@ -48,17 +48,17 @@ public class TestPinnedObjectTypes {
     }
 
     private static void testPinning(String type, boolean shouldSucceed) throws Exception {
-        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:+UseG1GC",
-                                                                             "-XX:+UnlockDiagnosticVMOptions",
-                                                                             "-XX:+WhiteBoxAPI",
-                                                                             "-Xbootclasspath/a:.",
-                                                                             "-Xmx32M",
-                                                                             "-Xmn16M",
-                                                                             "-Xlog:gc",
-                                                                             TestObjectPin.class.getName(),
-                                                                             type);
+        OutputAnalyzer output = ProcessTools.executeLimitedTestJava("-XX:+UseG1GC",
+                                                                    "-XX:+UnlockDiagnosticVMOptions",
+                                                                    "-XX:+WhiteBoxAPI",
+                                                                    "-Xbootclasspath/a:.",
+                                                                    "-XX:-CreateCoredumpOnCrash",
+                                                                    "-Xmx32M",
+                                                                    "-Xmn16M",
+                                                                    "-Xlog:gc",
+                                                                    TestObjectPin.class.getName(),
+                                                                    type);
 
-        OutputAnalyzer output = new OutputAnalyzer(pb.start());
         System.out.println(output.getStdout());
         if (shouldSucceed) {
           output.shouldHaveExitValue(0);
@@ -83,4 +83,3 @@ class TestObjectPin {
         wb.pinObject(o);
     }
 }
-

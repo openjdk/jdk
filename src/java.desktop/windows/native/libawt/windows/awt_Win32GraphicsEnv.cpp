@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -126,9 +126,15 @@ BOOL DWMIsCompositionEnabled() {
     dwmIsCompositionEnabled = bRes;
 
     JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
-    JNU_CallStaticMethodByName(env, NULL,
+    jboolean hasException;
+    JNU_CallStaticMethodByName(env, &hasException,
                               "sun/awt/Win32GraphicsEnvironment",
                               "dwmCompositionChanged", "(Z)V", (jboolean)bRes);
+    if (hasException) {
+        J2dTraceLn(J2D_TRACE_INFO, "Exception occurred in DWMIsCompositionEnabled");
+        env->ExceptionDescribe();
+        env->ExceptionClear();
+    }
     return bRes;
 }
 
