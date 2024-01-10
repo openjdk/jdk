@@ -123,7 +123,6 @@ public:
 
   // The index of the split region, the size of the partial object on that
   // region and the destination of the partial object.
-  size_t    src_region_idx() const   { return _src_region_idx; }
   size_t    partial_obj_size() const { return _partial_obj_size; }
   HeapWord* destination() const      { return _destination; }
 
@@ -283,9 +282,6 @@ public:
     // The location of the java heap data that corresponds to this region.
     inline HeapWord* data_location() const;
 
-    // The highest address referenced by objects in this region.
-    inline HeapWord* highest_ref() const;
-
     // Whether this region is available to be claimed, has been claimed, or has
     // been completed.
     //
@@ -314,7 +310,6 @@ public:
 
     // These are atomic.
     inline void add_live_obj(size_t words);
-    inline void set_highest_ref(HeapWord* addr);
     inline void decrement_destination_count();
     inline bool claim();
 
@@ -443,26 +438,16 @@ public:
   inline size_t     addr_to_region_idx(const HeapWord* addr) const;
   inline RegionData* addr_to_region_ptr(const HeapWord* addr) const;
   inline HeapWord*  region_to_addr(size_t region) const;
-  inline HeapWord*  region_to_addr(size_t region, size_t offset) const;
   inline HeapWord*  region_to_addr(const RegionData* region) const;
 
   inline HeapWord*  region_align_down(HeapWord* addr) const;
   inline HeapWord*  region_align_up(HeapWord* addr) const;
   inline bool       is_region_aligned(HeapWord* addr) const;
 
-  // Analogous to region_offset() for blocks.
-  size_t     block_offset(const HeapWord* addr) const;
   size_t     addr_to_block_idx(const HeapWord* addr) const;
-  size_t     addr_to_block_idx(const oop obj) const {
-    return addr_to_block_idx(cast_from_oop<HeapWord*>(obj));
-  }
   inline BlockData* addr_to_block_ptr(const HeapWord* addr) const;
-  inline HeapWord*  block_to_addr(size_t block) const;
-  inline size_t     region_to_block_idx(size_t region) const;
 
   inline HeapWord*  block_align_down(HeapWord* addr) const;
-  inline HeapWord*  block_align_up(HeapWord* addr) const;
-  inline bool       is_block_aligned(HeapWord* addr) const;
 
   // Return the address one past the end of the partial object.
   HeapWord* partial_obj_end(size_t region_idx) const;
@@ -563,12 +548,6 @@ inline HeapWord* ParallelCompactData::RegionData::data_location() const
   NOT_DEBUG(return nullptr;)
 }
 
-inline HeapWord* ParallelCompactData::RegionData::highest_ref() const
-{
-  DEBUG_ONLY(return _highest_ref;)
-  NOT_DEBUG(return nullptr;)
-}
-
 inline void ParallelCompactData::RegionData::set_data_location(HeapWord* addr)
 {
   DEBUG_ONLY(_data_location = addr;)
@@ -595,16 +574,6 @@ inline void ParallelCompactData::RegionData::add_live_obj(size_t words)
 {
   assert(words <= (size_t)los_mask - live_obj_size(), "overflow");
   Atomic::add(&_dc_and_los, static_cast<region_sz_t>(words));
-}
-
-inline void ParallelCompactData::RegionData::set_highest_ref(HeapWord* addr)
-{
-#ifdef ASSERT
-  HeapWord* tmp = _highest_ref;
-  while (addr > tmp) {
-    tmp = Atomic::cmpxchg(&_highest_ref, tmp, addr);
-  }
-#endif  // #ifdef ASSERT
 }
 
 inline bool ParallelCompactData::RegionData::claim()
@@ -696,14 +665,6 @@ ParallelCompactData::region_to_addr(const RegionData* region) const
 }
 
 inline HeapWord*
-ParallelCompactData::region_to_addr(size_t region, size_t offset) const
-{
-  assert(region <= _region_count, "region out of range");
-  assert(offset < RegionSize, "offset too big");  // This may be too strict.
-  return region_to_addr(region) + offset;
-}
-
-inline HeapWord*
 ParallelCompactData::region_align_down(HeapWord* addr) const
 {
   assert(addr >= _heap_start, "bad addr");
@@ -726,14 +687,6 @@ ParallelCompactData::is_region_aligned(HeapWord* addr) const
 }
 
 inline size_t
-ParallelCompactData::block_offset(const HeapWord* addr) const
-{
-  assert(addr >= _heap_start, "bad addr");
-  assert(addr <= _heap_end, "bad addr");
-  return (size_t(addr) & BlockAddrOffsetMask) >> LogHeapWordSize;
-}
-
-inline size_t
 ParallelCompactData::addr_to_block_idx(const HeapWord* addr) const
 {
   assert(addr >= _heap_start, "bad addr");
@@ -748,38 +701,11 @@ ParallelCompactData::addr_to_block_ptr(const HeapWord* addr) const
 }
 
 inline HeapWord*
-ParallelCompactData::block_to_addr(size_t block) const
-{
-  assert(block < _block_count, "block out of range");
-  return _heap_start + (block << Log2BlockSize);
-}
-
-inline size_t
-ParallelCompactData::region_to_block_idx(size_t region) const
-{
-  return region << Log2BlocksPerRegion;
-}
-
-inline HeapWord*
 ParallelCompactData::block_align_down(HeapWord* addr) const
 {
   assert(addr >= _heap_start, "bad addr");
   assert(addr < _heap_end + RegionSize, "bad addr");
   return (HeapWord*)(size_t(addr) & BlockAddrMask);
-}
-
-inline HeapWord*
-ParallelCompactData::block_align_up(HeapWord* addr) const
-{
-  assert(addr >= _heap_start, "bad addr");
-  assert(addr <= _heap_end, "bad addr");
-  return block_align_down(addr + BlockSizeOffsetMask);
-}
-
-inline bool
-ParallelCompactData::is_block_aligned(HeapWord* addr) const
-{
-  return block_offset(addr) == 0;
 }
 
 // Abstract closure for use with ParMarkBitMap::iterate(), which will invoke the
@@ -1169,15 +1095,6 @@ class PSParallelCompact : AllStatic {
   static inline HeapWord*         new_top(SpaceId space_id);
   static inline HeapWord*         dense_prefix(SpaceId space_id);
   static inline ObjectStartArray* start_array(SpaceId space_id);
-
-  // Process the end of the given region range in the dense prefix.
-  // This includes saving any object not updated.
-  static void dense_prefix_regions_epilogue(ParCompactionManager* cm,
-                                            size_t region_start_index,
-                                            size_t region_end_index,
-                                            idx_t exiting_object_offset,
-                                            idx_t region_offset_start,
-                                            idx_t region_offset_end);
 
   // Update a region in the dense prefix.  For each live object
   // in the region, update it's interior references.  For each
