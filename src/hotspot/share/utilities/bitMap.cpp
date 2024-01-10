@@ -104,24 +104,22 @@ void GrowableBitMap<BitMapWithAllocator>::slice(idx_t start_bit, idx_t end_bit, 
   idx_t start_word = to_words_align_up(start_bit);
   idx_t end_word = to_words_align_up(end_bit);
   bm_word_t* const old_map = map();
-  const size_t old_size_in_bits = size();
   const idx_t new_size_in_bits = end_bit-start_bit;
-
-  const size_t old_size_in_words = calc_size_in_words(size());
-  const size_t new_size_in_words = calc_size_in_words(new_size_in_bits);
 
   BitMapWithAllocator* derived = static_cast<BitMapWithAllocator*>(this);
 
-  bm_word_t* new_map = derived->allocate(new_size_in_words);
-  // copy elements from startword to endword
-  //tty->print_cr("EE Start word: %ld, End word: %ld", start_word, end_word);
-  //tty->print_cr("EE Old size: %ld, New size: %ld", old_size_in_bits, new_size_in_bits);
+  // Shift over elements to avoid allocating a new array
   for (idx_t word = start_word; word < end_word; word++) {
-    set_word(word-start_word, old_map[word]);
+    set_word(word - start_word, old_map[word]);
   }
 
-  derived->free(old_map, old_size_in_words);
-  //update(new_map, new_size_in_bits);
+  resize(new_size_in_bits);
+}
+
+template <class BitMapWithAllocator>
+void GrowableBitMap<BitMapWithAllocator>::slice(idx_t start_bit, bool clear) {
+  const size_t old_size_in_bits = size();
+  slice(start_bit, old_size_in_bits, clear);
 }
 
 ArenaBitMap::ArenaBitMap(Arena* arena, idx_t size_in_bits, bool clear)
