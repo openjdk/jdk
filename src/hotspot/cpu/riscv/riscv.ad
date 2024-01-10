@@ -1001,6 +1001,7 @@ definitions %{
   int_def LOAD_COST            (  300,  3 * DEFAULT_COST);          // load, fpload
   int_def STORE_COST           (  100,  1 * DEFAULT_COST);          // store, fpstore
   int_def XFER_COST            (  300,  3 * DEFAULT_COST);          // mfc, mtc, fcvt, fmove, fcmp
+  int_def FMVX_COST            (  100,  1 * DEFAULT_COST);          // shuffles with no conversion
   int_def BRANCH_COST          (  200,  2 * DEFAULT_COST);          // branch, jmp, call
   int_def IMUL_COST            ( 1000, 10 * DEFAULT_COST);          // imul
   int_def IDIVSI_COST          ( 3400, 34 * DEFAULT_COST);          // idivsi
@@ -8674,7 +8675,7 @@ instruct MoveF2I_reg_reg(iRegINoSp dst, fRegF src) %{
 
   effect(DEF dst, USE src);
 
-  ins_cost(XFER_COST);
+  ins_cost(FMVX_COST);
 
   format %{ "fmv.x.w  $dst, $src\t#@MoveF2I_reg_reg" %}
 
@@ -8692,7 +8693,7 @@ instruct MoveI2F_reg_reg(fRegF dst, iRegI src) %{
 
   effect(DEF dst, USE src);
 
-  ins_cost(XFER_COST);
+  ins_cost(FMVX_COST);
 
   format %{ "fmv.w.x  $dst, $src\t#@MoveI2F_reg_reg" %}
 
@@ -8710,7 +8711,7 @@ instruct MoveD2L_reg_reg(iRegLNoSp dst, fRegD src) %{
 
   effect(DEF dst, USE src);
 
-  ins_cost(XFER_COST);
+  ins_cost(FMVX_COST);
 
   format %{ "fmv.x.d $dst, $src\t#@MoveD2L_reg_reg" %}
 
@@ -8728,7 +8729,7 @@ instruct MoveL2D_reg_reg(fRegD dst, iRegL src) %{
 
   effect(DEF dst, USE src);
 
-  ins_cost(XFER_COST);
+  ins_cost(FMVX_COST);
 
   format %{ "fmv.d.x  $dst, $src\t#@MoveL2D_reg_reg" %}
 

@@ -292,11 +292,6 @@ public:
                      CLDClosure* weak_cld_closure,
                      CodeBlobToOopClosure* code_roots);
 
-  // Apply "root_closure" to all the weak roots of the system.
-  // These include JNI weak roots, string table,
-  // and referents of reachable weak refs.
-  void gen_process_weak_roots(OopClosure* root_closure);
-
   // Set the saved marks of generations, if that makes sense.
   // In particular, if any generation might iterate over the oops
   // in other generations, it should call this method.
@@ -339,13 +334,6 @@ private:
 
   HeapWord* mem_allocate_work(size_t size,
                               bool is_tlab);
-
-#if INCLUDE_SERIALGC
-  // For use by mark-sweep.  As implemented, mark-sweep-compact is global
-  // in an essential way: compaction is performed across generations, by
-  // iterating over spaces.
-  void prepare_for_compaction();
-#endif
 
   // Save the tops of the spaces in all generations
   void record_gen_tops_before_GC() PRODUCT_RETURN;

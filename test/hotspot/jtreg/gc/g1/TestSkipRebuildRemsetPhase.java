@@ -45,7 +45,7 @@ public class TestSkipRebuildRemsetPhase {
                                                                     "-XX:+UnlockExperimentalVMOptions",
                                                                     "-XX:+UnlockDiagnosticVMOptions",
                                                                     "-XX:+WhiteBoxAPI",
-                                                                    "-XX:G1MixedGCLiveThresholdPercent=20",
+                                                                    "-XX:G1MixedGCLiveThresholdPercent=0",
                                                                     "-Xlog:gc+marking=debug,gc+phases=debug,gc+remset+tracking=trace",
                                                                     "-Xms10M",
                                                                     "-Xmx10M",
@@ -58,24 +58,20 @@ public class TestSkipRebuildRemsetPhase {
     public static class GCTest {
         public static void main(String args[]) throws Exception {
             WhiteBox wb = WhiteBox.getWhiteBox();
-            // Allocate some memory less than region size.
-            Object used = alloc();
+            // Allocate some memory less than region size. Any object is just fine as we set
+            // G1MixedGCLiveThresholdPercent to zero (and no region should be selected).
+            Object used = new byte[2000];
 
-            // Trigger the full GC using the WhiteBox API.
-            wb.fullGC();  // full
+            // Trigger the full GC using the WhiteBox API to make sure that at least "used"
+            // has been promoted to old gen.
+            wb.fullGC();
 
             // Memory objects have been promoted to old by full GC.
-            // Concurrent cycle should not select any regions for rebuilding
+            // Concurrent cycle should not select any regions for rebuilding and print the
+            // appropriate message.
             wb.g1RunConcurrentGC();
             System.out.println(used);
         }
-
-        private static Object alloc() {
-            // Since G1MixedGCLiveThresholdPercent is 20%, make sure to allocate object larger than that
-            // so that it will not be collected and the expected message printed.
-            final int objectSize = WhiteBox.getWhiteBox().g1RegionSize() / 3;
-            Object ret = new byte[objectSize];
-            return ret;
-        }
     }
 }
+

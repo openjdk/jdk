@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@ public class AndINodeIdealizationTests {
     }
 
     @Run(test = {"test1", "test2", "test3",
-                 "test4", "test5"})
+                 "test4", "test5", "test6"})
     public void runMethod() {
         int a = RunInfo.getRandom().nextInt();
         int b = RunInfo.getRandom().nextInt();
@@ -56,10 +56,11 @@ public class AndINodeIdealizationTests {
     @DontCompile
     public void assertResult(int a, int b) {
         Asserts.assertEQ((0 - a) & 1, test1(a));
-        Asserts.assertEQ(b << 8, test2(a, b));
-        Asserts.assertEQ(1, test3(a, b));
-        Asserts.assertEQ(0, test4(a, b));
-        Asserts.assertEQ(1, test5(a, b));
+        Asserts.assertEQ((~a) & (~b), test2(a, b));
+        Asserts.assertEQ(b << 8, test3(a, b));
+        Asserts.assertEQ(1, test4(a, b));
+        Asserts.assertEQ(0, test5(a, b));
+        Asserts.assertEQ(1, test6(a, b));
     }
 
     @Test
@@ -71,30 +72,39 @@ public class AndINodeIdealizationTests {
     }
 
     @Test
+    @IR(failOn = { IRNode.AND })
+    @IR(counts = { IRNode.OR, "1",
+                   IRNode.XOR, "1" })
+    // Checks (~a) & (~b) => ~(a | b)
+    public int test2(int a, int b) {
+        return (~a) & (~b);
+    }
+
+    @Test
     @IR(failOn = {IRNode.AND_I, IRNode.OR_I})
     // All bits that can be unset in one operand is known to be unset in the other
-    public int test2(int x, int y) {
+    public int test3(int x, int y) {
         return (x | -256) & (y << 8);
     }
 
     @Test
     @IR(failOn = {IRNode.AND_I, IRNode.OR_I})
     // Bits set in both are set in the result
-    public int test3(int x, int y) {
+    public int test4(int x, int y) {
         return ((x | 3) & (y | 101)) & 1;
     }
 
     @Test
     @IR(failOn = {IRNode.AND_I})
     // Bits unset in either are unset in the result
-    public int test4(int x, int y) {
+    public int test5(int x, int y) {
         return (x & (y & 6)) & 1;
     }
 
     @Test
     @IR(failOn = {IRNode.AND_I})
     // The unsigned value of the result is smaller than both operands
-    public int test5(int x, int y) {
+    public int test6(int x, int y) {
         return Integer.compareUnsigned(((byte)x + 150) & y, 300) < 0 ? 1 : 0;
     }
 }

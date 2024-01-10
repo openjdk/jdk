@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,6 @@
 /**
  * @test
  * @bug 8310886
- * @requires os.arch == "x86_64" | os.arch == "aarch64"
  * @summary Test MulAddS2I vectorization.
  * @library /test/lib /
  * @run driver compiler.loopopts.superword.TestMulAddS2I
@@ -75,15 +74,14 @@ public class TestMulAddS2I {
     }
 
     @Test
-    @IR(applyIfCPUFeature = {"sse2", "true"}, applyIf = {"UseUnalignedLoadStores", "true"},
+    @IR(applyIfCPUFeature = {"sse2", "true"},
+        applyIfPlatform = {"64-bit", "true"},
         counts = {IRNode.MUL_ADD_S2I, "> 0", IRNode.MUL_ADD_VS2VI, "> 0"})
-    @IR(applyIfCPUFeature = {"sse2", "true"}, applyIf = {"UseUnalignedLoadStores", "false"},
-        failOn = {IRNode.MUL_ADD_VS2VI}, // Can only pack LoadS if UseUnalignedLoadStores is true (default if sse4.2)
-        counts = {IRNode.MUL_ADD_S2I, "> 0"})
-    @IR(applyIfCPUFeature = {"asimd", "true"}, applyIf = {"MaxVectorSize", "16"}, // AD file requires vector_length = 16
-            counts = {IRNode.MUL_ADD_S2I, "> 0", IRNode.MUL_ADD_VS2VI, "> 0"})
-    @IR(applyIfCPUFeature = {"avx512_vnni", "true"}, applyIf = {"UseUnalignedLoadStores", "true"},
-            counts = {IRNode.MUL_ADD_S2I, "> 0", IRNode.MUL_ADD_VS2VI_VNNI, "> 0"})
+    @IR(applyIfCPUFeature = {"asimd", "true"},
+        applyIf = {"MaxVectorSize", "16"}, // AD file requires vector_length = 16
+        counts = {IRNode.MUL_ADD_S2I, "> 0", IRNode.MUL_ADD_VS2VI, "> 0"})
+    @IR(applyIfCPUFeature = {"avx512_vnni", "true"},
+        counts = {IRNode.MUL_ADD_S2I, "> 0", IRNode.MUL_ADD_VS2VI_VNNI, "> 0"})
     public static int[] test() {
         int[] out = new int[ITER];
         int[] out2 = new int[ITER];
