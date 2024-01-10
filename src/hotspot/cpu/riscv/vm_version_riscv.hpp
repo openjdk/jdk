@@ -199,6 +199,9 @@ class VM_Version : public Abstract_VM_Version {
   static void initialize_cpu_information();
 
   constexpr static bool supports_stack_watermark_barrier() { return true; }
+
+  // RISCV64 supports fast class initialization checks
+  static bool supports_fast_class_init_checks() { return true; }
 };
 
 #endif // CPU_RISCV_VM_VERSION_RISCV_HPP
