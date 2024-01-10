@@ -32,9 +32,8 @@
 #include "runtime/threadCritical.hpp"
 #include "utilities/ostream.hpp"
 
-size_t VirtualMemorySummary::_snapshot[CALC_OBJ_SIZE_IN_TYPE(VirtualMemorySnapshot, size_t)];
+VirtualMemorySnapshot VirtualMemorySummary::_snapshot;
 
-#ifdef ASSERT
 void VirtualMemory::update_peak(size_t size) {
   size_t peak_sz = peak_size();
   while (peak_sz < size) {
@@ -45,13 +44,6 @@ void VirtualMemory::update_peak(size_t size) {
       peak_sz = old_sz;
     }
   }
-}
-#endif // ASSERT
-
-void VirtualMemorySummary::initialize() {
-  assert(sizeof(_snapshot) >= sizeof(VirtualMemorySnapshot), "Sanity Check");
-  // Use placement operator new to initialize static data area.
-  ::new ((void*)_snapshot) VirtualMemorySnapshot();
 }
 
 void VirtualMemorySummary::snapshot(VirtualMemorySnapshot* s) {
@@ -336,7 +328,6 @@ address ReservedMemoryRegion::thread_stack_uncommitted_bottom() const {
 bool VirtualMemoryTracker::initialize(NMT_TrackingLevel level) {
   assert(_reserved_regions == nullptr, "only call once");
   if (level >= NMT_summary) {
-    VirtualMemorySummary::initialize();
     _reserved_regions = new (std::nothrow, mtNMT)
       SortedLinkedList<ReservedMemoryRegion, compare_reserved_region_base>();
     return (_reserved_regions != nullptr);
@@ -408,12 +399,16 @@ bool VirtualMemoryTracker::add_reserved_region(address base_addr, size_t size,
       }
 
       // Print some more details. Don't use UL here to avoid circularities.
-#ifdef ASSERT
       tty->print_cr("Error: existing region: [" INTPTR_FORMAT "-" INTPTR_FORMAT "), flag %u.\n"
                     "       new region: [" INTPTR_FORMAT "-" INTPTR_FORMAT "), flag %u.",
                     p2i(reserved_rgn->base()), p2i(reserved_rgn->end()), (unsigned)reserved_rgn->flag(),
                     p2i(base_addr), p2i(base_addr + size), (unsigned)flag);
-#endif
+      if (MemTracker::tracking_level() == NMT_detail) {
+        tty->print_cr("Existing region allocated from:");
+        reserved_rgn->call_stack()->print_on(tty);
+        tty->print_cr("New region allocated from:");
+        stack.print_on(tty);
+      }
       ShouldNotReachHere();
       return false;
     }
@@ -488,7 +483,7 @@ bool VirtualMemoryTracker::remove_released_region(ReservedMemoryRegion* rgn) {
 
   VirtualMemorySummary::record_released_memory(rgn->size(), rgn->flag());
   result =  _reserved_regions->remove(*rgn);
-  log_debug(nmt)("Removed region \'%s\' (" INTPTR_FORMAT ", " SIZE_FORMAT ") from _resvered_regions %s" ,
+  log_debug(nmt)("Removed region \'%s\' (" INTPTR_FORMAT ", " SIZE_FORMAT ") from _reserved_regions %s" ,
                 backup.flag_name(), p2i(backup.base()), backup.size(), (result ? "Succeeded" : "Failed"));
   return result;
 }

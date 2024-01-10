@@ -74,7 +74,7 @@
 
 #define read_csr(csr)                                           \
 ({                                                              \
-        register unsigned long __v;                             \
+        unsigned long __v;                                      \
         __asm__ __volatile__ ("csrr %0, %1"                     \
                               : "=r" (__v)                      \
                               : "i" (csr)                       \
@@ -239,6 +239,8 @@ void VM_Version::rivos_features() {
   ext_Zba.enable_feature();
   ext_Zbb.enable_feature();
   ext_Zbs.enable_feature();
+
+  ext_Zcb.enable_feature();
 
   ext_Zicsr.enable_feature();
   ext_Zifencei.enable_feature();

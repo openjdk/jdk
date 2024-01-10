@@ -71,7 +71,7 @@ static ArchivedClassLoaderData _archived_system_loader_data;
 static ModuleEntry* _archived_javabase_moduleEntry = nullptr;
 
 void ArchivedClassLoaderData::iterate_symbols(ClassLoaderData* loader_data, MetaspaceClosure* closure) {
-  assert(DumpSharedSpaces, "must be");
+  assert(CDSConfig::is_dumping_full_module_graph(), "must be");
   assert_valid(loader_data);
   if (loader_data != nullptr) {
     loader_data->packages()->iterate_symbols(closure);
@@ -80,7 +80,7 @@ void ArchivedClassLoaderData::iterate_symbols(ClassLoaderData* loader_data, Meta
 }
 
 void ArchivedClassLoaderData::allocate(ClassLoaderData* loader_data) {
-  assert(DumpSharedSpaces, "must be");
+  assert(CDSConfig::is_dumping_full_module_graph(), "must be");
   assert_valid(loader_data);
   if (loader_data != nullptr) {
     // We can't create hashtables at dump time because the hashcode depends on the
@@ -93,7 +93,7 @@ void ArchivedClassLoaderData::allocate(ClassLoaderData* loader_data) {
 }
 
 void ArchivedClassLoaderData::init_archived_entries(ClassLoaderData* loader_data) {
-  assert(DumpSharedSpaces, "must be");
+  assert(CDSConfig::is_dumping_full_module_graph(), "must be");
   assert_valid(loader_data);
   if (loader_data != nullptr) {
     loader_data->packages()->init_archived_entries(_packages);

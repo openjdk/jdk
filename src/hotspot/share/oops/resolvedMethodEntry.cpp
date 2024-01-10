@@ -37,11 +37,11 @@ bool ResolvedMethodEntry::check_no_old_or_obsolete_entry() {
 }
 
 void ResolvedMethodEntry::reset_entry() {
-  if (has_resolved_ref_index()) {
+  if (has_resolved_references_index()) {
     u2 saved_resolved_references_index = _entry_specific._resolved_references_index;
     u2 saved_cpool_index = _cpool_index;
     memset(this, 0, sizeof(*this));
-    _entry_specific._resolved_references_index = saved_resolved_references_index;
+    set_resolved_references_index(saved_resolved_references_index);
     _cpool_index = saved_cpool_index;
   } else {
     u2 saved_cpool_index = _cpool_index;
@@ -74,7 +74,13 @@ void ResolvedMethodEntry::print_on(outputStream* st) const {
     st->print_cr(" - Resolved References Index: none");
   }
   if (bytecode2() == Bytecodes::_invokevirtual) {
+#ifdef ASSERT
+    if (_has_table_index) {
+      st->print_cr(" - Table Index: %d", table_index());
+    }
+#else
     st->print_cr(" - Table Index: %d", table_index());
+#endif
   } else {
     st->print_cr(" - Table Index: none");
   }

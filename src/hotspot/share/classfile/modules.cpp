@@ -486,7 +486,6 @@ static bool _seen_system_unnamed_module = false;
 //
 // Returns true iff the oop has an archived ModuleEntry.
 bool Modules::check_archived_module_oop(oop orig_module_obj) {
-  assert(DumpSharedSpaces, "must be");
   assert(CDSConfig::is_dumping_full_module_graph(), "must be");
   assert(java_lang_Module::is_instance(orig_module_obj), "must be");
 
@@ -641,7 +640,7 @@ void Modules::define_archived_modules(Handle h_platform_loader, Handle h_system_
 }
 
 void Modules::check_cds_restrictions(TRAPS) {
-  if (DumpSharedSpaces && Universe::is_module_initialized() && CDSConfig::is_dumping_full_module_graph()) {
+  if (CDSConfig::is_dumping_full_module_graph() && Universe::is_module_initialized()) {
     THROW_MSG(vmSymbols::java_lang_UnsupportedOperationException(),
               "During -Xshare:dump, module system cannot be modified after it's initialized");
   }

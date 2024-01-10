@@ -1929,7 +1929,7 @@ void LIR_Assembler::emit_opTypeCheck(LIR_OpTypeCheck* op) {
 
 
 void LIR_Assembler::emit_compare_and_swap(LIR_OpCompareAndSwap* op) {
-  if (LP64_ONLY(false &&) op->code() == lir_cas_long && VM_Version::supports_cx8()) {
+  if (LP64_ONLY(false &&) op->code() == lir_cas_long) {
     assert(op->cmp_value()->as_register_lo() == rax, "wrong register");
     assert(op->cmp_value()->as_register_hi() == rdx, "wrong register");
     assert(op->new_value()->as_register_lo() == rbx, "wrong register");
@@ -3629,13 +3629,33 @@ void LIR_Assembler::emit_profile_type(LIR_OpProfileType* op) {
 
   __ verify_oop(obj);
 
-  if (tmp != obj) {
-    __ mov(tmp, obj);
+#ifdef ASSERT
+  if (obj == tmp) {
+#ifdef _LP64
+    assert_different_registers(obj, rscratch1, mdo_addr.base(), mdo_addr.index());
+#else
+    assert_different_registers(obj, mdo_addr.base(), mdo_addr.index());
+#endif
+  } else {
+#ifdef _LP64
+    assert_different_registers(obj, tmp, rscratch1, mdo_addr.base(), mdo_addr.index());
+#else
+    assert_different_registers(obj, tmp, mdo_addr.base(), mdo_addr.index());
+#endif
   }
+#endif
   if (do_null) {
-    __ testptr(tmp, tmp);
+    __ testptr(obj, obj);
     __ jccb(Assembler::notZero, update);
     if (!TypeEntries::was_null_seen(current_klass)) {
+      __ testptr(mdo_addr, TypeEntries::null_seen);
+#ifndef ASSERT
+      __ jccb(Assembler::notZero, next); // already set
+#else
+      __ jcc(Assembler::notZero, next); // already set
+#endif
+      // atomic update to prevent overwriting Klass* with 0
+      __ lock();
       __ orptr(mdo_addr, TypeEntries::null_seen);
     }
     if (do_update) {
@@ -3646,7 +3666,7 @@ void LIR_Assembler::emit_profile_type(LIR_OpProfileType* op) {
       __ jmp(next);
     }
   } else {
-    __ testptr(tmp, tmp);
+    __ testptr(obj, obj);
     __ jcc(Assembler::notZero, update);
     __ stop("unexpected null obj");
 #endif
@@ -3658,7 +3678,7 @@ void LIR_Assembler::emit_profile_type(LIR_OpProfileType* op) {
 #ifdef ASSERT
     if (exact_klass != nullptr) {
       Label ok;
-      __ load_klass(tmp, tmp, tmp_load_klass);
+      __ load_klass(tmp, obj, tmp_load_klass);
       __ push(tmp);
       __ mov_metadata(tmp, exact_klass->constant_encoding());
       __ cmpptr(tmp, Address(rsp, 0));
@@ -3673,9 +3693,11 @@ void LIR_Assembler::emit_profile_type(LIR_OpProfileType* op) {
         if (exact_klass != nullptr) {
           __ mov_metadata(tmp, exact_klass->constant_encoding());
         } else {
-          __ load_klass(tmp, tmp, tmp_load_klass);
+          __ load_klass(tmp, obj, tmp_load_klass);
         }
-
+#ifdef _LP64
+        __ mov(rscratch1, tmp); // save original value before XOR
+#endif
         __ xorptr(tmp, mdo_addr);
         __ testptr(tmp, TypeEntries::type_klass_mask);
         // klass seen before, nothing to do. The unknown bit may have been
@@ -3686,23 +3708,23 @@ void LIR_Assembler::emit_profile_type(LIR_OpProfileType* op) {
         __ jccb(Assembler::notZero, next); // already unknown. Nothing to do anymore.
 
         if (TypeEntries::is_type_none(current_klass)) {
-          __ cmpptr(mdo_addr, 0);
-          __ jccb(Assembler::equal, none);
-          __ cmpptr(mdo_addr, TypeEntries::null_seen);
-          __ jccb(Assembler::equal, none);
+          __ testptr(mdo_addr, TypeEntries::type_mask);
+          __ jccb(Assembler::zero, none);
+#ifdef _LP64
           // There is a chance that the checks above (re-reading profiling
           // data from memory) fail if another thread has just set the
           // profiling to this obj's klass
+          __ mov(tmp, rscratch1); // get back original value before XOR
           __ xorptr(tmp, mdo_addr);
           __ testptr(tmp, TypeEntries::type_klass_mask);
           __ jccb(Assembler::zero, next);
+#endif
         }
       } else {
         assert(ciTypeEntries::valid_ciklass(current_klass) != nullptr &&
                ciTypeEntries::valid_ciklass(current_klass) != exact_klass, "conflict only");
 
-        __ movptr(tmp, mdo_addr);
-        __ testptr(tmp, TypeEntries::type_unknown);
+        __ testptr(mdo_addr, TypeEntries::type_unknown);
         __ jccb(Assembler::notZero, next); // already unknown. Nothing to do anymore.
       }
 
@@ -3715,6 +3737,10 @@ void LIR_Assembler::emit_profile_type(LIR_OpProfileType* op) {
         __ bind(none);
         // first time here. Set profile type.
         __ movptr(mdo_addr, tmp);
+#ifdef ASSERT
+        __ andptr(tmp, TypeEntries::type_klass_mask);
+        __ verify_klass_ptr(tmp);
+#endif
       }
     } else {
       // There's a single possible klass at this profile point
@@ -3729,10 +3755,8 @@ void LIR_Assembler::emit_profile_type(LIR_OpProfileType* op) {
         {
           Label ok;
           __ push(tmp);
-          __ cmpptr(mdo_addr, 0);
-          __ jcc(Assembler::equal, ok);
-          __ cmpptr(mdo_addr, TypeEntries::null_seen);
-          __ jcc(Assembler::equal, ok);
+          __ testptr(mdo_addr, TypeEntries::type_mask);
+          __ jcc(Assembler::zero, ok);
           // may have been set by another thread
           __ mov_metadata(tmp, exact_klass->constant_encoding());
           __ xorptr(tmp, mdo_addr);
@@ -3748,20 +3772,22 @@ void LIR_Assembler::emit_profile_type(LIR_OpProfileType* op) {
 #endif
         // first time here. Set profile type.
         __ movptr(mdo_addr, tmp);
+#ifdef ASSERT
+        __ andptr(tmp, TypeEntries::type_klass_mask);
+        __ verify_klass_ptr(tmp);
+#endif
       } else {
         assert(ciTypeEntries::valid_ciklass(current_klass) != nullptr &&
                ciTypeEntries::valid_ciklass(current_klass) != exact_klass, "inconsistent");
 
-        __ movptr(tmp, mdo_addr);
-        __ testptr(tmp, TypeEntries::type_unknown);
+        __ testptr(mdo_addr, TypeEntries::type_unknown);
         __ jccb(Assembler::notZero, next); // already unknown. Nothing to do anymore.
 
         __ orptr(mdo_addr, TypeEntries::type_unknown);
       }
     }
-
-    __ bind(next);
   }
+  __ bind(next);
 }
 
 void LIR_Assembler::emit_delay(LIR_OpDelay*) {

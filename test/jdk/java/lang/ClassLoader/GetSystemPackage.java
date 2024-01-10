@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug 8060130
+ * @requires vm.flagless
  * @library /test/lib
  * @build package2.Class2 GetSystemPackage
  * @summary Test if getSystemPackage() return consistent values for cases
@@ -41,6 +42,8 @@ import java.util.jar.Attributes;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
 import java.util.jar.Manifest;
+
+import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 
 public class GetSystemPackage {
@@ -118,8 +121,9 @@ public class GetSystemPackage {
     private static void runSubProcess(String messageOnError, String ... args)
             throws Exception
     {
-        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(args);
-        int res = pb.directory(tmpFolder).inheritIO().start().waitFor();
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(args)
+                                        .directory(tmpFolder);
+        int res = ProcessTools.executeProcess(pb).getExitValue();
         if (res != 0) {
             throw new RuntimeException(messageOnError);
         }

@@ -806,7 +806,9 @@ oop StringTable::lookup_shared(const jchar* name, int len) {
 // This should be called when we know no more strings will be added (which will be easy
 // to guarantee because CDS runs with a single Java thread. See JDK-8253495.)
 void StringTable::allocate_shared_strings_array(TRAPS) {
-  assert(CDSConfig::is_dumping_heap(), "must be");
+  if (!CDSConfig::is_dumping_heap()) {
+    return;
+  }
   if (_items_count > (size_t)max_jint) {
     fatal("Too many strings to be archived: %zu", _items_count);
   }

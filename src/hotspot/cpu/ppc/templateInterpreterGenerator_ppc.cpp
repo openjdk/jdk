@@ -291,21 +291,7 @@ address TemplateInterpreterGenerator::generate_slow_signature_handler() {
 
   __ bind(do_float);
   __ lfs(floatSlot, 0, arg_java);
-#if defined(LINUX)
-  // Linux uses ELF ABI. Both original ELF and ELFv2 ABIs have float
-  // in the least significant word of an argument slot.
-#if defined(VM_LITTLE_ENDIAN)
-  __ stfs(floatSlot, 0, arg_c);
-#else
-  __ stfs(floatSlot, 4, arg_c);
-#endif
-#elif defined(AIX)
-  // Although AIX runs on big endian CPU, float is in most significant
-  // word of an argument slot.
-  __ stfs(floatSlot, 0, arg_c);
-#else
-#error "unknown OS"
-#endif
+  __ stfs(floatSlot, Argument::float_on_stack_offset_in_bytes_c, arg_c);
   __ addi(arg_java, arg_java, -BytesPerWord);
   __ addi(arg_c, arg_c, BytesPerWord);
   __ cmplwi(CCR0, fpcnt, max_fp_register_arguments);
@@ -951,14 +937,14 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call, Regist
          in_bytes(ConstMethod::size_of_parameters_offset()), Rconst_method);
   if (native_call) {
     // If we're calling a native method, we reserve space for the worst-case signature
-    // handler varargs vector, which is max(Argument::n_register_parameters, parameter_count+2).
+    // handler varargs vector, which is max(Argument::n_int_register_parameters_c, parameter_count+2).
     // We add two slots to the parameter_count, one for the jni
     // environment and one for a possible native mirror.
     Label skip_native_calculate_max_stack;
     __ addi(Rtop_frame_size, Rsize_of_parameters, 2);
-    __ cmpwi(CCR0, Rtop_frame_size, Argument::n_register_parameters);
+    __ cmpwi(CCR0, Rtop_frame_size, Argument::n_int_register_parameters_c);
     __ bge(CCR0, skip_native_calculate_max_stack);
-    __ li(Rtop_frame_size, Argument::n_register_parameters);
+    __ li(Rtop_frame_size, Argument::n_int_register_parameters_c);
     __ bind(skip_native_calculate_max_stack);
     __ sldi(Rsize_of_parameters, Rsize_of_parameters, Interpreter::logStackElementSize);
     __ sldi(Rtop_frame_size, Rtop_frame_size, Interpreter::logStackElementSize);
@@ -1355,7 +1341,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   // outgoing argument area.
   //
   // Not needed on PPC64.
-  //__ add(SP, SP, Argument::n_register_parameters*BytesPerWord);
+  //__ add(SP, SP, Argument::n_int_register_parameters_c*BytesPerWord);
 
   assert(result_handler_addr->is_nonvolatile(), "result_handler_addr must be in a non-volatile register");
   // Save across call to native method.

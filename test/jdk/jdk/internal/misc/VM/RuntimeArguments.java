@@ -23,11 +23,12 @@
 
 /**
  * @test
- * @summary Basic test of VM::getRuntimeArguments
+ * @requires vm.flagless
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          jdk.zipfs
  * @run testng RuntimeArguments
+ * @summary Basic test of VM::getRuntimeArguments
  */
 
 import java.io.IOException;
@@ -46,7 +47,6 @@ import org.testng.annotations.Test;
 import static org.testng.Assert.*;
 
 public class RuntimeArguments {
-    static final String TEST_CLASSES = System.getProperty("test.classes");
     static final List<String> VM_OPTIONS = getInitialOptions();
 
     /*
@@ -112,11 +112,9 @@ public class RuntimeArguments {
 
     @Test(dataProvider = "options")
     public void test(List<String> args, List<String> expected) throws Exception {
-        // launch a test program
-        // $ java <args> -classpath <cpath> RuntimeArguments <vm_options> <expected>
-        Stream<String> options = Stream.concat(args.stream(),
-            Stream.of("-classpath", TEST_CLASSES, "RuntimeArguments"));
-
+        // launch a test program with classpath set by ProcessTools::createLimitedTestJavaProcessBuilder
+        // $ java <args> RuntimeArguments <vm_options> <expected>
+        Stream<String> options = Stream.concat(args.stream(), Stream.of("RuntimeArguments"));
         ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
             // The runtime image may be created with jlink --add-options
             // The initial VM options will be included in the result

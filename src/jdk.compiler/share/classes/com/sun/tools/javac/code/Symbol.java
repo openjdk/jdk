@@ -435,6 +435,10 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
         return (flags_field & FINAL) != 0;
     }
 
+    public boolean isImplicit() {
+        return (flags_field & IMPLICIT_CLASS) != 0;
+    }
+
    /** Is this symbol declared (directly or indirectly) local
      *  to a method or variable initializer?
      *  Also includes fields of inner classes which are in
@@ -1256,7 +1260,6 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
 
     /** A class for class symbols
      */
-    @SuppressWarnings("preview") // isUnnamed()
     public static class ClassSymbol extends TypeSymbol implements TypeElement {
 
         /** a scope for all class members; variables, methods and inner classes
@@ -1370,7 +1373,7 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
 
          @Override @DefinedBy(Api.LANGUAGE_MODEL)
          public Name getQualifiedName() {
-             return isUnnamed() ? fullname.subName(0, 0) /* empty name */ : fullname;
+             return fullname;
          }
 
          @Override @DefinedBy(Api.LANGUAGE_MODEL)
@@ -1551,7 +1554,7 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
         @DefinedBy(Api.LANGUAGE_MODEL)
         public NestingKind getNestingKind() {
             apiComplete();
-            if (owner.kind == PCK) // Handles unnamed classes as well
+            if (owner.kind == PCK) // Handles implicitly declared classes as well
                 return NestingKind.TOP_LEVEL;
             else if (name.isEmpty())
                 return NestingKind.ANONYMOUS;
@@ -1641,11 +1644,6 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
         @DefinedBy(Api.LANGUAGE_MODEL)
         public List<Type> getPermittedSubclasses() {
             return permitted.map(s -> s.type);
-        }
-
-        @Override @DefinedBy(Api.LANGUAGE_MODEL)
-        public boolean isUnnamed() {
-            return (flags_field & Flags.UNNAMED_CLASS) != 0 ;
         }
     }
 

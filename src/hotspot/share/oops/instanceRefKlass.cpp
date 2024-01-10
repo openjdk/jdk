@@ -23,12 +23,17 @@
  */
 
 #include "precompiled.hpp"
+#include "cds/cdsConfig.hpp"
 #include "classfile/classFileParser.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "oops/instanceRefKlass.inline.hpp"
 #include "oops/oop.inline.hpp"
+
+InstanceRefKlass::InstanceRefKlass() {
+  assert(CDSConfig::is_dumping_static_archive() || UseSharedSpaces, "only for CDS");
+}
 
 static ReferenceType reference_subclass_name_to_type(const Symbol* name) {
   if (       name == vmSymbols::java_lang_ref_SoftReference()) {
