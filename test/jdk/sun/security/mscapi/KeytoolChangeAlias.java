@@ -25,6 +25,7 @@ import jdk.test.lib.SecurityTools;
 import jdk.test.lib.security.CertUtils;
 
 import java.security.KeyStore;
+import java.security.SecureRandom;
 
 /*
  * @test
@@ -35,15 +36,17 @@ import java.security.KeyStore;
  */
 public class KeytoolChangeAlias {
     public static void main(String[] args) throws Exception {
-
+        SecureRandom random = new SecureRandom();
+        String alias = Integer.toString(random.nextInt(1000, 9999));
+        String newAlias = alias + "1";
         KeyStore ks = KeyStore.getInstance("Windows-MY");
         ks.load(null, null);
 
         try {
-            ks.setCertificateEntry("246810", CertUtils.getCertFromFile("246810.cer"));
+            ks.setCertificateEntry(alias, CertUtils.getCertFromFile("246810.cer"));
 
-            if (ks.containsAlias("13579")) {
-                ks.deleteEntry("13579");
+            if (ks.containsAlias(newAlias)) {
+                ks.deleteEntry(newAlias);
             }
 
             int before = ks.size();
@@ -52,8 +55,8 @@ public class KeytoolChangeAlias {
 
             SecurityTools.keytool("-changealias",
                     "-storetype", "Windows-My",
-                    "-alias", "246810",
-                    "-destalias", "13579").shouldHaveExitValue(0);
+                    "-alias", alias,
+                    "-destalias", newAlias).shouldHaveExitValue(0);
 
             ks.load(null, null);
 
@@ -63,13 +66,23 @@ public class KeytoolChangeAlias {
                         + ". After: " + ks.size());
             }
 
-            if (!ks.containsAlias("13579")) {
+            if (!ks.containsAlias(newAlias)) {
                 throw new Exception("error: cannot find the new alias name"
                         + " in the Windows-MY store");
             }
         } finally {
-            ks.deleteEntry("13579");
-            ks.deleteEntry("246810");
+            try {
+                ks.deleteEntry(newAlias);
+            } catch (Exception e) {
+                System.err.println("Couldn't delete alias " + newAlias);
+                e.printStackTrace(System.err);
+            }
+            try {
+                ks.deleteEntry(alias);
+            } catch (Exception e) {
+                System.err.println("Couldn't delete alias " + alias);
+                e.printStackTrace(System.err);
+            }
             ks.store(null, null);
         }
     }
