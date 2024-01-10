@@ -1,0 +1,5 @@
+#include "precompiled.hpp"
+#include "logging/circularStringBuffer.hpp"
+#include "logging/logDecorations.hpp"
+#include "threadHelper.inline.hpp"
+#include "unittest.hpp"
