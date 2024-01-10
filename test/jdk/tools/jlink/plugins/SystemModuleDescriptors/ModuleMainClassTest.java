@@ -102,7 +102,7 @@ public class ModuleMainClassTest {
     }
 
     @Test
-    public void testComFoo() throws Exception {
+    public void testComFoo() throws Throwable {
         if (!hasJmods()) return;
 
         Path java = IMAGE.resolve("bin").resolve("java");
@@ -114,7 +114,7 @@ public class ModuleMainClassTest {
     }
 
     @Test
-    public void testNetFoo() throws Exception {
+    public void testNetFoo() throws Throwable {
         if (!hasJmods()) return;
 
         Path java = IMAGE.resolve("bin").resolve("java");
