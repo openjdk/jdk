@@ -369,14 +369,20 @@ gss_import_name(OM_uint32 *minor_status,
 
     SEC_WCHAR* value = new SEC_WCHAR[len + 1];
     if (value == NULL) {
-        delete[] value;
-        return GSS_S_FAILURE;
+        goto err;
     }
+
+    goto execution;
+
+err:
+    delete[] value;
+    return GSS_S_FAILURE;
+
+execution:
 
     len = MultiByteToWideChar(CP_UTF8, 0, input, len, value, len+1);
     if (len == 0) {
-        delete[] value;
-        return GSS_S_FAILURE;
+        goto err;
     }
     value[len] = 0;
 
@@ -392,8 +398,7 @@ gss_import_name(OM_uint32 *minor_status,
         len--;
     }
     if (len == 0) {
-        delete[] value;
-        return GSS_S_FAILURE;
+        goto err;
     }
 
     if (input_name_type != NULL
@@ -414,8 +419,7 @@ gss_import_name(OM_uint32 *minor_status,
     PP("import_name to %ls", value);
     gss_name_struct* name = new gss_name_struct;
     if (name == nullptr) {
-        delete[] value;
-        return GSS_S_FAILURE;
+        goto err;
     }
     name->name = value;
     *output_name = (gss_name_t) name;
@@ -530,30 +534,21 @@ gss_export_name(OM_uint32 *minor_status,
     SEC_WCHAR* name = input_name->name;
     SEC_WCHAR* fullname = get_full_name(name);
     if (!fullname) {
-        if (fullname != name) {
-            delete[] fullname;
-        }
-        return result;
+        goto err;
     }
     PP("Make fullname: %ls -> %ls", name, fullname);
     int len;
     size_t namelen = wcslen(fullname);
     if (namelen > 255) {
-        if (fullname != name) {
-            delete[] fullname;
-        }
-        return result;
+        goto err;
     }
     len = (int)namelen;
     // We only deal with not-so-long names.
     // 04 01 00 ** 06 ** OID len:int32 name
     int mechLen = KRB5_OID.length;
-    char* buffer = (char*) malloc(10 + mechLen + len);
-    if (buffer == NULL) {
-        if (fullname != name) {
-            delete[] fullname;
-        }
-        return result;
+    char* buffer = static_cast<char*>(malloc(10 + mechLen + len));
+    if (buffer == nullptr) {
+        goto err;
     }
     buffer[0] = 4;
     buffer[1] = 1;
@@ -568,15 +563,12 @@ gss_export_name(OM_uint32 *minor_status,
                 buffer+10+mechLen, len, NULL, NULL);
     if (len == 0) {
         free(buffer);
-        if (fullname != name) {
-            delete[] fullname;
-        }
-        return result;
+        goto err;
     }
     exported_name->length = 10 + mechLen + len;
     exported_name->value = buffer;
     result = GSS_S_COMPLETE;
-
+err:
     if (fullname != name) {
         delete[] fullname;
     }
@@ -904,6 +896,22 @@ gss_init_sec_context(OM_uint32 *minor_status,
         return GSS_S_NO_CONTEXT;
     }
 
+    goto execution;
+
+err:
+    if (firstTime) {
+        OM_uint32 dummy;
+        gss_delete_sec_context(&dummy, context_handle, GSS_C_NO_BUFFER);
+    }
+    delete newCred;
+    if (output_token->value) {
+        gss_release_buffer(NULL, output_token);
+    }
+    output_token = GSS_C_NO_BUFFER;
+    return GSS_S_FAILURE;
+
+execution:
+
     DWORD outFlag;
     TCHAR outName[100];
 
@@ -913,16 +921,7 @@ gss_init_sec_context(OM_uint32 *minor_status,
     int len = MultiByteToWideChar(CP_UTF8, 0, (LPCCH)tn.value, (int)tn.length,
             outName, (sizeof(outName) / sizeof(outName[0])) - 1);
     if (len == 0) {
-        if (firstTime) {
-            OM_uint32 dummy;
-            gss_delete_sec_context(&dummy, context_handle, GSS_C_NO_BUFFER);
-        }
-        delete newCred;
-        if (output_token->value) {
-            gss_release_buffer(NULL, output_token);
-        }
-        output_token = GSS_C_NO_BUFFER;
-        return GSS_S_FAILURE;
+        goto err;
     }
     outName[len] = 0;
 
@@ -957,16 +956,7 @@ gss_init_sec_context(OM_uint32 *minor_status,
             PP("No credentials provided, acquire myself");
             newCred = new CredHandle;
             if (!newCred) {
-                if (firstTime) {
-                    OM_uint32 dummy;
-                    gss_delete_sec_context(&dummy, context_handle, GSS_C_NO_BUFFER);
-                }
-                delete newCred;
-                if (output_token->value) {
-                    gss_release_buffer(NULL, output_token);
-                }
-                output_token = GSS_C_NO_BUFFER;
-                return GSS_S_FAILURE;
+                goto err;
             }
             SEC_WINNT_AUTH_IDENTITY_EX auth;
             ZeroMemory(&auth, sizeof(auth));
@@ -986,16 +976,7 @@ gss_init_sec_context(OM_uint32 *minor_status,
                     newCred,
                     &lifeTime);
             if (!(SEC_SUCCESS(ss))) {
-                if (firstTime) {
-                    OM_uint32 dummy;
-                    gss_delete_sec_context(&dummy, context_handle, GSS_C_NO_BUFFER);
-                }
-                delete newCred;
-                if (output_token->value) {
-                    gss_release_buffer(NULL, output_token);
-                }
-                output_token = GSS_C_NO_BUFFER;
-                return GSS_S_FAILURE;
+                goto err;
             }
             pc->phCred = newCred;
             pc->isLocalCred = TRUE;
@@ -1017,16 +998,7 @@ gss_init_sec_context(OM_uint32 *minor_status,
 
     if (!SEC_SUCCESS(ss)) {
         PP("InitializeSecurityContext failed");
-        if (firstTime) {
-            OM_uint32 dummy;
-            gss_delete_sec_context(&dummy, context_handle, GSS_C_NO_BUFFER);
-        }
-        delete newCred;
-        if (output_token->value) {
-            gss_release_buffer(NULL, output_token);
-        }
-        output_token = GSS_C_NO_BUFFER;
-        return GSS_S_FAILURE;
+        goto err;
     }
 
     pc->flags = *ret_flags = flag_sspi_to_gss(outFlag);
@@ -1045,16 +1017,7 @@ gss_init_sec_context(OM_uint32 *minor_status,
         output_token->value = malloc(outSecBuff.cbBuffer);
         if (!output_token->value) {
             FreeContextBuffer(outSecBuff.pvBuffer);
-            if (firstTime) {
-                OM_uint32 dummy;
-                gss_delete_sec_context(&dummy, context_handle, GSS_C_NO_BUFFER);
-            }
-            delete newCred;
-            if (output_token->value) {
-                gss_release_buffer(NULL, output_token);
-            }
-            output_token = GSS_C_NO_BUFFER;
-            return GSS_S_FAILURE;
+            goto err;
         }
         memcpy(output_token->value, outSecBuff.pvBuffer, outSecBuff.cbBuffer);
         FreeContextBuffer(outSecBuff.pvBuffer);
@@ -1066,16 +1029,7 @@ gss_init_sec_context(OM_uint32 *minor_status,
         pc->established = true;
         ss = QueryContextAttributes(&pc->hCtxt, SECPKG_ATTR_NATIVE_NAMES, &pc->nnames);
         if (!SEC_SUCCESS(ss)) {
-            if (firstTime) {
-                OM_uint32 dummy;
-                gss_delete_sec_context(&dummy, context_handle, GSS_C_NO_BUFFER);
-            }
-            delete newCred;
-            if (output_token->value) {
-                gss_release_buffer(NULL, output_token);
-            }
-            output_token = GSS_C_NO_BUFFER;
-            return GSS_S_FAILURE;
+            goto err;
         }
         PP("Names. %ls %ls", pc->nnames.sClientName, pc->nnames.sServerName);
         *ret_flags |= GSS_C_PROT_READY_FLAG;
