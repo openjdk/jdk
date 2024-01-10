@@ -27,12 +27,15 @@ import java.awt.GraphicsDevice;
 import java.awt.GraphicsEnvironment;
 import java.awt.Robot;
 
+import jtreg.SkippedException;
+
 import static java.awt.EventQueue.invokeAndWait;
 
 /*
  * @test
  * @key headful
  * @bug 8312518
+ * @library /test/lib
  * @summary Setting fullscreen window using setFullScreenWindow() shows up
  *          as black screen on newer macOS versions (13 & 14).
  */
@@ -40,14 +43,23 @@ import static java.awt.EventQueue.invokeAndWait;
 public class SetFullScreenTest {
     private static Frame frame;
     private static GraphicsDevice gd;
+    private static Robot robot;
     private static volatile int width;
     private static volatile int height;
 
     public static void main(String[] args) throws Exception {
         try {
-            Robot robot = new Robot();
+            robot = new Robot();
             invokeAndWait(() -> {
-                frame = new Frame();
+                gd = GraphicsEnvironment.getLocalGraphicsEnvironment().
+                        getDefaultScreenDevice();
+                if (!gd.isFullScreenSupported()) {
+                    throw new SkippedException("Full Screen mode not supported");
+                }
+            });
+
+            invokeAndWait(() -> {
+                frame = new Frame("Test FullScreen mode");
                 frame.setBackground(Color.RED);
                 frame.setSize(100, 100);
                 frame.setLocation(10, 10);
@@ -55,11 +67,8 @@ public class SetFullScreenTest {
             });
             robot.delay(1000);
 
-            invokeAndWait(() -> {
-                gd = GraphicsEnvironment.getLocalGraphicsEnvironment().
-                                getDefaultScreenDevice();
-                gd.setFullScreenWindow(frame);
-            });
+            invokeAndWait(() -> gd.setFullScreenWindow(frame));
+            robot.waitForIdle();
             robot.delay(300);
 
             invokeAndWait(() -> {
@@ -68,6 +77,8 @@ public class SetFullScreenTest {
             });
 
             if (!robot.getPixelColor(width / 2, height / 2).equals(Color.RED)) {
+                System.err.println("Actual color: " + robot.getPixelColor(width / 2, height / 2)
+                                    + " Expected color: " + Color.RED);
                 throw new RuntimeException("Test Failed! Window not in full screen mode");
             }
         } finally {
