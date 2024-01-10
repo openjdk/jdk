@@ -82,7 +82,7 @@ JfrJniMethodRegistration::JfrJniMethodRegistration(JNIEnv* env) {
       (char*)"uncaughtException", (char*)"(Ljava/lang/Thread;Ljava/lang/Throwable;)V", (void*)jfr_uncaught_exception,
       (char*)"setForceInstrumentation", (char*)"(Z)V", (void*)jfr_set_force_instrumentation,
       (char*)"getUnloadedEventClassCount", (char*)"()J", (void*)jfr_get_unloaded_event_classes_count,
-      (char*)"setCutoff", (char*)"(JJ)Z", (void*)jfr_set_cutoff,
+      (char*)"setMiscellaneous", (char*)"(JJ)V", (void*)jfr_set_miscellaneous,
       (char*)"setThrottle", (char*)"(JJJ)Z", (void*)jfr_set_throttle,
       (char*)"emitOldObjectSamples", (char*)"(JZZ)V", (void*)jfr_emit_old_object_samples,
       (char*)"shouldRotateDisk", (char*)"()Z", (void*)jfr_should_rotate_disk,

@@ -3436,10 +3436,6 @@ bool os::can_commit_large_page_memory() {
   return false;
 }
 
-bool os::can_execute_large_page_memory() {
-  return true;
-}
-
 static char* reserve_large_pages_individually(size_t size, char* req_addr, bool exec) {
   log_debug(pagesize)("Reserving large pages individually.");
 
