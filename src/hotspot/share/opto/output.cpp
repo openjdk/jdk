@@ -1093,7 +1093,7 @@ void PhaseOutput::Process_OopMap_Node(MachNode *mach, int current_offset) {
           GrowableArray<ScopeValue*> deps;
 
           int merge_pointer_idx = smerge->merge_pointer_idx(youngest_jvms);
-          (void)FillLocArray(0, sfn, sfn->in(merge_pointer_idx), &deps, objs);
+          FillLocArray(0, sfn, sfn->in(merge_pointer_idx), &deps, objs);
           assert(deps.length() == 1, "missing value");
 
           int selector_idx = smerge->selector_idx(youngest_jvms);
