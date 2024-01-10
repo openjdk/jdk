@@ -1604,7 +1604,7 @@ size_t FileMapInfo::write_heap_region(ArchiveHeapInfo* heap_info) {
   header()->set_heap_ptrmap_leading_zeros(heap_info->ptrmap()->find_first_set_bit(0));
 
   // Remove leading zeros
-  if (UseNewCode) {
+  // if (UseNewCode) {
     size_t old_oop_zeros = header()->heap_oopmap_leading_zeros();
     size_t old_ptr_zeros = header()->heap_ptrmap_leading_zeros();
     heap_info->oopmap()->slice(header()->heap_oopmap_leading_zeros(), heap_info->oopmap()->size());
@@ -1615,7 +1615,7 @@ size_t FileMapInfo::write_heap_region(ArchiveHeapInfo* heap_info) {
 
     assert(header()->heap_oopmap_leading_zeros() < old_oop_zeros, "Should have removed leading zeros");
     assert(header()->heap_ptrmap_leading_zeros() < old_ptr_zeros, "Should have removed leading zeros");
-  }
+  //}
   return buffer_size;
 }
 

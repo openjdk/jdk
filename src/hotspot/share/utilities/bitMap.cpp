@@ -101,6 +101,8 @@ void GrowableBitMap<BitMapWithAllocator>::resize(idx_t new_size_in_bits, bool cl
 
 template <class BitMapWithAllocator>
 void GrowableBitMap<BitMapWithAllocator>::slice(idx_t start_bit, idx_t end_bit, bool clear) {
+  assert(start_bit > 0, "Invalid start bit");
+  assert(&& start_bit < end_bit, "End bit must come after start bit");
   idx_t start_word = to_words_align_up(start_bit);
   idx_t end_word = to_words_align_up(end_bit);
   bm_word_t* const old_map = map();
