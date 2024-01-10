@@ -58,6 +58,7 @@ import static java.util.Collections.singletonMap;
 /*
  * @test
  * @bug 8064925
+ * @library /test/lib
  * @summary Basic test for ContentHandler. Ensures discovery paths for content
  *          handlers follow a particular order.
  */
