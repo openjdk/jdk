@@ -28,9 +28,11 @@
  * @summary Testing PEM decodings
  */
 
+import javax.crypto.EncryptedPrivateKeyInfo;
 import java.io.IOException;
 import java.rmi.RemoteException;
 import java.security.PEMDecoder;
+import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.SecurityObject;
 import java.security.interfaces.ECPrivateKey;
@@ -52,6 +54,8 @@ public class PEMDecoderTest {
         testTwoKeys();
         testFailure(PEMCerts.getEntry("ecprivpem"), ECPublicKey.class, false);
         testFailure(PEMCerts.getEntry(PEMCerts.failureEntryList, "rsaOpenSSL"), RSAPublicKey.class, false);
+        testEncrypted(PEMCerts.getEntry(PEMCerts.encryptedList, "encECKey"), PrivateKey.class, "fish".toCharArray());
+        testEncrypted(PEMCerts.getEntry(PEMCerts.encryptedList, "encECKey"), EncryptedPrivateKeyInfo.class, "fish".toCharArray());
     }
 
     static void testFailure(PEMCerts.Entry entry, Class c, boolean expected) {
@@ -95,28 +99,41 @@ public class PEMDecoderTest {
         }
     }
 
-
-    static List getInterfaceList(Class<?> so) {
-        Class<?>[] clist = so.getInterfaces();
-        ArrayList<Class> list = new ArrayList<>();
-        list.addAll(Arrays.asList(clist));
-        if (clist.length > 0) {
-            for (Class cc : clist) {
-                list.addAll(getInterfaceList(cc));
+    static List getInterfaceList(Class ccc) {
+        Class<?>[] interfaces = ccc.getInterfaces();
+        List<Class> list = new ArrayList<>(Arrays.asList(interfaces));
+        //Arrays.stream(interfaces).forEach(cl -> list.add(cl));
+        list.add(ccc.getSuperclass());
+        List<Class> results = new ArrayList<>(list);
+        if (list.size() > 0) {
+            for (Class cname : list) {
+                try {
+                    if (cname != null &&
+                        cname.getName().startsWith("java.security.")) {
+                        results.addAll(getInterfaceList(cname));
+                    }
+                } catch (Exception e) {
+                    System.err.println("Exception with " + cname);
+                }
             }
         }
-        return list;
+        return results;
     }
 
     static void test(String pem, Class c, boolean expected) throws IOException {
         var pk = new PEMDecoder().decode(pem);
+        if (pk.getClass().equals(c)) {
+            return;
+        }
         List<Class> list = getInterfaceList(pk.getClass());
+        list.add(pk.getClass());
         for(Class cc : list) {
-            if (cc.equals(c)) {
+            if (cc != null && cc.equals(c)) {
                 return;
             }
         }
-        throw new RuntimeException("Entry did not contain expected: " + c);
+        throw new RuntimeException("Entry did not contain expected: " +
+            c.getName());
     }
 
     // Run the same key twice through the same decoder and make sure the
@@ -133,5 +150,20 @@ public class PEMDecoderTest {
             throw new AssertionError("Two decoding of the same key failed to" +
                 " match: ");
         }
+    }
+
+    static void testEncrypted(PEMCerts.Entry entry, Class c, char[] password) throws IOException {
+        PEMDecoder pd = new PEMDecoder();
+        if (c != EncryptedPrivateKeyInfo.class) {
+            pd = pd.withDecryption(password);
+        }
+        var pk = pd.decode(entry.pem());
+        List<Class> list = getInterfaceList(pk.getClass());
+        for(Class cc : list) {
+            if (cc.equals(c)) {
+                return;
+            }
+        }
+        throw new RuntimeException("Entry did not contain expected: PrivateKey.class");
     }
 }

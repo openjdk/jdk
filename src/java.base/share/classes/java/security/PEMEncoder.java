@@ -92,26 +92,25 @@ final public class PEMEncoder implements Encoder<SecurityObject> {
      */
     private String pemEncoded(Pem.KeyType keyType, byte[] encoded) {
         StringBuilder sb = new StringBuilder(200);
-        Base64.Encoder e = Base64.getEncoder();
         switch (keyType) {
             case PUBLIC -> {
                 sb.append(Pem.PUBHEADER);
                 sb.append(Pem.LINESEPARATOR);
-                sb.append(e.encodeToString(encoded));
+                sb.append(convertToPEM(encoded));
                 sb.append(Pem.PUBFOOTER);
                 sb.append(Pem.LINESEPARATOR);
             }
             case PRIVATE -> {
                 sb.append(Pem.PKCS8HEADER);
                 sb.append(Pem.LINESEPARATOR);
-                sb.append(e.encodeToString(encoded));
+                sb.append(convertToPEM(encoded));
                 sb.append(Pem.PKCS8FOOTER);
                 sb.append(Pem.LINESEPARATOR);
             }
             case ENCRYPTED_PRIVATE -> {
                 sb.append(Pem.PKCS8ENCHEADER);
                 sb.append(Pem.LINESEPARATOR);
-                sb.append(e.encodeToString(encoded));
+                sb.append(convertToPEM(encoded));
                 sb.append(Pem.PKCS8ENCFOOTER);
                 sb.append(Pem.LINESEPARATOR);
             }
@@ -120,6 +119,26 @@ final public class PEMEncoder implements Encoder<SecurityObject> {
             }
         }
         return sb.toString();
+    }
+
+    static String convertToPEM(byte[] encoding) {
+        if (encoding.length == 0) {
+            return "";
+        }
+        Base64.Encoder e = Base64.getEncoder();
+        String pem = e.encodeToString(encoding);
+        int len = pem.length();
+        int lines = (pem.length() / 64);
+        StringBuffer buf = new StringBuffer(len + (lines * 2));
+        int i = 0;
+        while (i + 64 < len) {
+            buf.append(pem.substring(i, i + 64));
+            buf.append(Pem.LINESEPARATOR);
+            i += 64;
+        }
+        buf.append(pem.substring(i));
+        buf.append(Pem.LINESEPARATOR);
+        return buf.toString();
     }
 
     /**
@@ -158,7 +177,7 @@ final public class PEMEncoder implements Encoder<SecurityObject> {
                 StringBuffer sb = new StringBuffer(512);
                 sb.append(Pem.CERTHEADER);
                 try {
-                    sb.append(Base64.getEncoder().encodeToString(c.getEncoded()));
+                    sb.append(Base64.getMimeEncoder().encodeToString(c.getEncoded()));
                 } catch (CertificateException e) {
                     throw new IOException(e);
                 }
@@ -170,7 +189,7 @@ final public class PEMEncoder implements Encoder<SecurityObject> {
                 StringBuffer sb = new StringBuffer(512);
                 sb.append(Pem.CRLHEADER);
                 try {
-                    sb.append(Base64.getEncoder().encodeToString(xcrl.getEncoded()));
+                    sb.append(Base64.getMimeEncoder().encodeToString(xcrl.getEncoded()));
                 } catch (CRLException e) {
                     throw new IOException(e);
                 }

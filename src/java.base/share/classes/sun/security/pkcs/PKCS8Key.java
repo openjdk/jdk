@@ -162,7 +162,6 @@ public class PKCS8Key implements PrivateKey, InternalPrivateKey {
 
             // OPTIONAL context tag 1 for Public Key for PKCS8 v2 only
             if (version == V2) {
-                System.err.println("writing pub");
                 result = val.data.getOptionalImplicitContextSpecific(1,
                     DerValue.tag_BitString);
                 if (result.isPresent()) {
