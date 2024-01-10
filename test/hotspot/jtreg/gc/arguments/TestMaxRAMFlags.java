@@ -61,8 +61,7 @@ public class TestMaxRAMFlags {
     args.add("-XX:+PrintFlagsFinal");
     args.add("-version");
 
-    ProcessBuilder pb = GCArguments.createLimitedTestJavaProcessBuilder(args);
-    OutputAnalyzer output = new OutputAnalyzer(pb.start());
+    OutputAnalyzer output = GCArguments.executeLimitedTestJava(args);
     output.shouldHaveExitValue(0);
     String stdout = output.getStdout();
 
@@ -84,8 +83,7 @@ public class TestMaxRAMFlags {
     args.add("-XX:+PrintFlagsFinal");
     args.add("-version");
 
-    ProcessBuilder pb = GCArguments.createLimitedTestJavaProcessBuilder(args);
-    OutputAnalyzer output = new OutputAnalyzer(pb.start());
+    OutputAnalyzer output = GCArguments.executeLimitedTestJava(args);
     output.shouldHaveExitValue(0);
     String stdout = output.getStdout();
     return (new Long(getFlagValue("HeapBaseMinAddress", stdout)).longValue());

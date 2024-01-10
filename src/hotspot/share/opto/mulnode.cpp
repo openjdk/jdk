@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -610,6 +610,13 @@ Node *AndINode::Ideal(PhaseGVN *phase, bool can_reshape) {
     return progress;
   }
 
+  // Convert "(~a) & (~b)" into "~(a | b)"
+  if (AddNode::is_not(phase, in(1), T_INT) && AddNode::is_not(phase, in(2), T_INT)) {
+    Node* or_a_b = new OrINode(in(1)->in(1), in(2)->in(1));
+    Node* tn = phase->transform(or_a_b);
+    return AddNode::make_not(phase, tn, T_INT);
+  }
+
   // Special case constant AND mask
   const TypeInt *t2 = phase->type( in(2) )->isa_int();
   if( !t2 || !t2->is_con() ) return MulNode::Ideal(phase, can_reshape);
@@ -748,6 +755,13 @@ Node *AndLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   Node* progress = AndIL_add_shift_and_mask(phase, T_LONG);
   if (progress != nullptr) {
     return progress;
+  }
+
+  // Convert "(~a) & (~b)" into "~(a | b)"
+  if (AddNode::is_not(phase, in(1), T_LONG) && AddNode::is_not(phase, in(2), T_LONG)) {
+    Node* or_a_b = new OrLNode(in(1)->in(1), in(2)->in(1));
+    Node* tn = phase->transform(or_a_b);
+    return AddNode::make_not(phase, tn, T_LONG);
   }
 
   // Special case constant AND mask

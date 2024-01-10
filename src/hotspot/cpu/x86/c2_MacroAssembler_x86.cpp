@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -5223,8 +5223,8 @@ void C2_MacroAssembler::vector_mask_operation(int opc, Register dst, KRegister m
 
 void C2_MacroAssembler::vector_mask_operation(int opc, Register dst, XMMRegister mask, XMMRegister xtmp,
                                               Register tmp, int masklen, BasicType bt, int vec_enc) {
-  assert(vec_enc == AVX_128bit && VM_Version::supports_avx() ||
-         vec_enc == AVX_256bit && (VM_Version::supports_avx2() || type2aelembytes(bt) >= 4), "");
+  assert((vec_enc == AVX_128bit && VM_Version::supports_avx()) ||
+         (vec_enc == AVX_256bit && (VM_Version::supports_avx2() || type2aelembytes(bt) >= 4)), "");
   assert(VM_Version::supports_popcnt(), "");
 
   bool need_clip = false;

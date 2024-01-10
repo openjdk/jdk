@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024 Alibaba Group Holding Limited. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,21 +19,25 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-package gc.stress.gclocker;
-
-/*
- * @test TestGCLockerWithParallel
- * @library /
- * @requires vm.gc.Parallel
- * @summary Stress Parallel's GC locker by calling GetPrimitiveArrayCritical while concurrently filling up old gen.
- * @run main/native/othervm/timeout=200 -Xlog:gc*=info -Xms1500m -Xmx1500m -XX:+UseParallelGC gc.stress.gclocker.TestGCLockerWithParallel
+/**
+ * @test
+ * @requires vm.gc.Serial & (vm.opt.DisableExplicitGC != "true")
+ * @summary Test of option -XX:FullGCHeapDumpLimit
+ * @library /test/lib
+ * @run main/othervm -XX:+UseSerialGC -XX:+HeapDumpBeforeFullGC -XX:+HeapDumpAfterFullGC -XX:HeapDumpPath=test.hprof -XX:FullGCHeapDumpLimit=1 FullGCHeapDumpLimitTest
  */
-public class TestGCLockerWithParallel {
-    public static void main(String[] args) {
-        String[] testArgs = {"2", "PS Old Gen"};
-        TestGCLocker.main(testArgs);
+
+import java.io.File;
+
+import jdk.test.lib.Asserts;
+
+public class FullGCHeapDumpLimitTest {
+
+    public static void main(String[] args) throws Exception {
+        System.gc();
+        Asserts.assertTrue(new File("test.hprof").exists());
+        Asserts.assertFalse(new File("test.hprof.1").exists());
     }
 }

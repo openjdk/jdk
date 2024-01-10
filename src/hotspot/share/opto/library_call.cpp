@@ -873,8 +873,7 @@ inline Node* LibraryCallKit::generate_negative_guard(Node* index, RegionNode* re
   Node* is_neg = generate_guard(bol_lt, region, PROB_MIN);
   if (is_neg != nullptr && pos_index != nullptr) {
     // Emulate effect of Parse::adjust_map_after_if.
-    Node* ccast = new CastIINode(index, TypeInt::POS);
-    ccast->set_req(0, control());
+    Node* ccast = new CastIINode(control(), index, TypeInt::POS);
     (*pos_index) = _gvn.transform(ccast);
   }
   return is_neg;
@@ -1141,7 +1140,9 @@ bool LibraryCallKit::inline_preconditions_checkIndex(BasicType bt) {
 
   // length is now known positive, add a cast node to make this explicit
   jlong upper_bound = _gvn.type(length)->is_integer(bt)->hi_as_long();
-  Node* casted_length = ConstraintCastNode::make(control(), length, TypeInteger::make(0, upper_bound, Type::WidenMax, bt), ConstraintCastNode::RegularDependency, bt);
+  Node* casted_length = ConstraintCastNode::make_cast_for_basic_type(
+      control(), length, TypeInteger::make(0, upper_bound, Type::WidenMax, bt),
+      ConstraintCastNode::RegularDependency, bt);
   casted_length = _gvn.transform(casted_length);
   replace_in_map(length, casted_length);
   length = casted_length;
@@ -1169,7 +1170,9 @@ bool LibraryCallKit::inline_preconditions_checkIndex(BasicType bt) {
   }
 
   // index is now known to be >= 0 and < length, cast it
-  Node* result = ConstraintCastNode::make(control(), index, TypeInteger::make(0, upper_bound, Type::WidenMax, bt), ConstraintCastNode::RegularDependency, bt);
+  Node* result = ConstraintCastNode::make_cast_for_basic_type(
+      control(), index, TypeInteger::make(0, upper_bound, Type::WidenMax, bt),
+      ConstraintCastNode::RegularDependency, bt);
   result = _gvn.transform(result);
   set_result(result);
   replace_in_map(index, result);
@@ -4312,8 +4315,7 @@ bool LibraryCallKit::inline_array_copyOf(bool is_copyOfRange) {
       // Improve the klass node's type from the new optimistic assumption:
       ciKlass* ak = ciArrayKlass::make(env()->Object_klass());
       const Type* akls = TypeKlassPtr::make(TypePtr::NotNull, ak, 0/*offset*/);
-      Node* cast = new CastPPNode(klass_node, akls);
-      cast->init_req(0, control());
+      Node* cast = new CastPPNode(control(), klass_node, akls);
       klass_node = _gvn.transform(cast);
     }
 
@@ -5940,8 +5942,7 @@ bool LibraryCallKit::inline_multiplyToLen() {
      } __ else_(); {
        // Update graphKit memory and control from IdealKit.
        sync_kit(ideal);
-       Node *cast = new CastPPNode(z, TypePtr::NOTNULL);
-       cast->init_req(0, control());
+       Node* cast = new CastPPNode(control(), z, TypePtr::NOTNULL);
        _gvn.set_type(cast, cast->bottom_type());
        C->record_for_igvn(cast);
 

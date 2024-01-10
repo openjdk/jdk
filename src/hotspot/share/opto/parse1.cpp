@@ -401,19 +401,17 @@ Parse::Parse(JVMState* caller, ciMethod* parse_method, float expected_uses)
   _wrote_stable = false;
   _wrote_fields = false;
   _alloc_with_final = nullptr;
-  _entry_bci = InvocationEntryBci;
-  _tf = nullptr;
   _block = nullptr;
   _first_return = true;
   _replaced_nodes_for_exceptions = false;
   _new_idx = C->unique();
-  debug_only(_block_count = -1);
-  debug_only(_blocks = (Block*)-1);
+  DEBUG_ONLY(_entry_bci = UnknownBci);
+  DEBUG_ONLY(_block_count = -1);
+  DEBUG_ONLY(_blocks = (Block*)-1);
 #ifndef PRODUCT
   if (PrintCompilation || PrintOpto) {
     // Make sure I have an inline tree, so I can print messages about it.
-    JVMState* ilt_caller = is_osr_parse() ? caller->caller() : caller;
-    InlineTree::find_subtree_from_root(C->ilt(), ilt_caller, parse_method);
+    InlineTree::find_subtree_from_root(C->ilt(), caller, parse_method);
   }
   _max_switch_depth = 0;
   _est_switch_depth = 0;
@@ -423,23 +421,11 @@ Parse::Parse(JVMState* caller, ciMethod* parse_method, float expected_uses)
     C->set_has_reserved_stack_access(true);
   }
 
-  if (parse_method->is_synchronized()) {
+  if (parse_method->is_synchronized() || parse_method->has_monitor_bytecodes()) {
     C->set_has_monitors(true);
   }
 
-  _tf = TypeFunc::make(method());
   _iter.reset_to_method(method());
-  _flow = method()->get_flow_analysis();
-  if (_flow->failing()) {
-    assert(false, "type flow failed during parsing");
-    C->record_method_not_compilable(_flow->failure_reason());
-  }
-
-#ifndef PRODUCT
-  if (_flow->has_irreducible_entry()) {
-    C->set_parsed_irreducible_loop(true);
-  }
-#endif
   C->set_has_loops(C->has_loops() || method()->has_loops());
 
   if (_expected_uses <= 0) {
@@ -507,14 +493,25 @@ Parse::Parse(JVMState* caller, ciMethod* parse_method, float expected_uses)
 
   // Do some special top-level things.
   if (depth() == 1 && C->is_osr_compilation()) {
+    _tf = C->tf();     // the OSR entry type is different
     _entry_bci = C->entry_bci();
     _flow = method()->get_osr_flow_analysis(osr_bci());
-    if (_flow->failing()) {
-      assert(false, "type flow analysis failed for OSR compilation");
-      C->record_method_not_compilable(_flow->failure_reason());
+  } else {
+    _tf = TypeFunc::make(method());
+    _entry_bci = InvocationEntryBci;
+    _flow = method()->get_flow_analysis();
+  }
+
+  if (_flow->failing()) {
+    assert(false, "type flow analysis failed during parsing");
+    C->record_method_not_compilable(_flow->failure_reason());
 #ifndef PRODUCT
       if (PrintOpto && (Verbose || WizardMode)) {
-        tty->print_cr("OSR @%d type flow bailout: %s", _entry_bci, _flow->failure_reason());
+        if (is_osr_parse()) {
+          tty->print_cr("OSR @%d type flow bailout: %s", _entry_bci, _flow->failure_reason());
+        } else {
+          tty->print_cr("type flow bailout: %s", _flow->failure_reason());
+        }
         if (Verbose) {
           method()->print();
           method()->print_codes();
@@ -522,8 +519,6 @@ Parse::Parse(JVMState* caller, ciMethod* parse_method, float expected_uses)
         }
       }
 #endif
-    }
-    _tf = C->tf();     // the OSR entry type is different
   }
 
 #ifdef ASSERT
@@ -535,6 +530,10 @@ Parse::Parse(JVMState* caller, ciMethod* parse_method, float expected_uses)
 #endif
 
 #ifndef PRODUCT
+  if (_flow->has_irreducible_entry()) {
+    C->set_parsed_irreducible_loop(true);
+  }
+
   methods_parsed++;
   // add method size here to guarantee that inlined methods are added too
   if (CITime)
@@ -1512,13 +1511,13 @@ void Parse::do_one_block() {
     int ns = b->num_successors();
     int nt = b->all_successors();
 
-    tty->print("Parsing block #%d at bci [%d,%d), successors: ",
+    tty->print("Parsing block #%d at bci [%d,%d), successors:",
                   block()->rpo(), block()->start(), block()->limit());
     for (int i = 0; i < nt; i++) {
-      tty->print((( i < ns) ? " %d" : " %d(e)"), b->successor_at(i)->rpo());
+      tty->print((( i < ns) ? " %d" : " %d(exception block)"), b->successor_at(i)->rpo());
     }
     if (b->is_loop_head()) {
-      tty->print("  lphd");
+      tty->print("  loop head");
     }
     if (b->is_irreducible_loop_entry()) {
       tty->print("  irreducible");
