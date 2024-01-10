@@ -254,7 +254,7 @@ public class DropTargetDropEvent extends DropTargetEvent {
     }
 
     /**
-     * This method returns an {@code int} indicating if the source is in the
+     * This method returns an {@code boolean} indicating if the source is in the
      * same JVM as the target.
      *
      * @return {@code true} if the Source is in the same JVM, otherwise
