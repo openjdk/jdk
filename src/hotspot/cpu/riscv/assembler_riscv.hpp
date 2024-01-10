@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -1156,10 +1156,8 @@ static Assembler::SEW elemtype_to_sew(BasicType etype) {
 }
 
 #define patch_vtype(hsb, lsb, vlmul, vsew, vta, vma, vill)   \
-    if (vill == 1) {                                         \
-      guarantee((vlmul | vsew | vta | vma == 0),             \
-                "the other bits in vtype shall be zero");    \
-    }                                                        \
+    /* If vill then other bits of vtype must be zero. */     \
+    guarantee(!vill, "vill not supported");                  \
     patch((address)&insn, lsb + 2, lsb, vlmul);              \
     patch((address)&insn, lsb + 5, lsb + 3, vsew);           \
     patch((address)&insn, lsb + 6, vta);                     \
