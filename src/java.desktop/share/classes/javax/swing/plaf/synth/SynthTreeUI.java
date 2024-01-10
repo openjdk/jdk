@@ -72,10 +72,16 @@ public class SynthTreeUI extends BasicTreeUI
     private int padding;
 
     private boolean useTreeColors;
+    private enum IconType {
+        EXPANDED,
+        COLLAPSED
+    }
 
-    private Icon expandedIconWrapper = new ExpandedIconWrapper();
+    private Icon expandedIconWrapper = new IconWrapper(IconType.EXPANDED);
 
-    private Icon collapsedIconWrapper = new CollapsedIconWrapper();
+    private Icon collapsedIconWrapper = new IconWrapper(IconType.COLLAPSED);
+
+
 
     /**
      *
@@ -789,15 +795,29 @@ public class SynthTreeUI extends BasicTreeUI
     // To get the correct context we return an instance of this that fetches
     // the SynthContext as needed.
     //
-    private class ExpandedIconWrapper implements SynthIcon {
+    private class IconWrapper implements SynthIcon {
+        IconType iconType;
+        public IconWrapper(IconType type) {
+            super();
+            iconType = type;
+        }
+
         public void paintIcon(SynthContext context, Graphics g, int x,
                               int y, int w, int h) {
             if (context == null) {
                 context = getContext(tree);
-                SynthGraphicsUtils.paintIcon(expandedIcon, context, g, x, y, w, h);
+                if (iconType == IconType.EXPANDED) {
+                    SynthGraphicsUtils.paintIcon(expandedIcon, context, g, x, y, w, h);
+                } else {
+                    SynthGraphicsUtils.paintIcon(collapsedIcon, context, g, x, y, w, h);
+                }
             }
             else {
-                SynthGraphicsUtils.paintIcon(expandedIcon, context, g, x, y, w, h);
+                if (iconType == IconType.EXPANDED) {
+                    SynthGraphicsUtils.paintIcon(expandedIcon, context, g, x, y, w, h);
+                } else {
+                    SynthGraphicsUtils.paintIcon(collapsedIcon, context, g, x, y, w, h);
+                }
             }
         }
 
@@ -805,10 +825,18 @@ public class SynthTreeUI extends BasicTreeUI
             int width;
             if (context == null) {
                 context = getContext(tree);
-                width = SynthGraphicsUtils.getIconWidth(expandedIcon, context);
+                if (iconType == IconType.EXPANDED) {
+                    width = SynthGraphicsUtils.getIconWidth(expandedIcon, context);
+                } else {
+                    width = SynthGraphicsUtils.getIconWidth(collapsedIcon, context);
+                }
             }
             else {
-                width = SynthGraphicsUtils.getIconWidth(expandedIcon, context);
+                if (iconType == IconType.EXPANDED) {
+                    width = SynthGraphicsUtils.getIconWidth(expandedIcon, context);
+                } else {
+                    width = SynthGraphicsUtils.getIconWidth(collapsedIcon, context);
+                }
             }
             return width;
         }
@@ -817,47 +845,18 @@ public class SynthTreeUI extends BasicTreeUI
             int height;
             if (context == null) {
                 context = getContext(tree);
-                height = SynthGraphicsUtils.getIconHeight(expandedIcon, context);
+                if (iconType == IconType.EXPANDED) {
+                    height = SynthGraphicsUtils.getIconHeight(expandedIcon, context);
+                } else {
+                    height = SynthGraphicsUtils.getIconHeight(collapsedIcon, context);
+                }
             }
             else {
-                height = SynthGraphicsUtils.getIconHeight(expandedIcon, context);
-            }
-            return height;
-        }
-    }
-
-    private class CollapsedIconWrapper implements SynthIcon {
-        public void paintIcon(SynthContext context, Graphics g, int x,
-                              int y, int w, int h) {
-            if (context == null) {
-                context = getContext(tree);
-                SynthGraphicsUtils.paintIcon(collapsedIcon, context, g, x, y, w, h);
-            }
-            else {
-                SynthGraphicsUtils.paintIcon(collapsedIcon, context, g, x, y, w, h);
-            }
-        }
-
-        public int getIconWidth(SynthContext context) {
-            int width;
-            if (context == null) {
-                context = getContext(tree);
-                width = SynthGraphicsUtils.getIconWidth(collapsedIcon, context);
-            }
-            else {
-                width = SynthGraphicsUtils.getIconWidth(collapsedIcon, context);
-            }
-            return width;
-        }
-
-        public int getIconHeight(SynthContext context) {
-            int height;
-            if (context == null) {
-                context = getContext(tree);
-                height = SynthGraphicsUtils.getIconHeight(collapsedIcon, context);
-            }
-            else {
-                height = SynthGraphicsUtils.getIconHeight(collapsedIcon, context);
+                if (iconType == IconType.EXPANDED) {
+                    height = SynthGraphicsUtils.getIconHeight(expandedIcon, context);
+                } else {
+                    height = SynthGraphicsUtils.getIconHeight(collapsedIcon, context);
+                }
             }
             return height;
         }
