@@ -63,10 +63,13 @@ langtools_jdeps = \
     tools/all \
     tools/jdeps
 
+# Catch-all definitions
+
+all = \
+    :langtools_all
+
 langtools_all = \
-    jdk \
-    lib \
-    tools
+    /
 
 # Tiered testing definitions
 

@@ -21,4 +21,10 @@
 # questions.
 #
 
-tier1 = .
+# Catch-all definitions
+
+all = \
+    /
+
+tier1 = \
+    :all
