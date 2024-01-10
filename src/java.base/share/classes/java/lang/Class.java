@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -377,10 +377,7 @@ public final class Class<T> implements java.io.Serializable,
         // Thus, an effect of the sealed keyword is to force all
         // direct subclasses to explicitly declare whether they are
         // final, sealed, or non-sealed. This avoids accidentally
-        // exposing a sealed class hierarchy to unwanted subclassing.
-        // [...]
-        // Thus, a subclass of a non-sealed class cannot itself be
-        // declared non-sealed."
+        // exposing a sealed class hierarchy to unwanted subclassing."
 
         // Therefore, will just check direct superclass and
         // superinterfaces.
