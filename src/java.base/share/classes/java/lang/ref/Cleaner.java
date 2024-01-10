@@ -215,7 +215,7 @@ public final class Cleaner {
      * Refer to the <a href="#compatible-cleaners">API Note</a> above for
      * cautions about the behavior of cleaning actions.
      *
-     * <p>The object being registered is kept strongly-reachable (and therefore not eligible
+     * <p>The object being registered is kept strongly reachable (and therefore not eligible
      * for cleaning) during the register() method.
      *
      * <p><a href="{@docRoot}/java.base/java/lang/ref/package-summary.html#MemoryConsistency">Memory consistency effects</a>:
