@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -5546,6 +5546,7 @@ void MacroAssembler::encode_and_move_klass_not_null(Register dst, Register src) 
 }
 
 void  MacroAssembler::decode_klass_not_null(Register r, Register tmp) {
+  BLOCK_COMMENT("decode_klass_not_null");
   assert_different_registers(r, tmp);
   // Note: it will change flags
   assert(UseCompressedClassPointers, "should only be used for compressed headers");
@@ -5557,7 +5558,8 @@ void  MacroAssembler::decode_klass_not_null(Register r, Register tmp) {
     shlq(r, LogKlassAlignmentInBytes);
   }
   if (CompressedKlassPointers::base() != nullptr) {
-    mov64(tmp, (int64_t)CompressedKlassPointers::base());
+    // Uses 32-bit mov if base is small enough
+    movptr(tmp, (intptr_t)CompressedKlassPointers::base());
     addq(r, tmp);
   }
 }
@@ -5577,7 +5579,8 @@ void  MacroAssembler::decode_and_move_klass_not_null(Register dst, Register src)
     movl(dst, src);
   } else {
     if (CompressedKlassPointers::base() != nullptr) {
-      mov64(dst, (int64_t)CompressedKlassPointers::base());
+      // Uses 32-bit mov if base is small enough
+      movptr(dst, (intptr_t)CompressedKlassPointers::base());
     } else {
       xorq(dst, dst);
     }

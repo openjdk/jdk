@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2023, Red Hat, Inc. All rights reserved.
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@
 
 #include "oops/compressedKlass.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "memory/metaspace.hpp"
 
 char* CompressedKlassPointers::reserve_address_space_for_compressed_classes(size_t size, bool aslr, bool optimize_for_zero_base) {
 
@@ -40,7 +41,11 @@ char* CompressedKlassPointers::reserve_address_space_for_compressed_classes(size
     if (result == nullptr) {
       result = reserve_address_space_for_zerobased_encoding(size, aslr);
     }
-  } // end: low-address reservation
+  } else {
+    // If we cannot use zero-based encoding (when CDS is enabled), optimizing for an
+    // encoding base < 4GB can still make sense since such a base allows for shorter imm32 moves
+    result = reserve_address_space_X(0, nth_bit(32), size, Metaspace::reserve_alignment(), aslr);
+  }
 
   // Nothing more to optimize for on x64. If base != 0, we will always emit the full 64-bit immediate.
   return result;
