@@ -42,7 +42,7 @@ import java.util.spi.ToolProvider;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
 import static java.nio.file.attribute.PosixFilePermission.GROUP_EXECUTE;
 import static java.nio.file.attribute.PosixFilePermission.GROUP_READ;
@@ -53,11 +53,11 @@ import static java.nio.file.attribute.PosixFilePermission.OTHERS_WRITE;
 import static java.nio.file.attribute.PosixFilePermission.OWNER_EXECUTE;
 import static java.nio.file.attribute.PosixFilePermission.OWNER_READ;
 import static java.nio.file.attribute.PosixFilePermission.OWNER_WRITE;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNotNull;
-import static org.testng.Assert.assertNull;
-import static org.testng.Assert.assertTrue;
-import static org.testng.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @test
@@ -65,8 +65,8 @@ import static org.testng.Assert.fail;
  * @summary Test POSIX ZIP file operations.
  * @modules jdk.zipfs
  *          jdk.jartool
- * @run testng TestPosix
- * @run testng/othervm/java.security.policy=test.policy.posix TestPosix
+ * @run junit TestPosix
+ * @run junit/othervm/java.security.policy=test.policy.posix TestPosix
  */
 public class TestPosix {
     private static final ToolProvider JAR_TOOL = ToolProvider.findFirst("jar")
@@ -357,7 +357,7 @@ public class TestPosix {
                 fail("Caught IOException reading file attributes (basic) " + name + ": " + e.getMessage());
             }
         }
-        assertEquals(Files.isDirectory(file), ei.isDir, "Unexpected directory attribute for:" + System.lineSeparator() + attrs);
+        assertEquals(ei.isDir, Files.isDirectory(file), "Unexpected directory attribute for:" + System.lineSeparator() + attrs);
 
         if (expected == checkExpects.contentOnly) {
             return;
@@ -395,7 +395,7 @@ public class TestPosix {
             });
         }
         System.out.println("Number of entries: " + entries.get() + ".");
-        assertEquals(entries.get(), entriesCreated, "File contained wrong number of entries.");
+        assertEquals(entriesCreated, entries.get(), "File contained wrong number of entries.");
     }
 
     private void checkEntries(FileSystem fs, checkExpects expected) throws IOException {
@@ -422,7 +422,7 @@ public class TestPosix {
             assertNull(actual, "Permissions are not null");
         } else {
             assertNotNull(actual, "Permissions are null.");
-            assertEquals(actual.size(), expected.size(), "Unexpected number of permissions (" +
+            assertEquals(expected.size(), actual.size(), "Unexpected number of permissions (" +
                 actual.size() + " received vs " + expected.size() + " expected).");
             for (PosixFilePermission p : expected) {
                 assertTrue(actual.contains(p), "Posix permission " + p + " missing.");
@@ -602,18 +602,18 @@ public class TestPosix {
             var owner = Files.getOwner(entry);
             assertNotNull(owner, "owner should not be null");
             if (defaultOwner != null) {
-                assertEquals(owner.getName(), defaultOwner);
+                assertEquals(defaultOwner, owner.getName());
             }
             Files.setOwner(entry, DUMMY_USER);
-            assertEquals(Files.getOwner(entry), DUMMY_USER);
+            assertEquals(DUMMY_USER, Files.getOwner(entry));
             var view = Files.getFileAttributeView(entry, PosixFileAttributeView.class);
             var group = view.readAttributes().group();
             assertNotNull(group, "group must not be null");
             if (defaultGroup != null) {
-                assertEquals(group.getName(), defaultGroup);
+                assertEquals(defaultGroup, group.getName());
             }
             view.setGroup(DUMMY_GROUP);
-            assertEquals(view.readAttributes().group(), DUMMY_GROUP);
+            assertEquals(DUMMY_GROUP, view.readAttributes().group());
             entry = zipIn.getPath("/uexec");
             Files.setPosixFilePermissions(entry, GR); // will be persisted
             comparePermissions(GR, Files.getPosixFilePermissions(entry));
@@ -625,9 +625,9 @@ public class TestPosix {
         {
             var entry = zipIn.getPath("/noperms");
             comparePermissions(UR, Files.getPosixFilePermissions(entry));
-            assertEquals(Files.getOwner(entry).getName(), "auser");
+            assertEquals("auser", Files.getOwner(entry).getName());
             var view = Files.getFileAttributeView(entry, PosixFileAttributeView.class);
-            assertEquals(view.readAttributes().group().getName(), "agroup");
+            assertEquals("agroup", view.readAttributes().group().getName());
             // check if the change to permissions of /uexec was persisted
             comparePermissions(GR, Files.getPosixFilePermissions(zipIn.getPath("/uexec")));
         }
@@ -638,9 +638,9 @@ public class TestPosix {
         {
             var entry = zipIn.getPath("/noperms");
             comparePermissions(UR, Files.getPosixFilePermissions(entry));
-            assertEquals(Files.getOwner(entry), DUMMY_USER);
+            assertEquals(DUMMY_USER, Files.getOwner(entry));
             var view = Files.getFileAttributeView(entry, PosixFileAttributeView.class);
-            assertEquals(view.readAttributes().group(), DUMMY_GROUP);
+            assertEquals(DUMMY_GROUP, view.readAttributes().group());
         }
     }
 
@@ -715,7 +715,7 @@ public class TestPosix {
 
         // the run method catches IOExceptions, we need to expose them
         int rc = JAR_TOOL.run(System.out, System.err, "xvf", JAR_FILE.toString());
-        assertEquals(rc, 0, "Return code of jar call is " + rc + " but expected 0");
+        assertEquals(0, rc, "Return code of jar call is " + rc + " but expected 0");
     }
 
     /**
@@ -816,7 +816,7 @@ public class TestPosix {
         int externalFileAttr = (buffer.getInt(cenOff + ZipFile.CENATX) >> 16) & 0xFFFF;
 
         // Verify that the expected bits are set
-        assertEquals(Integer.toBinaryString(externalFileAttr), expectedBits,
+        assertEquals(expectedBits, Integer.toBinaryString(externalFileAttr),
                 "The 'external file attributes' field does not match the expected value:");
     }
 }
