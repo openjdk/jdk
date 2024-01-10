@@ -28,70 +28,70 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
-import jdk.internal.classfile.Annotation;
-import jdk.internal.classfile.AnnotationElement;
-import jdk.internal.classfile.AnnotationValue;
-import jdk.internal.classfile.Attribute;
-import jdk.internal.classfile.AttributeMapper;
-import jdk.internal.classfile.Attributes;
-import jdk.internal.classfile.BootstrapMethodEntry;
-import jdk.internal.classfile.BufWriter;
-import jdk.internal.classfile.constantpool.ClassEntry;
-import jdk.internal.classfile.Label;
-import jdk.internal.classfile.TypeAnnotation;
-import jdk.internal.classfile.attribute.AnnotationDefaultAttribute;
-import jdk.internal.classfile.attribute.BootstrapMethodsAttribute;
-import jdk.internal.classfile.attribute.CharacterRangeInfo;
-import jdk.internal.classfile.attribute.CharacterRangeTableAttribute;
-import jdk.internal.classfile.attribute.CompilationIDAttribute;
-import jdk.internal.classfile.attribute.ConstantValueAttribute;
-import jdk.internal.classfile.attribute.DeprecatedAttribute;
-import jdk.internal.classfile.attribute.EnclosingMethodAttribute;
-import jdk.internal.classfile.attribute.ExceptionsAttribute;
-import jdk.internal.classfile.attribute.InnerClassInfo;
-import jdk.internal.classfile.attribute.InnerClassesAttribute;
-import jdk.internal.classfile.attribute.LineNumberInfo;
-import jdk.internal.classfile.attribute.LineNumberTableAttribute;
-import jdk.internal.classfile.attribute.LocalVariableInfo;
-import jdk.internal.classfile.attribute.LocalVariableTableAttribute;
-import jdk.internal.classfile.attribute.LocalVariableTypeInfo;
-import jdk.internal.classfile.attribute.LocalVariableTypeTableAttribute;
-import jdk.internal.classfile.attribute.MethodParameterInfo;
-import jdk.internal.classfile.attribute.MethodParametersAttribute;
-import jdk.internal.classfile.attribute.ModuleAttribute;
-import jdk.internal.classfile.attribute.ModuleExportInfo;
-import jdk.internal.classfile.attribute.ModuleHashInfo;
-import jdk.internal.classfile.attribute.ModuleHashesAttribute;
-import jdk.internal.classfile.attribute.ModuleMainClassAttribute;
-import jdk.internal.classfile.attribute.ModuleOpenInfo;
-import jdk.internal.classfile.attribute.ModulePackagesAttribute;
-import jdk.internal.classfile.attribute.ModuleProvideInfo;
-import jdk.internal.classfile.attribute.ModuleRequireInfo;
-import jdk.internal.classfile.attribute.ModuleResolutionAttribute;
-import jdk.internal.classfile.attribute.ModuleTargetAttribute;
-import jdk.internal.classfile.attribute.NestHostAttribute;
-import jdk.internal.classfile.attribute.NestMembersAttribute;
-import jdk.internal.classfile.attribute.PermittedSubclassesAttribute;
-import jdk.internal.classfile.attribute.RecordAttribute;
-import jdk.internal.classfile.attribute.RecordComponentInfo;
-import jdk.internal.classfile.attribute.RuntimeInvisibleAnnotationsAttribute;
-import jdk.internal.classfile.attribute.RuntimeInvisibleParameterAnnotationsAttribute;
-import jdk.internal.classfile.attribute.RuntimeInvisibleTypeAnnotationsAttribute;
-import jdk.internal.classfile.attribute.RuntimeVisibleAnnotationsAttribute;
-import jdk.internal.classfile.attribute.RuntimeVisibleParameterAnnotationsAttribute;
-import jdk.internal.classfile.attribute.RuntimeVisibleTypeAnnotationsAttribute;
-import jdk.internal.classfile.attribute.SignatureAttribute;
-import jdk.internal.classfile.attribute.SourceDebugExtensionAttribute;
-import jdk.internal.classfile.attribute.SourceFileAttribute;
-import jdk.internal.classfile.attribute.SourceIDAttribute;
-import jdk.internal.classfile.attribute.StackMapTableAttribute;
-import jdk.internal.classfile.attribute.StackMapFrameInfo;
-import jdk.internal.classfile.attribute.SyntheticAttribute;
-import jdk.internal.classfile.constantpool.ConstantValueEntry;
-import jdk.internal.classfile.constantpool.ModuleEntry;
-import jdk.internal.classfile.constantpool.NameAndTypeEntry;
-import jdk.internal.classfile.constantpool.PackageEntry;
-import jdk.internal.classfile.constantpool.Utf8Entry;
+import java.lang.classfile.Annotation;
+import java.lang.classfile.AnnotationElement;
+import java.lang.classfile.AnnotationValue;
+import java.lang.classfile.Attribute;
+import java.lang.classfile.AttributeMapper;
+import java.lang.classfile.Attributes;
+import java.lang.classfile.BootstrapMethodEntry;
+import java.lang.classfile.BufWriter;
+import java.lang.classfile.constantpool.ClassEntry;
+import java.lang.classfile.Label;
+import java.lang.classfile.TypeAnnotation;
+import java.lang.classfile.attribute.AnnotationDefaultAttribute;
+import java.lang.classfile.attribute.BootstrapMethodsAttribute;
+import java.lang.classfile.attribute.CharacterRangeInfo;
+import java.lang.classfile.attribute.CharacterRangeTableAttribute;
+import java.lang.classfile.attribute.CompilationIDAttribute;
+import java.lang.classfile.attribute.ConstantValueAttribute;
+import java.lang.classfile.attribute.DeprecatedAttribute;
+import java.lang.classfile.attribute.EnclosingMethodAttribute;
+import java.lang.classfile.attribute.ExceptionsAttribute;
+import java.lang.classfile.attribute.InnerClassInfo;
+import java.lang.classfile.attribute.InnerClassesAttribute;
+import java.lang.classfile.attribute.LineNumberInfo;
+import java.lang.classfile.attribute.LineNumberTableAttribute;
+import java.lang.classfile.attribute.LocalVariableInfo;
+import java.lang.classfile.attribute.LocalVariableTableAttribute;
+import java.lang.classfile.attribute.LocalVariableTypeInfo;
+import java.lang.classfile.attribute.LocalVariableTypeTableAttribute;
+import java.lang.classfile.attribute.MethodParameterInfo;
+import java.lang.classfile.attribute.MethodParametersAttribute;
+import java.lang.classfile.attribute.ModuleAttribute;
+import java.lang.classfile.attribute.ModuleExportInfo;
+import java.lang.classfile.attribute.ModuleHashInfo;
+import java.lang.classfile.attribute.ModuleHashesAttribute;
+import java.lang.classfile.attribute.ModuleMainClassAttribute;
+import java.lang.classfile.attribute.ModuleOpenInfo;
+import java.lang.classfile.attribute.ModulePackagesAttribute;
+import java.lang.classfile.attribute.ModuleProvideInfo;
+import java.lang.classfile.attribute.ModuleRequireInfo;
+import java.lang.classfile.attribute.ModuleResolutionAttribute;
+import java.lang.classfile.attribute.ModuleTargetAttribute;
+import java.lang.classfile.attribute.NestHostAttribute;
+import java.lang.classfile.attribute.NestMembersAttribute;
+import java.lang.classfile.attribute.PermittedSubclassesAttribute;
+import java.lang.classfile.attribute.RecordAttribute;
+import java.lang.classfile.attribute.RecordComponentInfo;
+import java.lang.classfile.attribute.RuntimeInvisibleAnnotationsAttribute;
+import java.lang.classfile.attribute.RuntimeInvisibleParameterAnnotationsAttribute;
+import java.lang.classfile.attribute.RuntimeInvisibleTypeAnnotationsAttribute;
+import java.lang.classfile.attribute.RuntimeVisibleAnnotationsAttribute;
+import java.lang.classfile.attribute.RuntimeVisibleParameterAnnotationsAttribute;
+import java.lang.classfile.attribute.RuntimeVisibleTypeAnnotationsAttribute;
+import java.lang.classfile.attribute.SignatureAttribute;
+import java.lang.classfile.attribute.SourceDebugExtensionAttribute;
+import java.lang.classfile.attribute.SourceFileAttribute;
+import java.lang.classfile.attribute.SourceIDAttribute;
+import java.lang.classfile.attribute.StackMapTableAttribute;
+import java.lang.classfile.attribute.StackMapFrameInfo;
+import java.lang.classfile.attribute.SyntheticAttribute;
+import java.lang.classfile.constantpool.ConstantValueEntry;
+import java.lang.classfile.constantpool.ModuleEntry;
+import java.lang.classfile.constantpool.NameAndTypeEntry;
+import java.lang.classfile.constantpool.PackageEntry;
+import java.lang.classfile.constantpool.Utf8Entry;
 
 public abstract sealed class UnboundAttribute<T extends Attribute<T>>
         extends AbstractElement
@@ -932,15 +932,6 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
         @Override
         public List<BootstrapMethodEntry> bootstrapMethods() {
             return List.of();
-        }
-    }
-
-    public static abstract sealed class CustomAttribute<T extends CustomAttribute<T>>
-            extends UnboundAttribute<T>
-            permits jdk.internal.classfile.CustomAttribute {
-
-        public CustomAttribute(AttributeMapper<T> mapper) {
-            super(mapper);
         }
     }
 }

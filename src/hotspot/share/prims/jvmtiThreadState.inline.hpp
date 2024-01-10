@@ -78,16 +78,27 @@ inline JvmtiThreadState* JvmtiThreadState::state_for_while_locked(JavaThread *th
 
   NoSafepointVerifier nsv;  // oop is safe to use.
 
-  if (thread_oop == nullptr) {  // Then thread should not be null (see assert above).
-    thread_oop = thread->jvmti_vthread() != nullptr ? thread->jvmti_vthread() : thread->threadObj();
-  }
-
   // In a case of unmounted virtual thread the thread can be null.
   JvmtiThreadState *state = thread == nullptr ? nullptr : thread->jvmti_thread_state();
 
-  if (state == nullptr && thread != nullptr && thread->is_exiting()) {
-    // Don't add a JvmtiThreadState to a thread that is exiting.
+  if (state == nullptr && thread != nullptr &&
+      (thread->is_exiting() ||
+       (thread->threadObj() == nullptr && thread->is_attaching_via_jni())
+      )) {
+    // Don't add a JvmtiThreadState to a thread that is exiting, or is attaching
+    // and does not yet have a Java level thread object allocated.
     return nullptr;
+  }
+
+  // Make sure we don't see an incomplete state. An incomplete state can cause
+  // a duplicate JvmtiThreadState being created below and bound to the 'thread'
+  // incorrectly, which leads to stale JavaThread* from the JvmtiThreadState
+  // after the thread exits.
+  assert(state == nullptr || state->get_thread_oop() != nullptr,
+         "incomplete state");
+
+  if (thread_oop == nullptr) {  // Then thread should not be null (see assert above).
+    thread_oop = thread->jvmti_vthread() != nullptr ? thread->jvmti_vthread() : thread->threadObj();
   }
   if (state == nullptr || state->get_thread_oop() != thread_oop) {
     // Check if java_lang_Thread already has a link to the JvmtiThreadState.
@@ -98,6 +109,7 @@ inline JvmtiThreadState* JvmtiThreadState::state_for_while_locked(JavaThread *th
       state = new JvmtiThreadState(thread, thread_oop);
     }
   }
+  assert(state != nullptr, "sanity check");
   return state;
 }
 

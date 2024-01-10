@@ -28,6 +28,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "jlong.h"
+
 JNIEXPORT jstring JNICALL Java_org_openjdk_bench_java_lang_foreign_ToJavaStringTest_readString(JNIEnv *const env, const jclass cls, jlong addr) {
     return (*env)->NewStringUTF(env, jlong_to_ptr(addr));
 }

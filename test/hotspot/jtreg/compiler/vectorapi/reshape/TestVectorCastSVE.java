@@ -36,7 +36,7 @@ import compiler.vectorapi.reshape.utils.VectorReshapeHelper;
  * @summary Test that vector cast intrinsics work as intended on sve.
  * @requires vm.cpu.features ~= ".*sve.*"
  * @library /test/lib /
- * @run main compiler.vectorapi.reshape.TestVectorCastSVE
+ * @run main/timeout=300 compiler.vectorapi.reshape.TestVectorCastSVE
  */
 public class TestVectorCastSVE {
     public static void main(String[] args) {

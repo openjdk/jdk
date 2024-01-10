@@ -24,8 +24,8 @@
  */
 package jdk.internal.classfile.impl;
 
-import jdk.internal.classfile.CodeModel;
-import jdk.internal.classfile.MethodBuilder;
+import java.lang.classfile.CodeModel;
+import java.lang.classfile.MethodBuilder;
 
 public sealed interface TerminalMethodBuilder
         extends MethodBuilder

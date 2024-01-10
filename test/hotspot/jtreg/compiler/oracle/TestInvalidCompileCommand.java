@@ -83,7 +83,7 @@ public class TestInvalidCompileCommand {
         ProcessBuilder pb;
         OutputAnalyzer out;
 
-        pb = ProcessTools.createJavaProcessBuilder(arguments);
+        pb = ProcessTools.createLimitedTestJavaProcessBuilder(arguments);
         out = new OutputAnalyzer(pb.start());
 
         for (String expected_output : expected_outputs) {

@@ -2228,7 +2228,7 @@ public abstract class BasicLookAndFeel extends LookAndFeel implements Serializab
                         src = (JComponent)
                             ((BasicSplitPaneDivider)c).getParent();
                     }
-                    if(src != null) {
+                    if(src != null && src.isEnabled()) {
                         JPopupMenu componentPopupMenu = src.getComponentPopupMenu();
                         if(componentPopupMenu != null) {
                             Point pt = src.getPopupLocation(me);

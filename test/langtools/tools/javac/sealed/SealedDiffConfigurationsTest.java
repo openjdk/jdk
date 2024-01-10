@@ -25,15 +25,11 @@
  * @test 8247352 8293348
  * @summary test different configurations of sealed classes, same compilation unit, diff pkg or mdl, etc
  * @library /tools/lib
+ * @enablePreview
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
  *          jdk.compiler/com.sun.tools.javac.util
  *          jdk.compiler/com.sun.tools.javac.code
- *          java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.constantpool
- *          java.base/jdk.internal.classfile.instruction
- *          java.base/jdk.internal.classfile.components
  *          java.base/jdk.internal.classfile.impl
  * @build toolbox.ToolBox toolbox.JavacTask
  * @run main SealedDiffConfigurationsTest
@@ -47,10 +43,10 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.stream.IntStream;
 
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.attribute.PermittedSubclassesAttribute;
-import jdk.internal.classfile.constantpool.ClassEntry;
-import jdk.internal.classfile.constantpool.ConstantPoolException;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.PermittedSubclassesAttribute;
+import java.lang.classfile.constantpool.ClassEntry;
+import java.lang.classfile.constantpool.ConstantPoolException;
 import com.sun.tools.javac.code.Flags;
 import com.sun.tools.javac.util.Assert;
 import toolbox.TestRunner;
@@ -135,8 +131,8 @@ public class SealedDiffConfigurationsTest extends TestRunner {
     }
 
     private void checkSealedClassFile(Path out, String cfName, List<String> expectedSubTypeNames) throws ConstantPoolException, Exception {
-        ClassModel sealedCF = Classfile.of().parse(out.resolve(cfName));
-        Assert.check((sealedCF.flags().flagsMask() & Classfile.ACC_FINAL) == 0, String.format("class at file %s must not be final", cfName));
+        ClassModel sealedCF = ClassFile.of().parse(out.resolve(cfName));
+        Assert.check((sealedCF.flags().flagsMask() & ClassFile.ACC_FINAL) == 0, String.format("class at file %s must not be final", cfName));
         PermittedSubclassesAttribute permittedSubclasses = sealedCF.findAttribute(Attributes.PERMITTED_SUBCLASSES).orElseThrow();
         Assert.check(permittedSubclasses.permittedSubclasses().size() == expectedSubTypeNames.size());
         List<String> subtypeNames = new ArrayList<>();
@@ -153,9 +149,9 @@ public class SealedDiffConfigurationsTest extends TestRunner {
     }
 
     private void checkSubtypeClassFile(Path out, String cfName, String superClassName, boolean shouldBeFinal) throws Exception {
-        ClassModel subCF1 = Classfile.of().parse(out.resolve(cfName));
+        ClassModel subCF1 = ClassFile.of().parse(out.resolve(cfName));
         if (shouldBeFinal) {
-            Assert.check((subCF1.flags().flagsMask() & Classfile.ACC_FINAL) != 0, String.format("class at file %s must be final", cfName));
+            Assert.check((subCF1.flags().flagsMask() & ClassFile.ACC_FINAL) != 0, String.format("class at file %s must be final", cfName));
         }
         Assert.checkNull(subCF1.findAttribute(Attributes.PERMITTED_SUBCLASSES).orElse(null));
         Assert.check(subCF1.superclass().orElseThrow().name().equalsString(superClassName));

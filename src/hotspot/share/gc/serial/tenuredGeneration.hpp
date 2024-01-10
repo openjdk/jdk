@@ -31,7 +31,7 @@
 #include "gc/shared/generationCounters.hpp"
 #include "utilities/macros.hpp"
 
-class BlockOffsetSharedArray;
+class SerialBlockOffsetSharedArray;
 class CardTableRS;
 class ContiguousSpace;
 
@@ -50,7 +50,7 @@ class TenuredGeneration: public Generation {
   // This is shared with other generations.
   CardTableRS* _rs;
   // This is local to this generation.
-  BlockOffsetSharedArray* _bts;
+  SerialBlockOffsetSharedArray* _bts;
 
   // Current shrinking effect: this damps shrinking when the heap gets empty.
   size_t _shrink_factor;
@@ -70,8 +70,6 @@ class TenuredGeneration: public Generation {
   GenerationCounters* _gen_counters;
   CSpaceCounters*     _space_counters;
 
-  // Accessing spaces
-  TenuredSpace* space() const { return _the_space; }
 
   // Attempt to expand the generation by "bytes".  Expand by at a
   // minimum "expand_bytes".  Return true if some amount (not
@@ -84,6 +82,8 @@ class TenuredGeneration: public Generation {
   void compute_new_size_inner();
  public:
   virtual void compute_new_size();
+
+  TenuredSpace* space() const { return _the_space; }
 
   // Grow generation with specified size (returns false if unable to grow)
   bool grow_by(size_t bytes);

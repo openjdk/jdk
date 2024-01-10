@@ -1111,6 +1111,9 @@ public class HSDB implements ObjectHistogramPanel.Listener, SAListener {
                             anno = "Old ";
                             bad = false;
                           }
+                          if (!bad && region.isPinned()) {
+                            anno += "Pinned ";
+                          }
                         } else if (collHeap instanceof ParallelScavengeHeap) {
                           ParallelScavengeHeap heap = (ParallelScavengeHeap) collHeap;
                           if (heap.youngGen().isIn(handle)) {

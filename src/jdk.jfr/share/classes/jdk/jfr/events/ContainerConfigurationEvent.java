@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, DataDog. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -37,7 +37,7 @@ import jdk.jfr.internal.Type;
 @Label("Container Configuration")
 @Category({"Operating System"})
 @Description("A set of container specific attributes")
-public final class ContainerConfigurationEvent extends AbstractJDKEvent {
+public final class ContainerConfigurationEvent extends AbstractPeriodicEvent {
     @Label("Container Type")
     @Description("Container type information")
     public String containerType;

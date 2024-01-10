@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -125,7 +125,7 @@ public class OverriderMsg {
     public static void main(String... args) throws Exception {
         dump_HasFinal();
         dump_Overrider();
-        ProcessBuilder pb = ProcessTools.createTestJvm("-cp", ".",  "Overrider");
+        ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder("-cp", ".",  "Overrider");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldContain(
             "java.lang.IncompatibleClassChangeError: class Overrider overrides final method HasFinal.m(Ljava/lang/String;)V");

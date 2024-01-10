@@ -409,7 +409,8 @@ gss_import_name(OM_uint32 *minor_status,
         PP("Host-based service now %ls", value);
     }
     PP("import_name to %ls", value);
-    gss_name_struct* name = new gss_name_struct;
+    gss_name_struct* name;
+    name = new gss_name_struct;
     if (name == NULL) {
         goto err;
     }
@@ -533,15 +534,18 @@ gss_export_name(OM_uint32 *minor_status,
     }
     PP("Make fullname: %ls -> %ls", name, fullname);
     int len;
-    size_t namelen = wcslen(fullname);
+    size_t namelen;
+    namelen = wcslen(fullname);
     if (namelen > 255) {
         goto err;
     }
     len = (int)namelen;
     // We only deal with not-so-long names.
     // 04 01 00 ** 06 ** OID len:int32 name
-    int mechLen = KRB5_OID.length;
-    char* buffer = (char*) malloc(10 + mechLen + len);
+    int mechLen;
+    mechLen = KRB5_OID.length;
+    char* buffer;
+    buffer = (char*) malloc(10 + mechLen + len);
     if (buffer == NULL) {
         goto err;
     }
@@ -904,7 +908,8 @@ gss_init_sec_context(OM_uint32 *minor_status,
     }
     outName[len] = 0;
 
-    int flag = flag_gss_to_sspi(req_flags) | ISC_REQ_ALLOCATE_MEMORY;
+    int flag;
+    flag = flag_gss_to_sspi(req_flags) | ISC_REQ_ALLOCATE_MEMORY;
 
     outBuffDesc.ulVersion = SECBUFFER_VERSION;
     outBuffDesc.cBuffers = 1;

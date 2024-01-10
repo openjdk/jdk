@@ -47,7 +47,7 @@ import javax.swing.table.TableModel;
  * @test
  * @bug 8044444 8081491
  * @summary The output's 'Page-n' footer does not show completely
- * @author Alexandr Scherbatiy
+ * @key printer
  * @run main/manual ImageableAreaTest
  */
 public class ImageableAreaTest {

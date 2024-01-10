@@ -22,9 +22,9 @@
  */
 
 #include "precompiled.hpp"
+#include "nmt/memTracker.hpp"
+#include "nmt/virtualMemoryTracker.hpp"
 #include "runtime/thread.hpp"
-#include "services/memTracker.hpp"
-#include "services/virtualMemoryTracker.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 #include "unittest.hpp"

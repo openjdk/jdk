@@ -43,11 +43,14 @@ final class LibFallback {
                     public Boolean run() {
                         try {
                             System.loadLibrary("fallbackLinker");
-                            init();
-                            return true;
                         } catch (UnsatisfiedLinkError ule) {
                             return false;
                         }
+                        if (!init()) {
+                            // library failed to initialize. Do not silently mark as unsupported
+                            throw new ExceptionInInitializerError("Fallback library failed to initialize");
+                        }
+                        return true;
                     }
                 });
     }
@@ -90,10 +93,12 @@ final class LibFallback {
      * @see jdk.internal.foreign.abi.CapturableState
      */
     static void doDowncall(MemorySegment cif, MemorySegment target, MemorySegment retPtr, MemorySegment argPtrs,
-                                  MemorySegment capturedState, int capturedStateMask) {
+                           MemorySegment capturedState, int capturedStateMask,
+                           Object[] heapBases, int numArgs) {
             doDowncall(cif.address(), target.address(),
-                    retPtr == null ? 0 : retPtr.address(), argPtrs.address(),
-                    capturedState == null ? 0 : capturedState.address(), capturedStateMask);
+                       retPtr == null ? 0 : retPtr.address(), argPtrs.address(),
+                       capturedState == null ? 0 : capturedState.address(), capturedStateMask,
+                       heapBases, numArgs);
     }
 
     /**
@@ -201,13 +206,15 @@ final class LibFallback {
         }
     }
 
-    private static native void init();
+    private static native boolean init();
 
     private static native long sizeofCif();
 
     private static native int createClosure(long cif, Object userData, long[] ptrs);
     private static native void freeClosure(long closureAddress, long globalTarget);
-    private static native void doDowncall(long cif, long fn, long rvalue, long avalues, long capturedState, int capturedStateMask);
+    private static native void doDowncall(long cif, long fn, long rvalue, long avalues,
+                                          long capturedState, int capturedStateMask,
+                                          Object[] heapBases, int numArgs);
 
     private static native int ffi_prep_cif(long cif, int abi, int nargs, long rtype, long atypes);
     private static native int ffi_prep_cif_var(long cif, int abi, int nfixedargs, int ntotalargs, long rtype, long atypes);

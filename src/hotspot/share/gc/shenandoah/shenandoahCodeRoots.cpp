@@ -26,6 +26,7 @@
 #include "code/codeCache.hpp"
 #include "code/icBuffer.hpp"
 #include "code/nmethod.hpp"
+#include "gc/shared/classUnloadingContext.hpp"
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahEvacOOMHandler.inline.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
@@ -235,7 +236,7 @@ void ShenandoahCodeRoots::unlink(WorkerThreads* workers, bool unloading_occurred
 void ShenandoahCodeRoots::purge() {
   assert(ShenandoahHeap::heap()->unload_classes(), "Only when running concurrent class unloading");
 
-  CodeCache::flush_unlinked_nmethods();
+  ClassUnloadingContext::context()->purge_and_free_nmethods();
 }
 
 ShenandoahCodeRootsIterator::ShenandoahCodeRootsIterator() :

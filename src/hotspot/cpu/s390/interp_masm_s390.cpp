@@ -38,6 +38,7 @@
 #include "oops/methodData.hpp"
 #include "oops/resolvedFieldEntry.hpp"
 #include "oops/resolvedIndyEntry.hpp"
+#include "oops/resolvedMethodEntry.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiThreadState.hpp"
 #include "runtime/basicLock.hpp"
@@ -337,18 +338,6 @@ void InterpreterMacroAssembler::get_cache_index_at_bcp(Register index, int bcp_o
   BLOCK_COMMENT("}");
 }
 
-
-void InterpreterMacroAssembler::get_cache_and_index_at_bcp(Register cache, Register cpe_offset,
-                                                           int bcp_offset, size_t index_size) {
-  BLOCK_COMMENT("get_cache_and_index_at_bcp {");
-  assert_different_registers(cache, cpe_offset);
-  get_cache_index_at_bcp(cpe_offset, bcp_offset, index_size);
-  z_lg(cache, Address(Z_fp, _z_ijava_state_neg(cpoolCache)));
-  // Convert from field index to ConstantPoolCache offset in bytes.
-  z_sllg(cpe_offset, cpe_offset, exact_log2(in_words(ConstantPoolCacheEntry::size()) * BytesPerWord));
-  BLOCK_COMMENT("}");
-}
-
 void InterpreterMacroAssembler::load_resolved_indy_entry(Register cache, Register index) {
   // Get index out of bytecode pointer.
   get_cache_index_at_bcp(index, 1, sizeof(u4));
@@ -389,26 +378,24 @@ void InterpreterMacroAssembler::load_field_entry(Register cache, Register index,
   z_la(cache, Array<ResolvedFieldEntry>::base_offset_in_bytes(), index, cache);
 }
 
-// Kills Z_R0_scratch.
-void InterpreterMacroAssembler::get_cache_and_index_and_bytecode_at_bcp(Register cache,
-                                                                        Register cpe_offset,
-                                                                        Register bytecode,
-                                                                        int byte_no,
-                                                                        int bcp_offset,
-                                                                        size_t index_size) {
-  BLOCK_COMMENT("get_cache_and_index_and_bytecode_at_bcp {");
-  get_cache_and_index_at_bcp(cache, cpe_offset, bcp_offset, index_size);
+void InterpreterMacroAssembler::load_method_entry(Register cache, Register index, int bcp_offset) {
+  // Get field index out of bytecode pointer.
+  get_cache_index_at_bcp(index, bcp_offset, sizeof(u2));
 
-  // We want to load (from CP cache) the bytecode that corresponds to the passed-in byte_no.
-  // It is located at (cache + cpe_offset + base_offset + indices_offset + (8-1) (last byte in DW) - (byte_no+1).
-  // Instead of loading, shifting and masking a DW, we just load that one byte of interest with z_llgc (unsigned).
-  const int base_ix_off = in_bytes(ConstantPoolCache::base_offset() + ConstantPoolCacheEntry::indices_offset());
-  const int off_in_DW   = (8-1) - (1+byte_no);
-  assert(ConstantPoolCacheEntry::bytecode_1_mask == ConstantPoolCacheEntry::bytecode_2_mask, "common mask");
-  assert(ConstantPoolCacheEntry::bytecode_1_mask == 0xff, "");
-  load_sized_value(bytecode, Address(cache, cpe_offset, base_ix_off+off_in_DW), 1, false /*signed*/);
+  // Get the address of the ResolvedMethodEntry array.
+  get_constant_pool_cache(cache);
+  z_lg(cache, Address(cache, in_bytes(ConstantPoolCache::method_entries_offset())));
 
-  BLOCK_COMMENT("}");
+  // Scale the index to form a byte offset into the ResolvedMethodEntry array
+  size_t entry_size = sizeof(ResolvedMethodEntry);
+  if (is_power_of_2(entry_size)) {
+    z_sllg(index, index, exact_log2(entry_size));
+  } else {
+    z_mghi(index, entry_size);
+  }
+
+  // Calculate the final field address.
+  z_la(cache, Array<ResolvedMethodEntry>::base_offset_in_bytes(), index, cache);
 }
 
 // Load object from cpool->resolved_references(index).
@@ -446,29 +433,6 @@ void InterpreterMacroAssembler::load_resolved_klass_at_offset(Register cpool, Re
   z_sllg(offset, offset, LogBytesPerWord);                          // Convert 'index' to 'offset'
   z_lg(iklass, Address(cpool, ConstantPool::resolved_klasses_offset())); // iklass = cpool->_resolved_klasses
   z_lg(iklass, Address(iklass, offset, Array<Klass*>::base_offset_in_bytes()));
-}
-
-void InterpreterMacroAssembler::get_cache_entry_pointer_at_bcp(Register cache,
-                                                               Register tmp,
-                                                               int bcp_offset,
-                                                               size_t index_size) {
-  BLOCK_COMMENT("get_cache_entry_pointer_at_bcp {");
-    get_cache_and_index_at_bcp(cache, tmp, bcp_offset, index_size);
-    add2reg_with_index(cache, in_bytes(ConstantPoolCache::base_offset()), tmp, cache);
-  BLOCK_COMMENT("}");
-}
-
-void InterpreterMacroAssembler::load_resolved_method_at_index(int byte_no,
-                                                              Register cache,
-                                                              Register cpe_offset,
-                                                              Register method) {
-  const int method_offset = in_bytes(
-    ConstantPoolCache::base_offset() +
-      ((byte_no == TemplateTable::f2_byte)
-       ? ConstantPoolCacheEntry::f2_offset()
-       : ConstantPoolCacheEntry::f1_offset()));
-
-  z_lg(method, Address(cache, cpe_offset, method_offset)); // get f1 Method*
 }
 
 // Generate a subtype check: branch to ok_is_subtype if sub_klass is

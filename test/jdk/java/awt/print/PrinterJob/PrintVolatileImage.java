@@ -25,7 +25,7 @@
  * @test
  * @bug 4511023
  * @summary Image should be sent to printer, no exceptions thrown
- * @author prr
+ * @key printer
  * @run main/manual PrintVolatileImage
  */
 

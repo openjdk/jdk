@@ -173,7 +173,7 @@ public abstract class AbstractFilePermissionTest {
             command.add(className);
 
 
-            ProcessBuilder processBuilder = ProcessTools.createTestJvm(command);
+            ProcessBuilder processBuilder = ProcessTools.createTestJavaProcessBuilder(command);
 
             System.out.println("test cmdline: " + Arrays.toString(processBuilder.command().toArray()).replace(",", ""));
             OutputAnalyzer output = ProcessTools.executeProcess(processBuilder);

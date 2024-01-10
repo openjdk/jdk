@@ -39,9 +39,6 @@ public abstract class GenCollectedHeap extends CollectedHeap {
   private static AddressField youngGenField;
   private static AddressField oldGenField;
 
-  private static AddressField youngGenSpecField;
-  private static AddressField oldGenSpecField;
-
   private static GenerationFactory genFactory;
 
   static {
@@ -57,8 +54,6 @@ public abstract class GenCollectedHeap extends CollectedHeap {
 
     youngGenField = type.getAddressField("_young_gen");
     oldGenField = type.getAddressField("_old_gen");
-    youngGenSpecField = type.getAddressField("_young_gen_spec");
-    oldGenSpecField = type.getAddressField("_old_gen_spec");
 
     genFactory = new GenerationFactory();
   }
@@ -113,26 +108,6 @@ public abstract class GenCollectedHeap extends CollectedHeap {
       used += getGen(i).used();
     }
     return used;
-  }
-
-  /** Package-private access to GenerationSpecs */
-  GenerationSpec spec(int level) {
-    if (Assert.ASSERTS_ENABLED) {
-      Assert.that((level == 0) || (level == 1), "Index " + level +
-                  " out of range (should be 0 or 1)");
-    }
-
-    if ((level != 0) && (level != 1)) {
-      return null;
-    }
-
-    if (level == 0) {
-      return VMObjectFactory.newObject(GenerationSpec.class,
-              youngGenSpecField.getAddress());
-    } else {
-      return VMObjectFactory.newObject(GenerationSpec.class,
-              oldGenSpecField.getAddress());
-    }
   }
 
   public void liveRegionsIterate(LiveRegionsClosure closure) {

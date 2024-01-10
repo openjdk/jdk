@@ -21,8 +21,8 @@
  * questions.
  */
 
-import jdk.internal.classfile.ClassHierarchyResolver;
-import jdk.internal.classfile.Classfile;
+import java.lang.classfile.ClassHierarchyResolver;
+import java.lang.classfile.ClassFile;
 import org.junit.jupiter.api.Test;
 
 import java.io.Closeable;
@@ -50,15 +50,13 @@ import static java.lang.constant.ConstantDescs.*;
 import static java.lang.invoke.MethodHandleProxies.*;
 import static java.lang.invoke.MethodType.genericMethodType;
 import static java.lang.invoke.MethodType.methodType;
-import static jdk.internal.classfile.Classfile.*;
+import static java.lang.classfile.ClassFile.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 /*
  * @test
  * @bug 6983726 8206955 8269351
- * @modules java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.constantpool
+ * @enablePreview
  * @summary Basic sanity tests for MethodHandleProxies
  * @build BasicTest Client
  * @run junit BasicTest
@@ -287,7 +285,7 @@ public class BasicTest {
         var objMtd = MethodTypeDesc.of(CD_Object);
         var integerMtd = MethodTypeDesc.of(CD_Integer);
         var intMtd = MethodTypeDesc.of(CD_int);
-        var classfile = Classfile.of(Classfile.ClassHierarchyResolverOption.of(ClassHierarchyResolver.defaultResolver().orElse(
+        var classfile = ClassFile.of(ClassFile.ClassHierarchyResolverOption.of(ClassHierarchyResolver.defaultResolver().orElse(
                 ClassHierarchyResolver.of(List.of(baseCd, childCd), Map.ofEntries(Map.entry(baseCd, CD_Object),
                         Map.entry(childCd, CD_Object))))));
 
