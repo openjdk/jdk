@@ -2407,7 +2407,7 @@ UpdateForPopTopFrameClosure::doit(Thread *target, bool self) {
 void
 SetFramePopClosure::do_thread(Thread *target) {
   Thread* current = Thread::current();
-  ResourceMark rm(current);
+  ResourceMark rm(current); // vframes are resource allocated
   JavaThread* java_thread = JavaThread::cast(target);
 
   if (java_thread->is_exiting()) {
@@ -2435,7 +2435,7 @@ SetFramePopClosure::do_thread(Thread *target) {
 void
 SetFramePopClosure::do_vthread(Handle target_h) {
   Thread* current = Thread::current();
-  ResourceMark rm(current);
+  ResourceMark rm(current); // vframes are resource allocated
 
   if (!_self && !JvmtiVTSuspender::is_vthread_suspended(target_h())) {
     _result = JVMTI_ERROR_THREAD_NOT_SUSPENDED;
