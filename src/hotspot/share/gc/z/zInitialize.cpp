@@ -28,7 +28,6 @@
 #include "gc/z/zDriver.hpp"
 #include "gc/z/zGCIdPrinter.hpp"
 #include "gc/z/zGlobals.hpp"
-#include "gc/z/zHeuristics.hpp"
 #include "gc/z/zInitialize.hpp"
 #include "gc/z/zJNICritical.hpp"
 #include "gc/z/zLargePages.hpp"
@@ -54,7 +53,6 @@ ZInitialize::ZInitialize(ZBarrierSet* barrier_set) {
   ZThreadLocalAllocBuffer::initialize();
   ZTracer::initialize();
   ZLargePages::initialize();
-  ZHeuristics::set_medium_page_size();
   ZBarrierSet::set_barrier_set(barrier_set);
   ZJNICritical::initialize();
   ZDriver::initialize();

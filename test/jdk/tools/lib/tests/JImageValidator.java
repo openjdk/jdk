@@ -223,10 +223,10 @@ public class JImageValidator {
     }
 
     public static void readClass(byte[] clazz) throws IOException{
-        var errors = ClassFile.of().parse(clazz).verify(
+        var errors = ClassFile.of(
                 //resolution of all classes as interfaces cancels assignability verification
-                cls -> ClassHierarchyResolver.ClassHierarchyInfo.ofInterface(),
-                null);
+                ClassFile.ClassHierarchyResolverOption.of(cls -> ClassHierarchyResolver.ClassHierarchyInfo.ofInterface()))
+                .verify(clazz);
         if (!errors.isEmpty()) {
             var itr = errors.iterator();
             var thrown = itr.next();

@@ -277,8 +277,8 @@
  *                             constantPoolBuilder.utf8Entry("mypackage.MyClass"));
  * }
  * <p>
- * More complex verification of a classfile can be achieved by explicit invocation
- * of {@link java.lang.classfile.ClassModel#verify}.
+ * More complex verification of a classfile can be achieved by invocation of
+ * {@link java.lang.classfile.ClassFile#verify}.
  *
  * <h2>Transforming classfiles</h2>
  * ClassFile Processing APIs are most frequently used to combine reading and

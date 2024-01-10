@@ -57,7 +57,7 @@ public:
   void work(uint worker_id) {
     ShenandoahHeap* heap = ShenandoahHeap::heap();
     ShenandoahConcurrentWorkerSession worker_session(worker_id);
-    ShenandoahSuspendibleThreadSetJoiner stsj(ShenandoahSuspendibleWorkers);
+    ShenandoahSuspendibleThreadSetJoiner stsj;
     ShenandoahReferenceProcessor* rp = heap->ref_processor();
     assert(rp != nullptr, "need reference processor");
     StringDedup::Requests requests;

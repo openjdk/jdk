@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
- * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
+ * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2471,7 +2471,7 @@ void TemplateTable::jvmti_post_field_access(Register cache, Register index,
     ExternalAddress target((address) JvmtiExport::get_field_access_count_addr());
     __ relocate(target.rspec(), [&] {
       int32_t offset;
-      __ la_patchable(t0, target, offset);
+      __ la(t0, target.target(), offset);
       __ lwu(x10, Address(t0, offset));
     });
 
@@ -2682,7 +2682,7 @@ void TemplateTable::jvmti_post_field_mod(Register cache, Register index, bool is
     ExternalAddress target((address)JvmtiExport::get_field_modification_count_addr());
     __ relocate(target.rspec(), [&] {
       int32_t offset;
-      __ la_patchable(t0, target, offset);
+      __ la(t0, target.target(), offset);
       __ lwu(x10, Address(t0, offset));
     });
     __ beqz(x10, L1);
@@ -2975,7 +2975,7 @@ void TemplateTable::jvmti_post_fast_field_mod() {
     ExternalAddress target((address)JvmtiExport::get_field_modification_count_addr());
     __ relocate(target.rspec(), [&] {
       int32_t offset;
-      __ la_patchable(t0, target, offset);
+      __ la(t0, target.target(), offset);
       __ lwu(c_rarg3, Address(t0, offset));
     });
     __ beqz(c_rarg3, L2);
@@ -3111,7 +3111,7 @@ void TemplateTable::fast_accessfield(TosState state) {
     ExternalAddress target((address)JvmtiExport::get_field_access_count_addr());
     __ relocate(target.rspec(), [&] {
       int32_t offset;
-      __ la_patchable(t0, target, offset);
+      __ la(t0, target.target(), offset);
       __ lwu(x12, Address(t0, offset));
     });
     __ beqz(x12, L1);

@@ -21,54 +21,24 @@
  * questions.
  */
 
+import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.Utils;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNotEquals;
 import static org.testng.Assert.assertTrue;
 
 public class UpcallTestHelper extends NativeTestHelper {
-    public record Output(int result, List<String> stdout, List<String> stderr) {
-        private static void assertContains(List<String> lines, String shouldInclude, String name) {
-            assertTrue(lines.stream().anyMatch(line -> line.contains(shouldInclude)),
-                "Did not find '" + shouldInclude + "' in " + name);
-        }
 
-        public Output assertFailed() {
-            assertNotEquals(result, 0);
-            return this;
-        }
-
-        public Output assertSuccess() {
-            assertEquals(result, 0);
-            return this;
-        }
-
-        public Output assertStdErrContains(String shouldInclude) {
-            assertContains(stderr, shouldInclude, "stderr");
-            return this;
-        }
-
-        public Output assertStdOutContains(String shouldInclude) {
-            assertContains(stdout, shouldInclude, "stdout");
-            return this;
-        }
-    }
-
-    public Output runInNewProcess(Class<?> target, boolean useSpec, String... programArgs) throws IOException, InterruptedException {
+    public OutputAnalyzer runInNewProcess(Class<?> target, boolean useSpec, String... programArgs) throws IOException, InterruptedException {
         return runInNewProcess(target, useSpec, List.of(), List.of(programArgs));
     }
 
-    public Output runInNewProcess(Class<?> target, boolean useSpec, List<String> vmArgs, List<String> programArgs) throws IOException, InterruptedException {
+    public OutputAnalyzer runInNewProcess(Class<?> target, boolean useSpec, List<String> vmArgs, List<String> programArgs) throws IOException, InterruptedException {
         assert !target.isArray();
 
         List<String> command = new ArrayList<>(List.of(
@@ -86,17 +56,10 @@ public class UpcallTestHelper extends NativeTestHelper {
         boolean completed = process.waitFor(timeOut, TimeUnit.MINUTES);
         assertTrue(completed, "Time out while waiting for process");
 
-        List<String> outLines = linesFromStream(process.getInputStream());
-        outLines.forEach(System.out::println);
-        List<String> errLines = linesFromStream(process.getErrorStream());
-        errLines.forEach(System.err::println);
+        OutputAnalyzer output = new OutputAnalyzer(process);
+        output.outputTo(System.out);
+        output.errorTo(System.err);
 
-        return new Output(process.exitValue(), outLines, errLines);
-    }
-
-    private static List<String> linesFromStream(InputStream stream) throws IOException {
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(stream))) {
-            return reader.lines().toList();
-        }
+        return output;
     }
 }
