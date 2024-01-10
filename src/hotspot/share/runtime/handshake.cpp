@@ -487,6 +487,10 @@ HandshakeOperation* HandshakeState::get_op_for_self(bool allow_suspend, bool che
   assert(_handshakee == Thread::current(), "Must be called by self");
   assert(_lock.owned_by_self(), "Lock must be held");
   assert(allow_suspend || !check_async_exception, "invalid case");
+  if (allow_suspend && _handshakee->is_disable_suspend()) {
+    // filter out suspend operations while JavaThread is in disable_suspend mode
+    allow_suspend = false;
+  }
   if (!allow_suspend) {
     return _queue.peek(no_suspend_no_async_exception_filter);
   } else if (check_async_exception && !_async_exceptions_blocked) {
