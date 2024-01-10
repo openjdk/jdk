@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -175,7 +175,7 @@ class Address {
     if (_index == noreg) {
       assert(-256 < _disp && _disp < 256, "encoding constraint");
       return _mode | up(_disp) << 23 | 1 << 22 | _base->encoding() << 16 |
-             (abs(_disp) & 0xf0) << 4 | abs(_disp) & 0x0f;
+             (abs(_disp) & 0xf0) << 4 | (abs(_disp) & 0x0f);
     } else {
       assert(_index != PC && (_mode == basic_offset || _index != _base), "unpredictable instruction");
       assert(_disp == 0 && _shift == lsl && _shift_imm == 0, "encoding constraint");

@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -9193,7 +9193,7 @@ instruct clear_array(iRegX cnt, iRegP base, iRegI temp, iRegX zero, Universe dum
   ins_encode %{
     __ mov($zero$$Register, 0);
     __ mov($temp$$Register, $cnt$$Register);
-    Label(loop);
+    Label loop;
     __ bind(loop);
     __ subs($temp$$Register, $temp$$Register, 4);
     __ str($zero$$Register, Address($base$$Register, $temp$$Register), ge);
