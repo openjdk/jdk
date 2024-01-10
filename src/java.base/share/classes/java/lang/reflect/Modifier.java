@@ -234,7 +234,7 @@ public class Modifier {
      * @apiNote
      * To make a high-fidelity representation of the Java source
      * modifiers of a class or member, source-level modifiers that do
-     * not <em>not</em> have a constant in the this class should be
+     * <em>not</em> have a constant in this class should be
      * included and ordered consistent with the full recommended
      * ordering for that kind of declaration as given in <cite>The
      * Java Language Specification</cite>. For example, for a
