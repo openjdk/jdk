@@ -105,7 +105,7 @@ public class bug8038113 {
         g.dispose();
         return im;
     }
-    
+
     private static boolean isImgRendered(BufferedImage img) {
         Color white = new Color(255, 255, 255);
         for (int x = 0; x < img.getWidth(); ++x) {
