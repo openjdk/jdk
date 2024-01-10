@@ -26,7 +26,6 @@ import java.awt.Frame;
 import java.awt.GraphicsDevice;
 import java.awt.GraphicsEnvironment;
 import java.awt.Robot;
-
 import jtreg.SkippedException;
 
 import static java.awt.EventQueue.invokeAndWait;
