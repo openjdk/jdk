@@ -43,8 +43,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.HexFormat;
 import java.util.zip.*;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class Zip64DataDescriptor {
 
@@ -130,6 +129,8 @@ public class Zip64DataDescriptor {
                 .putInt(ZipFile.LOCSIZ, 0xFFFFFFFF)
                 .putInt(ZipFile.LOCLEN, 0xFFFFFFFF);
 
+        // Set the Zip64 header ID 0x1 on the extra field in the invalid file
+        setExtraHeaderId((short) 0x1);
     }
 
     /*
@@ -146,12 +147,33 @@ public class Zip64DataDescriptor {
      */
     @Test
     public void shouldIgnoreInvalidExtraSize() throws IOException {
-
         setExtraSize((short) 42);
-
-
         readZipInputStream(invalidZip64);
+    }
 
+    /*
+     * Files with Zip64 magic values but no Zip64 field should be ignored
+     * when considering 8 byte data descriptors
+     */
+    @Test
+    public void shouldIgnoreNoZip64Header() throws IOException {
+        setExtraSize((short) 123);
+        readZipInputStream(invalidZip64);
+    }
+
+    /*
+     * Theoretically, ZIP files may exist with ZIP64 format, but with 4-byte
+     * data descriptors. Such files will fail to parse, as demonstrated by this test.
+     */
+    @Test
+    public void shouldFailParsingZip64With4ByteDataDescriptor() throws IOException {
+        ZipException ex = assertThrows(ZipException.class, () -> {
+            readZipInputStream(invalidZip64);
+        });
+
+        String msg = String.format("Expected exeption message to contain 'invalid entry size', was %s",
+                ex.getMessage());
+        assertTrue(ex.getMessage().contains("invalid entry size"), msg);
     }
 
     /*
@@ -194,12 +216,22 @@ public class Zip64DataDescriptor {
     }
 
     /**
+     * Update the Extra field header ID of the invalid file
+     */
+    private void setExtraHeaderId(short id) {
+        // Set the header ID on the extra field
+        ByteBuffer buffer = ByteBuffer.wrap(invalidZip64).order(ByteOrder.LITTLE_ENDIAN);
+        int nlen = buffer.getShort(ZipFile.LOCNAM);
+        buffer.putShort(ZipFile.LOCHDR + nlen, id);
+    }
+
+    /**
      * Updates the 16-bit 'data size' field of the Zip64 extended information field,
      * potentially to an invalid value.
      * @param size the value to set in the 'data size' field.
      */
     private void setExtraSize(short size) {
-        ByteBuffer buffer = ByteBuffer.wrap(zip64File).order(ByteOrder.LITTLE_ENDIAN);
+        ByteBuffer buffer = ByteBuffer.wrap(invalidZip64).order(ByteOrder.LITTLE_ENDIAN);
         // Compute the offset to the Zip64 data block size field
         short nlen = buffer.getShort(ZipFile.LOCNAM);
         int dataSizeOffset = ZipFile.LOCHDR + nlen + Short.BYTES;
