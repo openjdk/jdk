@@ -719,12 +719,47 @@ public class TestPosix {
     }
 
     /**
-     * Verify that Files.setPosixPermissions does not alter the
-     * 7 first non-permission bits of the 'external file attributes' field.
+     * Verify that calling Files.setPosixPermissions with the current
+     * permission set does not change the 'external file attributes' field.
+     *
      * @throws IOException if an unexpected IOException occurs
      */
     @Test
-    public void preserveRemainingBits() throws IOException {
+    public void setPermissionsShouldPreserveRemainingBits() throws IOException {
+        assertExternalFileAttributeUnchanged(fs -> {
+            Path path = fs.getPath("hello.txt");
+            // Set permissions to their current value
+            Files.setPosixFilePermissions(path, Files.getPosixFilePermissions(path));
+        });
+    }
+
+    /**
+     * Verify that a non-POSIX operation such as Files.setLastModifiedTime
+     * does not change the 'external file attributes' field.
+     *
+     * @throws IOException if an unexpected IOException occurs
+     */
+    @Test
+    public void setLastModifiedTimeShouldNotChangeExternalFileAttribute() throws IOException {
+        assertExternalFileAttributeUnchanged(fs -> {
+            Path path = fs.getPath("hello.txt");
+            Files.setLastModifiedTime(path, FileTime.from(Instant.now()));
+        });
+    }
+
+    // Represents an operation performed on a FileSystem
+    static interface FileSystemOperation {
+        void accept(FileSystem fileSystem) throws IOException;
+    }
+
+    /**
+     * Assert that running the given operation on a ZipFileSystem does not
+     * change the 'external file attributes' value of the 'hello.txt' entry
+     * @param action the action to run on the file system
+     *
+     * @throws IOException if an unexpected IOException occurs
+     */
+    private void assertExternalFileAttributeUnchanged(FileSystemOperation action) throws IOException {
         /*
          * The ZIP test vector used here is created using:
          * % touch hello.txt
@@ -755,25 +790,14 @@ public class TestPosix {
         verifyExternalFileAttribute(zip, expectedBits);
 
 
-        Path zipFile = Path.of("preserve-symlink.zip");
+        Path zipFile = Path.of("preserve-external-file-attrs.zip");
         Files.write(zipFile, zip);
 
-        // Verify that a read/synch roundtrip preserves the external file attributes
+        // Run the provided action on the ZipFileSystem
         try (FileSystem fs = FileSystems.newFileSystem(zipFile, ENV_POSIX)) {
-            Path source = fs.getPath("hello.txt");
-            Files.setLastModifiedTime(source, FileTime.from(Instant.now()));
+            action.accept(fs);
         }
-        // Updating last modified time should not modify external file attributes
-        verifyExternalFileAttribute(Files.readAllBytes(zipFile), expectedBits);
-
-        // Verify calling Files.setPosixFilePermissions with current permission set
-        try (FileSystem fs = FileSystems.newFileSystem(zipFile, ENV_POSIX)) {
-            Path source = fs.getPath("hello.txt");
-            // Set permissions to their current value
-            Files.setPosixFilePermissions(source, Files.getPosixFilePermissions(source));
-        }
-
-        // Verify that the 'external file attributes' field did not change
+        // Running the action should not change the 'external file attributes' value
         verifyExternalFileAttribute(Files.readAllBytes(zipFile), expectedBits);
     }
 
