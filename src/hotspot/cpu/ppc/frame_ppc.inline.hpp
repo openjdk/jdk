@@ -361,20 +361,6 @@ inline void frame::set_saved_oop_result(RegisterMap* map, oop obj) {
   *result_adr = obj;
 }
 
-inline const ImmutableOopMap* frame::get_oop_map() const {
-  if (_cb == nullptr) return nullptr;
-  if (_cb->oop_maps() != nullptr) {
-    NativePostCallNop* nop = nativePostCallNop_at(_pc);
-    if (nop != nullptr && nop->displacement() != 0) {
-      int slot = ((nop->displacement() >> 24) & 0xff);
-      return _cb->oop_map_for_slot(slot, _pc);
-    }
-    const ImmutableOopMap* oop_map = OopMapSet::find_map(this);
-    return oop_map;
-  }
-  return nullptr;
-}
-
 inline int frame::compiled_frame_stack_argsize() const {
   assert(cb()->is_compiled(), "");
   return (cb()->as_compiled_method()->method()->num_stack_arg_slots() * VMRegImpl::stack_slot_size) >> LogBytesPerWord;
