@@ -1812,6 +1812,9 @@ char* os::reserve_memory(size_t bytes, bool executable, MEMFLAGS flags) {
   char* result = pd_reserve_memory(bytes, executable);
   if (result != nullptr) {
     MemTracker::record_virtual_memory_reserve(result, bytes, CALLER_PC, flags);
+    log_debug(os,map)("Reserved [" INTPTR_FORMAT " - " INTPTR_FORMAT"] (%zu bytes).", p2i(result), p2i(result + bytes), bytes);
+  } else {
+    log_info(os,map)("Reserve failed (%zu bytes), errno %d %s", bytes, get_last_error(), strerror(get_last_error()));
   }
   return result;
 }
@@ -1820,10 +1823,10 @@ char* os::attempt_reserve_memory_at(char* addr, size_t bytes, bool executable) {
   char* result = SimulateFullAddressSpace ? nullptr : pd_attempt_reserve_memory_at(addr, bytes, executable);
   if (result != nullptr) {
     MemTracker::record_virtual_memory_reserve((address)result, bytes, CALLER_PC);
-    log_debug(os)("Reserved memory at " INTPTR_FORMAT " for " SIZE_FORMAT " bytes.", p2i(addr), bytes);
+    log_debug(os,map)("Reserved [" INTPTR_FORMAT " - " INTPTR_FORMAT"] (%zu bytes).", p2i(result), p2i(result + bytes), bytes);
   } else {
-    log_debug(os)("Attempt to reserve memory at " INTPTR_FORMAT " for "
-                 SIZE_FORMAT " bytes failed, errno %d", p2i(addr), bytes, get_last_error());
+    log_info(os,map)("Attempt to reserve [" INTPTR_FORMAT " - " INTPTR_FORMAT"] (%zu bytes) failed, errno %d %s",
+      p2i(addr), p2i(addr + bytes), bytes, get_last_error(), strerror(get_last_error()));
   }
   return result;
 }
@@ -2031,6 +2034,11 @@ bool os::commit_memory(char* addr, size_t bytes, bool executable) {
   bool res = pd_commit_memory(addr, bytes, executable);
   if (res) {
     MemTracker::record_virtual_memory_commit((address)addr, bytes, CALLER_PC);
+    log_debug(os,map)("Committed [" INTPTR_FORMAT " - " INTPTR_FORMAT"] (%zu bytes).",
+      p2i(addr), p2i(addr + bytes), bytes);
+  } else {
+    log_info(os,map)("Failed to commit [" INTPTR_FORMAT " - " INTPTR_FORMAT"] (%zu bytes), errno %d %s",
+      p2i(addr), p2i(addr + bytes), bytes, get_last_error(), strerror(get_last_error()));
   }
   return res;
 }
@@ -2041,6 +2049,11 @@ bool os::commit_memory(char* addr, size_t size, size_t alignment_hint,
   bool res = os::pd_commit_memory(addr, size, alignment_hint, executable);
   if (res) {
     MemTracker::record_virtual_memory_commit((address)addr, size, CALLER_PC);
+    log_debug(os,map)("Committed [" INTPTR_FORMAT " - " INTPTR_FORMAT"] (%zu bytes).",
+      p2i(addr), p2i(addr + size), size);
+  } else {
+    log_info(os,map)("Failed to commit [" INTPTR_FORMAT " - " INTPTR_FORMAT"] (%zu bytes), errno %d %s",
+      p2i(addr), p2i(addr + size), size, get_last_error(), strerror(get_last_error()));
   }
   return res;
 }
@@ -2071,6 +2084,15 @@ bool os::uncommit_memory(char* addr, size_t bytes, bool executable) {
   } else {
     res = pd_uncommit_memory(addr, bytes, executable);
   }
+
+  if (res) {
+    log_debug(os,map)("Uncommitted [" INTPTR_FORMAT " - " INTPTR_FORMAT"] (%zu bytes).",
+      p2i(addr), p2i(addr + bytes), bytes);
+  } else {
+    log_info(os,map)("Failed to uncommit [" INTPTR_FORMAT " - " INTPTR_FORMAT"] (%zu bytes), errno %d %s",
+      p2i(addr), p2i(addr + bytes), bytes, get_last_error(), strerror(get_last_error()));
+  }
+
   return res;
 }
 
@@ -2088,7 +2110,11 @@ bool os::release_memory(char* addr, size_t bytes) {
     res = pd_release_memory(addr, bytes);
   }
   if (!res) {
-    log_info(os)("os::release_memory failed (" PTR_FORMAT ", " SIZE_FORMAT ")", p2i(addr), bytes);
+    log_info(os,map)("Failed to release [" INTPTR_FORMAT " - " INTPTR_FORMAT"] (%zu bytes), errno %d %s",
+      p2i(addr), p2i(addr + bytes), bytes, get_last_error(), strerror(get_last_error()));
+  } else {
+    log_debug(os,map)("Released [" INTPTR_FORMAT " - " INTPTR_FORMAT"] (%zu bytes).",
+      p2i(addr), p2i(addr + bytes), bytes);
   }
   return res;
 }
@@ -2193,6 +2219,11 @@ char* os::reserve_memory_special(size_t size, size_t alignment, size_t page_size
   if (result != nullptr) {
     // The memory is committed
     MemTracker::record_virtual_memory_reserve_and_commit((address)result, size, CALLER_PC);
+    log_debug(os,map)("Reserved and committed [" INTPTR_FORMAT " - " INTPTR_FORMAT"] (%zu bytes).",
+      p2i(result), p2i(result + size), size);
+  } else {
+    log_info(os,map)("Reserve and commit failed (%zu bytes), errno %d %s", size, get_last_error(),
+      strerror(get_last_error()));
   }
 
   return result;
