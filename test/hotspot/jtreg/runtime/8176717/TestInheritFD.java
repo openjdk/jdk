@@ -42,6 +42,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.Collection;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.TimeUnit;
 import java.util.Optional;
 import java.util.stream.Stream;
@@ -255,7 +256,7 @@ public class TestInheritFD {
         } else if (result == Result.FOUND_LEAKS_FD) {
             throw new RuntimeException("Log file was leaked to the third VM.");
         } else {
-            throw new RuntimeException("Found neither message, I am confused!");
+            throw new RuntimeException("Found neither message, test failed to run correctly");
         }
         System.out.println("First VM ends.");
     }
@@ -304,13 +305,11 @@ public class TestInheritFD {
                 if (false) {  // Enable to simulate a timeout in the third VM.
                     Thread.sleep(300 * 1000);
                 }
+            } catch (CompletionException e) {
+                System.out.println("(Third VM) Timed out waiting for second VM: " + e.toString());
+                throw e;
             } catch (Exception e) {
-                if (e instanceof TimeoutException) {
-                    TimeoutException te = (TimeoutException)e;
-                    System.out.println("(Third VM) Timed out waiting for second VM: " + te.toString());
-                } else {
-                    System.out.println("(Third VM) Exception was thrown: " + e.toString());
-                }
+                System.out.println("(Third VM) Exception was thrown: " + e.toString());
                 throw e;
             } finally {
                 System.out.println(EXIT);
