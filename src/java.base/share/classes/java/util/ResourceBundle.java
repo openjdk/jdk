@@ -509,7 +509,7 @@ public abstract class ResourceBundle {
      * Calling this method is equivalent to calling
      * {@snippet lang=java :
      *     // @link substring="getObject" target="#getObject(java.lang.String)"
-     *     (String[]) getObject(key);
+     *     (String) getObject(key);
      * }
      *
      * @param key the key for the desired string
