@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,9 +28,16 @@ import java.lang.*;
 import java.util.*;
 import java.io.*;
 import java.awt.Color;
+import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
+import java.nio.charset.Charset;
+import java.nio.charset.CharsetDecoder;
+import java.nio.charset.CodingErrorAction;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import javax.swing.text.*;
+
+import static java.nio.charset.StandardCharsets.ISO_8859_1;
 
 /**
  * Takes a sequence of RTF tokens and text and appends the text
@@ -64,6 +71,10 @@ class RTFReader extends RTFParser
 
   /** This Dictionary maps Integer font numbers to String font names. */
   Dictionary<Integer, String> fontTable;
+  /** This Dictionary maps Integer font numbers to Charset font charset. */
+  Dictionary<Integer, Charset> fcharsetTable;
+  /** This Dictionary maps String font charset to String code page. */
+  static Dictionary<String, String> fcharsetToCP = null;
   /** This array maps color indices to Color objects. */
   Color[] colorTable;
   /** This Map maps character style numbers to Style objects. */
@@ -110,6 +121,7 @@ class RTFReader extends RTFParser
       textKeywords.put("emspace",    "\u2003");
       textKeywords.put("endash",     "\u2013");
       textKeywords.put("enspace",    "\u2002");
+      textKeywords.put("line",       "\n");
       textKeywords.put("ldblquote",  "\u201C");
       textKeywords.put("lquote",     "\u2018");
       textKeywords.put("ltrmark",    "\u200E");
@@ -136,7 +148,50 @@ class RTFReader extends RTFParser
       defineCharacterSet("ansicpg", latin1TranslationTable);
   }
 
-/* TODO: per-font font encodings ( \fcharset control word ) ? */
+    /**
+     * Windows font charset
+     */
+    private static final int ANSI_CHARSET        = 0;
+    private static final int DEFAULT_CHARSET     = 1;
+    private static final int SYMBOL_CHARSET      = 2;
+    private static final int MAC_CHARSET         = 77;
+    private static final int SHIFTJIS_CHARSET    = 128;
+    private static final int HANGUL_CHARSET      = 129;
+    private static final int JOHAB_CHARSET       = 130;
+    private static final int GB2312_CHARSET      = 134;
+    private static final int CHINESEBIG5_CHARSET = 136;
+    private static final int GREEK_CHARSET       = 161;
+    private static final int TURKISH_CHARSET     = 162;
+    private static final int VIETNAMESE_CHARSET  = 163;
+    private static final int HEBREW_CHARSET      = 177;
+    private static final int ARABIC_CHARSET      = 178;
+    private static final int BALTIC_CHARSET      = 186;
+    private static final int RUSSIAN_CHARSET     = 204;
+    private static final int THAI_CHARSET        = 222;
+    private static final int EASTEUROPE_CHARSET  = 238;
+    private static final int OEM_CHARSET         = 255;
+
+    static {
+        fcharsetToCP = new Hashtable<String, String>();
+        fcharsetToCP.put("fcharset" + ANSI_CHARSET, "windows-1252");
+        fcharsetToCP.put("fcharset" + SHIFTJIS_CHARSET, "ms932");
+        fcharsetToCP.put("fcharset" + HANGUL_CHARSET, "ms949");
+        fcharsetToCP.put("fcharset" + JOHAB_CHARSET, "ms1361");
+        fcharsetToCP.put("fcharset" + GB2312_CHARSET, "ms936");
+        fcharsetToCP.put("fcharset" + CHINESEBIG5_CHARSET, "ms950");
+        fcharsetToCP.put("fcharset" + GREEK_CHARSET, "windows-1253");
+        fcharsetToCP.put("fcharset" + TURKISH_CHARSET, "windows-1254");
+        fcharsetToCP.put("fcharset" + VIETNAMESE_CHARSET, "windows-1258");
+        fcharsetToCP.put("fcharset" + HEBREW_CHARSET, "windows-1255");
+        fcharsetToCP.put("fcharset" + ARABIC_CHARSET, "windows-1256");
+        fcharsetToCP.put("fcharset" + BALTIC_CHARSET, "windows-1257");
+        fcharsetToCP.put("fcharset" + RUSSIAN_CHARSET, "windows-1251");
+        fcharsetToCP.put("fcharset" + THAI_CHARSET, "ms874");
+        fcharsetToCP.put("fcharset" + EASTEUROPE_CHARSET, "windows-1250");
+    }
+
+    // Defined for replacement character
+    private static final String REPLACEMENT_CHAR = "\uFFFD";
 
 /**
  * Creates a new RTFReader instance. Text will be sent to
@@ -151,6 +206,7 @@ public RTFReader(StyledDocument destination)
     target = destination;
     parserState = new Hashtable<Object, Object>();
     fontTable = new Hashtable<Integer, String>();
+    fcharsetTable = new Hashtable<Integer, Charset>();
 
     rtfversion = -1;
 
@@ -740,6 +796,25 @@ class FonttblDestination implements Destination
             nextFontNumber = parameter;
             return true;
         }
+        // For fcharset control word
+        if (keyword.equals("fcharset")) {
+            String fcharset = keyword+parameter;
+            String csName = fcharsetToCP.get(fcharset);
+            Charset cs;
+            if (csName != null) {
+                try {
+                    cs = Charset.forName(csName);
+                } catch (IllegalArgumentException iae) {
+                    // Fallback, should not be called
+                    cs = ISO_8859_1;
+                }
+            } else {
+                // Fallback, fcharset control word number is not defined
+                cs = ISO_8859_1;
+            }
+            fcharsetTable.put(nextFontNumber, cs);
+            return true;
+        }
 
         return false;
     }
@@ -1194,6 +1269,25 @@ abstract class AttributeTrackingDestination implements Destination
 
         if (keyword.equals("f")) {
             parserState.put(keyword, Integer.valueOf(parameter));
+
+            // Check lead byte is stored or not
+            if (decoderBB.position() == 1) {
+                handleText(REPLACEMENT_CHAR);
+            }
+            // Reset decoder byte buffer
+            decoderBB.clear();
+            decoderBB.limit(1);
+            // Check fcharset is used or not
+            Charset cs = fcharsetTable.get(parameter);
+            if (cs != null) {
+                decoder = cs.newDecoder();
+                decoder.onMalformedInput(CodingErrorAction.REPLACE)
+                       .onUnmappableCharacter(CodingErrorAction.REPLACE);
+            } else {
+                // fcharset is not used, use translationTable
+                decoder = null;
+            }
+
             return true;
         }
         if (keyword.equals("cf")) {
@@ -1588,6 +1682,12 @@ abstract class TextHandlingDestination
 
         if (keyword.equals("par")) {
 //          warnings.println("Ending paragraph.");
+            // Check lead byte is stored or not
+            if (decoderBB.position() == 1) {
+                handleText(REPLACEMENT_CHAR);
+                decoderBB.clear();
+                decoderBB.limit(1);
+            }
             endParagraph();
             return true;
         }
