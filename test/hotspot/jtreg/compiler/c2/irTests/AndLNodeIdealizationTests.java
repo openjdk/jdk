@@ -27,24 +27,24 @@ import compiler.lib.ir_framework.*;
 
 /*
  * @test
- * @bug 8297384
- * @summary Test that Ideal transformations of AndINode* are being performed as expected.
+ * @bug 8322589
+ * @summary Test that Ideal transformations of AndLNode* are being performed as expected.
  * @library /test/lib /
- * @run driver compiler.c2.irTests.AndINodeIdealizationTests
+ * @run driver compiler.c2.irTests.AndLNodeIdealizationTests
  */
-public class AndINodeIdealizationTests {
+public class AndLNodeIdealizationTests {
 
     public static void main(String[] args) {
         TestFramework.run();
     }
 
-    @Run(test = { "test1", "test2" })
+    @Run(test = { "test1" })
     public void runMethod() {
-        int a = RunInfo.getRandom().nextInt();
-        int b = RunInfo.getRandom().nextInt();
+        long a = RunInfo.getRandom().nextLong();
+        long b = RunInfo.getRandom().nextLong();
 
-        int min = Integer.MIN_VALUE;
-        int max = Integer.MAX_VALUE;
+        long min = Long.MIN_VALUE;
+        long max = Long.MAX_VALUE;
 
         assertResult(0, 0);
         assertResult(a, b);
@@ -53,17 +53,8 @@ public class AndINodeIdealizationTests {
     }
 
     @DontCompile
-    public void assertResult(int a, int b) {
-        Asserts.assertEQ((0 - a) & 1, test1(a));
-        Asserts.assertEQ((~a) & (~b), test2(a, b));
-    }
-
-    @Test
-    @IR(failOn = { IRNode.SUB })
-    @IR(counts = { IRNode.AND, "1" })
-    // Checks (0 - x) & 1 => x & 1
-    public int test1(int x) {
-        return (0 - x) & 1;
+    public void assertResult(long a, long b) {
+        Asserts.assertEQ((~a) & (~b), test1(a, b));
     }
 
     @Test
@@ -71,7 +62,7 @@ public class AndINodeIdealizationTests {
     @IR(counts = { IRNode.OR, "1",
                    IRNode.XOR, "1" })
     // Checks (~a) & (~b) => ~(a | b)
-    public int test2(int a, int b) {
+    public long test1(long a, long b) {
         return (~a) & (~b);
     }
 }
