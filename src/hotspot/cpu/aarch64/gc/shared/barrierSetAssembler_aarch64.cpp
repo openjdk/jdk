@@ -358,7 +358,7 @@ void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm, Label* slo
   __ br(condition, barrier_target);
 
   if (slow_path == nullptr) {
-    __ movptr(rscratch1, (uintptr_t) StubRoutines::aarch64::method_entry_barrier());
+    __ lea(rscratch1, RuntimeAddress(StubRoutines::method_entry_barrier()));
     __ blr(rscratch1);
     __ b(skip_barrier);
 

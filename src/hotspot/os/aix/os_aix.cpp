@@ -1017,6 +1017,10 @@ int os::current_process_id() {
 // directory not the java application's temp directory, ala java.io.tmpdir.
 const char* os::get_temp_directory() { return "/tmp"; }
 
+void os::prepare_native_symbols() {
+  LoadedLibraries::reload();
+}
+
 // Check if addr is inside libjvm.so.
 bool os::address_is_in_vm(address addr) {
 
@@ -1914,10 +1918,6 @@ bool os::numa_get_group_ids_for_range(const void** addresses, int* lgrp_ids, siz
   return false;
 }
 
-char *os::scan_pages(char *start, char* end, page_info* page_expected, page_info* page_found) {
-  return end;
-}
-
 // Reserves and attaches a shared memory segment.
 char* os::pd_reserve_memory(size_t bytes, bool exec) {
   // Always round to os::vm_page_size(), which may be larger than 4K.
@@ -2108,11 +2108,6 @@ size_t os::large_page_size() {
 }
 
 bool os::can_commit_large_page_memory() {
-  // Does not matter, we do not support huge pages.
-  return false;
-}
-
-bool os::can_execute_large_page_memory() {
   // Does not matter, we do not support huge pages.
   return false;
 }

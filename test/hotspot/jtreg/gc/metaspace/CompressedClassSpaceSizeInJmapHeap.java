@@ -77,9 +77,8 @@ public class CompressedClassSpaceSizeInJmapHeap {
     }
 
     private static void run(ProcessBuilder pb) throws Exception {
-        Process p = pb.start();
-        p.waitFor();
-        int exitValue = p.exitValue();
+        OutputAnalyzer output = ProcessTools.executeProcess(pb);
+        int exitValue = output.getExitValue();
         if (exitValue != 0) {
             throw new Exception("jmap -heap exited with error code: " + exitValue);
         }

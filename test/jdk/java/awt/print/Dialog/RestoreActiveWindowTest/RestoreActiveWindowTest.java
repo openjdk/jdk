@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug 6365992 6379599 8137137
+ * @key printer
  * @summary REG: Showing and disposing a native print dialog makes the main
  *  frame inactive, Win32
  * @run main/manual RestoreActiveWindowTest

@@ -50,9 +50,8 @@
 
 class DefNewGeneration;
 class GCMemoryManager;
-class GenerationSpec;
 class ContiguousSpace;
-class CompactPoint;
+
 class OopClosure;
 class GCStats;
 
@@ -113,8 +112,6 @@ class Generation: public CHeapObj<mtGC> {
 
   virtual Generation::Name kind() { return Generation::Other; }
 
-  // Space inquiries (results in bytes)
-  size_t initial_size();
   virtual size_t capacity() const = 0;  // The maximum number of object bytes the
                                         // generation can currently hold.
   virtual size_t used() const = 0;      // The number of used bytes in the gen.
@@ -288,13 +285,6 @@ class Generation: public CHeapObj<mtGC> {
   // the collection of the young generation has completed.
   GCStats* gc_stats() const { return _gc_stats; }
   virtual void update_gc_stats(Generation* current_generation, bool full) {}
-
-  // Mark sweep support phase2
-  virtual void prepare_for_compaction(CompactPoint* cp);
-  // Mark sweep support phase3
-  virtual void adjust_pointers();
-  // Mark sweep support phase4
-  virtual void compact();
 
   // Accessing "marks".
 

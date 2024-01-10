@@ -82,10 +82,9 @@ public class ToCStringTest extends CLayouts {
 
     @Benchmark
     public MemorySegment panama_writeString() throws Throwable {
-        Arena arena = Arena.ofConfined();
-        MemorySegment segment = arena.allocateFrom(str);
-        arena.close();
-        return segment;
+        try (Arena arena = Arena.ofConfined()) {
+            return arena.allocateFrom(str);
+        }
     }
 
     static native long writeString(String str);
