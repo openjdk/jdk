@@ -206,8 +206,3 @@ address StubRoutines::ppc::generate_crc_constants(juint reverse_poly) {
 
   return consts;
 }
-
-address StubRoutines::ppc::_nmethod_entry_barrier = nullptr;
-address StubRoutines::ppc::nmethod_entry_barrier() {
-  return _nmethod_entry_barrier;
-}

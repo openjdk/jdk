@@ -25,7 +25,7 @@
   @test PrintDialog.java
   @bug 4257903
   @summary  Confirm that the you see the print dialog.
-  @author prr: area=PrinterJob
+  @key printer
   @run main/manual PrintDialog
 */
 

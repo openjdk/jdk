@@ -957,6 +957,8 @@
     <Field type="string" name="name" label="Name" />
     <Field type="boolean" name="success" label="Success" description="Success or failure of the load operation" />
     <Field type="string" name="errorMessage" label="Error Message" description="In case of a load error, error description" />
+    <Field type="boolean" name="fpEnvCorrectionAttempt" label="FPU Environment correction" description="In case of IEEE conformance issues we might reset the FP environment" />
+    <Field type="boolean" name="fpEnvCorrectionSuccess" label="FPU Environment correction result" description="Stores the result in the case of an FP environment correction" />
   </Event>
 
   <Event name="NativeLibraryUnload" category="Java Virtual Machine, Runtime" label="Native Library Unload" thread="true" stackTrace="true" startTime="true"
@@ -1250,6 +1252,13 @@
     <Field type="Ticks" name="initializationTime" label="Initialization Time" description="The time the JVM initialized the agent" />
     <Field type="Tickspan" name="initializationDuration" label="Initialization Duration" description="The duration of executing the JVMTI VMInit event callback. If no VMInit callback is specified, the duration is 0. For a dynamically loaded agent, it is the duration of executing the call to Agent_OnAttach." />
     <Field type="string" name="path" label="Path" description="The path of the library" />
+  </Event>
+
+  <Event name="DeprecatedInvocation" description= "A unique invocation of a method that is annotated with @Deprecated. Packages and modules that are deprecated are ignored. At most 10 000 invocation sites and only the first invocation from a class is guaranteed to be included."
+   category="Java Application, Statistics" label="Deprecated Method Invocation" thread="false" stackTrace="true" startTime="false" level="forRemoval,all">
+    <Field type="Method" name="method" label="Deprecated Method" />
+    <Field type="Ticks" name="invocationTime" label="Invocation Time" description="The time the deprecated method was invoked for the first time" />
+    <Field type="boolean" name="forRemoval" label="For Removal" />
   </Event>
 
   <Type name="DeoptimizationReason" label="Deoptimization Reason">

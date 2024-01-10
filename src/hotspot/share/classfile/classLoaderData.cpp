@@ -599,7 +599,7 @@ void ClassLoaderData::unload() {
   free_deallocate_list_C_heap_structures();
 
   // Clean up class dependencies and tell serviceability tools
-  // these classes are unloading.  Must be called
+  // these classes are unloading.  This must be called
   // after erroneous classes are released.
   classes_do(InstanceKlass::unload_class);
 

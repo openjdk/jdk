@@ -915,6 +915,12 @@
       <setting name="period">endChunk</setting>
     </event>
 
+    <event name="jdk.DeprecatedInvocation">
+      <setting name="enabled">true</setting>
+      <setting name="stackTrace">true</setting>
+      <setting name="level">forRemoval</setting>
+    </event>
+
 
 
 

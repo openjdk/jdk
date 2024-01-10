@@ -23,16 +23,12 @@
 
 /*
  * @test
- * @bug 8171177
+ * @bug 8171177 8187591
  * @summary Verify that ModuleResolution attribute flags are honored.
  * @library /tools/lib
+ * @enablePreview
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
- *          java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.constantpool
- *          java.base/jdk.internal.classfile.instruction
- *          java.base/jdk.internal.classfile.components
  *          java.base/jdk.internal.classfile.impl
  *          java.base/jdk.internal.module
  *          jdk.jdeps/com.sun.tools.javap
@@ -53,9 +49,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.attribute.ModuleResolutionAttribute;
-import jdk.internal.classfile.constantpool.*;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.ModuleResolutionAttribute;
+import java.lang.classfile.constantpool.*;
 import toolbox.JavacTask;
 import toolbox.Task;
 import toolbox.Task.Expect;
@@ -238,6 +234,16 @@ public class IncubatingTest extends ModuleTestBase {
         if (!expected.equals(log)) {
             throw new AssertionError("Unexpected output: " + log);
         }
+
+        //test disable lint incubating
+        new JavacTask(tb)
+                .options("--module-path", classes.toString(),
+                         "-XDrawDiagnostics",
+                         "-Xlint:-incubating",
+                         "-Werror")
+                .outdir(testModuleClasses)
+                .files(findJavaFiles(testModuleSrc))
+                .run(Expect.SUCCESS);
     }
 
     private void copyJavaBase(Path targetDir) throws IOException {
@@ -258,9 +264,9 @@ public class IncubatingTest extends ModuleTestBase {
     }
 
     private void addModuleResolutionAttribute(Path classfile, int resolution_flags) throws Exception {
-        ClassModel cm = Classfile.of().parse(classfile);
+        ClassModel cm = ClassFile.of().parse(classfile);
         ModuleResolutionAttribute modRAttr = ModuleResolutionAttribute.of(resolution_flags);
-        byte[] newBytes = Classfile.of().transform(cm, ClassTransform.dropping(ce -> ce instanceof ModuleResolutionAttribute).
+        byte[] newBytes = ClassFile.of().transform(cm, ClassTransform.dropping(ce -> ce instanceof ModuleResolutionAttribute).
                 andThen(ClassTransform.endHandler(classBuilder -> classBuilder.with(modRAttr))));
         try (OutputStream out = Files.newOutputStream(classfile)) {
             out.write(newBytes);

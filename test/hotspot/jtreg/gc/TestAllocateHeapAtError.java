@@ -45,13 +45,12 @@ public class TestAllocateHeapAtError {
       f = new File(test_dir, UUID.randomUUID().toString());
     } while(f.exists());
 
-    ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
+    OutputAnalyzer output = ProcessTools.executeTestJava(
         "-XX:AllocateHeapAt=" + f.getName(),
         "-Xlog:gc+heap=info",
         "-Xmx32m",
         "-Xms32m",
         "-version");
-    OutputAnalyzer output = new OutputAnalyzer(pb.start());
 
     System.out.println("Output:\n" + output.getOutput());
 

@@ -27,13 +27,13 @@ package jdk.internal.classfile.impl;
 import java.util.Optional;
 import java.util.function.Consumer;
 
-import jdk.internal.classfile.CodeBuilder;
-import jdk.internal.classfile.CodeModel;
-import jdk.internal.classfile.CodeTransform;
-import jdk.internal.classfile.MethodBuilder;
-import jdk.internal.classfile.MethodElement;
-import jdk.internal.classfile.MethodModel;
-import jdk.internal.classfile.constantpool.ConstantPoolBuilder;
+import java.lang.classfile.CodeBuilder;
+import java.lang.classfile.CodeModel;
+import java.lang.classfile.CodeTransform;
+import java.lang.classfile.MethodBuilder;
+import java.lang.classfile.MethodElement;
+import java.lang.classfile.MethodModel;
+import java.lang.classfile.constantpool.ConstantPoolBuilder;
 
 public final class ChainedMethodBuilder implements MethodBuilder {
     final MethodBuilder downstream;

@@ -560,18 +560,23 @@ static bool is_movk_to_zr(uint32_t insn) {
 }
 #endif
 
-void NativePostCallNop::patch(jint diff) {
+bool NativePostCallNop::patch(int32_t oopmap_slot, int32_t cb_offset) {
+  if (((oopmap_slot & 0xff) != oopmap_slot) || ((cb_offset & 0xffffff) != cb_offset)) {
+    return false; // cannot encode
+  }
+  uint32_t data = ((uint32_t)oopmap_slot << 24) | cb_offset;
 #ifdef ASSERT
-  assert(diff != 0, "must be");
+  assert(data != 0, "must be");
   uint32_t insn1 = uint_at(4);
   uint32_t insn2 = uint_at(8);
   assert (is_movk_to_zr(insn1) && is_movk_to_zr(insn2), "must be");
 #endif
 
-  uint32_t lo = diff & 0xffff;
-  uint32_t hi = (uint32_t)diff >> 16;
+  uint32_t lo = data & 0xffff;
+  uint32_t hi = data >> 16;
   Instruction_aarch64::patch(addr_at(4), 20, 5, lo);
   Instruction_aarch64::patch(addr_at(8), 20, 5, hi);
+  return true; // successfully encoded
 }
 
 void NativeDeoptInstruction::verify() {

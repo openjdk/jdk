@@ -24,9 +24,9 @@
  */
 package jdk.tools.jlink.internal.plugins;
 
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.attribute.*;
-import jdk.internal.classfile.constantpool.*;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.*;
+import java.lang.classfile.constantpool.*;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
@@ -194,7 +194,7 @@ public class StringSharingPlugin extends AbstractPlugin implements ResourcePrevi
         public byte[] transform(ResourcePoolEntry resource, ResourcePoolBuilder out,
                 StringTable strings) throws IOException, Exception {
             byte[] content = resource.contentBytes();
-            ClassModel cf = Classfile.of().parse(content);
+            ClassModel cf = ClassFile.of().parse(content);
             DescriptorsScanner scanner = new DescriptorsScanner(cf);
             return optimize(resource, out, strings, scanner.scan(), content);
         }
@@ -215,7 +215,7 @@ public class StringSharingPlugin extends AbstractPlugin implements ResourcePrevi
                 int tag = stream.readUnsignedByte();
                 byte[] arr;
                 switch (tag) {
-                    case Classfile.TAG_UTF8: {
+                    case ClassFile.TAG_UTF8: {
                         String original = stream.readUTF();
                         // 2 cases, a Descriptor or a simple String
                         if (descriptorIndexes.contains(i)) {
@@ -239,8 +239,8 @@ public class StringSharingPlugin extends AbstractPlugin implements ResourcePrevi
 
                         break;
                     }
-                    case Classfile.TAG_LONG:
-                    case Classfile.TAG_DOUBLE:
+                    case ClassFile.TAG_LONG:
+                    case ClassFile.TAG_DOUBLE:
                         i++;
                     default: {
                         out.write(tag);

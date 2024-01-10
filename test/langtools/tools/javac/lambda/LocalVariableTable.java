@@ -25,12 +25,8 @@
  * @test
  * @bug 8025998 8026749 8054220 8058227
  * @summary Missing LV table in lambda bodies
- * @modules java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.constantpool
- *          java.base/jdk.internal.classfile.instruction
- *          java.base/jdk.internal.classfile.components
- *          java.base/jdk.internal.classfile.impl
+ * @enablePreview
+ * @modules java.base/jdk.internal.classfile.impl
  * @compile -g LocalVariableTable.java
  * @run main LocalVariableTable
  */
@@ -38,8 +34,8 @@
 import java.io.*;
 import java.lang.annotation.*;
 import java.util.*;
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.attribute.*;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.*;
 
 /*
  * The test checks that a LocalVariableTable attribute is generated for the
@@ -87,7 +83,7 @@ public class LocalVariableTable {
             return;
         }
 
-        ClassModel cm = Classfile.of().parse(Objects.requireNonNull(getClass().getResource(c.getName() + ".class")).openStream().readAllBytes());
+        ClassModel cm = ClassFile.of().parse(Objects.requireNonNull(getClass().getResource(c.getName() + ".class")).openStream().readAllBytes());
         MethodModel m = getLambdaMethod(cm);
         if (m == null) {
             error("lambda method not found");
