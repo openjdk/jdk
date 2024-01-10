@@ -90,7 +90,7 @@ public class ZipInputStream extends InflaterInputStream implements ZipConstants 
 
     private ZipCoder zc;
 
-    // True if readEnd should expect 64 bit size fields in the Data Descriptor
+    // Flag to indicate readEnd should expect 64 bit Data Descriptor size fields
     private boolean expect64BitDataDescriptor;
 
     /**
@@ -539,7 +539,6 @@ public class ZipInputStream extends InflaterInputStream implements ZipConstants 
                 throw new ZipException(
                         "only DEFLATED entries can have EXT descriptor");
             }
-            // ZipEntry.csize and ZipEntry.size are initialized by readEnd
         } else {
             e.crc = get32(tmpbuf, LOCCRC);
             e.csize = csize;
@@ -647,8 +646,8 @@ public class ZipInputStream extends InflaterInputStream implements ZipConstants 
      * as 64-bit numbers instead of the regular 32-bit numbers.
      *
      * Returns true if the LOC has the 'streaming mode' flag set, the 'compressed size' and
-     * 'uncompressed size' set to the Zip64 magic value 0xFFFFFFFF, and the LOC's extra field
-     * contains a Zip64 field with both 'Original Size' and 'Compressed Size' is set to zero.
+     * 'uncompressed size' are set to the Zip64 magic value 0xFFFFFFFF, and the LOC's extra field
+     * contains a Zip64 field where both 'Original Size' and 'Compressed Size' are set to zero.
      *
      * @param extra the LOC extra field to look for a Zip64 field in
      * @param flag the value of the 'general purpose bit flag' field in the LOC
