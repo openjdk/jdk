@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -80,13 +80,9 @@ public class ShowAfterDisposeTest {
     }
 
     public void showFrameAndIcon() throws Exception {
-        if (!traySupported) {
-            return;
-        }
-
         SwingUtilities.invokeAndWait(() -> {
-            frame = new JFrame();
-            frame.setLayout (new BorderLayout());
+            frame = new JFrame("ShowAfterDisposeTest");
+            frame.setLayout(new BorderLayout());
 
             frame.setSize (200,200);
             frame.setVisible(true);
