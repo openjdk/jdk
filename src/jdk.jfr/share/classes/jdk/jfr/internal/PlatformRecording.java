@@ -194,7 +194,7 @@ public final class PlatformRecording implements AutoCloseable {
         }
         return true;
     }
-    
+
     @SuppressWarnings("removal")
     public WriteableUserPath makeDumpPath() {
         try {
@@ -853,9 +853,9 @@ public final class PlatformRecording implements AutoCloseable {
         Collections.reverse(result);
         return result;
     }
- 
+
     /**
-     * Sets dump directory. 
+     * Sets the dump directory.
      * <p>
      * Only to be used by DCmdStart.
      */
