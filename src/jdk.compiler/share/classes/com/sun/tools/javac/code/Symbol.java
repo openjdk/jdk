@@ -1331,18 +1331,14 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
         }
 
         public void addPermittedSubclass(ClassSymbol csym, int pos) {
-            if (isPermittedExplicit) {
-                // in this case just add the permitted subclasses clause is explicit
-                permitted.add(new PermittedClassWithPos(csym, pos));
-            } else {
-                // in this case we need to insert at the right pos
-                PermittedClassWithPos element = new PermittedClassWithPos(csym, pos);
-                int index = Collections.binarySearch(permitted, element, java.util.Comparator.comparing(PermittedClassWithPos::pos));
-                if (index < 0) {
-                    index = -index - 1;
-                }
-                permitted.add(index, element);
+            Assert.check(!isPermittedExplicit);
+            // we need to insert at the right pos
+            PermittedClassWithPos element = new PermittedClassWithPos(csym, pos);
+            int index = Collections.binarySearch(permitted, element, java.util.Comparator.comparing(PermittedClassWithPos::pos));
+            if (index < 0) {
+                index = -index - 1;
             }
+            permitted.add(index, element);
         }
 
         public boolean isPermittedSubclass(Symbol csym) {
