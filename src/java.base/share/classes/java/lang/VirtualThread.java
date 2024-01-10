@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -191,7 +191,15 @@ final class VirtualThread extends BaseVirtualThread {
         protected void onPinned(Continuation.Pinned reason) {
             if (TRACE_PINNING_MODE > 0) {
                 boolean printAll = (TRACE_PINNING_MODE == 1);
-                PinnedThreadPrinter.printStackTrace(System.out, printAll);
+                VirtualThread vthread = (VirtualThread) Thread.currentThread();
+                int oldState = vthread.state();
+                try {
+                    // avoid printing when in transition states
+                    vthread.setState(RUNNING);
+                    PinnedThreadPrinter.printStackTrace(System.out, reason, printAll);
+                } finally {
+                    vthread.setState(oldState);
+                }
             }
         }
         private static Runnable wrap(VirtualThread vthread, Runnable task) {
@@ -845,17 +853,31 @@ final class VirtualThread extends BaseVirtualThread {
     }
 
     @Override
+    void blockedOn(Interruptible b) {
+        notifyJvmtiDisableSuspend(true);
+        try {
+            super.blockedOn(b);
+        } finally {
+            notifyJvmtiDisableSuspend(false);
+        }
+    }
+
+    @Override
     @SuppressWarnings("removal")
     public void interrupt() {
         if (Thread.currentThread() != this) {
             checkAccess();
+
+            // if current thread is a virtual thread then prevent it from being
+            // suspended when entering or holding interruptLock
+            Interruptible blocker;
             notifyJvmtiDisableSuspend(true);
             try {
                 synchronized (interruptLock) {
                     interrupted = true;
-                    Interruptible b = nioBlocker;
-                    if (b != null) {
-                        b.interrupt(this);
+                    blocker = nioBlocker();
+                    if (blocker != null) {
+                        blocker.interrupt(this);
                     }
 
                     // interrupt carrier thread if mounted
@@ -864,6 +886,11 @@ final class VirtualThread extends BaseVirtualThread {
                 }
             } finally {
                 notifyJvmtiDisableSuspend(false);
+            }
+
+            // notify blocker after releasing interruptLock
+            if (blocker != null) {
+                blocker.postInterrupt();
             }
         } else {
             interrupted = true;

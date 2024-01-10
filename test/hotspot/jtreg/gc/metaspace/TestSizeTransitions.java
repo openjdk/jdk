@@ -119,8 +119,7 @@ public class TestSizeTransitions {
       System.out.println("  " + a);
     }
 
-    final ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(jvmArgs);
-    final OutputAnalyzer output = new OutputAnalyzer(pb.start());
+    final OutputAnalyzer output = ProcessTools.executeLimitedTestJava(jvmArgs);
     System.out.println(output.getStdout());
     output.shouldHaveExitValue(0);
 

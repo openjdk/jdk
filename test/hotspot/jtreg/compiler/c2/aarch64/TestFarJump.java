@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, BELLSOFT. All rights reserved.
+ * Copyright (c) 2024, BELLSOFT. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -89,10 +89,9 @@ public class TestFarJump {
             "-Xbatch",
             "-XX:+TieredCompilation",
             "-XX:+SegmentedCodeCache",
-            "-XX:CompileOnly=" + className + "::main",
             "-XX:ReservedCodeCacheSize=" + (bigCodeHeap ? "256M" : "200M"),
             "-XX:+UnlockDiagnosticVMOptions",
-            "-XX:+PrintAssembly",
+            "-XX:CompileCommand=option," + className + "::main,bool,PrintAssembly,true",
             className};
 
         ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(procArgs);
