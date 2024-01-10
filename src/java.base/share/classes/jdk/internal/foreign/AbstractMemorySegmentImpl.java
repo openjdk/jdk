@@ -681,7 +681,7 @@ public abstract sealed class AbstractMemorySegmentImpl
         long dstBytes = dstToOffset - dstFromOffset;
         srcImpl.checkAccess(srcFromOffset, srcBytes, true);
         dstImpl.checkAccess(dstFromOffset, dstBytes, true);
-        if (dstImpl == srcImpl) {
+        if (dstImpl.equals(srcImpl) && srcFromOffset == dstFromOffset && srcBytes == dstBytes) {
             srcImpl.checkValidState();
             return -1;
         }
