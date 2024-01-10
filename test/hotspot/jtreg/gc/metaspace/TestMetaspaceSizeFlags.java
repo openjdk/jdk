@@ -84,13 +84,12 @@ public class TestMetaspaceSizeFlags {
   }
 
   private static OutputAnalyzer run(long maxMetaspaceSize, long metaspaceSize) throws Exception {
-    ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+    return ProcessTools.executeLimitedTestJava(
         "-XX:MaxMetaspaceSize=" + maxMetaspaceSize,
         "-XX:MetaspaceSize=" + metaspaceSize,
         "-XX:-UseLargePages", // Prevent us from using 2GB large pages on solaris + sparc.
         "-XX:+PrintFlagsFinal",
         "-version");
-    return new OutputAnalyzer(pb.start());
   }
 
   private static class MetaspaceFlags {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -396,7 +396,7 @@ class NativeMovConstReg: public NativeInstruction {
 inline NativeMovConstReg* nativeMovConstReg_at(address address) {
   NativeInstruction* ni = nativeInstruction_at(address);
   assert(ni->is_ldr_literal() || ni->is_pc_rel() ||
-         ni->is_movw() && VM_Version::supports_movw(), "must be");
+         (ni->is_movw() && VM_Version::supports_movw()), "must be");
   return (NativeMovConstReg*)address;
 }
 

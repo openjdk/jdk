@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -204,7 +204,7 @@ public class FtpClient extends sun.net.ftp.FtpClient {
             47, 63, 58, 64, 38, 61, 43, 36, 44};
 
         byte[] b = chkS.getBytes(encoding);
-        return java.util.Arrays.equals(b, chkB);
+        return Arrays.equals(b, chkB);
     }
 
     private class DefaultParser implements FtpDirParser {

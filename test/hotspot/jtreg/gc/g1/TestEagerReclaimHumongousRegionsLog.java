@@ -54,7 +54,7 @@ public class TestEagerReclaimHumongousRegionsLog {
     }
 
     public static void runTest() throws Exception {
-        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+        OutputAnalyzer output = ProcessTools.executeLimitedTestJava(
             "-Xbootclasspath/a:.",
             "-XX:+UnlockExperimentalVMOptions",
             "-XX:+UnlockDiagnosticVMOptions",
@@ -65,7 +65,6 @@ public class TestEagerReclaimHumongousRegionsLog {
             "-Xmx128M",
             "-Xlog:gc+phases=trace,gc+heap=info",
             GCTest.class.getName());
-        OutputAnalyzer output = new OutputAnalyzer(pb.start());
 
         output.shouldHaveExitValue(0);
 

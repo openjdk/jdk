@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -150,8 +150,8 @@ void RelocIterator::initialize(CompiledMethod* nm, address begin, address limit)
 
 RelocIterator::RelocIterator(CodeSection* cs, address begin, address limit) {
   initialize_misc();
-  assert((cs->locs_start() != nullptr) && (cs->locs_end() != nullptr) ||
-         (cs->locs_start() == nullptr) && (cs->locs_end() == nullptr), "valid start and end pointer");
+  assert(((cs->locs_start() != nullptr) && (cs->locs_end() != nullptr)) ||
+         ((cs->locs_start() == nullptr) && (cs->locs_end() == nullptr)), "valid start and end pointer");
   _current = cs->locs_start()-1;
   _end     = cs->locs_end();
   _addr    = cs->start();
