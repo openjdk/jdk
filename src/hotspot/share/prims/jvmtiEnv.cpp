@@ -2905,9 +2905,8 @@ JvmtiEnv::GetClassFields(oop k_mirror, jint* field_count_ptr, jfieldID** fields_
   // Allocate the result and fill it in.
   jfieldID* result_list = (jfieldID*)jvmtiMalloc(result_count * sizeof(jfieldID));
   for (int i = 0; i < result_count; i++, flds.next()) {
-    result_list[i] = jfieldIDWorkaround::to_jfieldID(
-          ik, flds.offset(),
-          flds.access_flags().is_static());
+    result_list[i] = jfieldIDWorkaround::to_jfieldID(ik, flds.offset(),
+                                                     flds.access_flags().is_static());
   }
   assert(flds.done(), "just checking");
 
