@@ -41,8 +41,8 @@ inline void frame::setup(kind knd) {
     assert(_pc != nullptr, "must have PC");
   }
 
-  if (_cb == nullptr ) {
-    _cb = knd == kind::nmethod ? CodeCache::find_blob_fast(_pc) : CodeCache::find_blob(_pc);
+  if (_cb == nullptr) {
+    _cb = (knd == kind::nmethod) ? CodeCache::find_blob_fast(_pc) : CodeCache::find_blob(_pc);
   }
 
   if (_unextended_sp == nullptr) {

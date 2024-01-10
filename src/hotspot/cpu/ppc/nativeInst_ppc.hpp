@@ -516,7 +516,7 @@ class NativePostCallNop: public NativeInstruction {
     //       |0 0 1 0 1|DATA HI| 1|        DATA LO                          |
     //       |         |4 bits |  |        22 bits                          |
     //
-    // Bit 9 is alwys 1 for PCNs to distinguish them from CMPI/CMPLI
+    // Bit 9 is always 1 for PCNs to distinguish them from regular CMPI/CMPLI
     //
     // Using both, CMPLI (opcode 10 = 0b001010) and CMPI (opcode 11 = 0b001011) for
     // PCNs allows using bit 5 from the opcode to encode DATA HI.

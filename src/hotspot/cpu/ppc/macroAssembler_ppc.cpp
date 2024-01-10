@@ -1188,7 +1188,7 @@ void MacroAssembler::post_call_nop() {
     return;
   }
   // We use CMPI/CMPLI instructions to encode post call nops.
-  // We set bit 9 to distinguish post call nops from real CMPI/CMPI instructions
+  // Refer to NativePostCallNop for details.
   relocate(post_call_nop_Relocation::spec());
   InlineSkippedInstructionsCounter skipCounter(this);
   Assembler::emit_int32(Assembler::CMPLI_OPCODE | Assembler::opp_u_field(1, 9, 9));

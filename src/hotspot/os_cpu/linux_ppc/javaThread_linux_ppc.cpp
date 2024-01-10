@@ -67,7 +67,7 @@ bool JavaThread::pd_get_top_frame_for_profiling(frame* fr_addr, void* ucontext, 
     }
 
     // pc could refer to a native address outside the code cache even though the thread isInJava.
-    frame ret_frame((intptr_t*)uc->uc_mcontext.regs->gpr[1/*REG_SP*/], pc, frame::kind::native);
+    frame ret_frame((intptr_t*)uc->uc_mcontext.regs->gpr[1/*REG_SP*/], pc, frame::kind::unknown);
 
     if (ret_frame.fp() == nullptr) {
       // The found frame does not have a valid frame pointer.

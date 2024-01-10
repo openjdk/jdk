@@ -451,7 +451,7 @@ intptr_t *frame::initial_deoptimization_info() {
 #ifndef PRODUCT
 // This is a generic constructor which is only used by pns() in debug.cpp.
 // fp is dropped and gets determined by backlink.
-frame::frame(void* sp, void* fp, void* pc) : frame((intptr_t*)sp, (address)pc, kind::code_blob) {}
+frame::frame(void* sp, void* fp, void* pc) : frame((intptr_t*)sp, (address)pc, kind::unknown) {}
 #endif
 
 BasicObjectLock* frame::interpreter_frame_monitor_end() const {
