@@ -26,7 +26,7 @@
  * @test
  * @bug 8323243
  * @summary Test that invocation of an abstract method from JNI works correctly
- * @compile AbstractMethod.jasm
+ * @compile AbstractMethodClass.jasm
  * @run main/othervm/native TestJNIAbstractMethod
  */
 
@@ -41,14 +41,15 @@
 public class TestJNIAbstractMethod {
 
     // Invokes an abstract method from JNI and throws AbstractMethodError.
-    private static native void invokeAbstractM(Class<?> AMclass, AbstractMethod receiver);
+    private static native void invokeAbstractM(Class<?> AMclass,
+                                               AbstractMethodClass receiver);
 
     static {
         System.loadLibrary("JNIAbstractMethod");
     }
 
     public static void main(String[] args) {
-        AbstractMethod obj = new AbstractMethod();
+        AbstractMethodClass obj = new AbstractMethodClass();
         try {
             System.out.println("Attempting direct invocation via JNI");
             invokeAbstractM(obj.getClass(), obj);

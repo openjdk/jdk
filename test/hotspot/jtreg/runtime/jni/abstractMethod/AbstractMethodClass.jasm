@@ -25,7 +25,7 @@
  *  This is a non-abstract class with an abstract method.
  *
  */
-super public class AbstractMethod
+super public class AbstractMethodClass
       extends java/lang/Object
               version 51:0  // Java 7 version
 {
