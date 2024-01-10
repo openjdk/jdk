@@ -1,2 +1,0 @@
-[24Dec2023 14:45CET]  Starting test run
-[24Dec2023 14:45CET]  Completed test run: ok
