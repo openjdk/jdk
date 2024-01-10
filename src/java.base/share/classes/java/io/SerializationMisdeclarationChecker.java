@@ -48,9 +48,14 @@ final class SerializationMisdeclarationChecker {
 
     private static final Class<?>[] WRITE_OBJECT_PARAM_TYPES = {ObjectOutputStream.class};
     private static final Class<?>[] READ_OBJECT_PARAM_TYPES = {ObjectInputStream.class};
+
+    /*
+     * The sharing of a single Class<?>[] instance here is just to avoid wasting
+     * space, and should not be considered as a conceptual sharing of types.
+     */
     private static final Class<?>[] READ_OBJECT_NO_DATA_PARAM_TYPES = {};
-    private static final Class<?>[] WRITE_REPLACE_PARAM_TYPES = {};
-    private static final Class<?>[] READ_RESOLVE_PARAM_TYPES = {};
+    private static final Class<?>[] WRITE_REPLACE_PARAM_TYPES = READ_OBJECT_NO_DATA_PARAM_TYPES;
+    private static final Class<?>[] READ_RESOLVE_PARAM_TYPES = READ_OBJECT_NO_DATA_PARAM_TYPES;
 
     static void checkMisdeclarations(Class<?> cl) {
         checkSerialVersionUID(cl);
@@ -126,7 +131,7 @@ final class SerializationMisdeclarationChecker {
         f.setAccessible(true);
         Object spf = objectFromStatic(f);
         if (spf == null) {
-            commitEvent(cl, SERIAL_PERSISTENT_FIELDS_NAME + " must be non-null");
+            commitEvent(cl, SERIAL_PERSISTENT_FIELDS_NAME + " should be non-null");
             return;
         }
         if (!(spf instanceof ObjectStreamField[])) {

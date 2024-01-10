@@ -74,7 +74,7 @@ public class TestSerializationMisdeclarationEvent {
     static Arguments[] testSingleClassMisdeclarations() {
         return new Arguments[] {
                 arguments(NoSUID.class, new String[] {"serialVersionUID", "should", "explicitly"}),
-                arguments(NoSUID.class, new String[] {"serialPersistentFields", "must", "non-null"}),
+                arguments(NoSUID.class, new String[] {"serialPersistentFields", "should", "non-null"}),
 
                 arguments(BadClass.class, new String[] {"serialVersionUID", "should", "private"}),
                 arguments(BadClass.class, new String[] {"serialVersionUID", "must", "type", "long"}),
@@ -219,7 +219,7 @@ public class TestSerializationMisdeclarationEvent {
          */
 
         /*
-         * value must be non-null
+         * value should be non-null
          */
         private static final ObjectStreamField[] serialPersistentFields = null;
 
