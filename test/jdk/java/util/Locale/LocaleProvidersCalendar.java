@@ -29,7 +29,6 @@
  * @build LocaleProviders
  * @modules java.base/sun.util.locale.provider
  * @run junit/othervm LocaleProvidersCalendar
- * @run junit/othervm -Duser.language=en -Duser.country=GB LocaleProvidersCalendar
  */
 
 import org.junit.jupiter.api.Test;
@@ -62,7 +61,8 @@ public class LocaleProvidersCalendar {
 
     /*
      * 8257964 (macOS/Windows only): Ensure correct Calendar::getMinimalDaysInFirstWeek
-     * value under HOST Windows / Mac. Only runs under GB country.
+     * value under HOST Windows / Mac. Only run against machine with underlying
+     * OS locale of en-GB.
      */
     @Test
     @EnabledOnOs({WINDOWS, MAC})

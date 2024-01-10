@@ -451,7 +451,8 @@ public class LocaleProviders {
         }
     }
 
-    // Run only if the platform locale is en-GB
+    // Run only if the underlying platform locale is en-GB
+    // (Setting the java locale via command line properties does not substitute this)
     static void bug8257964Test() {
         var defLoc = Locale.getDefault(Locale.Category.FORMAT);
         var type = LocaleProviderAdapter.getAdapter(CalendarNameProvider.class, Locale.UK)

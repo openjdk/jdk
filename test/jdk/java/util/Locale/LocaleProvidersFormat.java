@@ -31,7 +31,6 @@
  *        providersrc.spi.src.tznp8013086
  * @modules java.base/sun.util.locale.provider
  * @run junit/othervm LocaleProvidersFormat
- * @run junit/othervm -Duser.language=zh -Duser.country=CN LocaleProvidersFormat
  */
 
 import org.junit.jupiter.api.Test;
@@ -86,7 +85,7 @@ public class LocaleProvidersFormat {
     }
 
     /*
-     * 8027289: Ensure if system format locale is zh_CN, the Window's currency
+     * 8027289: Ensure if underlying system format locale is zh_CN, the Window's currency
      * symbol under HOST provider is \u00A5, the yen (yuan) sign.
      */
     @Test
