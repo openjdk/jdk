@@ -58,7 +58,7 @@ DEMO_MANIFEST := $(SUPPORT_OUTPUTDIR)/demos/java-main-manifest.mf
 # This rule will be depended on due to the MANIFEST line in SetupBuildDemo
 # and SetupBuildJvmtiDemo.
 $(eval $(call SetupTextFileProcessing, BUILD_JAVA_MANIFEST, \
-  SOURCE_FILES := $(TOPDIR)/make/data/mainmanifest/manifest.mf, \
+  SOURCE_FILES := $(TOPDIR)/make/data/mainmanifest/manifest.mf.template, \
   OUTPUT_FILE := $(DEMO_MANIFEST), \
   REPLACEMENTS := \
       @@VERSION_SPECIFICATION@@ => $(VERSION_SPECIFICATION) ; \

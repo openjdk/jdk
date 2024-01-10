@@ -73,6 +73,7 @@ public final class MetadataRepository {
                 EventType eventType = PrivateAccess.getInstance().newEventType(pEventType);
                 pEventType.setHasCutoff(eventType.getAnnotation(Cutoff.class) != null);
                 pEventType.setHasThrottle(eventType.getAnnotation(Throttle.class) != null);
+                pEventType.setHasLevel(eventType.getAnnotation(Level.class) != null);
                 pEventType.setHasPeriod(eventType.getAnnotation(Period.class) != null);
                 // Must add hook before EventControl is created as it removes
                 // annotations, such as Period and Threshold.

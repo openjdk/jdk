@@ -27,6 +27,7 @@
 #include "code/icBuffer.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/barrierSetNMethod.hpp"
+#include "gc/shared/classUnloadingContext.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
 #include "gc/x/xBarrier.inline.hpp"
 #include "gc/x/xGlobals.hpp"
@@ -362,5 +363,5 @@ void XNMethod::unlink(XWorkers* workers, bool unloading_occurred) {
 }
 
 void XNMethod::purge() {
-  CodeCache::flush_unlinked_nmethods();
+  ClassUnloadingContext::context()->purge_and_free_nmethods();
 }

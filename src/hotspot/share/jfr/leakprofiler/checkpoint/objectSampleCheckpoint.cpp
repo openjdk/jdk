@@ -416,9 +416,9 @@ static void install_type_set_blobs() {
   iterate_samples(installer);
 }
 
-static void save_type_set_blob(JfrCheckpointWriter& writer, bool copy = false) {
+static void save_type_set_blob(JfrCheckpointWriter& writer) {
   assert(writer.has_data(), "invariant");
-  const JfrBlobHandle blob = copy ? writer.copy() : writer.move();
+  const JfrBlobHandle blob = writer.copy();
   if (saved_type_set_blobs.valid()) {
     saved_type_set_blobs->set_next(blob);
   } else {
@@ -438,9 +438,8 @@ void ObjectSampleCheckpoint::on_type_set(JfrCheckpointWriter& writer) {
 }
 
 void ObjectSampleCheckpoint::on_type_set_unload(JfrCheckpointWriter& writer) {
-  assert_locked_or_safepoint(ClassLoaderDataGraph_lock);
   assert(LeakProfiler::is_running(), "invariant");
   if (writer.has_data() && ObjectSampler::sampler()->last() != nullptr) {
-    save_type_set_blob(writer, true);
+    save_type_set_blob(writer);
   }
 }

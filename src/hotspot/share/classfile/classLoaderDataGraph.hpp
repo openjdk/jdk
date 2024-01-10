@@ -43,8 +43,6 @@ class ClassLoaderDataGraph : public AllStatic {
  private:
   // All CLDs (except unlinked CLDs) can be reached by walking _head->_next->...
   static ClassLoaderData* volatile _head;
-  // All unlinked CLDs
-  static ClassLoaderData* _unloading_head;
 
   // Set if there's anything to purge in the deallocate lists or previous versions
   // during a safepoint after class unloading in a full GC.

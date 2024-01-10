@@ -121,7 +121,7 @@ public final class HugeDirectiveUtil {
     protected static OutputAnalyzer execute(String fileName) {
         OutputAnalyzer output;
         try {
-            output = ProcessTools.executeTestJvm(
+            output = ProcessTools.executeTestJava(
                     "-XX:+UnlockDiagnosticVMOptions",
                     "-XX:CompilerDirectivesLimit=1000",
                     "-XX:CompilerDirectivesFile=" + fileName,
