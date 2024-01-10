@@ -218,7 +218,7 @@ public class KeyBoardNavigation {
 
         JTable tableView = new JTable(dataModel);
         // Turn off auto-resizing so that we can set column sizes programmatically.
-        // In this mode, all columns will get their preferred widths, as set blow.
+        // In this mode, all columns will get their preferred widths, as set below.
         tableView.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
         return tableView;
     }
