@@ -37,13 +37,30 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
 public class Fairness {
-    private static void testFairness(boolean fair,
-                                     final SynchronousQueue<Integer> q,
-                                     final VarHandle underlyingHandle)
+    private final static VarHandle underlyingTransferQueueAccess;
+
+    static {
+        try {
+            underlyingTransferQueueAccess =
+                MethodHandles.privateLookupIn(
+                    SynchronousQueue.class,
+                    MethodHandles.lookup()
+                ).findVarHandle(
+                    SynchronousQueue.class,
+                    "transferer",
+                    Class.forName(SynchronousQueue.class.getName() + "$Transferer")
+            );
+        } catch (Exception ex) {
+            throw new ExceptionInInitializerError(ex);
+        }
+    }
+
+
+    private static void testFairness(boolean fair, final SynchronousQueue<Integer> q)
         throws Throwable
     {
         final LinkedTransferQueue<Integer> underlying =
-            (LinkedTransferQueue<Integer>)underlyingHandle.get(q);
+            (LinkedTransferQueue<Integer>)underlyingTransferQueueAccess.get(q);
 
         final ReentrantLock lock = new ReentrantLock();
         final Condition ready = lock.newCondition();
@@ -79,14 +96,8 @@ public class Fairness {
     }
 
     public static void main(String[] args) throws Throwable {
-        var klazz = SynchronousQueue.class;
-        var underlyingKlazz = Class.forName(klazz.getName() + "$Transferer");
-        var underlying =
-            MethodHandles.privateLookupIn(klazz, MethodHandles.lookup())
-                         .findVarHandle(klazz, "transferer", underlyingKlazz);
-
-        testFairness(false, new SynchronousQueue(),      underlying);
-        testFairness(false, new SynchronousQueue(false), underlying);
-        testFairness(true,  new SynchronousQueue(true),  underlying);
+        testFairness(false, new SynchronousQueue<>());
+        testFairness(false, new SynchronousQueue<>(false));
+        testFairness(true,  new SynchronousQueue<>(true));
     }
 }
