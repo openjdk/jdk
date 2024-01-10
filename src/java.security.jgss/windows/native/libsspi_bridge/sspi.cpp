@@ -533,6 +533,15 @@ gss_export_name(OM_uint32 *minor_status,
     OM_uint32 result = GSS_S_FAILURE;
     SEC_WCHAR* name = input_name->name;
     SEC_WCHAR* fullname = get_full_name(name);
+    goto execution;
+cleanup:
+    static_cast<void>(0);
+err:
+    if (fullname != name) {
+        delete[] fullname;
+    }
+    goto finish;
+execution:
     if (!fullname) {
         goto err;
     }
@@ -568,10 +577,8 @@ gss_export_name(OM_uint32 *minor_status,
     exported_name->length = 10 + mechLen + len;
     exported_name->value = buffer;
     result = GSS_S_COMPLETE;
-err:
-    if (fullname != name) {
-        delete[] fullname;
-    }
+    goto cleanup;
+finish:
     return result;
 }
 
