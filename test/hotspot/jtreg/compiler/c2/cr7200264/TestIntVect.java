@@ -42,11 +42,13 @@ public class TestIntVect {
     private static int[] a3 = new int[ARRLEN];
     private static int[] a4 = new int[ARRLEN];
     private static long[] p2 = new long[ARRLEN/2];
+    private static int gold_sum = 0;
 
     // Initialize
     static{
         for (int i=0; i<ARRLEN; i++) {
             int val = (int)(ADD_INIT+i);
+            gold_sum += val;
             a1[i] = val;
             a2[i] = (int)VALUE;
             a3[i] = (int)-VALUE;
@@ -56,70 +58,280 @@ public class TestIntVect {
 
     @ForceInline
     public static void testInner() {
-            test_sum(a0, a1);
-            test_addc(a0, a1);
-            test_addv(a0, a1, (int)VALUE);
-            test_adda(a0, a1, a2);
-            test_subc(a0, a1);
-            test_subv(a0, a1, (int)VALUE);
-            test_suba(a0, a1, a2);
-            test_mulc(a0, a1);
-            test_mulv(a0, a1, (int)VALUE);
-            test_mula(a0, a1, a2);
-            test_divc(a0, a1);
-            test_divv(a0, a1, (int)VALUE);
-            test_diva(a0, a1, a2);
-            test_mulc_n(a0, a1);
-            test_mulv(a0, a1, (int)-VALUE);
-            test_mula(a0, a1, a3);
-            test_divc_n(a0, a1);
-            test_divv(a0, a1, (int)-VALUE);
-            test_diva(a0, a1, a3);
-            test_andc(a0, a1);
-            test_andv(a0, a1, (int)BIT_MASK);
-            test_anda(a0, a1, a4);
-            test_orc(a0, a1);
-            test_orv(a0, a1, (int)BIT_MASK);
-            test_ora(a0, a1, a4);
-            test_xorc(a0, a1);
-            test_xorv(a0, a1, (int)BIT_MASK);
-            test_xora(a0, a1, a4);
-            test_sllc(a0, a1);
-            test_sllv(a0, a1, VALUE);
-            test_srlc(a0, a1);
-            test_srlv(a0, a1, VALUE);
-            test_srac(a0, a1);
-            test_srav(a0, a1, VALUE);
-            test_sllc_n(a0, a1);
-            test_sllv(a0, a1, -VALUE);
-            test_srlc_n(a0, a1);
-            test_srlv(a0, a1, -VALUE);
-            test_srac_n(a0, a1);
-            test_srav(a0, a1, -VALUE);
-            test_sllc_o(a0, a1);
-            test_sllv(a0, a1, SHIFT);
-            test_srlc_o(a0, a1);
-            test_srlv(a0, a1, SHIFT);
-            test_srac_o(a0, a1);
-            test_srav(a0, a1, SHIFT);
-            test_sllc_on(a0, a1);
-            test_sllv(a0, a1, -SHIFT);
-            test_srlc_on(a0, a1);
-            test_srlv(a0, a1, -SHIFT);
-            test_srac_on(a0, a1);
-            test_srav(a0, a1, -SHIFT);
-            test_pack2(p2, a1);
-            test_unpack2(a0, p2);
-            test_pack2_swap(p2, a1);
-            test_unpack2_swap(a0, p2);
+        System.out.println("Testing Integer vectors");
+        int errn = 0;
+
+        int sum = test_sum(a1);
+        if (sum != gold_sum) {
+            System.err.println("test_sum:  " + sum + " != " + gold_sum);
+            errn++;
+        }
+
+        System.out.println("Verification");
+        test_addc(a0, a1);
+        for (int i=0; i<ARRLEN; i++) {
+            errn += verify("test_addc: ", i, a0[i], (int)((int)(ADD_INIT+i)+VALUE));
+        }
+        test_addv(a0, a1, (int)VALUE);
+        for (int i=0; i<ARRLEN; i++) {
+            errn += verify("test_addv: ", i, a0[i], (int)((int)(ADD_INIT+i)+VALUE));
+        }
+        test_adda(a0, a1, a2);
+        for (int i=0; i<ARRLEN; i++) {
+            errn += verify("test_adda: ", i, a0[i], (int)((int)(ADD_INIT+i)+VALUE));
+        }
+
+        test_subc(a0, a1);
+        for (int i=0; i<ARRLEN; i++) {
+            errn += verify("test_subc: ", i, a0[i], (int)((int)(ADD_INIT+i)-VALUE));
+        }
+        test_subv(a0, a1, (int)VALUE);
+        for (int i=0; i<ARRLEN; i++) {
+            errn += verify("test_subv: ", i, a0[i], (int)((int)(ADD_INIT+i)-VALUE));
+        }
+        test_suba(a0, a1, a2);
+        for (int i=0; i<ARRLEN; i++) {
+            errn += verify("test_suba: ", i, a0[i], (int)((int)(ADD_INIT+i)-VALUE));
+        }
+
+        test_mulc(a0, a1);
+        for (int i=0; i<ARRLEN; i++) {
+            errn += verify("test_mulc: ", i, a0[i], (int)((int)(ADD_INIT+i)*VALUE));
+        }
+        test_mulv(a0, a1, (int)VALUE);
+        for (int i=0; i<ARRLEN; i++) {
+            errn += verify("test_mulv: ", i, a0[i], (int)((int)(ADD_INIT+i)*VALUE));
+        }
+        test_mula(a0, a1, a2);
+        for (int i=0; i<ARRLEN; i++) {
+            errn += verify("test_mula: ", i, a0[i], (int)((int)(ADD_INIT+i)*VALUE));
+        }
+
+        test_divc(a0, a1);
+        for (int i=0; i<ARRLEN; i++) {
+            errn += verify("test_divc: ", i, a0[i], (int)((int)(ADD_INIT+i)/VALUE));
+        }
+        test_divv(a0, a1, (int)VALUE);
+        for (int i=0; i<ARRLEN; i++) {
+            errn += verify("test_divv: ", i, a0[i], (int)((int)(ADD_INIT+i)/VALUE));
+        }
+        test_diva(a0, a1, a2);
+        for (int i=0; i<ARRLEN; i++) {
+            errn += verify("test_diva: ", i, a0[i], (int)((int)(ADD_INIT+i)/VALUE));
+        }
+
+        test_mulc_n(a0, a1);
+        for (int i=0; i<ARRLEN; i++) {
+            errn += verify("test_mulc_n: ", i, a0[i], (int)((int)(ADD_INIT+i)*(-VALUE)));
+        }
+        test_mulv(a0, a1, (int)-VALUE);
+        for (int i=0; i<ARRLEN; i++) {
+            errn += verify("test_mulv_n: ", i, a0[i], (int)((int)(ADD_INIT+i)*(-VALUE)));
+        }
+        test_mula(a0, a1, a3);
+        for (int i=0; i<ARRLEN; i++) {
+            errn += verify("test_mula_n: ", i, a0[i], (int)((int)(ADD_INIT+i)*(-VALUE)));
+        }
+
+        test_divc_n(a0, a1);
+        for (int i=0; i<ARRLEN; i++) {
+            errn += verify("test_divc_n: ", i, a0[i], (int)((int)(ADD_INIT+i)/(-VALUE)));
+        }
+        test_divv(a0, a1, (int)-VALUE);
+        for (int i=0; i<ARRLEN; i++) {
+            errn += verify("test_divv_n: ", i, a0[i], (int)((int)(ADD_INIT+i)/(-VALUE)));
+        }
+        test_diva(a0, a1, a3);
+        for (int i=0; i<ARRLEN; i++) {
+            errn += verify("test_diva_n: ", i, a0[i], (int)((int)(ADD_INIT+i)/(-VALUE)));
+        }
+
+        test_andc(a0, a1);
+        for (int i=0; i<ARRLEN; i++) {
+            errn += verify("test_andc: ", i, a0[i], (int)((int)(ADD_INIT+i)&BIT_MASK));
+        }
+        test_andv(a0, a1, (int)BIT_MASK);
+        for (int i=0; i<ARRLEN; i++) {
+            errn += verify("test_andv: ", i, a0[i], (int)((int)(ADD_INIT+i)&BIT_MASK));
+        }
+        test_anda(a0, a1, a4);
+        for (int i=0; i<ARRLEN; i++) {
+            errn += verify("test_anda: ", i, a0[i], (int)((int)(ADD_INIT+i)&BIT_MASK));
+        }
+
+        test_orc(a0, a1);
+        for (int i=0; i<ARRLEN; i++) {
+            errn += verify("test_orc: ", i, a0[i], (int)((int)(ADD_INIT+i)|BIT_MASK));
+        }
+        test_orv(a0, a1, (int)BIT_MASK);
+        for (int i=0; i<ARRLEN; i++) {
+            errn += verify("test_orv: ", i, a0[i], (int)((int)(ADD_INIT+i)|BIT_MASK));
+        }
+        test_ora(a0, a1, a4);
+        for (int i=0; i<ARRLEN; i++) {
+            errn += verify("test_ora: ", i, a0[i], (int)((int)(ADD_INIT+i)|BIT_MASK));
+        }
+
+        test_xorc(a0, a1);
+        for (int i=0; i<ARRLEN; i++) {
+            errn += verify("test_xorc: ", i, a0[i], (int)((int)(ADD_INIT+i)^BIT_MASK));
+        }
+        test_xorv(a0, a1, (int)BIT_MASK);
+        for (int i=0; i<ARRLEN; i++) {
+            errn += verify("test_xorv: ", i, a0[i], (int)((int)(ADD_INIT+i)^BIT_MASK));
+        }
+        test_xora(a0, a1, a4);
+        for (int i=0; i<ARRLEN; i++) {
+            errn += verify("test_xora: ", i, a0[i], (int)((int)(ADD_INIT+i)^BIT_MASK));
+        }
+
+        test_sllc(a0, a1);
+        for (int i=0; i<ARRLEN; i++) {
+            errn += verify("test_sllc: ", i, a0[i], (int)((int)(ADD_INIT+i)<<VALUE));
+        }
+        test_sllv(a0, a1, VALUE);
+        for (int i=0; i<ARRLEN; i++) {
+            errn += verify("test_sllv: ", i, a0[i], (int)((int)(ADD_INIT+i)<<VALUE));
+        }
+
+        test_srlc(a0, a1);
+        for (int i=0; i<ARRLEN; i++) {
+            errn += verify("test_srlc: ", i, a0[i], (int)((int)(ADD_INIT+i)>>>VALUE));
+        }
+        test_srlv(a0, a1, VALUE);
+        for (int i=0; i<ARRLEN; i++) {
+            errn += verify("test_srlv: ", i, a0[i], (int)((int)(ADD_INIT+i)>>>VALUE));
+        }
+
+        test_srac(a0, a1);
+        for (int i=0; i<ARRLEN; i++) {
+            errn += verify("test_srac: ", i, a0[i], (int)((int)(ADD_INIT+i)>>VALUE));
+        }
+        test_srav(a0, a1, VALUE);
+        for (int i=0; i<ARRLEN; i++) {
+            errn += verify("test_srav: ", i, a0[i], (int)((int)(ADD_INIT+i)>>VALUE));
+        }
+
+        test_sllc_n(a0, a1);
+        for (int i=0; i<ARRLEN; i++) {
+            errn += verify("test_sllc_n: ", i, a0[i], (int)((int)(ADD_INIT+i)<<(-VALUE)));
+        }
+        test_sllv(a0, a1, -VALUE);
+        for (int i=0; i<ARRLEN; i++) {
+            errn += verify("test_sllv_n: ", i, a0[i], (int)((int)(ADD_INIT+i)<<(-VALUE)));
+        }
+
+        test_srlc_n(a0, a1);
+        for (int i=0; i<ARRLEN; i++) {
+            errn += verify("test_srlc_n: ", i, a0[i], (int)((int)(ADD_INIT+i)>>>(-VALUE)));
+        }
+        test_srlv(a0, a1, -VALUE);
+        for (int i=0; i<ARRLEN; i++) {
+            errn += verify("test_srlv_n: ", i, a0[i], (int)((int)(ADD_INIT+i)>>>(-VALUE)));
+        }
+
+        test_srac_n(a0, a1);
+        for (int i=0; i<ARRLEN; i++) {
+            errn += verify("test_srac_n: ", i, a0[i], (int)((int)(ADD_INIT+i)>>(-VALUE)));
+        }
+        test_srav(a0, a1, -VALUE);
+        for (int i=0; i<ARRLEN; i++) {
+            errn += verify("test_srav_n: ", i, a0[i], (int)((int)(ADD_INIT+i)>>(-VALUE)));
+        }
+
+        test_sllc_o(a0, a1);
+        for (int i=0; i<ARRLEN; i++) {
+            errn += verify("test_sllc_o: ", i, a0[i], (int)((int)(ADD_INIT+i)<<SHIFT));
+        }
+        test_sllv(a0, a1, SHIFT);
+        for (int i=0; i<ARRLEN; i++) {
+            errn += verify("test_sllv_o: ", i, a0[i], (int)((int)(ADD_INIT+i)<<SHIFT));
+        }
+
+        test_srlc_o(a0, a1);
+        for (int i=0; i<ARRLEN; i++) {
+            errn += verify("test_srlc_o: ", i, a0[i], (int)((int)(ADD_INIT+i)>>>SHIFT));
+        }
+        test_srlv(a0, a1, SHIFT);
+        for (int i=0; i<ARRLEN; i++) {
+            errn += verify("test_srlv_o: ", i, a0[i], (int)((int)(ADD_INIT+i)>>>SHIFT));
+        }
+
+        test_srac_o(a0, a1);
+        for (int i=0; i<ARRLEN; i++) {
+            errn += verify("test_srac_o: ", i, a0[i], (int)((int)(ADD_INIT+i)>>SHIFT));
+        }
+        test_srav(a0, a1, SHIFT);
+        for (int i=0; i<ARRLEN; i++) {
+            errn += verify("test_srav_o: ", i, a0[i], (int)((int)(ADD_INIT+i)>>SHIFT));
+        }
+
+        test_sllc_on(a0, a1);
+        for (int i=0; i<ARRLEN; i++) {
+            errn += verify("test_sllc_on: ", i, a0[i], (int)((int)(ADD_INIT+i)<<(-SHIFT)));
+        }
+        test_sllv(a0, a1, -SHIFT);
+        for (int i=0; i<ARRLEN; i++) {
+            errn += verify("test_sllv_on: ", i, a0[i], (int)((int)(ADD_INIT+i)<<(-SHIFT)));
+        }
+
+        test_srlc_on(a0, a1);
+        for (int i=0; i<ARRLEN; i++) {
+            errn += verify("test_srlc_on: ", i, a0[i], (int)((int)(ADD_INIT+i)>>>(-SHIFT)));
+        }
+        test_srlv(a0, a1, -SHIFT);
+        for (int i=0; i<ARRLEN; i++) {
+            errn += verify("test_srlv_on: ", i, a0[i], (int)((int)(ADD_INIT+i)>>>(-SHIFT)));
+        }
+
+        test_srac_on(a0, a1);
+        for (int i=0; i<ARRLEN; i++) {
+            errn += verify("test_srac_on: ", i, a0[i], (int)((int)(ADD_INIT+i)>>(-SHIFT)));
+        }
+        test_srav(a0, a1, -SHIFT);
+        for (int i=0; i<ARRLEN; i++) {
+            errn += verify("test_srav_on: ", i, a0[i], (int)((int)(ADD_INIT+i)>>(-SHIFT)));
+        }
+
+        test_pack2(p2, a1);
+        for (int i=0; i<ARRLEN/2; i++) {
+            errn += verify("test_pack2: ", i, p2[i], ((long)(ADD_INIT+2*i) & 0xFFFFFFFFl) | ((long)(ADD_INIT+2*i+1) << 32));
+        }
+        for (int i=0; i<ARRLEN; i++) {
+            a0[i] = -1;
+        }
+        test_unpack2(a0, p2);
+        for (int i=0; i<(ARRLEN&(-2)); i++) {
+            errn += verify("test_unpack2: ", i, a0[i], (ADD_INIT+i));
+        }
+
+        test_pack2_swap(p2, a1);
+        for (int i=0; i<ARRLEN/2; i++) {
+            errn += verify("test_pack2_swap: ", i, p2[i], ((long)(ADD_INIT+2*i+1) & 0xFFFFFFFFl) | ((long)(ADD_INIT+2*i) << 32));
+        }
+        for (int i=0; i<ARRLEN; i++) {
+            a0[i] = -1;
+        }
+        test_unpack2_swap(a0, p2);
+        for (int i=0; i<(ARRLEN&(-2)); i++) {
+            errn += verify("test_unpack2_swap: ", i, a0[i], (ADD_INIT+i));
+        }
+
+        if (errn > 0) {
+            System.err.println("FAILED: " + errn + " errors");
+            System.exit(97);
+        }
+        System.out.println("PASSED");
+
     }
 
     @ForceInline
-    static void test_sum(int[] a0, int[] a1) {
-        a0[0] = 0;
+    static int test_sum(int[] a1) {
+        int sum = 0;
         for (int i = 0; i < a1.length; i+=1) {
-            a0[0] += a1[i];
+            sum += a1[i];
         }
+        return sum;
     }
 
     @ForceInline
@@ -395,5 +607,22 @@ public class TestIntVect {
             a0[i*2+0] = (int)(l >> 32);
             a0[i*2+1] = (int)(l & 0xFFFFFFFFl);
         }
+    }
+
+
+    static int verify(String text, int i, int elem, int val) {
+        if (elem != val) {
+            System.err.println(text + "[" + i + "] = " + elem + " != " + val);
+            return 1;
+        }
+        return 0;
+    }
+
+    static int verify(String text, int i, long elem, long val) {
+        if (elem != val) {
+            System.err.println(text + "[" + i + "] = " + Long.toHexString(elem) + " != " + Long.toHexString(val));
+            return 1;
+        }
+        return 0;
     }
 }
