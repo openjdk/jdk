@@ -1,0 +1,6 @@
+#Last test run info
+#Sun Dec 24 14:45:30 CET 2023
+configName=regtest
+finishTime=1703425530109
+startTime=1703425516094
+testURLs=com/sun/tools/attach/warnings/DynamicLoadWarningTest.java

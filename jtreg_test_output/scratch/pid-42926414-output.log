@@ -1,0 +1,5 @@
+--- ProcessLog ---
+cmd: /priv/d042520/bate/jdk/build/aix-ppc64-server-release/images/jdk/bin/java -cp /data/d042520/bate/jdk/jtreg_test_output/classes/com/sun/tools/attach/warnings/DynamicLoadWarningTest.d:/data/d042520/bate/jdk/test/jdk/com/sun/tools/attach/warnings:/data/d042520/bate/jdk/jtreg_test_output/classes/test/lib:/data/d042520/bate/jdk/test/lib:/data/d042520/bate/jdk/jtreg_test_output/classes/test/jdk:/data/d042520/bate/jdk/test/jdk:/net/sapmnt.sapjvm_work/openjdk/tools/jtreg-7.3.1+1/lib/junit-platform-console-standalone-1.9.2.jar:/net/sapmnt.sapjvm_work/openjdk/tools/jtreg-7.3.1+1/lib/jtreg.jar -XX:+EnableDynamicAgentLoading Application 36091
+exitvalue: 0
+stderr: 
+stdout: 
