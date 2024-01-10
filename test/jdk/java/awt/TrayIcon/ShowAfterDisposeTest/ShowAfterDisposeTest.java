@@ -84,7 +84,7 @@ public class ShowAfterDisposeTest {
             frame = new JFrame("ShowAfterDisposeTest");
             frame.setLayout(new BorderLayout());
 
-            frame.setSize (200,200);
+            frame.setSize(200,200);
             frame.setVisible(true);
             frame.validate();
         });
