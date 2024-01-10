@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -526,11 +526,12 @@ public class ZipInputStream extends InflaterInputStream implements ZipConstants 
         }
         e.method = get16(tmpbuf, LOCHOW);
         e.xdostime = get32(tmpbuf, LOCTIM);
-        // Data descriptors have 32-bit size fields by default
+
+        // Expect 32-bit Data Descriptor size fields by default
         expect64BitDataDescriptor = false;
+
         long csize = get32(tmpbuf, LOCSIZ);
         long size = get32(tmpbuf, LOCLEN);
-
 
         if ((flag & 8) == 8) {
             /* "Data Descriptor" present */
@@ -538,7 +539,7 @@ public class ZipInputStream extends InflaterInputStream implements ZipConstants 
                 throw new ZipException(
                         "only DEFLATED entries can have EXT descriptor");
             }
-            // ZipEntry.csize and ZipEntry.size are not initialized here
+            // ZipEntry.csize and ZipEntry.size are initialized by readEnd
         } else {
             e.crc = get32(tmpbuf, LOCCRC);
             e.csize = csize;
@@ -642,45 +643,30 @@ public class ZipInputStream extends InflaterInputStream implements ZipConstants 
 
     /**
      * Determine whether the {@link #readEnd(ZipEntry)} method should interpret the
-     * 'size' and 'compressed size' fields of the Data Descriptor record as 64-bit
-     * numbers instead of the regular 32-bit numbers.
+     * 'compressed size' and 'uncompressed size' fields of the Data Descriptor record
+     * as 64-bit numbers instead of the regular 32-bit numbers.
      *
-     * Returns true if the LOC has the 'streaming mode' flag set, at least one size field
-     * in the LOC has the Zip64 magic value 0xFFFFFFFF set, and the LOC's extra field contains
-     * a Zip64 field with the expected data block size.
+     * Returns true if the LOC has the 'streaming mode' flag set, the 'compressed size' and
+     * 'uncompressed size' set to the Zip64 magic value 0xFFFFFFFF, and the LOC's extra field
+     * contains a Zip64 field with both 'Original Size' and 'Compressed Size' is set to zero.
      *
-     * <p>
-     * While ZipOutputStream only produces a Zip64 extra field if either the size or
-     * compressed size of the entry exceeds 0XFFFFFFFF, the ZIP APPNOTE.txt format
-     * specification explicitly allows the use of Zip64 format for entries of any size:
-     *
-     * <pre>
-     * When extracting, if the zip64 extended information extra
-     * field is present for the file the compressed and
-     * uncompressed sizes will be 8 byte values.
-     * </pre>
-     * <p>
-     * To guard against invalid or corrupt extra fields, this method validates that
-     * any Zip64 extended field has a valid block size given the presence of magic values
-     * in the LOC's csize and size fields.
-     * <p>
-     * This method returns false for any invalid extra block sizes.
-     *
-     * @param extra the extra field to look for a Zip64 field in
+     * @param extra the LOC extra field to look for a Zip64 field in
      * @param flag the value of the 'general purpose bit flag' field in the LOC
      * @param csize the value of the 'compressed size' field in the LOC
      * @param size  the value of the 'uncompressed size' field in the LOC
      */
     private boolean expect64BitDataDescriptor(byte[] extra, int flag, long csize, long size)  {
+        // The LOC's 'general purpose bit flag' 3 must indicate use of a Data Descriptor
         if ((flag & 8) == 0) {
-            return false; // No data descriptor
+            return false;
         }
 
-        if (csize != ZIP64_MAGICVAL && size != ZIP64_MAGICVAL) {
-            return false; // No Zip64 magic values
+        // The LOC's 'compressed size' and 'uncompressed size' must both be marked for Zip64
+        if (csize != ZIP64_MAGICVAL || size != ZIP64_MAGICVAL) {
+            return false;
         }
 
-        // Check extra for Zip64 fields
+        // Look for a Zip64 field valid for use with data descriptors
         int headerSize = 2 * Short.BYTES; // id + size
         if (extra != null) {
             for (int i = 0; i + headerSize < extra.length;) {
@@ -689,8 +675,8 @@ public class ZipInputStream extends InflaterInputStream implements ZipConstants 
                 if (i + headerSize + dsize > extra.length) {
                     return false; // Invalid size
                 }
-                if (id == ZIP64_EXTID) {
-                    return isZip64ExtBlockSizeValid(dsize, csize, size);
+                if (isZip64DataDescriptorField(id, extra, i + headerSize, dsize)) {
+                    return true;
                 }
                 i += headerSize + dsize;
             }
@@ -699,8 +685,8 @@ public class ZipInputStream extends InflaterInputStream implements ZipConstants 
     }
 
     /**
-     * Validate the size of a Zip64 extended information field in the
-     * LOC header.
+     * Returns true if the given extra field is a Zip64 field with both 'Original Size'
+     * and 'Compressed Size' fields set to zero, making it valid for use with a Data Descriptor.
      * <p>
      * The order of the Zip64 fields is fixed, but the fields MUST
      * only appear if the corresponding LOC field is set to 0xFFFFFFFF:
@@ -712,20 +698,32 @@ public class ZipInputStream extends InflaterInputStream implements ZipConstants 
      * <p>
      * See PKWare APP.Note Section 4.5.3 for more details
      *
-     * @param blockSize the Zip64 Extended Information Extra Field size
-     * @param csize the value of the 'compressed size' field in the LOC
-     * @param size the value of the 'uncompressed size' field in the LOC
-     * @return true if the extra block size is valid for the LOC header; false otherwise
+     * @param headerId the extra field header id
+     * @param extra the array where the extra block is stored
+     * @param blockStart the offset into the array where the extra block starts
+     * @param blockSize the size of the extra field data block
+     * @return true if the extra field is a Zip64 extra field compatible with data descriptors
      */
-    private static boolean isZip64ExtBlockSizeValid(int blockSize, long csize, long size) {
-        long expectedSize = 0;
-        if (csize == ZIP64_MAGICVAL) {
-            expectedSize += Long.BYTES;
+    private static boolean isZip64DataDescriptorField(int headerId, byte[] extra, int blockStart, int blockSize) {
+        if (headerId != ZIP64_EXTID) {
+            return false; // Not a Zip64 extra field 
         }
-        if (size == ZIP64_MAGICVAL) {
-            expectedSize += Long.BYTES;
+        
+        if (blockSize != 16) {
+            return false; // MUST include BOTH original and compressed file size
         }
-        return blockSize == expectedSize;
+
+        // Sanity check that we can access the full block size in the array
+        if (extra == null || blockStart + blockSize > extra.length) {
+            return false;
+        }
+
+        // Read the original and compressed size fields
+        long size = get64(extra, blockStart);
+        long csize = get64(extra, blockStart + 8);
+
+        // Used with Data Descriptors, both fields should be zero
+        return size == 0 && csize == 0;
     }
 
     /*
