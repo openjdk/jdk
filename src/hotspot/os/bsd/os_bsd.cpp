@@ -2053,13 +2053,11 @@ jint os::init_2(void) {
       // at INT_MAX instead, just in case, for everyone.
       nbr_files.rlim_cur = MIN(INT_MAX, nbr_files.rlim_max);
 
-      if (rlim_org < nbr_files.rlim_cur) {
-        status = setrlimit(RLIMIT_NOFILE, &nbr_files);
-        if (status != 0) {
-          // if that fails then try lowering the limit to either OPEN_MAX
-          // (which is safe) or the original limit, whichever was greater.
-          nbr_files.rlim_cur = MAX(OPEN_MAX, rlim_org);
-        }
+      status = setrlimit(RLIMIT_NOFILE, &nbr_files);
+      if (status != 0) {
+        // if that fails then try lowering the limit to either OPEN_MAX
+        // (which is safe) or the original limit, whichever was greater.
+        nbr_files.rlim_cur = MAX(OPEN_MAX, rlim_org);
       }
 #else
       nbr_files.rlim_cur = nbr_files.rlim_max;
