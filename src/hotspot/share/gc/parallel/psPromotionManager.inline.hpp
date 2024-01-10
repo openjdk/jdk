@@ -60,6 +60,7 @@ inline void PSPromotionManager::claim_or_forward_depth(T* p) {
   T heap_oop = RawAccess<>::oop_load(p);
   if (PSScavenge::is_obj_in_young(heap_oop)) {
     oop obj = CompressedOops::decode_not_null(heap_oop);
+    assert(!PSScavenge::is_obj_in_to_space(obj), "revisiting object?");
     Prefetch::write(obj->mark_addr(), 0);
     push_depth(ScannerTask(p));
   }
