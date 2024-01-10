@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2640,8 +2640,8 @@ void LIR_Assembler::rt_call(LIR_Opr result, address dest, const LIR_OprList* arg
 
 
 void LIR_Assembler::volatile_move_op(LIR_Opr src, LIR_Opr dest, BasicType type, CodeEmitInfo* info) {
-  assert(src->is_double_cpu() && dest->is_address() ||
-         src->is_address() && dest->is_double_cpu(),
+  assert((src->is_double_cpu() && dest->is_address()) ||
+         (src->is_address() && dest->is_double_cpu()),
          "Simple move_op is called for all other cases");
 
   int null_check_offset;

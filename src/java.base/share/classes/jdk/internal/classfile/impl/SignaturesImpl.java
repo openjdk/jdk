@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,49 +44,64 @@ public final class SignaturesImpl {
     public ClassSignature parseClassSignature(String signature) {
         this.sig = signature;
         sigp = 0;
-        List<TypeParam> typeParamTypes = parseParamTypes();
-        RefTypeSig superclass = referenceTypeSig();
-        ArrayList<RefTypeSig> superinterfaces = null;
-        while (sigp < sig.length()) {
-            if (superinterfaces == null)
-                superinterfaces = new ArrayList<>();
-            superinterfaces.add(referenceTypeSig());
+        try {
+            List<TypeParam> typeParamTypes = parseParamTypes();
+            RefTypeSig superclass = referenceTypeSig();
+            ArrayList<RefTypeSig> superinterfaces = null;
+            while (sigp < sig.length()) {
+                if (superinterfaces == null)
+                    superinterfaces = new ArrayList<>();
+                superinterfaces.add(referenceTypeSig());
+            }
+            return new ClassSignatureImpl(typeParamTypes, superclass, null2Empty(superinterfaces));
+        } catch (IndexOutOfBoundsException e) {
+            throw error("Not a valid class signature");
         }
-        return new ClassSignatureImpl(typeParamTypes, superclass, null2Empty(superinterfaces));
     }
 
     public MethodSignature parseMethodSignature(String signature) {
         this.sig = signature;
         sigp = 0;
-        List<TypeParam> typeParamTypes = parseParamTypes();
-        assert sig.charAt(sigp) == '(';
-        sigp++;
-        ArrayList<Signature> paramTypes = null;
-        while (sig.charAt(sigp) != ')') {
-            if (paramTypes == null)
-                 paramTypes = new ArrayList<>();
-            paramTypes.add(typeSig());
-        }
-        sigp++;
-        Signature returnType = typeSig();
-        ArrayList<ThrowableSig> throwsTypes = null;
-        while (sigp < sig.length() && sig.charAt(sigp) == '^') {
+        try {
+            List<TypeParam> typeParamTypes = parseParamTypes();
+            if (sig.charAt(sigp) != '(') throw error("Expected ( at possition %d of signature".formatted(sigp));
             sigp++;
-            if (throwsTypes == null)
-                throwsTypes = new ArrayList<>();
-            var t = typeSig();
-            if (t instanceof ThrowableSig ts)
-                throwsTypes.add(ts);
-            else
-                throw new IllegalArgumentException("not a valid type signature: " + sig);
+            ArrayList<Signature> paramTypes = null;
+            while (sig.charAt(sigp) != ')') {
+                if (paramTypes == null)
+                     paramTypes = new ArrayList<>();
+                paramTypes.add(typeSig());
+            }
+            sigp++;
+            Signature returnType = typeSig();
+            ArrayList<ThrowableSig> throwsTypes = null;
+            while (sigp < sig.length()) {
+                if (sig.charAt(sigp) != '^') throw error("Expected ^ at possition %d of signature".formatted(sigp));
+                sigp++;
+                if (throwsTypes == null)
+                    throwsTypes = new ArrayList<>();
+                var t = referenceTypeSig();
+                if (t instanceof ThrowableSig ts)
+                    throwsTypes.add(ts);
+                else
+                    throw error("Not a valid throwable signature %s in".formatted(t.signatureString()));
+            }
+            return new MethodSignatureImpl(typeParamTypes, null2Empty(throwsTypes), returnType, null2Empty(paramTypes));
+        } catch (IndexOutOfBoundsException e) {
+            throw error("Not a valid method signature");
         }
-        return new MethodSignatureImpl(typeParamTypes, null2Empty(throwsTypes), returnType, null2Empty(paramTypes));
     }
 
     public Signature parseSignature(String signature) {
         this.sig = signature;
         sigp = 0;
-        return typeSig();
+        try {
+            var s = typeSig();
+            if (sigp == signature.length())
+                return s;
+        } catch (IndexOutOfBoundsException e) {
+        }
+        throw error("Not a valid type signature");
     }
 
     private List<TypeParam> parseParamTypes() {
@@ -157,7 +172,7 @@ public final class SignaturesImpl {
                 return ty;
             case '[': return ArrayTypeSig.of(typeSig());
         }
-        throw new IllegalArgumentException("not a valid type signature: " + sig);
+        throw error("Unexpected character %c at possition %d of signature".formatted(c, sigp - 1));
     }
 
     private TypeArg typeArg() {
@@ -291,5 +306,9 @@ public final class SignaturesImpl {
 
     private static <T> List<T> null2Empty(ArrayList<T> l) {
         return l == null ? List.of() : Collections.unmodifiableList(l);
+    }
+
+    private IllegalArgumentException error(String message) {
+        return new IllegalArgumentException("%s: %s".formatted(message, sig));
     }
 }

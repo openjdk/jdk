@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,22 +19,27 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
-
-package gc.stress.gclocker;
 
 /*
- * @test TestGCLockerWithSerial
- * @library /
- * @requires vm.gc.Serial
- * @requires vm.flavor != "minimal"
- * @summary Stress Serial's GC locker by calling GetPrimitiveArrayCritical while concurrently filling up old gen.
- * @run main/native/othervm/timeout=200 -Xlog:gc*=info -Xms1500m -Xmx1500m -XX:+UseSerialGC gc.stress.gclocker.TestGCLockerWithSerial
+ * @test
+ * @summary Unit test for ProcessTools.executeLimitedTestJava()
+ * @library /test/lib
+ * @run main/othervm -Dtest.java.opts=-XX:MaxMetaspaceSize=123456789 ProcessToolsExecuteLimitedTestJavaTest
  */
-public class TestGCLockerWithSerial {
-    public static void main(String[] args) {
-        String[] testArgs = {"2", "Tenured Gen"};
-        TestGCLocker.main(testArgs);
+
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
+
+public class ProcessToolsExecuteLimitedTestJavaTest {
+    public static void main(String[] args) throws Exception {
+        if (args.length > 0) {
+            // Do nothing. Just let the JVM log its output.
+        } else {
+            // In comparison to executeTestJava, executeLimitedTestJava should not add the
+            // -Dtest.java.opts flags. Check that it doesn't.
+            OutputAnalyzer output = ProcessTools.executeLimitedTestJava("-XX:+PrintFlagsFinal", "-version");
+            output.stdoutShouldNotMatch(".*MaxMetaspaceSize.* = 123456789.*");
+        }
     }
 }

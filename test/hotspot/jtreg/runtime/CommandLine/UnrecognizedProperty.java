@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,21 +19,27 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
-
-package gc.stress.gclocker;
 
 /*
- * @test TestGCLockerWithG1
- * @library /
- * @requires vm.gc.G1
- * @summary Stress G1's GC locker by calling GetPrimitiveArrayCritical while concurrently filling up old gen.
- * @run main/native/othervm/timeout=200 -Xlog:gc*=info -Xms1500m -Xmx1500m -XX:+UseG1GC gc.stress.gclocker.TestGCLockerWithG1
+ * @test
+ * @bug 8321479
+ * @summary VM should not crash with property "-D-D"
+ * @requires vm.flagless
+ * @library /test/lib
+ * @run driver UnrecognizedProperty
  */
-public class TestGCLockerWithG1 {
-    public static void main(String[] args) {
-        String[] testArgs = {"2", "G1 Old Gen"};
-        TestGCLocker.main(testArgs);
+
+import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.process.OutputAnalyzer;
+
+public class UnrecognizedProperty {
+    public static void main(String[] args) throws Exception {
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+            "-D-D");
+
+        OutputAnalyzer output = new OutputAnalyzer(pb.start());
+        output.shouldContain("Usage: java");
+        output.shouldHaveExitValue(1);
     }
 }

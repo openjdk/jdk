@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,21 +19,19 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-package gc.stress.gclocker;
+#include <stdio.h>
+
+#ifdef _WIN64
+#define EXPORT __declspec(dllexport)
+#else
+#define EXPORT
+#endif
 
 /*
- * @test TestGCLockerWithParallel
- * @library /
- * @requires vm.gc.Parallel
- * @summary Stress Parallel's GC locker by calling GetPrimitiveArrayCritical while concurrently filling up old gen.
- * @run main/native/othervm/timeout=200 -Xlog:gc*=info -Xms1500m -Xmx1500m -XX:+UseParallelGC gc.stress.gclocker.TestGCLockerWithParallel
+ * Call a function with the given function pointer.
  */
-public class TestGCLockerWithParallel {
-    public static void main(String[] args) {
-        String[] testArgs = {"2", "PS Old Gen"};
-        TestGCLocker.main(testArgs);
-    }
+EXPORT void call(void *(*f)(void)) {
+    (*f)();
 }

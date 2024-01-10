@@ -75,6 +75,7 @@
 #include "utilities/align.hpp"
 #include "utilities/formatBuffer.hpp"
 #include "utilities/growableArray.hpp"
+#include "utilities/powerOfTwo.hpp"
 
 bool G1CMBitMapClosure::do_addr(HeapWord* const addr) {
   assert(addr < _cm->finger(), "invariant");
@@ -94,80 +95,173 @@ bool G1CMBitMapClosure::do_addr(HeapWord* const addr) {
 }
 
 G1CMMarkStack::G1CMMarkStack() :
-  _max_chunk_capacity(0),
-  _base(nullptr),
-  _chunk_capacity(0) {
+  _chunk_allocator() {
   set_empty();
-}
-
-bool G1CMMarkStack::resize(size_t new_capacity) {
-  assert(is_empty(), "Only resize when stack is empty.");
-  assert(new_capacity <= _max_chunk_capacity,
-         "Trying to resize stack to " SIZE_FORMAT " chunks when the maximum is " SIZE_FORMAT, new_capacity, _max_chunk_capacity);
-
-  TaskQueueEntryChunk* new_base = MmapArrayAllocator<TaskQueueEntryChunk>::allocate_or_null(new_capacity, mtGC);
-
-  if (new_base == nullptr) {
-    log_warning(gc)("Failed to reserve memory for new overflow mark stack with " SIZE_FORMAT " chunks and size " SIZE_FORMAT "B.", new_capacity, new_capacity * sizeof(TaskQueueEntryChunk));
-    return false;
-  }
-  // Release old mapping.
-  if (_base != nullptr) {
-    MmapArrayAllocator<TaskQueueEntryChunk>::free(_base, _chunk_capacity);
-  }
-
-  _base = new_base;
-  _chunk_capacity = new_capacity;
-  set_empty();
-
-  return true;
 }
 
 size_t G1CMMarkStack::capacity_alignment() {
   return (size_t)lcm(os::vm_allocation_granularity(), sizeof(TaskQueueEntryChunk)) / sizeof(G1TaskQueueEntry);
 }
 
-bool G1CMMarkStack::initialize(size_t initial_capacity, size_t max_capacity) {
-  guarantee(_max_chunk_capacity == 0, "G1CMMarkStack already initialized.");
+bool G1CMMarkStack::initialize() {
+  guarantee(_chunk_allocator.capacity() == 0, "G1CMMarkStack already initialized.");
+
+  size_t initial_capacity = MarkStackSize;
+  size_t max_capacity = MarkStackSizeMax;
 
   size_t const TaskEntryChunkSizeInVoidStar = sizeof(TaskQueueEntryChunk) / sizeof(G1TaskQueueEntry);
 
-  _max_chunk_capacity = align_up(max_capacity, capacity_alignment()) / TaskEntryChunkSizeInVoidStar;
-  size_t initial_chunk_capacity = align_up(initial_capacity, capacity_alignment()) / TaskEntryChunkSizeInVoidStar;
+  size_t max_num_chunks = align_up(max_capacity, capacity_alignment()) / TaskEntryChunkSizeInVoidStar;
+  size_t initial_num_chunks = align_up(initial_capacity, capacity_alignment()) / TaskEntryChunkSizeInVoidStar;
 
-  guarantee(initial_chunk_capacity <= _max_chunk_capacity,
-            "Maximum chunk capacity " SIZE_FORMAT " smaller than initial capacity " SIZE_FORMAT,
-            _max_chunk_capacity,
-            initial_chunk_capacity);
+  initial_num_chunks = round_up_power_of_2(initial_num_chunks);
+  max_num_chunks = MAX2(initial_num_chunks, max_num_chunks);
+
+  size_t limit = (INT_MAX - 1);
+  max_capacity = MIN2((max_num_chunks * TaskEntryChunkSizeInVoidStar), limit);
+  initial_capacity = MIN2((initial_num_chunks * TaskEntryChunkSizeInVoidStar), limit);
+
+  FLAG_SET_ERGO(MarkStackSizeMax, max_capacity);
+  FLAG_SET_ERGO(MarkStackSize, initial_capacity);
+
+  log_trace(gc)("MarkStackSize: %uk  MarkStackSizeMax: %uk", (uint)(MarkStackSize / K), (uint)(MarkStackSizeMax / K));
 
   log_debug(gc)("Initialize mark stack with " SIZE_FORMAT " chunks, maximum " SIZE_FORMAT,
-                initial_chunk_capacity, _max_chunk_capacity);
+                initial_num_chunks, max_capacity);
 
-  return resize(initial_chunk_capacity);
+  return _chunk_allocator.initialize(initial_num_chunks, max_num_chunks);
+}
+
+G1CMMarkStack::TaskQueueEntryChunk* G1CMMarkStack::ChunkAllocator::allocate_new_chunk() {
+  if (_size >= _max_capacity) {
+    return nullptr;
+  }
+
+  size_t cur_idx = Atomic::fetch_then_add(&_size, 1u);
+
+  if (cur_idx >= _max_capacity) {
+    return nullptr;
+  }
+
+  size_t bucket = get_bucket(cur_idx);
+  if (Atomic::load_acquire(&_buckets[bucket]) == nullptr) {
+    if (!_should_grow) {
+      // Prefer to restart the CM.
+      return nullptr;
+    }
+
+    MutexLocker x(MarkStackChunkList_lock, Mutex::_no_safepoint_check_flag);
+    if (Atomic::load_acquire(&_buckets[bucket]) == nullptr) {
+      if (!expand()) {
+        return nullptr;
+      }
+    }
+  }
+
+  size_t bucket_idx = get_bucket_index(cur_idx);
+  TaskQueueEntryChunk* result = ::new (&_buckets[bucket][bucket_idx]) TaskQueueEntryChunk;
+  result->next = nullptr;
+  return result;
+}
+
+G1CMMarkStack::ChunkAllocator::ChunkAllocator() :
+  _min_capacity(0),
+  _max_capacity(0),
+  _capacity(0),
+  _num_buckets(0),
+  _should_grow(false),
+  _buckets(nullptr),
+  _size(0)
+{ }
+
+bool G1CMMarkStack::ChunkAllocator::initialize(size_t initial_capacity, size_t max_capacity) {
+  guarantee(is_power_of_2(initial_capacity), "Invalid initial_capacity");
+
+  _min_capacity = initial_capacity;
+  _max_capacity = max_capacity;
+  _num_buckets  = get_bucket(_max_capacity) + 1;
+
+  _buckets = NEW_C_HEAP_ARRAY(TaskQueueEntryChunk*, _num_buckets, mtGC);
+
+  for (size_t i = 0; i < _num_buckets; i++) {
+    _buckets[i] = nullptr;
+  }
+
+  size_t new_capacity = bucket_size(0);
+
+  if (!reserve(new_capacity)) {
+    log_warning(gc)("Failed to reserve memory for new overflow mark stack with " SIZE_FORMAT " chunks and size " SIZE_FORMAT "B.", new_capacity, new_capacity * sizeof(TaskQueueEntryChunk));
+    return false;
+  }
+  return true;
+}
+
+bool G1CMMarkStack::ChunkAllocator::expand() {
+  if (_capacity == _max_capacity) {
+    log_debug(gc)("Can not expand overflow mark stack further, already at maximum capacity of " SIZE_FORMAT " chunks.", _capacity);
+    return false;
+  }
+  size_t old_capacity = _capacity;
+  // Double capacity if possible.
+  size_t new_capacity = MIN2(old_capacity * 2, _max_capacity);
+
+  if (reserve(new_capacity)) {
+    log_debug(gc)("Expanded the mark stack capacity from " SIZE_FORMAT " to " SIZE_FORMAT " chunks",
+                  old_capacity, new_capacity);
+    return true;
+  }
+  return false;
+}
+
+G1CMMarkStack::ChunkAllocator::~ChunkAllocator() {
+  if (_buckets == nullptr) {
+    return;
+  }
+
+  for (size_t i = 0; i < _num_buckets; i++) {
+    if (_buckets[i] != nullptr) {
+      MmapArrayAllocator<TaskQueueEntryChunk>::free(_buckets[i],  bucket_size(i));
+      _buckets[i] = nullptr;
+    }
+  }
+
+  FREE_C_HEAP_ARRAY(TaskQueueEntryChunk*, _buckets);
+}
+
+bool G1CMMarkStack::ChunkAllocator::reserve(size_t new_capacity) {
+  assert(new_capacity <= _max_capacity, "Cannot expand overflow mark stack beyond the max_capacity" SIZE_FORMAT " chunks.", _max_capacity);
+
+  size_t highest_bucket = get_bucket(new_capacity - 1);
+  size_t i = get_bucket(_capacity);
+
+  for (; i <= highest_bucket; i++) {
+    if (Atomic::load_acquire(&_buckets[i]) != nullptr) {
+      continue; // Skip over already allocated buckets.
+    }
+
+    size_t bucket_capacity = bucket_size(i);
+
+    // Trim bucket size so that we do not exceed the _max_capacity.
+    bucket_capacity = (_capacity + bucket_capacity) <= _max_capacity ?
+                      bucket_capacity :
+                      _max_capacity - _capacity;
+
+
+    TaskQueueEntryChunk* bucket_base = MmapArrayAllocator<TaskQueueEntryChunk>::allocate_or_null(bucket_capacity, mtGC);
+
+    if (bucket_base == nullptr) {
+      log_warning(gc)("Failed to reserve memory for increasing the overflow mark stack capacity with " SIZE_FORMAT " chunks and size " SIZE_FORMAT "B.",
+                      bucket_capacity, bucket_capacity * sizeof(TaskQueueEntryChunk));
+      return false;
+    }
+    _capacity += bucket_capacity;
+    Atomic::release_store(&_buckets[i], bucket_base);
+  }
+  return true;
 }
 
 void G1CMMarkStack::expand() {
-  if (_chunk_capacity == _max_chunk_capacity) {
-    log_debug(gc)("Can not expand overflow mark stack further, already at maximum capacity of " SIZE_FORMAT " chunks.", _chunk_capacity);
-    return;
-  }
-  size_t old_capacity = _chunk_capacity;
-  // Double capacity if possible
-  size_t new_capacity = MIN2(old_capacity * 2, _max_chunk_capacity);
-
-  if (resize(new_capacity)) {
-    log_debug(gc)("Expanded mark stack capacity from " SIZE_FORMAT " to " SIZE_FORMAT " chunks",
-                  old_capacity, new_capacity);
-  } else {
-    log_warning(gc)("Failed to expand mark stack capacity from " SIZE_FORMAT " to " SIZE_FORMAT " chunks",
-                    old_capacity, new_capacity);
-  }
-}
-
-G1CMMarkStack::~G1CMMarkStack() {
-  if (_base != nullptr) {
-    MmapArrayAllocator<TaskQueueEntryChunk>::free(_base, _chunk_capacity);
-  }
+  _chunk_allocator.expand();
 }
 
 void G1CMMarkStack::add_chunk_to_list(TaskQueueEntryChunk* volatile* list, TaskQueueEntryChunk* elem) {
@@ -208,31 +302,13 @@ G1CMMarkStack::TaskQueueEntryChunk* G1CMMarkStack::remove_chunk_from_free_list()
   return remove_chunk_from_list(&_free_list);
 }
 
-G1CMMarkStack::TaskQueueEntryChunk* G1CMMarkStack::allocate_new_chunk() {
-  // This dirty read of _hwm is okay because we only ever increase the _hwm in parallel code.
-  // Further this limits _hwm to a value of _chunk_capacity + #threads, avoiding
-  // wraparound of _hwm.
-  if (_hwm >= _chunk_capacity) {
-    return nullptr;
-  }
-
-  size_t cur_idx = Atomic::fetch_then_add(&_hwm, 1u);
-  if (cur_idx >= _chunk_capacity) {
-    return nullptr;
-  }
-
-  TaskQueueEntryChunk* result = ::new (&_base[cur_idx]) TaskQueueEntryChunk;
-  result->next = nullptr;
-  return result;
-}
-
 bool G1CMMarkStack::par_push_chunk(G1TaskQueueEntry* ptr_arr) {
   // Get a new chunk.
   TaskQueueEntryChunk* new_chunk = remove_chunk_from_free_list();
 
   if (new_chunk == nullptr) {
     // Did not get a chunk from the free list. Allocate from backing memory.
-    new_chunk = allocate_new_chunk();
+    new_chunk = _chunk_allocator.allocate_new_chunk();
 
     if (new_chunk == nullptr) {
       return false;
@@ -261,9 +337,9 @@ bool G1CMMarkStack::par_pop_chunk(G1TaskQueueEntry* ptr_arr) {
 
 void G1CMMarkStack::set_empty() {
   _chunks_in_chunk_list = 0;
-  _hwm = 0;
   _chunk_list = nullptr;
   _free_list = nullptr;
+  _chunk_allocator.reset();
 }
 
 G1CMRootMemRegions::G1CMRootMemRegions(uint const max_regions) :
@@ -440,7 +516,7 @@ G1ConcurrentMark::G1ConcurrentMark(G1CollectedHeap* g1h,
   _concurrent_workers->initialize_workers();
   _num_concurrent_workers = _concurrent_workers->active_workers();
 
-  if (!_global_mark_stack.initialize(MarkStackSize, MarkStackSizeMax)) {
+  if (!_global_mark_stack.initialize()) {
     vm_exit_during_initialization("Failed to allocate initial concurrent mark overflow mark stack.");
   }
 
@@ -1634,6 +1710,9 @@ void G1ConcurrentMark::weak_refs_work() {
     // about how reference processing currently works in G1.
 
     assert(_global_mark_stack.is_empty(), "mark stack should be empty");
+
+    // Prefer to grow the stack until the max capacity.
+    _global_mark_stack.set_should_grow();
 
     // We need at least one active thread. If reference processing
     // is not multi-threaded we use the current (VMThread) thread,

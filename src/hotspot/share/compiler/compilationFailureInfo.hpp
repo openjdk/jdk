@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Red Hat, Inc. and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,32 +20,38 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
 
-package compiler.lib.ir_framework.driver.irmatching.parser.hotspot;
+#ifndef SHARE_COMPILER_COMPILATIONFAILUREINFO_HPP
+#define SHARE_COMPILER_COMPILATIONFAILUREINFO_HPP
 
-import compiler.lib.ir_framework.TestFramework;
+#if defined(COMPILER1) || defined(COMPILER2)
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+#include "memory/allocation.hpp"
+#include "utilities/globalDefinitions.hpp"
+#include "utilities/nativeCallStack.hpp"
 
-/**
- * This class keeps track of all {@link WriterThread} instances.
- */
-class WriterThreads {
-    private final Map<Integer, WriterThread> mapIdToThread = new HashMap<>();
+class outputStream;
+class Symbol;
 
-    WriterThread parse(String line) {
-        int writerThreadId = parseWriterThreadId(line);
-        return mapIdToThread.computeIfAbsent(writerThreadId, c -> new WriterThread());
-    }
+class CompilationFailureInfo : public CHeapObj<mtCompiler> {
+  NativeCallStack _stack;
+  char* const _failure_reason;
+  const double _elapsed_seconds;
+  const int _compile_id;
+public:
+  CompilationFailureInfo(const char* failure_reason);
+  ~CompilationFailureInfo();
+  void print_on(outputStream* st) const;
 
-    private static int parseWriterThreadId(String line) {
-        Pattern pattern = Pattern.compile("='(\\d+)'");
-        Matcher matcher = pattern.matcher(line);
-        TestFramework.check(matcher.find(), "should find writer thread id");
-        return Integer.parseInt(matcher.group(1));
-    }
-}
+  // Convenience function to print, safely, current compile failure iff
+  // current thread is compiler thread and there is an ongoing compilation
+  // and a pending failure.
+  // Otherwise prints nothing.
+  static bool print_pending_compilation_failure(outputStream* st);
+};
+
+#endif // defined(COMPILER1) || defined(COMPILER2)
+
+#endif // SHARE_COMPILER_COMPILATIONFAILUREINFO_HPP

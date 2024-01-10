@@ -47,14 +47,16 @@ protected:
   uint         _gc_id;
 public:
   VM_ShenandoahOperation() : _gc_id(GCId::current()) {};
-  virtual bool skip_thread_oop_barriers() const { return true; }
+  bool skip_thread_oop_barriers() const override { return true; }
+  bool doit_prologue() override;
+  void doit_epilogue() override;
 };
 
 class VM_ShenandoahReferenceOperation : public VM_ShenandoahOperation {
 public:
   VM_ShenandoahReferenceOperation() : VM_ShenandoahOperation() {};
-  bool doit_prologue();
-  void doit_epilogue();
+  bool doit_prologue() override;
+  void doit_epilogue() override;
 };
 
 class VM_ShenandoahInitMark: public VM_ShenandoahOperation {

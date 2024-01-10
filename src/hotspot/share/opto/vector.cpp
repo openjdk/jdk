@@ -488,7 +488,7 @@ void PhaseVector::expand_vunbox_node(VectorUnboxNode* vec_unbox) {
     // For proper aliasing, attach concrete payload type.
     ciKlass* payload_klass = ciTypeArrayKlass::make(bt);
     const Type* payload_type = TypeAryPtr::make_from_klass(payload_klass)->cast_to_ptr_type(TypePtr::NotNull);
-    vec_field_ld = gvn.transform(new CastPPNode(vec_field_ld, payload_type));
+    vec_field_ld = gvn.transform(new CastPPNode(nullptr, vec_field_ld, payload_type));
 
     Node* adr = kit.array_element_address(vec_field_ld, gvn.intcon(0), bt);
     const TypePtr* adr_type = adr->bottom_type()->is_ptr();
