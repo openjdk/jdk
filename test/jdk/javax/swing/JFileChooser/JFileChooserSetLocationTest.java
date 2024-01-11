@@ -214,7 +214,7 @@ public class JFileChooserSetLocationTest {
 
         int screenWidth = (int) screenSize.getWidth() / 2;
         int screenHeight = (int) screenSize.getHeight() / 2;
-        frame = new JFrame();
+        frame = new JFrame("FileChooser set location test");
         panel = new JPanel();
         btn = new JButton(SHOW_DIALOG_OUTSIDE_THE_PANEL);
         btn1 = new JButton(SHOW_DIALOG_OVER_THE_PANEL);
