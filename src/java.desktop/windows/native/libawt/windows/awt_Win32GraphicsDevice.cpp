@@ -185,17 +185,21 @@ void AwtWin32GraphicsDevice::Initialize()
     }
     gpBitmapInfo->bmiHeader.biBitCount = 0;
     HDC hBMDC = this->GetDC();
+    HBITMAP hBM = NULL;
     if (hBMDC == NULL) {
         J2dTraceLn(J2D_TRACE_WARNING, "AwtWin32GraphicsDevice::Initialize GetDC failed");
-    }
-    HBITMAP hBM = ::CreateCompatibleBitmap(hBMDC, 1, 1);
-    if (hBM == NULL) {
-        J2dTraceLn(J2D_TRACE_WARNING, "AwtWin32GraphicsDevice::Initialize CreateCompatibleBitmap failed");
+    } else {
+        hBM = ::CreateCompatibleBitmap(hBMDC, 1, 1);
+        if (hBM == NULL) {
+            J2dTraceLn(J2D_TRACE_WARNING, "AwtWin32GraphicsDevice::Initialize CreateCompatibleBitmap failed");
+        }
     }
 
     bool cbf = false;
-    if (::GetDIBits(hBMDC, hBM, 0, 1, NULL, gpBitmapInfo, DIB_RGB_COLORS) == 0) {
-        cbf = true;
+    if (hBM != NULL) {
+        if (::GetDIBits(hBMDC, hBM, 0, 1, NULL, gpBitmapInfo, DIB_RGB_COLORS) == 0) {
+            cbf = true;
+        }
     }
 
     if (colorData->bitsperpixel > 8) {
