@@ -72,16 +72,10 @@ public class SynthTreeUI extends BasicTreeUI
     private int padding;
 
     private boolean useTreeColors;
-    private enum IconType {
-        EXPANDED,
-        COLLAPSED
-    }
 
-    private Icon expandedIconWrapper = new IconWrapper(IconType.EXPANDED);
+    private Icon expandedIconWrapper;
 
-    private Icon collapsedIconWrapper = new IconWrapper(IconType.COLLAPSED);
-
-
+    private Icon collapsedIconWrapper;
 
     /**
      *
@@ -162,6 +156,9 @@ public class SynthTreeUI extends BasicTreeUI
                     context, "Tree.showsRootHandles", Boolean.TRUE);
             LookAndFeel.installProperty(
                     tree, JTree.SHOWS_ROOT_HANDLES_PROPERTY, showsRootHandles);
+
+            expandedIconWrapper = new IconWrapper(expandedIcon);
+            collapsedIconWrapper = new IconWrapper(collapsedIcon);
 
             if (oldStyle != null) {
                 uninstallKeyboardActions();
@@ -796,8 +793,8 @@ public class SynthTreeUI extends BasicTreeUI
     // the SynthContext as needed.
     //
     private class IconWrapper implements SynthIcon {
-        IconType iconType;
-        public IconWrapper(IconType type) {
+        Icon iconType;
+        public IconWrapper(Icon type) {
             super();
             iconType = type;
         }
@@ -806,18 +803,10 @@ public class SynthTreeUI extends BasicTreeUI
                               int y, int w, int h) {
             if (context == null) {
                 context = getContext(tree);
-                if (iconType == IconType.EXPANDED) {
-                    SynthGraphicsUtils.paintIcon(expandedIcon, context, g, x, y, w, h);
-                } else {
-                    SynthGraphicsUtils.paintIcon(collapsedIcon, context, g, x, y, w, h);
-                }
+                SynthGraphicsUtils.paintIcon(iconType, context, g, x, y, w, h);
             }
             else {
-                if (iconType == IconType.EXPANDED) {
-                    SynthGraphicsUtils.paintIcon(expandedIcon, context, g, x, y, w, h);
-                } else {
-                    SynthGraphicsUtils.paintIcon(collapsedIcon, context, g, x, y, w, h);
-                }
+                SynthGraphicsUtils.paintIcon(iconType, context, g, x, y, w, h);
             }
         }
 
@@ -825,18 +814,10 @@ public class SynthTreeUI extends BasicTreeUI
             int width;
             if (context == null) {
                 context = getContext(tree);
-                if (iconType == IconType.EXPANDED) {
-                    width = SynthGraphicsUtils.getIconWidth(expandedIcon, context);
-                } else {
-                    width = SynthGraphicsUtils.getIconWidth(collapsedIcon, context);
-                }
+                width = SynthGraphicsUtils.getIconWidth(iconType, context);
             }
             else {
-                if (iconType == IconType.EXPANDED) {
-                    width = SynthGraphicsUtils.getIconWidth(expandedIcon, context);
-                } else {
-                    width = SynthGraphicsUtils.getIconWidth(collapsedIcon, context);
-                }
+                width = SynthGraphicsUtils.getIconWidth(iconType, context);
             }
             return width;
         }
@@ -845,18 +826,10 @@ public class SynthTreeUI extends BasicTreeUI
             int height;
             if (context == null) {
                 context = getContext(tree);
-                if (iconType == IconType.EXPANDED) {
-                    height = SynthGraphicsUtils.getIconHeight(expandedIcon, context);
-                } else {
-                    height = SynthGraphicsUtils.getIconHeight(collapsedIcon, context);
-                }
+                height = SynthGraphicsUtils.getIconHeight(iconType, context);
             }
             else {
-                if (iconType == IconType.EXPANDED) {
-                    height = SynthGraphicsUtils.getIconHeight(expandedIcon, context);
-                } else {
-                    height = SynthGraphicsUtils.getIconHeight(collapsedIcon, context);
-                }
+                height = SynthGraphicsUtils.getIconHeight(iconType, context);
             }
             return height;
         }
