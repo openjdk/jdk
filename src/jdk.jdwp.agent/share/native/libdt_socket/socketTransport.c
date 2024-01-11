@@ -425,8 +425,9 @@ parseAllowedAddr(const char *buffer, struct in6_addr *result, int *isIPv4) {
         memcpy(&(((struct sockaddr_in*)&sa)->sin_addr), &addr, 4);
         convertIPv4ToIPv6(&sa, &addr6);
         *isIPv4 = 1;
-    } else
-         return JDWPTRANSPORT_ERROR_IO_ERROR;
+    } else {
+        return JDWPTRANSPORT_ERROR_IO_ERROR;
+    }
 
     memcpy(result, &addr6, sizeof(*result));
 
