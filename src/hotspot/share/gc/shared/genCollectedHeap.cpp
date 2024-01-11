@@ -713,10 +713,6 @@ void GenCollectedHeap::process_roots(ScanningOption so,
   DEBUG_ONLY(ScavengableNMethods::asserted_non_scavengable_nmethods_do(&assert_code_is_non_scavengable));
 }
 
-void GenCollectedHeap::gen_process_weak_roots(OopClosure* root_closure) {
-  WeakProcessor::oops_do(root_closure);
-}
-
 bool GenCollectedHeap::no_allocs_since_save_marks() {
   return _young_gen->no_allocs_since_save_marks() &&
          _old_gen->no_allocs_since_save_marks();
@@ -910,15 +906,6 @@ GenCollectedHeap* GenCollectedHeap::heap() {
   // SerialHeap is the only subtype of GenCollectedHeap.
   return named_heap<GenCollectedHeap>(CollectedHeap::Serial);
 }
-
-#if INCLUDE_SERIALGC
-void GenCollectedHeap::prepare_for_compaction() {
-  // Start by compacting into same gen.
-  CompactPoint cp(_old_gen);
-  _old_gen->prepare_for_compaction(&cp);
-  _young_gen->prepare_for_compaction(&cp);
-}
-#endif // INCLUDE_SERIALGC
 
 void GenCollectedHeap::verify(VerifyOption option /* ignored */) {
   log_debug(gc, verify)("%s", _old_gen->name());

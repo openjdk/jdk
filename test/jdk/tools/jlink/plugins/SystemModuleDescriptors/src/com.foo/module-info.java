@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,17 +21,7 @@
  * questions.
  */
 
-import java.util.zip.*;
-import java.io.File;
-
-public class Available
-{
-    public static void main (String argv[]) throws Exception {
-        ZipFile zf = new ZipFile(new File(System.getProperty("test.src"),
-                                          "input.jar"));
-        ZipEntry e = zf.getEntry("ReleaseInflater.java");
-        if (e.getSize() != zf.getInputStream(e).available()) {
-            throw new Exception("wrong return value of available");
-        }
-    }
+module com.foo {
+    requires jdk.httpserver;
+    requires net.foo;
 }
