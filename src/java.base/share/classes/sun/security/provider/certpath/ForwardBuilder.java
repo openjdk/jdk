@@ -395,29 +395,15 @@ public final class ForwardBuilder extends Builder {
      * 2) Issuer matches a trusted subject
      *    Issuer: ou=D,ou=C,o=B,c=A
      *
-     * 3) Issuer is a descendant of a trusted subject (in order of
-     *    number of links to the trusted subject)
-     *    a) Issuer: ou=E,ou=D,ou=C,o=B,c=A        [links=1]
-     *    b) Issuer: ou=F,ou=E,ou=D,ou=C,ou=B,c=A  [links=2]
-     *
-     * 4) Issuer is an ancestor of a trusted subject (in order of number of
-     *    links to the trusted subject)
-     *    a) Issuer: ou=C,o=B,c=A [links=1]
-     *    b) Issuer: o=B,c=A      [links=2]
-     *
-     * 5) Issuer is in the same namespace as a trusted subject (in order of
-     *    number of links to the trusted subject)
+     * 3) Issuer is in the same namespace as a trusted subject (in order of
+     *    number of links to the trusted subject). If the last RDN of the
+     *    common ancestor is geographical, then it is skipped and the next
+     *    trusted certificate is checked.
      *    a) Issuer: ou=G,ou=C,o=B,c=A  [links=2]
      *    b) Issuer: ou=H,o=B,c=A       [links=3]
+     *    c) Issuer: ou=H,o=D,c=A	[skipped, only geographical c=A is same]
      *
-     * 6) Issuer is an ancestor of certificate subject (in order of number
-     *    of links to the certificate subject)
-     *    a) Issuer:  ou=K,o=J,c=A
-     *       Subject: ou=L,ou=K,o=J,c=A
-     *    b) Issuer:  o=J,c=A
-     *       Subject: ou=L,ou=K,0=J,c=A
-     *
-     * 7) Any other certificates
+     * 4) Any other certificates
      */
     static class PKIXCertComparator implements Comparator<X509Certificate> {
 
@@ -511,27 +497,36 @@ public final class ForwardBuilder extends Builder {
 
             X500Name cIssuer1Name = X500Name.asX500Name(cIssuer1);
             X500Name cIssuer2Name = X500Name.asX500Name(cIssuer2);
+            // Note that we stop searching if we find a trust anchor that
+            // has a common non-geographical ancestor on the basis that there
+            // is a good chance that this path is the one we want.
             for (X500Principal tSubject : trustedSubjectDNs) {
                 X500Name tSubjectName = X500Name.asX500Name(tSubject);
-                List<RDN> tAo1 = commonAncestor(tSubjectName, cIssuer1Name);
-                List<RDN> tAo2 = commonAncestor(tSubjectName, cIssuer2Name);
-                if (tAo1 == null && tAo2 == null) {
-                    // continue checking other trust anchors
+                int d1 = distanceToCommonAncestor(tSubjectName, cIssuer1Name);
+                int d2 = distanceToCommonAncestor(tSubjectName, cIssuer2Name);
+                if (d1 == -1 && d2 == -1) {
+                    // neither cert has a common non-geographical ancestor with
+                    // trust anchor, so continue checking other trust anchors
                     continue;
                 }
-                if (tAo1 != null) {
-                    if (tAo2 != null) {
-                        int hopsTto1 = cIssuer1Name.size() - tAo1.size();
-                        int hopsTto2 = cIssuer2Name.size() - tAo2.size();
+                if (d1 != -1) {
+                    if (d2 != -1) {
+                        // both certs share a common non-geographical ancestor
+                        // with trust anchor. Prefer the one that is closer
+                        // to the trust anchor.
                         if (debug != null) {
-                            debug.println(METHOD_NME +" hopsTto1: " + hopsTto1);
-                            debug.println(METHOD_NME +" hopsTto2: " + hopsTto2);
+                            debug.println(METHOD_NME +" cert1 links: " + d1);
+                            debug.println(METHOD_NME +" cert2 links: " + d2);
                         }
-                        return (hopsTto1 > hopsTto2) ? 1 : -1;
+                        return (d1 > d2) ? 1 : -1;
                     } else {
+                        // cert1 shares a common non-geographical ancestor with
+                        // trust anchor, so it is preferred.
                         return -1;
                     }
-                } else if (tAo2 != null) {
+                } else if (d2 != -1) {
+                    // cert2 shares a common non-geographical ancestor with
+                    // trust anchor, so it is preferred.
                     return 1;
                 }
             }
@@ -546,29 +541,29 @@ public final class ForwardBuilder extends Builder {
     }
 
     /**
-     * Return the common non-geographical ancestor of two X500Names as a
-     * List of RDN.
+     * Returns the distance (number of RDNs) from the issuer's DN to the
+     * common non-geographical ancestor of the trust anchor and issuer's DN.
      *
-     * @param first the first X500Name
-     * @param second the second X500Name
-     * @return the common ancestor or null if none or an attribute of the
+     * @param anchor the anchor's DN
+     * @param issuer the issuer's DN
+     * @return the distance or -1 if no common ancestor or an attribute of the
      *    last RDN of the common ancestor is geographical
      */
-    public static List<RDN> commonAncestor(X500Name first, X500Name second) {
-        List<RDN> firstRdns = first.rdns();
-        List<RDN> secondRdns = second.rdns();
-        int minLen = Math.min(firstRdns.size(), secondRdns.size());
+    private static int distanceToCommonAncestor(X500Name anchor, X500Name issuer) {
+        List<RDN> anchorRdns = anchor.rdns();
+        List<RDN> issuerRdns = issuer.rdns();
+        int minLen = Math.min(anchorRdns.size(), issuerRdns.size());
         if (minLen == 0) {
-            return null;
+            return -1;
         }
 
         // Compare names from highest RDN down the naming tree.
         int i = 0;
         for (; i < minLen; i++) {
-            RDN rdn = firstRdns.get(i);
-            if (!rdn.equals(secondRdns.get(i))) {
+            RDN rdn = anchorRdns.get(i);
+            if (!rdn.equals(issuerRdns.get(i))) {
                 if (i == 0) {
-                    return null;
+                    return -1;
                 } else {
                     break;
                 }
@@ -576,18 +571,18 @@ public final class ForwardBuilder extends Builder {
         }
 
         // check if last RDN is geographical
-        RDN lastRDN = firstRdns.get(i - 1);
+        RDN lastRDN = anchorRdns.get(i - 1);
         for (AVA ava : lastRDN.avas()) {
             ObjectIdentifier oid = ava.getObjectIdentifier();
             if (oid.equals(X500Name.countryName_oid) ||
                 oid.equals(X500Name.stateName_oid) ||
                 oid.equals(X500Name.localityName_oid) ||
                 oid.equals(X500Name.streetAddress_oid)) {
-                return null;
+                return -1;
            }
         }
 
-        return firstRdns.subList(0, i);
+        return issuer.size() - anchorRdns.subList(0, i).size();
     }
 
     /**

@@ -33,7 +33,6 @@ import java.util.*;
 import sun.security.action.GetBooleanAction;
 import sun.security.provider.certpath.PKIX.BuilderParams;
 import sun.security.util.Debug;
-import sun.security.x509.GeneralNameInterface;
 
 /**
  * Abstract class representing a builder, which is able to retrieve
