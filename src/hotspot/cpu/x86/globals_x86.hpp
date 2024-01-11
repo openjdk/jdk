@@ -211,6 +211,9 @@ define_pd_global(intx, InitArrayShortSize, 8*BytesPerLong);
   product(bool, UseBMI2Instructions, false,                                 \
           "Use BMI2 instructions")                                          \
                                                                             \
+  product(bool, UseMOVBEInstructions, false,                                \
+          "Use MOVBE instructions")                                         \
+                                                                            \
   product(bool, UseLibmIntrinsic, true, DIAGNOSTIC,                         \
           "Use Libm Intrinsics")                                            \
                                                                             \

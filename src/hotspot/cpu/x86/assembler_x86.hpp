@@ -1699,6 +1699,16 @@ private:
   void movzwq(Register dst, Register src);
 #endif
 
+  // Move big-endian
+  void movbew(Address dst, Register src);
+  void movbew(Register dst, Address src);
+  void movbel(Address dst, Register src);
+  void movbel(Register dst, Address src);
+#ifdef _LP64
+  void movbeq(Address dst, Register src);
+  void movbeq(Register dst, Address src);
+#endif
+
   // Unsigned multiply with RAX destination register
   void mull(Address src);
   void mull(Register src);

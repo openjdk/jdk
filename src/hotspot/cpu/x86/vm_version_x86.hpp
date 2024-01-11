@@ -82,7 +82,8 @@ class VM_Version : public Abstract_VM_Version {
                dca      : 1,
                sse4_1   : 1,
                sse4_2   : 1,
-                        : 2,
+                        : 1,
+               movbe    : 1,
                popcnt   : 1,
                         : 1,
                aes      : 1,
@@ -390,7 +391,8 @@ protected:
     decl(OSPKE,             "ospke",             55) /* OS enables protection keys */ \
     decl(CET_IBT,           "cet_ibt",           56) /* Control Flow Enforcement - Indirect Branch Tracking */ \
     decl(CET_SS,            "cet_ss",            57) /* Control Flow Enforcement - Shadow Stack */ \
-    decl(AVX512_IFMA,       "avx512_ifma",       58) /* Integer Vector FMA instructions*/
+    decl(AVX512_IFMA,       "avx512_ifma",       58) /* Integer Vector FMA instructions */ \
+    decl(MOVBE,             "movbe",             59) /* Move big-endian */
 
 #define DECLARE_CPU_FEATURE_FLAG(id, name, bit) CPU_##id = (1ULL << bit),
     CPU_FEATURE_FLAGS(DECLARE_CPU_FEATURE_FLAG)
@@ -702,6 +704,7 @@ public:
   static bool supports_ospke()        { return (_features & CPU_OSPKE) != 0; }
   static bool supports_cet_ss()       { return (_features & CPU_CET_SS) != 0; }
   static bool supports_cet_ibt()      { return (_features & CPU_CET_IBT) != 0; }
+  static bool supports_movbe()        { return (_features & CPU_MOVBE) != 0; }
 
   // Intel features
   static bool is_intel_family_core() { return is_intel() &&

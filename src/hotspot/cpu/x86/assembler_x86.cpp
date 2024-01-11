@@ -3744,6 +3744,58 @@ void Assembler::movzwl(Register dst, Register src) { // movzxw
   emit_int24(0x0F, (unsigned char)0xB7, 0xC0 | encode);
 }
 
+void Assembler::movbew(Register dst, Address src) {
+  assert(VM_Version::supports_movbe(), "Sanity");
+  InstructionMark im(this);
+  emit_int8(0x66);
+  prefix(src, dst);
+  emit_int24(0x0F, 0x38, (unsigned char)0xF0);
+  emit_operand(dst, src, 0);
+}
+
+void Assembler::movbew(Address dst, Register src) {
+  assert(VM_Version::supports_movbe(), "Sanity");
+  InstructionMark im(this);
+  emit_int8(0x66);
+  prefix(dst, src);
+  emit_int24(0x0F, 0x38, (unsigned char)0xF1);
+  emit_operand(src, dst, 0);
+}
+
+void Assembler::movbel(Register dst, Address src) {
+  assert(VM_Version::supports_movbe(), "Sanity");
+  InstructionMark im(this);
+  prefix(src, dst);
+  emit_int24(0x0F, 0x38, (unsigned char)0xF0);
+  emit_operand(dst, src, 0);
+}
+
+void Assembler::movbel(Address dst, Register src) {
+  assert(VM_Version::supports_movbe(), "Sanity");
+  InstructionMark im(this);
+  prefix(dst, src);
+  emit_int24(0x0F, 0x38, (unsigned char)0xF1);
+  emit_operand(src, dst, 0);
+}
+
+#ifdef _LP64
+void Assembler::movbeq(Register dst, Address src) {
+  assert(VM_Version::supports_movbe(), "Sanity");
+  InstructionMark im(this);
+  prefixq(src, dst);
+  emit_int24(0x0F, 0x38, (unsigned char)0xF0);
+  emit_operand(dst, src, 0);
+}
+
+void Assembler::movbeq(Address dst, Register src) {
+  assert(VM_Version::supports_movbe(), "Sanity");
+  InstructionMark im(this);
+  prefixq(dst, src);
+  emit_int24(0x0F, 0x38, (unsigned char)0xF1);
+  emit_operand(src, dst, 0);
+}
+#endif
+
 void Assembler::mull(Address src) {
   InstructionMark im(this);
   prefix(src);

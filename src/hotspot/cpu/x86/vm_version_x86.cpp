@@ -1757,6 +1757,15 @@ void VM_Version::get_processor_features() {
     FLAG_SET_DEFAULT(UseBMI2Instructions, false);
   }
 
+  if (supports_movbe()) {
+    if (FLAG_IS_DEFAULT(UseMOVBEInstructions)) {
+      UseMOVBEInstructions = true;
+    }
+  } else if (UseMOVBEInstructions) {
+    warning("MOVBE instructions are not available on this CPU");
+    FLAG_SET_DEFAULT(UseMOVBEInstructions, false);
+  }
+
   // Use population count instruction if available.
   if (supports_popcnt()) {
     if (FLAG_IS_DEFAULT(UsePopCountInstruction)) {
@@ -2925,6 +2934,8 @@ uint64_t VM_Version::feature_flags() {
     result |= CPU_SSE4_1;
   if (_cpuid_info.std_cpuid1_ecx.bits.sse4_2 != 0)
     result |= CPU_SSE4_2;
+  if (_cpuid_info.std_cpuid1_ecx.bits.movbe != 0)
+    result |= CPU_MOVBE;
   if (_cpuid_info.std_cpuid1_ecx.bits.popcnt != 0)
     result |= CPU_POPCNT;
   if (_cpuid_info.std_cpuid1_ecx.bits.avx != 0 &&

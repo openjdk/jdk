@@ -5561,10 +5561,35 @@ instruct cacheWBPostSync()
   ins_pipe(pipe_slow); // XXX
 %}
 
-//----------BSWAP Instructions-------------------------------------------------
+//---------- Byte reversal Instructions ---------------------------------
+instruct bytes_reverse_int_load(rRegI dst, memory src) %{
+  predicate(UseMOVBEInstructions);
+  match(Set dst (ReverseBytesI (LoadI src)));
+
+  ins_cost(10);
+  format %{ "movbel  $dst,$src" %}
+  ins_encode %{
+    __ movbel($dst$$Register, $src$$Address);
+  %}
+  ins_pipe( ialu_reg_mem );
+%}
+
+instruct bytes_reverse_int_store(memory dst, rRegI src) %{
+  predicate(UseMOVBEInstructions);
+  match(Set dst (StoreI dst (ReverseBytesI src)));
+
+  ins_cost(10);
+  format %{ "movbel  $src,$dst" %}
+  ins_encode %{
+    __ movbel($dst$$Address, $src$$Register);
+  %}
+  ins_pipe( ialu_mem_reg );
+%}
+
 instruct bytes_reverse_int(rRegI dst) %{
   match(Set dst (ReverseBytesI dst));
 
+  ins_cost(100);
   format %{ "bswapl  $dst" %}
   ins_encode %{
     __ bswapl($dst$$Register);
@@ -5572,9 +5597,34 @@ instruct bytes_reverse_int(rRegI dst) %{
   ins_pipe( ialu_reg );
 %}
 
+instruct bytes_reverse_long_load(rRegL dst, memory src) %{
+  predicate(UseMOVBEInstructions);
+  match(Set dst (ReverseBytesL (LoadL src)));
+
+  ins_cost(10);
+  format %{ "movbeq  $dst,$src" %}
+  ins_encode %{
+    __ movbeq($dst$$Register, $src$$Address);
+  %}
+  ins_pipe( ialu_reg_mem );
+%}
+
+instruct bytes_reverse_long_store(memory dst, rRegL src) %{
+  predicate(UseMOVBEInstructions);
+  match(Set dst (StoreL dst (ReverseBytesL src)));
+
+  ins_cost(10);
+  format %{ "movbeq  $src,$dst" %}
+  ins_encode %{
+    __ movbeq($dst$$Address, $src$$Register);
+  %}
+  ins_pipe( ialu_mem_reg );
+%}
+
 instruct bytes_reverse_long(rRegL dst) %{
   match(Set dst (ReverseBytesL dst));
 
+  ins_cost(100);
   format %{ "bswapq  $dst" %}
   ins_encode %{
     __ bswapq($dst$$Register);
@@ -5582,10 +5632,38 @@ instruct bytes_reverse_long(rRegL dst) %{
   ins_pipe( ialu_reg);
 %}
 
+instruct bytes_reverse_unsigned_short_load(rRegI dst, memory src) %{
+  predicate(UseMOVBEInstructions);
+  match(Set dst (ReverseBytesUS (LoadUS src)));
+
+  ins_cost(10);
+  format %{ "movbew  $dst,$src\n\t"
+            "andl    $dst,0xFFFF\tclear upper 16-bits" %}
+  ins_encode %{
+    __ movbew($dst$$Register, $src$$Address);
+    // For 16-bit ops, the higher 16 bits are not cleared by movbe.
+    __ andl($dst$$Register, 0x0000FFFF);
+  %}
+  ins_pipe( ialu_reg_mem );
+%}
+
+instruct bytes_reverse_unsigned_short_store(memory dst, rRegI src) %{
+  predicate(UseMOVBEInstructions);
+  match(Set dst (StoreC dst (ReverseBytesS src)));
+
+  ins_cost(10);
+  format %{ "movbew  $src,$dst" %}
+  ins_encode %{
+    __ movbew($dst$$Address, $src$$Register);
+  %}
+  ins_pipe( ialu_mem_reg );
+%}
+
 instruct bytes_reverse_unsigned_short(rRegI dst, rFlagsReg cr) %{
   match(Set dst (ReverseBytesUS dst));
   effect(KILL cr);
 
+  ins_cost(100);
   format %{ "bswapl  $dst\n\t"
             "shrl    $dst,16\n\t" %}
   ins_encode %{
@@ -5595,10 +5673,37 @@ instruct bytes_reverse_unsigned_short(rRegI dst, rFlagsReg cr) %{
   ins_pipe( ialu_reg );
 %}
 
+instruct bytes_reverse_short_load(rRegI dst, memory src) %{
+  predicate(UseMOVBEInstructions);
+  match(Set dst (ReverseBytesS (LoadS src)));
+
+  ins_cost(10);
+  format %{ "movbew  $dst,$src\n\t"
+            "movswl  $dst,$dst\t# sign-extend" %}
+  ins_encode %{
+    __ movbew($dst$$Register, $src$$Address);
+    __ movswl($dst$$Register, $dst$$Register); // sign-extend to int
+  %}
+  ins_pipe( ialu_reg_mem );
+%}
+
+instruct bytes_reverse_short_store(memory dst, rRegI src) %{
+  predicate(UseMOVBEInstructions);
+  match(Set dst (StoreC dst (ReverseBytesS src)));
+
+  ins_cost(10);
+  format %{ "movbew  $src,$dst" %}
+  ins_encode %{
+    __ movbew($dst$$Address, $src$$Register);
+  %}
+  ins_pipe( ialu_mem_reg );
+%}
+
 instruct bytes_reverse_short(rRegI dst, rFlagsReg cr) %{
   match(Set dst (ReverseBytesS dst));
   effect(KILL cr);
 
+  ins_cost(100);
   format %{ "bswapl  $dst\n\t"
             "sar     $dst,16\n\t" %}
   ins_encode %{
