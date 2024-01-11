@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,29 +21,26 @@
  * questions.
  */
 
-/* @test
-   @bug 4290060
-   @summary Check if the zip file is closed before access any
-            elements in the Enumeration.
+/*
+ * @test
+ * @bug 8248695
+ * @summary Test any java.time.DateTimeFormatter Locale provider related issues
+ * @library /test/lib
+ * @build LocaleProviders
+ * @modules java.base/sun.util.locale.provider
+ * @run junit/othervm LocaleProvidersDateTimeFormatter
  */
 
-import java.io.*;
-import java.util.zip.*;
-import java.util.Enumeration;
+import org.junit.jupiter.api.Test;
 
-public class EnumAfterClose {
-    public static void main(String args[]) throws Exception {
-        Enumeration e;
-        try (ZipFile zf = new ZipFile(new File(System.getProperty("test.src", "."),
-                                               "input.zip"))) {
-            e = zf.entries();
-        }
-        // ensure that the ZipFile is closed before checking the Enumeration
-        try {
-            if (e.hasMoreElements()) {
-                ZipEntry ze = (ZipEntry)e.nextElement();
-            }
-        } catch (IllegalStateException ie) {
-        }
+public class LocaleProvidersDateTimeFormatter {
+
+    /*
+     * 8248695: Ensure DateTimeFormatter::ofLocalizedDate does not throw exception
+     * under HOST (date only pattern leaks time field)
+     */
+    @Test
+    public void dateOnlyJavaTimePattern() throws Throwable {
+        LocaleProviders.test("HOST", "bug8248695Test");
     }
 }

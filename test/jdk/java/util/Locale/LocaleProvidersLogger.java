@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,17 +21,29 @@
  * questions.
  */
 
-import java.util.zip.*;
-import java.io.File;
+/*
+ * @test
+ * @bug 8245241 8246721 8261919
+ * @summary Test the Locale provider preference is logged
+ * @library /test/lib
+ * @build LocaleProviders
+ * @modules java.base/sun.util.locale.provider
+ * @run junit/othervm -Djdk.lang.Process.allowAmbiguousCommands=false LocaleProvidersLogger
+ */
 
-public class Available
-{
-    public static void main (String argv[]) throws Exception {
-        ZipFile zf = new ZipFile(new File(System.getProperty("test.src"),
-                                          "input.jar"));
-        ZipEntry e = zf.getEntry("ReleaseInflater.java");
-        if (e.getSize() != zf.getInputStream(e).available()) {
-            throw new Exception("wrong return value of available");
-        }
+import org.junit.jupiter.api.Test;
+
+public class LocaleProvidersLogger {
+
+    /*
+     * 8245241 8246721 8261919: Ensure if an incorrect system property for locale providers is set,
+     * it should be logged and presented to the user. The option
+     * jdk.lang.Process.allowAmbiguousCommands=false is needed for properly escaping
+     * double quotes in the string argument.
+     */
+    @Test
+    public void logIncorrectLocaleProvider() throws Throwable {
+        LocaleProviders.test("FOO", "bug8245241Test",
+                "Invalid locale provider adapter \"FOO\" ignored.");
     }
 }

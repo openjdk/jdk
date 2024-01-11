@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,28 +21,37 @@
  * questions.
  */
 
-/* @test 1.1 99/06/01
-   @bug 4239446
-   @summary Make sure the ZipEntry fields are correct.
+/*
+ * @test
+ * @bug 8319793
+ * @summary Replacing a test with a dominating test can cause an array access CastII to float above a range check that guards it
+ * @run main/othervm -Xbatch -XX:-TieredCompilation TestArrayAccessCastIIAboveRC
  */
 
-import java.io.*;
-import java.util.zip.*;
+public class TestArrayAccessCastIIAboveRC {
+    static int N = 400;
+    static int iArrFld[] = new int[N];
 
-public class CopyJar {
-    public static void main(String args[]) throws Exception {
-        try (ZipFile zf = new ZipFile(new File(System.getProperty("test.src", "."),
-                                               "input.jar"))) {
-            ZipEntry ze = zf.getEntry("ReleaseInflater.java");
-            ZipOutputStream zos = new ZipOutputStream(new ByteArrayOutputStream());
-            InputStream in = zf.getInputStream(ze);
-            byte[] b = new byte[128];
-            int n;
-            zos.putNextEntry(ze);
-            while((n = in.read(b)) != -1) {
-                zos.write(b, 0, n);
+    static void test() {
+        float fArr[] = new float[N];
+        int i9, i10, i12;
+        long lArr1[] = new long[N];
+        for (i9 = 7; i9 < 43; i9++) {
+            try {
+                i10 = 7 % i9;
+                iArrFld[i9 + 1] = i9 / i10;
+            } catch (ArithmeticException a_e) {
             }
-            zos.close();
+            for (i12 = 1; 7 > i12; i12++)
+                lArr1[i9 - 1] = 42;
+            iArrFld[i12] = 4;
+            fArr[i9 - 1] = 0;
+        }
+    }
+
+    public static void main(String[] args) {
+        for (int i = 0; i < 50_000; ++i) {
+            test();
         }
     }
 }
