@@ -226,7 +226,7 @@ AC_DEFUN([UTIL_GET_MATCHING_VALUES],
   if test -z "$illegal_values"; then
     $1=""
   else
-    result=`$GREP -Fx "$illegal_values" <<< "$values_to_check" | $GREP -v '^$'`
+    result=`$GREP -Fx -- "$illegal_values" <<< "$values_to_check" | $GREP -v '^$'`
     $1=${result//$'\n'/ }
   fi
 ])
