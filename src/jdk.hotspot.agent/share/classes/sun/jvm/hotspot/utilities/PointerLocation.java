@@ -28,6 +28,7 @@ import java.io.*;
 import sun.jvm.hotspot.code.*;
 import sun.jvm.hotspot.debugger.*;
 import sun.jvm.hotspot.debugger.cdbg.*;
+import sun.jvm.hotspot.gc.serial.*;
 import sun.jvm.hotspot.gc.shared.*;
 import sun.jvm.hotspot.interpreter.*;
 import sun.jvm.hotspot.memory.*;
@@ -110,10 +111,23 @@ public class PointerLocation {
     return (heap != null);
   }
 
+  public boolean isInNewGen() {
+    return ((gen != null) && (gen.equals(((SerialHeap)heap).getGen(0))));
+  }
+
+  public boolean isInOldGen() {
+    return ((gen != null) && (gen.equals(((SerialHeap)heap).getGen(1))));
+  }
+
+  public boolean inOtherGen() {
+    return (!isInNewGen() && !isInOldGen());
+  }
+
   public Generation getGeneration() {
       return gen;
   }
 
+  /** This may be true if isInNewGen is also true */
   public boolean isInTLAB() {
     return inTLAB;
   }
@@ -259,6 +273,18 @@ public class PointerLocation {
         getTLABThread().printThreadInfoOn(tty);
         tty.print(") ");
         getTLAB().printOn(tty); // includes "\n"
+      } else {
+        if (isInNewGen()) {
+          tty.print("In new generation ");
+        } else if (isInOldGen()) {
+          tty.print("In old generation ");
+        } else {
+          tty.print("In unknown section of Java heap");
+        }
+        if (getGeneration() != null) {
+          getGeneration().printOn(tty); // does not include "\n"
+        }
+        tty.println();
       }
     } else if (isInInterpreter()) {
       tty.print("In interpreter codelet: ");

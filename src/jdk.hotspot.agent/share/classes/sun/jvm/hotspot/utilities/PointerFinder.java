@@ -27,6 +27,7 @@ package sun.jvm.hotspot.utilities;
 import sun.jvm.hotspot.code.*;
 import sun.jvm.hotspot.debugger.*;
 import sun.jvm.hotspot.debugger.cdbg.*;
+import sun.jvm.hotspot.gc.serial.*;
 import sun.jvm.hotspot.gc.shared.*;
 import sun.jvm.hotspot.interpreter.*;
 import sun.jvm.hotspot.memory.*;
@@ -84,9 +85,43 @@ public class PointerFinder {
 
     // Check if address is in the java heap.
     CollectedHeap heap = VM.getVM().getUniverse().heap();
-    if (heap.isIn(a)) {
-      loc.heap = heap;
-      return loc;
+    if (heap instanceof SerialHeap) {
+      SerialHeap sh = (SerialHeap) heap;
+      if (sh.isIn(a)) {
+        loc.heap = heap;
+        for (int i = 0; i < sh.nGens(); i++) {
+          Generation g = sh.getGen(i);
+          if (g.isIn(a)) {
+            loc.gen = g;
+            break;
+          }
+        }
+
+        if (Assert.ASSERTS_ENABLED) {
+          Assert.that(loc.gen != null, "Should have found this in a generation");
+        }
+
+        if (VM.getVM().getUseTLAB()) {
+          // Try to find thread containing it
+          for (int i = 0; i < threads.getNumberOfThreads(); i++) {
+            JavaThread t = threads.getJavaThreadAt(i);
+            ThreadLocalAllocBuffer tlab = t.tlab();
+            if (tlab.contains(a)) {
+              loc.inTLAB = true;
+              loc.tlabThread = t;
+              loc.tlab = tlab;
+              break;
+            }
+          }
+        }
+
+        return loc;
+      }
+    } else {
+      if (heap.isIn(a)) {
+        loc.heap = heap;
+        return loc;
+      }
     }
 
     // Check if address is in the interpreter
