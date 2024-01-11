@@ -88,9 +88,8 @@ public class HSS {
     }
 
     // RFC 8554 Test Case 1
-    @State(Scope.Thread)
-    public static class test01 extends HSS {
-        Signature v;
+    @State(Scope.Benchmark)
+    public static class test01 {
         byte[] pk;
         byte[] msg;
         byte[] sig;
@@ -98,7 +97,7 @@ public class HSS {
         @Param({"RFC 8554 1"})
         private String test;
 
-        @Setup(Level.Trial)
+        @Setup
         public void setup() throws Exception {
             pk = decode("""
                 00000002
@@ -206,19 +205,12 @@ public class HSS {
                 f90b65a7a6201689999f32bfd368e5e3ec9cb70ac7b8399003f175c40885081a
                 09ab3034911fe125631051df0408b3946b0bde790911e8978ba07dd56c73e7ee
                 """);
-
-            v = getVerifier(pk);
-        }
-        @Benchmark
-        public void verify() throws Exception {
-            HSS.verify(v, pk, msg, sig);
         }
     }
 
     // RFC 8554 Test Case 2
-    @State(Scope.Thread)
-    public static class test02 extends HSS {
-        Signature v;
+    @State(Scope.Benchmark)
+    public static class test02 {
         byte[] pk;
         byte[] msg;
         byte[] sig;
@@ -226,7 +218,7 @@ public class HSS {
         @Param({"RFC 8554 2"})
         private String test;
 
-        @Setup(Level.Trial)
+        @Setup
         public void setup() throws Exception {
             pk = decode("""
                 00000002
@@ -371,19 +363,12 @@ public class HSS {
                 b0f75be80ea3af098c9752420a8ac0ea2bbb1f4eeba05238aef0d8ce63f0c6e5
                 e4041d95398a6f7f3e0ee97cc1591849d4ed236338b147abde9f51ef9fd4e1c1
                 """);
-
-            v = getVerifier(pk);
-        }
-        @Benchmark
-        public void verify() throws Exception {
-            HSS.verify(v, pk, msg, sig);
         }
     }
 
     // LMSigParameters.lms_sha256_m32_h15, LMOtsParameters.sha256_n32_w8);
-    @State(Scope.Thread)
-    public static class test03 extends HSS {
-        Signature v;
+    @State(Scope.Benchmark)
+    public static class test03 {
         byte[] pk;
         byte[] msg;
         byte[] sig;
@@ -391,7 +376,7 @@ public class HSS {
         @Param({"       h15_w8"})
         private String test;
 
-        @Setup(Level.Trial)
+        @Setup
         public void setup() throws Exception {
             pk = decode("""
                 00000001
@@ -489,19 +474,12 @@ public class HSS {
                 f4197291b1ad4257f8f76e1633c19f77fc361767a7a3804d5607931d975d3b19
                 5182fd0867719ce10daf0f0c0d52b16b8088ca9a26a22aa05224a1765fc82961
                 """);
-
-            v = getVerifier(pk);
-        }
-        @Benchmark
-        public void verify() throws Exception {
-            HSS.verify(v, pk, msg, sig);
         }
     }
 
     // LMSigParameters.lms_sha256_m32_h20, LMOtsParameters.sha256_n32_w8);
-    @State(Scope.Thread)
-    public static class test04 extends HSS {
-        Signature v;
+    @State(Scope.Benchmark)
+    public static class test04 {
         byte[] pk;
         byte[] msg;
         byte[] sig;
@@ -509,7 +487,7 @@ public class HSS {
         @Param({"       h20_w8"})
         private String test;
 
-        @Setup(Level.Trial)
+        @Setup
         public void setup() throws Exception {
             pk = decode("""
                 00000001
@@ -612,19 +590,12 @@ public class HSS {
                 072a39cfd09a8bf9c7591c605659c1b103288486475f54be0fb80c18717a944f
                 51b6d317fba486e1e0ab5afea205335836e717a185827ea4cd47d557be53cc4e
                 """);
-
-            v = getVerifier(pk);
-        }
-        @Benchmark
-        public void verify() throws Exception {
-            HSS.verify(v, pk, msg, sig);
         }
     }
 
     // LMSigParameters.lms_sha256_m32_h15, LMOtsParameters.sha256_n32_w4);
-    @State(Scope.Thread)
-    public static class test05 extends HSS {
-        Signature v;
+    @State(Scope.Benchmark)
+    public static class test05 {
         byte[] pk;
         byte[] msg;
         byte[] sig;
@@ -632,7 +603,7 @@ public class HSS {
         @Param({"       h15_w4"})
         private String test;
 
-        @Setup(Level.Trial)
+        @Setup
         public void setup() throws Exception {
             pk = decode("""
                 00000001
@@ -763,19 +734,12 @@ public class HSS {
                 213db6d352863854781c78c4cac3083210f979d3f7884aca69fa83429c1542a5
                 51b8e95ffad4f89b506bd31ba613fe66a375434114dfbdf11741a8d86a239ded
                 """);
-
-            v = getVerifier(pk);
-        }
-        @Benchmark
-        public void verify() throws Exception {
-            HSS.verify(v, pk, msg, sig);
         }
     }
 
     // LMSigParameters.lms_sha256_m32_h20, LMOtsParameters.sha256_n32_w4);
-    @State(Scope.Thread)
-    public static class test06 extends HSS {
-        Signature v;
+    @State(Scope.Benchmark)
+    public static class test06 {
         byte[] pk;
         byte[] msg;
         byte[] sig;
@@ -783,7 +747,7 @@ public class HSS {
         @Param({"       h20_w4"})
         private String test;
 
-        @Setup(Level.Trial)
+        @Setup
         public void setup() throws Exception {
             pk = decode("""
                 00000001
@@ -919,20 +883,13 @@ public class HSS {
                 cd742fa9e1225dc8e6cc32b86d6f57a3ac4b6d733a0655cfcc036c4b4c004a61
                 1efd58035b06ba03b4a701a68f5945cd90bd4d69d702fb43f0ff10a5879ab709
                 """);
-
-            v = getVerifier(pk);
-        }
-        @Benchmark
-        public void verify() throws Exception {
-            HSS.verify(v, pk, msg, sig);
         }
     }
 
     // LMSigParameters.lms_sha256_m32_h15, LMOtsParameters.sha256_n32_w4);
     // LMSigParameters.lms_sha256_m32_h10, LMOtsParameters.sha256_n32_w4);
-    @State(Scope.Thread)
-    public static class test07 extends HSS {
-        Signature v;
+    @State(Scope.Benchmark)
+    public static class test07 {
         byte[] pk;
         byte[] msg;
         byte[] sig;
@@ -940,7 +897,7 @@ public class HSS {
         @Param({"h15_w4_h10_w4"})
         private String test;
 
-        @Setup(Level.Trial)
+        @Setup
         public void setup() throws Exception {
             pk = decode("""
                 00000002
@@ -1156,20 +1113,13 @@ public class HSS {
                 7ffe104cd0be40b96a04048def98caffea64e25ecfdd3566d3775200c5eb9182
                 e9a45d41023db850048e05f200a4e7ed2e0b48c532e10c1628503d5b7f394cde
                 """);
-
-            v = getVerifier(pk);
-        }
-        @Benchmark
-        public void verify() throws Exception {
-            HSS.verify(v, pk, msg, sig);
         }
     }
 
     // LMSigParameters.lms_sha256_m32_h15, LMOtsParameters.sha256_n32_w4);
     // LMSigParameters.lms_sha256_m32_h15, LMOtsParameters.sha256_n32_w4);
-    @State(Scope.Thread)
-    public static class test08 extends HSS {
-        Signature v;
+    @State(Scope.Benchmark)
+    public static class test08 {
         byte[] pk;
         byte[] msg;
         byte[] sig;
@@ -1177,7 +1127,7 @@ public class HSS {
         @Param({"h15_w4_h15_w4"})
         private String test;
 
-        @Setup(Level.Trial)
+        @Setup
         public void setup() throws Exception {
             pk = decode("""
                 00000002
@@ -1398,20 +1348,13 @@ public class HSS {
                 244569171a23d6d593bd19634758b7ff9c8731720e771023fdb0a6241dda4f61
                 a4385d3b9c5b6f6bb018324528aff429eca9c1264de9ea434a1a90e07f69015e
                 """);
-
-            v = getVerifier(pk);
-        }
-        @Benchmark
-        public void verify() throws Exception {
-            HSS.verify(v, pk, msg, sig);
         }
     }
 
     // LMSigParameters.lms_sha256_m32_h20, LMOtsParameters.sha256_n32_w4);
     // LMSigParameters.lms_sha256_m32_h10, LMOtsParameters.sha256_n32_w4);
-    @State(Scope.Thread)
-    public static class test09 extends HSS {
-        Signature v;
+    @State(Scope.Benchmark)
+    public static class test09 {
         byte[] pk;
         byte[] msg;
         byte[] sig;
@@ -1419,7 +1362,7 @@ public class HSS {
         @Param({"h20_w4_h10_w4"})
         private String test;
 
-        @Setup(Level.Trial)
+        @Setup
         public void setup() throws Exception {
             pk = decode("""
                 00000002
@@ -1640,20 +1583,13 @@ public class HSS {
                 a7a4cb92d8b054a206adec09b35ea6615069fc7d49132549bab5548b9e1fe61d
                 2b7a9ba0d6d3e0336f17f3caa18e0ea19d6cf0a9c0e48a83cf325369b6a091ba
                 """);
-
-            v = getVerifier(pk);
-        }
-        @Benchmark
-        public void verify() throws Exception {
-            HSS.verify(v, pk, msg, sig);
         }
     }
 
     // LMSigParameters.lms_sha256_m32_h20, LMOtsParameters.sha256_n32_w4);
     // LMSigParameters.lms_sha256_m32_h15, LMOtsParameters.sha256_n32_w4);
-    @State(Scope.Thread)
-    public static class test10 extends HSS {
-        Signature v;
+    @State(Scope.Benchmark)
+    public static class test10 {
         byte[] pk;
         byte[] msg;
         byte[] sig;
@@ -1661,7 +1597,7 @@ public class HSS {
         @Param({"h20_w4_h15_w4"})
         private String test;
 
-        @Setup(Level.Trial)
+        @Setup
         public void setup() throws Exception {
             pk = decode("""
                 00000002
@@ -1887,12 +1823,138 @@ public class HSS {
                 ba5cab16b084d208d20bf25ad9a7ae31bceb00b07ef20cab7d1f6883ac331c75
                 a2aefb8230ae97dc34577785b123af406040d01fd072c493228d7583cd023c25
                 """);
+        }
+    }
 
-            v = getVerifier(pk);
+    @State(Scope.Thread)
+    public static class verifier01 {
+        Signature v;
+
+        @Setup
+        public void setup(test01 test) throws Exception {
+            v = getVerifier(test.pk);
         }
-        @Benchmark
-        public void verify() throws Exception {
-            HSS.verify(v, pk, msg, sig);
+    }
+    @State(Scope.Thread)
+    public static class verifier02 {
+        Signature v;
+
+        @Setup
+        public void setup(test02 test) throws Exception {
+            v = getVerifier(test.pk);
         }
+    }
+    @State(Scope.Thread)
+    public static class verifier03 {
+        Signature v;
+
+        @Setup
+        public void setup(test03 test) throws Exception {
+            v = getVerifier(test.pk);
+        }
+    }
+    @State(Scope.Thread)
+    public static class verifier04 {
+        Signature v;
+
+        @Setup
+        public void setup(test04 test) throws Exception {
+            v = getVerifier(test.pk);
+        }
+    }
+    @State(Scope.Thread)
+    public static class verifier05 {
+        Signature v;
+
+        @Setup
+        public void setup(test05 test) throws Exception {
+            v = getVerifier(test.pk);
+        }
+    }
+    @State(Scope.Thread)
+    public static class verifier06 {
+        Signature v;
+
+        @Setup
+        public void setup(test06 test) throws Exception {
+            v = getVerifier(test.pk);
+        }
+    }
+    @State(Scope.Thread)
+    public static class verifier07 {
+        Signature v;
+
+        @Setup
+        public void setup(test07 test) throws Exception {
+            v = getVerifier(test.pk);
+        }
+    }
+    @State(Scope.Thread)
+    public static class verifier08 {
+        Signature v;
+
+        @Setup
+        public void setup(test08 test) throws Exception {
+            v = getVerifier(test.pk);
+        }
+    }
+    @State(Scope.Thread)
+    public static class verifier09 {
+        Signature v;
+
+        @Setup
+        public void setup(test09 test) throws Exception {
+            v = getVerifier(test.pk);
+        }
+    }
+    @State(Scope.Thread)
+    public static class verifier10 {
+        Signature v;
+
+        @Setup
+        public void setup(test10 test) throws Exception {
+            v = getVerifier(test.pk);
+        }
+    }
+
+    @Benchmark
+    public void verify01(test01 test, verifier01 v) throws Exception {
+        HSS.verify(v.v, test.pk, test.msg, test.sig);
+    }
+    @Benchmark
+    public void verify02(test02 test, verifier02 v) throws Exception {
+        HSS.verify(v.v, test.pk, test.msg, test.sig);
+    }
+    @Benchmark
+    public void verify03(test03 test, verifier03 v) throws Exception {
+        HSS.verify(v.v, test.pk, test.msg, test.sig);
+    }
+    @Benchmark
+    public void verify04(test04 test, verifier04 v) throws Exception {
+        HSS.verify(v.v, test.pk, test.msg, test.sig);
+    }
+    @Benchmark
+    public void verify05(test05 test, verifier05 v) throws Exception {
+        HSS.verify(v.v, test.pk, test.msg, test.sig);
+    }
+    @Benchmark
+    public void verify06(test06 test, verifier06 v) throws Exception {
+        HSS.verify(v.v, test.pk, test.msg, test.sig);
+    }
+    @Benchmark
+    public void verify07(test07 test, verifier07 v) throws Exception {
+        HSS.verify(v.v, test.pk, test.msg, test.sig);
+    }
+    @Benchmark
+    public void verify08(test08 test, verifier08 v) throws Exception {
+        HSS.verify(v.v, test.pk, test.msg, test.sig);
+    }
+    @Benchmark
+    public void verify09(test09 test, verifier09 v) throws Exception {
+        HSS.verify(v.v, test.pk, test.msg, test.sig);
+    }
+    @Benchmark
+    public void verify10(test10 test, verifier10 v) throws Exception {
+        HSS.verify(v.v, test.pk, test.msg, test.sig);
     }
 }
