@@ -257,13 +257,12 @@ public abstract class Signature extends SignatureSpi {
     public static Signature getInstance(String algorithm)
             throws NoSuchAlgorithmException {
         Objects.requireNonNull(algorithm, "null algorithm name");
-        Iterable<Service> list;
+        Iterator<Service> t;
         if (algorithm.equalsIgnoreCase(RSA_SIGNATURE)) {
-            list = GetInstance.getServices(rsaIds);
+            t = GetInstance.getServices(rsaIds);
         } else {
-            list = GetInstance.getServices("Signature", algorithm);
+            t = GetInstance.getServices("Signature", algorithm);
         }
-        Iterator<Service> t = list.iterator();
         if (!t.hasNext()) {
             throw new NoSuchAlgorithmException
                 (algorithm + " Signature not available");

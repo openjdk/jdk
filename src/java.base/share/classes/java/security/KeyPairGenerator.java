@@ -230,9 +230,7 @@ public abstract class KeyPairGenerator extends KeyPairGeneratorSpi {
     public static KeyPairGenerator getInstance(String algorithm)
             throws NoSuchAlgorithmException {
         Objects.requireNonNull(algorithm, "null algorithm name");
-        Iterable<Service> list =
-                GetInstance.getServices("KeyPairGenerator", algorithm);
-        Iterator<Service> t = list.iterator();
+        Iterator<Service> t = GetInstance.getServices("KeyPairGenerator", algorithm);
         if (!t.hasNext()) {
             throw new NoSuchAlgorithmException
                 (algorithm + " KeyPairGenerator not available");

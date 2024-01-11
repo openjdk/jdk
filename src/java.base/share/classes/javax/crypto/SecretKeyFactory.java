@@ -110,9 +110,7 @@ public class SecretKeyFactory {
 
     private SecretKeyFactory(String algorithm) throws NoSuchAlgorithmException {
         this.algorithm = algorithm;
-        Iterable<Service> list =
-                GetInstance.getServices("SecretKeyFactory", algorithm);
-        serviceIterator = list.iterator();
+        serviceIterator = GetInstance.getServices("SecretKeyFactory", algorithm);
         // fetch and instantiate initial spi
         if (nextSpi(null) == null) {
             throw new NoSuchAlgorithmException

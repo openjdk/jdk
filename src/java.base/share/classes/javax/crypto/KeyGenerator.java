@@ -167,9 +167,7 @@ public class KeyGenerator {
 
     private KeyGenerator(String algorithm) throws NoSuchAlgorithmException {
         this.algorithm = algorithm;
-        Iterable<Service> list =
-                GetInstance.getServices("KeyGenerator", algorithm);
-        serviceIterator = list.iterator();
+        serviceIterator = GetInstance.getServices("KeyGenerator", algorithm);
         initType = I_NONE;
         // fetch and instantiate initial spi
         if (nextSpi(null, false) == null) {

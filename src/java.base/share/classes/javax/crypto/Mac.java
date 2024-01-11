@@ -177,9 +177,8 @@ public class Mac implements Cloneable {
     public static final Mac getInstance(String algorithm)
             throws NoSuchAlgorithmException {
         Objects.requireNonNull(algorithm, "null algorithm name");
-        Iterable<Service> services = GetInstance.getServices("Mac", algorithm);
         // make sure there is at least one service from a signed provider
-        Iterator<Service> t = services.iterator();
+        Iterator<Service> t = GetInstance.getServices("Mac", algorithm);
         while (t.hasNext()) {
             Service s = t.next();
             if (!JceSecurity.canUseProvider(s.getProvider())) {

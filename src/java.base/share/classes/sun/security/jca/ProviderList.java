@@ -399,7 +399,7 @@ public final class ProviderList {
      *
      * The List returned is NOT thread safe.
      */
-    public Iterable<Service> getServices(String type, String algorithm) {
+    public Iterator<Service> getServices(String type, String algorithm) {
         return new ServiceList(type, algorithm);
     }
 
@@ -409,7 +409,7 @@ public final class ProviderList {
      * @deprecated use {@code getServices(List<ServiceId>)} instead
      */
     @Deprecated
-    public Iterable<Service> getServices(String type, List<String> algorithms) {
+    public Iterator<Service> getServices(String type, List<String> algorithms) {
         List<ServiceId> ids = new ArrayList<>();
         for (String alg : algorithms) {
             ids.add(new ServiceId(type, alg));
@@ -417,7 +417,7 @@ public final class ProviderList {
         return getServices(ids);
     }
 
-    public Iterable<Service> getServices(List<ServiceId> ids) {
+    public Iterator<Service> getServices(List<ServiceId> ids) {
         return new ServiceList(ids);
     }
 
@@ -426,7 +426,7 @@ public final class ProviderList {
      * order to delay Provider initialization and lookup.
      * Not thread safe.
      */
-    private final class ServiceList implements Iterable<Service> {
+    private final class ServiceList implements Iterator<Service> {
 
         // type and algorithm for simple lookup
         // avoid allocating/traversing the ServiceId list for these lookups
@@ -534,27 +534,23 @@ public final class ProviderList {
             }
         }
 
-        public Iterator<Service> iterator() {
-            return new Iterator<>() {
-                int index;
+        int index;
 
-                public boolean hasNext() {
-                    return tryGet(index) != null;
-                }
+        public boolean hasNext() {
+            return tryGet(index) != null;
+        }
 
-                public Service next() {
-                    Service s = tryGet(index);
-                    if (s == null) {
-                        throw new NoSuchElementException();
-                    }
-                    index++;
-                    return s;
-                }
+        public Service next() {
+            Service s = tryGet(index);
+            if (s == null) {
+                throw new NoSuchElementException();
+            }
+            index++;
+            return s;
+        }
 
-                public void remove() {
-                    throw new UnsupportedOperationException();
-                }
-            };
+        public void remove() {
+            throw new UnsupportedOperationException();
         }
     }
 

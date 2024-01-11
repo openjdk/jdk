@@ -30,6 +30,7 @@ import java.security.*;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.spec.AlgorithmParameterSpec;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 
@@ -537,11 +538,12 @@ public final class KEM {
      */
     public static KEM getInstance(String algorithm)
             throws NoSuchAlgorithmException {
-        Iterable<Provider.Service> list = GetInstance.getServices(
+        Iterator<Provider.Service> list = GetInstance.getServices(
                 "KEM",
                 Objects.requireNonNull(algorithm, "null algorithm name"));
         List<Provider.Service> allowed = new ArrayList<>();
-        for (Provider.Service s : list) {
+        while (list.hasNext()) {
+            Provider.Service s = list.next();
             if (!JceSecurity.canUseProvider(s.getProvider())) {
                 continue;
             }
