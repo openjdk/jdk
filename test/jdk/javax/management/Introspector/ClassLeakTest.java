@@ -49,10 +49,36 @@ public class ClassLeakTest {
                            "Standard MBean does not retain a reference to " +
                            "the MBean's class");
 
+        String[] cpaths = System.getProperty("test.classes", ".")
+                                .split(File.pathSeparator);
+        URL[] urls = new URL[cpaths.length];
+        for (int i=0; i < cpaths.length; i++) {
+            urls[i] = Paths.get(cpaths[i]).toUri().toURL();
+        }
+
+        Test loaderMBean = new Test(urls);
+        Class<?> shadowClass = loaderMBean.loadClass(TestMBean.class.getName());
+        if (shadowClass == TestMBean.class) {
+            System.out.println("TEST INVALID: MBean got original " +
+                               "TestMBean not shadow");
+            System.exit(1);
+        }
+        shadowClass = null;
+
         MBeanServer mbs = MBeanServerFactory.createMBeanServer();
-        ObjectName testName = new ObjectName("x:name=Test");
-        Test mbean = new Test();
-        mbs.registerMBean(mbean, testName);
+        ObjectName loaderMBeanName = new ObjectName("x:name=loader");
+        mbs.registerMBean(loaderMBean, loaderMBeanName);
+
+        ObjectName testName = new ObjectName("x:type=test");
+        mbs.createMBean(Test.class.getName(), testName, loaderMBeanName);
+
+        ClassLoader testLoader = mbs.getClassLoaderFor(testName);
+        if (testLoader != loaderMBean) {
+            System.out.println("TEST INVALID: MBean's class loader is not " +
+                               "MLet: " + testLoader);
+            System.exit(1);
+        }
+        testLoader = null;
 
         MBeanInfo info = mbs.getMBeanInfo(testName);
         MBeanAttributeInfo[] attrs = info.getAttributes();
@@ -82,9 +108,10 @@ public class ClassLeakTest {
             System.exit(1);
         }
 
-        WeakReference mbeanRef = new WeakReference(mbean);
+        WeakReference mbeanRef = new WeakReference(loaderMBean);
         mbs.unregisterMBean(testName);
-        mbean = null;
+        mbs.unregisterMBean(loaderMBeanName);
+        loaderMBean = null;
 
         System.out.println("MBean registered and unregistered, waiting for " +
                            "garbage collector to collect class loader");
@@ -107,10 +134,13 @@ public class ClassLeakTest {
         public void setA(int a);
     }
 
-    public static class Test implements TestMBean {
-        public Test() {}
-        public Test(int x) {}
-
+    public static class Test extends URLClassLoader implements TestMBean, PrivateClassLoader {
+        public Test() {
+            super(new URL[0], null);
+        }
+        public Test(URL[] urls) {
+            super(urls, null);
+        }
         public void bogus() {}
         public int getA() {return 0;}
         public void setA(int a) {}
