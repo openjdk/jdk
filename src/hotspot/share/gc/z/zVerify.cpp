@@ -55,6 +55,8 @@
 #include "utilities/preserveException.hpp"
 #include "utilities/resourceHash.hpp"
 
+#ifdef ASSERT
+
 // Used to verify that safepoints operations can't be scheduled concurrently
 // with callers to this function. Typically used to verify that object oops
 // and headers are safe to access.
@@ -99,6 +101,8 @@ void z_verify_safepoints_are_blocked() {
     fatal("Unexpected thread type");
   }
 }
+
+#endif
 
 #define BAD_OOP_ARG(o, p)   "Bad oop " PTR_FORMAT " found at " PTR_FORMAT, untype(o), p2i(p)
 

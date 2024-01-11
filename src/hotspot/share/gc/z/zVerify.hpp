@@ -30,7 +30,7 @@ class frame;
 class ZForwarding;
 class ZPageAllocator;
 
-void z_verify_safepoints_are_blocked() NOT_DEBUG_RETURN;
+NOT_DEBUG(inline) void z_verify_safepoints_are_blocked() NOT_DEBUG_RETURN;
 
 class ZVerify : public AllStatic {
 private:
