@@ -58,6 +58,7 @@ import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 
 /**
@@ -264,37 +265,127 @@ public abstract class JavadocTester {
 
     /**
      * Run all methods annotated with @Test, followed by printSummary.
-     * Typically called on a tester object in main()
+     * The methods are invoked in the order found using getDeclaredMethods.
+     * The arguments for the invocation are provided {@link #getTestArgs(Method)}.
      *
+     * Typically called on a tester object in main().
+     *
+     * @throws IllegalArgumentException if any test method does not have a recognized signature
      * @throws Exception if any errors occurred
      */
     public void runTests() throws Exception {
-        runTests(m -> new Object[0]);
+        runTests(this::getTestArgs);
     }
 
     /**
      * Runs all methods annotated with @Test, followed by printSummary.
+     * The methods are invoked in the order found using getDeclaredMethods.
+     * The arguments for the invocation are provided by a given function.
+     *
      * Typically called on a tester object in main()
      *
      * @param f a function which will be used to provide arguments to each
      *          invoked method
-     * @throws Exception if any errors occurred
+     * @throws Exception if any errors occurred while executing a test method
      */
     public void runTests(Function<Method, Object[]> f) throws Exception {
-        for (Method m: getClass().getDeclaredMethods()) {
+        for (Method m : getClass().getDeclaredMethods()) {
             Annotation a = m.getAnnotation(Test.class);
             if (a != null) {
-                try {
-                    out.println("Running test " + m.getName());
-                    m.invoke(this, f.apply(m));
-                } catch (InvocationTargetException e) {
-                    Throwable cause = e.getCause();
-                    throw (cause instanceof Exception) ? ((Exception) cause) : e;
-                }
+                runTest(m, f);
                 out.println();
             }
         }
         printSummary();
+    }
+
+    /**
+     * Run the specified methods annotated with @Test, or all methods annotated
+     * with @Test if none are specified, followed by printSummary.
+     * The methods are invoked in the order given in the methodNames argument,
+     * or the order returned by getDeclaredMethods if no names are provided.
+     * The arguments for the invocation are provided {@link #getTestArgs(Method)}.
+     *
+     * Typically called on a tester object in main(String[] args), perhaps using
+     * args as the list of method names.
+     *
+     * @throws IllegalStateException if any methods annotated with @Test are overloaded
+     * @throws IllegalArgumentException if any of the method names does not name a suitable method
+     * @throws NullPointerException if {@code methodNames} is {@code null}, or if any of the names are {@code null}
+     * @throws Exception if any errors occurred while executing a test method
+     */
+    public void runTests(String... methodNames) throws Exception {
+        runTests(this::getTestArgs, methodNames);
+    }
+
+    /**
+     * Run the specified methods annotated with @Test, or all methods annotated
+     * with @Test if non are specified, followed by printSummary.
+     * The methods are invoked in the order given in the methodNames argument,
+     * or the order returned by getDeclaredMethods if no names are provided.
+     * The arguments for the invocation are provided {@link #getTestArgs(Method)}.
+     *
+     * Typically called on a tester object in main(String[] args), perhaps using
+     * args as the list of method names.
+     *
+     * @throws IllegalStateException if any methods annotated with @Test are overloaded
+     * @throws IllegalArgumentException if any of the method names does not name a suitable method
+     * @throws NullPointerException if {@code methodNames} is {@code null}, or if any of the names are {@code null}
+     * @throws Exception if any errors occurred while executing a test method
+     */
+    public void runTests(Function<Method, Object[]> f, String... methodNames) throws Exception {
+        if (methodNames.length == 0) {
+            runTests(f);
+        } else {
+            Map<String, Method> testMethods = Stream.of(getClass().getDeclaredMethods())
+                    .filter(this::isTestMethod)
+                    .collect(Collectors.toMap(Method::getName, Function.identity(),
+                            (o, n) -> {
+                                throw new IllegalStateException("test method " + o.getName() + " is overloaded");
+                            }));
+
+            List<Method> list = new ArrayList<>();
+            for (String mn : methodNames) {
+                Method m = testMethods.get(mn);
+                if (m == null) {
+                    throw new IllegalArgumentException("test method " + mn + " not found");
+                }
+                list.add(m);
+            }
+
+            for (Method m : list) {
+                runTest(m, f);
+            }
+        }
+    }
+
+    protected boolean isTestMethod(Method m) {
+        return m.getAnnotation(Test.class) != null;
+    }
+
+    protected Object[] getTestArgs(Method m) throws IllegalArgumentException {
+        Class<?>[] paramTypes = m.getParameterTypes();
+        if (paramTypes.length == 0) {
+            return new Object[] {};
+        } else if (paramTypes.length == 1 && paramTypes[0] == Path.class) {
+            return new Object[] { Path.of(m.getName())};
+        } else {
+            throw new IllegalArgumentException("unknown signature for method "
+                    + m + Stream.of(paramTypes)
+                    .map(Class::toString)
+                    .collect(Collectors.joining(", ", "(", ")")))  ;
+        }
+    }
+
+    protected void runTest(Method m, Function<Method, Object[]> f) throws Exception {
+        try {
+            out.println("Running test " + m.getName());
+            m.invoke(this, f.apply(m));
+        } catch (InvocationTargetException e) {
+            Throwable cause = e.getCause();
+            throw (cause instanceof Exception) ? ((Exception) cause) : e;
+        }
+
     }
 
     /**
