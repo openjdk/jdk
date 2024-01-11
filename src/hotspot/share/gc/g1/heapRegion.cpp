@@ -424,7 +424,7 @@ void HeapRegion::print_on(outputStream* st) const {
       st->print("|-");
     }
   }
-  st->print("|%3u", Atomic::load(&_pinned_object_count));
+  st->print("|%3zu", Atomic::load(&_pinned_object_count));
   st->print_cr("");
 }
 

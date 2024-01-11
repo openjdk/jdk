@@ -41,7 +41,7 @@
   nonstatic_field(HeapRegion, _bottom,         HeapWord* const)               \
   nonstatic_field(HeapRegion, _top,            HeapWord* volatile)            \
   nonstatic_field(HeapRegion, _end,            HeapWord* const)               \
-  nonstatic_field(HeapRegion, _pinned_object_count, volatile uint)            \
+  volatile_nonstatic_field(HeapRegion, _pinned_object_count, size_t)          \
                                                                               \
   nonstatic_field(HeapRegionType, _tag,       HeapRegionType::Tag volatile)   \
                                                                               \
