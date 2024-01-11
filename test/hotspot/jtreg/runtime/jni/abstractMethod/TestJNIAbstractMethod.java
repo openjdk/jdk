@@ -57,5 +57,13 @@ public class TestJNIAbstractMethod {
         } catch (AbstractMethodError expected) {
             System.out.println("ok - got expected exception: " + expected);
         }
+        try {
+            System.out.println("Attempting direct invocation via Java");
+            obj.abstractM();
+            throw new RuntimeException("Did not get AbstractMethodError!");
+        } catch (AbstractMethodError expected) {
+            System.out.println("ok - got expected exception: " + expected);
+        }
+
     }
 }
