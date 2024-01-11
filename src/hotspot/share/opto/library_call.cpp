@@ -4861,28 +4861,6 @@ bool LibraryCallKit::inline_fp_range_check(vmIntrinsics::ID id) {
 //----------------------inline_unsafe_copyMemory-------------------------
 // public native void Unsafe.copyMemory0(Object srcBase, long srcOffset, Object destBase, long destOffset, long bytes);
 
-static bool has_wide_mem(PhaseGVN& gvn, Node* addr, Node* base) {
-  const TypeAryPtr* addr_t = gvn.type(addr)->isa_aryptr();
-  const Type*       base_t = gvn.type(base);
-
-  bool in_native = (base_t == TypePtr::NULL_PTR);
-  bool in_heap   = !TypePtr::NULL_PTR->higher_equal(base_t);
-  bool is_mixed  = !in_heap && !in_native;
-
-  if (is_mixed) {
-    return true; // mixed accesses can touch both on-heap and off-heap memory
-  }
-  if (in_heap) {
-    bool is_prim_array = (addr_t != nullptr) && (addr_t->elem() != Type::BOTTOM);
-    if (!is_prim_array) {
-      // Though Unsafe.copyMemory() ensures at runtime for on-heap accesses that base is a primitive array,
-      // there's not enough type information available to determine proper memory slice for it.
-      return true;
-    }
-  }
-  return false;
-}
-
 bool LibraryCallKit::inline_unsafe_copyMemory() {
   if (callee()->is_static())  return false;  // caller must have the capability!
   null_check_receiver();  // null-check receiver
@@ -4910,27 +4888,12 @@ bool LibraryCallKit::inline_unsafe_copyMemory() {
   // update volatile field
   store_to_memory(control(), doing_unsafe_access_addr, intcon(1), doing_unsafe_access_bt, Compile::AliasIdxRaw, MemNode::unordered);
 
-  int flags = RC_LEAF | RC_NO_FP;
-
-  const TypePtr* dst_type = TypePtr::BOTTOM;
-
-  // Adjust memory effects of the runtime call based on input values.
-  if (!has_wide_mem(_gvn, src_addr, src_base) &&
-      !has_wide_mem(_gvn, dst_addr, dst_base)) {
-    dst_type = _gvn.type(dst_addr)->is_ptr(); // narrow out memory
-
-    const TypePtr* src_type = _gvn.type(src_addr)->is_ptr();
-    if (C->get_alias_index(src_type) == C->get_alias_index(dst_type)) {
-      flags |= RC_NARROW_MEM; // narrow in memory
-    }
-  }
-
   // Call it.  Note that the length argument is not scaled.
-  make_runtime_call(flags,
+  make_runtime_call(RC_LEAF | RC_NO_FP,
                     OptoRuntime::fast_arraycopy_Type(),
                     StubRoutines::unsafe_arraycopy(),
                     "unsafe_arraycopy",
-                    dst_type,
+                    TypePtr::BOTTOM,
                     src_addr, dst_addr, size XTOP);
 
   store_to_memory(control(), doing_unsafe_access_addr, intcon(0), doing_unsafe_access_bt, Compile::AliasIdxRaw, MemNode::unordered);
