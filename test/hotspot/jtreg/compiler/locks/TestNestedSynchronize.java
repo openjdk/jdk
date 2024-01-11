@@ -27,7 +27,7 @@
  * @summary Ensure no assert error in C2 with deeply nested synchronize
  *          statements.
  * @run main/othervm -XX:CompileCommand=compileonly,compiler.c2.TestNestedSynchronize::test
- *                   -XX:-TieredCompilation -Xcomp
+ *                   -Xcomp
  *                   compiler.c2.TestNestedSynchronize
  */
 
