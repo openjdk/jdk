@@ -286,6 +286,17 @@ public abstract sealed class AbstractMemorySegmentImpl
     @Override
     public long mismatch(MemorySegment other) {
         Objects.requireNonNull(other);
+        if (
+            other instanceof AbstractMemorySegmentImpl that &&
+            unsafeGetBase() == that.unsafeGetBase() &&
+            unsafeGetOffset() == that.unsafeGetOffset() &&
+            byteSize() == that.byteSize()
+        ) {
+            this.checkAccess(0, this.byteSize(), true);
+            that.checkAccess(0, that.byteSize(), true);
+            checkValidState();
+            return -1;
+        }
         return MemorySegment.mismatch(this, 0, byteSize(), other, 0, other.byteSize());
     }
 
@@ -681,10 +692,6 @@ public abstract sealed class AbstractMemorySegmentImpl
         long dstBytes = dstToOffset - dstFromOffset;
         srcImpl.checkAccess(srcFromOffset, srcBytes, true);
         dstImpl.checkAccess(dstFromOffset, dstBytes, true);
-        if (dstImpl.equals(srcImpl) && srcFromOffset == dstFromOffset && srcBytes == dstBytes) {
-            srcImpl.checkValidState();
-            return -1;
-        }
 
         long bytes = Math.min(srcBytes, dstBytes);
         long i = 0;
