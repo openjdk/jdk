@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,11 +26,14 @@
  * @bug 8190312
  * @summary test redirected URLs for -link
  * @library /tools/lib ../../lib
+ * @library /test/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
  *          jdk.javadoc/jdk.javadoc.internal.api
  *          jdk.javadoc/jdk.javadoc.internal.tool
  * @build toolbox.ToolBox toolbox.JavacTask javadoc.tester.*
+ * @build jtreg.SkippedException
+ * @build jdk.test.lib.Platform
  * @run main TestRedirectLinks
  */
 
@@ -66,13 +69,19 @@ import javadoc.tester.JavadocTester;
 import toolbox.JavacTask;
 import toolbox.ToolBox;
 
+import jdk.test.lib.Platform;
+import jtreg.SkippedException;
+
 public class TestRedirectLinks extends JavadocTester {
     /**
      * The entry point of the test.
      * @param args the array of command line arguments.
      */
     public static void main(String... args) throws Exception {
-        TestRedirectLinks tester = new TestRedirectLinks();
+        if (Platform.isSlowDebugBuild()) {
+            throw new SkippedException("Test is unstable with slowdebug bits");
+        }
+        var tester = new TestRedirectLinks();
         tester.runTests();
     }
 

@@ -22,7 +22,7 @@
  * questions.
  */
 
-package org.openjdk.bench.vm.compiler;
+package org.openjdk.bench.java.lang;
 
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
@@ -61,7 +61,7 @@ class MyClass {
  }
 }
 
-@State(Scope.Benchmark)
+@State(Scope.Thread)
 @BenchmarkMode(Mode.Throughput)
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
 @Warmup(iterations = 10, time = 1)

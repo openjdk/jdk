@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import jdk.jpackage.internal.IOUtils;
+import jdk.jpackage.test.Functional.ThrowingConsumer;
 import jdk.jpackage.test.PackageTest.PackageHandlers;
 
 
@@ -463,12 +464,23 @@ public final class LinuxHelper {
         }
     }
 
-    private static Path getSystemDesktopFilesFolder() {
+    static Path getSystemDesktopFilesFolder() {
         return Stream.of("/usr/share/applications",
                 "/usr/local/share/applications").map(Path::of).filter(dir -> {
             return Files.exists(dir.resolve("defaults.list"));
         }).findFirst().orElseThrow(() -> new RuntimeException(
                 "Failed to locate system .desktop files folder"));
+    }
+
+    private static void withTestFileAssociationsFile(FileAssociations fa,
+            ThrowingConsumer<Path> consumer) {
+        boolean iterated[] = new boolean[] { false };
+        PackageTest.withFileAssociationsTestRuns(fa, (testRun, testFiles) -> {
+            if (!iterated[0]) {
+                iterated[0] = true;
+                consumer.accept(testFiles.get(0));
+            }
+        });
     }
 
     static void addFileAssociationsVerifier(PackageTest test, FileAssociations fa) {
@@ -477,7 +489,7 @@ public final class LinuxHelper {
                 return;
             }
 
-            PackageTest.withTestFileAssociationsFile(fa, testFile -> {
+            withTestFileAssociationsFile(fa, testFile -> {
                 String mimeType = queryFileMimeType(testFile);
 
                 TKit.assertEquals(fa.getMime(), mimeType, String.format(
@@ -501,7 +513,7 @@ public final class LinuxHelper {
         });
 
         test.addUninstallVerifier(cmd -> {
-            PackageTest.withTestFileAssociationsFile(fa, testFile -> {
+            withTestFileAssociationsFile(fa, testFile -> {
                 String mimeType = queryFileMimeType(testFile);
 
                 TKit.assertNotEquals(fa.getMime(), mimeType, String.format(
@@ -546,12 +558,17 @@ public final class LinuxHelper {
         final String xdgCmdName = "xdg-icon-resource";
 
         Stream<String> scriptletBodyStream = scriptletBody.stream()
-                .filter(str -> str.startsWith(xdgCmdName))
                 .filter(str -> Pattern.compile(
                         "\\b" + dashMime + "\\b").matcher(str).find());
         if (scriptletType == Scriptlet.PostInstall) {
+            scriptletBodyStream = scriptletBodyStream.filter(str -> str.
+                    startsWith(xdgCmdName));
             scriptletBodyStream = scriptletBodyStream.filter(str -> List.of(
                     str.split("\\s+")).contains(iconPathInPackage.toString()));
+        } else {
+            scriptletBodyStream = scriptletBodyStream.filter(str -> str.
+                    contains(xdgCmdName)).filter(str -> str.startsWith(
+                    "do_if_file_belongs_to_single_package"));
         }
 
         scriptletBodyStream.peek(xdgCmd -> {

@@ -89,7 +89,7 @@ jint forceSharedPixmaps = JNI_FALSE;
 int mitShmPermissionMask = MITSHM_PERM_OWNER;
 #endif
 
-/* Cached shared image, one for all surface datas. */
+/* Cached shared image, one for all surface data. */
 static XImage * cachedXImage;
 
 #endif /* !HEADLESS */
@@ -291,7 +291,7 @@ Java_sun_java2d_x11_XSurfaceData_flushNativeSurface(JNIEnv *env, jobject xsd)
 }
 
 
-JNIEXPORT X11SDOps * JNICALL
+X11SDOps *
 X11SurfaceData_GetOps(JNIEnv *env, jobject sData)
 {
 #ifdef HEADLESS

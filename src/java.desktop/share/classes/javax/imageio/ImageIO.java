@@ -1464,6 +1464,8 @@ public final class ImageIO {
         BufferedImage bi;
         try (stream) {
             bi = reader.read(0, param);
+        } catch (RuntimeException e) {
+            throw new IIOException(e.toString(), e);
         } finally {
             reader.dispose();
         }

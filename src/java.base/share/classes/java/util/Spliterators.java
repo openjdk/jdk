@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -399,8 +399,8 @@ public final class Spliterators {
 
     /**
      * Creates a {@code Spliterator} using the given collection's
-     * {@link java.util.Collection#iterator()} as the source of elements, and
-     * reporting its {@link java.util.Collection#size()} as its initial size.
+     * {@link java.util.Collection#iterator() iterator} as the source of elements, and
+     * reporting its {@link java.util.Collection#size() size} as its initial size.
      *
      * <p>The spliterator is
      * <em><a href="Spliterator.html#binding">late-binding</a></em>, inherits
@@ -908,18 +908,21 @@ public final class Spliterators {
             OfRef() { }
         }
 
+        @SuppressWarnings("overloads")
         private static final class OfInt
                 extends EmptySpliterator<Integer, Spliterator.OfInt, IntConsumer>
                 implements Spliterator.OfInt {
             OfInt() { }
         }
 
+        @SuppressWarnings("overloads")
         private static final class OfLong
                 extends EmptySpliterator<Long, Spliterator.OfLong, LongConsumer>
                 implements Spliterator.OfLong {
             OfLong() { }
         }
 
+        @SuppressWarnings("overloads")
         private static final class OfDouble
                 extends EmptySpliterator<Double, Spliterator.OfDouble, DoubleConsumer>
                 implements Spliterator.OfDouble {
@@ -945,10 +948,12 @@ public final class Spliterators {
         private int index;        // current index, modified on advance/split
         private final int fence;  // one past last index
         private final int characteristics;
-        private long estimatedSize; // estimated size, to help to split evenly
+        private long estimatedSize; // if >= 0, the estimated size, to help to split evenly
+                                    // if -1, exact size is known to be fence - index
 
         /**
          * Creates a spliterator covering all of the given array.
+         * Its size is known exactly and it is SIZED and SUBSIZED.
          * @param array the array, assumed to be unmodified during use
          * @param additionalCharacteristics Additional spliterator characteristics
          * of this spliterator's source or elements beyond {@code SIZED} and
@@ -959,7 +964,8 @@ public final class Spliterators {
         }
 
         /**
-         * Creates a spliterator covering the given array and range
+         * Creates a spliterator covering the given array and range.
+         * Its size is known exactly and it is SIZED and SUBSIZED.
          * @param array the array, assumed to be unmodified during use
          * @param origin the least index (inclusive) to cover
          * @param fence one past the greatest index to cover
@@ -975,6 +981,18 @@ public final class Spliterators {
             this.estimatedSize = -1;
         }
 
+        /**
+         * Creates a spliterator covering the given array and range but that is
+         * not SIZED or SUBSIZED. This case occurs as a result of splitting another
+         * spliterator that is not sized, so it's inappropriate for one of its
+         * sub-spliterators to be sized.
+         * @param array the array, assumed to be unmodified during use
+         * @param origin the least index (inclusive) to cover
+         * @param fence one past the greatest index to cover
+         * @param characteristics characteristics of this spliterator's source; {@code SIZED} and
+         *        {@code SUBSIZED} are removed if present
+         * @param estimatedSize the size estimate; should always be nonnegative
+         */
         private ArraySpliterator(Object[] array, int origin, int fence, int characteristics, long estimatedSize) {
             this.array = array;
             this.index = origin;
@@ -1817,11 +1835,11 @@ public final class Spliterators {
 
         /**
          * Creates a spliterator using the given
-         * collection's {@link java.util.Collection#iterator()) for traversal,
-         * and reporting its {@link java.util.Collection#size()) as its initial
+         * collection's {@link java.util.Collection#iterator() iterator} for traversal,
+         * and reporting its {@link java.util.Collection#size() size} as its initial
          * size.
          *
-         * @param c the collection
+         * @param collection the collection
          * @param characteristics properties of this spliterator's
          *        source or elements.
          */

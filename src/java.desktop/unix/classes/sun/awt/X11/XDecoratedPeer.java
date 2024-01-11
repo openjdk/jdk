@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -341,7 +341,8 @@ abstract class XDecoratedPeer extends XWindowPeer {
             || ev.get_atom() == XWM.XA_NET_FRAME_EXTENTS.getAtom())
         {
             if (XWM.getWMID() != XWM.UNITY_COMPIZ_WM) {
-                if (getMWMDecorTitleProperty().isPresent()) {
+                if ((XWM.getWMID() == XWM.MUTTER_WM && !isTargetUndecorated() && isVisible())
+                    || getMWMDecorTitleProperty().isPresent()) {
                     // Insets might have changed "in-flight" if that property
                     // is present, so we need to get the actual values of
                     // insets from the WM and propagate them through all the
@@ -418,7 +419,7 @@ abstract class XDecoratedPeer extends XWindowPeer {
             insets_corrected = false;
 
             /*
-             * We can be repareted to root for two reasons:
+             * We can be reparented to root for two reasons:
              *   . setVisible(false)
              *   . WM exited
              */
@@ -479,7 +480,7 @@ abstract class XDecoratedPeer extends XWindowPeer {
          */
         Insets correction = difference(correctWM, currentInsets);
         if (insLog.isLoggable(PlatformLogger.Level.FINEST)) {
-            insLog.finest("Corrention {0}", correction);
+            insLog.finest("Correction {0}", correction);
         }
         if (!isNull(correction)) {
             currentInsets = copy(correctWM);
@@ -677,7 +678,7 @@ abstract class XDecoratedPeer extends XWindowPeer {
     }
 
     /**
-     * @param x, y, width, heith - dimensions of the window with insets
+     * @param x, y, width, height - dimensions of the window with insets
      */
     private void reshape(int x, int y, int width, int height, int operation,
                          boolean userReshape)
@@ -716,7 +717,7 @@ abstract class XDecoratedPeer extends XWindowPeer {
         reshape(dims, operation, userReshape);
     }
 
-    // This method gets overriden in XFramePeer & XDialogPeer.
+    // This method gets overridden in XFramePeer & XDialogPeer.
     abstract boolean isTargetUndecorated();
 
     /**
@@ -782,7 +783,7 @@ abstract class XDecoratedPeer extends XWindowPeer {
 
         /*
          * Some window managers configure before we are reparented and
-         * the send event flag is set! ugh... (Enlighetenment for one,
+         * the send event flag is set! ugh... (Enlightenment for one,
          * possibly MWM as well).  If we haven't been reparented yet
          * this is just the WM shuffling us into position.  Ignore
          * it!!!! or we wind up in a bogus location.
@@ -1204,7 +1205,7 @@ abstract class XDecoratedPeer extends XWindowPeer {
     public boolean requestWindowFocus(long time, boolean timeProvided) {
         focusLog.fine("Request for decorated window focus");
         // If this is Frame or Dialog we can't assure focus request success - but we still can try
-        // If this is Window and its owner Frame is active we can be sure request succedded.
+        // If this is Window and its owner Frame is active we can be sure request succeeded.
         Window focusedWindow = XKeyboardFocusManagerPeer.getInstance().getCurrentFocusedWindow();
         Window activeWindow = XWindowPeer.getDecoratedOwner(focusedWindow);
 
@@ -1220,7 +1221,7 @@ abstract class XDecoratedPeer extends XWindowPeer {
         }
         if (toFocus == null || !toFocus.focusAllowedFor()) {
             // This might change when WM will have property to determine focus policy.
-            // Right now, because policy is unknown we can't be sure we succedded
+            // Right now, because policy is unknown we can't be sure we succeeded
             return false;
         }
         if (this == toFocus) {
@@ -1287,7 +1288,7 @@ abstract class XDecoratedPeer extends XWindowPeer {
              * The fix is based on the empiric fact consisting in that the component
              * receives native mouse event nearly at the same time the Frame receives
              * WM_TAKE_FOCUS (when FocusIn is generated via XSetInputFocus call) but
-             * definetely before the Frame gets FocusIn event (when this method is called).
+             * definitely before the Frame gets FocusIn event (when this method is called).
              */
             postEvent(new InvocationEvent(target, new Runnable() {
                 public void run() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,11 +31,11 @@
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds
  *          /test/hotspot/jtreg/runtime/cds/appcds/test-classes
  *          /test/hotspot/jtreg/runtime/cds/appcds/dynamicArchive/test-classes
- * @build LambdaContainsOldInfApp sun.hotspot.WhiteBox OldProvider LambdaVerification
+ * @build LambdaContainsOldInfApp jdk.test.whitebox.WhiteBox OldProvider LambdaVerification
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar lambda_contains_old_inf.jar LambdaVerification
  *             LambdaContainsOldInfApp OldProvider
- * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar WhiteBox.jar sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar WhiteBox.jar jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. LambdaContainsOldInf
  */
 
@@ -65,7 +65,7 @@ public class LambdaContainsOldInf extends DynamicArchiveTestBase {
                 "-cp", appJar, mainClass, mainArg)
                 .assertNormalExit(output -> {
                     output.shouldContain("Skipping OldProvider: Old class has been linked")
-                          .shouldMatch("Skipping.LambdaContainsOldInfApp[$][$]Lambda[$].*0x.*:.*Old.class.has.been.linked")
+                          .shouldMatch("Skipping.LambdaContainsOldInfApp[$][$]Lambda.*0x.*:.*Old.class.has.been.linked")
                           .shouldHaveExitValue(0);
             });
 
@@ -78,7 +78,7 @@ public class LambdaContainsOldInf extends DynamicArchiveTestBase {
                 .assertNormalExit(output -> {
                     output.shouldContain("[class,load] LambdaContainsOldInfApp source: shared objects file (top)")
                           .shouldMatch(".class.load. OldProvider.source:.*lambda_contains_old_inf.jar")
-                          .shouldMatch(".class.load. LambdaContainsOldInfApp[$][$]Lambda[$].*/0x.*source:.*LambdaContainsOldInf")
+                          .shouldMatch(".class.load. LambdaContainsOldInfApp[$][$]Lambda.*/0x.*source:.*LambdaContainsOldInf")
                           .shouldHaveExitValue(0);
             });
         }

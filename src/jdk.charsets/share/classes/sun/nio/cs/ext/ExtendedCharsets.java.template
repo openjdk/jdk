@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  *
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -28,9 +28,6 @@
 // -- This file was mechanically generated: Do not edit! -- //
 
 package sun.nio.cs.ext;
-
-import java.nio.charset.Charset;
-import java.nio.charset.spi.CharsetProvider;
 
 /**
  * Provider for extended charsets.

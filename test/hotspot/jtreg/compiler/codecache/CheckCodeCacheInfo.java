@@ -28,9 +28,7 @@
  * @library /test/lib
  * @requires vm.debug
  *
- * @run driver jdk.test.lib.helpers.ClassFileInstaller
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
- *                   compiler.codecache.CheckCodeCacheInfo
+ * @run driver compiler.codecache.CheckCodeCacheInfo
  */
 
 package compiler.codecache;
@@ -43,8 +41,7 @@ public class CheckCodeCacheInfo {
 
     static {
         String entry = "\\d+K( \\(hdr \\d+K \\d+%, loc \\d+K \\d+%, code \\d+K \\d+%, stub \\d+K \\d+%, \\[oops \\d+K \\d+%, metadata \\d+K \\d+%, data \\d+K \\d+%, pcs \\d+K \\d+%\\]\\))?\\n";
-        String pair = " #\\d+ live = " + entry
-                    + " #\\d+ dead = " + entry;
+        String pair = " #\\d+ live = " + entry;
 
         VERBOSE_REGEXP = "nmethod blobs per compilation level:\\n"
                        + "none:\\n"
@@ -69,9 +66,9 @@ public class CheckCodeCacheInfo {
     public static void main(String[] args) throws Exception {
         ProcessBuilder pb;
 
-        pb = ProcessTools.createJavaProcessBuilder("-XX:+PrintCodeCache",
-                                                   "-XX:+Verbose",
-                                                   "-version");
+        pb = ProcessTools.createTestJavaProcessBuilder("-XX:+PrintCodeCache",
+                                                       "-XX:+Verbose",
+                                                       "-version");
         OutputAnalyzer out = new OutputAnalyzer(pb.start());
         out.shouldHaveExitValue(0);
         out.stdoutShouldMatch(VERBOSE_REGEXP);

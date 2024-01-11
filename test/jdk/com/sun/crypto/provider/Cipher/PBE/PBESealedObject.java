@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@ import javax.crypto.spec.PBEParameterSpec;
 
 /**
  * @test
- * @bug 8041781
+ * @bug 8041781 8288050
  * @summary test if seal/unseal works correctly with PBE algorithms
  * @author Yun Ke
  * @author Bill Situ
@@ -69,11 +69,15 @@ public class PBESealedObject {
         "PBEWithHmacSHA256AndAES_128",
         "PBEWithHmacSHA384AndAES_128",
         "PBEWithHmacSHA512AndAES_128",
+        "PBEWithHmacSHA512/224AndAES_128",
+        "PBEWithHmacSHA512/256AndAES_128",
         "PBEWithHmacSHA1AndAES_256",
         "PBEWithHmacSHA224AndAES_256",
         "PBEWithHmacSHA256AndAES_256",
         "PBEWithHmacSHA384AndAES_256",
-        "PBEWithHmacSHA512AndAES_256"
+        "PBEWithHmacSHA512AndAES_256",
+        "PBEWithHmacSHA512/224AndAES_256",
+        "PBEWithHmacSHA512/256AndAES_256",
     };
 
     public static void main(String[] args) {
@@ -115,9 +119,10 @@ public class PBESealedObject {
         int ITERATION_COUNT = 1000;
         AlgorithmParameters pbeParams = null;
 
-        String baseAlgo
-                = new StringTokenizer(algo, "/").nextToken().toUpperCase();
-        boolean isAES = baseAlgo.contains("AES");
+        String keyAlgo = (algo.endsWith("Padding") ?
+                new StringTokenizer(algo, "/").nextToken().toUpperCase() :
+                algo);
+        boolean isAES = keyAlgo.contains("AES");
 
         try {
             // Initialization
@@ -125,7 +130,7 @@ public class PBESealedObject {
             new Random().nextBytes(salt);
             AlgorithmParameterSpec aps = new PBEParameterSpec(salt,
                     ITERATION_COUNT);
-            SecretKeyFactory skf = SecretKeyFactory.getInstance(baseAlgo, p);
+            SecretKeyFactory skf = SecretKeyFactory.getInstance(keyAlgo, p);
             SecretKey key = skf.generateSecret(
                     new PBEKeySpec("Secret Lover".toCharArray()));
 
@@ -161,7 +166,7 @@ public class PBESealedObject {
             unsealedKey = (SecretKey) so.getObject(key, "SunJCE");
             return Arrays.equals(unsealedKey.getEncoded(), key.getEncoded());
         } catch (InvalidKeyException ex) {
-            if (baseAlgo.endsWith("TRIPLEDES") || baseAlgo.endsWith("AES_256")) {
+            if (keyAlgo.endsWith("TRIPLEDES") || keyAlgo.endsWith("AES_256")) {
                 out.println(
                         "Expected exception , keyStrength > 128 within" + algo);
                 return true;

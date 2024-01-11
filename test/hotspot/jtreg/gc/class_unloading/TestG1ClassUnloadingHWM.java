@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,22 +30,22 @@ package gc.class_unloading;
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @build sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run driver gc.class_unloading.TestG1ClassUnloadingHWM
  * @summary Test that -XX:-ClassUnloadingWithConcurrentMark will trigger a Full GC when more than MetaspaceSize metadata is allocated.
  */
 
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
-import sun.hotspot.WhiteBox;
+import jdk.test.whitebox.WhiteBox;
 
 public class TestG1ClassUnloadingHWM {
   private static long MetaspaceSize = 32 * 1024 * 1024;
   private static long YoungGenSize  = 32 * 1024 * 1024;
 
   private static OutputAnalyzer run(boolean enableUnloading) throws Exception {
-    ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+    return ProcessTools.executeLimitedTestJava(
       "-Xbootclasspath/a:.",
       "-XX:+UnlockDiagnosticVMOptions",
       "-XX:+WhiteBoxAPI",
@@ -57,7 +57,6 @@ public class TestG1ClassUnloadingHWM {
       TestG1ClassUnloadingHWM.AllocateBeyondMetaspaceSize.class.getName(),
       "" + MetaspaceSize,
       "" + YoungGenSize);
-    return new OutputAnalyzer(pb.start());
   }
 
   public static OutputAnalyzer runWithG1ClassUnloading() throws Exception {
@@ -126,4 +125,3 @@ public class TestG1ClassUnloadingHWM {
     }
   }
 }
-

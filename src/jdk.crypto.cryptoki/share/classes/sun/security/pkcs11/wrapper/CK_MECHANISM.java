@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  */
 
 /* Copyright  (c) 2002 Graz University of Technology. All rights reserved.
@@ -160,6 +160,18 @@ public class CK_MECHANISM {
         init(mechanism, params);
     }
 
+    public CK_MECHANISM(long mechanism, CK_PBE_PARAMS params) {
+        init(mechanism, params);
+    }
+
+    public CK_MECHANISM(long mechanism, CK_PKCS5_PBKD2_PARAMS params) {
+        init(mechanism, params);
+    }
+
+    public CK_MECHANISM(long mechanism, CK_PKCS5_PBKD2_PARAMS2 params) {
+        init(mechanism, params);
+    }
+
     // For PSS. the parameter may be set multiple times, use the
     // CK_MECHANISM(long) constructor and setParameter(CK_RSA_PKCS_PSS_PARAMS)
     // methods instead of creating yet another constructor
@@ -193,11 +205,12 @@ public class CK_MECHANISM {
 
         sb.append(Constants.INDENT);
         sb.append("mechanism: ");
-        sb.append(mechanism);
+        sb.append(Functions.getMechanismName(mechanism));
         sb.append(Constants.NEWLINE);
 
         sb.append(Constants.INDENT);
-        sb.append("pParameter: ");
+        sb.append("pParameter:");
+        sb.append(Constants.NEWLINE);
         sb.append(pParameter.toString());
         sb.append(Constants.NEWLINE);
 

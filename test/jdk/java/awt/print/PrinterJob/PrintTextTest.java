@@ -24,6 +24,7 @@
 /**
  * @test
  * @bug 6425068 7157659 8132890
+ * @key printer
  * @summary Confirm that text prints where we expect to the length we expect.
  * @run main/manual=yesno PrintTextTest
  */

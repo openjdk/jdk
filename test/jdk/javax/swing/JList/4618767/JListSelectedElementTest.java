@@ -50,7 +50,7 @@ import static javax.swing.UIManager.getInstalledLookAndFeels;
 /*
  * @test
  * @key headful
- * @bug 4618767
+ * @bug 4618767 8292062
  * @summary This test confirms that typing a letter while a JList has focus now makes the selection
  *          not jump to the item whose text starts with that letter if that typed letter is accompanied
  *          by modifier keys such as ALT or CTRL(eg: ALT+F).
@@ -117,8 +117,8 @@ public class JListSelectedElementTest {
                 }
 
                 // Now operate Menu using Mnemonics, different key combinations for different OSes.
-                // For most OSes it's ALT+F; on macOS it's ALT+CNTRL+F except for Nimbus LaF.
-                if (isMac && !laf.contains("Nimbus")) {
+                // For most OSes it's ALT+F; on macOS it's ALT+CNTRL+F.
+                if (isMac) {
                     hitKeys(KeyEvent.VK_ALT, KeyEvent.VK_CONTROL, FILE_MENU);
                 } else {
                     hitKeys(KeyEvent.VK_ALT, FILE_MENU);

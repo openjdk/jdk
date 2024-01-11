@@ -95,7 +95,7 @@ public class SecretKeyFactory {
     private Iterator<Service> serviceIterator;
 
     /**
-     * Creates a SecretKeyFactory object.
+     * Creates a {@code SecretKeyFactory} object.
      *
      * @param keyFacSpi the delegate
      * @param provider the provider
@@ -124,11 +124,11 @@ public class SecretKeyFactory {
      * Returns a {@code SecretKeyFactory} object that converts
      * secret keys of the specified algorithm.
      *
-     * <p> This method traverses the list of registered security Providers,
-     * starting with the most preferred Provider.
-     * A new SecretKeyFactory object encapsulating the
-     * SecretKeyFactorySpi implementation from the first
-     * Provider that supports the specified algorithm is returned.
+     * <p> This method traverses the list of registered security providers,
+     * starting with the most preferred provider.
+     * A new {@code SecretKeyFactory} object encapsulating the
+     * {@code SecretKeyFactorySpi} implementation from the first
+     * provider that supports the specified algorithm is returned.
      *
      * <p> Note that the list of registered providers may be retrieved via
      * the {@link Security#getProviders() Security.getProviders()} method.
@@ -168,8 +168,8 @@ public class SecretKeyFactory {
      * Returns a {@code SecretKeyFactory} object that converts
      * secret keys of the specified algorithm.
      *
-     * <p> A new SecretKeyFactory object encapsulating the
-     * SecretKeyFactorySpi implementation from the specified provider
+     * <p> A new {@code SecretKeyFactory} object encapsulating the
+     * {@code SecretKeyFactorySpi} implementation from the specified provider
      * is returned.  The specified provider must be registered
      * in the security provider list.
      *
@@ -215,9 +215,9 @@ public class SecretKeyFactory {
      * Returns a {@code SecretKeyFactory} object that converts
      * secret keys of the specified algorithm.
      *
-     * <p> A new SecretKeyFactory object encapsulating the
-     * SecretKeyFactorySpi implementation from the specified Provider
-     * object is returned.  Note that the specified Provider object
+     * <p> A new {@code SecretKeyFactory} object encapsulating the
+     * {@code SecretKeyFactorySpi} implementation from the specified provider
+     * object is returned.  Note that the specified provider object
      * does not have to be registered in the provider list.
      *
      * @param algorithm the standard name of the requested secret-key
@@ -281,8 +281,8 @@ public class SecretKeyFactory {
     /**
      * Update the active spi of this class and return the next
      * implementation for failover. If no more implementations are
-     * available, this method returns null. However, the active spi of
-     * this class is never set to null.
+     * available, this method returns {@code null}. However, the active spi of
+     * this class is never set to {@code null}.
      */
     private SecretKeyFactorySpi nextSpi(SecretKeyFactorySpi oldSpi) {
         synchronized (lock) {

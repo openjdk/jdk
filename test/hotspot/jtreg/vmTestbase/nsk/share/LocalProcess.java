@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,8 +60,7 @@ public class LocalProcess extends FinalizableObject {
 
         process = Runtime.getRuntime().exec(args);
 
-        Finalizer finalizer = new Finalizer(this);
-        finalizer.activate();
+        registerCleanup();
     }
 
     public void launch (String cmdLine) throws IOException {
@@ -69,8 +68,7 @@ public class LocalProcess extends FinalizableObject {
 
         process = Runtime.getRuntime().exec(cmdLine);
 
-        Finalizer finalizer = new Finalizer(this);
-        finalizer.activate();
+        registerCleanup();
     }
 
     /** Return exit status. */
@@ -166,12 +164,11 @@ public class LocalProcess extends FinalizableObject {
     }
 
     /**
-     * Finalize mirror by invoking <code>close()</code>.
+     * This method is called at finalization and calls <code>kill()</code>.
      *
-     * @throws Throwable if any throwable exception is thrown during finalization
      */
-    protected void finalize() throws Throwable {
+    @Override
+    public void cleanup() {
         kill();
-        super.finalize();
     }
 }

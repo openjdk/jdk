@@ -57,10 +57,10 @@ import sun.security.action.GetPropertyAction;
  * create an SFnt superclass. Eg to handle sfnt-housed postscript fonts.
  * OpenType fonts are handled by this class, and possibly should be
  * represented by a subclass.
- * An instance stores some information from the font file to faciliate
+ * An instance stores some information from the font file to facilitate
  * faster access. File size, the table directory and the names of the font
  * are the most important of these. It amounts to approx 400 bytes
- * for a typical font. Systems with mutiple locales sometimes have up to 400
+ * for a typical font. Systems with multiple locales sometimes have up to 400
  * font files, and an app which loads all font files would need around
  * 160Kbytes. So storing any more info than this would be expensive.
  */

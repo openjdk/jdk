@@ -46,11 +46,19 @@
  */
 
 /*
- * @test id=with_ZGC
- * @requires vm.gc.Z
+ * @test id=with_ZGC_Singlegen
+ * @requires vm.gc.ZSinglegen
  * @bug 8198540
  * @summary Test TypeConverterFactory is not leaking class loaders (Z GC)
- * @run main/othervm -XX:+UseZGC TypeConverterFactoryRetentionTests
+ * @run main/othervm -XX:+UseZGC -XX:-ZGenerational TypeConverterFactoryRetentionTests
+ */
+
+/*
+ * @test id=with_ZGC_Generational
+ * @requires vm.gc.ZGenerational
+ * @bug 8198540
+ * @summary Test TypeConverterFactory is not leaking class loaders (Z GC)
+ * @run main/othervm -XX:+UseZGC -XX:+ZGenerational TypeConverterFactoryRetentionTests
  */
 
 /*

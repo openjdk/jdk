@@ -44,6 +44,7 @@ import sun.security.util.SecurityProperties;
  * <a href="{@docRoot}/../specs/jar/jar.html">
  * Manifest format specification</a>.
  *
+ * @spec jar/jar.html JAR File Specification
  * @author  David Connelly
  * @see     Attributes
  * @since   1.2
@@ -336,7 +337,7 @@ public class Manifest implements Cloneable {
                     lastline = buf;
                     continue;
                 }
-                name = new String(buf, 0, buf.length, UTF_8.INSTANCE);
+                name = new String(buf, UTF_8.INSTANCE);
                 lastline = null;
             }
             Attributes attr = getAttributes(name);

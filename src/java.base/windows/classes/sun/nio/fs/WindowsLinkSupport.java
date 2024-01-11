@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,6 +43,36 @@ class WindowsLinkSupport {
     private static final Unsafe unsafe = Unsafe.getUnsafe();
 
     private WindowsLinkSupport() {
+    }
+
+    /**
+     * Creates a symbolic link, retyring if not privileged
+     */
+    static void createSymbolicLink(String link, String target, int flags)
+        throws WindowsException
+    {
+        try {
+            CreateSymbolicLink(link, target, flags);
+        } catch (WindowsException x) {
+            // Retry if the privilege to create symbolic links is not held
+            if (x.lastError() == ERROR_PRIVILEGE_NOT_HELD) {
+                flags |= SYMBOLIC_LINK_FLAG_ALLOW_UNPRIVILEGED_CREATE;
+                try {
+                    CreateSymbolicLink(link, target, flags);
+                    return;
+                } catch (WindowsException y) {
+                    // Throw an exception if and only if it is not due to symbolic link creation
+                    // privilege not being held (ERROR_PRIVILEGE_NOT_HELD) nor the
+                    // SYMBOLIC_LINK_FLAG_ALLOW_UNPRIVILEGED_CREATE flag not being recognized
+                    // (ERROR_INVALID_PARAMETER). The latter will occur for Windows builds
+                    // older than 14972.
+                    int lastError = y.lastError();
+                    if (lastError != ERROR_PRIVILEGE_NOT_HELD && lastError != ERROR_INVALID_PARAMETER)
+                        throw y;
+                }
+            }
+            throw x;
+        }
     }
 
     /**
@@ -269,8 +299,7 @@ class WindowsLinkSupport {
      */
     private static String readLinkImpl(long handle) throws IOException {
         int size = MAXIMUM_REPARSE_DATA_BUFFER_SIZE;
-        NativeBuffer buffer = NativeBuffers.getNativeBuffer(size);
-        try {
+        try (NativeBuffer buffer = NativeBuffers.getNativeBuffer(size)) {
             try {
                 DeviceIoControlGetReparsePoint(handle, buffer.address(), size);
             } catch (WindowsException x) {
@@ -334,8 +363,6 @@ class WindowsLinkSupport {
                 throw new IOException("Symbolic link target is invalid");
             }
             return target;
-        } finally {
-            buffer.release();
         }
     }
 

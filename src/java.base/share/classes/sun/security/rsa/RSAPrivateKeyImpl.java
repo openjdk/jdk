@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,8 @@
 package sun.security.rsa;
 
 import java.io.IOException;
+import java.io.InvalidObjectException;
+import java.io.ObjectInputStream;
 import java.math.BigInteger;
 
 import java.security.*;
@@ -40,10 +42,11 @@ import sun.security.rsa.RSAUtil.KeyType;
 
 /**
  * RSA private key implementation for "RSA", "RSASSA-PSS" algorithms in non-CRT
- * form (modulus, private exponent only). For CRT private keys, see
- * RSAPrivateCrtKeyImpl. We need separate classes to ensure correct behavior
- * in instanceof checks, etc.
- *
+ * form (modulus, private exponent only).
+ * <p>
+ * For CRT private keys, see RSAPrivateCrtKeyImpl. We need separate classes
+ * to ensure correct behavior in instanceof checks, etc.
+ * <p>
  * Note: RSA keys must be at least 512 bits long
  *
  * @see RSAPrivateCrtKeyImpl
@@ -89,31 +92,26 @@ public final class RSAPrivateKeyImpl extends PKCS8Key implements RSAPrivateKey {
         this.type = type;
         this.keyParams = keyParams;
 
-        try {
-            // generate the key encoding
-            byte[] nbytes = n.toByteArray();
-            byte[] dbytes = d.toByteArray();
-            DerOutputStream out = new DerOutputStream(
-                    nbytes.length + dbytes.length + 50);
-                    // Enough for 7 zeroes (21) and 2 tag+length(4)
-            out.putInteger(0); // version must be 0
-            out.putInteger(nbytes);
-            Arrays.fill(nbytes, (byte)0);
-            out.putInteger(0);
-            out.putInteger(dbytes);
-            Arrays.fill(dbytes, (byte)0);
-            out.putInteger(0);
-            out.putInteger(0);
-            out.putInteger(0);
-            out.putInteger(0);
-            out.putInteger(0);
-            DerValue val = DerValue.wrap(DerValue.tag_Sequence, out);
-            key = val.toByteArray();
-            val.clear();
-        } catch (IOException exc) {
-            // should never occur
-            throw new InvalidKeyException(exc);
-        }
+        // generate the key encoding
+        byte[] nbytes = n.toByteArray();
+        byte[] dbytes = d.toByteArray();
+        DerOutputStream out = new DerOutputStream(
+                nbytes.length + dbytes.length + 50);
+        // Enough for 7 zeroes (21) and 2 tag+length(4)
+        out.putInteger(0); // version must be 0
+        out.putInteger(nbytes);
+        Arrays.fill(nbytes, (byte) 0);
+        out.putInteger(0);
+        out.putInteger(dbytes);
+        Arrays.fill(dbytes, (byte) 0);
+        out.putInteger(0);
+        out.putInteger(0);
+        out.putInteger(0);
+        out.putInteger(0);
+        out.putInteger(0);
+        DerValue val = DerValue.wrap(DerValue.tag_Sequence, out);
+        key = val.toByteArray();
+        val.clear();
     }
 
     // see JCA doc
@@ -146,5 +144,21 @@ public final class RSAPrivateKeyImpl extends PKCS8Key implements RSAPrivateKey {
         return "Sun " + type.keyAlgo + " private key, " + n.bitLength()
                + " bits" + "\n  params: " + keyParams + "\n  modulus: " + n
                + "\n  private exponent: " + d;
+    }
+
+    /**
+     * Restores the state of this object from the stream.
+     * <p>
+     * Deserialization of this object is not supported.
+     *
+     * @param  stream the {@code ObjectInputStream} from which data is read
+     * @throws IOException if an I/O error occurs
+     * @throws ClassNotFoundException if a serialized class cannot be loaded
+     */
+    @java.io.Serial
+    private void readObject(ObjectInputStream stream)
+            throws IOException, ClassNotFoundException {
+        throw new InvalidObjectException(
+                "RSAPrivateKeyImpl keys are not directly deserializable");
     }
 }

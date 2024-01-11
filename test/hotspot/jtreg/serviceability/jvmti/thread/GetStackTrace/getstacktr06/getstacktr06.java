@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,8 +39,8 @@
  *
  * @requires vm.continuations
  * @library /test/lib
- * @compile --enable-preview -source ${jdk.version} getstacktr06.java
- * @run main/othervm/native --enable-preview -agentlib:getstacktr06 getstacktr06
+ * @compile getstacktr06.java
+ * @run main/othervm/native -agentlib:getstacktr06 getstacktr06
  */
 
 public class getstacktr06 {

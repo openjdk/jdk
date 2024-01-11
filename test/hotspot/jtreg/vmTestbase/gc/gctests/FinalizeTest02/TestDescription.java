@@ -36,4 +36,3 @@
  *      gc.gctests.FinalizeTest01.FinalizeTest01
  *      -throwExceptions
  */
-

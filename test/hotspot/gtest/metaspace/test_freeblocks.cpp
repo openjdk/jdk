@@ -79,7 +79,7 @@ class FreeBlocksTest {
     return false;
   }
 
-  void deallocate_top() {
+  bool deallocate_top() {
 
     allocation_t* a = _allocations;
     if (a != NULL) {
@@ -88,7 +88,13 @@ class FreeBlocksTest {
       _freeblocks.add_block(a->p, a->word_size);
       delete a;
       DEBUG_ONLY(_freeblocks.verify();)
+      return true;
     }
+    return false;
+  }
+
+  void deallocate_all() {
+    while (deallocate_top());
   }
 
   bool allocate() {
@@ -124,7 +130,7 @@ class FreeBlocksTest {
     bool forcefeed = false;
     bool draining = false;
     bool stop = false;
-    int iter = 100000; // safety stop
+    int iter = 25000; // safety stop
     while (!stop && iter > 0) {
       iter --;
       int surprise = (int)os::random() % 10;
@@ -180,6 +186,10 @@ public:
     // some initial feeding
     _freeblocks.add_block(_fb.get(1024), 1024);
     CHECK_CONTENT(_freeblocks, 1, 1024);
+  }
+
+  ~FreeBlocksTest() {
+    deallocate_all();
   }
 
   static void test_small_allocations() {

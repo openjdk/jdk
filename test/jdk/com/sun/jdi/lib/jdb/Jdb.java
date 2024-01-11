@@ -42,6 +42,8 @@ import jdk.test.lib.process.StreamPumper;
 public class Jdb implements AutoCloseable {
     public Jdb(String... args) {
         ProcessBuilder pb = new ProcessBuilder(JDKToolFinder.getTestJDKTool("jdb"));
+        pb.command().add("-J-Duser.language=en");
+        pb.command().add("-J-Duser.country=US");
         pb.command().addAll(Arrays.asList(args));
         try {
             jdb = pb.start();
@@ -150,7 +152,7 @@ public class Jdb implements AutoCloseable {
         #
         # 5) ^main[89] > @
         #
-        # i.e., the > prompt comes out AFTER the prompt we we need to wait for.
+        # i.e., the > prompt comes out AFTER the prompt we need to wait for.
     */
     // compile regexp once
     private final static String promptPattern = "<?[a-zA-Z0-9_-]*>?\\[[1-9][0-9]*\\] [ >]*$";

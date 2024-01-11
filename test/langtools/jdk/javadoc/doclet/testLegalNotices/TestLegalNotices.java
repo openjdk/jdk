@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,8 +47,8 @@ import toolbox.ToolBox;
 
 public class TestLegalNotices extends JavadocTester {
     public static void main(String... args) throws Exception {
-        TestLegalNotices tester = new TestLegalNotices();
-        tester.runTests(m -> new Object[]{Path.of(m.getName())});
+        var tester = new TestLegalNotices();
+        tester.runTests();
     }
 
     private final ToolBox tb = new ToolBox();
@@ -111,7 +111,21 @@ public class TestLegalNotices extends JavadocTester {
         super.out.println("   Found: " + foundFiles);
         if (foundFiles.equals(expectFiles)) {
             passed("Found all expected files");
+        } else {
+            failed("Did not find all expected files");
         }
+
+        // See JDK-8306980
+        for (Path p : foundFiles) {
+            // Somewhat unusually, the dominant test is that the string "Please see..."
+            // does _not_ appear in the generated legal-notice files.
+            // The string is used by jlink when creating the legal files for a module
+            // on platforms that do not support symbolic links.
+            // The test verifies that javadoc is not using any such files.
+            checkOutput("legal/" + p, false,
+                    "Please see");
+        }
+
     }
 
     Set<Path> getExpectFiles(OptionKind optionKind, IndexKind indexKind, Path legal) throws IOException {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package sun.print;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Vector;
@@ -52,6 +53,7 @@ import java.io.FileReader;
 import java.net.URL;
 import java.nio.file.Files;
 
+import sun.awt.OSInfo;
 import sun.awt.util.ThreadGroupUtils;
 
 /*
@@ -74,10 +76,6 @@ public class PrintServiceLookupProvider extends PrintServiceLookup
     private static boolean pollServices = true;
     private static final int DEFAULT_MINREFRESH = 120;  // 2 minutes
     private static int minRefreshTime = DEFAULT_MINREFRESH;
-
-    @SuppressWarnings("removal")
-    static String osname = java.security.AccessController.doPrivileged(
-            new sun.security.action.GetPropertyAction("os.name"));
 
     // List of commands used to deal with the printer queues on AIX
     String[] lpNameComAix = {
@@ -149,20 +147,20 @@ public class PrintServiceLookupProvider extends PrintServiceLookup
     }
 
     static boolean isMac() {
-        return osname.startsWith("Mac");
+        return OSInfo.getOSType() == OSInfo.OSType.MACOSX;
     }
 
     static boolean isLinux() {
-        return (osname.equals("Linux"));
+        return OSInfo.getOSType() == OSInfo.OSType.LINUX;
     }
 
     static boolean isBSD() {
-        return (osname.equals("Linux") ||
-                osname.contains("OS X"));
+        return (OSInfo.getOSType() == OSInfo.OSType.LINUX ||
+                OSInfo.getOSType() == OSInfo.OSType.MACOSX);
     }
 
     static boolean isAIX() {
-        return osname.equals("AIX");
+        return OSInfo.getOSType() == OSInfo.OSType.AIX;
     }
 
     static final int UNINITIALIZED = -1;
@@ -475,7 +473,7 @@ public class PrintServiceLookupProvider extends PrintServiceLookup
         if (CUPSPrinter.isCupsRunning()) {
             try {
                 return new IPPPrintService(name,
-                                           new URL("http://"+
+                                           newURL("http://"+
                                                    CUPSPrinter.getServer()+":"+
                                                    CUPSPrinter.getPort()+"/"+
                                                    name));
@@ -509,13 +507,13 @@ public class PrintServiceLookupProvider extends PrintServiceLookup
          * Directly retrieve that service and confirm
          * that it meets the other requirements.
          * If printer name isn't mentioned then go a slow path checking
-         * all printers if they meet the reqiremements.
+         * all printers if they meet the requirements.
          */
         PrintService[] services;
         PrinterName name = (PrinterName)serviceSet.get(PrinterName.class);
         PrintService defService;
         if (name != null && (defService = getDefaultPrintService()) != null) {
-            /* To avoid execing a unix command  see if the client is asking
+            /* To avoid executing a unix command, see if the client is asking
              * for the default printer by name, since we already have that
              * initialised.
              */
@@ -687,7 +685,7 @@ public class PrintServiceLookupProvider extends PrintServiceLookup
                                                         psuri, true);
                     } else {
                         defaultPS = new IPPPrintService(defaultPrinter,
-                                            new URL("http://"+
+                                            newURL("http://"+
                                                     CUPSPrinter.getServer()+":"+
                                                     CUPSPrinter.getPort()+"/"+
                                                     defaultPrinter));
@@ -968,5 +966,10 @@ public class PrintServiceLookupProvider extends PrintServiceLookup
                 }
             }
         }
+    }
+
+    @SuppressWarnings("deprecation")
+    private static URL newURL(String spec) throws MalformedURLException {
+        return new URL(spec);
     }
 }

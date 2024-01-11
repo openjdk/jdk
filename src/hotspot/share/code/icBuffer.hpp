@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,7 +56,7 @@ class ICStub: public Stub {
  protected:
   friend class ICStubInterface;
   // This will be called only by ICStubInterface
-  void    initialize(int size)                   { _size = size; _ic_site = NULL; }
+  void    initialize(int size)                   { _size = size; _ic_site = nullptr; }
   void    finalize(); // called when a method is removed
 
   // General info
@@ -77,7 +77,7 @@ class ICStub: public Stub {
   // Call site info
   address ic_site() const                        { return _ic_site; }
   void    clear();
-  bool    is_empty() const                       { return _ic_site == NULL; }
+  bool    is_empty() const                       { return _ic_site == nullptr; }
 
   // stub info
   address destination() const;  // destination of jump instruction
@@ -146,8 +146,8 @@ class InlineCacheBuffer: public AllStatic {
 
   static StubQueue* _buffer;
 
-  static CompiledICHolder* _pending_released;
-  static int _pending_count;
+  static CompiledICHolder* volatile _pending_released;
+  static volatile int _pending_count;
 
   static StubQueue* buffer()                         { return _buffer;         }
 
@@ -167,6 +167,7 @@ class InlineCacheBuffer: public AllStatic {
   static bool contains(address instruction_address);
 
     // removes the ICStubs after backpatching
+  static bool needs_update_inline_caches();
   static void update_inline_caches();
   static void refill_ic_stubs();
 
@@ -175,7 +176,7 @@ class InlineCacheBuffer: public AllStatic {
 
   static void release_pending_icholders();
   static void queue_for_release(CompiledICHolder* icholder);
-  static int pending_icholder_count() { return _pending_count; }
+  static int pending_icholder_count();
 
   // New interface
   static bool    create_transition_stub(CompiledIC *ic, void* cached_value, address entry);

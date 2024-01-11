@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,13 +47,13 @@ interface State extends Cloneable {
      *
      * @param cert the certificate which is used to update the state
      */
-    public void updateState(X509Certificate cert)
+    void updateState(X509Certificate cert)
         throws CertificateException, IOException, CertPathValidatorException;
 
     /**
      * Creates and returns a copy of this object
      */
-    public Object clone();
+    Object clone();
 
     /**
      * Returns a boolean flag indicating if the state is initial
@@ -61,13 +61,5 @@ interface State extends Cloneable {
      *
      * @return boolean flag indicating if the state is initial (just starting)
      */
-    public boolean isInitial();
-
-    /**
-     * Returns a boolean flag indicating if a key lacking necessary key
-     * algorithm parameters has been encountered.
-     *
-     * @return boolean flag indicating if key lacking parameters encountered.
-     */
-    public boolean keyParamsNeeded();
+    boolean isInitial();
 }

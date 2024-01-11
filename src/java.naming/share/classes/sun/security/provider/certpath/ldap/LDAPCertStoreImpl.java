@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,7 @@ import java.security.cert.*;
 import javax.naming.CommunicationException;
 import javax.naming.ldap.InitialLdapContext;
 import javax.naming.ldap.LdapContext;
+import javax.naming.ldap.LdapName;
 import javax.security.auth.x500.X500Principal;
 
 import com.sun.jndi.ldap.LdapReferralException;
@@ -218,16 +219,23 @@ final class LDAPCertStoreImpl {
      */
     private class LDAPRequest {
 
-        private final String name;
+        private final LdapName name;
         private Map<String, byte[][]> valueMap;
         private final List<String> requestedAttributes;
 
         LDAPRequest(String name) throws CertStoreException {
-            this.name = checkName(name);
+            try {
+                // Convert DN to an LdapName so that it is not treated as a
+                // composite name by JNDI. In JNDI, using a string name is
+                // equivalent to calling new CompositeName(stringName).
+                this.name = new LdapName(name);
+            } catch (InvalidNameException ine) {
+                throw new CertStoreException("Invalid name: " + name, ine);
+            }
             requestedAttributes = new ArrayList<>(5);
         }
 
-        private String checkName(String name) throws CertStoreException {
+        private static String checkName(String name) throws CertStoreException {
             if (name == null) {
                 throw new CertStoreException("Name absent");
             }
@@ -321,6 +329,9 @@ final class LDAPCertStoreImpl {
                         if (newDn != null && newDn.charAt(0) == '/') {
                             newDn = newDn.substring(1);
                         }
+                        // In JNDI, it is not possible to use an LdapName for
+                        // the referral DN, so we must validate the syntax of
+                        // the string DN.
                         checkName(newDn);
                     } catch (Exception e) {
                         throw new NamingException("Cannot follow referral to "
@@ -371,7 +382,7 @@ final class LDAPCertStoreImpl {
          * or does not contain any values, a zero length byte array is
          * returned. NOTE that it is assumed that all values are byte arrays.
          */
-        private byte[][] getAttributeValues(Attribute attr)
+        private static byte[][] getAttributeValues(Attribute attr)
                 throws NamingException {
             byte[][] values;
             if (attr == null) {
@@ -768,9 +779,13 @@ final class LDAPCertStoreImpl {
                 } catch (IllegalArgumentException e) {
                     continue;
                 }
-            } else {
+            } else if (nameObject instanceof String) {
                 issuerName = (String)nameObject;
+            } else {
+                throw new CertStoreException(
+                    "unrecognized issuerName: must be String or byte[]");
             }
+
             // If all we want is CA certs, try to get the (probably shorter) ARL
             Collection<X509CRL> entryCRLs = Collections.emptySet();
             if (certChecking == null || certChecking.getBasicConstraints() != -1) {

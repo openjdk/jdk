@@ -25,9 +25,14 @@
 package jdk.tools.jlink.internal.plugins;
 
 import java.util.function.Predicate;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.ClassTransform;
+import java.lang.classfile.CodeTransform;
+import java.lang.classfile.MethodTransform;
+import java.lang.classfile.attribute.MethodParametersAttribute;
+import java.lang.classfile.attribute.SourceFileAttribute;
+import java.lang.classfile.attribute.SourceDebugExtensionAttribute;
 
-import jdk.internal.org.objectweb.asm.ClassReader;
-import jdk.internal.org.objectweb.asm.ClassWriter;
 import jdk.tools.jlink.plugin.ResourcePool;
 import jdk.tools.jlink.plugin.ResourcePoolBuilder;
 import jdk.tools.jlink.plugin.ResourcePoolEntry;
@@ -57,12 +62,18 @@ public final class StripJavaDebugAttributesPlugin extends AbstractPlugin {
                 String path = resource.path();
                 if (path.endsWith(".class")) {
                     if (path.endsWith("module-info.class")) {
-                        // XXX. Do we have debug info? Is Asm ready for module-info?
+                        // XXX. Do we have debug info?
                     } else {
-                        ClassReader reader = newClassReader(path, resource);
-                        ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_MAXS);
-                        reader.accept(writer, ClassReader.SKIP_DEBUG);
-                        byte[] content = writer.toByteArray();
+                        var clm = newClassReader(path, resource,
+                                ClassFile.DebugElementsOption.DROP_DEBUG,
+                                ClassFile.LineNumbersOption.DROP_LINE_NUMBERS);
+                        byte[] content = ClassFile.of().transform(clm, ClassTransform
+                                        .dropping(cle -> cle instanceof SourceFileAttribute
+                                                            || cle instanceof SourceDebugExtensionAttribute)
+                                              .andThen(ClassTransform.transformingMethods(MethodTransform
+                                                    .dropping(me -> me instanceof MethodParametersAttribute)
+                                                    .andThen(MethodTransform
+                                                            .transformingCode(CodeTransform.ACCEPT_ALL)))));
                         res = resource.copyWithContent(content);
                     }
                 }

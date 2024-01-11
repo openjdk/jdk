@@ -26,7 +26,6 @@ package com.sun.hotspot.igv.util;
 
 import com.sun.hotspot.igv.data.Properties;
 import com.sun.hotspot.igv.data.Property;
-import java.lang.reflect.InvocationTargetException;
 import org.openide.nodes.Node;
 import org.openide.nodes.Sheet;
 
@@ -49,7 +48,7 @@ public class PropertiesSheet {
                 }
 
                 @Override
-                public String getValue() throws IllegalAccessException, InvocationTargetException {
+                public String getValue() {
                     return p.getValue();
                 }
 
@@ -59,7 +58,7 @@ public class PropertiesSheet {
                 }
 
                 @Override
-                public void setValue(String arg0) throws IllegalAccessException, IllegalArgumentException, InvocationTargetException {
+                public void setValue(String arg0) throws IllegalArgumentException {
                     properties.setProperty(p.getName(), arg0);
                 }
             };

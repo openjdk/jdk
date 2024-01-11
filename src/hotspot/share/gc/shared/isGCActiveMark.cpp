@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,4 +41,16 @@ IsGCActiveMark::~IsGCActiveMark() {
   CollectedHeap* heap = Universe::heap();
   assert(heap->is_gc_active(), "Sanity");
   heap->_is_gc_active = false;
+}
+
+DisableIsGCActiveMark::DisableIsGCActiveMark() {
+  CollectedHeap* heap = Universe::heap();
+  assert(heap->is_gc_active(), "Not reentrant");
+  heap->_is_gc_active = false;
+}
+
+DisableIsGCActiveMark::~DisableIsGCActiveMark() {
+  CollectedHeap* heap = Universe::heap();
+  assert(!heap->is_gc_active(), "Sanity");
+  heap->_is_gc_active = true;
 }

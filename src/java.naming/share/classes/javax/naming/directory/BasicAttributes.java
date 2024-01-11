@@ -294,9 +294,8 @@ public class BasicAttributes implements Attributes {
         // Overridden to avoid exposing implementation details
         s.defaultWriteObject(); // write out the ignoreCase flag
         s.writeInt(attrs.size());
-        Enumeration<Attribute> attrEnum = attrs.elements();
-        while (attrEnum.hasMoreElements()) {
-            s.writeObject(attrEnum.nextElement());
+        for (Attribute attribute : attrs.values()) {
+            s.writeObject(attribute);
         }
     }
 

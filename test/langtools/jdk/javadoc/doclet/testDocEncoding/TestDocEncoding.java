@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,7 @@ import javadoc.tester.JavadocTester;
 public class TestDocEncoding extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        TestDocEncoding tester = new TestDocEncoding();
+        var tester = new TestDocEncoding();
         tester.runTests();
     }
 
@@ -56,18 +56,18 @@ public class TestDocEncoding extends JavadocTester {
                 "pkg");
         checkExit(Exit.OK);
 
-        checkOutput("stylesheet.css", true,
+        checkOutput("resource-files/stylesheet.css", true,
                 """
-                    body {
-                        background-color:#ffffff;""");
+                body {
+                    background-color:var(--body-background-color);""");
 
         // reset the charset, for a negative test, that the -docencoding
         // was effective and that the output is not in UTF-8.
         charset = Charset.forName("UTF-8");
-        checkOutput("stylesheet.css", false,
+        checkOutput("resource-files/stylesheet.css", false,
                 """
                     body {
-                        background-color:#ffffff;""");
+                        background-color:var(--page-bg-color);""");
     }
 }
 

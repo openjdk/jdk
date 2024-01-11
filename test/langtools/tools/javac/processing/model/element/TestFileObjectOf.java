@@ -26,9 +26,10 @@
  * @bug 8224922
  * @summary Verify the behavior of the Elements.getFileObjectOf
  * @library /tools/lib
+ * @enablePreview
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
- *          jdk.jdeps/com.sun.tools.classfile
+ *          java.base/jdk.internal.classfile.impl
  * @build toolbox.ToolBox toolbox.JavacTask toolbox.TestRunner
  * @build TestFileObjectOf
  * @run main TestFileObjectOf

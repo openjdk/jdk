@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 
 #include "precompiled.hpp"
 #include "classfile/systemDictionary.hpp"
+#include "compiler/abstractCompiler.hpp"
 #include "compiler/compileTask.hpp"
 #include "compiler/compilerThread.hpp"
 #include "gc/shared/collectedHeap.hpp"
@@ -35,6 +36,8 @@
 #include "memory/universe.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/javaThread.inline.hpp"
+#include "runtime/os.hpp"
 #include "utilities/events.hpp"
 
 JVMCIRuntime* JVMCI::_compiler_runtimes = nullptr;
@@ -51,47 +54,94 @@ volatile intx JVMCI::_fatal_log_init_thread = -1;
 volatile int JVMCI::_fatal_log_fd = -1;
 const char* JVMCI::_fatal_log_filename = nullptr;
 
+CompilerThreadCanCallJava::CompilerThreadCanCallJava(JavaThread* current, bool new_state) {
+  _current = nullptr;
+  if (current->is_Compiler_thread()) {
+    CompilerThread* ct = CompilerThread::cast(current);
+    if (ct->_can_call_java != new_state &&
+        ct->_compiler != nullptr &&
+        ct->_compiler->is_jvmci())
+    {
+      // Only enter a new context if the ability of the
+      // current thread to call Java actually changes
+      _reset_state = ct->_can_call_java;
+      ct->_can_call_java = new_state;
+      _current = ct;
+    }
+  }
+}
+
+CompilerThreadCanCallJava::~CompilerThreadCanCallJava() {
+  if (_current != nullptr) {
+    _current->_can_call_java = _reset_state;
+  }
+}
+
 void jvmci_vmStructs_init() NOT_DEBUG_RETURN;
 
 bool JVMCI::can_initialize_JVMCI() {
+  if (UseJVMCINativeLibrary) {
+    // Initializing libjvmci does not execute Java code so
+    // can be done any time.
+    return true;
+  }
   // Initializing JVMCI requires the module system to be initialized past phase 3.
   // The JVMCI API itself isn't available until phase 2 and ServiceLoader (which
   // JVMCI initialization requires) isn't usable until after phase 3. Testing
   // whether the system loader is initialized satisfies all these invariants.
-  if (SystemDictionary::java_system_loader() == NULL) {
+  if (SystemDictionary::java_system_loader() == nullptr) {
     return false;
   }
   assert(Universe::is_module_initialized(), "must be");
   return true;
 }
 
+bool JVMCI::get_shared_library_path(char* pathbuf, size_t pathlen, bool fail_is_fatal) {
+  if (JVMCILibPath != nullptr) {
+    if (!os::dll_locate_lib(pathbuf, pathlen, JVMCILibPath, JVMCI_SHARED_LIBRARY_NAME)) {
+      if (!fail_is_fatal) {
+        return false;
+      }
+      fatal("Unable to create path to JVMCI shared library based on value of JVMCILibPath (%s)", JVMCILibPath);
+    }
+  } else {
+    if (!os::dll_locate_lib(pathbuf, pathlen, Arguments::get_dll_dir(), JVMCI_SHARED_LIBRARY_NAME)) {
+      if (!fail_is_fatal) {
+        return false;
+      }
+      fatal("Unable to create path to JVMCI shared library");
+    }
+  }
+  return true;
+}
+
+bool JVMCI::shared_library_exists() {
+  if (_shared_library_handle != nullptr) {
+    return true;
+  }
+  char path[JVM_MAXPATHLEN];
+  return get_shared_library_path(path, sizeof(path), false);
+}
+
 void* JVMCI::get_shared_library(char*& path, bool load) {
   void* sl_handle = _shared_library_handle;
-  if (sl_handle != NULL || !load) {
+  if (sl_handle != nullptr || !load) {
     path = _shared_library_path;
     return sl_handle;
   }
   MutexLocker locker(JVMCI_lock);
-  path = NULL;
-  if (_shared_library_handle == NULL) {
+  path = nullptr;
+  if (_shared_library_handle == nullptr) {
     char path[JVM_MAXPATHLEN];
     char ebuf[1024];
-    if (JVMCILibPath != NULL) {
-      if (!os::dll_locate_lib(path, sizeof(path), JVMCILibPath, JVMCI_SHARED_LIBRARY_NAME)) {
-        fatal("Unable to create path to JVMCI shared library based on value of JVMCILibPath (%s)", JVMCILibPath);
-      }
-    } else {
-      if (!os::dll_locate_lib(path, sizeof(path), Arguments::get_dll_dir(), JVMCI_SHARED_LIBRARY_NAME)) {
-        fatal("Unable to create path to JVMCI shared library");
-      }
-    }
+    get_shared_library_path(path, sizeof(path), true);
 
     void* handle = os::dll_load(path, ebuf, sizeof ebuf);
-    if (handle == NULL) {
+    if (handle == nullptr) {
       fatal("Unable to load JVMCI shared library from %s: %s", path, ebuf);
     }
     _shared_library_handle = handle;
-    _shared_library_path = strdup(path);
+    _shared_library_path = os::strdup(path);
 
     JVMCI_event_1("loaded JVMCI shared library from %s", path);
   }
@@ -101,12 +151,12 @@ void* JVMCI::get_shared_library(char*& path, bool load) {
 
 void JVMCI::initialize_compiler(TRAPS) {
   if (JVMCILibDumpJNIConfig) {
-    JNIJVMCI::initialize_ids(NULL);
+    JNIJVMCI::initialize_ids(nullptr);
     ShouldNotReachHere();
   }
   JVMCIRuntime* runtime;
   if (UseJVMCINativeLibrary) {
-      runtime = JVMCI::compiler_runtime((JavaThread*) THREAD);
+      runtime = JVMCI::compiler_runtime(THREAD);
   } else {
       runtime = JVMCI::java_runtime();
   }
@@ -150,6 +200,10 @@ void JVMCI::ensure_box_caches_initialized(TRAPS) {
     java_lang_Long_LongCache::symbol()
   };
 
+  // Class resolution and initialization below
+  // requires calling into Java
+  CompilerThreadCanCallJava ccj(THREAD, true);
+
   for (unsigned i = 0; i < sizeof(box_classes) / sizeof(Symbol*); i++) {
     Klass* k = SystemDictionary::resolve_or_fail(box_classes[i], true, CHECK);
     InstanceKlass* ik = InstanceKlass::cast(k);
@@ -173,9 +227,9 @@ JVMCIRuntime* JVMCI::compiler_runtime(JavaThread* thread, bool create) {
 JavaThread* JVMCI::compilation_tick(JavaThread* thread) {
   if (thread->is_Compiler_thread()) {
     CompileTask *task = CompilerThread::cast(thread)->task();
-    if (task != NULL) {
+    if (task != nullptr) {
       JVMCICompileState *state = task->blocking_jvmci_compile_state();
-      if (state != NULL) {
+      if (state != nullptr) {
         state->inc_compilation_ticks();
       }
     }
@@ -227,9 +281,17 @@ void JVMCI::vlog(int level, const char* format, va_list ap) {
 void JVMCI::vtrace(int level, const char* format, va_list ap) {
   if (JVMCITraceLevel >= level) {
     Thread* thread = Thread::current_or_null_safe();
-    if (thread != nullptr) {
-      ResourceMark rm;
-      tty->print("JVMCITrace-%d[%s]:%*c", level, thread->name(), level, ' ');
+    if (thread != nullptr && thread->is_Java_thread()) {
+      ResourceMark rm(thread);
+      JavaThreadState state = JavaThread::cast(thread)->thread_state();
+      if (state == _thread_in_vm || state == _thread_in_Java || state == _thread_new) {
+        tty->print("JVMCITrace-%d[" PTR_FORMAT " \"%s\"]:%*c", level, p2i(thread), thread->name(), level, ' ');
+      } else {
+        // According to check_access_thread_state, it's unsafe to
+        // resolve the j.l.Thread object unless the thread is in
+        // one of the states above.
+        tty->print("JVMCITrace-%d[" PTR_FORMAT " <%s>]:%*c", level, p2i(thread), thread->type_name(), level, ' ');
+      }
     } else {
       tty->print("JVMCITrace-%d[?]:%*c", level, level, ' ');
     }

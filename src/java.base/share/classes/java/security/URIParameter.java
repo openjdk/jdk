@@ -39,12 +39,12 @@ public class URIParameter implements
     private final java.net.URI uri;
 
     /**
-     * Constructs a URIParameter with the URI pointing to
+     * Constructs a {@code URIParameter} with the URI pointing to
      * data intended for an SPI implementation.
      *
      * @param uri the URI pointing to the data.
      *
-     * @throws    NullPointerException if the specified URI is null.
+     * @throws    NullPointerException if the specified URI is {@code null}.
      */
     public URIParameter(java.net.URI uri) {
         if (uri == null) {

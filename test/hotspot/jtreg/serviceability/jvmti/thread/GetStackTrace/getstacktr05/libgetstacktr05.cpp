@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,7 @@ static frame_info expected_platform_frames[] = {
     {"Lgetstacktr05$TestThread;", "chain2", "()V"},
     {"Lgetstacktr05$TestThread;", "chain1", "()V"},
     {"Lgetstacktr05$TestThread;", "run", "()V"},
+    {"Ljava/lang/Thread;", "runWith", "(Ljava/lang/Object;Ljava/lang/Runnable;)V"},
     {"Ljava/lang/Thread;", "run", "()V"},
 };
 
@@ -48,9 +49,9 @@ static frame_info expected_virtual_frames[] = {
     {"Lgetstacktr05$TestThread;", "chain2", "()V"},
     {"Lgetstacktr05$TestThread;", "chain1", "()V"},
     {"Lgetstacktr05$TestThread;", "run", "()V"},
+    {"Ljava/lang/VirtualThread;", "runWith", "(Ljava/lang/Object;Ljava/lang/Runnable;)V"},
     {"Ljava/lang/VirtualThread;", "run", "(Ljava/lang/Runnable;)V"},
-    {"Ljava/lang/VirtualThread$VThreadContinuation;", "lambda$new$0", "(Ljava/lang/VirtualThread;Ljava/lang/Runnable;)V"},
-    {"Ljava/lang/VirtualThread$VThreadContinuation$$Lambda;", "run", "()V"},
+    {"Ljava/lang/VirtualThread$VThreadContinuation$1;", "run", "()V"},
     {"Ljdk/internal/vm/Continuation;", "enter0", "()V"},
     {"Ljdk/internal/vm/Continuation;", "enter", "(Ljdk/internal/vm/Continuation;Z)V"},
 };

@@ -23,6 +23,7 @@
 // (http://www.iwar.org.uk/comsec/resources/cipher/sha256-384-512.pdf).
 
 #include "asm/macroAssembler.inline.hpp"
+#include "runtime/os.hpp"
 #include "runtime/stubRoutines.hpp"
 
 /**********************************************************************
@@ -402,7 +403,7 @@ void MacroAssembler::sha256(bool multi_block) {
 #ifdef AIX
   // malloc provides 16 byte alignment
   if (((uintptr_t)sha256_round_consts & 0xF) != 0) {
-    uint32_t *new_round_consts = (uint32_t*)malloc(sizeof(sha256_round_table));
+    uint32_t *new_round_consts = (uint32_t*)os::malloc(sizeof(sha256_round_table), mtCompiler);
     guarantee(new_round_consts, "oom");
     memcpy(new_round_consts, sha256_round_consts, sizeof(sha256_round_table));
     sha256_round_consts = (const uint32_t*)new_round_consts;
@@ -957,7 +958,7 @@ void MacroAssembler::sha512(bool multi_block) {
 #ifdef AIX
   // malloc provides 16 byte alignment
   if (((uintptr_t)sha512_round_consts & 0xF) != 0) {
-    uint64_t *new_round_consts = (uint64_t*)malloc(sizeof(sha512_round_table));
+    uint64_t *new_round_consts = (uint64_t*)os::malloc(sizeof(sha512_round_table), mtCompiler);
     guarantee(new_round_consts, "oom");
     memcpy(new_round_consts, sha512_round_consts, sizeof(sha512_round_table));
     sha512_round_consts = (const uint64_t*)new_round_consts;

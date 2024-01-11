@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -177,7 +177,7 @@ final class ScreenMenu extends Menu
     }
 
     /**
-     * Callback from JavaMenuUpdater.m -- called when menu item is hilighted.
+     * Callback from JavaMenuUpdater.m -- called when menu item is highlighted.
      *
      * @param inWhichItem The menu item selected by the user. -1 if mouse moves off the menu.
      * @param itemRectTop
@@ -420,9 +420,9 @@ final class ScreenMenu extends Menu
             final KeyStroke ks = mi.getAccelerator();
             if (ks != null) hashCode ^= ks.hashCode();
 
-            hashCode ^= Boolean.valueOf(mi.isVisible()).hashCode();
-            hashCode ^= Boolean.valueOf(mi.isEnabled()).hashCode();
-            hashCode ^= Boolean.valueOf(mi.isSelected()).hashCode();
+            hashCode ^= Boolean.hashCode(mi.isVisible());
+            hashCode ^= Boolean.hashCode(mi.isEnabled());
+            hashCode ^= Boolean.hashCode(mi.isSelected());
 
         } else if (m instanceof JSeparator) {
             hashCode ^= "-".hashCode();

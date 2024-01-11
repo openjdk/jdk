@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,9 @@ import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.function.Supplier;
 import java.util.List;
+import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
@@ -42,7 +44,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.stream.Stream;
 
-import jdk.internal.access.SharedSecrets;
+import jdk.internal.util.ReferencedKeySet;
+import jdk.internal.util.ReferenceKey;
 import jdk.internal.vm.annotation.Stable;
 import sun.invoke.util.BytecodeDescriptor;
 import sun.invoke.util.VerifyType;
@@ -51,7 +54,6 @@ import sun.security.util.SecurityConstants;
 
 import static java.lang.invoke.MethodHandleStatics.UNSAFE;
 import static java.lang.invoke.MethodHandleStatics.newIllegalArgumentException;
-import static java.lang.invoke.MethodType.fromDescriptor;
 
 /**
  * A method type represents the arguments and return type accepted and
@@ -228,7 +230,13 @@ class MethodType
         return new IndexOutOfBoundsException(num.toString());
     }
 
-    static final ConcurrentWeakInternSet<MethodType> internTable = new ConcurrentWeakInternSet<>();
+    static final ReferencedKeySet<MethodType> internTable =
+        ReferencedKeySet.create(false, true, new Supplier<>() {
+            @Override
+            public Map<ReferenceKey<MethodType>, ReferenceKey<MethodType>> get() {
+                return new ConcurrentHashMap<>(512);
+            }
+        });
 
     static final Class<?>[] NO_PTYPES = {};
 
@@ -406,7 +414,7 @@ class MethodType
             mt = new MethodType(rtype, ptypes);
         }
         mt.form = MethodTypeForm.findForm(mt);
-        return internTable.add(mt);
+        return internTable.intern(mt);
     }
     private static final @Stable MethodType[] objectOnlyTypes = new MethodType[20];
 
@@ -884,23 +892,13 @@ class MethodType
      * @param x object to compare
      * @see Object#equals(Object)
      */
-    // This implementation may also return true if x is a WeakEntry containing
-    // a method type that is equal to this. This is an internal implementation
-    // detail to allow for faster method type lookups.
-    // See ConcurrentWeakInternSet.WeakEntry#equals(Object)
     @Override
     public boolean equals(Object x) {
         if (this == x) {
             return true;
         }
-        if (x instanceof MethodType) {
-            return equals((MethodType)x);
-        }
-        if (x instanceof ConcurrentWeakInternSet.WeakEntry) {
-            Object o = ((ConcurrentWeakInternSet.WeakEntry)x).get();
-            if (o instanceof MethodType) {
-                return equals((MethodType)o);
-            }
+        if (x instanceof MethodType mt) {
+            return equals(mt);
         }
         return false;
     }
@@ -1161,26 +1159,29 @@ class MethodType
     }
 
     /**
-     * Finds or creates an instance of a method type, given the spelling of its bytecode descriptor.
-     * Convenience method for {@link #methodType(java.lang.Class, java.lang.Class[]) methodType}.
+     * Finds or creates an instance of a method type of the given method descriptor
+     * (JVMS {@jvms 4.3.3}). This method is a convenience method for
+     * {@link #methodType(java.lang.Class, java.lang.Class[]) methodType}.
      * Any class or interface name embedded in the descriptor string will be
-     * resolved by the given loader (or if it is null, on the system class loader).
-     * <p>
-     * Note that it is possible to encounter method types which cannot be
-     * constructed by this method, because their component types are
-     * not all reachable from a common class loader.
+     * resolved by the given loader (or if it is {@code null}, on the system class loader).
+     *
+     * @apiNote
+     * It is possible to encounter method types that have valid descriptors but
+     * cannot be constructed by this method, because their component types are
+     * not visible from a common class loader.
      * <p>
      * This method is included for the benefit of applications that must
      * generate bytecodes that process method handles and {@code invokedynamic}.
-     * @param descriptor a bytecode-level type descriptor string "(T...)T"
+     * @param descriptor a method descriptor string
      * @param loader the class loader in which to look up the types
-     * @return a method type matching the bytecode-level type descriptor
-     * @throws NullPointerException if the string is null
-     * @throws IllegalArgumentException if the string is not well-formed
+     * @return a method type of the given method descriptor
+     * @throws NullPointerException if the string is {@code null}
+     * @throws IllegalArgumentException if the string is not a method descriptor
      * @throws TypeNotPresentException if a named type cannot be found
      * @throws SecurityException if the security manager is present and
      *         {@code loader} is {@code null} and the caller does not have the
      *         {@link RuntimePermission}{@code ("getClassLoader")}
+     * @jvms 4.3.3 Method Descriptors
      */
     public static MethodType fromMethodDescriptorString(String descriptor, ClassLoader loader)
         throws IllegalArgumentException, TypeNotPresentException
@@ -1220,19 +1221,20 @@ class MethodType
     }
 
     /**
-     * Returns a descriptor string for the method type.  This method
+     * {@return the descriptor string for this method type} This method
      * is equivalent to calling {@link #descriptorString() MethodType::descriptorString}.
      *
-     * <p>
-     * Note that this is not a strict inverse of {@link #fromMethodDescriptorString fromMethodDescriptorString}.
-     * Two distinct classes which share a common name but have different class loaders
-     * will appear identical when viewed within descriptor strings.
+     * @apiNote
+     * This is not a strict inverse of {@link #fromMethodDescriptorString
+     * fromMethodDescriptorString} which requires a method type descriptor
+     * (JVMS {@jvms 4.3.3}) and a suitable class loader argument.
+     * Two distinct {@code MethodType} objects can have an identical
+     * descriptor string as distinct classes can have the same name
+     * but different class loaders.
+     *
      * <p>
      * This method is included for the benefit of applications that must
      * generate bytecodes that process method handles and {@code invokedynamic}.
-     * {@link #fromMethodDescriptorString(java.lang.String, java.lang.ClassLoader) fromMethodDescriptorString},
-     * because the latter requires a suitable class loader argument.
-     * @return the descriptor string for this method type
      * @jvms 4.3.3 Method Descriptors
      * @see <a href="#descriptor">Nominal Descriptor for {@code MethodType}</a>
      */
@@ -1246,16 +1248,16 @@ class MethodType
     }
 
     /**
-     * Returns a descriptor string for this method type.
+     * {@return the descriptor string for this method type}
      *
      * <p>
-     * If this method type can be <a href="#descriptor">described nominally</a>,
+     * If this method type can be {@linkplain ##descriptor described nominally},
      * then the result is a method type descriptor (JVMS {@jvms 4.3.3}).
      * {@link MethodTypeDesc MethodTypeDesc} for this method type
      * can be produced by calling {@link MethodTypeDesc#ofDescriptor(String)
      * MethodTypeDesc::ofDescriptor} with the result descriptor string.
      * <p>
-     * If this method type cannot be <a href="#descriptor">described nominally</a>
+     * If this method type cannot be {@linkplain ##descriptor described nominally}
      * and the result is a string of the form:
      * <blockquote>{@code "(<parameter-descriptors>)<return-descriptor>"}</blockquote>
      * where {@code <parameter-descriptors>} is the concatenation of the
@@ -1264,7 +1266,6 @@ class MethodType
      * of the return type. No {@link java.lang.constant.MethodTypeDesc MethodTypeDesc}
      * can be produced from the result string.
      *
-     * @return the descriptor string for this method type
      * @since 12
      * @jvms 4.3.3 Method Descriptors
      * @see <a href="#descriptor">Nominal Descriptor for {@code MethodType}</a>
@@ -1390,112 +1391,4 @@ s.writeObject(this.parameterArray());
         wrapAlt = null;
         return mt;
     }
-
-    /**
-     * Simple implementation of weak concurrent intern set.
-     *
-     * @param <T> interned type
-     */
-    private static class ConcurrentWeakInternSet<T> {
-
-        private final ConcurrentMap<WeakEntry<T>, WeakEntry<T>> map;
-        private final ReferenceQueue<T> stale;
-
-        public ConcurrentWeakInternSet() {
-            this.map = new ConcurrentHashMap<>(512);
-            this.stale = SharedSecrets.getJavaLangRefAccess().newNativeReferenceQueue();
-        }
-
-        /**
-         * Get the existing interned element.
-         * This method returns null if no element is interned.
-         *
-         * @param elem element to look up
-         * @return the interned element
-         */
-        public T get(T elem) {
-            if (elem == null) throw new NullPointerException();
-            expungeStaleElements();
-
-            WeakEntry<T> value = map.get(elem);
-            if (value != null) {
-                T res = value.get();
-                if (res != null) {
-                    return res;
-                }
-            }
-            return null;
-        }
-
-        /**
-         * Interns the element.
-         * Always returns non-null element, matching the one in the intern set.
-         * Under the race against another add(), it can return <i>different</i>
-         * element, if another thread beats us to interning it.
-         *
-         * @param elem element to add
-         * @return element that was actually added
-         */
-        public T add(T elem) {
-            if (elem == null) throw new NullPointerException();
-
-            // Playing double race here, and so spinloop is required.
-            // First race is with two concurrent updaters.
-            // Second race is with GC purging weak ref under our feet.
-            // Hopefully, we almost always end up with a single pass.
-            T interned;
-            WeakEntry<T> e = new WeakEntry<>(elem, stale);
-            do {
-                expungeStaleElements();
-                WeakEntry<T> exist = map.putIfAbsent(e, e);
-                interned = (exist == null) ? elem : exist.get();
-            } while (interned == null);
-            return interned;
-        }
-
-        private void expungeStaleElements() {
-            Reference<? extends T> reference;
-            while ((reference = stale.poll()) != null) {
-                map.remove(reference);
-            }
-        }
-
-        private static class WeakEntry<T> extends WeakReference<T> {
-
-            public final int hashcode;
-
-            public WeakEntry(T key, ReferenceQueue<T> queue) {
-                super(key, queue);
-                hashcode = key.hashCode();
-            }
-
-            /**
-             * This implementation returns {@code true} if {@code obj} is another
-             * {@code WeakEntry} whose referent is equal to this referent, or
-             * if {@code obj} is equal to the referent of this. This allows
-             * lookups to be made without wrapping in a {@code WeakEntry}.
-             *
-             * @param obj the object to compare
-             * @return true if {@code obj} is equal to this or the referent of this
-             * @see MethodType#equals(Object)
-             * @see Object#equals(Object)
-             */
-            @Override
-            public boolean equals(Object obj) {
-                Object mine = get();
-                if (obj instanceof WeakEntry) {
-                    Object that = ((WeakEntry) obj).get();
-                    return (that == null || mine == null) ? (this == obj) : mine.equals(that);
-                }
-                return (mine == null) ? (obj == null) : mine.equals(obj);
-            }
-
-            @Override
-            public int hashCode() {
-                return hashcode;
-            }
-
-        }
-    }
-
 }

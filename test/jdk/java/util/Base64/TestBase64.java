@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -146,7 +146,7 @@ public class TestBase64 {
         testDecoderKeepsAbstinence(Base64.getMimeDecoder());
 
         // tests patch addressing JDK-8222187
-        // https://bugs.openjdk.java.net/browse/JDK-8222187
+        // https://bugs.openjdk.org/browse/JDK-8222187
         testJDK_8222187();
     }
 

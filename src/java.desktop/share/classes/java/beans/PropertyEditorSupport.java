@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 
 package java.beans;
 
-import java.beans.*;
+import java.util.ArrayList;
 
 /**
  * This is a support class to help build property editors.
@@ -253,9 +253,9 @@ public class PropertyEditorSupport implements PropertyEditor {
     public synchronized void addPropertyChangeListener(
                                 PropertyChangeListener listener) {
         if (listeners == null) {
-            listeners = new java.util.Vector<>();
+            listeners = new ArrayList<>();
         }
-        listeners.addElement(listener);
+        listeners.add(listener);
     }
 
     /**
@@ -273,37 +273,32 @@ public class PropertyEditorSupport implements PropertyEditor {
         if (listeners == null) {
             return;
         }
-        listeners.removeElement(listener);
+        listeners.remove(listener);
     }
 
     /**
      * Report that we have been modified to any interested listeners.
      */
     public void firePropertyChange() {
-        java.util.Vector<PropertyChangeListener> targets;
+        ArrayList<PropertyChangeListener> targets;
         synchronized (this) {
             if (listeners == null) {
                 return;
             }
-            targets = unsafeClone(listeners);
+            targets = new ArrayList<>(listeners);
         }
         // Tell our listeners that "everything" has changed.
         PropertyChangeEvent evt = new PropertyChangeEvent(source, null, null, null);
 
         for (int i = 0; i < targets.size(); i++) {
-            PropertyChangeListener target = targets.elementAt(i);
+            PropertyChangeListener target = targets.get(i);
             target.propertyChange(evt);
         }
-    }
-
-    @SuppressWarnings("unchecked")
-    private <T> java.util.Vector<T> unsafeClone(java.util.Vector<T> v) {
-        return (java.util.Vector<T>)v.clone();
     }
 
     //----------------------------------------------------------------------
 
     private Object value;
     private Object source;
-    private java.util.Vector<PropertyChangeListener> listeners;
+    private ArrayList<PropertyChangeListener> listeners;
 }

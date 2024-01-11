@@ -58,8 +58,8 @@ class CausedFocusEvent extends FocusEvent {
         NATIVE_SYSTEM,
         ACTIVATION,
         CLEAR_GLOBAL_FOCUS_OWNER,
-        RETARGETED;
-    };
+        RETARGETED
+    }
 
     @SuppressWarnings("serial")
     private static final Component dummy = new Component(){};

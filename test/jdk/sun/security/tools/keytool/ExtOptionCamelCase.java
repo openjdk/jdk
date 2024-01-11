@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@
  */
 
 import sun.security.tools.keytool.Main;
+import sun.security.util.DerOutputStream;
 import sun.security.util.DerValue;
 import sun.security.x509.BasicConstraintsExtension;
 import sun.security.x509.CertificateExtensions;
@@ -41,7 +42,6 @@ import sun.security.x509.Extension;
 import sun.security.x509.KeyIdentifier;
 import sun.security.x509.KeyUsageExtension;
 
-import java.io.ByteArrayOutputStream;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -203,9 +203,9 @@ public class ExtOptionCamelCase {
             // ATTENTION: the extensions created above might contain raw
             // extensions (not of a subtype) and we need to store and reload
             // it to resolve them to subtypes.
-            ByteArrayOutputStream bout = new ByteArrayOutputStream();
-            exts.encode(bout);
-            exts = new CertificateExtensions(new DerValue(bout.toByteArray()).data);
+            DerOutputStream dout = new DerOutputStream();
+            exts.encode(dout);
+            exts = new CertificateExtensions(new DerValue(dout.toByteArray()).data);
 
             if (clazz == null) {
                 throw new Exception("Should fail");

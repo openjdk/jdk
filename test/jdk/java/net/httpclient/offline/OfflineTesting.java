@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,42 +63,46 @@ public class OfflineTesting {
 
     @Test
     public void testResponseAsString() {
-        HttpClient client = getClient();
+        try (HttpClient client = getClient()) {
 
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create("http://openjdk.java.net/"))
-                .build();
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create("https://openjdk.org/"))
+                    .build();
 
-        client.sendAsync(request, BodyHandlers.ofString())
-                .thenAccept(response -> {
-                    System.out.println("response: " + response);
-                    assertEquals(response.statusCode(), 200);
-                    assertTrue(response.headers().firstValue("Server").isPresent());
-                    assertEquals(response.body(), "A response message"); } )
-                .join();
+            client.sendAsync(request, BodyHandlers.ofString())
+                    .thenAccept(response -> {
+                        System.out.println("response: " + response);
+                        assertEquals(response.statusCode(), 200);
+                        assertTrue(response.headers().firstValue("Server").isPresent());
+                        assertEquals(response.body(), "A response message");
+                    })
+                    .join();
+        }
     }
 
     @Test
     public void testResponseAsByteArray() {
-        HttpClient client = getClient();
+        try (HttpClient client = getClient()) {
 
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create("http://openjdk.java.net/"))
-                .build();
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create("https://openjdk.org/"))
+                    .build();
 
-        client.sendAsync(request, BodyHandlers.ofByteArray())
-                .thenAccept(response -> {
-                    System.out.println("response: " + response);
-                    assertEquals(response.statusCode(), 200);
-                    assertTrue(response.headers().firstValue("Content-Type").isPresent());
-                    assertEquals(response.body(), "A response message".getBytes(UTF_8)); } )
-                .join();
+            client.sendAsync(request, BodyHandlers.ofByteArray())
+                    .thenAccept(response -> {
+                        System.out.println("response: " + response);
+                        assertEquals(response.statusCode(), 200);
+                        assertTrue(response.headers().firstValue("Content-Type").isPresent());
+                        assertEquals(response.body(), "A response message".getBytes(UTF_8));
+                    })
+                    .join();
+        }
     }
 
     @Test
     public void testFileNotFound() {
         //HttpClient client = HttpClient.newHttpClient();
-        HttpClient client = FixedResponseHttpClient.createClientFrom(
+        HttpClient fixedClient = FixedResponseHttpClient.createClientFrom(
                 HttpClient.newBuilder(),
                 404,
                 headersOf("Connection",  "keep-alive",
@@ -115,55 +119,62 @@ public class OfflineTesting {
                 "</html>");
 
         HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create("http://openjdk.java.net/notFound"))
+                .uri(URI.create("https://openjdk.org/notFound"))
                 .build();
 
-        client.sendAsync(request, BodyHandlers.ofString())
-                .thenAccept(response -> {
-                    assertEquals(response.statusCode(), 404);
-                    response.headers().firstValue("Content-Type")
-                            .ifPresentOrElse(type -> assertEquals(type, "text/html"),
-                                             () -> fail("Content-Type not present"));
-                    assertTrue(response.body().contains("404 Not Found")); } )
-                .join();
+        try (var client = fixedClient) {
+            client.sendAsync(request, BodyHandlers.ofString())
+                    .thenAccept(response -> {
+                        assertEquals(response.statusCode(), 404);
+                        response.headers().firstValue("Content-Type")
+                                .ifPresentOrElse(type -> assertEquals(type, "text/html"),
+                                        () -> fail("Content-Type not present"));
+                        assertTrue(response.body().contains("404 Not Found"));
+                    })
+                    .join();
+        }
+        assertTrue(fixedClient.isTerminated());
     }
 
     @Test
     public void testEcho() {
-        HttpClient client = FixedResponseHttpClient.createEchoClient(
+        try (HttpClient client = FixedResponseHttpClient.createEchoClient(
                 HttpClient.newBuilder(),
                 200,
-                headersOf("Connection",  "keep-alive"));
+                headersOf("Connection",  "keep-alive"))) {
 
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create("http://openjdk.java.net/echo"))
-                .POST(BodyPublishers.ofString("Hello World"))
-                .build();
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create("https://openjdk.org/echo"))
+                    .POST(BodyPublishers.ofString("Hello World"))
+                    .build();
 
-        client.sendAsync(request, BodyHandlers.ofString())
-                .thenAccept(response -> {
-                    System.out.println("response: " + response);
-                    assertEquals(response.statusCode(), 200);
-                    assertEquals(response.body(), "Hello World"); } )
-                .join();
+            client.sendAsync(request, BodyHandlers.ofString())
+                    .thenAccept(response -> {
+                        System.out.println("response: " + response);
+                        assertEquals(response.statusCode(), 200);
+                        assertEquals(response.body(), "Hello World");
+                    })
+                    .join();
+        }
     }
 
     @Test
     public void testEchoBlocking() throws IOException, InterruptedException {
-        HttpClient client = FixedResponseHttpClient.createEchoClient(
+        try (HttpClient client = FixedResponseHttpClient.createEchoClient(
                 HttpClient.newBuilder(),
                 200,
-                headersOf("Connection",  "keep-alive"));
+                headersOf("Connection",  "keep-alive"))) {
 
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create("http://openjdk.java.net/echo"))
-                .POST(BodyPublishers.ofString("Hello chegar!!"))
-                .build();
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create("https://openjdk.org/echo"))
+                    .POST(BodyPublishers.ofString("Hello chegar!!"))
+                    .build();
 
-        HttpResponse<String> response = client.send(request, BodyHandlers.ofString());
-        System.out.println("response: " + response);
-        assertEquals(response.statusCode(), 200);
-        assertEquals(response.body(), "Hello chegar!!");
+            HttpResponse<String> response = client.send(request, BodyHandlers.ofString());
+            System.out.println("response: " + response);
+            assertEquals(response.statusCode(), 200);
+            assertEquals(response.body(), "Hello chegar!!");
+        }
     }
 
     // ---

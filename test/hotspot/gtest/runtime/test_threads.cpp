@@ -147,18 +147,17 @@ public:
     ASSERT_EQ(max_uintx, thread_claim_token());
 
     CountThreads count2(thread_claim_token(), false); // Claimed by PPTD below
-    possibly_parallel_threads_do(true, &count2);
+    possibly_parallel_threads_do(true /* is_par */, &count2);
     ASSERT_EQ(count1.java_threads_count(), count2.java_threads_count());
-    ASSERT_EQ(1u, count2.non_java_threads_count()); // Only VM thread
+    ASSERT_EQ(count1.non_java_threads_count(), count2.non_java_threads_count());
 
     CheckClaims check2(thread_claim_token());
     threads_do(&check2);
     ASSERT_EQ(count2.java_threads_count(), check2.java_threads_claimed());
     ASSERT_EQ(0u, check2.java_threads_unclaimed());
-    ASSERT_EQ(1u, check2.non_java_threads_claimed()); // Only VM thread
+    ASSERT_EQ(0u, check2.non_java_threads_unclaimed());
     ASSERT_EQ(count1.non_java_threads_count(),
-              check2.non_java_threads_claimed() +
-              check2.non_java_threads_unclaimed());
+              check2.non_java_threads_claimed());
 
     change_thread_claim_token(); // Expect overflow.
     ASSERT_EQ(uintx(1), thread_claim_token());

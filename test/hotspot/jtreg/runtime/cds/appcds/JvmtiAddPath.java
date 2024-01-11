@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,8 +28,8 @@
  * @requires vm.cds
  * @bug 8060592
  * @library /test/lib
- * @build sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @compile test-classes/Hello.java
  * @compile test-classes/JvmtiApp.java
  * @run driver JvmtiAddPath
@@ -37,7 +37,7 @@
 
 import java.io.File;
 import jdk.test.lib.process.OutputAnalyzer;
-import sun.hotspot.WhiteBox;
+import jdk.test.whitebox.WhiteBox;
 
 public class JvmtiAddPath {
     static String use_whitebox_jar;
@@ -63,7 +63,7 @@ public class JvmtiAddPath {
         JarBuilder.build("jvmti_addboot", "Hello");
         JarBuilder.build("jvmti_addapp", "Hello");
         JarBuilder.build("jvmti_app", "JvmtiApp", "ExtraClass");
-        JarBuilder.build(true, "WhiteBox", "sun/hotspot/WhiteBox");
+        JarBuilder.build(true, "WhiteBox", "jdk/test/whitebox/WhiteBox");
 
         // In all the test cases below, appJar does not contain Hello.class. Instead, we
         // append JAR file(s) that contain Hello.class to the boot classpath, the app
@@ -81,9 +81,7 @@ public class JvmtiAddPath {
         run(check_appcds_enabled, appJar, "-Xlog:class+load", "JvmtiApp", "noadd"); // appcds should be enabled
 
         System.out.println("Test case 2: add to boot classpath only - should find Hello.class in boot loader");
-        String[] toCheck = (TestCommon.isDynamicArchive()) ? check_appcds_enabled
-                                                           : check_appcds_disabled;
-        run(toCheck, appJar, "-Xlog:class+load", "JvmtiApp", "bootonly", addbootJar); // appcds should be disabled
+        run(check_appcds_disabled, appJar, "-Xlog:class+load", "JvmtiApp", "bootonly", addbootJar); // appcds should be disabled
 
         System.out.println("Test case 3: add to app classpath only - should find Hello.class in app loader");
         run(appJar, "JvmtiApp", "apponly", addappJar);

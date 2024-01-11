@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -528,6 +528,10 @@ public abstract class DatagramChannel
      *
      * @throws  NotYetConnectedException
      *          If this channel's socket is not connected
+     *
+     * @throws  ClosedChannelException      {@inheritDoc}
+     * @throws  AsynchronousCloseException  {@inheritDoc}
+     * @throws  ClosedByInterruptException  {@inheritDoc}
      */
     public abstract int read(ByteBuffer dst) throws IOException;
 
@@ -543,6 +547,10 @@ public abstract class DatagramChannel
      *
      * @throws  NotYetConnectedException
      *          If this channel's socket is not connected
+     *
+     * @throws  ClosedChannelException      {@inheritDoc}
+     * @throws  AsynchronousCloseException  {@inheritDoc}
+     * @throws  ClosedByInterruptException  {@inheritDoc}
      */
     public abstract long read(ByteBuffer[] dsts, int offset, int length)
         throws IOException;
@@ -559,6 +567,10 @@ public abstract class DatagramChannel
      *
      * @throws  NotYetConnectedException
      *          If this channel's socket is not connected
+     *
+     * @throws  ClosedChannelException      {@inheritDoc}
+     * @throws  AsynchronousCloseException  {@inheritDoc}
+     * @throws  ClosedByInterruptException  {@inheritDoc}
      */
     public final long read(ByteBuffer[] dsts) throws IOException {
         return read(dsts, 0, dsts.length);
@@ -574,6 +586,10 @@ public abstract class DatagramChannel
      *
      * @throws  NotYetConnectedException
      *          If this channel's socket is not connected
+     *
+     * @throws  ClosedChannelException      {@inheritDoc}
+     * @throws  AsynchronousCloseException  {@inheritDoc}
+     * @throws  ClosedByInterruptException  {@inheritDoc}
      */
     public abstract int write(ByteBuffer src) throws IOException;
 
@@ -593,6 +609,10 @@ public abstract class DatagramChannel
      *
      * @throws  NotYetConnectedException
      *          If this channel's socket is not connected
+     *
+     * @throws  ClosedChannelException      {@inheritDoc}
+     * @throws  AsynchronousCloseException  {@inheritDoc}
+     * @throws  ClosedByInterruptException  {@inheritDoc}
      */
     public abstract long write(ByteBuffer[] srcs, int offset, int length)
         throws IOException;
@@ -613,6 +633,10 @@ public abstract class DatagramChannel
      *
      * @throws  NotYetConnectedException
      *          If this channel's socket is not connected
+     *
+     * @throws  ClosedChannelException      {@inheritDoc}
+     * @throws  AsynchronousCloseException  {@inheritDoc}
+     * @throws  ClosedByInterruptException  {@inheritDoc}
      */
     public final long write(ByteBuffer[] srcs) throws IOException {
         return write(srcs, 0, srcs.length);
@@ -620,6 +644,13 @@ public abstract class DatagramChannel
 
     /**
      * {@inheritDoc}
+     * <p>
+     * If the channel's socket was initially bound to the wildcard address and
+     * is now {@link #isConnected connected}, then the address returned
+     * may be the local address selected as the source address for
+     * datagrams sent via this channel instead of the wildcard address.
+     * When {@link #disconnect} is called, the bound address reverts
+     * to the wildcard address.
      * <p>
      * If there is a security manager set, its {@code checkConnect} method is
      * called with the local address and {@code -1} as its arguments to see

@@ -1,6 +1,5 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -24,28 +23,39 @@ package com.sun.org.apache.bcel.internal.classfile;
 import java.io.DataInput;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.util.Arrays;
 
 import com.sun.org.apache.bcel.internal.Const;
+import com.sun.org.apache.bcel.internal.util.Args;
 
 /**
- * This class is derived from <em>Attribute</em> and represents the list of packages that are exported or opened by the Module attribute.
- * There may be at most one ModulePackages attribute in a ClassFile structure.
+ * This class is derived from <em>Attribute</em> and represents the list of packages that are exported or opened by the
+ * Module attribute. There may be at most one ModulePackages attribute in a ClassFile structure.
  *
- * @see     Attribute
+ * @see Attribute
+ * @LastModified: Feb 2023
  */
 public final class ModulePackages extends Attribute {
 
     private int[] packageIndexTable;
 
-
     /**
-     * Initialize from another object. Note that both objects use the same
-     * references (shallow copy). Use copy() for a physical copy.
+     * Construct object from input stream.
+     *
+     * @param nameIndex Index in constant pool
+     * @param length Content length in bytes
+     * @param input Input stream
+     * @param constantPool Array of constants
+     * @throws IOException if an I/O error occurs.
      */
-    public ModulePackages(final ModulePackages c) {
-        this(c.getNameIndex(), c.getLength(), c.getPackageIndexTable(), c.getConstantPool());
+    ModulePackages(final int nameIndex, final int length, final DataInput input, final ConstantPool constantPool) throws IOException {
+        this(nameIndex, length, (int[]) null, constantPool);
+        final int packageCount = input.readUnsignedShort();
+        packageIndexTable = new int[packageCount];
+        for (int i = 0; i < packageCount; i++) {
+            packageIndexTable[i] = input.readUnsignedShort();
+        }
     }
-
 
     /**
      * @param nameIndex Index in constant pool
@@ -53,67 +63,60 @@ public final class ModulePackages extends Attribute {
      * @param packageIndexTable Table of indices in constant pool
      * @param constantPool Array of constants
      */
-    public ModulePackages(final int nameIndex, final int length, final int[] packageIndexTable,
-            final ConstantPool constantPool) {
+    public ModulePackages(final int nameIndex, final int length, final int[] packageIndexTable, final ConstantPool constantPool) {
         super(Const.ATTR_MODULE_PACKAGES, nameIndex, length, constantPool);
-        this.packageIndexTable = packageIndexTable != null ? packageIndexTable : new int[0];
+        this.packageIndexTable = packageIndexTable != null ? packageIndexTable : Const.EMPTY_INT_ARRAY;
+        Args.requireU2(this.packageIndexTable.length, "packageIndexTable.length");
     }
 
-
     /**
-     * Construct object from input stream.
-     * @param name_index Index in constant pool
-     * @param length Content length in bytes
-     * @param input Input stream
-     * @param constant_pool Array of constants
-     * @throws IOException
+     * Initialize from another object. Note that both objects use the same references (shallow copy). Use copy() for a
+     * physical copy.
+     *
+     * @param c Source to copy.
      */
-    ModulePackages(final int name_index, final int length, final DataInput input, final ConstantPool constant_pool) throws IOException {
-        this(name_index, length, (int[]) null, constant_pool);
-        final int number_of_packages = input.readUnsignedShort();
-        packageIndexTable = new int[number_of_packages];
-        for (int i = 0; i < number_of_packages; i++) {
-            packageIndexTable[i] = input.readUnsignedShort();
-        }
+    public ModulePackages(final ModulePackages c) {
+        this(c.getNameIndex(), c.getLength(), c.getPackageIndexTable(), c.getConstantPool());
     }
 
-
     /**
-     * Called by objects that are traversing the nodes of the tree implicitely
-     * defined by the contents of a Java class. I.e., the hierarchy of methods,
-     * fields, attributes, etc. spawns a tree of objects.
+     * Called by objects that are traversing the nodes of the tree implicitly defined by the contents of a Java class.
+     * I.e., the hierarchy of methods, fields, attributes, etc. spawns a tree of objects.
      *
      * @param v Visitor object
      */
     @Override
-    public void accept( final Visitor v ) {
+    public void accept(final Visitor v) {
         v.visitModulePackages(this);
     }
 
+    /**
+     * @return deep copy of this attribute
+     */
+    @Override
+    public Attribute copy(final ConstantPool constantPool) {
+        final ModulePackages c = (ModulePackages) clone();
+        if (packageIndexTable != null) {
+            c.packageIndexTable = packageIndexTable.clone();
+        }
+        c.setConstantPool(constantPool);
+        return c;
+    }
 
     /**
      * Dump ModulePackages attribute to file stream in binary format.
      *
      * @param file Output file stream
-     * @throws IOException
+     * @throws IOException if an I/O error occurs.
      */
     @Override
-    public void dump( final DataOutputStream file ) throws IOException {
+    public void dump(final DataOutputStream file) throws IOException {
         super.dump(file);
         file.writeShort(packageIndexTable.length);
         for (final int index : packageIndexTable) {
             file.writeShort(index);
         }
     }
-
-
-    /**
-     * @return array of indices into constant pool of package names.
-     */
-    public int[] getPackageIndexTable() {
-        return packageIndexTable;
-    }
-
 
     /**
      * @return Length of package table.
@@ -122,28 +125,28 @@ public final class ModulePackages extends Attribute {
         return packageIndexTable == null ? 0 : packageIndexTable.length;
     }
 
+    /**
+     * @return array of indices into constant pool of package names.
+     */
+    public int[] getPackageIndexTable() {
+        return packageIndexTable;
+    }
 
     /**
      * @return string array of package names
      */
     public String[] getPackageNames() {
         final String[] names = new String[packageIndexTable.length];
-        for (int i = 0; i < packageIndexTable.length; i++) {
-            names[i] = super.getConstantPool().getConstantString(packageIndexTable[i],
-                    Const.CONSTANT_Package).replace('/', '.');
-        }
+        Arrays.setAll(names, i -> Utility.pathToPackage(super.getConstantPool().getConstantString(packageIndexTable[i], Const.CONSTANT_Package)));
         return names;
     }
 
-
     /**
-     * @param packageIndexTable the list of package indexes
-     * Also redefines number_of_packages according to table length.
+     * @param packageIndexTable the list of package indexes Also redefines number_of_packages according to table length.
      */
-    public void setPackageIndexTable( final int[] packageIndexTable ) {
-        this.packageIndexTable = packageIndexTable != null ? packageIndexTable : new int[0];
+    public void setPackageIndexTable(final int[] packageIndexTable) {
+        this.packageIndexTable = packageIndexTable != null ? packageIndexTable : Const.EMPTY_INT_ARRAY;
     }
-
 
     /**
      * @return String representation, i.e., a list of packages.
@@ -155,25 +158,9 @@ public final class ModulePackages extends Attribute {
         buf.append(packageIndexTable.length);
         buf.append("):\n");
         for (final int index : packageIndexTable) {
-            final String package_name = super.getConstantPool().getConstantString(index, Const.CONSTANT_Package);
-            buf.append("  ").append(Utility.compactClassName(package_name, false)).append("\n");
+            final String packageName = super.getConstantPool().getConstantString(index, Const.CONSTANT_Package);
+            buf.append("  ").append(Utility.compactClassName(packageName, false)).append("\n");
         }
-        return buf.substring(0, buf.length()-1); // remove the last newline
-    }
-
-
-    /**
-     * @return deep copy of this attribute
-     */
-    @Override
-    public Attribute copy( final ConstantPool _constant_pool ) {
-        final ModulePackages c = (ModulePackages) clone();
-        if (packageIndexTable != null) {
-            c.packageIndexTable = new int[packageIndexTable.length];
-            System.arraycopy(packageIndexTable, 0, c.packageIndexTable, 0,
-                    packageIndexTable.length);
-        }
-        c.setConstantPool(_constant_pool);
-        return c;
+        return buf.substring(0, buf.length() - 1); // remove the last newline
     }
 }

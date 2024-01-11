@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "iphlp_interface.hpp"
+#include "os_windows.hpp"
 #include "runtime/os.hpp"
 
 // IPHLP API
@@ -31,18 +32,18 @@ typedef DWORD(WINAPI *GetIfTable2_Fn)(PMIB_IF_TABLE2*);
 typedef DWORD(WINAPI *FreeMibTable_Fn)(PVOID);
 
 // IPHLP statics
-GetIfTable2_Fn IphlpDll::_GetIfTable2 = NULL;
-FreeMibTable_Fn IphlpDll::_FreeMibTable = NULL;
+GetIfTable2_Fn IphlpDll::_GetIfTable2 = nullptr;
+FreeMibTable_Fn IphlpDll::_FreeMibTable = nullptr;
 
 LONG IphlpDll::_critical_section = 0;
 LONG IphlpDll::_initialized = 0;
 LONG IphlpDll::_iphlp_reference_count = 0;
-HMODULE IphlpDll::_hModule = NULL;
+HMODULE IphlpDll::_hModule = nullptr;
 
 void IphlpDll::initialize(void) {
-  _hModule = os::win32::load_Windows_dll("iphlpapi.dll", NULL, 0);
+  _hModule = os::win32::load_Windows_dll("iphlpapi.dll", nullptr, 0);
 
-  if (NULL == _hModule) {
+  if (nullptr == _hModule) {
     return;
   }
 
@@ -59,12 +60,12 @@ bool IphlpDll::IphlpDetach(void) {
   BOOL ret = false;
 
   if (1 == prev_ref_count) {
-    if (_initialized && _hModule != NULL) {
+    if (_initialized && _hModule != nullptr) {
       ret = FreeLibrary(_hModule);
       if (ret) {
-        _hModule = NULL;
-        _GetIfTable2 = NULL;
-        _FreeMibTable = NULL;
+        _hModule = nullptr;
+        _GetIfTable2 = nullptr;
+        _FreeMibTable = nullptr;
         InterlockedExchange(&_initialized, 0);
       }
     }
@@ -87,18 +88,18 @@ bool IphlpDll::IphlpAttach(void) {
 
   while (InterlockedCompareExchange(&_critical_section, 0, 1) == 0);
 
-  return (_GetIfTable2 != NULL && _FreeMibTable != NULL);
+  return (_GetIfTable2 != nullptr && _FreeMibTable != nullptr);
 }
 
 DWORD IphlpDll::GetIfTable2(PMIB_IF_TABLE2* Table) {
-  assert(_initialized && _GetIfTable2 != NULL,
+  assert(_initialized && _GetIfTable2 != nullptr,
          "IphlpAttach() not yet called");
 
   return _GetIfTable2(Table);
 }
 
 DWORD IphlpDll::FreeMibTable(PVOID Memory) {
-  assert(_initialized && _FreeMibTable != NULL,
+  assert(_initialized && _FreeMibTable != nullptr,
          "IphlpAttach() not yet called");
 
   return _FreeMibTable(Memory);

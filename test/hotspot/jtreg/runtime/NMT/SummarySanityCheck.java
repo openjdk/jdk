@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,8 @@
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @build sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:NativeMemoryTracking=summary -XX:+WhiteBoxAPI SummarySanityCheck
  */
 
@@ -38,7 +38,7 @@ import jdk.test.lib.JDKToolFinder;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import sun.hotspot.WhiteBox;
+import jdk.test.whitebox.WhiteBox;
 
 public class SummarySanityCheck {
 
@@ -64,8 +64,8 @@ public class SummarySanityCheck {
     long totalCommitted = 0, totalReserved = 0;
     long totalCommittedSum = 0, totalReservedSum = 0;
 
-    // Match '- <mtType> (reserved=<reserved>KB, committed=<committed>KB)
-    Pattern mtTypePattern = Pattern.compile("-\\s+(?<typename>[\\w\\s]+)\\(reserved=(?<reserved>\\d+)KB,\\scommitted=(?<committed>\\d+)KB\\)");
+    // Match '- <mtType> (reserved=<reserved>KB, committed=<committed>KB) and some times readonly=<readonly>KB
+    Pattern mtTypePattern = Pattern.compile("-\\s+(?<typename>[\\w\\s]+)\\(reserved=(?<reserved>\\d+)KB,\\scommitted=(?<committed>\\d+)KB((,\\sreadonly=(?<readonly>\\d+)KB)|)\\)");
     // Match 'Total: reserved=<reserved>KB, committed=<committed>KB'
     Pattern totalMemoryPattern = Pattern.compile("Total\\:\\sreserved=(?<reserved>\\d+)KB,\\scommitted=(?<committed>\\d+)KB");
 
@@ -84,6 +84,16 @@ public class SummarySanityCheck {
         if (typeMatcher.matches()) {
           long typeCommitted = Long.parseLong(typeMatcher.group("committed"));
           long typeReserved = Long.parseLong(typeMatcher.group("reserved"));
+
+          // Only Shared class space has readonly component
+          if (lines[i].contains("Shared class space") && typeMatcher.group("readonly") != null) {
+            long typeReadOnly = Long.parseLong(typeMatcher.group("readonly"));
+            // Make sure readonly is always less or equal to committed
+            if (typeReadOnly > typeCommitted) {
+              throwTestException("Readonly (" + typeReadOnly + ") was more than Committed ("
+                  + typeCommitted + ") for mtType: " + typeMatcher.group("typename"));
+            }
+          }
 
           // Make sure reserved is always less or equals
           if (typeCommitted > typeReserved) {

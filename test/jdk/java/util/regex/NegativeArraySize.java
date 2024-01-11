@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @bug 8223174
  * @summary Pattern.compile() can throw confusing NegativeArraySizeException
- * @requires os.maxMemory >= 5g & vm.bits == 64
+ * @requires os.maxMemory >= 6g & vm.bits == 64 & !vm.musl
  * @run testng/othervm -Xms5G -Xmx5G NegativeArraySize
  */
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,20 +38,12 @@ inline void PerfDataList::append(PerfData *p) {
   _set->append(p);
 }
 
-inline void PerfDataList::remove(PerfData *p) {
-  _set->remove(p);
-}
-
 inline PerfData* PerfDataList::at(int index) {
   return _set->at(index);
 }
 
-inline int PerfDataManager::count() {
-  return _all->length();
-}
-
 inline bool PerfDataManager::exists(const char* name) {
-  if (_all != NULL) {
+  if (_all != nullptr) {
     return _all->contains(name);
   } else {
     return false;

@@ -33,11 +33,11 @@
  * @compile ../test-classes/ChildOldSuper.java ../test-classes/GChild.java
  * @compile ../test-classes/OldInf.jasm ../test-classes/ChildOldInf.java
  * @compile ../test-classes/GChild2.java
- * @build sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar oldclassapp.jar OldClassApp
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar loadees.jar OldSuper ChildOldSuper GChild
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar loadees2.jar OldInf ChildOldInf GChild2
- * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar WhiteBox.jar sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar WhiteBox.jar jdk.test.whitebox.WhiteBox
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:./WhiteBox.jar OldClassAndInf
  */
 

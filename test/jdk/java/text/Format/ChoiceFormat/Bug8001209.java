@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,70 +21,90 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 8001209
  * @summary Confirm that the values set by setChoices() are not mutable.
+ * @run junit Bug8001209
  */
-import java.text.*;
+
+import java.text.ChoiceFormat;
+import java.text.ParsePosition;
+
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class Bug8001209 {
 
-    public static void main(String[] args) throws Exception {
-        boolean err = false;
+    // Represents the expected output of formatting the ChoiceFormat
+    private static String expectedFormattedOutput;
+    private static ChoiceFormat cFmt;
+    private static ParsePosition status;
+    private static String[] originalSetterArray;
 
-        // Borrow an example in API doc
-        double[] limits = {1,2,3,4,5,6,7};
-        String[] dayOfWeekNames = {"Sun","Mon","Tue","Wed","Thu","Fri","Sat"};
-        ChoiceFormat form = new ChoiceFormat(limits, dayOfWeekNames);
-        ParsePosition status = new ParsePosition(0);
+    // Build the original ChoiceFormat to test if it can be mutated
+    @BeforeAll
+    static void setUpChoiceFormatAndOutput() {
+        double[] limits = {1, 2, 3, 4, 5, 6, 7};
+        originalSetterArray = new String[]{"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
+        // Constructor calls setChoices
+        cFmt = new ChoiceFormat(limits, originalSetterArray);
+        status = new ParsePosition(0);
 
+        // Build the expected results of formatting with the original ChoiceFormat
         StringBuilder before = new StringBuilder();
         for (double i = 1.0; i <= 7.0; ++i) {
             status.setIndex(0);
-            String s = form.format(i);
+            String s = cFmt.format(i);
             before.append(" ");
             before.append(s);
-            before.append(form.parse(form.format(i),status));
+            before.append(cFmt.parse(cFmt.format(i), status));
         }
-        String original = before.toString();
+        expectedFormattedOutput = before.toString();
+    }
 
-        double[] newLimits = form.getLimits();
-        String[] newFormats = (String[])form.getFormats();
+    /*
+     * Ensure that mutating the arrays returned by getChoices and getLimits does
+     * not affect the internal representation of the ChoiceFormat.
+     */
+    @Test
+    public void immutableArraysFromGetters() {
+        // Modify the array returned by getFormats() -> newFormats
+        String[] newFormats = (String[]) cFmt.getFormats();
         newFormats[6] = "Doyoubi";
         StringBuilder after = new StringBuilder();
         for (double i = 1.0; i <= 7.0; ++i) {
             status.setIndex(0);
-            String s = form.format(i);
+            String s = cFmt.format(i);
             after.append(" ");
             after.append(s);
-            after.append(form.parse(form.format(i),status));
+            after.append(cFmt.parse(cFmt.format(i), status));
         }
-        if (!original.equals(after.toString())) {
-            err = true;
-            System.err.println("  Expected:" + before
-                               + "\n  Got:     " + after);
-        }
+        // Compare the expected results with the new formatted results
+        assertEquals(after.toString(), expectedFormattedOutput,
+                "Mutating array returned from getter changed internals of ChoiceFormat");
+    }
 
-        dayOfWeekNames[6] = "Saturday";
-        after = new StringBuilder();
+    /*
+     * Ensure that mutating the arrays passed to setChoices/constructor does
+     * not affect the internal representation of the ChoiceFormat.
+     */
+    @Test
+    public void immutableArraysFromSetter() {
+        // Modify the array passed to setFormats() -> dayOfWeekNames
+        originalSetterArray[6] = "Saturday";
+        StringBuilder after = new StringBuilder();
         for (double i = 1.0; i <= 7.0; ++i) {
             status.setIndex(0);
-            String s = form.format(i);
+            String s = cFmt.format(i);
             after.append(" ");
             after.append(s);
-            after.append(form.parse(form.format(i),status));
+            after.append(cFmt.parse(cFmt.format(i), status));
         }
-        if (!original.equals(after.toString())) {
-            err = true;
-            System.err.println("  Expected:" + before
-                               + "\n  Got:     " + after);
-        }
-
-        if (err) {
-            throw new RuntimeException("Failed.");
-        } else {
-            System.out.println("Passed.");
-        }
+        // Compare the expected results with the new formatted results
+        assertEquals(after.toString(), expectedFormattedOutput,
+                "Mutating array passed to setter changed internals of ChoiceFormat");
     }
 }

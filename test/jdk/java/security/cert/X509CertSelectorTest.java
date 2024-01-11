@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,13 +21,9 @@
  * questions.
  */
 import static sun.security.x509.GeneralNameInterface.NAME_DIRECTORY;
-import static sun.security.x509.NameConstraintsExtension.EXCLUDED_SUBTREES;
-import static sun.security.x509.NameConstraintsExtension.PERMITTED_SUBTREES;
 
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.math.BigInteger;
 import java.security.GeneralSecurityException;
 import java.security.KeyFactory;
@@ -64,10 +60,11 @@ import sun.security.x509.PolicyInformation;
 import sun.security.x509.PrivateKeyUsageExtension;
 import sun.security.x509.SubjectAlternativeNameExtension;
 import sun.security.x509.X500Name;
+import sun.security.util.Debug;
 
 /*
  * @test
- * @bug 8074931
+ * @bug 8074931 8296787
  * @summary This class tests the X509CertSelector. The tests check particular criteria
  *          by setting them to a value that should match our test certificate and
  *          ensuring that they do match, then setting them to a value that should not
@@ -195,6 +192,14 @@ public class X509CertSelectorTest {
         // good match
         selector.setSerialNumber(cert.getSerialNumber());
         checkMatch(selector, cert, true);
+
+        // check serial number format
+        String serialNum = Debug.toString(selector.getSerialNumber());
+        String expected = "38:df:82:b8";
+        if (!serialNum.equals(expected)) {
+            throw new RuntimeException("Serial number toString format is incorrect. Got: "
+                + serialNum + " Expected: " + expected);
+        }
     }
 
     // Tests matching on the issuer name contained in the certificate.
@@ -284,7 +289,7 @@ public class X509CertSelectorTest {
         DerInputStream in = new DerInputStream(cert.getExtensionValue("2.5.29.16"));
         byte[] encoded = in.getOctetString();
         PrivateKeyUsageExtension ext = new PrivateKeyUsageExtension(false, encoded);
-        Date validDate = (Date) ext.get(PrivateKeyUsageExtension.NOT_BEFORE);
+        Date validDate = ext.getNotBefore();
         selector.setPrivateKeyValid(validDate);
         checkMatch(selector, cert, true);
 
@@ -351,8 +356,8 @@ public class X509CertSelectorTest {
         DerInputStream in = new DerInputStream(cert.getExtensionValue("2.5.29.17"));
         byte[] encoded = in.getOctetString();
         SubjectAlternativeNameExtension ext = new SubjectAlternativeNameExtension(false, encoded);
-        GeneralNames names = (GeneralNames) ext.get(SubjectAlternativeNameExtension.SUBJECT_NAME);
-        GeneralName name = (GeneralName) names.get(0);
+        GeneralNames names = ext.getNames();
+        GeneralName name = names.get(0);
         selector.setSubjectAlternativeNames(null);
         DerOutputStream tmp2 = new DerOutputStream();
         name.getName().encode(tmp2);
@@ -383,7 +388,7 @@ public class X509CertSelectorTest {
         // good match
         DerInputStream in = new DerInputStream(cert.getExtensionValue("2.5.29.32"));
         CertificatePoliciesExtension ext = new CertificatePoliciesExtension(false, in.getOctetString());
-        List<PolicyInformation> policies = ext.get(CertificatePoliciesExtension.POLICIES);
+        List<PolicyInformation> policies = ext.getCertPolicies();
         // match on the first policy id
         PolicyInformation policyInfo = (PolicyInformation) policies.get(0);
         s.clear();
@@ -403,8 +408,8 @@ public class X509CertSelectorTest {
         DerInputStream in = new DerInputStream(cert.getExtensionValue("2.5.29.30"));
         byte[] encoded = in.getOctetString();
         NameConstraintsExtension ext = new NameConstraintsExtension(false, encoded);
-        GeneralSubtrees permitted = (GeneralSubtrees) ext.get(PERMITTED_SUBTREES);
-        GeneralSubtrees excluded = (GeneralSubtrees) ext.get(EXCLUDED_SUBTREES);
+        GeneralSubtrees permitted = ext.getPermittedSubtrees();
+        GeneralSubtrees excluded = ext.getExcludedSubtrees();
 
         // bad matches on pathToName within excluded subtrees
         if (excluded != null) {

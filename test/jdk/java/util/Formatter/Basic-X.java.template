@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,103 +43,6 @@ import java.util.regex.Pattern;
 #end[datetime]
 
 public class Basic$Type$ extends Basic {
-
-    private static void test(String fs, String exp, Object ... args) {
-        Formatter f = new Formatter(new StringBuilder(), Locale.US);
-        f.format(fs, args);
-        ck(fs, exp, f.toString());
-
-        f = new Formatter(new StringBuilder(), Locale.US);
-        f.format("foo " + fs + " bar", args);
-        ck(fs, "foo " + exp + " bar", f.toString());
-    }
-
-    private static void test(Locale l, String fs, String exp, Object ... args)
-    {
-        Formatter f = new Formatter(new StringBuilder(), l);
-        f.format(fs, args);
-        ck(fs, exp, f.toString());
-
-        f = new Formatter(new StringBuilder(), l);
-        f.format("foo " + fs + " bar", args);
-        ck(fs, "foo " + exp + " bar", f.toString());
-    }
-
-    private static void test(String fs, Object ... args) {
-        Formatter f = new Formatter(new StringBuilder(), Locale.US);
-        f.format(fs, args);
-        ck(fs, "fail", f.toString());
-    }
-
-    private static void test(String fs) {
-        Formatter f = new Formatter(new StringBuilder(), Locale.US);
-        f.format(fs, "fail");
-        ck(fs, "fail", f.toString());
-    }
-
-    private static void testSysOut(String fs, String exp, Object ... args) {
-        FileOutputStream fos = null;
-        FileInputStream fis = null;
-        try {
-            PrintStream saveOut = System.out;
-            fos = new FileOutputStream("testSysOut");
-            System.setOut(new PrintStream(fos));
-            System.out.format(Locale.US, fs, args);
-            fos.close();
-
-            fis = new FileInputStream("testSysOut");
-            byte [] ba = new byte[exp.length()];
-            int len = fis.read(ba);
-            String got = new String(ba);
-            if (len != ba.length)
-                fail(fs, exp, got);
-            ck(fs, exp, got);
-
-            System.setOut(saveOut);
-        } catch (FileNotFoundException ex) {
-            fail(fs, ex.getClass());
-        } catch (IOException ex) {
-            fail(fs, ex.getClass());
-        } finally {
-            try {
-                if (fos != null)
-                    fos.close();
-                if (fis != null)
-                    fis.close();
-            } catch (IOException ex) {
-                fail(fs, ex.getClass());
-            }
-        }
-    }
-
-    private static void tryCatch(String fs, Class<?> ex) {
-        boolean caught = false;
-        try {
-            test(fs);
-        } catch (Throwable x) {
-            if (ex.isAssignableFrom(x.getClass()))
-                caught = true;
-        }
-        if (!caught)
-            fail(fs, ex);
-        else
-            pass();
-    }
-
-    private static void tryCatch(String fs, Class<?> ex, Object ... args) {
-        boolean caught = false;
-        try {
-            test(fs, args);
-        } catch (Throwable x) {
-            if (ex.isAssignableFrom(x.getClass()))
-                caught = true;
-        }
-        if (!caught)
-            fail(fs, ex);
-        else
-            pass();
-    }
-
 #if[datetime]
     private static void testDateTime(String fs, String exp, Calendar c) {
         testDateTime(fs, exp, c, true);
@@ -229,22 +132,22 @@ public class Basic$Type$ extends Basic {
 #end[dec]
 #if[Byte]
     private static $type$ negate($type$ v) {
-        return new $type$((byte) -v.byteValue());
+        return (byte) -v.byteValue();
     }
 #end[Byte]
 #if[Short]
     private static $type$ negate($type$ v) {
-        return new $type$((short) -v.shortValue());
+        return (short) -v.shortValue();
     }
 #end[Short]
 #if[Integer]
     private static $type$ negate($type$ v) {
-        return new $type$(-v.intValue());
+        return -v.intValue();
     }
 #end[Integer]
 #if[Long]
     private static $type$ negate($type$ v) {
-        return new $type$(-v.longValue());
+        return -v.longValue();
     }
 #end[Long]
 
@@ -284,19 +187,19 @@ public class Basic$Type$ extends Basic {
 #end[float]
 #if[Float]
     private static $type$ create(double v) {
-        return new $type$(v);
+        return (float) v;
     }
 
     private static $type$ negate($type$ v) {
-        return new $type$(-v.floatValue());
+        return -v.floatValue();
     }
 
     private static $type$ mult($type$ v, double mul) {
-        return new $type$(v.floatValue() * (float) mul);
+        return v.floatValue() * (float) mul;
     }
 
     private static $type$ recip($type$ v) {
-        return new $type$(1.0f / v.floatValue());
+        return 1.0f / v.floatValue();
     }
 #end[Float]
 #if[double]
@@ -319,19 +222,19 @@ public class Basic$Type$ extends Basic {
 #end[double]
 #if[Double]
     private static $type$ create(double v) {
-        return new $type$(v);
+        return v;
     }
 
     private static $type$ negate($type$ v) {
-        return new $type$(-v.doubleValue());
+        return -v.doubleValue();
     }
 
     private static $type$ mult($type$ v, double mul) {
-        return new $type$(v.doubleValue() * mul);
+        return v.doubleValue() * mul;
     }
 
     private static $type$ recip($type$ v) {
-        return new $type$(1.0 / v.doubleValue());
+        return 1.0 / v.doubleValue();
     }
 #end[Double]
 
@@ -435,7 +338,7 @@ public class Basic$Type$ extends Basic {
         test("%-4c", "i   ", 'i');
         test("%4C",  "   I", 'i');
         test("%-4C", "I   ", 'i');
-        test("%c", "i", new Character('i'));
+        test("%c", "i", Character.valueOf('i'));
         test("%c", "H", (byte) 72);
         test("%c", "i", (short) 105);
         test("%c", "!", (int) 33);
@@ -493,7 +396,7 @@ public class Basic$Type$ extends Basic {
         tryCatch("%#s", FormatFlagsConversionMismatchException.class, 0);
         tryCatch("%#s", FormatFlagsConversionMismatchException.class, 0.5f);
         tryCatch("%#s", FormatFlagsConversionMismatchException.class, "hello");
-        tryCatch("%#s", FormatFlagsConversionMismatchException.class, null);
+        tryCatch("%#s", FormatFlagsConversionMismatchException.class, (Object)null);
 
         //---------------------------------------------------------------------
         // %h
@@ -521,11 +424,21 @@ public class Basic$Type$ extends Basic {
         tryCatch("%#g", FormatFlagsConversionMismatchException.class);
 
 #if[dec]
-
 #if[prim]
         $type$ minByte = Byte.MIN_VALUE;   // -128
 #else[prim]
-        $type$ minByte = new $type$(Byte.MIN_VALUE);
+#if[Short]
+        $type$ minByte = (short) Byte.MIN_VALUE;
+#end[Short]
+#if[Byte]
+        $type$ minByte = Byte.MIN_VALUE;
+#end[Byte]
+#if[Integer]
+        $type$ minByte = (int) Byte.MIN_VALUE;
+#end[Integer]
+#if[Long]
+        $type$ minByte = (long) Byte.MIN_VALUE;
+#end[Long]
 #end[prim]
 
         //---------------------------------------------------------------------
@@ -886,9 +799,9 @@ public class Basic$Type$ extends Basic {
         //---------------------------------------------------------------------
         // %s - Float
         //---------------------------------------------------------------------
-        $type$ one = new $type$(1.0f);
-        $type$ ten = new $type$(10.0f);
-        $type$ pi  = new $type$(Math.PI);
+        $type$ one = 1.0f;
+        $type$ ten = 10.0f;
+        $type$ pi  = (float) Math.PI;
 
         test("%s", "3.1415927", pi);
 #end[Float]
@@ -906,9 +819,9 @@ public class Basic$Type$ extends Basic {
         //---------------------------------------------------------------------
         // %s - Double
         //---------------------------------------------------------------------
-        $type$ one = new $type$(1.0);
-        $type$ ten = new $type$(10.0);
-        $type$ pi  = new $type$(Math.PI);
+        $type$ one = 1.0d;
+        $type$ ten = 10.0d;
+        $type$ pi  = (double) Math.PI;
 
         test("%s", "3.141592653589793", pi);
 #end[Double]
@@ -1019,6 +932,16 @@ public class Basic$Type$ extends Basic {
         test("%3.0e", "1e+08", 100000000.00);
 
         //---------------------------------------------------------------------
+        // %e - adoption of Double.toString(double) algorithm
+        //---------------------------------------------------------------------
+        test("%.1e", "9.9e-324", 1e-323);
+        test("%.1e", "9.9e-323", 1e-322);
+        test("%.15e", "7.387900000000000e+20", 7.3879e20);
+        test("%.15e", "1.000000000000000e+23", 1e23);
+        test("%.16e", "2.0000000000000000e+23", 2e23);
+        test("%.16e", "1.9400994884341945e+25", 1.9400994884341945E25);
+
+        //---------------------------------------------------------------------
         // %f
         //
         // Floating-point conversions applicable to float, double, and
@@ -1078,6 +1001,14 @@ public class Basic$Type$ extends Basic {
         test("%,3.0f", "100,000,000", 100000000.00);
         test("%,3.0f", "10,000,000",  10000000.00);
         test("%,3.0f", "100,000,000", 100000000.00);
+
+        //---------------------------------------------------------------------
+        // %f - adoption of Double.toString(double) algorithm
+        //---------------------------------------------------------------------
+        test("%.0f", "738790000000000000000", 7.3879e20);
+        test("%.0f", "100000000000000000000000", 1e23);
+        test("%.0f", "200000000000000000000000", 2e23);
+        test("%.0f", "19400994884341945000000000", 1.9400994884341945E25);
 #if[BigDecimal]
         //---------------------------------------------------------------------
         // %f - BigDecimal
@@ -1273,6 +1204,16 @@ public class Basic$Type$ extends Basic {
         test("%3.10g", "100000000.0", 100000000.00);
 
         tryCatch("%#3.0g", FormatFlagsConversionMismatchException.class, 1000.00);
+
+        //---------------------------------------------------------------------
+        // %g - adoption of Double.toString(double) algorithm
+        //---------------------------------------------------------------------
+        test("%.2g", "9.9e-324", 1e-323);
+        test("%.2g", "9.9e-323", 1e-322);
+        test("%.16g", "7.387900000000000e+20", 7.3879e20);
+        test("%.16g", "1.000000000000000e+23", 1e23);
+        test("%.17g", "2.0000000000000000e+23", 2e23);
+        test("%.17g", "1.9400994884341945e+25", 1.9400994884341945E25);
 
         // double PI^300
         //    = 13962455701329742638131355433930076081862072808 ... e+149

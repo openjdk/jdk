@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -123,16 +123,11 @@ public final class CMSManager {
         }
 
         /* methods for creating ColorTransforms */
-        public ColorTransform createTransform(ICC_Profile profile,
-                                              int renderType,
-                                              int transformType) {
-            System.err.println(cName + ".createTransform(ICC_Profile,int,int)");
-            return tcmm.createTransform(profile, renderType, transformType);
-        }
-
-        public ColorTransform createTransform(ColorTransform[] transforms) {
-            System.err.println(cName + ".createTransform(ColorTransform[])");
-            return tcmm.createTransform(transforms);
+        public ColorTransform createTransform(int renderingIntent,
+                                              ICC_Profile... profiles)
+        {
+            System.err.println(cName + ".createTransform(int, ICC_Profile...)");
+            return tcmm.createTransform(renderingIntent, profiles);
         }
 
         private static String signatureToString(int sig) {

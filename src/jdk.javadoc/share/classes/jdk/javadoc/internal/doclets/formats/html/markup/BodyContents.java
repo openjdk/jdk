@@ -25,7 +25,7 @@
 
 package jdk.javadoc.internal.doclets.formats.html.markup;
 
-import jdk.javadoc.internal.doclets.toolkit.Content;
+import jdk.javadoc.internal.doclets.formats.html.Content;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -42,21 +42,21 @@ import java.util.Objects;
  */
 public class BodyContents extends Content {
 
-    private List<Content> mainContents = new ArrayList<>();
-    private HtmlTree header = null;
-    private HtmlTree footer = null;
+    private final List<Content> mainContents = new ArrayList<>();
+    private Content header = null;
+    private Content footer = null;
 
     public BodyContents addMainContent(Content content) {
         mainContents.add(content);
         return this;
     }
 
-    public BodyContents setHeader(HtmlTree header) {
+    public BodyContents setHeader(Content header) {
         this.header = Objects.requireNonNull(header);
         return this;
     }
 
-    public BodyContents setFooter(HtmlTree footer) {
+    public BodyContents setFooter(Content footer) {
         this.footer = footer;
         return this;
     }
@@ -74,8 +74,8 @@ public class BodyContents extends Content {
     }
 
     @Override
-    public boolean write(Writer out, boolean atNewline) throws IOException {
-        return toContent().write(out, atNewline);
+    public boolean write(Writer out, String newline, boolean atNewline) throws IOException {
+        return toContent().write(out, newline, atNewline);
     }
 
     /**
@@ -87,14 +87,9 @@ public class BodyContents extends Content {
         if (header == null)
             throw new NullPointerException();
 
-        HtmlTree flexHeader = header.addStyle(HtmlStyle.flexHeader);
-
-        var flexContent = HtmlTree.DIV(HtmlStyle.flexContent)
+        return new ContentBuilder()
+                .add(header)
                 .add(HtmlTree.MAIN().add(mainContents))
                 .add(footer == null ? Text.EMPTY : footer);
-
-        return HtmlTree.DIV(HtmlStyle.flexBox)
-                .add(flexHeader)
-                .add(flexContent);
     }
 }

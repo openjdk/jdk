@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import java.io.*;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.Hashtable;
+import java.util.Objects;
 import java.util.Vector;
 import static java.util.Locale.ENGLISH;
 
@@ -42,8 +43,9 @@ import java.lang.reflect.*;
  * JCE will be used.
  *
  * The jurisdiction policy file has the same syntax as JDK policy files except
- * that JCE has new permission classes called javax.crypto.CryptoPermission
- * and javax.crypto.CryptoAllPermission.
+ * that JCE has new permission classes called
+ * {@code javax.crypto.CryptoPermission} and
+ * {@code javax.crypto.CryptoAllPermission}.
  *
  * The format of a permission entry in the jurisdiction policy file is:
  *
@@ -74,16 +76,16 @@ final class CryptoPolicyParser {
     private boolean allPermEntryFound = false;
 
     /**
-     * Creates a CryptoPolicyParser object.
+     * Creates a {@code CryptoPolicyParser} object.
      */
     CryptoPolicyParser() {
         grantEntries = new Vector<>();
     }
 
     /**
-     * Reads a policy configuration using a Reader object. <p>
+     * Reads a policy configuration using a {@code Reader} object. <p>
      *
-     * @param policy the policy Reader object.
+     * @param policy the policy {@code Reader} object.
      *
      * @exception ParsingException if the policy configuration
      * contains a syntax error.
@@ -470,13 +472,8 @@ final class CryptoPolicyParser {
     CryptoPermission[] getPermissions() {
         ArrayList<CryptoPermission> result = new ArrayList<>();
 
-        Enumeration<GrantEntry> grantEnum = grantEntries.elements();
-        while (grantEnum.hasMoreElements()) {
-            GrantEntry ge = grantEnum.nextElement();
-            Enumeration<CryptoPermissionEntry> permEnum =
-                    ge.permissionElements();
-            while (permEnum.hasMoreElements()) {
-                CryptoPermissionEntry pe = permEnum.nextElement();
+        for (GrantEntry ge : grantEntries) {
+            for (CryptoPermissionEntry pe : ge.permissionEntries) {
                 if (pe.cryptoPermission.equals(
                                         "javax.crypto.CryptoAllPermission")) {
                     result.add(CryptoAllPermission.INSTANCE);
@@ -537,8 +534,8 @@ final class CryptoPolicyParser {
     }
 
     /**
-     * Each grant entry in the policy configuration file is  represented by a
-     * GrantEntry object.
+     * Each grant entry in the policy configuration file is represented by a
+     * {@code GrantEntry} object.
      * <p>
      * For example, the entry
      * <pre>
@@ -576,29 +573,11 @@ final class CryptoPolicyParser {
         {
             permissionEntries.addElement(pe);
         }
-
-        boolean remove(CryptoPermissionEntry pe)
-        {
-            return permissionEntries.removeElement(pe);
-        }
-
-        boolean contains(CryptoPermissionEntry pe)
-        {
-            return permissionEntries.contains(pe);
-        }
-
-        /**
-         * Enumerate all the permission entries in this GrantEntry.
-         */
-        Enumeration<CryptoPermissionEntry> permissionElements(){
-            return permissionEntries.elements();
-        }
-
     }
 
     /**
      * Each crypto permission entry in the policy configuration file is
-     * represented by a CryptoPermissionEntry object.
+     * represented by a {@code CryptoPermissionEntry} object.
      * <p>
      * For example, the entry
      * <pre>
@@ -638,20 +617,17 @@ final class CryptoPolicyParser {
          * Calculates a hash code value for the object.  Objects
          * which are equal will also have the same hashcode.
          */
+        @Override
         public int hashCode() {
-            int retval = cryptoPermission.hashCode();
-            if (alg != null) retval ^= alg.hashCode();
-            if (exemptionMechanism != null) {
-                retval ^= exemptionMechanism.hashCode();
-            }
-            retval ^= maxKeySize;
-            if (checkParam) retval ^= 100;
-            if (algParamSpec != null) {
-                retval ^= algParamSpec.hashCode();
-            }
-            return retval;
+            return cryptoPermission.hashCode()
+                    ^ Objects.hashCode(alg)
+                    ^ Objects.hashCode(exemptionMechanism)
+                    ^ maxKeySize
+                    ^ (checkParam ? 100 : 0)
+                    ^ Objects.hashCode(algParamSpec);
         }
 
+        @Override
         public boolean equals(Object obj) {
             if (obj == this)
                 return true;
@@ -659,12 +635,8 @@ final class CryptoPolicyParser {
             if (!(obj instanceof CryptoPermissionEntry that))
                 return false;
 
-            if (this.cryptoPermission == null) {
-                if (that.cryptoPermission != null) return false;
-            } else {
-                if (!this.cryptoPermission.equals(
-                                                 that.cryptoPermission))
-                    return false;
+            if (!Objects.equals(this.cryptoPermission, that.cryptoPermission)) {
+                return false;
             }
 
             if (this.alg == null) {
@@ -674,15 +646,11 @@ final class CryptoPolicyParser {
                     return false;
             }
 
-            if (!(this.maxKeySize == that.maxKeySize)) return false;
+            if (this.maxKeySize != that.maxKeySize) return false;
 
             if (this.checkParam != that.checkParam) return false;
 
-            if (this.algParamSpec == null) {
-                return that.algParamSpec == null;
-            } else {
-                return this.algParamSpec.equals(that.algParamSpec);
-            }
+            return Objects.equals(this.algParamSpec, that.algParamSpec);
         }
     }
 
@@ -692,7 +660,7 @@ final class CryptoPolicyParser {
         private static final long serialVersionUID = 7147241245566588374L;
 
         /**
-         * Constructs a ParsingException with the specified
+         * Constructs a {@code ParsingException} with the specified
          * detail message.
          * @param msg the detail message.
          */

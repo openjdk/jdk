@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,7 @@ import com.sun.tools.javac.code.Attribute.RetentionPolicy;
 import com.sun.tools.javac.code.Lint.LintCategory;
 import com.sun.tools.javac.code.Source.Feature;
 import com.sun.tools.javac.code.Type.UndetVar.InferenceBound;
-import com.sun.tools.javac.code.TypeMetadata.Entry.Kind;
+import com.sun.tools.javac.code.TypeMetadata.Annotations;
 import com.sun.tools.javac.comp.AttrContext;
 import com.sun.tools.javac.comp.Check;
 import com.sun.tools.javac.comp.Enter;
@@ -92,8 +92,6 @@ public class Types {
     final Symtab syms;
     final JavacMessages messages;
     final Names names;
-    final boolean allowDefaultMethods;
-    final boolean mapCapturesToBounds;
     final Check chk;
     final Enter enter;
     JCDiagnostic.Factory diags;
@@ -110,13 +108,12 @@ public class Types {
         return instance;
     }
 
+    @SuppressWarnings("this-escape")
     protected Types(Context context) {
         context.put(typesKey, this);
         syms = Symtab.instance(context);
         names = Names.instance(context);
         Source source = Source.instance(context);
-        allowDefaultMethods = Feature.DEFAULT_METHODS.allowedInSource(source);
-        mapCapturesToBounds = Feature.MAP_CAPTURES_TO_BOUNDS.allowedInSource(source);
         chk = Check.instance(context);
         enter = Enter.instance(context);
         capturedName = names.fromString("<captured wildcard>");
@@ -1411,9 +1408,6 @@ public class Types {
 
                     Map<Symbol,Type> tMap = new HashMap<>();
                     for (Type ti : interfaces(t)) {
-                        if (tMap.containsKey(ti)) {
-                            throw new AssertionError("Malformed intersection");
-                        }
                         tMap.put(ti.tsym, ti);
                     }
                     for (Type si : interfaces(s)) {
@@ -1671,37 +1665,46 @@ public class Types {
                 && (t.tsym.isSealed() || s.tsym.isSealed())) {
             return (t.isCompound() || s.isCompound()) ?
                     true :
-                    !areDisjoint((ClassSymbol)t.tsym, (ClassSymbol)s.tsym);
+                    !(new DisjointChecker().areDisjoint((ClassSymbol)t.tsym, (ClassSymbol)s.tsym));
         }
         return result;
     }
     // where
-        private boolean areDisjoint(ClassSymbol ts, ClassSymbol ss) {
-            if (isSubtype(erasure(ts.type), erasure(ss.type))) {
-                return false;
-            }
-            // if both are classes or both are interfaces, shortcut
-            if (ts.isInterface() == ss.isInterface() && isSubtype(erasure(ss.type), erasure(ts.type))) {
-                return false;
-            }
-            if (ts.isInterface() && !ss.isInterface()) {
-                /* so ts is interface but ss is a class
-                 * an interface is disjoint from a class if the class is disjoint form the interface
+        class DisjointChecker {
+            Set<Pair<ClassSymbol, ClassSymbol>> pairsSeen = new HashSet<>();
+            private boolean areDisjoint(ClassSymbol ts, ClassSymbol ss) {
+                Pair<ClassSymbol, ClassSymbol> newPair = new Pair<>(ts, ss);
+                /* if we are seeing the same pair again then there is an issue with the sealed hierarchy
+                 * bail out, a detailed error will be reported downstream
                  */
-                return areDisjoint(ss, ts);
+                if (!pairsSeen.add(newPair))
+                    return false;
+                if (isSubtype(erasure(ts.type), erasure(ss.type))) {
+                    return false;
+                }
+                // if both are classes or both are interfaces, shortcut
+                if (ts.isInterface() == ss.isInterface() && isSubtype(erasure(ss.type), erasure(ts.type))) {
+                    return false;
+                }
+                if (ts.isInterface() && !ss.isInterface()) {
+                    /* so ts is interface but ss is a class
+                     * an interface is disjoint from a class if the class is disjoint form the interface
+                     */
+                    return areDisjoint(ss, ts);
+                }
+                // a final class that is not subtype of ss is disjoint
+                if (!ts.isInterface() && ts.isFinal()) {
+                    return true;
+                }
+                // if at least one is sealed
+                if (ts.isSealed() || ss.isSealed()) {
+                    // permitted subtypes have to be disjoint with the other symbol
+                    ClassSymbol sealedOne = ts.isSealed() ? ts : ss;
+                    ClassSymbol other = sealedOne == ts ? ss : ts;
+                    return sealedOne.permitted.stream().allMatch(sym -> areDisjoint((ClassSymbol)sym, other));
+                }
+                return false;
             }
-            // a final class that is not subtype of ss is disjoint
-            if (!ts.isInterface() && ts.isFinal()) {
-                return true;
-            }
-            // if at least one is sealed
-            if (ts.isSealed() || ss.isSealed()) {
-                // permitted subtypes have to be disjoint with the other symbol
-                ClassSymbol sealedOne = ts.isSealed() ? ts : ss;
-                ClassSymbol other = sealedOne == ts ? ss : ts;
-                return sealedOne.permitted.stream().allMatch(sym -> areDisjoint((ClassSymbol)sym, other));
-            }
-            return false;
         }
 
         private TypeRelation isCastable = new TypeRelation() {
@@ -1856,7 +1859,7 @@ public class Types {
                     if (elemtype(t).isPrimitive() || elemtype(s).isPrimitive()) {
                         return elemtype(t).hasTag(elemtype(s).getTag());
                     } else {
-                        return visit(elemtype(t), elemtype(s));
+                        return isCastable(elemtype(t), elemtype(s), warnStack.head);
                     }
                 default:
                     return false;
@@ -2404,20 +2407,26 @@ public class Types {
     }
     // where
         private TypeMapping<Boolean> erasure = new StructuralTypeMapping<Boolean>() {
+            @SuppressWarnings("fallthrough")
             private Type combineMetadata(final Type s,
                                          final Type t) {
-                if (t.getMetadata() != TypeMetadata.EMPTY) {
-                    switch (s.getKind()) {
-                        case OTHER:
-                        case UNION:
-                        case INTERSECTION:
-                        case PACKAGE:
-                        case EXECUTABLE:
-                        case NONE:
-                        case VOID:
-                        case ERROR:
+                if (t.getMetadata().nonEmpty()) {
+                    switch (s.getTag()) {
+                        case CLASS:
+                            if (s instanceof UnionClassType ||
+                                s instanceof IntersectionClassType) {
+                                return s;
+                            }
+                            //fall-through
+                        case BYTE, CHAR, SHORT, LONG, FLOAT, INT, DOUBLE, BOOLEAN,
+                             ARRAY, MODULE, TYPEVAR, WILDCARD, BOT:
+                            return s.dropMetadata(Annotations.class);
+                        case VOID, METHOD, PACKAGE, FORALL, DEFERRED,
+                             NONE, ERROR, UNKNOWN, UNDETVAR, UNINITIALIZED_THIS,
+                             UNINITIALIZED_OBJECT:
                             return s;
-                        default: return s.cloneWithMetadata(s.getMetadata().without(Kind.ANNOTATIONS));
+                        default:
+                            throw new AssertionError(s.getTag().name());
                     }
                 } else {
                     return s;
@@ -2444,7 +2453,7 @@ public class Types {
                 Type erased = t.tsym.erasure(Types.this);
                 if (recurse) {
                     erased = new ErasedClassType(erased.getEnclosingType(),erased.tsym,
-                            t.getMetadata().without(Kind.ANNOTATIONS));
+                            t.dropMetadata(Annotations.class).getMetadata());
                     return erased;
                 } else {
                     return combineMetadata(erased, t);
@@ -2799,11 +2808,7 @@ public class Types {
      * @return true if t is a subsignature of s.
      */
     public boolean isSubSignature(Type t, Type s) {
-        return isSubSignature(t, s, true);
-    }
-
-    public boolean isSubSignature(Type t, Type s, boolean strict) {
-        return hasSameArgs(t, s, strict) || hasSameArgs(t, erasure(s), strict);
+        return hasSameArgs(t, s, true) || hasSameArgs(t, erasure(s), true);
     }
 
     /**
@@ -2873,8 +2878,8 @@ public class Types {
 
     /**
      * Merge multiple abstract methods. The preferred method is a method that is a subsignature
-     * of all the other signatures and whose return type is more specific {@see MostSpecificReturnCheck}.
-     * The resulting preferred method has a thrown clause that is the intersection of the merged
+     * of all the other signatures and whose return type is more specific {@link MostSpecificReturnCheck}.
+     * The resulting preferred method has a throws clause that is the intersection of the merged
      * methods' clauses.
      */
     public Optional<Symbol> mergeAbstracts(List<Symbol> ambiguousInOrder, Type site, boolean sigCheck) {
@@ -3126,11 +3131,9 @@ public class Types {
                         MethodSymbol implmeth = absmeth.implementation(impl, this, true);
                         if (implmeth == null || implmeth == absmeth) {
                             //look for default implementations
-                            if (allowDefaultMethods) {
-                                MethodSymbol prov = interfaceCandidates(impl.type, absmeth).head;
-                                if (prov != null && prov.overrides(absmeth, impl, this, true)) {
-                                    implmeth = prov;
-                                }
+                            MethodSymbol prov = interfaceCandidates(impl.type, absmeth).head;
+                            if (prov != null && prov.overrides(absmeth, impl, this, true)) {
+                                implmeth = prov;
                             }
                         }
                         if (implmeth == null || implmeth == absmeth) {
@@ -3705,7 +3708,7 @@ public class Types {
      *
      * <p>A closure is a list of all the supertypes and interfaces of
      * a class or interface type, ordered by ClassSymbol.precedes
-     * (that is, subclasses come first, arbitrary but fixed
+     * (that is, subclasses come first, arbitrarily but fixed
      * otherwise).
      */
     private Map<Type,List<Type>> closureCache = new HashMap<>();
@@ -3736,7 +3739,7 @@ public class Types {
     }
 
     /**
-     * Collect types into a new closure (using a @code{ClosureHolder})
+     * Collect types into a new closure (using a {@code ClosureHolder})
      */
     public Collector<Type, ClosureHolder, List<Type>> closureCollector(boolean minClosure, BiPredicate<Type, Type> shouldSkip) {
         return Collector.of(() -> new ClosureHolder(minClosure, shouldSkip),
@@ -5204,7 +5207,7 @@ public class Types {
                 append(rawOuter ? '$' : '.');
                 Assert.check(c.flatname.startsWith(c.owner.enclClass().flatname));
                 append(rawOuter
-                        ? c.flatname.subName(c.owner.enclClass().flatname.getByteLength() + 1, c.flatname.getByteLength())
+                        ? c.flatname.subName(c.owner.enclClass().flatname.length() + 1)
                         : c.name);
             } else {
                 append(externalize(c.flatname));

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,8 +62,11 @@ public class TestCastMethods {
             makePair(FSPEC128, ISPEC128),
             makePair(FSPEC64, DSPEC128),
             makePair(FSPEC128, DSPEC256),
+            makePair(FSPEC128, ISPEC128),
+            makePair(FSPEC128, SSPEC64),
             makePair(DSPEC128, FSPEC64),
             makePair(DSPEC256, FSPEC128),
+            makePair(DSPEC128, ISPEC64),
             makePair(BSPEC64, SSPEC64, true),
             makePair(BSPEC64, SSPEC128, true),
             makePair(BSPEC64, ISPEC128, true),
@@ -74,6 +77,11 @@ public class TestCastMethods {
     );
 
     public static final List<VectorSpeciesPair> AVX2_CAST_TESTS = Stream.concat(AVX1_CAST_TESTS.stream(), Stream.of(
+            makePair(DSPEC256, ISPEC128),
+            makePair(DSPEC256, SSPEC64),
+            makePair(FSPEC256, ISPEC256),
+            makePair(FSPEC256, SSPEC128),
+            makePair(FSPEC256, BSPEC64),
             makePair(BSPEC128, SSPEC256),
             makePair(BSPEC64, ISPEC256),
             makePair(BSPEC64, LSPEC256),
@@ -89,7 +97,6 @@ public class TestCastMethods {
             makePair(LSPEC256, BSPEC64),
             makePair(LSPEC256, SSPEC64),
             makePair(LSPEC256, ISPEC128),
-            makePair(FSPEC256, ISPEC256),
             makePair(BSPEC128, SSPEC256, true),
             makePair(BSPEC64, ISPEC256, true),
             makePair(BSPEC64, LSPEC256, true),
@@ -115,9 +122,14 @@ public class TestCastMethods {
             makePair(LSPEC512, BSPEC64),
             makePair(LSPEC512, SSPEC128),
             makePair(LSPEC512, ISPEC256),
-            makePair(FSPEC512, ISPEC512),
             makePair(FSPEC256, DSPEC512),
             makePair(DSPEC512, FSPEC256),
+            makePair(DSPEC512, ISPEC256),
+            makePair(DSPEC512, SSPEC128),
+            makePair(DSPEC512, BSPEC64),
+            makePair(FSPEC512, ISPEC512),
+            makePair(FSPEC512, SSPEC256),
+            makePair(FSPEC512, BSPEC128),
             makePair(BSPEC128, ISPEC512, true),
             makePair(BSPEC64, LSPEC512, true),
             makePair(SSPEC256, ISPEC512, true),
@@ -216,7 +228,74 @@ public class TestCastMethods {
             makePair(DSPEC512, LSPEC512),
             makePair(DSPEC128, FSPEC64),
             makePair(DSPEC256, FSPEC128),
-            makePair(DSPEC512, FSPEC256)
+            makePair(DSPEC512, FSPEC256),
+
+            makePair(BSPEC64, SSPEC64, true),
+            makePair(BSPEC64, SSPEC128, true),
+            makePair(BSPEC64, SSPEC256, true),
+            makePair(BSPEC64, SSPEC512, true),
+            makePair(BSPEC64, ISPEC128, true),
+            makePair(BSPEC64, ISPEC256, true),
+            makePair(BSPEC64, ISPEC512, true),
+            makePair(BSPEC64, LSPEC256, true),
+            makePair(BSPEC64, LSPEC512, true),
+            makePair(BSPEC128, SSPEC64, true),
+            makePair(BSPEC128, SSPEC128, true),
+            makePair(BSPEC128, SSPEC256, true),
+            makePair(BSPEC128, SSPEC512, true),
+            makePair(BSPEC128, ISPEC128, true),
+            makePair(BSPEC128, ISPEC256, true),
+            makePair(BSPEC128, ISPEC512, true),
+            makePair(BSPEC128, LSPEC256, true),
+            makePair(BSPEC128, LSPEC512, true),
+            makePair(BSPEC256, SSPEC64, true),
+            makePair(BSPEC256, SSPEC128, true),
+            makePair(BSPEC256, SSPEC256, true),
+            makePair(BSPEC256, SSPEC512, true),
+            makePair(BSPEC256, ISPEC128, true),
+            makePair(BSPEC256, ISPEC256, true),
+            makePair(BSPEC256, ISPEC512, true),
+            makePair(BSPEC256, LSPEC256, true),
+            makePair(BSPEC256, LSPEC512, true),
+            makePair(BSPEC512, SSPEC64, true),
+            makePair(BSPEC512, SSPEC128, true),
+            makePair(BSPEC512, SSPEC256, true),
+            makePair(BSPEC512, SSPEC512, true),
+            makePair(BSPEC512, ISPEC128, true),
+            makePair(BSPEC512, ISPEC256, true),
+            makePair(BSPEC512, ISPEC512, true),
+            makePair(BSPEC512, LSPEC256, true),
+            makePair(BSPEC512, LSPEC512, true),
+
+            makePair(SSPEC64, ISPEC128, true),
+            makePair(SSPEC64, ISPEC256, true),
+            makePair(SSPEC64, ISPEC512, true),
+            makePair(SSPEC64, LSPEC256, true),
+            makePair(SSPEC64, LSPEC512, true),
+            makePair(SSPEC128, ISPEC128, true),
+            makePair(SSPEC128, ISPEC256, true),
+            makePair(SSPEC128, ISPEC512, true),
+            makePair(SSPEC128, LSPEC256, true),
+            makePair(SSPEC128, LSPEC512, true),
+            makePair(SSPEC256, ISPEC128, true),
+            makePair(SSPEC256, ISPEC256, true),
+            makePair(SSPEC256, ISPEC512, true),
+            makePair(SSPEC256, LSPEC256, true),
+            makePair(SSPEC256, LSPEC512, true),
+            makePair(SSPEC512, ISPEC128, true),
+            makePair(SSPEC512, ISPEC256, true),
+            makePair(SSPEC512, ISPEC512, true),
+            makePair(SSPEC512, LSPEC256, true),
+            makePair(SSPEC512, LSPEC512, true),
+
+            makePair(ISPEC64, LSPEC128, true),
+            makePair(ISPEC64, LSPEC256, true),
+            makePair(ISPEC128, LSPEC128, true),
+            makePair(ISPEC128, LSPEC256, true),
+            makePair(ISPEC256, LSPEC128, true),
+            makePair(ISPEC256, LSPEC256, true),
+            makePair(ISPEC512, LSPEC128, true),
+            makePair(ISPEC512, LSPEC256, true)
     );
 
     public static final List<VectorSpeciesPair> NEON_CAST_TESTS = List.of(
@@ -245,6 +324,16 @@ public class TestCastMethods {
             makePair(FSPEC64, DSPEC128),
             makePair(DSPEC128, ISPEC64),
             makePair(DSPEC128, LSPEC128),
-            makePair(DSPEC128, FSPEC64)
+            makePair(DSPEC128, FSPEC64),
+
+            makePair(BSPEC64, SSPEC64, true),
+            makePair(BSPEC64, SSPEC128, true),
+            makePair(BSPEC64, ISPEC128, true),
+            makePair(BSPEC128, SSPEC64, true),
+            makePair(BSPEC128, SSPEC128, true),
+            makePair(BSPEC128, ISPEC128, true),
+            makePair(SSPEC64, ISPEC128, true),
+            makePair(SSPEC128, ISPEC128, true),
+            makePair(ISPEC64, LSPEC128, true)
     );
 }

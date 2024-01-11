@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 #ifndef SHARE_CLASSFILE_COMPACTHASHTABLE_HPP
 #define SHARE_CLASSFILE_COMPACTHASHTABLE_HPP
 
+#include "cds/cds_globals.hpp"
 #include "oops/array.hpp"
 #include "oops/symbol.hpp"
 #include "runtime/globals.hpp"
@@ -278,7 +279,7 @@ public:
         }
       }
     }
-    return NULL;
+    return nullptr;
   }
 
   template <class ITER>
@@ -426,7 +427,7 @@ public:
   int scan_string_prefix();
   int scan_symbol_prefix();
 
-  jchar unescape(const char* from, const char* end, int count);
+  int unescape(const char* from, const char* end, int count);
   void get_utf8(char* utf8_buffer, int utf8_length);
   static void put_utf8(outputStream* st, const char* utf8_string, int utf8_length);
 };

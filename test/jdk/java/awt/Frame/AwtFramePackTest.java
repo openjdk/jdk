@@ -39,21 +39,37 @@ import javax.imageio.ImageIO;
  * @test
  * @bug 8265586
  * @key headful
- * @summary Tests whether insets are calculated correctly on Windows
- * for AWT Frame by checking the actual and expected/preferred frame sizes.
+ * @summary Tests whether correct native frame insets are obtained
+ * for Resizable & Non-Resizable AWT Frame by checking the actual
+ * and expected/preferred frame sizes.
  * @run main AwtFramePackTest
  */
-
 public class AwtFramePackTest {
-
     private static Frame frame;
     private static Robot robot;
+    private static StringBuffer errorLog = new StringBuffer();
 
     public static void main(String[] args) throws AWTException {
-        try {
-            robot = new Robot();
-            robot.setAutoDelay(300);
+        robot = new Robot();
+        robot.setAutoDelay(300);
 
+        // Resizable frame
+        createAWTFrame(true);
+
+        robot.waitForIdle();
+        robot.delay(500);
+
+        // Non-Resizable frame
+        createAWTFrame(false);
+
+        if (!errorLog.isEmpty()) {
+            throw new RuntimeException("Test failed due to the following" +
+                    " one or more errors: \n" + errorLog);
+        }
+    }
+
+    private static void createAWTFrame(boolean isResizable) {
+        try {
             frame = new Frame();
             frame.setLayout(new BorderLayout());
 
@@ -67,32 +83,36 @@ public class AwtFramePackTest {
             mb.add(m);
             frame.setMenuBar(mb);
 
+            frame.setResizable(isResizable);
             frame.pack();
             frame.setVisible(true);
 
-            robot.delay(500);
             robot.waitForIdle();
+            robot.delay(500);
 
             Dimension actualFrameSize = frame.getSize();
             Dimension expectedFrameSize = frame.getPreferredSize();
 
             if (!actualFrameSize.equals(expectedFrameSize)) {
-                System.out.println("Expected frame size: "+ expectedFrameSize);
-                System.out.println("Actual frame size: "+ actualFrameSize);
-                saveScreenCapture();
-                throw new RuntimeException("Expected and Actual frame size" +
-                        " are different. frame.pack() does not work!!");
+                String frameType = isResizable ? "ResizableFrame" : "NonResizableFrame";
+                System.out.println("Expected frame size: " + expectedFrameSize);
+                System.out.println("Actual frame size: " + actualFrameSize);
+                saveScreenCapture(frameType + ".png");
+                errorLog.append(frameType + ": Expected and Actual frame size" +
+                        " are different. frame.pack() does not work!! \n");
             }
         } finally {
-            frame.dispose();
+            if (frame != null) {
+                frame.dispose();
+            }
         }
     }
 
     // for debugging purpose, saves screen capture when test fails.
-    private static void saveScreenCapture() {
+    private static void saveScreenCapture(String filename) {
         BufferedImage image = robot.createScreenCapture(frame.getBounds());
         try {
-            ImageIO.write(image,"png", new File("Frame.png"));
+            ImageIO.write(image,"png", new File(filename));
         } catch (IOException e) {
             e.printStackTrace();
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +25,7 @@
 
 package sun.security.util;
 
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-import java.util.Arrays;
-import java.util.Collection;
+import java.util.*;
 import java.util.regex.Pattern;
 
 /**
@@ -87,7 +82,7 @@ public class AlgorithmDecomposer {
      * so that we can check the "SHA1" and "RSA" algorithm constraints
      * separately.
      * <p>
-     * Please override the method if need to support more name pattern.
+     * Please override the method if you need to support more name pattern.
      */
     public Set<String> decompose(String algorithm) {
         if (algorithm == null || algorithm.isEmpty()) {
@@ -157,9 +152,7 @@ public class AlgorithmDecomposer {
 
         for (Map.Entry<String, String> e : DECOMPOSED_DIGEST_NAMES.entrySet()) {
             if (elements.contains(e.getKey())) {
-                if (!elements.contains(e.getValue())) {
-                    elements.add(e.getValue());
-                }
+                elements.add(e.getValue());
                 elements.remove(e.getKey());
             }
         }

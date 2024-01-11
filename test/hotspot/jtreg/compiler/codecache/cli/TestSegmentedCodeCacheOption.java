@@ -25,6 +25,7 @@
  * @test
  * @bug 8015774
  * @summary Verify SegmentedCodeCache option's processing
+ * @requires vm.flagless
  * @library /test/lib /
  * @modules java.base/jdk.internal.misc
  *          java.compiler
@@ -40,7 +41,7 @@ import compiler.codecache.cli.common.CodeCacheOptions;
 import jdk.test.lib.process.ExitCode;
 import jdk.test.lib.Platform;
 import jdk.test.lib.cli.CommandLineOptionTest;
-import sun.hotspot.code.BlobType;
+import jdk.test.whitebox.code.BlobType;
 
 public class TestSegmentedCodeCacheOption {
     private static final String INT_MODE = "-Xint";

@@ -94,6 +94,7 @@ import java.lang.annotation.*;
  * and methods reflectively and those fields and methods may appear
  * otherwise unused in a {@code Serializable} class.
  *
+ * @spec serialization/index.html Java Object Serialization Specification
  * @see Serializable
  * @see Externalizable
  * @since 14

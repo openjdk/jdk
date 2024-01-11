@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@ public final class GCTokens {
 
     public static final String WB_INITIATED_YOUNG_GC = "Young (Normal) (WhiteBox Initiated Young GC)";
     public static final String WB_INITIATED_MIXED_GC = "Young (Mixed) (WhiteBox Initiated Young GC)";
-    public static final String WB_INITIATED_CMC = "WhiteBox Initiated Concurrent Mark";
+    public static final String WB_INITIATED_CMC = "WhiteBox Initiated Run to Breakpoint";
     public static final String FULL_GC = "Full (System.gc())";
     public static final String FULL_GC_MEMORY_PRESSURE = "WhiteBox Initiated Full GC";
     public static final String CMC = "Concurrent Mark)";

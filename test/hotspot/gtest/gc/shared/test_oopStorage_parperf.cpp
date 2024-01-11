@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,6 +52,8 @@ static uint _num_workers = 0;
 const size_t _storage_entries = 1000000;
 
 class OopStorageParIterPerf : public ::testing::Test {
+  OopStorage* _storage;
+
 public:
   OopStorageParIterPerf();
   ~OopStorageParIterPerf();
@@ -62,13 +64,13 @@ public:
   class Task;
   class Closure;
 
+  OopStorage& storage() const { return *_storage; }
   Tickspan run_task(Task* task, uint nthreads);
   void show_task(const Task* task, Tickspan duration, uint nthreads);
   void run_test(uint nthreads);
 
   static WorkerThreads* _workers;
 
-  OopStorage _storage;
   oop* _entries[_storage_entries];
 };
 
@@ -85,16 +87,17 @@ WorkerThreads* OopStorageParIterPerf::workers() const {
 }
 
 OopStorageParIterPerf::OopStorageParIterPerf() :
-  _storage("Test Storage", mtGC)
+  _storage(OopStorage::create("Test Storage", mtGC))
 {
   for (size_t i = 0; i < _storage_entries; ++i) {
-    _entries[i] = _storage.allocate();
+    _entries[i] = storage().allocate();
   }
   _num_workers = MIN2(_max_workers, (uint)os::processor_count());
 }
 
 OopStorageParIterPerf::~OopStorageParIterPerf() {
-  _storage.release(_entries, ARRAY_SIZE(_entries));
+  storage().release(_entries, ARRAY_SIZE(_entries));
+  delete _storage;
 }
 
 class OopStorageParIterPerf::VM_ParStateTime : public VM_GTestExecuteAtSafepoint {
@@ -177,7 +180,7 @@ void OopStorageParIterPerf::run_test(uint nthreads) {
   if (nthreads <= _num_workers) {
     SCOPED_TRACE(err_msg("Running test with %u threads", nthreads).buffer());
     Closure closure;
-    Task task(&_storage, &closure, nthreads);
+    Task task(&storage(), &closure, nthreads);
     Tickspan t = run_task(&task, nthreads);
     show_task(&task, t, nthreads);
   }

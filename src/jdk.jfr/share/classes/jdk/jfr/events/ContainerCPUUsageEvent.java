@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, DataDog. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -26,14 +26,9 @@
 package jdk.jfr.events;
 
 import jdk.jfr.Category;
-import jdk.jfr.DataAmount;
 import jdk.jfr.Description;
-import jdk.jfr.Enabled;
 import jdk.jfr.Label;
 import jdk.jfr.Name;
-import jdk.jfr.Period;
-import jdk.jfr.StackTrace;
-import jdk.jfr.Threshold;
 import jdk.jfr.Timespan;
 import jdk.jfr.internal.Type;
 
@@ -41,7 +36,7 @@ import jdk.jfr.internal.Type;
 @Label("CPU Usage")
 @Category({"Operating System", "Processor"})
 @Description("Container CPU usage related information")
-public class ContainerCPUUsageEvent extends AbstractJDKEvent {
+public class ContainerCPUUsageEvent extends AbstractPeriodicEvent {
   @Label("CPU Time")
   @Description("Aggregate time consumed by all tasks in the container")
   @Timespan

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 /* @test
  * @summary Unit test for java.net.URI
  * @bug 4464135 4505046 4503239 4438319 4991359 4866303 7023363 7041800
- *      7171415 6933879
+ *      7171415 6339649 6933879 8037396 8272072 8051627 8297687
  * @author Mark Reinhold
  */
 
@@ -1364,6 +1364,7 @@ public class Test {
     }
 
     static void eq(String expected, String actual) {
+        testCount++;
         if (expected == null && actual == null) {
             return;
         }
@@ -1612,9 +1613,59 @@ public class Test {
     // miscellaneous bugs/rfes that don't fit in with the test framework
 
     static void bugs() {
+        header("Bugs");
         b6339649();
         b6933879();
         b8037396();
+        b8051627();
+        b8272072();
+        b8297687();
+    }
+
+    private static void b8297687() {
+        // constructors that take a hostname should fail
+        test("ftps", "p.e.local|SIT@p.e.local", "/path", null)
+                .x().z();
+        test("ftps", null,"p.e.local|SIT@p.e.local", -1, "/path", null, null)
+                .x().z();
+        // constructors that take an authority component should succeed
+        test("ftps", "p.e.local|SIT@p.e.local", "/path", null,null)
+                .s("ftps")
+                .sp("//p.e.local%7CSIT@p.e.local/path")
+                .spd("//p.e.local|SIT@p.e.local/path")
+                .u("p.e.local%7CSIT")
+                .ud("p.e.local|SIT")
+                .h("p.e.local")
+                .n(-1)
+                .p("/path")
+                .pd("/path")
+                .z();
+
+        // check index in exception for constructors that should fail
+        try {
+            URI uri = new URI("ftps", "p.e.local|SIT@p.e.local", "/path", null);
+            throw new AssertionError("Expected URISyntaxException not thrown for " + uri);
+        } catch (URISyntaxException ex) {
+            if (ex.getMessage().contains("at index 16")) {
+                 System.out.println("Got expected exception: " + ex);
+            } else {
+                throw new AssertionError("Exception does not point at index 16", ex);
+            }
+        }
+        testCount++;
+
+        // check index in exception for constructors that should fail
+        try {
+            URI uri = new URI("ftps", null, "p.e.local|SIT@p.e.local", -1, "/path", null, null);
+            throw new AssertionError("Expected URISyntaxException not thrown for " + uri);
+        } catch (URISyntaxException ex) {
+            if (ex.getMessage().contains("at index 16")) {
+                System.out.println("Got expected exception: " + ex);
+            } else {
+                throw new AssertionError("Exception does not point at index 16", ex);
+            }
+        }
+        testCount++;
     }
 
     // 6339649 - include detail message from nested exception
@@ -1626,6 +1677,7 @@ public class Test {
                 throw new RuntimeException ("No detail message");
             }
         }
+        testCount++;
     }
 
     // 6933879 - check that "." and "_" characters are allowed in IPv6 scope_id.
@@ -1671,6 +1723,67 @@ public class Test {
         eq("/a%20b%5Bc%20d%5D", u.getRawPath());
         eq("a%20b[c%20d]", u.getRawQuery());
         eq("a%20b[c%20d]", u.getRawFragment());
+    }
+
+    // 8051627 - Invariants about java.net.URI resolve and relativize are wrong
+    private static void b8051627() {
+        try {
+            // Let u be a normalized absolute URI u which ends with "/" and
+            // v be a normalized relative URI v which does not start with "." or "/", then
+            // u.relativize(u.resolve(v)).equals(v) should be true
+            reltivizeAfterResolveTest("http://a/b/", "c/d", "c/d");
+            reltivizeAfterResolveTest("http://a/b/", "g;x?y#s", "g;x?y#s");
+
+            // when the URI condition is not met, u.relativize(u.resolve(v)).equals(v) may be false
+            // In the following examples, that should be false
+            reltivizeAfterResolveTest("http://a/b", "c/d", "http://a/c/d");
+            reltivizeAfterResolveTest("http://a/b/", "../c/d", "http://a/c/d");
+            reltivizeAfterResolveTest("http://a/b/", "/c/d", "http://a/c/d");
+            reltivizeAfterResolveTest("http://a/b/", "http://a/b/c/d", "c/d");
+
+            // Let u be a normalized absolute URI u which ends with "/" and
+            // v be a normalized absolute URI v, then
+            // u.resolve(u.relativize(v)).equals(v) should be true
+            resolveAfterRelativizeTest("http://a/b/", "http://a/b/c/d", "http://a/b/c/d");
+            resolveAfterRelativizeTest("http://a/b/", "http://a/b/c/g;x?y#s", "http://a/b/c/g;x?y#s");
+
+            // when the URI condition is not met, u.resolve(u.relativize(v)).equals(v) may be false
+            // In the following examples, that should be false
+            resolveAfterRelativizeTest("http://a/b", "http://a/b/c/d", "http://a/c/d");
+            resolveAfterRelativizeTest("http://a/b/", "c/d", "http://a/b/c/d");
+        } catch (URISyntaxException e) {
+            throw new AssertionError("shouldn't ever happen", e);
+        }
+    }
+    private static void reltivizeAfterResolveTest(String base, String target, String expected)
+        throws URISyntaxException {
+            URI baseURI = URI.create(base);
+            URI targetURI = URI.create(target);
+            eq(URI.create(expected), baseURI.relativize(baseURI.resolve(targetURI)));
+    }
+    private static void resolveAfterRelativizeTest(String base, String target, String expected)
+        throws URISyntaxException {
+            URI baseURI = URI.create(base);
+            URI targetURI = URI.create(target);
+            eq(URI.create(expected), baseURI.resolve(baseURI.relativize(targetURI)));
+    }
+
+    // 8272072 - Resolving URI relative path with no "/" may lead to incorrect toString
+    private static void b8272072() {
+        try {
+            URI baseURI = new URI("http://example.com");
+            URI relativeURI = new URI("test");
+            URI resolvedURI = baseURI.resolve(relativeURI);
+
+            eq(new URI("http://example.com/test"), resolvedURI);
+
+            baseURI = new URI("relativeBase");
+            resolvedURI = baseURI.resolve(relativeURI);
+
+            eq(new URI("test"), resolvedURI);
+        } catch (URISyntaxException e) {
+            throw new AssertionError("shouldn't ever happen", e);
+        }
     }
 
     public static void main(String[] args) throws Exception {

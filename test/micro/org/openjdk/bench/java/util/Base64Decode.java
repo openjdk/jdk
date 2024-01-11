@@ -31,15 +31,18 @@ import java.util.Random;
 import java.util.ArrayList;
 import java.util.concurrent.TimeUnit;
 
-@BenchmarkMode(Mode.AverageTime)
-@OutputTimeUnit(TimeUnit.NANOSECONDS)
+@BenchmarkMode(Mode.Throughput)
+@OutputTimeUnit(TimeUnit.MILLISECONDS)
 @State(Scope.Thread)
+@Warmup(iterations = 4, time = 2)
+@Measurement(iterations = 4, time = 2)
+@Fork(value = 3)
 public class Base64Decode {
 
-    private Base64.Encoder encoder, mimeEncoder;
-    private Base64.Decoder decoder, mimeDecoder;
-    private ArrayList<byte[]> encoded, mimeEncoded, errorEncoded;
-    private byte[] decoded, mimeDecoded, errorDecoded;
+    private Base64.Encoder encoder, mimeEncoder, urlEncoder;
+    private Base64.Decoder decoder, mimeDecoder, urlDecoder;
+    private ArrayList<byte[]> encoded, mimeEncoded, urlEncoded, errorEncoded;
+    private byte[] decoded, mimeDecoded, urlDecoded, errorDecoded;
 
     private static final int TESTSIZE = 1000;
 
@@ -57,6 +60,9 @@ public class Base64Decode {
     @Param({"144"})
     private int errorIndex;
 
+    @Param({"0"})
+    private int addSpecial;
+
     @Setup
     public void setup() {
         Random r = new Random(1123);
@@ -71,6 +77,11 @@ public class Base64Decode {
         mimeDecoder = Base64.getMimeDecoder();
         mimeEncoded = new ArrayList<byte[]> ();
 
+        urlDecoded = new byte[maxNumBytes + 1];
+        urlEncoder = Base64.getUrlEncoder();
+        urlDecoder = Base64.getUrlDecoder();
+        urlEncoded = new ArrayList<byte[]> ();
+
         errorDecoded = new byte[errorIndex + 100];
         errorEncoded = new ArrayList<byte[]> ();
 
@@ -80,6 +91,10 @@ public class Base64Decode {
             byte[] dst = new byte[((srcLen + 2) / 3) * 4];
             r.nextBytes(src);
             encoder.encode(src, dst);
+            if(addSpecial != 0){
+              dst[0] = '/';
+              dst[1] = '+';
+            }
             encoded.add(dst);
 
             int mimeSrcLen = 1 + r.nextInt(maxNumBytes);
@@ -89,13 +104,24 @@ public class Base64Decode {
             mimeEncoder.encode(mimeSrc, mimeDst);
             mimeEncoded.add(mimeDst);
 
+            int urlSrcLen = 1 + r.nextInt(maxNumBytes);
+            byte[] urlSrc = new byte[urlSrcLen];
+            byte[] urlDst = new byte[((urlSrcLen + 2) / 3) * 4];
+            r.nextBytes(urlSrc);
+            urlEncoder.encode(urlSrc, urlDst);
+            if(addSpecial != 0){
+              urlDst[0] = '_';
+              urlDst[1] = '-';
+            }
+            urlEncoded.add(urlDst);
+
             int errorSrcLen = errorIndex + r.nextInt(100);
             byte[] errorSrc = new byte[errorSrcLen];
             byte[] errorDst = new byte[(errorSrcLen + 2) / 3 * 4];
             r.nextBytes(errorSrc);
             encoder.encode(errorSrc, errorDst);
-            errorEncoded.add(errorDst);
             errorDst[errorIndex] = (byte) '?';
+            errorEncoded.add(errorDst);
         }
     }
 
@@ -114,6 +140,15 @@ public class Base64Decode {
         for (byte[] s : mimeEncoded) {
             mimeDecoder.decode(s, mimeDecoded);
             bh.consume(mimeDecoded);
+        }
+    }
+
+    @Benchmark
+    @OperationsPerInvocation(TESTSIZE)
+    public void testBase64URLDecode(Blackhole bh) {
+        for (byte[] s : urlEncoded) {
+            urlDecoder.decode(s, urlDecoded);
+            bh.consume(urlDecoded);
         }
     }
 

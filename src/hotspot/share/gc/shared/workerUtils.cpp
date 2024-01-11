@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -80,7 +80,7 @@ void WorkerThreadsBarrierSync::abort() {
 // SubTasksDone functions.
 
 SubTasksDone::SubTasksDone(uint n) :
-  _tasks(NULL), _n_tasks(n) {
+  _tasks(nullptr), _n_tasks(n) {
   _tasks = NEW_C_HEAP_ARRAY(bool, n, mtInternal);
   for (uint i = 0; i < _n_tasks; i++) {
     _tasks[i] = false;

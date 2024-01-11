@@ -238,7 +238,7 @@ jint check_add_module_exports(JNIEnv *env,
     printf("Check #C0:\n");
     exported = is_exported_to(env, baseModule, pkg, thisModule, open);
     if (exported != JNI_FALSE) {
-        sprintf(strbuf, "Check #C0: unexpected export of %s from base to this", pkg);
+        snprintf(strbuf, sizeof(strbuf), "Check #C0: unexpected export of %s from base to this", pkg);
         throw_exc(env, strbuf);
         return FAILED;
     }
@@ -248,7 +248,7 @@ jint check_add_module_exports(JNIEnv *env,
     err = add_module_exports(baseModule, pkg, thisModule, open);
     if (err != JVMTI_ERROR_NONE) {
         printf("#C1: jvmtiError from %s: %d\n", jvmti_fn, err);
-        sprintf(strbuf, "Check #C1: error in add export of %s from base to this", pkg);
+        snprintf(strbuf, sizeof(strbuf), "Check #C1: error in add export of %s from base to this", pkg);
         throw_exc(env, strbuf);
         return FAILED;
     }
@@ -257,7 +257,7 @@ jint check_add_module_exports(JNIEnv *env,
     printf("Check #C2:\n");
     exported = is_exported_to(env, baseModule, pkg, thisModule, open);
     if (exported == JNI_FALSE) {
-        sprintf(strbuf, "Check #C2: failed to export %s from base to this", pkg);
+        snprintf(strbuf, sizeof(strbuf), "Check #C2: failed to export %s from base to this", pkg);
         throw_exc(env, strbuf);
         return FAILED;
     }
@@ -266,7 +266,7 @@ jint check_add_module_exports(JNIEnv *env,
     printf("Check #C3:\n");
     exported = is_exported(env, baseModule, pkg, open);
     if (exported != JNI_FALSE) {
-        sprintf(strbuf, "Check #C3: unexpected export of %s from base to all modules", pkg);
+        snprintf(strbuf, sizeof(strbuf), "Check #C3: unexpected export of %s from base to all modules", pkg);
         throw_exc(env, strbuf);
         return FAILED;
     }

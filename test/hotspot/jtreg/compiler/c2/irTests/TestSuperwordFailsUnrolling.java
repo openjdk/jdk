@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2022, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,16 +25,16 @@
 package compiler.c2.irTests;
 
 import compiler.lib.ir_framework.*;
-import sun.hotspot.WhiteBox;
+import jdk.test.whitebox.WhiteBox;
 
 /*
  * @test
  * @bug 8283187
  * @summary C2: loop candidate for superword not always unrolled fully if superword fails
  * @library /test/lib /
- * @build sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
  * @requires vm.compiler2.enabled
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI compiler.c2.irTests.TestSuperwordFailsUnrolling
  */
 
@@ -44,9 +45,9 @@ public class TestSuperwordFailsUnrolling {
     public static void main(String[] args) {
         Object avx = wb.getVMFlag("UseAVX");
         if (avx != null && ((Long)avx) > 2) {
-            TestFramework.runWithFlags("-XX:UseAVX=2", "-XX:LoopMaxUnroll=8");
+            TestFramework.runWithFlags("-XX:UseAVX=2", "-XX:LoopMaxUnroll=8", "-XX:-SuperWordReductions");
         }
-        TestFramework.runWithFlags("-XX:LoopMaxUnroll=8");
+        TestFramework.runWithFlags("-XX:LoopMaxUnroll=8", "-XX:-SuperWordReductions");
     }
 
     @Test

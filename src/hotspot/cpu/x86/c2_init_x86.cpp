@@ -43,11 +43,11 @@ void Compile::pd_compiler2_init() {
 #endif // AMD64
 
   if (UseAVX < 3) {
-    int delta = XMMRegisterImpl::max_slots_per_register * XMMRegisterImpl::number_of_registers;
+    int delta = XMMRegister::max_slots_per_register * XMMRegister::number_of_registers;
     int bottom = ConcreteRegisterImpl::max_fpr;
     int top = bottom + delta;
     int middle = bottom + (delta / 2);
-    int xmm_slots = XMMRegisterImpl::max_slots_per_register;
+    int xmm_slots = XMMRegister::max_slots_per_register;
     int lower = xmm_slots / 2;
     // mark bad every register that we cannot get to if AVX less than 3, we have all slots in the array
     // Note: vm2opto is allocated to ConcreteRegisterImpl::number_of_registers

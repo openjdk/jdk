@@ -23,6 +23,7 @@
 /*
  * @test
  * @bug 5080830
+ * @key printer
  * @summary Verify if SheetCollate option is disabled for flavors that do not
  *          support SheetCollate
  * @run main/manual ServiceDlgSheetCollateTest

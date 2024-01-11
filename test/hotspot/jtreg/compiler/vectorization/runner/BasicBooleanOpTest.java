@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Arm Limited. All rights reserved.
+ * Copyright (c) 2022, 2023, Arm Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,23 +26,25 @@
  * @summary Vectorization test on basic boolean operations
  * @library /test/lib /
  *
- * @build sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
  *        compiler.vectorization.runner.VectorizationTestRunner
  *
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:.
  *                   -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI
  *                   compiler.vectorization.runner.BasicBooleanOpTest
  *
- * @requires vm.compiler2.enabled & vm.flagless
+ * @requires vm.compiler2.enabled
  */
 
 package compiler.vectorization.runner;
 
+import compiler.lib.ir_framework.*;
+
 public class BasicBooleanOpTest extends VectorizationTestRunner {
 
-    private static final int SIZE = 2345;
+    private static final int SIZE = 6543;
 
     private boolean[] a;
     private boolean[] b;
@@ -69,6 +71,12 @@ public class BasicBooleanOpTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeature = {"asimd", "true"},
+        counts = {IRNode.AND_VB, ">0"})
+    @IR(applyIfCPUFeatureAnd = {"avx512f", "false", "sse2", "true"},
+        counts = {IRNode.AND_VB, ">0"})
+    @IR(applyIfCPUFeature = {"avx512f", "true"},
+        counts = {IRNode.MACRO_LOGIC_V, ">0"})
     public boolean[] vectorAnd() {
         boolean[] res = new boolean[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -78,6 +86,8 @@ public class BasicBooleanOpTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+        counts = {IRNode.OR_VB, ">0"})
     public boolean[] vectorOr() {
         boolean[] res = new boolean[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -87,6 +97,8 @@ public class BasicBooleanOpTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+        counts = {IRNode.XOR_VB, ">0"})
     public boolean[] vectorXor() {
         boolean[] res = new boolean[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -95,4 +107,3 @@ public class BasicBooleanOpTest extends VectorizationTestRunner {
         return res;
     }
 }
-

@@ -474,7 +474,7 @@ class Range : public CompilationResourceObj {
  public:
   Range(int from, int to, Range* next);
 
-  static void      initialize(Arena* arena);
+  static void      initialize();
   static Range*    end()                         { return _end; }
 
   int              from() const                  { return _from; }
@@ -541,7 +541,7 @@ class Interval : public CompilationResourceObj {
  public:
   Interval(int reg_num);
 
-  static void      initialize(Arena* arena);
+  static void      initialize();
   static Interval* end()                         { return _end; }
 
   // accessors

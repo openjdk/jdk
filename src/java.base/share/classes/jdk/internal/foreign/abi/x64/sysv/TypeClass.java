@@ -25,9 +25,11 @@
 package jdk.internal.foreign.abi.x64.sysv;
 
 import java.lang.foreign.GroupLayout;
-import java.lang.foreign.MemoryAddress;
 import java.lang.foreign.MemoryLayout;
+import java.lang.foreign.MemorySegment;
+import java.lang.foreign.PaddingLayout;
 import java.lang.foreign.SequenceLayout;
+import java.lang.foreign.StructLayout;
 import java.lang.foreign.ValueLayout;
 import jdk.internal.foreign.Utils;
 
@@ -106,14 +108,14 @@ class TypeClass {
                 .collect(Collectors.toCollection(ArrayList::new));
     }
 
-    private static ArgumentClassImpl argumentClassFor(MemoryLayout layout) {
-        Class<?> carrier = ((ValueLayout)layout).carrier();
+    private static ArgumentClassImpl argumentClassFor(ValueLayout layout) {
+        Class<?> carrier = layout.carrier();
         if (carrier == boolean.class || carrier == byte.class || carrier == char.class ||
                 carrier == short.class || carrier == int.class || carrier == long.class) {
             return ArgumentClassImpl.INTEGER;
         } else if (carrier == float.class || carrier == double.class) {
             return ArgumentClassImpl.SSE;
-        } else if (carrier == MemoryAddress.class) {
+        } else if (carrier == MemorySegment.class) {
             return ArgumentClassImpl.POINTER;
         } else {
             throw new IllegalStateException("Cannot get here: " + carrier.getName());
@@ -173,12 +175,12 @@ class TypeClass {
 
     static TypeClass classifyLayout(MemoryLayout type) {
         try {
-            if (type instanceof ValueLayout) {
-                return ofValue((ValueLayout)type);
-            } else if (type instanceof GroupLayout) {
-                return ofStruct((GroupLayout)type);
+            if (type instanceof ValueLayout valueLayout) {
+                return ofValue(valueLayout);
+            } else if (type instanceof GroupLayout groupLayout) {
+                return ofStruct(groupLayout);
             } else {
-                throw new IllegalArgumentException("Unhandled type " + type);
+                throw new IllegalArgumentException("Unsupported layout: " + type);
             }
         } catch (UnsupportedOperationException e) {
             System.err.println("Failed to classify layout: " + type);
@@ -188,49 +190,58 @@ class TypeClass {
 
     private static List<ArgumentClassImpl>[] groupByEightBytes(GroupLayout group) {
         long offset = 0L;
-        int nEightbytes = (int) Utils.alignUp(group.byteSize(), 8) / 8;
+        int nEightbytes;
+        try {
+            // alignUp can overflow the value, but it's okay since toIntExact still catches it
+            nEightbytes = Math.toIntExact(Utils.alignUp(group.byteSize(), 8) / 8);
+        } catch (ArithmeticException e) {
+            throw new IllegalArgumentException("GroupLayout is too large: " + group, e);
+        }
         @SuppressWarnings({"unchecked", "rawtypes"})
         List<ArgumentClassImpl>[] groups = new List[nEightbytes];
         for (MemoryLayout l : group.memberLayouts()) {
             groupByEightBytes(l, offset, groups);
-            if (group.isStruct()) {
+            if (group instanceof StructLayout) {
                 offset += l.byteSize();
             }
         }
         return groups;
     }
 
-    private static void groupByEightBytes(MemoryLayout l, long offset, List<ArgumentClassImpl>[] groups) {
-        if (l instanceof GroupLayout) {
-            GroupLayout group = (GroupLayout)l;
-            for (MemoryLayout m : group.memberLayouts()) {
-                groupByEightBytes(m, offset, groups);
-                if (group.isStruct()) {
-                    offset += m.byteSize();
+    private static void groupByEightBytes(MemoryLayout layout,
+                                          long offset,
+                                          List<ArgumentClassImpl>[] groups) {
+        switch (layout) {
+            case GroupLayout group -> {
+                for (MemoryLayout m : group.memberLayouts()) {
+                    groupByEightBytes(m, offset, groups);
+                    if (group instanceof StructLayout) {
+                        offset += m.byteSize();
+                    }
                 }
             }
-        } else if (l.isPadding()) {
-            return;
-        } else if (l instanceof SequenceLayout) {
-            SequenceLayout seq = (SequenceLayout)l;
-            MemoryLayout elem = seq.elementLayout();
-            for (long i = 0 ; i < seq.elementCount() ; i++) {
-                groupByEightBytes(elem, offset, groups);
-                offset += elem.byteSize();
+            case PaddingLayout  _ -> {
             }
-        } else if (l instanceof ValueLayout) {
-            List<ArgumentClassImpl> layouts = groups[(int)offset / 8];
-            if (layouts == null) {
-                layouts = new ArrayList<>();
-                groups[(int)offset / 8] = layouts;
+            case SequenceLayout seq -> {
+                MemoryLayout elem = seq.elementLayout();
+                for (long i = 0; i < seq.elementCount(); i++) {
+                    groupByEightBytes(elem, offset, groups);
+                    offset += elem.byteSize();
+                }
             }
-            // if the aggregate contains unaligned fields, it has class MEMORY
-            ArgumentClassImpl argumentClass = (offset % l.byteAlignment()) == 0 ?
-                    argumentClassFor(l) :
-                    ArgumentClassImpl.MEMORY;
-            layouts.add(argumentClass);
-        } else {
-            throw new IllegalStateException("Unexpected layout: " + l);
+            case ValueLayout vl -> {
+                List<ArgumentClassImpl> layouts = groups[(int) offset / 8];
+                if (layouts == null) {
+                    layouts = new ArrayList<>();
+                    groups[(int) offset / 8] = layouts;
+                }
+                // if the aggregate contains unaligned fields, it has class MEMORY
+                ArgumentClassImpl argumentClass = (offset % vl.byteAlignment()) == 0 ?
+                        argumentClassFor(vl) :
+                        ArgumentClassImpl.MEMORY;
+                layouts.add(argumentClass);
+            }
+            case null, default -> throw new IllegalStateException("Unexpected layout: " + layout);
         }
     }
 }

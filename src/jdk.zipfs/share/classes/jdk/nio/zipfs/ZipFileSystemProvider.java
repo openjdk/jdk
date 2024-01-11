@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -192,6 +192,15 @@ public class ZipFileSystemProvider extends FileSystemProvider {
     }
 
     @Override
+    public boolean exists(Path path, LinkOption... options) {
+        if (options.length == 0) {
+            return toZipPath(path).exists();
+        } else {
+            return super.exists(path, options);
+        }
+    }
+
+    @Override
     public <V extends FileAttributeView> V
         getFileAttributeView(Path path, Class<V> type, LinkOption... options)
     {
@@ -285,6 +294,16 @@ public class ZipFileSystemProvider extends FileSystemProvider {
     }
 
     @Override
+    @SuppressWarnings("unchecked") // Cast to A
+    public <A extends BasicFileAttributes> A readAttributesIfExists(Path path,
+                                                                    Class<A> type,
+                                                                    LinkOption... options)
+        throws IOException
+    {
+        return (A) toZipPath(path).readAttributesIfExists();
+    }
+
+    @Override
     public Path readSymbolicLink(Path link) {
         throw new UnsupportedOperationException("Not supported.");
     }
@@ -308,8 +327,7 @@ public class ZipFileSystemProvider extends FileSystemProvider {
             } catch (PrivilegedActionException e) {
                 throw (IOException) e.getException();
             }
-            if (filesystems.get(zfpath) == zfs)
-                filesystems.remove(zfpath);
+            filesystems.remove(zfpath, zfs);
         }
     }
 }

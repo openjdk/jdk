@@ -29,7 +29,7 @@
 # Fail fast
 set -e; set -o pipefail;
 
-# $JT_BUNDLE_URL (Link can be obtained from https://openjdk.java.net/jtreg/ page)
+# $JT_BUNDLE_URL (Link can be obtained from https://openjdk.org/jtreg/ page)
 jtreg_bundle=$JT_BUNDLE_URL
 workdir=/tmp/jpackage_jtreg_testing
 jtreg_jar=$workdir/jtreg/lib/jtreg.jar
@@ -231,7 +231,7 @@ fi
 
 if [ -z "$JT_HOME" ]; then
   if [ -z "$JT_BUNDLE_URL" ]; then
-    fatal 'JT_HOME or JT_BUNDLE_URL environment variable is not set. Link to JTREG bundle can be found at https://openjdk.java.net/jtreg/'.
+    fatal 'JT_HOME or JT_BUNDLE_URL environment variable is not set. Link to JTREG bundle can be found at https://openjdk.org/jtreg/'.
   fi
 fi
 

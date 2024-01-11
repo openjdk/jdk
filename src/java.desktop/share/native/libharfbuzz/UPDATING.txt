@@ -1,0 +1,119 @@
+Tips and tasks when updating harfbuzz sources to a newer version.
+-----------------------------------------------------------------
+
+STEP 1: UPDATING FILES
+----------------------
+Download and unzip the latest version from https://github.com/harfbuzz/harfbuzz/releases
+We only use files from the src directory and even then only the ones we need.
+So just C++ include and source files and only the ones needed for the library,
+and even then just the ones we use.
+IMPORTANT! DO NOT just copy everything.
+
+- Harfbuzz is not modular, so the update is not a straightforward process.
+- The main thing is we do NOT want any
+   * "test" programs (test in the name, have a main are clues)
+   * support for (eg) GLib, DirectWrite, Graphite, GDI, ICU, Uniscribe
+   * aggregators like harfbuzz.cc - since it includes things from the above
+     as well as hb-ft.cc which we specifically exclude in the Makefile
+   * but we do use core text support on macOS.
+   * I really wish that "src" were just library source, but I expect the authors
+    have their reasons.
+
+So one way to update is to
+
+- copy over from the updated harfbuzz the exact same files we already have
+- it isn't a flat directory so watch out for that.
+
+- For files that are no longer available (for which copy fails), we remove such files,
+  but these may come back later if they were actually renamed.
+
+- look for files in the destination that were NOT updated - perhaps they
+  are removed or renamed in the upstream. Remove them if they are really
+  obsolete, or add their replacements/renames.
+  In IntelliJ IDE:
+    Newly added files are shown in RED
+    Modified in BLUE
+    NOT Updated in WHITE
+  This feature might be helpful to keep track of new, modified and unchanged files.
+
+
+STEP 2: BUILD CHANGES INCREMENTALLY
+-----------------------------------
+- iterate over : build and see what new file is missing that causes a build failure.
+  Sometimes just running a build does not show up any failures due to stale files.
+  Clean followed by build would be helpful in this situation.
+
+- You might run into compiler warnings that are treated as errors or the requirement
+  to set certain compiler flags if the build fails on a specific platform.
+  Check "COMPILER WARNINGS AND SETTING FLAGS" section for more details.
+
+- when this is done we have something buildable, make sure it builds
+  on all supported platforms.
+
+
+STEP 3: COMPILER WARNINGS AND SETTING FLAGS
+-------------------------------------------
+- Update make parameters in Awt2DLibraries.gmk
+  Since we don't use configure we need to manually specify the options
+  we need in the Harfbuzz section of Awt2DLibraries.gmk.
+  As well as adding new options, we may need to clean up obsolete options.
+  Note there may be platform variations in the flags.
+
+- As with other 3rd party libs we do not fix the code to eliminate compiler
+  warnings unless they are critical and clearly avoiding a bug. Even then
+  we'd report it upstream and apply the patch once it is made available.
+  The usual practice is do just disable the warnings.
+
+
+STEP 4: UPDATING .md FILE
+-------------------------
+- we do not apply any header file changes so this is not an issue.
+
+- verify the license text is unchanged (extra steps are needed if it is) and update
+  src/java.desktop/share/legal/harfbuzz.md with the new version.
+
+
+STEP 5: REPLACE TABS & REMOVE TRAILING SPACES
+---------------------------------------------
+- clean up trailing white space and tabs to follow jcheck rules.
+  Use "expand" and "sed" to remove tabs and trailing white space from the
+  imported sources.
+  To clean up the extra spaces and tabs run the following script at
+  each folder level within libharfbuzz.
+
+  shopt -s nullglob
+  for f in *.c *.h *.cc *.hh;
+      do
+          # replace tabs with spaces
+          expand ${f} > ${f}.tmp;
+          mv ${f}.tmp $f;
+
+          # fix line endings to LF
+          sed -e 's/\r$//g' ${f} > ${f}.tmp;
+          mv ${f}.tmp $f;
+
+          # remove trailing spaces
+          sed -e 's/[ ]* $//g' ${f} > ${f}.tmp;
+          mv ${f}.tmp $f;
+      done
+
+
+STEP 6: TESTING
+---------------
+- test using all the automated jtreg tests on all platforms.
+
+- do MANUAL verification of Arabic, Hebrew, Thai, Indic against previous releases.
+  Look for manual related layout jtreg tests (test/jdk/java/awt/font/TextLayout)
+  and run on Windows,Linux and Mac.
+  Use Font2DTest set to TextLayout and check the above languages. Probably
+  not going to see layout problems in code at this point of time but it needs to
+  be checked.
+
+  Different unicode combinations can be checked using Font2DTest.
+  Run Font2DTest, select 'UserText' option for 'Text to use'.
+  Paste unicodes of different languages (Arabic, Hebrew, Thai, Indic)
+  and compare the glyphs with previous versions.
+  It should look the same in both cases.
+
+
+- FINALLY, Do update THIS UPDATING.txt file too if it is outdated.

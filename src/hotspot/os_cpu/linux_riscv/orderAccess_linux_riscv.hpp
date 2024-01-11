@@ -37,7 +37,7 @@ inline void OrderAccess::storestore() { release(); }
 inline void OrderAccess::loadstore()  { acquire(); }
 inline void OrderAccess::storeload()  { fence(); }
 
-#define FULL_MEM_BARRIER  __sync_synchronize()
+#define FULL_MEM_BARRIER  __atomic_thread_fence(__ATOMIC_SEQ_CST);
 #define READ_MEM_BARRIER  __atomic_thread_fence(__ATOMIC_ACQUIRE);
 #define WRITE_MEM_BARRIER __atomic_thread_fence(__ATOMIC_RELEASE);
 
@@ -54,10 +54,6 @@ inline void OrderAccess::fence() {
 }
 
 inline void OrderAccess::cross_modify_fence_impl() {
-  asm volatile("fence.i" : : : "memory");
-  if (UseConservativeFence) {
-    asm volatile("fence ir, ir" : : : "memory");
-  }
 }
 
 #endif // OS_CPU_LINUX_RISCV_ORDERACCESS_LINUX_RISCV_HPP

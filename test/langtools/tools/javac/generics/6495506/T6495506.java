@@ -7,7 +7,7 @@
  */
 
 public class T6495506 {
-    public static void main(String... args) {
+    public static void meth() {
         a.A myA = new a.A();
         myA.p = myA.vec.get(0);
     }

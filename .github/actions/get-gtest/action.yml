@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -40,15 +40,15 @@ runs:
         var: GTEST_VERSION
 
     - name: 'Checkout GTest source'
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       with:
         repository: google/googletest
-        ref: 'release-${{ steps.version.outputs.value }}'
+        ref: 'v${{ steps.version.outputs.value }}'
         path: gtest
 
     - name: 'Export path to where GTest is installed'
       id: path-name
       run: |
         # Export the path
-        echo '::set-output name=path::gtest'
+        echo 'path=gtest' >> $GITHUB_OUTPUT
       shell: bash

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,9 +37,27 @@ import impl.SimpleResolverProviderImpl;
  * @library lib providers/simple
  * @build test.library/testlib.ResolutionRegistry
  *  simple.provider/impl.SimpleResolverProviderImpl AddressesCachingTest
- * @run testng/othervm -Djava.security.properties=${test.src}/NeverCache.props
+ * @run testng/othervm -Djava.security.properties=${test.src}/props/NeverCache.props
  *  -Dtest.cachingDisabled=true AddressesCachingTest
- * @run testng/othervm -Djava.security.properties=${test.src}/ForeverCache.props
+ * @run testng/othervm -Djava.security.properties=${test.src}/props/ForeverCache.props
+ *  -Dtest.cachingDisabled=false AddressesCachingTest
+ * @run testng/othervm
+ *  -Djava.security.properties=${test.src}/props/NeverCacheIgnoreMinusStale.props
+ *  -Dtest.cachingDisabled=true AddressesCachingTest
+ * @run testng/othervm
+ *  -Djava.security.properties=${test.src}/props/NeverCacheIgnorePositiveStale.props
+ *  -Dtest.cachingDisabled=true AddressesCachingTest
+ * @run testng/othervm
+ *  -Djava.security.properties=${test.src}/props/NeverCacheIgnoreZeroStale.props
+ *  -Dtest.cachingDisabled=true AddressesCachingTest
+ * @run testng/othervm
+ *  -Djava.security.properties=${test.src}/props/ForeverCacheIgnoreMinusStale.props
+ *  -Dtest.cachingDisabled=false AddressesCachingTest
+ * @run testng/othervm
+ *  -Djava.security.properties=${test.src}/props/ForeverCacheIgnorePositiveStale.props
+ *  -Dtest.cachingDisabled=false AddressesCachingTest
+ * @run testng/othervm
+ *  -Djava.security.properties=${test.src}/props/ForeverCacheIgnoreZeroStale.props
  *  -Dtest.cachingDisabled=false AddressesCachingTest
  */
 public class AddressesCachingTest {

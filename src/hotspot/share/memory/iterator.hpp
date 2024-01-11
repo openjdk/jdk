@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,7 +72,7 @@ class OopIterateClosure : public OopClosure {
 
  protected:
   OopIterateClosure(ReferenceDiscoverer* rd) : _ref_discoverer(rd) { }
-  OopIterateClosure() : _ref_discoverer(NULL) { }
+  OopIterateClosure() : _ref_discoverer(nullptr) { }
   ~OopIterateClosure() { }
 
   void set_ref_discoverer_internal(ReferenceDiscoverer* rd) { _ref_discoverer = rd; }
@@ -107,14 +107,14 @@ class OopIterateClosure : public OopClosure {
 
   // Class redefinition needs to get notified about methods from stackChunkOops
   virtual void do_method(Method* m) = 0;
-  // The code cache sweeper needs to get notified about methods from stackChunkOops
+  // The code cache unloading needs to get notified about methods from stackChunkOops
   virtual void do_nmethod(nmethod* nm) = 0;
 };
 
 // An OopIterateClosure that can be used when there's no need to visit the Metadata.
 class BasicOopIterateClosure : public OopIterateClosure {
 public:
-  BasicOopIterateClosure(ReferenceDiscoverer* rd = NULL) : OopIterateClosure(rd) {}
+  BasicOopIterateClosure(ReferenceDiscoverer* rd = nullptr) : OopIterateClosure(rd) {}
 
   virtual bool do_metadata() { return false; }
   virtual void do_klass(Klass* k) { ShouldNotReachHere(); }
@@ -123,11 +123,18 @@ public:
   virtual void do_nmethod(nmethod* nm) { ShouldNotReachHere(); }
 };
 
+// Interface for applying an OopClosure to a set of oops.
+class OopIterator {
+public:
+  virtual void oops_do(OopClosure* cl) = 0;
+};
+
+enum class derived_base : intptr_t;
 enum class derived_pointer : intptr_t;
 class DerivedOopClosure : public Closure {
  public:
   enum { SkipNull = true };
-  virtual void do_derived_oop(oop* base, derived_pointer* derived) = 0;
+  virtual void do_derived_oop(derived_base* base, derived_pointer* derived) = 0;
 };
 
 class KlassClosure : public Closure {
@@ -170,7 +177,7 @@ class ClaimMetadataVisitingOopIterateClosure : public OopIterateClosure {
   const int _claim;
 
  public:
-  ClaimMetadataVisitingOopIterateClosure(int claim, ReferenceDiscoverer* rd = NULL) :
+  ClaimMetadataVisitingOopIterateClosure(int claim, ReferenceDiscoverer* rd = nullptr) :
       OopIterateClosure(rd),
       _claim(claim) { }
 
@@ -186,7 +193,7 @@ class ClaimMetadataVisitingOopIterateClosure : public OopIterateClosure {
 // It's used to proxy through the metadata to the oops defined in them.
 class MetadataVisitingOopIterateClosure: public ClaimMetadataVisitingOopIterateClosure {
  public:
-  MetadataVisitingOopIterateClosure(ReferenceDiscoverer* rd = NULL);
+  MetadataVisitingOopIterateClosure(ReferenceDiscoverer* rd = nullptr);
 };
 
 // ObjectClosure is used for iterating through an object space
@@ -197,10 +204,14 @@ class ObjectClosure : public Closure {
   virtual void do_object(oop obj) = 0;
 };
 
-
 class BoolObjectClosure : public Closure {
  public:
   virtual bool do_object_b(oop obj) = 0;
+};
+
+class OopFieldClosure {
+public:
+  virtual void do_field(oop base, oop* p) = 0;
 };
 
 class AlwaysTrueClosure: public BoolObjectClosure {
@@ -225,20 +236,12 @@ public:
 // SpaceClosure is used for iterating over spaces
 
 class Space;
-class CompactibleSpace;
 
 class SpaceClosure : public StackObj {
  public:
   // Called for each space
   virtual void do_space(Space* s) = 0;
 };
-
-class CompactibleSpaceClosure : public StackObj {
- public:
-  // Called for each compactible space
-  virtual void do_space(CompactibleSpace* s) = 0;
-};
-
 
 // CodeBlobClosure is used for iterating through code blobs
 // in the code cache or on thread stacks
@@ -323,39 +326,6 @@ public:
 
  // Yield on a fine-grain level. The check in case of not yielding should be very fast.
  virtual bool should_return_fine_grain() { return false; }
-};
-
-// Abstract closure for serializing data (read or write).
-
-class SerializeClosure : public Closure {
-public:
-  // Return bool indicating whether closure implements read or write.
-  virtual bool reading() const = 0;
-
-  // Read/write the void pointer pointed to by p.
-  virtual void do_ptr(void** p) = 0;
-
-  // Read/write the 32-bit unsigned integer pointed to by p.
-  virtual void do_u4(u4* p) = 0;
-
-  // Read/write the bool pointed to by p.
-  virtual void do_bool(bool* p) = 0;
-
-  // Read/write the region specified.
-  virtual void do_region(u_char* start, size_t size) = 0;
-
-  // Check/write the tag.  If reading, then compare the tag against
-  // the passed in value and fail is they don't match.  This allows
-  // for verification that sections of the serialized data are of the
-  // correct length.
-  virtual void do_tag(int tag) = 0;
-
-  // Read/write the oop
-  virtual void do_oop(oop* o) = 0;
-
-  bool writing() {
-    return !reading();
-  }
 };
 
 class SymbolClosure : public StackObj {

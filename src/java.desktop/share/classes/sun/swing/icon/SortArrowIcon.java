@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,7 +57,7 @@ public class SortArrowIcon implements Icon, UIResource, Serializable {
     /**
      * Creates a <code>SortArrowIcon</code>.
      *
-     * @param ascending if true, icon respresenting ascending sort, otherwise
+     * @param ascending if true, icon representing ascending sort, otherwise
      *        descending
      * @param color the color to render the icon
      */
@@ -72,7 +72,7 @@ public class SortArrowIcon implements Icon, UIResource, Serializable {
     /**
      * Creates a <code>SortArrowIcon</code>.
      *
-     * @param ascending if true, icon respresenting ascending sort, otherwise
+     * @param ascending if true, icon representing ascending sort, otherwise
      *        descending
      * @param colorKey the key used to find color in UIManager
      */

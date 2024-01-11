@@ -51,6 +51,7 @@
  */
 
 module jdk.jpackage {
+    requires jdk.internal.opt;
     requires jdk.jlink;
 
     requires java.desktop;

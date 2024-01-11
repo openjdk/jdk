@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,8 +31,8 @@ import java.util.concurrent.CountDownLatch;
  * Test native threads attaching implicitly to the VM by means of an upcall.
  */
 public class ImplicitAttach {
-    private static final ValueLayout.OfInt C_INT = ValueLayout.JAVA_INT.withBitAlignment(32);
-    private static final ValueLayout.OfAddress C_POINTER = ValueLayout.ADDRESS.withBitAlignment(64);
+    private static final ValueLayout.OfInt C_INT = ValueLayout.JAVA_INT;
+    private static final AddressLayout C_POINTER = ValueLayout.ADDRESS;
 
     private static volatile CountDownLatch latch;
 
@@ -45,18 +45,24 @@ public class ImplicitAttach {
         }
         latch = new CountDownLatch(threadCount);
 
-        Linker abi = Linker.nativeLinker();
+        Linker abi;
+        try {
+            abi = Linker.nativeLinker();
+        } catch (UnsupportedOperationException e) {
+            System.out.println("Test skipped, no native linker on this platform");
+            return;
+        }
 
         // stub to invoke callback
         MethodHandle callback = MethodHandles.lookup()
                 .findStatic(ImplicitAttach.class, "callback", MethodType.methodType(void.class));
         MemorySegment upcallStub = abi.upcallStub(callback,
                 FunctionDescriptor.ofVoid(),
-                MemorySession.global());
+                Arena.global());
 
         // void start_threads(int count, void *(*f)(void *))
         SymbolLookup symbolLookup = SymbolLookup.loaderLookup();
-        MemorySegment symbol = symbolLookup.lookup("start_threads").orElseThrow();
+        MemorySegment symbol = symbolLookup.find("start_threads").orElseThrow();
         FunctionDescriptor desc = FunctionDescriptor.ofVoid(C_INT, C_POINTER);
         MethodHandle start_threads = abi.downcallHandle(symbol, desc);
 

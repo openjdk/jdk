@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,7 @@ import java.awt.*;
  *
  * <p>While <code>CompositeView</code>
  * does not impose a layout policy on its child <code>View</code>s,
- * it does allow for inseting the child <code>View</code>s
+ * it does allow for insetting the child <code>View</code>s
  * it will contain.  The insets can be set by either
  * {@link #setInsets} or {@link #setParagraphInsets}.
  *
@@ -64,7 +64,7 @@ import java.awt.*;
  * <li>{@link #childAllocation} - Returns the bounds of
  *     a particular child <code>View</code>.
  *     <code>getChildAllocation</code> will invoke
- *     <code>childAllocation</code> after offseting
+ *     <code>childAllocation</code> after offsetting
  *     the bounds by the <code>Inset</code>s of the
  *     <code>CompositeView</code>.
  * </ul>
@@ -763,7 +763,7 @@ public abstract class CompositeView extends View {
     /**
      * Determines in which direction the next view lays.
      * Consider the <code>View</code> at index n. Typically the
-     * <code>View</code>s are layed out from left to right,
+     * <code>View</code>s are laid out from left to right,
      * so that the <code>View</code> to the EAST will be
      * at index n + 1, and the <code>View</code> to the WEST
      * will be at index n - 1. In certain situations,
@@ -772,7 +772,7 @@ public abstract class CompositeView extends View {
      * but rather at index n - 1, or that the <code>View</code>
      * to the WEST is not at index n - 1, but index n + 1.
      * In this case this method would return true, indicating the
-     * <code>View</code>s are layed out in descending order.
+     * <code>View</code>s are laid out in descending order.
      * <p>
      * This unconditionally returns false, subclasses should override this
      * method if there is the possibility for laying <code>View</code>s in

@@ -68,6 +68,19 @@ public class SynthPasswordFieldUI extends SynthTextFieldUI {
     }
 
     /**
+     * Installs the necessary properties on the JPasswordField.
+     */
+    @Override
+    protected void installDefaults() {
+        super.installDefaults();
+        String prefix = getPropertyPrefix();
+        Character echoChar = (Character)UIManager.getDefaults().get(prefix + ".echoChar");
+        if (echoChar != null) {
+            LookAndFeel.installProperty(getComponent(), "echoChar", echoChar);
+        }
+    }
+
+    /**
      * Creates a view (PasswordView) for an element.
      *
      * @param elem the element

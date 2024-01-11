@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,8 @@
 package jdk.jpackage.internal;
 
 import java.util.List;
+import jdk.internal.util.OperatingSystem;
+import jdk.internal.util.OSVersion;
 
 final class WindowsDefender {
 
@@ -34,8 +36,8 @@ final class WindowsDefender {
     static final boolean isThereAPotentialWindowsDefenderIssue(String dir) {
         boolean result = false;
 
-        if (Platform.getPlatform() == Platform.WINDOWS &&
-            Platform.getMajorVersion() == 10) {
+        if (OperatingSystem.isWindows() &&
+                OSVersion.current().major() == 10) {
 
             // If DisableRealtimeMonitoring is not enabled then there
             // may be a problem.

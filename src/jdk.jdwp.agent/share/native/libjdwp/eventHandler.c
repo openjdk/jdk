@@ -132,6 +132,10 @@ static jrawMonitorID callbackBlock;
                 debugMonitorEnter(callbackBlock);                       \
                 debugMonitorExit(callbackBlock);                        \
             } else {                                                    \
+                /* Notify anyone waiting for callbacks to exit */       \
+                if (active_callbacks == 0) {                            \
+                    debugMonitorNotifyAll(callbackLock);                \
+                }                                                       \
                 debugMonitorExit(callbackLock);                         \
             }                                                           \
         }                                                               \
@@ -334,9 +338,14 @@ deferEventReport(JNIEnv *env, jthread thread,
                 jlocation end;
                 error = methodLocation(method, &start, &end);
                 if (error == JVMTI_ERROR_NONE) {
-                    deferring = isBreakpointSet(clazz, method, start) ||
-                                threadControl_getInstructionStepMode(thread)
-                                    == JVMTI_ENABLE;
+                    if (isBreakpointSet(clazz, method, start)) {
+                        deferring = JNI_TRUE;
+                    } else {
+                        StepRequest* step = threadControl_getStepRequest(thread);
+                        if (step->pending && step->depth == JDWP_STEP_DEPTH(INTO)) {
+                            deferring = JNI_TRUE;
+                        }
+                    }
                     if (!deferring) {
                         threadControl_saveCLEInfo(env, thread, ei,
                                                   clazz, method, start);
@@ -457,16 +466,10 @@ reportEvents(JNIEnv *env, jbyte sessionID, jthread thread, EventIndex ei,
     }
 }
 
-/* A bagEnumerateFunction.  Create a synthetic class unload event
- * for every class no longer present.  Analogous to event_callback
- * combined with a handler in a unload specific (no event
- * structure) kind of way.
- */
-static jboolean
-synthesizeUnloadEvent(void *signatureVoid, void *envVoid)
+/* Create a synthetic class unload event for the specified signature. */
+jboolean
+eventHandler_synthesizeUnloadEvent(char *signature, JNIEnv *env)
 {
-    JNIEnv *env = (JNIEnv *)envVoid;
-    char *signature = *(char **)signatureVoid;
     char *classname;
     HandlerNode *node;
     jbyte eventSessionID = currentSessionID;
@@ -484,7 +487,7 @@ synthesizeUnloadEvent(void *signatureVoid, void *envVoid)
 
     debugMonitorEnter(handlerLock);
 
-    node = getHandlerChain(EI_GC_FINISH)->first;
+    node = getHandlerChain(EI_CLASS_UNLOAD)->first;
     while (node != NULL) {
         /* save next so handlers can remove themselves */
         HandlerNode *next = NEXT(node);
@@ -546,11 +549,6 @@ filterAndHandleEvent(JNIEnv *env, EventInfo *evinfo, EventIndex ei,
     {
         HandlerNode *node;
         char        *classname;
-
-        /* We must keep track of all classes prepared to know what's unloaded */
-        if (evinfo->ei == EI_CLASS_PREPARE) {
-            classTrack_addPreparedClass(env, evinfo->clazz);
-        }
 
         node = getHandlerChain(ei)->first;
         classname = getClassname(evinfo->clazz);
@@ -620,39 +618,10 @@ event_callback(JNIEnv *env, EventInfo *evinfo)
     currentException = JNI_FUNC_PTR(env,ExceptionOccurred)(env);
     JNI_FUNC_PTR(env,ExceptionClear)(env);
 
-    /* See if a garbage collection finish event happened earlier.
-     *
-     * Note: The "if" is an optimization to avoid entering the lock on every
-     *       event; garbageCollected may be zapped before we enter
-     *       the lock but then this just becomes one big no-op.
-     */
-    if ( garbageCollected > 0 ) {
-        struct bag *unloadedSignatures = NULL;
-
-        /* We want to compact the hash table of all
-         * objects sent to the front end by removing objects that have
-         * been collected.
-         */
+    /* See if a garbage collection finish event happened earlier. */
+    if ( garbageCollected > 0) {
         commonRef_compact();
-
-        /* We also need to simulate the class unload events. */
-
-        debugMonitorEnter(handlerLock);
-
-        /* Clear garbage collection counter */
         garbageCollected = 0;
-
-        /* Analyze which class unloads occurred */
-        unloadedSignatures = classTrack_processUnloads(env);
-
-        debugMonitorExit(handlerLock);
-
-        /* Generate the synthetic class unload events and/or just cleanup.  */
-        if ( unloadedSignatures != NULL ) {
-            (void)bagEnumerateOver(unloadedSignatures, synthesizeUnloadEvent,
-                             (void *)env);
-            bagDestroyBag(unloadedSignatures);
-        }
     }
 
     thread = evinfo->thread;
@@ -1539,18 +1508,21 @@ eventHandler_initialize(jbyte sessionID)
     if (error != JVMTI_ERROR_NONE) {
         EXIT_ERROR(error,"Can't enable thread end events");
     }
-    error = threadControl_setEventMode(JVMTI_ENABLE,
-                                       EI_CLASS_PREPARE, NULL);
-    if (error != JVMTI_ERROR_NONE) {
-        EXIT_ERROR(error,"Can't enable class prepare events");
-    }
-    error = threadControl_setEventMode(JVMTI_ENABLE,
-                                       EI_GC_FINISH, NULL);
+
+    /*
+     * GARBAGE_COLLECTION_FINISH is special since it is not tied to any handlers or an EI,
+     * so it cannot be setup using threadControl_setEventMode(). Use JVMTI API directly.
+     */
+    error = JVMTI_FUNC_PTR(gdata->jvmti,SetEventNotificationMode)
+            (gdata->jvmti, JVMTI_ENABLE, JVMTI_EVENT_GARBAGE_COLLECTION_FINISH, NULL);
     if (error != JVMTI_ERROR_NONE) {
         EXIT_ERROR(error,"Can't enable garbage collection finish events");
     }
-    /* Only enable vthread events if vthread support is enabled. */
-    if (gdata->vthreadsSupported) {
+    /*
+     * Only enable vthread START and END events if we want to remember
+     * vthreads when no debugger is connected.
+     */
+    if (gdata->vthreadsSupported && gdata->rememberVThreadsWhenDisconnected) {
         error = threadControl_setEventMode(JVMTI_ENABLE,
                                            EI_VIRTUAL_THREAD_START, NULL);
         if (error != JVMTI_ERROR_NONE) {
@@ -1623,6 +1595,42 @@ eventHandler_initialize(jbyte sessionID)
 }
 
 void
+eventHandler_onConnect() {
+    debugMonitorEnter(handlerLock);
+
+    /*
+     * Enable vthread START and END events if they are not already always enabled.
+     * They are always enabled if we are remembering vthreads when no debugger is
+     * connected. Otherwise they are only enabled when connected because they can
+     * be very noisy and hurt performance a lot.
+     */
+    if (gdata->vthreadsSupported && !gdata->rememberVThreadsWhenDisconnected) {
+        jvmtiError error;
+        error = threadControl_setEventMode(JVMTI_ENABLE,
+                                           EI_VIRTUAL_THREAD_START, NULL);
+        if (error != JVMTI_ERROR_NONE) {
+            EXIT_ERROR(error,"Can't enable vthread start events");
+        }
+        error = threadControl_setEventMode(JVMTI_ENABLE,
+                                           EI_VIRTUAL_THREAD_END, NULL);
+        if (error != JVMTI_ERROR_NONE) {
+            EXIT_ERROR(error,"Can't enable vthread end events");
+        }
+    }
+
+    debugMonitorExit(handlerLock);
+}
+
+static jvmtiError
+adjust_jvmti_error(jvmtiError error) {
+    // Allow WRONG_PHASE if vm is exiting.
+    if (error == JVMTI_ERROR_WRONG_PHASE && gdata->vmDead) {
+        error = JVMTI_ERROR_NONE;
+    }
+    return error;
+}
+
+void
 eventHandler_reset(jbyte sessionID)
 {
     int i;
@@ -1635,6 +1643,26 @@ eventHandler_reset(jbyte sessionID)
      * the invoke completions can sneak through.
      */
     threadControl_detachInvokes();
+
+    /* Disable vthread START and END events unless we are remembering vthreads
+     * when no debugger is connected. We do this because these events can
+     * be very noisy and hurt performance a lot. Note the VM might be exiting,
+     * and we might get the VM_DEATH event while executing here, so don't
+     * complain about JVMTI_ERROR_WRONG_PHASE if we've already seen VM_DEATH event.
+     */
+    if (gdata->vthreadsSupported && !gdata->rememberVThreadsWhenDisconnected) {
+        jvmtiError error;
+        error = threadControl_setEventMode(JVMTI_DISABLE,
+                                           EI_VIRTUAL_THREAD_START, NULL);
+        if (adjust_jvmti_error(error) != JVMTI_ERROR_NONE) {
+            EXIT_ERROR(error,"Can't disable vthread start events");
+        }
+        error = threadControl_setEventMode(JVMTI_DISABLE,
+                                           EI_VIRTUAL_THREAD_END, NULL);
+        if (adjust_jvmti_error(error) != JVMTI_ERROR_NONE) {
+            EXIT_ERROR(error,"Can't disable vthread end events");
+        }
+    }
 
     /* Reset the event helper thread, purging all queued and
      * in-process commands.
@@ -1650,6 +1678,23 @@ eventHandler_reset(jbyte sessionID)
     currentSessionID = sessionID;
 
     debugMonitorExit(handlerLock);
+}
+
+void
+eventHandler_waitForActiveCallbacks()
+{
+    /*
+     * Wait for active callbacks to complete. It is ok if more callbacks come in
+     * after this point. This is being done so threadControl_reset() can safely
+     * remove all vthreads without worry that they might be referenced in an active
+     * callback. The only callbacks enabled at this point are the permanent ones,
+     * and they never involve vthreads.
+     */
+    debugMonitorEnter(callbackLock);
+    while (active_callbacks > 0) {
+        debugMonitorWait(callbackLock);
+    }
+    debugMonitorExit(callbackLock);
 }
 
 void
@@ -1709,9 +1754,6 @@ installHandler(HandlerNode *node,
 
     node->handlerID = external? ++requestIdCounter : 0;
     error = eventFilterRestricted_install(node);
-    if (node->ei == EI_GC_FINISH) {
-        classTrack_activate(getEnv());
-    }
     if (error == JVMTI_ERROR_NONE) {
         insert(getHandlerChain(node->ei), node);
     }

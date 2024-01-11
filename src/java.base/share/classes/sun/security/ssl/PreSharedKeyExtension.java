@@ -28,10 +28,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.security.*;
 import java.text.MessageFormat;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.Locale;
-import java.util.Collection;
+import java.util.*;
 import javax.crypto.Mac;
 import javax.crypto.SecretKey;
 import javax.net.ssl.SSLPeerUnverifiedException;
@@ -217,12 +214,12 @@ final class PreSharedKeyExtension {
         @Override
         public String toString() {
             MessageFormat messageFormat = new MessageFormat(
-                "\"PreSharedKey\": '{'\n" +
-                "  \"identities\": '{'\n" +
-                "{0}\n" +
-                "  '}'" +
-                "  \"binders\": \"{1}\",\n" +
-                "'}'",
+                    """
+                            "PreSharedKey": '{'
+                              "identities": '{'
+                            {0}
+                              '}'  "binders": "{1}",
+                            '}'""",
                 Locale.ENGLISH);
 
             Object[] messageFields = {
@@ -299,9 +296,10 @@ final class PreSharedKeyExtension {
         @Override
         public String toString() {
             MessageFormat messageFormat = new MessageFormat(
-                "\"PreSharedKey\": '{'\n" +
-                "  \"selected_identity\"      : \"{0}\",\n" +
-                "'}'",
+                    """
+                            "PreSharedKey": '{'
+                              "selected_identity"      : "{0}",
+                            '}'""",
                 Locale.ENGLISH);
 
             Object[] messageFields = {
@@ -444,7 +442,7 @@ final class PreSharedKeyExtension {
 
         // Make sure that the server handshake context's localSupportedSignAlgs
         // field is populated.  This is particularly important when
-        // client authentication was used in an initial session and it is
+        // client authentication was used in an initial session, and it is
         // now being resumed.
         if (shc.localSupportedSignAlgs == null) {
             shc.localSupportedSignAlgs =
@@ -683,7 +681,7 @@ final class PreSharedKeyExtension {
                 return null;
             }
 
-            // The PSK ID can only be used in one connections, but this method
+            // The PSK ID can only be used in one connection, but this method
             // may be called twice in a connection if the server sends HRR.
             // ID is saved in the context so it can be used in the second call.
             if (chc.pskIdentity == null) {

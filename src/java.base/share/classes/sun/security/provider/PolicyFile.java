@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -414,7 +414,7 @@ public class PolicyFile extends java.security.Policy {
                                 policyURL = ParseUtil.fileToEncodedURL
                                     (new File(policyFile.getCanonicalPath()));
                             } else {
-                                policyURL = new URL(extra_policy);
+                                policyURL = newURL(extra_policy);
                             }
                             if (debug != null) {
                                 debug.println("reading "+policyURL);
@@ -672,7 +672,7 @@ public class PolicyFile extends java.security.Policy {
         URL location;
 
         if (ge.codeBase != null)
-            location = new URL(ge.codeBase);
+            location = newURL(ge.codeBase);
         else
             location = null;
 
@@ -1607,7 +1607,7 @@ public class PolicyFile extends java.security.Policy {
                 int separator = spec.indexOf("!/");
                 if (separator != -1) {
                     try {
-                        u = new URL(spec.substring(0, separator));
+                        u = newURL(spec.substring(0, separator));
                     } catch (MalformedURLException e) {
                         // Fail silently. In this case, url stays what
                         // it was above
@@ -1819,7 +1819,7 @@ public class PolicyFile extends java.security.Policy {
             return null;
         }
 
-        if (cert == null || !(cert instanceof X509Certificate)) {
+        if (!(cert instanceof X509Certificate x509Cert)) {
             if (debug != null) {
                 debug.println("  -- No certificate for '" +
                                 alias +
@@ -1827,8 +1827,6 @@ public class PolicyFile extends java.security.Policy {
             }
             return null;
         } else {
-            X509Certificate x509Cert = (X509Certificate)cert;
-
             // 4702543:  X500 names with an EmailAddress
             // were encoded incorrectly.  create new
             // X500Principal name with correct encoding
@@ -2100,8 +2098,17 @@ public class PolicyFile extends java.security.Policy {
                 this.actions.equals(that.actions)))
                 return false;
 
-            if (this.certs.length != that.certs.length)
+            if ((this.certs == null) && (that.certs == null)) {
+                return true;
+            }
+
+            if ((this.certs == null) || (that.certs == null)) {
                 return false;
+            }
+
+            if (this.certs.length != that.certs.length) {
+                return false;
+            }
 
             int i,j;
             boolean match;
@@ -2131,17 +2138,11 @@ public class PolicyFile extends java.security.Policy {
         }
 
         /**
-         * Returns the hash code value for this object.
-         *
-         * @return a hash code value for this object.
+         * {@return the hash code value for this object}
          */
         @Override public int hashCode() {
-            int hash = type.hashCode();
-            if (name != null)
-                hash ^= name.hashCode();
-            if (actions != null)
-                hash ^= actions.hashCode();
-            return hash;
+            return type.hashCode() ^ Objects.hashCode(name)
+                    ^ Objects.hashCode(actions);
         }
 
         /**
@@ -2171,7 +2172,7 @@ public class PolicyFile extends java.security.Policy {
         }
 
         public Certificate[] getCerts() {
-            return certs;
+            return (certs == null ? null : certs.clone());
         }
 
         /**
@@ -2183,6 +2184,22 @@ public class PolicyFile extends java.security.Policy {
          */
         @Override public String toString() {
             return "(SelfPermission " + type + " " + name + " " + actions + ")";
+        }
+
+        /**
+         * Restores the state of this object from the stream.
+         *
+         * @param  stream the {@code ObjectInputStream} from which data is read
+         * @throws IOException if an I/O error occurs
+         * @throws ClassNotFoundException if a serialized class cannot be loaded
+         */
+        @java.io.Serial
+        private void readObject(ObjectInputStream stream)
+                throws IOException, ClassNotFoundException {
+            stream.defaultReadObject();
+            if (certs != null) {
+                this.certs = certs.clone();
+            }
         }
     }
 
@@ -2224,5 +2241,10 @@ public class PolicyFile extends java.security.Policy {
                 return pdMapping[i];
             }
         }
+    }
+
+    @SuppressWarnings("deprecation")
+    private static URL newURL(String spec) throws MalformedURLException {
+        return new URL(spec);
     }
 }

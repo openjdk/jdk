@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,6 +64,9 @@ final class SSLConfiguration implements Cloneable {
     // "signature_algorithms_cert" extensions
     String[]                   signatureSchemes;
 
+    // the configured named groups for the "supported_groups" extensions
+    String[]                   namedGroups;
+
     // the maximum protocol version of enabled protocols
     ProtocolVersion             maximumProtocolVersion;
 
@@ -105,9 +108,18 @@ final class SSLConfiguration implements Cloneable {
     static final int maxHandshakeMessageSize = GetIntegerAction.privilegedGetProperty(
             "jdk.tls.maxHandshakeMessageSize", 32768);
 
-    // Set the max certificate chain length to 10
-    static final int maxCertificateChainLength = GetIntegerAction.privilegedGetProperty(
-            "jdk.tls.maxCertificateChainLength", 10);
+    // Limit the certificate chain length accepted from clients
+    static final int maxInboundClientCertChainLen;
+
+    // Limit the certificate chain length accepted from servers
+    static final int maxInboundServerCertChainLen;
+
+    // To switch off the supported_groups extension for DHE cipher suite.
+    static final boolean enableFFDHE =
+            Utilities.getBooleanProperty("jsse.enableFFDHE", true);
+
+    static final boolean enableDtlsResumeCookie = Utilities.getBooleanProperty(
+            "jdk.tls.enableDtlsResumeCookie", true);
 
     // Is the extended_master_secret extension supported?
     static {
@@ -121,6 +133,64 @@ final class SSLConfiguration implements Cloneable {
             }
         }
         useExtendedMasterSecret = supportExtendedMasterSecret;
+    }
+
+    static {
+        boolean globalPropSet = false;
+
+        /*
+         * jdk.tls.maxCertificateChainLength system property works for both
+         * server and client modes.
+         */
+        Integer maxCertificateChainLength = GetIntegerAction.privilegedGetProperty(
+                "jdk.tls.maxCertificateChainLength");
+        if (maxCertificateChainLength != null && maxCertificateChainLength >= 0) {
+            globalPropSet = true;
+        }
+
+        /*
+         * jdk.tls.server.maxInboundCertificateChainLength system property
+         * works in server mode.
+         * maxInboundClientCertChainLen is the maximum length of a client
+         * certificate chain accepted by a server. It is determined as follows:
+         *  - If the jdk.tls.server.maxInboundCertificateChainLength system
+         *    property is set and its value >= 0, it uses that value.
+         *  - Otherwise, if the jdk.tls.maxCertificateChainLength system
+         *    property is set and its value >= 0, it uses that value.
+         *  - Otherwise it is set to a default value of 8.
+         */
+        Integer inboundClientLen = GetIntegerAction.privilegedGetProperty(
+                "jdk.tls.server.maxInboundCertificateChainLength");
+
+        // Default for jdk.tls.server.maxInboundCertificateChainLength is 8
+        if (inboundClientLen == null || inboundClientLen < 0) {
+            maxInboundClientCertChainLen = globalPropSet ?
+                    maxCertificateChainLength : 8;
+        } else {
+            maxInboundClientCertChainLen = inboundClientLen;
+        }
+
+        /*
+         * jdk.tls.client.maxInboundCertificateChainLength system property
+         * works in client mode.
+         * maxInboundServerCertChainLen is the maximum length of a server
+         * certificate chain accepted by a client. It is determined as follows:
+         *  - If the jdk.tls.client.maxInboundCertificateChainLength system
+         *    property is set and its value >= 0, it uses that value.
+         *  - Otherwise, if the jdk.tls.maxCertificateChainLength system
+         *    property is set and its value >= 0, it uses that value.
+         *  - Otherwise it is set to a default value of 10.
+         */
+        Integer inboundServerLen = GetIntegerAction.privilegedGetProperty(
+                "jdk.tls.client.maxInboundCertificateChainLength");
+
+        // Default for jdk.tls.client.maxInboundCertificateChainLength is 10
+        if (inboundServerLen == null || inboundServerLen < 0) {
+            maxInboundServerCertChainLen = globalPropSet ?
+                    maxCertificateChainLength : 10;
+        } else {
+            maxInboundServerCertChainLen = inboundServerLen;
+        }
     }
 
     SSLConfiguration(SSLContextImpl sslContext, boolean isClientMode) {
@@ -146,6 +216,7 @@ final class SSLConfiguration implements Cloneable {
         this.signatureSchemes = isClientMode ?
                 CustomizedClientSignatureSchemes.signatureSchemes :
                 CustomizedServerSignatureSchemes.signatureSchemes;
+        this.namedGroups = NamedGroup.SupportedGroups.namedGroups;
         this.maximumProtocolVersion = ProtocolVersion.NONE;
         for (ProtocolVersion pv : enabledProtocols) {
             if (pv.compareTo(maximumProtocolVersion) > 0) {
@@ -201,6 +272,7 @@ final class SSLConfiguration implements Cloneable {
         params.setEnableRetransmissions(this.enableRetransmissions);
         params.setMaximumPacketSize(this.maximumPacketSize);
         params.setSignatureSchemes(this.signatureSchemes);
+        params.setNamedGroups(this.namedGroups);
 
         return params;
     }
@@ -264,6 +336,15 @@ final class SSLConfiguration implements Cloneable {
             // specified over the connections.
             this.signatureSchemes = ss;
         }   // Otherwise, use the default values
+
+        String[] ngs = params.getNamedGroups();
+        if (ngs != null) {
+            // Note if 'ngs' is empty, then no named groups should be
+            // specified over the connections.
+            this.namedGroups = ngs;
+        } else {    // Otherwise, use the default values.
+            this.namedGroups = NamedGroup.SupportedGroups.namedGroups;
+        }
 
         this.preferLocalCipherSuites = params.getUseCipherSuitesOrder();
         this.enableRetransmissions = params.getEnableRetransmissions();

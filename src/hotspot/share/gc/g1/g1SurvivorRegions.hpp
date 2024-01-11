@@ -41,7 +41,7 @@ private:
 public:
   G1SurvivorRegions();
 
-  virtual uint add(HeapRegion* hr);
+  uint add(HeapRegion* hr);
 
   void convert_to_eden();
 

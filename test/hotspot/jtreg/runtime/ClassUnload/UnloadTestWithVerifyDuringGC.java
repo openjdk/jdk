@@ -31,11 +31,11 @@
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
  * @library classes
- * @build sun.hotspot.WhiteBox test.Empty
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox test.Empty
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -Xmn8m -XX:+UseG1GC -XX:+UnlockDiagnosticVMOptions -XX:+VerifyDuringGC -XX:+AlwaysTenure -XX:+WhiteBoxAPI -Xlog:gc,class+unload=debug UnloadTestWithVerifyDuringGC
  */
-import sun.hotspot.WhiteBox;
+import jdk.test.whitebox.WhiteBox;
 import jdk.test.lib.classloader.ClassUnloadCommon;
 
 /**
@@ -50,23 +50,9 @@ import jdk.test.lib.classloader.ClassUnloadCommon;
 public class UnloadTestWithVerifyDuringGC {
     private static final WhiteBox wb = WhiteBox.getWhiteBox();
 
-    private static void waitUntilConcMarkFinished() throws Exception {
-        while (wb.g1InConcurrentMark()) {
-            try {
-                Thread.sleep(1);
-            } catch (InterruptedException e) {
-                System.out.println("Got InterruptedException while waiting for concurrent mark to finish");
-                throw e;
-            }
-        }
-    }
-
     private static void triggerUnloadingWithConcurrentMark() throws Exception {
-        // Try to unload classes using concurrent mark. First wait for any currently running concurrent
-        // cycle.
-        waitUntilConcMarkFinished();
-        wb.g1StartConcMarkCycle();
-        waitUntilConcMarkFinished();
+        // Try to unload classes using concurrent mark.
+        wb.g1RunConcurrentGC();
     }
 
     private static String className = "test.Empty";

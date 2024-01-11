@@ -1,6 +1,6 @@
 //
-// Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
-// Copyright (c) 2012, 2021 SAP SE. All rights reserved.
+// Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2012, 2023 SAP SE. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -257,70 +257,72 @@ register %{
 // ----------------------------
 // Vector-Scalar Registers
 // ----------------------------
-  reg_def VSR0 ( SOC, SOC, Op_VecX, 0, NULL);
-  reg_def VSR1 ( SOC, SOC, Op_VecX, 1, NULL);
-  reg_def VSR2 ( SOC, SOC, Op_VecX, 2, NULL);
-  reg_def VSR3 ( SOC, SOC, Op_VecX, 3, NULL);
-  reg_def VSR4 ( SOC, SOC, Op_VecX, 4, NULL);
-  reg_def VSR5 ( SOC, SOC, Op_VecX, 5, NULL);
-  reg_def VSR6 ( SOC, SOC, Op_VecX, 6, NULL);
-  reg_def VSR7 ( SOC, SOC, Op_VecX, 7, NULL);
-  reg_def VSR8 ( SOC, SOC, Op_VecX, 8, NULL);
-  reg_def VSR9 ( SOC, SOC, Op_VecX, 9, NULL);
-  reg_def VSR10 ( SOC, SOC, Op_VecX, 10, NULL);
-  reg_def VSR11 ( SOC, SOC, Op_VecX, 11, NULL);
-  reg_def VSR12 ( SOC, SOC, Op_VecX, 12, NULL);
-  reg_def VSR13 ( SOC, SOC, Op_VecX, 13, NULL);
-  reg_def VSR14 ( SOC, SOC, Op_VecX, 14, NULL);
-  reg_def VSR15 ( SOC, SOC, Op_VecX, 15, NULL);
-  reg_def VSR16 ( SOC, SOC, Op_VecX, 16, NULL);
-  reg_def VSR17 ( SOC, SOC, Op_VecX, 17, NULL);
-  reg_def VSR18 ( SOC, SOC, Op_VecX, 18, NULL);
-  reg_def VSR19 ( SOC, SOC, Op_VecX, 19, NULL);
-  reg_def VSR20 ( SOC, SOC, Op_VecX, 20, NULL);
-  reg_def VSR21 ( SOC, SOC, Op_VecX, 21, NULL);
-  reg_def VSR22 ( SOC, SOC, Op_VecX, 22, NULL);
-  reg_def VSR23 ( SOC, SOC, Op_VecX, 23, NULL);
-  reg_def VSR24 ( SOC, SOC, Op_VecX, 24, NULL);
-  reg_def VSR25 ( SOC, SOC, Op_VecX, 25, NULL);
-  reg_def VSR26 ( SOC, SOC, Op_VecX, 26, NULL);
-  reg_def VSR27 ( SOC, SOC, Op_VecX, 27, NULL);
-  reg_def VSR28 ( SOC, SOC, Op_VecX, 28, NULL);
-  reg_def VSR29 ( SOC, SOC, Op_VecX, 29, NULL);
-  reg_def VSR30 ( SOC, SOC, Op_VecX, 30, NULL);
-  reg_def VSR31 ( SOC, SOC, Op_VecX, 31, NULL);
-  reg_def VSR32 ( SOC, SOC, Op_VecX, 32, NULL);
-  reg_def VSR33 ( SOC, SOC, Op_VecX, 33, NULL);
-  reg_def VSR34 ( SOC, SOC, Op_VecX, 34, NULL);
-  reg_def VSR35 ( SOC, SOC, Op_VecX, 35, NULL);
-  reg_def VSR36 ( SOC, SOC, Op_VecX, 36, NULL);
-  reg_def VSR37 ( SOC, SOC, Op_VecX, 37, NULL);
-  reg_def VSR38 ( SOC, SOC, Op_VecX, 38, NULL);
-  reg_def VSR39 ( SOC, SOC, Op_VecX, 39, NULL);
-  reg_def VSR40 ( SOC, SOC, Op_VecX, 40, NULL);
-  reg_def VSR41 ( SOC, SOC, Op_VecX, 41, NULL);
-  reg_def VSR42 ( SOC, SOC, Op_VecX, 42, NULL);
-  reg_def VSR43 ( SOC, SOC, Op_VecX, 43, NULL);
-  reg_def VSR44 ( SOC, SOC, Op_VecX, 44, NULL);
-  reg_def VSR45 ( SOC, SOC, Op_VecX, 45, NULL);
-  reg_def VSR46 ( SOC, SOC, Op_VecX, 46, NULL);
-  reg_def VSR47 ( SOC, SOC, Op_VecX, 47, NULL);
-  reg_def VSR48 ( SOC, SOC, Op_VecX, 48, NULL);
-  reg_def VSR49 ( SOC, SOC, Op_VecX, 49, NULL);
-  reg_def VSR50 ( SOC, SOC, Op_VecX, 50, NULL);
-  reg_def VSR51 ( SOC, SOC, Op_VecX, 51, NULL);
-  reg_def VSR52 ( SOC, SOC, Op_VecX, 52, NULL);
-  reg_def VSR53 ( SOC, SOC, Op_VecX, 53, NULL);
-  reg_def VSR54 ( SOC, SOC, Op_VecX, 54, NULL);
-  reg_def VSR55 ( SOC, SOC, Op_VecX, 55, NULL);
-  reg_def VSR56 ( SOC, SOC, Op_VecX, 56, NULL);
-  reg_def VSR57 ( SOC, SOC, Op_VecX, 57, NULL);
-  reg_def VSR58 ( SOC, SOC, Op_VecX, 58, NULL);
-  reg_def VSR59 ( SOC, SOC, Op_VecX, 59, NULL);
-  reg_def VSR60 ( SOC, SOC, Op_VecX, 60, NULL);
-  reg_def VSR61 ( SOC, SOC, Op_VecX, 61, NULL);
-  reg_def VSR62 ( SOC, SOC, Op_VecX, 62, NULL);
-  reg_def VSR63 ( SOC, SOC, Op_VecX, 63, NULL);
+  // 1st 32 VSRs are aliases for the FPRs which are already defined above.
+  reg_def VSR0 ( SOC, SOC, Op_VecX, 0, VMRegImpl::Bad());
+  reg_def VSR1 ( SOC, SOC, Op_VecX, 1, VMRegImpl::Bad());
+  reg_def VSR2 ( SOC, SOC, Op_VecX, 2, VMRegImpl::Bad());
+  reg_def VSR3 ( SOC, SOC, Op_VecX, 3, VMRegImpl::Bad());
+  reg_def VSR4 ( SOC, SOC, Op_VecX, 4, VMRegImpl::Bad());
+  reg_def VSR5 ( SOC, SOC, Op_VecX, 5, VMRegImpl::Bad());
+  reg_def VSR6 ( SOC, SOC, Op_VecX, 6, VMRegImpl::Bad());
+  reg_def VSR7 ( SOC, SOC, Op_VecX, 7, VMRegImpl::Bad());
+  reg_def VSR8 ( SOC, SOC, Op_VecX, 8, VMRegImpl::Bad());
+  reg_def VSR9 ( SOC, SOC, Op_VecX, 9, VMRegImpl::Bad());
+  reg_def VSR10 ( SOC, SOC, Op_VecX, 10, VMRegImpl::Bad());
+  reg_def VSR11 ( SOC, SOC, Op_VecX, 11, VMRegImpl::Bad());
+  reg_def VSR12 ( SOC, SOC, Op_VecX, 12, VMRegImpl::Bad());
+  reg_def VSR13 ( SOC, SOC, Op_VecX, 13, VMRegImpl::Bad());
+  reg_def VSR14 ( SOC, SOE, Op_VecX, 14, VMRegImpl::Bad());
+  reg_def VSR15 ( SOC, SOE, Op_VecX, 15, VMRegImpl::Bad());
+  reg_def VSR16 ( SOC, SOE, Op_VecX, 16, VMRegImpl::Bad());
+  reg_def VSR17 ( SOC, SOE, Op_VecX, 17, VMRegImpl::Bad());
+  reg_def VSR18 ( SOC, SOE, Op_VecX, 18, VMRegImpl::Bad());
+  reg_def VSR19 ( SOC, SOE, Op_VecX, 19, VMRegImpl::Bad());
+  reg_def VSR20 ( SOC, SOE, Op_VecX, 20, VMRegImpl::Bad());
+  reg_def VSR21 ( SOC, SOE, Op_VecX, 21, VMRegImpl::Bad());
+  reg_def VSR22 ( SOC, SOE, Op_VecX, 22, VMRegImpl::Bad());
+  reg_def VSR23 ( SOC, SOE, Op_VecX, 23, VMRegImpl::Bad());
+  reg_def VSR24 ( SOC, SOE, Op_VecX, 24, VMRegImpl::Bad());
+  reg_def VSR25 ( SOC, SOE, Op_VecX, 25, VMRegImpl::Bad());
+  reg_def VSR26 ( SOC, SOE, Op_VecX, 26, VMRegImpl::Bad());
+  reg_def VSR27 ( SOC, SOE, Op_VecX, 27, VMRegImpl::Bad());
+  reg_def VSR28 ( SOC, SOE, Op_VecX, 28, VMRegImpl::Bad());
+  reg_def VSR29 ( SOC, SOE, Op_VecX, 29, VMRegImpl::Bad());
+  reg_def VSR30 ( SOC, SOE, Op_VecX, 30, VMRegImpl::Bad());
+  reg_def VSR31 ( SOC, SOE, Op_VecX, 31, VMRegImpl::Bad());
+  // 2nd 32 VSRs are aliases for the VRs which are only defined here.
+  reg_def VSR32 ( SOC, SOC, Op_VecX, 32, VSR32->as_VMReg());
+  reg_def VSR33 ( SOC, SOC, Op_VecX, 33, VSR33->as_VMReg());
+  reg_def VSR34 ( SOC, SOC, Op_VecX, 34, VSR34->as_VMReg());
+  reg_def VSR35 ( SOC, SOC, Op_VecX, 35, VSR35->as_VMReg());
+  reg_def VSR36 ( SOC, SOC, Op_VecX, 36, VSR36->as_VMReg());
+  reg_def VSR37 ( SOC, SOC, Op_VecX, 37, VSR37->as_VMReg());
+  reg_def VSR38 ( SOC, SOC, Op_VecX, 38, VSR38->as_VMReg());
+  reg_def VSR39 ( SOC, SOC, Op_VecX, 39, VSR39->as_VMReg());
+  reg_def VSR40 ( SOC, SOC, Op_VecX, 40, VSR40->as_VMReg());
+  reg_def VSR41 ( SOC, SOC, Op_VecX, 41, VSR41->as_VMReg());
+  reg_def VSR42 ( SOC, SOC, Op_VecX, 42, VSR42->as_VMReg());
+  reg_def VSR43 ( SOC, SOC, Op_VecX, 43, VSR43->as_VMReg());
+  reg_def VSR44 ( SOC, SOC, Op_VecX, 44, VSR44->as_VMReg());
+  reg_def VSR45 ( SOC, SOC, Op_VecX, 45, VSR45->as_VMReg());
+  reg_def VSR46 ( SOC, SOC, Op_VecX, 46, VSR46->as_VMReg());
+  reg_def VSR47 ( SOC, SOC, Op_VecX, 47, VSR47->as_VMReg());
+  reg_def VSR48 ( SOC, SOC, Op_VecX, 48, VSR48->as_VMReg());
+  reg_def VSR49 ( SOC, SOC, Op_VecX, 49, VSR49->as_VMReg());
+  reg_def VSR50 ( SOC, SOC, Op_VecX, 50, VSR50->as_VMReg());
+  reg_def VSR51 ( SOC, SOC, Op_VecX, 51, VSR51->as_VMReg());
+  reg_def VSR52 ( SOC, SOE, Op_VecX, 52, VSR52->as_VMReg());
+  reg_def VSR53 ( SOC, SOE, Op_VecX, 53, VSR53->as_VMReg());
+  reg_def VSR54 ( SOC, SOE, Op_VecX, 54, VSR54->as_VMReg());
+  reg_def VSR55 ( SOC, SOE, Op_VecX, 55, VSR55->as_VMReg());
+  reg_def VSR56 ( SOC, SOE, Op_VecX, 56, VSR56->as_VMReg());
+  reg_def VSR57 ( SOC, SOE, Op_VecX, 57, VSR57->as_VMReg());
+  reg_def VSR58 ( SOC, SOE, Op_VecX, 58, VSR58->as_VMReg());
+  reg_def VSR59 ( SOC, SOE, Op_VecX, 59, VSR59->as_VMReg());
+  reg_def VSR60 ( SOC, SOE, Op_VecX, 60, VSR60->as_VMReg());
+  reg_def VSR61 ( SOC, SOE, Op_VecX, 61, VSR61->as_VMReg());
+  reg_def VSR62 ( SOC, SOE, Op_VecX, 62, VSR62->as_VMReg());
+  reg_def VSR63 ( SOC, SOE, Op_VecX, 63, VSR63->as_VMReg());
 
 // ----------------------------
 // Specify priority of register selection within phases of register
@@ -980,6 +982,7 @@ source_hpp %{
 
 source %{
 
+#include "opto/c2_CodeStubs.hpp"
 #include "oops/klass.inline.hpp"
 
 void PhaseOutput::pd_perform_mach_node_analysis() {
@@ -1614,7 +1617,9 @@ void MachEpilogNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
     Label dummy_label;
     Label* code_stub = &dummy_label;
     if (!UseSIGTRAP && !C->output()->in_scratch_emit_size()) {
-      code_stub = &C->output()->safepoint_poll_table()->add_safepoint(__ offset());
+      C2SafepointPollStub* stub = new (C->comp_arena()) C2SafepointPollStub(__ offset());
+      C->output()->add_stub(stub);
+      code_stub = &stub->entry();
       __ relocate(relocInfo::poll_return_type);
     }
     __ safepoint_poll(*code_stub, temp, true /* at_return */, true /* in_nmethod */);
@@ -1939,7 +1944,7 @@ uint MachNopNode::size(PhaseRegAlloc *ra_) const {
 void BoxLockNode::format(PhaseRegAlloc *ra_, outputStream *st) const {
   int offset = ra_->reg2offset(in_RegMask(0).find_first_elem());
   char reg_str[128];
-  ra_->dump_register(this, reg_str);
+  ra_->dump_register(this, reg_str, sizeof(reg_str));
   st->print("ADDI    %s, SP, %d \t// box node", reg_str, offset);
 }
 #endif
@@ -2095,7 +2100,7 @@ static int frame_slots_bias(int reg_enc, PhaseRegAlloc* ra_) {
   return 0;
 }
 
-const bool Matcher::match_rule_supported(int opcode) {
+bool Matcher::match_rule_supported(int opcode) {
   if (!has_match_rule(opcode)) {
     return false; // no match rule present
   }
@@ -2143,6 +2148,9 @@ const bool Matcher::match_rule_supported(int opcode) {
       return SuperwordUseVSX;
     case Op_PopCountVI:
       return (SuperwordUseVSX && UsePopCountInstruction);
+    case Op_FmaF:
+    case Op_FmaD:
+      return UseFMA;
     case Op_FmaVF:
     case Op_FmaVD:
       return (SuperwordUseVSX && UseFMA);
@@ -2165,18 +2173,22 @@ const bool Matcher::match_rule_supported(int opcode) {
   return true; // Per default match rules are supported.
 }
 
-const bool Matcher::match_rule_supported_superword(int opcode, int vlen, BasicType bt) {
+bool Matcher::match_rule_supported_superword(int opcode, int vlen, BasicType bt) {
   return match_rule_supported_vector(opcode, vlen, bt);
 }
 
-const bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType bt) {
+bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType bt) {
   if (!match_rule_supported(opcode) || !vector_size_supported(bt, vlen)) {
     return false;
   }
   return true; // Per default match rules are supported.
 }
 
-const bool Matcher::match_rule_supported_vector_masked(int opcode, int vlen, BasicType bt) {
+bool Matcher::match_rule_supported_vector_masked(int opcode, int vlen, BasicType bt) {
+  return false;
+}
+
+bool Matcher::vector_needs_partial_operations(Node* node, const TypeVect* vt) {
   return false;
 }
 
@@ -2189,7 +2201,7 @@ const TypeVectMask* Matcher::predicate_reg_type(const Type* elemTy, int length) 
 }
 
 // Vector calling convention not yet implemented.
-const bool Matcher::supports_vector_calling_convention(void) {
+bool Matcher::supports_vector_calling_convention(void) {
   return false;
 }
 
@@ -2199,7 +2211,7 @@ OptoRegPair Matcher::vector_return_value(uint ideal_reg) {
 }
 
 // Vector width in bytes.
-const int Matcher::vector_width_in_bytes(BasicType bt) {
+int Matcher::vector_width_in_bytes(BasicType bt) {
   if (SuperwordUseVSX) {
     assert(MaxVectorSize == 16, "");
     return 16;
@@ -2210,7 +2222,7 @@ const int Matcher::vector_width_in_bytes(BasicType bt) {
 }
 
 // Vector ideal reg.
-const uint Matcher::vector_ideal_reg(int size) {
+uint Matcher::vector_ideal_reg(int size) {
   if (SuperwordUseVSX) {
     assert(MaxVectorSize == 16 && size == 16, "");
     return Op_VecX;
@@ -2221,16 +2233,20 @@ const uint Matcher::vector_ideal_reg(int size) {
 }
 
 // Limits on vector size (number of elements) loaded into vector.
-const int Matcher::max_vector_size(const BasicType bt) {
+int Matcher::max_vector_size(const BasicType bt) {
   assert(is_java_primitive(bt), "only primitive type vectors");
   return vector_width_in_bytes(bt)/type2aelembytes(bt);
 }
 
-const int Matcher::min_vector_size(const BasicType bt) {
+int Matcher::min_vector_size(const BasicType bt) {
   return max_vector_size(bt); // Same as max.
 }
 
-const int Matcher::scalable_vector_reg_size(const BasicType bt) {
+int Matcher::superword_max_vector_size(const BasicType bt) {
+  return Matcher::max_vector_size(bt);
+}
+
+int Matcher::scalable_vector_reg_size(const BasicType bt) {
   return -1;
 }
 
@@ -3403,6 +3419,7 @@ encode %{
     if (!_method) {
       // A call to a runtime wrapper, e.g. new, new_typeArray_Java, uncommon_trap.
       emit_call_with_trampoline_stub(_masm, entry_point, relocInfo::runtime_call_type);
+      if (ciEnv::current()->failing()) { return; } // Code cache may be full.
     } else {
       // Remember the offset not the address.
       const int start_offset = __ offset();
@@ -3441,6 +3458,7 @@ encode %{
         return;
       }
     }
+    __ post_call_nop();
   %}
 
   // Second node of expanded dynamic call - the call.
@@ -3481,6 +3499,7 @@ encode %{
     // and the entry point might be too far away for bl. Pc() serves
     // as dummy and bl will be patched later.
     __ bl((address) __ pc());
+    __ post_call_nop();
   %}
 
   // postalloc expand emitter for virtual calls.
@@ -3571,6 +3590,7 @@ encode %{
       // to determine who we intended to call.
       __ relocate(virtual_call_Relocation::spec(virtual_call_meta_addr));
       emit_call_with_trampoline_stub(_masm, (address)$meth$$method, relocInfo::none);
+      if (ciEnv::current()->failing()) { return; } // Code cache may be full.
       assert(((MachCallDynamicJavaNode*)this)->ret_addr_offset() == __ offset() - start_offset,
              "Fix constant in ret_addr_offset(), expected %d", __ offset() - start_offset);
     } else {
@@ -3582,7 +3602,7 @@ encode %{
       __ load_klass(R11_scratch1, R3);
 
       int entry_offset = in_bytes(Klass::vtable_start_offset()) + vtable_index * vtableEntry::size_in_bytes();
-      int v_off = entry_offset + vtableEntry::method_offset_in_bytes();
+      int v_off = entry_offset + in_bytes(vtableEntry::method_offset());
       __ li(R19_method, v_off);
       __ ldx(R19_method/*method*/, R19_method/*method offset*/, R11_scratch1/*class*/);
       // NOTE: for vtable dispatches, the vtable entry will never be
@@ -3595,6 +3615,7 @@ encode %{
       assert(((MachCallDynamicJavaNode*)this)->ret_addr_offset() == __ offset() - start_offset,
              "Fix constant in ret_addr_offset(), expected %d", __ offset() - start_offset);
     }
+    __ post_call_nop();
   %}
 
   // a runtime call
@@ -3606,6 +3627,7 @@ encode %{
 #if defined(ABI_ELFv2)
     address entry= !($meth$$method) ? NULL : (address)$meth$$method;
     __ call_c(entry, relocInfo::runtime_call_type);
+    __ post_call_nop();
 #else
     // The function we're going to call.
     FunctionDescriptor fdtemp;
@@ -3621,6 +3643,7 @@ encode %{
       ciEnv::current()->record_out_of_memory_failure();
       return;
     }
+    __ post_call_nop();
 #endif
 
     // Check the ret_addr_offset.
@@ -3775,7 +3798,7 @@ frame %{
   // out_preserve_stack_slots for calls to C. Supports the var-args
   // backing area for register parms.
   //
-  varargs_C_out_slots_killed(((frame::abi_reg_args_size - frame::jit_out_preserve_size) / VMRegImpl::stack_slot_size));
+  varargs_C_out_slots_killed(((frame::native_abi_reg_args_size - frame::jit_out_preserve_size) / VMRegImpl::stack_slot_size));
 
   // The after-PROLOG location of the return address. Location of
   // return address specifies a type (REG or STACK) and a number
@@ -6523,6 +6546,7 @@ instruct storeNKlass(memory dst, iRegN_P2N src) %{
 // Store Pointer
 instruct storeP(memoryAlg4 dst, iRegPsrc src) %{
   match(Set dst (StoreP dst src));
+  predicate(n->as_Store()->barrier_data() == 0);
   ins_cost(MEMORY_REF_COST);
 
   format %{ "STD     $src, $dst \t// ptr" %}
@@ -6835,6 +6859,9 @@ instruct decodeN_Disjoint_notNull_Ex(iRegPdst dst, iRegNsrc src) %{
     n2->_opnds[1] = op_src;
     n2->_opnds[2] = op_dst;
     n2->_bottom_type = _bottom_type;
+
+    assert(ra_->is_oop(this) == true, "A decodeN node must produce an oop!");
+    ra_->set_oop(n2, true);
 
     ra_->set_pair(n1->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this));
     ra_->set_pair(n2->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this));
@@ -7445,62 +7472,6 @@ instruct cmovD_reg(cmpOp cmp, flagsRegSrc crx, regD dst, regD src) %{
     __ bind(done);
   %}
   ins_pipe(pipe_class_default);
-%}
-
-//----------Conditional_store--------------------------------------------------
-// Conditional-store of the updated heap-top.
-// Used during allocation of the shared heap.
-// Sets flags (EQ) on success. Implemented with a CASA on Sparc.
-
-// As compareAndSwapL, but return flag register instead of boolean value in
-// int register.
-// Used by sun/misc/AtomicLongCSImpl.java.
-// Mem_ptr must be a memory operand, else this node does not get
-// Flag_needs_anti_dependence_check set by adlc. If this is not set this node
-// can be rematerialized which leads to errors.
-instruct storeLConditional_regP_regL_regL(flagsReg crx, indirect mem_ptr, iRegLsrc oldVal, iRegLsrc newVal, flagsRegCR0 cr0) %{
-  match(Set crx (StoreLConditional mem_ptr (Binary oldVal newVal)));
-  effect(TEMP cr0);
-  format %{ "CMPXCHGD if ($crx = ($oldVal == *$mem_ptr)) *mem_ptr = $newVal; as bool" %}
-  ins_encode %{
-    __ cmpxchgd($crx$$CondRegister, R0, $oldVal$$Register, $newVal$$Register, $mem_ptr$$Register,
-                MacroAssembler::MemBarAcq, MacroAssembler::cmpxchgx_hint_atomic_update(),
-                noreg, NULL, true);
-  %}
-  ins_pipe(pipe_class_default);
-%}
-
-// As compareAndSwapP, but return flag register instead of boolean value in
-// int register.
-// This instruction is matched if UseTLAB is off.
-// Mem_ptr must be a memory operand, else this node does not get
-// Flag_needs_anti_dependence_check set by adlc. If this is not set this node
-// can be rematerialized which leads to errors.
-instruct storePConditional_regP_regP_regP(flagsRegCR0 cr0, indirect mem_ptr, iRegPsrc oldVal, iRegPsrc newVal) %{
-  match(Set cr0 (StorePConditional mem_ptr (Binary oldVal newVal)));
-  ins_cost(2*MEMORY_REF_COST);
-  predicate(n->as_LoadStore()->barrier_data() == 0);
-
-  format %{ "STDCX_  if ($cr0 = ($oldVal == *$mem_ptr)) *mem_ptr = $newVal; as bool" %}
-  ins_encode %{
-    __ stdcx_($newVal$$Register, $mem_ptr$$Register);
-  %}
-  ins_pipe(pipe_class_memory);
-%}
-
-// Implement LoadPLocked. Must be ordered against changes of the memory location
-// by storePConditional.
-// Don't know whether this is ever used.
-instruct loadPLocked(iRegPdst dst, memory mem) %{
-  match(Set dst (LoadPLocked mem));
-  ins_cost(2*MEMORY_REF_COST);
-
-  format %{ "LDARX   $dst, $mem \t// loadPLocked\n\t" %}
-  size(4);
-  ins_encode %{
-    __ ldarx($dst$$Register, $mem$$Register, MacroAssembler::cmpxchgx_hint_atomic_update());
-  %}
-  ins_pipe(pipe_class_memory);
 %}
 
 //----------Compare-And-Swap---------------------------------------------------
@@ -9684,6 +9655,7 @@ instruct maddF_reg_reg(regF dst, regF src1, regF src2, regF src3) %{
   format %{ "FMADDS  $dst, $src1, $src2, $src3" %}
   size(4);
   ins_encode %{
+    assert(UseFMA, "Needs FMA instructions support.");
     __ fmadds($dst$$FloatRegister, $src1$$FloatRegister, $src2$$FloatRegister, $src3$$FloatRegister);
   %}
   ins_pipe(pipe_class_default);
@@ -9696,58 +9668,63 @@ instruct maddD_reg_reg(regD dst, regD src1, regD src2, regD src3) %{
   format %{ "FMADD   $dst, $src1, $src2, $src3" %}
   size(4);
   ins_encode %{
+    assert(UseFMA, "Needs FMA instructions support.");
     __ fmadd($dst$$FloatRegister, $src1$$FloatRegister, $src2$$FloatRegister, $src3$$FloatRegister);
   %}
   ins_pipe(pipe_class_default);
 %}
 
-// -src1 * src2 + src3 = -(src1*src2-src3)
+// src1 * (-src2) + src3 = -(src1*src2-src3)
+// "(-src1) * src2 + src3" has been idealized to "src2 * (-src1) + src3"
 instruct mnsubF_reg_reg(regF dst, regF src1, regF src2, regF src3) %{
-  match(Set dst (FmaF src3 (Binary (NegF src1) src2)));
   match(Set dst (FmaF src3 (Binary src1 (NegF src2))));
 
   format %{ "FNMSUBS $dst, $src1, $src2, $src3" %}
   size(4);
   ins_encode %{
+    assert(UseFMA, "Needs FMA instructions support.");
     __ fnmsubs($dst$$FloatRegister, $src1$$FloatRegister, $src2$$FloatRegister, $src3$$FloatRegister);
   %}
   ins_pipe(pipe_class_default);
 %}
 
-// -src1 * src2 + src3 = -(src1*src2-src3)
+// src1 * (-src2) + src3 = -(src1*src2-src3)
+// "(-src1) * src2 + src3" has been idealized to "src2 * (-src1) + src3"
 instruct mnsubD_reg_reg(regD dst, regD src1, regD src2, regD src3) %{
-  match(Set dst (FmaD src3 (Binary (NegD src1) src2)));
   match(Set dst (FmaD src3 (Binary src1 (NegD src2))));
 
   format %{ "FNMSUB  $dst, $src1, $src2, $src3" %}
   size(4);
   ins_encode %{
+    assert(UseFMA, "Needs FMA instructions support.");
     __ fnmsub($dst$$FloatRegister, $src1$$FloatRegister, $src2$$FloatRegister, $src3$$FloatRegister);
   %}
   ins_pipe(pipe_class_default);
 %}
 
-// -src1 * src2 - src3 = -(src1*src2+src3)
+// src1 * (-src2) - src3 = -(src1*src2+src3)
+// "(-src1) * src2 - src3" has been idealized to "src2 * (-src1) - src3"
 instruct mnaddF_reg_reg(regF dst, regF src1, regF src2, regF src3) %{
-  match(Set dst (FmaF (NegF src3) (Binary (NegF src1) src2)));
   match(Set dst (FmaF (NegF src3) (Binary src1 (NegF src2))));
 
   format %{ "FNMADDS $dst, $src1, $src2, $src3" %}
   size(4);
   ins_encode %{
+    assert(UseFMA, "Needs FMA instructions support.");
     __ fnmadds($dst$$FloatRegister, $src1$$FloatRegister, $src2$$FloatRegister, $src3$$FloatRegister);
   %}
   ins_pipe(pipe_class_default);
 %}
 
-// -src1 * src2 - src3 = -(src1*src2+src3)
+// src1 * (-src2) - src3 = -(src1*src2+src3)
+// "(-src1) * src2 - src3" has been idealized to "src2 * (-src1) - src3"
 instruct mnaddD_reg_reg(regD dst, regD src1, regD src2, regD src3) %{
-  match(Set dst (FmaD (NegD src3) (Binary (NegD src1) src2)));
   match(Set dst (FmaD (NegD src3) (Binary src1 (NegD src2))));
 
   format %{ "FNMADD  $dst, $src1, $src2, $src3" %}
   size(4);
   ins_encode %{
+    assert(UseFMA, "Needs FMA instructions support.");
     __ fnmadd($dst$$FloatRegister, $src1$$FloatRegister, $src2$$FloatRegister, $src3$$FloatRegister);
   %}
   ins_pipe(pipe_class_default);
@@ -9760,6 +9737,7 @@ instruct msubF_reg_reg(regF dst, regF src1, regF src2, regF src3) %{
   format %{ "FMSUBS  $dst, $src1, $src2, $src3" %}
   size(4);
   ins_encode %{
+    assert(UseFMA, "Needs FMA instructions support.");
     __ fmsubs($dst$$FloatRegister, $src1$$FloatRegister, $src2$$FloatRegister, $src3$$FloatRegister);
   %}
   ins_pipe(pipe_class_default);
@@ -9772,6 +9750,7 @@ instruct msubD_reg_reg(regD dst, regD src1, regD src2, regD src3) %{
   format %{ "FMSUB   $dst, $src1, $src2, $src3" %}
   size(4);
   ins_encode %{
+    assert(UseFMA, "Needs FMA instructions support.");
     __ fmsub($dst$$FloatRegister, $src1$$FloatRegister, $src2$$FloatRegister, $src3$$FloatRegister);
   %}
   ins_pipe(pipe_class_default);
@@ -11469,7 +11448,7 @@ instruct cmpL3_reg_reg(iRegIdst dst, iRegLsrc src1, iRegLsrc src2, flagsRegCR0 c
   match(Set dst (CmpL3 src1 src2));
   effect(KILL cr0);
   ins_cost(DEFAULT_COST * 5);
-  size(VM_Version::has_brw() ? 16 : 20);
+  size((VM_Version::has_brw() ? 16 : 20));
 
   format %{ "cmpL3_reg_reg $dst, $src1, $src2" %}
 
@@ -11804,7 +11783,7 @@ instruct cmpF3_reg_reg(iRegIdst dst, regF src1, regF src2, flagsRegCR0 cr0) %{
   match(Set dst (CmpF3 src1 src2));
   effect(KILL cr0);
   ins_cost(DEFAULT_COST * 6);
-  size(VM_Version::has_brw() ? 20 : 24);
+  size((VM_Version::has_brw() ? 20 : 24));
 
   format %{ "cmpF3_reg_reg $dst, $src1, $src2" %}
 
@@ -11888,7 +11867,7 @@ instruct cmpD3_reg_reg(iRegIdst dst, regD src1, regD src2, flagsRegCR0 cr0) %{
   match(Set dst (CmpD3 src1 src2));
   effect(KILL cr0);
   ins_cost(DEFAULT_COST * 6);
-  size(VM_Version::has_brw() ? 20 : 24);
+  size((VM_Version::has_brw() ? 20 : 24));
 
   format %{ "cmpD3_reg_reg $dst, $src1, $src2" %}
 
@@ -12167,10 +12146,9 @@ instruct partialSubtypeCheck(iRegPdst result, iRegP_N2P subklass, iRegP_N2P supe
 
 // inlined locking and unlocking
 
-instruct cmpFastLock(flagsReg crx, iRegPdst oop, iRegPdst box, iRegPdst tmp1, iRegPdst tmp2) %{
+instruct cmpFastLock(flagsRegCR0 crx, iRegPdst oop, iRegPdst box, iRegPdst tmp1, iRegPdst tmp2) %{
   match(Set crx (FastLock oop box));
   effect(TEMP tmp1, TEMP tmp2);
-  predicate(!Compile::current()->use_rtm());
 
   format %{ "FASTLOCK  $oop, $box, $tmp1, $tmp2" %}
   ins_encode %{
@@ -12183,53 +12161,14 @@ instruct cmpFastLock(flagsReg crx, iRegPdst oop, iRegPdst box, iRegPdst tmp1, iR
   ins_pipe(pipe_class_compare);
 %}
 
-// Separate version for TM. Use bound register for box to enable USE_KILL.
-instruct cmpFastLock_tm(flagsReg crx, iRegPdst oop, rarg2RegP box, iRegPdst tmp1, iRegPdst tmp2, iRegPdst tmp3) %{
-  match(Set crx (FastLock oop box));
-  effect(TEMP tmp1, TEMP tmp2, TEMP tmp3, USE_KILL box);
-  predicate(Compile::current()->use_rtm());
-
-  format %{ "FASTLOCK  $oop, $box, $tmp1, $tmp2, $tmp3 (TM)" %}
-  ins_encode %{
-    __ compiler_fast_lock_object($crx$$CondRegister, $oop$$Register, $box$$Register,
-                                 $tmp1$$Register, $tmp2$$Register, $tmp3$$Register,
-                                 _rtm_counters, _stack_rtm_counters,
-                                 ((Method*)(ra_->C->method()->constant_encoding()))->method_data(),
-                                 /*RTM*/ true, ra_->C->profile_rtm());
-    // If locking was successful, crx should indicate 'EQ'.
-    // The compiler generates a branch to the runtime call to
-    // _complete_monitor_locking_Java for the case where crx is 'NE'.
-  %}
-  ins_pipe(pipe_class_compare);
-%}
-
-instruct cmpFastUnlock(flagsReg crx, iRegPdst oop, iRegPdst box, iRegPdst tmp1, iRegPdst tmp2, iRegPdst tmp3) %{
+instruct cmpFastUnlock(flagsRegCR0 crx, iRegPdst oop, iRegPdst box, iRegPdst tmp1, iRegPdst tmp2, iRegPdst tmp3) %{
   match(Set crx (FastUnlock oop box));
   effect(TEMP tmp1, TEMP tmp2, TEMP tmp3);
-  predicate(!Compile::current()->use_rtm());
 
   format %{ "FASTUNLOCK  $oop, $box, $tmp1, $tmp2" %}
   ins_encode %{
     __ compiler_fast_unlock_object($crx$$CondRegister, $oop$$Register, $box$$Register,
-                                   $tmp1$$Register, $tmp2$$Register, $tmp3$$Register,
-                                   false);
-    // If unlocking was successful, crx should indicate 'EQ'.
-    // The compiler generates a branch to the runtime call to
-    // _complete_monitor_unlocking_Java for the case where crx is 'NE'.
-  %}
-  ins_pipe(pipe_class_compare);
-%}
-
-instruct cmpFastUnlock_tm(flagsReg crx, iRegPdst oop, iRegPdst box, iRegPdst tmp1, iRegPdst tmp2, iRegPdst tmp3) %{
-  match(Set crx (FastUnlock oop box));
-  effect(TEMP tmp1, TEMP tmp2, TEMP tmp3);
-  predicate(Compile::current()->use_rtm());
-
-  format %{ "FASTUNLOCK  $oop, $box, $tmp1, $tmp2 (TM)" %}
-  ins_encode %{
-    __ compiler_fast_unlock_object($crx$$CondRegister, $oop$$Register, $box$$Register,
-                                   $tmp1$$Register, $tmp2$$Register, $tmp3$$Register,
-                                   /*RTM*/ true);
+                                   $tmp1$$Register, $tmp2$$Register, $tmp3$$Register);
     // If unlocking was successful, crx should indicate 'EQ'.
     // The compiler generates a branch to the runtime call to
     // _complete_monitor_unlocking_Java for the case where crx is 'NE'.
@@ -12788,16 +12727,8 @@ instruct string_compress(rarg1RegP src, rarg2RegP dst, iRegIsrc len, iRegIdst re
   ins_cost(300);
   format %{ "String Compress $src,$dst,$len -> $result \t// KILL $tmp1, $tmp2, $tmp3, $tmp4, $tmp5" %}
   ins_encode %{
-    Label Lskip, Ldone;
-    __ li($result$$Register, 0);
-    __ string_compress_16($src$$Register, $dst$$Register, $len$$Register, $tmp1$$Register,
-                          $tmp2$$Register, $tmp3$$Register, $tmp4$$Register, $tmp5$$Register, Ldone);
-    __ rldicl_($tmp1$$Register, $len$$Register, 0, 64-3); // Remaining characters.
-    __ beq(CCR0, Lskip);
-    __ string_compress($src$$Register, $dst$$Register, $tmp1$$Register, $tmp2$$Register, Ldone);
-    __ bind(Lskip);
-    __ mr($result$$Register, $len$$Register);
-    __ bind(Ldone);
+    __ encode_iso_array($src$$Register, $dst$$Register, $len$$Register, $tmp1$$Register, $tmp2$$Register,
+                        $tmp3$$Register, $tmp4$$Register, $tmp5$$Register, $result$$Register, false);
   %}
   ins_pipe(pipe_class_default);
 %}
@@ -13516,8 +13447,9 @@ instruct repl56(iRegLdst dst) %{
 %}
 
 instruct repl8B_reg_Ex(iRegLdst dst, iRegIsrc src) %{
-  match(Set dst (ReplicateB src));
-  predicate(n->as_Vector()->length() == 8);
+  match(Set dst (Replicate src));
+  predicate(n->as_Vector()->length() == 8 &&
+            Matcher::vector_element_basic_type(n) == T_BYTE);
   expand %{
     moveReg(dst, src);
     repl56(dst);
@@ -13527,8 +13459,9 @@ instruct repl8B_reg_Ex(iRegLdst dst, iRegIsrc src) %{
 %}
 
 instruct repl8B_immI0(iRegLdst dst, immI_0 zero) %{
-  match(Set dst (ReplicateB zero));
-  predicate(n->as_Vector()->length() == 8);
+  match(Set dst (Replicate zero));
+  predicate(n->as_Vector()->length() == 8 &&
+            Matcher::vector_element_basic_type(n) == T_BYTE);
   format %{ "LI      $dst, #0 \t// replicate8B" %}
   size(4);
   ins_encode %{
@@ -13538,8 +13471,9 @@ instruct repl8B_immI0(iRegLdst dst, immI_0 zero) %{
 %}
 
 instruct repl8B_immIminus1(iRegLdst dst, immI_minus1 src) %{
-  match(Set dst (ReplicateB src));
-  predicate(n->as_Vector()->length() == 8);
+  match(Set dst (Replicate src));
+  predicate(n->as_Vector()->length() == 8 &&
+            Matcher::vector_element_basic_type(n) == T_BYTE);
   format %{ "LI      $dst, #-1 \t// replicate8B" %}
   size(4);
   ins_encode %{
@@ -13549,8 +13483,9 @@ instruct repl8B_immIminus1(iRegLdst dst, immI_minus1 src) %{
 %}
 
 instruct repl16B_reg_Ex(vecX dst, iRegIsrc src) %{
-  match(Set dst (ReplicateB src));
-  predicate(n->as_Vector()->length() == 16);
+  match(Set dst (Replicate src));
+  predicate(n->as_Vector()->length() == 16 &&
+            Matcher::vector_element_basic_type(n) == T_BYTE);
 
   expand %{
     iRegLdst tmpL;
@@ -13565,8 +13500,9 @@ instruct repl16B_reg_Ex(vecX dst, iRegIsrc src) %{
 %}
 
 instruct repl16B_immI0(vecX dst, immI_0 zero) %{
-  match(Set dst (ReplicateB zero));
-  predicate(n->as_Vector()->length() == 16);
+  match(Set dst (Replicate zero));
+  predicate(n->as_Vector()->length() == 16 &&
+            Matcher::vector_element_basic_type(n) == T_BYTE);
 
   format %{ "XXLXOR      $dst, $zero \t// replicate16B" %}
   size(4);
@@ -13577,8 +13513,9 @@ instruct repl16B_immI0(vecX dst, immI_0 zero) %{
 %}
 
 instruct repl16B_immIminus1(vecX dst, immI_minus1 src) %{
-  match(Set dst (ReplicateB src));
-  predicate(n->as_Vector()->length() == 16);
+  match(Set dst (Replicate src));
+  predicate(n->as_Vector()->length() == 16 &&
+            Matcher::vector_element_basic_type(n) == T_BYTE);
 
   format %{ "XXLEQV      $dst, $src \t// replicate16B" %}
   size(4);
@@ -13589,8 +13526,9 @@ instruct repl16B_immIminus1(vecX dst, immI_minus1 src) %{
 %}
 
 instruct repl4S_reg_Ex(iRegLdst dst, iRegIsrc src) %{
-  match(Set dst (ReplicateS src));
-  predicate(n->as_Vector()->length() == 4);
+  match(Set dst (Replicate src));
+  predicate(n->as_Vector()->length() == 4 &&
+            Matcher::vector_element_basic_type(n) == T_SHORT);
   expand %{
     moveReg(dst, src);
     repl48(dst);
@@ -13599,8 +13537,9 @@ instruct repl4S_reg_Ex(iRegLdst dst, iRegIsrc src) %{
 %}
 
 instruct repl4S_immI0(iRegLdst dst, immI_0 zero) %{
-  match(Set dst (ReplicateS zero));
-  predicate(n->as_Vector()->length() == 4);
+  match(Set dst (Replicate zero));
+  predicate(n->as_Vector()->length() == 4 &&
+            Matcher::vector_element_basic_type(n) == T_SHORT);
   format %{ "LI      $dst, #0 \t// replicate4S" %}
   size(4);
   ins_encode %{
@@ -13610,8 +13549,9 @@ instruct repl4S_immI0(iRegLdst dst, immI_0 zero) %{
 %}
 
 instruct repl4S_immIminus1(iRegLdst dst, immI_minus1 src) %{
-  match(Set dst (ReplicateS src));
-  predicate(n->as_Vector()->length() == 4);
+  match(Set dst (Replicate src));
+  predicate(n->as_Vector()->length() == 4 &&
+            Matcher::vector_element_basic_type(n) == T_SHORT);
   format %{ "LI      $dst, -1 \t// replicate4S" %}
   size(4);
   ins_encode %{
@@ -13621,8 +13561,9 @@ instruct repl4S_immIminus1(iRegLdst dst, immI_minus1 src) %{
 %}
 
 instruct repl8S_reg_Ex(vecX dst, iRegIsrc src) %{
-  match(Set dst (ReplicateS src));
-  predicate(n->as_Vector()->length() == 8);
+  match(Set dst (Replicate src));
+  predicate(n->as_Vector()->length() == 8 &&
+            Matcher::vector_element_basic_type(n) == T_SHORT);
 
   expand %{
     iRegLdst tmpL;
@@ -13637,8 +13578,9 @@ instruct repl8S_reg_Ex(vecX dst, iRegIsrc src) %{
 %}
 
 instruct repl8S_immI0(vecX dst, immI_0 zero) %{
-  match(Set dst (ReplicateS zero));
-  predicate(n->as_Vector()->length() == 8);
+  match(Set dst (Replicate zero));
+  predicate(n->as_Vector()->length() == 8 &&
+            Matcher::vector_element_basic_type(n) == T_SHORT);
 
   format %{ "XXLXOR      $dst, $zero \t// replicate8S" %}
   size(4);
@@ -13649,8 +13591,9 @@ instruct repl8S_immI0(vecX dst, immI_0 zero) %{
 %}
 
 instruct repl8S_immIminus1(vecX dst, immI_minus1 src) %{
-  match(Set dst (ReplicateS src));
-  predicate(n->as_Vector()->length() == 8);
+  match(Set dst (Replicate src));
+  predicate(n->as_Vector()->length() == 8 &&
+            Matcher::vector_element_basic_type(n) == T_SHORT);
 
   format %{ "XXLEQV      $dst, $src \t// replicate8S" %}
   size(4);
@@ -13661,8 +13604,9 @@ instruct repl8S_immIminus1(vecX dst, immI_minus1 src) %{
 %}
 
 instruct repl2I_reg_Ex(iRegLdst dst, iRegIsrc src) %{
-  match(Set dst (ReplicateI src));
-  predicate(n->as_Vector()->length() == 2);
+  match(Set dst (Replicate src));
+  predicate(n->as_Vector()->length() == 2 &&
+            Matcher::vector_element_basic_type(n) == T_INT);
   ins_cost(2 * DEFAULT_COST);
   expand %{
     moveReg(dst, src);
@@ -13671,8 +13615,9 @@ instruct repl2I_reg_Ex(iRegLdst dst, iRegIsrc src) %{
 %}
 
 instruct repl2I_immI0(iRegLdst dst, immI_0 zero) %{
-  match(Set dst (ReplicateI zero));
-  predicate(n->as_Vector()->length() == 2);
+  match(Set dst (Replicate zero));
+  predicate(n->as_Vector()->length() == 2 &&
+            Matcher::vector_element_basic_type(n) == T_INT);
   format %{ "LI      $dst, #0 \t// replicate2I" %}
   size(4);
   ins_encode %{
@@ -13682,8 +13627,9 @@ instruct repl2I_immI0(iRegLdst dst, immI_0 zero) %{
 %}
 
 instruct repl2I_immIminus1(iRegLdst dst, immI_minus1 src) %{
-  match(Set dst (ReplicateI src));
-  predicate(n->as_Vector()->length() == 2);
+  match(Set dst (Replicate src));
+  predicate(n->as_Vector()->length() == 2 &&
+            Matcher::vector_element_basic_type(n) == T_INT);
   format %{ "LI      $dst, -1 \t// replicate2I" %}
   size(4);
   ins_encode %{
@@ -13693,8 +13639,9 @@ instruct repl2I_immIminus1(iRegLdst dst, immI_minus1 src) %{
 %}
 
 instruct repl4I_reg_Ex(vecX dst, iRegIsrc src) %{
-  match(Set dst (ReplicateI src));
-  predicate(n->as_Vector()->length() == 4);
+  match(Set dst (Replicate src));
+  predicate(n->as_Vector()->length() == 4 &&
+            Matcher::vector_element_basic_type(n) == T_INT);
   ins_cost(2 * DEFAULT_COST);
 
   expand %{
@@ -13709,8 +13656,9 @@ instruct repl4I_reg_Ex(vecX dst, iRegIsrc src) %{
 %}
 
 instruct repl4I_immI0(vecX dst, immI_0 zero) %{
-  match(Set dst (ReplicateI zero));
-  predicate(n->as_Vector()->length() == 4);
+  match(Set dst (Replicate zero));
+  predicate(n->as_Vector()->length() == 4 &&
+            Matcher::vector_element_basic_type(n) == T_INT);
 
   format %{ "XXLXOR      $dst, $zero \t// replicate4I" %}
   size(4);
@@ -13721,8 +13669,9 @@ instruct repl4I_immI0(vecX dst, immI_0 zero) %{
 %}
 
 instruct repl4I_immIminus1(vecX dst, immI_minus1 src) %{
-  match(Set dst (ReplicateI src));
-  predicate(n->as_Vector()->length() == 4);
+  match(Set dst (Replicate src));
+  predicate(n->as_Vector()->length() == 4 &&
+            Matcher::vector_element_basic_type(n) == T_INT);
 
   format %{ "XXLEQV      $dst, $dst, $dst \t// replicate4I" %}
   size(4);
@@ -13734,8 +13683,9 @@ instruct repl4I_immIminus1(vecX dst, immI_minus1 src) %{
 
 // Move float to int register via stack, replicate.
 instruct repl2F_reg_Ex(iRegLdst dst, regF src) %{
-  match(Set dst (ReplicateF src));
-  predicate(n->as_Vector()->length() == 2);
+  match(Set dst (Replicate src));
+  predicate(n->as_Vector()->length() == 2 &&
+            Matcher::vector_element_basic_type(n) == T_FLOAT);
   ins_cost(2 * MEMORY_REF_COST + DEFAULT_COST);
   expand %{
     stackSlotL tmpS;
@@ -13749,8 +13699,9 @@ instruct repl2F_reg_Ex(iRegLdst dst, regF src) %{
 
 // Replicate scalar constant to packed float values in Double register
 instruct repl2F_immF_Ex(iRegLdst dst, immF src) %{
-  match(Set dst (ReplicateF src));
-  predicate(n->as_Vector()->length() == 2);
+  match(Set dst (Replicate src));
+  predicate(n->as_Vector()->length() == 2 &&
+            Matcher::vector_element_basic_type(n) == T_FLOAT);
   ins_cost(5 * DEFAULT_COST);
 
   format %{ "LD      $dst, offset, $constanttablebase\t// load replicated float $src $src from table, postalloc expanded" %}
@@ -13759,8 +13710,9 @@ instruct repl2F_immF_Ex(iRegLdst dst, immF src) %{
 
 // Replicate scalar zero constant to packed float values in Double register
 instruct repl2F_immF0(iRegLdst dst, immF_0 zero) %{
-  match(Set dst (ReplicateF zero));
-  predicate(n->as_Vector()->length() == 2);
+  match(Set dst (Replicate zero));
+  predicate(n->as_Vector()->length() == 2 &&
+            Matcher::vector_element_basic_type(n) == T_FLOAT);
 
   format %{ "LI      $dst, #0 \t// replicate2F" %}
   ins_encode %{
@@ -14129,7 +14081,7 @@ instruct vpopcnt_reg(vecX dst, vecX src) %{
 %}
 
 // --------------------------------- FMA --------------------------------------
-// dst + src1 * src2
+// src1 * src2 + dst
 instruct vfma4F(vecX dst, vecX src1, vecX src2) %{
   match(Set dst (FmaVF dst (Binary src1 src2)));
   predicate(n->as_Vector()->length() == 4);
@@ -14138,14 +14090,15 @@ instruct vfma4F(vecX dst, vecX src1, vecX src2) %{
 
   size(4);
   ins_encode %{
+    assert(UseFMA, "Needs FMA instructions support.");
     __ xvmaddasp($dst$$VectorSRegister, $src1$$VectorSRegister, $src2$$VectorSRegister);
   %}
   ins_pipe(pipe_class_default);
 %}
 
-// dst - src1 * src2
+// src1 * (-src2) + dst
+// "(-src1) * src2 + dst" has been idealized to "src2 * (-src1) + dst"
 instruct vfma4F_neg1(vecX dst, vecX src1, vecX src2) %{
-  match(Set dst (FmaVF dst (Binary (NegVF src1) src2)));
   match(Set dst (FmaVF dst (Binary src1 (NegVF src2))));
   predicate(n->as_Vector()->length() == 4);
 
@@ -14153,12 +14106,13 @@ instruct vfma4F_neg1(vecX dst, vecX src1, vecX src2) %{
 
   size(4);
   ins_encode %{
+    assert(UseFMA, "Needs FMA instructions support.");
     __ xvnmsubasp($dst$$VectorSRegister, $src1$$VectorSRegister, $src2$$VectorSRegister);
   %}
   ins_pipe(pipe_class_default);
 %}
 
-// - dst + src1 * src2
+// src1 * src2 - dst
 instruct vfma4F_neg2(vecX dst, vecX src1, vecX src2) %{
   match(Set dst (FmaVF (NegVF dst) (Binary src1 src2)));
   predicate(n->as_Vector()->length() == 4);
@@ -14167,12 +14121,13 @@ instruct vfma4F_neg2(vecX dst, vecX src1, vecX src2) %{
 
   size(4);
   ins_encode %{
+    assert(UseFMA, "Needs FMA instructions support.");
     __ xvmsubasp($dst$$VectorSRegister, $src1$$VectorSRegister, $src2$$VectorSRegister);
   %}
   ins_pipe(pipe_class_default);
 %}
 
-// dst + src1 * src2
+// src1 * src2 + dst
 instruct vfma2D(vecX dst, vecX src1, vecX src2) %{
   match(Set dst (FmaVD  dst (Binary src1 src2)));
   predicate(n->as_Vector()->length() == 2);
@@ -14181,14 +14136,15 @@ instruct vfma2D(vecX dst, vecX src1, vecX src2) %{
 
   size(4);
   ins_encode %{
+    assert(UseFMA, "Needs FMA instructions support.");
     __ xvmaddadp($dst$$VectorSRegister, $src1$$VectorSRegister, $src2$$VectorSRegister);
   %}
   ins_pipe(pipe_class_default);
 %}
 
-// dst - src1 * src2
+// src1 * (-src2) + dst
+// "(-src1) * src2 + dst" has been idealized to "src2 * (-src1) + dst"
 instruct vfma2D_neg1(vecX dst, vecX src1, vecX src2) %{
-  match(Set dst (FmaVD  dst (Binary (NegVD src1) src2)));
   match(Set dst (FmaVD  dst (Binary src1 (NegVD src2))));
   predicate(n->as_Vector()->length() == 2);
 
@@ -14196,12 +14152,13 @@ instruct vfma2D_neg1(vecX dst, vecX src1, vecX src2) %{
 
   size(4);
   ins_encode %{
+    assert(UseFMA, "Needs FMA instructions support.");
     __ xvnmsubadp($dst$$VectorSRegister, $src1$$VectorSRegister, $src2$$VectorSRegister);
   %}
   ins_pipe(pipe_class_default);
 %}
 
-// - dst + src1 * src2
+// src1 * src2 - dst
 instruct vfma2D_neg2(vecX dst, vecX src1, vecX src2) %{
   match(Set dst (FmaVD (NegVD dst) (Binary src1 src2)));
   predicate(n->as_Vector()->length() == 2);
@@ -14210,6 +14167,7 @@ instruct vfma2D_neg2(vecX dst, vecX src1, vecX src2) %{
 
   size(4);
   ins_encode %{
+    assert(UseFMA, "Needs FMA instructions support.");
     __ xvmsubadp($dst$$VectorSRegister, $src1$$VectorSRegister, $src2$$VectorSRegister);
   %}
   ins_pipe(pipe_class_default);
@@ -14270,8 +14228,9 @@ instruct overflowMulL_reg_reg(flagsRegCR0 cr0, iRegLsrc op1, iRegLsrc op2) %{
 %}
 
 instruct repl4F_reg_Ex(vecX dst, regF src) %{
-  match(Set dst (ReplicateF src));
-  predicate(n->as_Vector()->length() == 4);
+  match(Set dst (Replicate src));
+  predicate(n->as_Vector()->length() == 4 &&
+            Matcher::vector_element_basic_type(n) == T_FLOAT);
   ins_cost(DEFAULT_COST);
   expand %{
     vecX tmpV;
@@ -14283,8 +14242,9 @@ instruct repl4F_reg_Ex(vecX dst, regF src) %{
 %}
 
 instruct repl4F_immF_Ex(vecX dst, immF src, iRegLdst tmp) %{
-  match(Set dst (ReplicateF src));
-  predicate(n->as_Vector()->length() == 4);
+  match(Set dst (Replicate src));
+  predicate(n->as_Vector()->length() == 4 &&
+            Matcher::vector_element_basic_type(n) == T_FLOAT);
   effect(TEMP tmp);
   ins_cost(10 * DEFAULT_COST);
 
@@ -14292,8 +14252,9 @@ instruct repl4F_immF_Ex(vecX dst, immF src, iRegLdst tmp) %{
 %}
 
 instruct repl4F_immF0(vecX dst, immF_0 zero) %{
-  match(Set dst (ReplicateF zero));
-  predicate(n->as_Vector()->length() == 4);
+  match(Set dst (Replicate zero));
+  predicate(n->as_Vector()->length() == 4 &&
+            Matcher::vector_element_basic_type(n) == T_FLOAT);
 
   format %{ "XXLXOR      $dst, $zero \t// replicate4F" %}
   ins_encode %{
@@ -14303,8 +14264,9 @@ instruct repl4F_immF0(vecX dst, immF_0 zero) %{
 %}
 
 instruct repl2D_reg_Ex(vecX dst, regD src) %{
-  match(Set dst (ReplicateD src));
-  predicate(n->as_Vector()->length() == 2);
+  match(Set dst (Replicate src));
+  predicate(n->as_Vector()->length() == 2 &&
+            Matcher::vector_element_basic_type(n) == T_DOUBLE);
 
   format %{ "XXPERMDI      $dst, $src, $src, 0 \t// Splat doubleword" %}
   size(4);
@@ -14315,8 +14277,9 @@ instruct repl2D_reg_Ex(vecX dst, regD src) %{
 %}
 
 instruct repl2D_immD0(vecX dst, immD_0 zero) %{
-  match(Set dst (ReplicateD zero));
-  predicate(n->as_Vector()->length() == 2);
+  match(Set dst (Replicate zero));
+  predicate(n->as_Vector()->length() == 2 &&
+            Matcher::vector_element_basic_type(n) == T_DOUBLE);
 
   format %{ "XXLXOR      $dst, $zero \t// replicate2D" %}
   size(4);
@@ -14361,7 +14324,8 @@ instruct xxpermdi(vecX dst, vecX src1, vecX src2, immI8 zero) %{
 %}
 
 instruct repl2L_reg_Ex(vecX dst, iRegLsrc src) %{
-  match(Set dst (ReplicateL src));
+  predicate(Matcher::vector_element_basic_type(n) == T_LONG);
+  match(Set dst (Replicate src));
   predicate(n->as_Vector()->length() == 2);
   expand %{
     vecX tmpV;
@@ -14372,8 +14336,9 @@ instruct repl2L_reg_Ex(vecX dst, iRegLsrc src) %{
 %}
 
 instruct repl2L_immI0(vecX dst, immI_0 zero) %{
-  match(Set dst (ReplicateL zero));
-  predicate(n->as_Vector()->length() == 2);
+  match(Set dst (Replicate zero));
+  predicate(n->as_Vector()->length() == 2 &&
+            Matcher::vector_element_basic_type(n) == T_LONG);
 
   format %{ "XXLXOR      $dst, $zero \t// replicate2L" %}
   size(4);
@@ -14384,8 +14349,9 @@ instruct repl2L_immI0(vecX dst, immI_0 zero) %{
 %}
 
 instruct repl2L_immIminus1(vecX dst, immI_minus1 src) %{
-  match(Set dst (ReplicateL src));
-  predicate(n->as_Vector()->length() == 2);
+  match(Set dst (Replicate src));
+  predicate(n->as_Vector()->length() == 2 &&
+            Matcher::vector_element_basic_type(n) == T_LONG);
 
   format %{ "XXLEQV      $dst, $src \t// replicate2L" %}
   size(4);
@@ -14416,6 +14382,12 @@ instruct safePoint_poll(iRegPdst poll) %{
 
 // Call Java Static Instruction
 
+source %{
+
+#include "runtime/continuation.hpp"
+
+%}
+
 // Schedulable version of call static node.
 instruct CallStaticJavaDirect(method meth) %{
   match(CallStaticJava);
@@ -14425,7 +14397,7 @@ instruct CallStaticJavaDirect(method meth) %{
   ins_num_consts(3 /* up to 3 patchable constants: inline cache, 2 call targets. */);
 
   format %{ "CALL,static $meth \t// ==> " %}
-  size(4);
+  size((Continuations::enabled() ? 8 : 4));
   ins_encode( enc_java_static_call(meth) );
   ins_pipe(pipe_class_call);
 %}
@@ -14446,7 +14418,7 @@ instruct CallDynamicJavaDirectSched(method meth) %{
   ins_num_consts(1 /* 1 patchable constant: call destination */);
 
   format %{ "BL        \t// dynamic $meth ==> " %}
-  size(4);
+  size((Continuations::enabled() ? 8 : 4));
   ins_encode( enc_java_dynamic_call_sched(meth) );
   ins_pipe(pipe_class_call);
 %}
@@ -14524,9 +14496,10 @@ instruct CallLeafDirect(method meth) %{
   predicate(false);  // but never match.
 
   format %{ "BCTRL     \t// leaf call $meth ==> " %}
-  size(4);
+  size((Continuations::enabled() ? 8 : 4));
   ins_encode %{
     __ bctrl();
+    __ post_call_nop();
   %}
   ins_pipe(pipe_class_call);
 %}

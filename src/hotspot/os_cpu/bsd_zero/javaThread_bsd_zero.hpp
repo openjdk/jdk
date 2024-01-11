@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007, 2008, 2009, 2010 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -31,7 +31,7 @@
   ZeroFrame* _top_zero_frame;
 
   void pd_initialize() {
-    _top_zero_frame = NULL;
+    _top_zero_frame = nullptr;
   }
 
  public:
@@ -68,7 +68,7 @@
     frame_anchor()->zap();
   }
   void set_last_Java_frame(ZeroFrame* fp, intptr_t* sp) {
-    frame_anchor()->set(sp, NULL, fp);
+    frame_anchor()->set(sp, nullptr, fp);
   }
 
  public:

@@ -1,11 +1,11 @@
-# PropertyValueAliases-14.0.0.txt
-# Date: 2021-05-10, 21:08:53 GMT
-# Copyright (c) 2021 Unicode, Inc.
+# PropertyValueAliases-15.1.0.txt
+# Date: 2023-08-07, 15:21:34 GMT
+# Copyright (c) 2023 Unicode, Inc.
 # Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
-# For terms of use, see http://www.unicode.org/terms_of_use.html
+# For terms of use, see https://www.unicode.org/terms_of_use.html
 #
 # Unicode Character Database
-#   For documentation, see http://www.unicode.org/reports/tr44/
+#   For documentation, see https://www.unicode.org/reports/tr44/
 #
 # This file contains aliases for property values used in the UCD.
 # These names can be used for XML formats of UCD data, for regular-expression
@@ -90,6 +90,8 @@ age; 12.0                             ; V12_0
 age; 12.1                             ; V12_1
 age; 13.0                             ; V13_0
 age; 14.0                             ; V14_0
+age; 15.0                             ; V15_0
+age; 15.1                             ; V15_1
 age; NA                               ; Unassigned
 
 # Alphabetic (Alpha)
@@ -135,7 +137,6 @@ Bidi_M; Y                             ; Yes                              ; T    
 
 # Bidi_Mirroring_Glyph (bmg)
 
-# @missing: 0000..10FFFF; Bidi_Mirroring_Glyph; <none>
 
 # Bidi_Paired_Bracket (bpb)
 
@@ -162,6 +163,7 @@ blk; Ancient_Symbols                  ; Ancient_Symbols
 blk; Arabic                           ; Arabic
 blk; Arabic_Ext_A                     ; Arabic_Extended_A
 blk; Arabic_Ext_B                     ; Arabic_Extended_B
+blk; Arabic_Ext_C                     ; Arabic_Extended_C
 blk; Arabic_Math                      ; Arabic_Mathematical_Alphabetic_Symbols
 blk; Arabic_PF_A                      ; Arabic_Presentation_Forms_A      ; Arabic_Presentation_Forms-A
 blk; Arabic_PF_B                      ; Arabic_Presentation_Forms_B
@@ -206,6 +208,8 @@ blk; CJK_Ext_D                        ; CJK_Unified_Ideographs_Extension_D
 blk; CJK_Ext_E                        ; CJK_Unified_Ideographs_Extension_E
 blk; CJK_Ext_F                        ; CJK_Unified_Ideographs_Extension_F
 blk; CJK_Ext_G                        ; CJK_Unified_Ideographs_Extension_G
+blk; CJK_Ext_H                        ; CJK_Unified_Ideographs_Extension_H
+blk; CJK_Ext_I                        ; CJK_Unified_Ideographs_Extension_I
 blk; CJK_Radicals_Sup                 ; CJK_Radicals_Supplement
 blk; CJK_Strokes                      ; CJK_Strokes
 blk; CJK_Symbols                      ; CJK_Symbols_And_Punctuation
@@ -223,10 +227,12 @@ blk; Cyrillic                         ; Cyrillic
 blk; Cyrillic_Ext_A                   ; Cyrillic_Extended_A
 blk; Cyrillic_Ext_B                   ; Cyrillic_Extended_B
 blk; Cyrillic_Ext_C                   ; Cyrillic_Extended_C
+blk; Cyrillic_Ext_D                   ; Cyrillic_Extended_D
 blk; Cyrillic_Sup                     ; Cyrillic_Supplement              ; Cyrillic_Supplementary
 blk; Deseret                          ; Deseret
 blk; Devanagari                       ; Devanagari
 blk; Devanagari_Ext                   ; Devanagari_Extended
+blk; Devanagari_Ext_A                 ; Devanagari_Extended_A
 blk; Diacriticals                     ; Combining_Diacritical_Marks
 blk; Diacriticals_Ext                 ; Combining_Diacritical_Marks_Extended
 blk; Diacriticals_For_Symbols         ; Combining_Diacritical_Marks_For_Symbols; Combining_Marks_For_Symbols
@@ -288,6 +294,7 @@ blk; Jamo_Ext_A                       ; Hangul_Jamo_Extended_A
 blk; Jamo_Ext_B                       ; Hangul_Jamo_Extended_B
 blk; Javanese                         ; Javanese
 blk; Kaithi                           ; Kaithi
+blk; Kaktovik_Numerals                ; Kaktovik_Numerals
 blk; Kana_Ext_A                       ; Kana_Extended_A
 blk; Kana_Ext_B                       ; Kana_Extended_B
 blk; Kana_Sup                         ; Kana_Supplement
@@ -296,6 +303,7 @@ blk; Kangxi                           ; Kangxi_Radicals
 blk; Kannada                          ; Kannada
 blk; Katakana                         ; Katakana
 blk; Katakana_Ext                     ; Katakana_Phonetic_Extensions
+blk; Kawi                             ; Kawi
 blk; Kayah_Li                         ; Kayah_Li
 blk; Kharoshthi                       ; Kharoshthi
 blk; Khitan_Small_Script              ; Khitan_Small_Script
@@ -360,6 +368,7 @@ blk; Myanmar                          ; Myanmar
 blk; Myanmar_Ext_A                    ; Myanmar_Extended_A
 blk; Myanmar_Ext_B                    ; Myanmar_Extended_B
 blk; Nabataean                        ; Nabataean
+blk; Nag_Mundari                      ; Nag_Mundari
 blk; Nandinagari                      ; Nandinagari
 blk; NB                               ; No_Block
 blk; New_Tai_Lue                      ; New_Tai_Lue
@@ -663,7 +672,6 @@ EPres; Y                              ; Yes                              ; T    
 
 # Equivalent_Unified_Ideograph (EqUIdeo)
 
-# @missing: 0000..10FFFF; Equivalent_Unified_Ideograph; <none>
 
 # Expands_On_NFC (XO_NFC)
 
@@ -811,6 +819,21 @@ IDSB; Y                               ; Yes                              ; T    
 IDST; N                               ; No                               ; F                                ; False
 IDST; Y                               ; Yes                              ; T                                ; True
 
+# IDS_Unary_Operator (IDSU)
+
+IDSU; N                               ; No                               ; F                                ; False
+IDSU; Y                               ; Yes                              ; T                                ; True
+
+# ID_Compat_Math_Continue (ID_Compat_Math_Continue)
+
+ID_Compat_Math_Continue; N            ; No                               ; F                                ; False
+ID_Compat_Math_Continue; Y            ; Yes                              ; T                                ; True
+
+# ID_Compat_Math_Start (ID_Compat_Math_Start)
+
+ID_Compat_Math_Start; N               ; No                               ; F                                ; False
+ID_Compat_Math_Start; Y               ; Yes                              ; T                                ; True
+
 # ID_Continue (IDC)
 
 IDC; N                                ; No                               ; F                                ; False
@@ -829,6 +852,13 @@ IDS; Y                                ; Yes                              ; T    
 
 Ideo; N                               ; No                               ; F                                ; False
 Ideo; Y                               ; Yes                              ; T                                ; True
+
+# Indic_Conjunct_Break (InCB)
+
+InCB; Consonant                       ; Consonant
+InCB; Extend                          ; Extend
+InCB; Linker                          ; Linker
+InCB; None                            ; None
 
 # Indic_Positional_Category (InPC)
 
@@ -1068,7 +1098,10 @@ jt ; U                                ; Non_Joining
 # Line_Break (lb)
 
 lb ; AI                               ; Ambiguous
+lb ; AK                               ; Aksara
 lb ; AL                               ; Alphabetic
+lb ; AP                               ; Aksara_Prebase
+lb ; AS                               ; Aksara_Start
 lb ; B2                               ; Break_Both
 lb ; BA                               ; Break_After
 lb ; BB                               ; Break_Before
@@ -1106,6 +1139,8 @@ lb ; SA                               ; Complex_Context
 lb ; SG                               ; Surrogate
 lb ; SP                               ; Space
 lb ; SY                               ; Break_Symbols
+lb ; VF                               ; Virama_Final
+lb ; VI                               ; Virama
 lb ; WJ                               ; Word_Joiner
 lb ; XX                               ; Unknown
 lb ; ZW                               ; ZWSpace
@@ -1143,13 +1178,15 @@ NFD_QC; Y                             ; Yes
 
 # NFKC_Casefold (NFKC_CF)
 
-# @missing: 0000..10FFFF; NFKC_Casefold; <code point>
 
 # NFKC_Quick_Check (NFKC_QC)
 
 NFKC_QC; M                            ; Maybe
 NFKC_QC; N                            ; No
 NFKC_QC; Y                            ; Yes
+
+# NFKC_Simple_Casefold (NFKC_SCF)
+
 
 # NFKD_Quick_Check (NFKD_QC)
 
@@ -1313,6 +1350,7 @@ sc ; Ital                             ; Old_Italic
 sc ; Java                             ; Javanese
 sc ; Kali                             ; Kayah_Li
 sc ; Kana                             ; Katakana
+sc ; Kawi                             ; Kawi
 sc ; Khar                             ; Kharoshthi
 sc ; Khmr                             ; Khmer
 sc ; Khoj                             ; Khojki
@@ -1345,6 +1383,7 @@ sc ; Mroo                             ; Mro
 sc ; Mtei                             ; Meetei_Mayek
 sc ; Mult                             ; Multani
 sc ; Mymr                             ; Myanmar
+sc ; Nagm                             ; Nag_Mundari
 sc ; Nand                             ; Nandinagari
 sc ; Narb                             ; Old_North_Arabian
 sc ; Nbat                             ; Nabataean
@@ -1418,7 +1457,6 @@ sc ; Zzzz                             ; Unknown
 
 # Script_Extensions (scx)
 
-# @missing: 0000..10FFFF; Script_Extensions; <script>
 
 # Sentence_Break (SB)
 

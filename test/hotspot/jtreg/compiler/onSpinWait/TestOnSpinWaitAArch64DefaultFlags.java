@@ -29,8 +29,8 @@
  *
  * @requires os.arch=="aarch64"
  *
- * @build sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI
  *                   compiler.onSpinWait.TestOnSpinWaitAArch64DefaultFlags
@@ -42,7 +42,7 @@ import java.util.Iterator;
 import java.util.List;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
-import sun.hotspot.cpuinfo.CPUInfo;
+import jdk.test.whitebox.cpuinfo.CPUInfo;
 
 public class TestOnSpinWaitAArch64DefaultFlags {
     private static boolean isCPUModelNeoverseN1(String cpuModel) {
@@ -87,9 +87,9 @@ public class TestOnSpinWaitAArch64DefaultFlags {
         final String cpuModel = cpuFeatures.get(0);
 
         if (isCPUModelNeoverseN1(cpuModel)) {
-            checkFinalFlagsEqualTo(ProcessTools.createJavaProcessBuilder("-XX:+UnlockDiagnosticVMOptions", "-XX:+PrintFlagsFinal", "-version"),
+            checkFinalFlagsEqualTo(ProcessTools.createLimitedTestJavaProcessBuilder("-XX:+UnlockDiagnosticVMOptions", "-XX:+PrintFlagsFinal", "-version"),
                 "isb", "1");
-            checkFinalFlagsEqualTo(ProcessTools.createJavaProcessBuilder("-XX:+UnlockDiagnosticVMOptions", "-XX:OnSpinWaitInstCount=2", "-XX:+PrintFlagsFinal", "-version"),
+            checkFinalFlagsEqualTo(ProcessTools.createLimitedTestJavaProcessBuilder("-XX:+UnlockDiagnosticVMOptions", "-XX:OnSpinWaitInstCount=2", "-XX:+PrintFlagsFinal", "-version"),
                 "isb", "2");
         } else {
             System.out.println("Skip because no defaults for CPU model: " + cpuModel);

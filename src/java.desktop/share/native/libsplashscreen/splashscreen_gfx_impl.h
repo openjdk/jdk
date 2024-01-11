@@ -309,7 +309,7 @@ getMaskShift(rgbquad_t mask, int *pShift, int *pnumBits)
         ++shift;
         mask >>= 1;
     }
-    /* check the mask is contigious */
+    /* check the mask is contiguous */
     if ((mask & (mask + 1)) != 0)
         return 0;
     /* calculate the number of bits */

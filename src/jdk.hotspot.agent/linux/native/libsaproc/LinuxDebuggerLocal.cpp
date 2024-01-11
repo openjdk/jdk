@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2019, 2021, NTT DATA.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -352,7 +352,6 @@ extern "C"
 JNIEXPORT jlong JNICALL Java_sun_jvm_hotspot_debugger_linux_LinuxDebuggerLocal_lookupByName0
   (JNIEnv *env, jobject this_obj, jstring objectName, jstring symbolName) {
   jlong addr;
-  jboolean isCopy;
   struct ps_prochandle* ph = get_proc_handle(env, this_obj);
   // Note, objectName is ignored, and may in fact be NULL.
   // lookup_symbol will always search all objects/libs
@@ -601,7 +600,7 @@ JNIEXPORT jlongArray JNICALL Java_sun_jvm_hotspot_debugger_linux_LinuxDebuggerLo
 
 #endif
 
-  env->ReleaseLongArrayElements(array, regs, JNI_COMMIT);
+  env->ReleaseLongArrayElements(array, regs, 0);
   return array;
 }
 #endif

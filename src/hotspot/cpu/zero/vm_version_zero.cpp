@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2009 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -116,10 +116,34 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseVectorizedMismatchIntrinsic, false);
   }
 
+  if ((LockingMode != LM_LEGACY) && (LockingMode != LM_MONITOR)) {
+    warning("Unsupported locking mode for this CPU.");
+    FLAG_SET_DEFAULT(LockingMode, LM_LEGACY);
+  }
+
+  // Enable error context decoding on known platforms
+#if defined(IA32) || defined(AMD64) || defined(ARM) || \
+    defined(AARCH64) || defined(PPC) || defined(RISCV) || \
+    defined(S390)
+  if (FLAG_IS_DEFAULT(DecodeErrorContext)) {
+    FLAG_SET_DEFAULT(DecodeErrorContext, true);
+  }
+#else
+  UNSUPPORTED_OPTION(DecodeErrorContext);
+#endif
+
   // Not implemented
   UNSUPPORTED_OPTION(UseCompiler);
 #ifdef ASSERT
   UNSUPPORTED_OPTION(CountCompiledCalls);
+#endif
+
+#ifndef SUPPORTS_NATIVE_CX8
+  // Supports 8-byte cmpxchg with compiler built-ins.
+  // These built-ins are supposed to be implemented on
+  // all platforms (even if not natively), so we claim
+  // the support unconditionally.
+  _supports_cx8 = true;
 #endif
 }
 

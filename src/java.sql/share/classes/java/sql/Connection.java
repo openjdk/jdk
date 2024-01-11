@@ -1108,12 +1108,11 @@ public interface Connection  extends Wrapper, AutoCloseable {
          * The query submitted by the driver to validate the connection shall be
          * executed in the context of the current transaction.
          *
-         * @param timeout -             The time in seconds to wait for the database operation
-         *                                              used to validate the connection to complete.  If
-         *                                              the timeout period expires before the operation
-         *                                              completes, this method returns false.  A value of
-         *                                              0 indicates a timeout is not applied to the
-         *                                              database operation.
+         * @param timeout The time in seconds to wait for the database operation
+         *                used to validate the connection to complete.  If the
+         *                timeout period expires before the operationcompletes,
+         *                this method returns false.  A value of 0 indicates a
+         *                timeout is not applied to the database operation.
          *
          * @return true if the connection is valid, false otherwise
          * @throws SQLException if the value supplied for {@code timeout}

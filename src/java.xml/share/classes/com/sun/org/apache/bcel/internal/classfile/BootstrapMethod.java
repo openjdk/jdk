@@ -29,12 +29,11 @@ import java.util.Arrays;
 import com.sun.org.apache.bcel.internal.Const;
 
 /**
- * This class represents a bootstrap method attribute, i.e., the bootstrap
- * method ref, the number of bootstrap arguments and an array of the
- * bootstrap arguments.
+ * This class represents a bootstrap method attribute, i.e., the bootstrap method ref, the number of bootstrap arguments
+ * and an array of the bootstrap arguments.
  *
- * @see <a href="https://docs.oracle.com/javase/specs/jvms/se8/html/jvms-4.html#jvms-4.7.23">
- * The class File Format : The BootstrapMethods Attribute</a>
+ * @see <a href="https://docs.oracle.com/javase/specs/jvms/se8/html/jvms-4.html#jvms-4.7.23"> The class File Format :
+ *      The BootstrapMethods Attribute</a>
  * @since 6.0
  */
 public class BootstrapMethod implements Cloneable {
@@ -45,9 +44,10 @@ public class BootstrapMethod implements Cloneable {
     /** Array of references to the constant_pool table */
     private int[] bootstrapArguments;
 
-
     /**
      * Initialize from another object.
+     *
+     * @param c Source to copy.
      */
     public BootstrapMethod(final BootstrapMethod c) {
         this(c.getBootstrapMethodRef(), c.getBootstrapArguments());
@@ -57,7 +57,7 @@ public class BootstrapMethod implements Cloneable {
      * Construct object from input stream.
      *
      * @param input Input stream
-     * @throws IOException
+     * @throws IOException if an I/O error occurs.
      */
     BootstrapMethod(final DataInput input) throws IOException {
         this(input.readUnsignedShort(), input.readUnsignedShort());
@@ -68,8 +68,8 @@ public class BootstrapMethod implements Cloneable {
     }
 
     // helper method
-    private BootstrapMethod(final int bootstrap_method_ref, final int num_bootstrap_arguments) {
-        this(bootstrap_method_ref, new int[num_bootstrap_arguments]);
+    private BootstrapMethod(final int bootstrapMethodRef, final int numBootstrapArguments) {
+        this(bootstrapMethodRef, new int[numBootstrapArguments]);
     }
 
     /**
@@ -82,17 +82,29 @@ public class BootstrapMethod implements Cloneable {
     }
 
     /**
-     * @return index into constant_pool of bootstrap_method
+     * @return deep copy of this object
      */
-    public int getBootstrapMethodRef() {
-        return bootstrapMethodRef;
+    public BootstrapMethod copy() {
+        try {
+            return (BootstrapMethod) clone();
+        } catch (final CloneNotSupportedException e) {
+            // TODO should this throw?
+        }
+        return null;
     }
 
     /**
-     * @param bootstrapMethodRef int index into constant_pool of CONSTANT_MethodHandle
+     * Dump object to file stream in binary format.
+     *
+     * @param file Output file stream
+     * @throws IOException if an I/O error occurs.
      */
-    public void setBootstrapMethodRef(final int bootstrapMethodRef) {
-        this.bootstrapMethodRef = bootstrapMethodRef;
+    public final void dump(final DataOutputStream file) throws IOException {
+        file.writeShort(bootstrapMethodRef);
+        file.writeShort(bootstrapArguments.length);
+        for (final int bootstrapArgument : bootstrapArguments) {
+            file.writeShort(bootstrapArgument);
+        }
     }
 
     /**
@@ -100,6 +112,13 @@ public class BootstrapMethod implements Cloneable {
      */
     public int[] getBootstrapArguments() {
         return bootstrapArguments;
+    }
+
+    /**
+     * @return index into constant_pool of bootstrap_method
+     */
+    public int getBootstrapMethodRef() {
+        return bootstrapMethodRef;
     }
 
     /**
@@ -117,57 +136,35 @@ public class BootstrapMethod implements Cloneable {
     }
 
     /**
+     * @param bootstrapMethodRef int index into constant_pool of CONSTANT_MethodHandle
+     */
+    public void setBootstrapMethodRef(final int bootstrapMethodRef) {
+        this.bootstrapMethodRef = bootstrapMethodRef;
+    }
+
+    /**
      * @return String representation.
      */
     @Override
     public final String toString() {
-        return "BootstrapMethod(" + bootstrapMethodRef + ", " + bootstrapArguments.length + ", "
-               + Arrays.toString(bootstrapArguments) + ")";
+        return "BootstrapMethod(" + bootstrapMethodRef + ", " + bootstrapArguments.length + ", " + Arrays.toString(bootstrapArguments) + ")";
     }
 
     /**
      * @return Resolved string representation
      */
-    public final String toString( final ConstantPool constantPool ) {
+    public final String toString(final ConstantPool constantPool) {
         final StringBuilder buf = new StringBuilder();
-        String bootstrap_method_name;
-        bootstrap_method_name = constantPool.constantToString(bootstrapMethodRef,
-                Const.CONSTANT_MethodHandle);
-        buf.append(Utility.compactClassName(bootstrap_method_name, false));
-        final int num_bootstrap_arguments = bootstrapArguments.length;
-        if (num_bootstrap_arguments > 0) {
+        final String bootstrapMethodName = constantPool.constantToString(bootstrapMethodRef, Const.CONSTANT_MethodHandle);
+        buf.append(Utility.compactClassName(bootstrapMethodName, false));
+        final int bootstrapArgumentsLen = bootstrapArguments.length;
+        if (bootstrapArgumentsLen > 0) {
             buf.append("\nMethod Arguments:");
-            for (int i = 0; i < num_bootstrap_arguments; i++) {
+            for (int i = 0; i < bootstrapArgumentsLen; i++) {
                 buf.append("\n  ").append(i).append(": ");
                 buf.append(constantPool.constantToString(constantPool.getConstant(bootstrapArguments[i])));
             }
         }
         return buf.toString();
-    }
-
-    /**
-     * Dump object to file stream in binary format.
-     *
-     * @param file Output file stream
-     * @throws IOException
-     */
-    public final void dump(final DataOutputStream file) throws IOException {
-        file.writeShort(bootstrapMethodRef);
-        file.writeShort(bootstrapArguments.length);
-        for (final int bootstrap_argument : bootstrapArguments) {
-            file.writeShort(bootstrap_argument);
-        }
-    }
-
-    /**
-     * @return deep copy of this object
-     */
-    public BootstrapMethod copy() {
-        try {
-            return (BootstrapMethod) clone();
-        } catch (final CloneNotSupportedException e) {
-            // TODO should this throw?
-        }
-        return null;
     }
 }

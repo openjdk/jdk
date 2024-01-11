@@ -246,10 +246,13 @@ final class CertificateStatus {
             }
 
             MessageFormat messageFormat = new MessageFormat(
-                "\"CertificateStatus\": '{'\n" +
-                "  \"type\"                : \"{0}\",\n" +
-                "  \"responses \"          : [\n" + "{1}\n" + "  ]\n" +
-                "'}'",
+                    """
+                            "CertificateStatus": '{'
+                              "type"                : "{0}",
+                              "responses "          : [
+                            {1}
+                              ]
+                            '}'""",
                 Locale.ENGLISH);
             Object[] messageFields = {
                 statusType.name,

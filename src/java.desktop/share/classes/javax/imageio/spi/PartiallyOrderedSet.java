@@ -45,7 +45,7 @@ import java.util.Set;
  * {@code unsetPreference} methods.  This difference is due to
  * the fact that the relevant ordering between elements is unlikely to
  * be inherent in the elements themselves; rather, it is set
- * dynamically accoring to application policy.  For example, in a
+ * dynamically according to application policy.  For example, in a
  * service provider registry situation, an application might allow the
  * user to set a preference order for service provider objects
  * supplied by a trusted vendor over those supplied by another.

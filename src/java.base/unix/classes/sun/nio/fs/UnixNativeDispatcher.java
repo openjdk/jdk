@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -318,33 +318,28 @@ class UnixNativeDispatcher {
         try (NativeBuffer buffer = copyToNativeBuffer(path)) {
             long comp = Blocker.begin();
             try {
-                stat0(buffer.address(), attrs);
+                int errno = stat0(buffer.address(), attrs);
+                if (errno != 0) {
+                    throw new UnixException(errno);
+                }
             } finally {
                 Blocker.end(comp);
             }
         }
     }
-    private static native void stat0(long pathAddress, UnixFileAttributes attrs)
-        throws UnixException;
 
-
-    /**
-     * stat(const char* path, struct stat* buf)
-     *
-     * @return st_mode (file type and mode) or 0 if an error occurs.
-     */
-    static int stat(UnixPath path) {
+    static int stat2(UnixPath path, UnixFileAttributes attrs) {
         try (NativeBuffer buffer = copyToNativeBuffer(path)) {
             long comp = Blocker.begin();
             try {
-                return stat1(buffer.address());
+                return stat0(buffer.address(), attrs);
             } finally {
                 Blocker.end(comp);
             }
         }
     }
-    private static native int stat1(long pathAddress);
 
+    private static native int stat0(long pathAddress, UnixFileAttributes attrs);
 
     /**
      * lstat(const char* path, struct stat* buf)
@@ -602,34 +597,17 @@ class UnixNativeDispatcher {
     /**
      * access(const char* path, int amode);
      */
-    static void access(UnixPath path, int amode) throws UnixException {
+    static int access(UnixPath path, int amode) {
         try (NativeBuffer buffer = copyToNativeBuffer(path)) {
             long comp = Blocker.begin();
             try {
-                access0(buffer.address(), amode);
+                return access0(buffer.address(), amode);
             } finally {
                 Blocker.end(comp);
             }
         }
     }
-    private static native void access0(long pathAddress, int amode) throws UnixException;
-
-    /**
-     * access(constant char* path, F_OK)
-     *
-     * @return true if the file exists, false otherwise
-     */
-    static boolean exists(UnixPath path) {
-        try (NativeBuffer buffer = copyToNativeBuffer(path)) {
-            long comp = Blocker.begin();
-            try {
-                return exists0(buffer.address());
-            } finally {
-                Blocker.end(comp);
-            }
-        }
-    }
-    private static native boolean exists0(long pathAddress);
+    private static native int access0(long pathAddress, int amode);
 
     /**
      * struct passwd *getpwuid(uid_t uid);

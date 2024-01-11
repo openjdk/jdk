@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,7 +65,7 @@ public class ConnectWithFoo {
             System.err.println("        <ldapurl> is the LDAP URL of the parent entry\n");
             System.err.println("example:");
             System.err.println("        java ConnectWithFoo ldap://oasis/o=airius.com");
-            return;
+            throw new IllegalArgumentException();
         }
 
         /*
@@ -112,6 +112,7 @@ public class ConnectWithFoo {
                 System.out.println("ConnectWithFoo: connected");
             } catch (NamingException e) {
                 System.err.println("ConnectWithFoo: error connecting " + e);
+                throw e;
             } finally {
                 if (ctx != null) {
                     ctx.close();

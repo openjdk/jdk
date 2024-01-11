@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,7 @@ AC_DEFUN_ONCE([LIB_SETUP_X11],
     X_CFLAGS=
     X_LIBS=
   else
+    x_libraries_orig="$x_libraries"
 
     if test "x${with_x}" = xno; then
       AC_MSG_ERROR([It is not possible to disable the use of X11. Remove the --without-x option.])
@@ -48,6 +49,7 @@ AC_DEFUN_ONCE([LIB_SETUP_X11],
       fi
       if test "x$x_libraries" = xNONE; then
         x_libraries="${with_x}/lib"
+        x_libraries_orig="$x_libraries"
       fi
     else
       # Check if the user has specified sysroot, but not --with-x, --x-includes or --x-libraries.
@@ -82,8 +84,8 @@ AC_DEFUN_ONCE([LIB_SETUP_X11],
     AC_PATH_XTRA
 
     # AC_PATH_XTRA creates X_LIBS and sometimes adds -R flags. When cross compiling
-    # this doesn't make sense so we remove it.
-    if test "x$COMPILE_TYPE" = xcross; then
+    # this doesn't make sense so we remove it; same for sysroot (devkit).
+    if test "x$COMPILE_TYPE" = xcross || (test "x$SYSROOT" != "x" && test "x$x_libraries_orig" = xNONE); then
       X_LIBS=`$ECHO $X_LIBS | $SED 's/-R \{0,1\}[[^ ]]*//g'`
     fi
 
@@ -96,23 +98,28 @@ AC_DEFUN_ONCE([LIB_SETUP_X11],
     OLD_CFLAGS="$CFLAGS"
     CFLAGS="$CFLAGS $SYSROOT_CFLAGS $X_CFLAGS"
 
-    HEADERS_TO_CHECK="X11/extensions/shape.h X11/extensions/Xrender.h X11/extensions/XTest.h X11/Intrinsic.h"
-    # There is no Xrandr extension on AIX
     if test "x$OPENJDK_TARGET_OS" = xaix; then
+      # There is no Xrandr extension on AIX. Code is duplicated to avoid autoconf
+      # 2.71+ warning "AC_CHECK_HEADERS: you should use literals"
       X_CFLAGS="$X_CFLAGS -DNO_XRANDR"
+      AC_CHECK_HEADERS([X11/extensions/shape.h X11/extensions/Xrender.h X11/extensions/XTest.h X11/Intrinsic.h],
+          [X11_HEADERS_OK=yes],
+          [X11_HEADERS_OK=no; break],
+          [
+            # include <X11/Xlib.h>
+            # include <X11/Xutil.h>
+          ]
+      )
     else
-      HEADERS_TO_CHECK="$HEADERS_TO_CHECK X11/extensions/Xrandr.h"
+      AC_CHECK_HEADERS([X11/extensions/shape.h X11/extensions/Xrender.h X11/extensions/XTest.h X11/Intrinsic.h X11/extensions/Xrandr.h],
+          [X11_HEADERS_OK=yes],
+          [X11_HEADERS_OK=no; break],
+          [
+            # include <X11/Xlib.h>
+            # include <X11/Xutil.h>
+          ]
+      )
     fi
-
-    # Need to include Xlib.h and Xutil.h to avoid "present but cannot be compiled" warnings on Solaris 10
-    AC_CHECK_HEADERS([$HEADERS_TO_CHECK],
-        [X11_HEADERS_OK=yes],
-        [X11_HEADERS_OK=no; break],
-        [
-          # include <X11/Xlib.h>
-          # include <X11/Xutil.h>
-        ]
-    )
 
     if test "x$X11_HEADERS_OK" = xno; then
       HELP_MSG_MISSING_DEPENDENCY([x11])

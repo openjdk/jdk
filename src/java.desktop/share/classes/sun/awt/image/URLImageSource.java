@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,7 +58,7 @@ public class URLImageSource extends InputStreamImageSource {
     }
 
     public URLImageSource(String href) throws MalformedURLException {
-        this(new URL(null, href));
+        this(newURL(null, href));
     }
 
     public URLImageSource(URL u, URLConnection uc) {
@@ -158,5 +158,10 @@ public class URLImageSource extends InputStreamImageSource {
             }
         }
         return id;
+    }
+
+    @SuppressWarnings("deprecation")
+    private static URL newURL(URL context, String spec) throws MalformedURLException {
+        return new URL(context, spec);
     }
 }

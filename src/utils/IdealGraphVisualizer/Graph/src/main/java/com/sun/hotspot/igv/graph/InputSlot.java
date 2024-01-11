@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,8 +32,11 @@ import java.util.List;
  */
 public class InputSlot extends Slot {
 
+    private int originalIndex;
+
     protected InputSlot(Figure figure, int wantedIndex) {
         super(figure, wantedIndex);
+        this.originalIndex = -1;
     }
 
     @Override
@@ -47,13 +50,34 @@ public class InputSlot extends Slot {
         InputSlot s = inputSlots.remove(position);
         inputSlots.add(position, s);
     }
+
+    public int getOriginalIndex() {
+        return originalIndex;
+    }
+
+    public void setOriginalIndex(int originalIndex) {
+        this.originalIndex = originalIndex;
+    }
+
+    public int gapSize() {
+        int index = getPosition();
+        int originalIndex = getOriginalIndex();
+        InputSlot prevSlot = index > 0 ? getFigure().getInputSlots().get(index - 1) : null;
+        int prevOriginalIndex = index > 0 ? prevSlot.getOriginalIndex() : -1;
+        return originalIndex - prevOriginalIndex - 1;
+    }
+
     @Override
     public Point getRelativePosition() {
         int gap = getFigure().getWidth() - Figure.getSlotsWidth(getFigure().getInputSlots());
         double gapRatio = (double)gap / (double)(getFigure().getInputSlots().size() + 1);
         int gapAmount = (int)((getPosition() + 1)*gapRatio);
         return new Point(gapAmount + Figure.getSlotsWidth(Figure.getAllBefore(getFigure().getInputSlots(), this)) + getWidth()/2, -Figure.SLOT_START);
-        //return new Point((getFigure().getWidth() / (getFigure().getInputSlots().size() * 2)) * (getPosition() * 2 + 1), -Figure.SLOT_START);
+    }
+
+    @Override
+    public String getToolTipText() {
+        return super.getToolTipText() + " [" + originalIndex + "]";
     }
 
     @Override

@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
+<!-- Copyright © 1991-2023 Unicode, Inc.
+For terms of use, see http://www.unicode.org/copyright.html
+SPDX-License-Identifier: Unicode-DFS-2016
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+-->
+<ldml>
+	<identity>
+		<version number="$Revision$"/>
+		<language type="bgc"/>
+	</identity>
+	<localeDisplayNames>
+		<languages>
+			<language type="bgc">हरियाणवी</language>
+			<language type="en">अंग्रेजी</language>
+		</languages>
+		<scripts>
+			<script type="Deva">देवानागारी</script>
+		</scripts>
+		<territories>
+			<territory type="IN">भारत</territory>
+			<territory type="ZZ">अणजाण जगह</territory>
+		</territories>
+		<measurementSystemNames>
+			<measurementSystemName type="metric">मेट्रिक</measurementSystemName>
+			<measurementSystemName type="UK">ब्रिटेन</measurementSystemName>
+			<measurementSystemName type="US">अमेरिका</measurementSystemName>
+		</measurementSystemNames>
+		<codePatterns>
+			<codePattern type="language">बोली: {0}</codePattern>
+			<codePattern type="script">लिपि: {0}</codePattern>
+			<codePattern type="territory">जगह: {0}</codePattern>
+		</codePatterns>
+	</localeDisplayNames>
+	<characters>
+		<exemplarCharacters draft="contributed">[ँः अ आ इ ई उ ऊ ऋ ए ऐ ओ औ क ख ग घ ङ च छ ज झ ञ ट ठ ड ढ ण त थ द ध न प फ ब भ म य र ल व श ष स ह ा ि ी ु ू ृ ॅ े ै ो ौ ्]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[ं]</exemplarCharacters>
+		<exemplarCharacters type="numbers" draft="contributed">[\- ‑ , . % ‰ + 0० 1१ 2२ 3३ 4४ 5५ 6६ 7७ 8८ 9९]</exemplarCharacters>
+		<exemplarCharacters type="punctuation" draft="contributed">[\- ‑ \: ! ? . … '‘’ &quot;“” ( ) \[ \] \{ \} @ * / \\ \&amp; # ′ ″ ` |]</exemplarCharacters>
+	</characters>
+	<dates>
+		<calendars>
+			<calendar type="gregorian">
+				<months>
+					<monthContext type="format">
+						<monthWidth type="wide">
+							<month type="1">जनवरी</month>
+							<month type="2">फरवरी</month>
+							<month type="3">मार्च</month>
+							<month type="4">अप्रैल</month>
+							<month type="5">मई</month>
+							<month type="6">जून</month>
+							<month type="7">जुलाई</month>
+							<month type="8">अगस्त</month>
+							<month type="9">सितम्बर</month>
+							<month type="10">अक्टूबर</month>
+							<month type="11">नवम्बर</month>
+							<month type="12">दिसंबर</month>
+						</monthWidth>
+					</monthContext>
+				</months>
+				<days>
+					<dayContext type="format">
+						<dayWidth type="wide">
+							<day type="sun">ऐतवार</day>
+							<day type="mon">सोमवार</day>
+							<day type="tue">मंगलवार</day>
+							<day type="wed">बुधवार</day>
+							<day type="thu">बृहस्पतवार</day>
+							<day type="fri">शुक्रवार</day>
+							<day type="sat">शनिवार</day>
+						</dayWidth>
+					</dayContext>
+				</days>
+				<dayPeriods>
+					<dayPeriodContext type="format">
+						<dayPeriodWidth type="wide">
+							<dayPeriod type="am">तडके</dayPeriod>
+							<dayPeriod type="pm">सांझ</dayPeriod>
+						</dayPeriodWidth>
+					</dayPeriodContext>
+				</dayPeriods>
+				<timeFormats>
+					<timeFormatLength type="full">
+						<timeFormat>
+							<pattern draft="contributed">h:mm:ss a zzzz</pattern>
+							<datetimeSkeleton draft="contributed">ahmmsszzzz</datetimeSkeleton>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="long">
+						<timeFormat>
+							<pattern draft="contributed">h:mm:ss a z</pattern>
+							<datetimeSkeleton draft="contributed">ahmmssz</datetimeSkeleton>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="medium">
+						<timeFormat>
+							<pattern draft="contributed">h:mm:ss a</pattern>
+							<datetimeSkeleton draft="contributed">ahmmss</datetimeSkeleton>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="short">
+						<timeFormat>
+							<pattern draft="contributed">h:mm a</pattern>
+							<datetimeSkeleton draft="contributed">ahmm</datetimeSkeleton>
+						</timeFormat>
+					</timeFormatLength>
+				</timeFormats>
+			</calendar>
+		</calendars>
+		<fields>
+			<field type="year">
+				<relative type="-1">पिछला साल</relative>
+				<relative type="0">इस साल</relative>
+				<relative type="1">अगला साल</relative>
+			</field>
+			<field type="month">
+				<relative type="-1">पिछला मिह्ना</relative>
+				<relative type="0">इस मिह्ने</relative>
+				<relative type="1">अगला मिह्ना</relative>
+			</field>
+			<field type="week">
+				<relative type="-1">पिछला हफ़्ता</relative>
+				<relative type="0">इस हफ़्ते</relative>
+				<relative type="1">अगला हफ़्ता</relative>
+			</field>
+			<field type="day">
+				<relative type="-1">काह्ल (बित्या होड)</relative>
+				<relative type="0">आज</relative>
+				<relative type="1">काह्ल (आण आला)</relative>
+			</field>
+			<field type="sun">
+				<relative type="-1">पिछला ऐतवार</relative>
+				<relative type="0">इस ऐतवार</relative>
+				<relative type="1">अगला ऐतवार</relative>
+			</field>
+		</fields>
+		<timeZoneNames>
+			<regionFormat>{0} समय</regionFormat>
+			<regionFormat type="standard">{0} (+0) स्टैण्डर्ड समय</regionFormat>
+			<metazone type="GMT">
+				<long>
+					<standard>ग्रीनविच मीन टाइम</standard>
+				</long>
+			</metazone>
+		</timeZoneNames>
+	</dates>
+	<numbers>
+		<defaultNumberingSystem>deva</defaultNumberingSystem>
+	</numbers>
+</ldml>

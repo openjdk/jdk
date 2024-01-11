@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,8 +78,8 @@ class JfrTraceIdLoadBarrier : AllStatic {
   static void destroy();
   static void enqueue(const Klass* klass);
   static void load_barrier(const Klass* klass);
-  static JfrBuffer* get_enqueue_buffer(Thread* thread);
-  static JfrBuffer* renew_enqueue_buffer(size_t size, Thread* thread);
+  static JfrBuffer* get_sampler_enqueue_buffer(Thread* thread);
+  static JfrBuffer* renew_sampler_enqueue_buffer(Thread* thread);
  public:
   static traceid load(const ClassLoaderData* cld);
   static traceid load(const Klass* klass);
@@ -88,7 +88,10 @@ class JfrTraceIdLoadBarrier : AllStatic {
   static traceid load(const ModuleEntry* module);
   static traceid load(const PackageEntry* package);
   static traceid load_leakp(const Klass* klass, const Method* method); // leak profiler
+  static traceid load_leakp_previuos_epoch(const Klass* klass, const Method* method); // leak profiler
   static void do_klasses(void f(Klass*), bool previous_epoch = false);
+  static traceid load_no_enqueue(const Klass* klass, const Method* method);
+  static traceid load_no_enqueue(const Method* method);
 };
 
 #endif // SHARE_JFR_RECORDER_CHECKPOINT_TYPES_TRACEID_JFRTRACEIDLOADBARRIER_HPP

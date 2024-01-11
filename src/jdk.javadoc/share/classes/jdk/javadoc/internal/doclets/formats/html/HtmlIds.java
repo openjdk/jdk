@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ package jdk.javadoc.internal.doclets.formats.html;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.PackageElement;
@@ -78,6 +79,7 @@ public class HtmlIds {
     static final HtmlId CONSTRUCTOR_SUMMARY = HtmlId.of("constructor-summary");
     static final HtmlId ENUM_CONSTANT_DETAIL = HtmlId.of("enum-constant-detail");
     static final HtmlId ENUM_CONSTANT_SUMMARY = HtmlId.of("enum-constant-summary");
+    static final HtmlId EXTERNAL_SPECS = HtmlId.of("external-specs");
     static final HtmlId FIELD_DETAIL = HtmlId.of("field-detail");
     static final HtmlId FIELD_SUMMARY = HtmlId.of("field-summary");
     static final HtmlId FOR_REMOVAL = HtmlId.of("for-removal");
@@ -104,8 +106,6 @@ public class HtmlIds {
     static final HtmlId SERVICES = HtmlId.of("services-summary");
     static final HtmlId SKIP_NAVBAR_TOP = HtmlId.of("skip-navbar-top");
     static final HtmlId UNNAMED_PACKAGE_ANCHOR = HtmlId.of("unnamed-package");
-
-    private static final String ENUM_CONSTANTS_INHERITANCE = "enum-constants-inherited-from-class-";
     private static final String FIELDS_INHERITANCE = "fields-inherited-from-class-";
     private static final String METHODS_INHERITANCE = "methods-inherited-from-class-";
     private static final String NESTED_CLASSES_INHERITANCE = "nested-classes-inherited-from-class-";
@@ -132,6 +132,19 @@ public class HtmlIds {
         return element == null || element.isUnnamed()
                 ? UNNAMED_PACKAGE_ANCHOR
                 : HtmlId.of(element.getQualifiedName().toString());
+    }
+
+    /**
+     * Returns an id for a package name.
+     *
+     * @param pkgName the package name
+     *
+     * @return the id
+     */
+    HtmlId forPackageName(String pkgName) {
+        return pkgName.isEmpty()
+                ? UNNAMED_PACKAGE_ANCHOR
+                : HtmlId.of(pkgName);
     }
 
     /**
@@ -309,17 +322,6 @@ public class HtmlIds {
     }
 
     /**
-     * Returns an id for the list of enum constants inherited from a class or interface.
-     *
-     * @param element the class or interface
-     *
-     * @return the id
-     */
-    HtmlId forInheritedEnumConstants(TypeElement element) {
-        return forInherited(ENUM_CONSTANTS_INHERITANCE, element);
-    }
-
-    /**
      * Returns an id for the list of methods inherited from a class or interface.
      *
      * @param element the class or interface
@@ -379,7 +381,7 @@ public class HtmlIds {
      *
      * @return the id
      */
-    static HtmlId forParam(String paramName) {
+    public static HtmlId forParam(String paramName) {
         return HtmlId.of("param-" + paramName);
     }
 
@@ -392,7 +394,7 @@ public class HtmlIds {
      *
      * @return the id
      */
-    static HtmlId forText(String text, Map<String, Integer> counts) {
+    public static HtmlId forText(String text, Map<String, Integer> counts) {
         String base = text.replaceAll("\\s+", "");
         int count = counts.compute(base, (k, v) -> v == null ? 0 : v + 1);
         return HtmlId.of(count == 0 ? base : base + "-" + count);
@@ -472,7 +474,6 @@ public class HtmlIds {
         return HtmlId.of(tableId.name() + ".tabpanel");
     }
 
-
     /**
      * Returns an id for the "preview" section for an element.
      *
@@ -489,6 +490,17 @@ public class HtmlIds {
     }
 
     /**
+     * Returns an id for the "restricted" section for an executable element.
+     *
+     * @param el the executable element
+     *
+     * @return the id
+     */
+    public HtmlId forRestrictedSection(ExecutableElement el) {
+        return HtmlId.of("restricted-" + forMember(el).name());
+    }
+
+    /**
      * Returns an id for the entry on the HELP page for a kind of generated page.
      *
      * @param page the kind of page
@@ -497,5 +509,30 @@ public class HtmlIds {
      */
     public HtmlId forPage(Navigation.PageMode page) {
         return HtmlId.of(page.name().toLowerCase(Locale.ROOT).replace("_", "-"));
+    }
+
+    /**
+     * Returns an id for a heading in a doc comment. The id value is derived from the contents
+     * of the heading with additional checks to make it unique within its containing page.
+     *
+     * @param headingText the text contained by the heading
+     * @param headingIds the set of heading ids already generated for the current page
+     * @return a unique id value for the heading
+     */
+    public HtmlId forHeading(CharSequence headingText, Set<String> headingIds) {
+        String idValue = headingText.toString()
+                .toLowerCase(Locale.ROOT)
+                .trim()
+                .replaceAll("[^\\w_-]+", "-");
+        // Make id value unique
+        idValue = idValue + "-heading";
+        if (!headingIds.add(idValue)) {
+            int counter = 1;
+            while (!headingIds.add(idValue + counter)) {
+                counter++;
+            }
+            idValue = idValue + counter;
+        }
+        return HtmlId.of(idValue);
     }
 }

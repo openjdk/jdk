@@ -37,8 +37,7 @@
 
   bool is_literal_address(LIR_Address* addr);
 
-  // When we need to use something other than rscratch1 use this
-  // method.
+  // When we need to use something other than rscratch1 use this method.
   Address as_Address(LIR_Address* addr, Register tmp);
 
   // Record the type of the receiver in ReceiverTypeData

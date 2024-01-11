@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -704,11 +704,9 @@ class WindowsPath implements Path {
         if (beginIndex >= endIndex)
             throw new IllegalArgumentException();
 
-        StringBuilder sb = new StringBuilder();
+        StringJoiner sb = new StringJoiner("\\");
         for (int i = beginIndex; i < endIndex; i++) {
-            sb.append(elementAsString(i));
-            if (i != (endIndex-1))
-                sb.append("\\");
+            sb.add(elementAsString(i));
         }
         return new WindowsPath(getFileSystem(), WindowsPathType.RELATIVE, "", sb.toString());
     }
@@ -814,10 +812,7 @@ class WindowsPath implements Path {
 
     @Override
     public boolean equals(Object obj) {
-        if (obj instanceof WindowsPath path) {
-            return compareTo(path) == 0;
-        }
-        return false;
+        return obj instanceof WindowsPath other && compareTo(other) == 0;
     }
 
     @Override
@@ -825,7 +820,7 @@ class WindowsPath implements Path {
         // OK if two or more threads compute hash
         int h = hash;
         if (h == 0) {
-            for (int i = 0; i< path.length(); i++) {
+            for (int i = 0; i < path.length(); i++) {
                 h = 31*h + Character.toUpperCase(path.charAt(i));
             }
             hash = h;

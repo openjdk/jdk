@@ -114,8 +114,14 @@ public class T6877206 {
         }
 
         try {
-            byte[] uriData = read(urlconn.getInputStream());
-            byte[] foData = read(fo.openInputStream());
+            byte[] uriData;
+            byte[] foData;
+            try (InputStream input = urlconn.getInputStream()) {
+                uriData = read(input);
+            }
+            try (InputStream input = fo.openInputStream()) {
+                foData = read(input);
+            }
             if (!Arrays.equals(uriData, foData)) {
                 if (uriData.length != foData.length)
                     throw new Exception("data size differs: uri data "
@@ -174,16 +180,11 @@ public class T6877206 {
 
     File createJar(String name, String... entries) throws IOException {
         File jar = new File(name);
-        OutputStream out = new FileOutputStream(jar);
-        try {
-            JarOutputStream jos = new JarOutputStream(out);
+        try (JarOutputStream jos = new JarOutputStream(new FileOutputStream(jar))) {
             for (String e: entries) {
                 jos.putNextEntry(new ZipEntry(e));
                 jos.write(e.getBytes());
             }
-            jos.close();
-        } finally {
-            out.close();
         }
         return jar;
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -28,71 +28,71 @@
 
 #include "code/codeCache.hpp"
 #include "code/vmreg.inline.hpp"
+#include "runtime/sharedRuntime.hpp"
 #include "utilities/align.hpp"
 
 // Inline functions for z/Architecture frames:
 
-inline void frame::find_codeblob_and_set_pc_and_deopt_state(address pc) {
-  assert(pc != NULL, "precondition: must have PC");
-
-  _cb = CodeCache::find_blob(pc);
-  _pc = pc;   // Must be set for get_deopt_original_pc().
-
-  _fp = (intptr_t *) own_abi()->callers_sp;
-
-  address original_pc = CompiledMethod::get_deopt_original_pc(this);
-  if (original_pc != NULL) {
-    _pc = original_pc;
-    _deopt_state = is_deoptimized;
-  } else {
-    _deopt_state = not_deoptimized;
+// Initialize frame members (_sp must be given)
+inline void frame::setup() {
+  if (_pc == nullptr) {
+    _pc = (address)own_abi()->return_pc;
+    assert(_pc != nullptr, "must have PC");
   }
 
-  assert(((uint64_t)_sp & 0x7) == 0, "SP must be 8-byte aligned");
+  if (_cb == nullptr) {
+    _cb = CodeCache::find_blob(_pc);
+  }
+
+  if (_fp == nullptr) {
+    _fp = (intptr_t*)own_abi()->callers_sp;
+  }
+
+  if (_unextended_sp == nullptr) {
+    _unextended_sp = _sp;
+  }
+
+  // When thawing continuation frames the _unextended_sp passed to the constructor is not aligend
+  assert(_on_heap || (is_aligned(_sp, alignment_in_bytes) && is_aligned(_fp, alignment_in_bytes)),
+         "invalid alignment sp:" PTR_FORMAT " unextended_sp:" PTR_FORMAT " fp:" PTR_FORMAT, p2i(_sp), p2i(_unextended_sp), p2i(_fp));
+
+  address original_pc = CompiledMethod::get_deopt_original_pc(this);
+  if (original_pc != nullptr) {
+    _pc = original_pc;
+    _deopt_state = is_deoptimized;
+    assert(_cb == nullptr || _cb->as_compiled_method()->insts_contains_inclusive(_pc),
+           "original PC must be in the main code section of the compiled method (or must be immediately following it)");
+  } else {
+    if (_cb == SharedRuntime::deopt_blob()) {
+      _deopt_state = is_deoptimized;
+    } else {
+      _deopt_state = not_deoptimized;
+    }
+  }
+
+  // assert(_on_heap || is_aligned(_sp, frame::frame_alignment), "SP must be 8-byte aligned");
 }
 
 // Constructors
 
-// Initialize all fields, _unextended_sp will be adjusted in find_codeblob_and_set_pc_and_deopt_state.
-inline frame::frame() : _sp(NULL), _pc(NULL), _cb(NULL), _deopt_state(unknown), _on_heap(false),
-#ifdef ASSERT
-                        _frame_index(-1),
-#endif
-                        _unextended_sp(NULL), _fp(NULL) {}
+// Initialize all fields
+inline frame::frame() : _sp(nullptr), _pc(nullptr), _cb(nullptr), _oop_map(nullptr), _deopt_state(unknown),
+                        _on_heap(false), DEBUG_ONLY(_frame_index(-1) COMMA) _unextended_sp(nullptr), _fp(nullptr) {}
 
-inline frame::frame(intptr_t* sp) : _sp(sp), _on_heap(false),
-#ifdef ASSERT
-                        _frame_index(-1),
-#endif
-                        _unextended_sp(sp) {
-  find_codeblob_and_set_pc_and_deopt_state((address)own_abi()->return_pc);
+inline frame::frame(intptr_t* sp, address pc, intptr_t* unextended_sp, intptr_t* fp, CodeBlob* cb)
+  : _sp(sp), _pc(pc), _cb(cb), _oop_map(nullptr),
+    _on_heap(false), DEBUG_ONLY(_frame_index(-1) COMMA) _unextended_sp(unextended_sp), _fp(fp) {
+  setup();
 }
 
-inline frame::frame(intptr_t* sp, address pc) : _sp(sp), _on_heap(false),
-#ifdef ASSERT
-                        _frame_index(-1),
-#endif
-                        _unextended_sp(sp) {
-  find_codeblob_and_set_pc_and_deopt_state(pc); // Also sets _fp and adjusts _unextended_sp.
-}
-
-inline frame::frame(intptr_t* sp, address pc, intptr_t* unextended_sp) : _sp(sp), _on_heap(false),
-#ifdef ASSERT
-                                                                         _frame_index(-1),
-#endif
-                                                                         _unextended_sp(unextended_sp) {
-  find_codeblob_and_set_pc_and_deopt_state(pc); // Also sets _fp and adjusts _unextended_sp.
-}
+inline frame::frame(intptr_t* sp) : frame(sp, nullptr) {}
 
 // Generic constructor. Used by pns() in debug.cpp only
 #ifndef PRODUCT
-inline frame::frame(void* sp, void* pc, void* unextended_sp) :
-  _sp((intptr_t*)sp), _pc(NULL), _cb(NULL), _on_heap(false),
-#ifdef ASSERT
-  _frame_index(-1),
-#endif
-  _unextended_sp((intptr_t*)unextended_sp) {
-  find_codeblob_and_set_pc_and_deopt_state((address)pc); // Also sets _fp and adjusts _unextended_sp.
+inline frame::frame(void* sp, void* pc, void* unextended_sp)
+  : _sp((intptr_t*)sp), _pc((address)pc), _cb(nullptr), _oop_map(nullptr),
+    _on_heap(false), DEBUG_ONLY(_frame_index(-1) COMMA) _unextended_sp((intptr_t*)unextended_sp) {
+  setup();
 }
 #endif
 
@@ -124,7 +124,7 @@ inline void frame::interpreter_frame_set_monitors(BasicObjectLock* monitors) {
 // Accessors
 
 // Return unique id for this frame. The id must have a value where we
-// can distinguish identity and younger/older relationship. NULL
+// can distinguish identity and younger/older relationship. null
 // represents an invalid (incomparable) frame.
 inline intptr_t* frame::id(void) const {
   // Use _fp. _sp or _unextended_sp wouldn't be correct due to resizing.
@@ -134,7 +134,7 @@ inline intptr_t* frame::id(void) const {
 // Return true if this frame is older (less recent activation) than
 // the frame represented by id.
 inline bool frame::is_older(intptr_t* id) const {
-  assert(this->id() != NULL && id != NULL, "NULL frame id");
+  assert(this->id() != nullptr && id != nullptr, "null frame id");
   // Stack grows towards smaller addresses on z/Architecture.
   return this->id() > id;
 }
@@ -179,8 +179,8 @@ inline intptr_t* frame::link_or_null() const {
   return link();
 }
 
-inline intptr_t** frame::interpreter_frame_locals_addr() const {
-  return (intptr_t**) &(ijava_state()->locals);
+inline intptr_t* frame::interpreter_frame_locals() const {
+  return (intptr_t*) (ijava_state()->locals);
 }
 
 inline intptr_t* frame::interpreter_frame_bcp_addr() const {
@@ -249,18 +249,7 @@ inline void frame::interpreter_frame_set_monitor_end(BasicObjectLock* monitors) 
 }
 
 inline int frame::interpreter_frame_monitor_size() {
-  // Number of stack slots for a monitor
-  return align_up(BasicObjectLock::size() /* number of stack slots */,
-                  WordsPerLong /* Number of stack slots for a Java long. */);
-}
-
-inline int frame::interpreter_frame_monitor_size_in_bytes() {
-  // Number of bytes for a monitor.
-  return frame::interpreter_frame_monitor_size() * wordSize;
-}
-
-inline int frame::interpreter_frame_interpreterstate_size_in_bytes() {
-  return z_ijava_state_size;
+  return BasicObjectLock::size();
 }
 
 inline Method** frame::interpreter_frame_method_addr() const {
@@ -304,8 +293,17 @@ inline intptr_t* frame::real_fp() const {
 }
 
 inline const ImmutableOopMap* frame::get_oop_map() const {
-  Unimplemented();
-  return NULL;
+  if (_cb == nullptr) return nullptr;
+  if (_cb->oop_maps() != nullptr) {
+    NativePostCallNop* nop = nativePostCallNop_at(_pc);
+    if (nop != nullptr && nop->displacement() != 0) {
+      int slot = ((nop->displacement() >> 24) & 0xff);
+      return _cb->oop_map_for_slot(slot, _pc);
+    }
+    const ImmutableOopMap* oop_map = OopMapSet::find_map(this);
+    return oop_map;
+  }
+  return nullptr;
 }
 
 inline int frame::compiled_frame_stack_argsize() const {
@@ -315,11 +313,6 @@ inline int frame::compiled_frame_stack_argsize() const {
 
 inline void frame::interpreted_frame_oop_map(InterpreterOopMap* mask) const {
   Unimplemented();
-}
-
-inline intptr_t* frame::interpreter_frame_last_sp() const {
-  Unimplemented();
-  return NULL;
 }
 
 inline int frame::sender_sp_ret_address_offset() {
@@ -348,14 +341,12 @@ inline frame frame::sender(RegisterMap* map) const {
   // update it accordingly.
   map->set_include_argument_oops(false);
 
-  if (is_entry_frame()) {
-    return sender_for_entry_frame(map);
-  }
-  if (is_interpreted_frame()) {
-    return sender_for_interpreter_frame(map);
-  }
+  if (is_entry_frame())       return sender_for_entry_frame(map);
+  if (is_upcall_stub_frame()) return sender_for_upcall_stub_frame(map);
+  if (is_interpreted_frame()) return sender_for_interpreter_frame(map);
+
   assert(_cb == CodeCache::find_blob(pc()),"Must be the same");
-  if (_cb != NULL) return sender_for_compiled_frame(map);
+  if (_cb != nullptr) return sender_for_compiled_frame(map);
 
   // Must be native-compiled frame, i.e. the marshaling code for native
   // methods that exists in the core system.
@@ -363,24 +354,21 @@ inline frame frame::sender(RegisterMap* map) const {
 }
 
 inline frame frame::sender_for_compiled_frame(RegisterMap *map) const {
-  assert(map != NULL, "map must be set");
-  // Frame owned by compiler.
+  assert(map != nullptr, "map must be set");
 
-  address pc = *compiled_sender_pc_addr(_cb);
-  frame caller(compiled_sender_sp(_cb), pc);
+  intptr_t* sender_sp = this->sender_sp();
+  address   sender_pc = this->sender_pc();
 
   // Now adjust the map.
-
-  // Get the rest.
   if (map->update_map()) {
     // Tell GC to use argument oopmaps for some runtime stubs that need it.
     map->set_include_argument_oops(_cb->caller_must_gc_arguments(map->thread()));
-    if (_cb->oop_maps() != NULL) {
+    if (_cb->oop_maps() != nullptr) {
       OopMapSet::update_register_map(this, map);
     }
   }
 
-  return caller;
+  return frame(sender_sp, sender_pc);
 }
 
 template <typename RegisterMapT>

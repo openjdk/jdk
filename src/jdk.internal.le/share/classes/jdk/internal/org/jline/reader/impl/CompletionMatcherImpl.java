@@ -54,7 +54,7 @@ public class CompletionMatcherImpl implements CompletionMatcher {
                 break;
             }
         }
-        return !matching.isEmpty() ? matching.entrySet().stream().flatMap(e -> e.getValue().stream()).collect(Collectors.toList())
+        return !matching.isEmpty() ? matching.entrySet().stream().flatMap(e -> e.getValue().stream()).distinct().collect(Collectors.toList())
                                    : new ArrayList<>();
     }
 

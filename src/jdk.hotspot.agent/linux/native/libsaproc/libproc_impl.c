@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -220,7 +220,6 @@ bool read_eh_frame(struct ps_prochandle* ph, lib_info* lib) {
   ELF_SHDR* shbuf = NULL;
   ELF_SHDR* sh = NULL;
   char* strtab = NULL;
-  void* result = NULL;
   int cnt;
 
   current_pos = lseek(lib->fd, (off_t)0L, SEEK_CUR);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -685,7 +685,7 @@ class WindbgCDebugInfoBuilder
 
     // Handle primitive types here.
     if (intIndex <= 0x0FFF) {
-      BasicType type = (BasicType) primIndexToTypeMap.get(index);
+      BasicType type = primIndexToTypeMap.get(index);
       if (type != null) {
         return type;
       }

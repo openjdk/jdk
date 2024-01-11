@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,7 @@ public class Testexecstack {
 
         // Create a new java process for the Test Java/JNI test without
         // an executeable stack
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
             "-Djava.library.path=" + libpath + ":.", "Test", "test-rw");
 
         // Start the process and check the output
@@ -56,7 +56,7 @@ public class Testexecstack {
 
         // Create a new java process for the Test Java/JNI test with an
         // executable stack
-        pb = ProcessTools.createJavaProcessBuilder(
+        pb = ProcessTools.createLimitedTestJavaProcessBuilder(
             "-Djava.library.path=" + libpath + ":.", "Test", "test-rwx");
 
         // Start the process and check the output
@@ -65,7 +65,7 @@ public class Testexecstack {
 
         // Create a new java process for the TestMT Java/JNI test with an
         // executable stack
-        pb = ProcessTools.createJavaProcessBuilder(
+        pb = ProcessTools.createLimitedTestJavaProcessBuilder(
             "-Djava.library.path=" + libpath + ":.", "TestMT", "test-rwx");
 
         // Start the process and check the output

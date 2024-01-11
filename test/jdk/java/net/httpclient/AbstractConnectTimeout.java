@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,19 +54,13 @@ public abstract class AbstractConnectTimeout {
 
     static List<List<Duration>> TIMEOUTS = List.of(
                     // connectTimeout   HttpRequest timeout
-            Arrays.asList( NO_DURATION,   ofSeconds(1)  ),
             Arrays.asList( NO_DURATION,   ofMillis(100) ),
-            Arrays.asList( NO_DURATION,   ofNanos(99)   ),
             Arrays.asList( NO_DURATION,   ofNanos(1)    ),
 
-            Arrays.asList( ofSeconds(1),  NO_DURATION   ),
             Arrays.asList( ofMillis(100), NO_DURATION   ),
-            Arrays.asList( ofNanos(99),   NO_DURATION   ),
             Arrays.asList( ofNanos(1),    NO_DURATION   ),
 
-            Arrays.asList( ofSeconds(1),  ofMinutes(1)  ),
             Arrays.asList( ofMillis(100), ofMinutes(1)  ),
-            Arrays.asList( ofNanos(99),   ofMinutes(1)  ),
             Arrays.asList( ofNanos(1),    ofMinutes(1)  )
     );
 

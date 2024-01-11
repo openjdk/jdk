@@ -33,7 +33,10 @@
  * Pat Fisher, Mike Judd.
  */
 
+import static java.util.concurrent.TimeUnit.DAYS;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.TimeUnit.MICROSECONDS;
+import static java.util.concurrent.TimeUnit.NANOSECONDS;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -41,11 +44,13 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Delayed;
 import java.util.concurrent.DelayQueue;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 
 import junit.framework.Test;
@@ -104,34 +109,26 @@ public class DelayQueueTest extends JSR166TestCase {
     }
 
     /**
-     * Delayed implementation that actually delays
+     * Delayed implementation that actually delays.
+     * Only for use in DelayQueue<SimpleDelay>.
      */
-    static class NanoDelay implements Delayed {
+    static class SimpleDelay implements Delayed {
         final long trigger;
-        NanoDelay(long i) {
-            trigger = System.nanoTime() + i;
+
+        SimpleDelay(long delay, TimeUnit unit) {
+            trigger = System.nanoTime() + unit.toNanos(delay);
         }
 
         public int compareTo(Delayed y) {
-            return Long.compare(trigger, ((NanoDelay)y).trigger);
+            long now = System.nanoTime();
+            return Long.compare(trigger - now, ((SimpleDelay)y).trigger - now);
         }
-
-        public boolean equals(Object other) {
-            return (other instanceof NanoDelay) &&
-                this.trigger == ((NanoDelay)other).trigger;
-        }
-
-        // suppress [overrides] javac warning
-        public int hashCode() { return (int) trigger; }
 
         public long getDelay(TimeUnit unit) {
-            long n = trigger - System.nanoTime();
-            return unit.convert(n, TimeUnit.NANOSECONDS);
+            return unit.convert(trigger - System.nanoTime(), NANOSECONDS);
         }
 
-        public long getTriggerTime() {
-            return trigger;
-        }
+        public long getTriggerTime() { return trigger; }
 
         public String toString() {
             return String.valueOf(trigger);
@@ -700,13 +697,16 @@ public class DelayQueueTest extends JSR166TestCase {
      * Delayed actions do not occur until their delay elapses
      */
     public void testDelay() throws InterruptedException {
-        DelayQueue<NanoDelay> q = new DelayQueue<>();
-        for (int i = 0; i < SIZE; ++i)
-            q.add(new NanoDelay(1000000L * (SIZE - i)));
+        DelayQueue<SimpleDelay> q = new DelayQueue<>();
+        ThreadLocalRandom rnd = ThreadLocalRandom.current();
+        for (int i = 0; i < SIZE; ++i) {
+            long micros = rnd.nextLong(SIZE);
+            q.add(new SimpleDelay(micros, MICROSECONDS));
+        }
 
         long last = 0;
         for (int i = 0; i < SIZE; ++i) {
-            NanoDelay e = q.take();
+            SimpleDelay e = q.take();
             long tt = e.getTriggerTime();
             assertTrue(System.nanoTime() - tt >= 0);
             if (i != 0)
@@ -720,29 +720,96 @@ public class DelayQueueTest extends JSR166TestCase {
      * peek of a non-empty queue returns non-null even if not expired
      */
     public void testPeekDelayed() {
-        DelayQueue<NanoDelay> q = new DelayQueue<>();
-        q.add(new NanoDelay(Long.MAX_VALUE));
-        assertNotNull(q.peek());
+        DelayQueue<SimpleDelay> q = new DelayQueue<>();
+        SimpleDelay unexpired = new SimpleDelay(1L, DAYS);
+        SimpleDelay expired = new SimpleDelay(0L, DAYS);
+        q.add(unexpired);
+        assertSame(unexpired, q.peek());
+        q.add(expired);
+        assertSame(expired, q.peek());
+    }
+
+    /**
+     * remove(Object) disregards the expiration state
+     */
+    public void testRemoveObject() {
+        DelayQueue<SimpleDelay> q = new DelayQueue<>();
+        ThreadLocalRandom rnd = ThreadLocalRandom.current();
+        var xs = new ArrayList<SimpleDelay>();
+        int size = 8;
+        for (int i = 0; i < size; i++) {
+            long days = rnd.nextLong(-size, size);
+            var x = new SimpleDelay(days, DAYS);
+            xs.add(x);
+            q.add(x);
+        }
+        for (SimpleDelay x : xs) {
+            assertTrue(q.remove(x));
+            assertFalse(q.remove(x));
+        }
+        assertTrue(q.isEmpty());
     }
 
     /**
      * poll of a non-empty queue returns null if no expired elements.
      */
     public void testPollDelayed() {
-        DelayQueue<NanoDelay> q = new DelayQueue<>();
-        q.add(new NanoDelay(Long.MAX_VALUE));
+        DelayQueue<SimpleDelay> q = new DelayQueue<>();
+        SimpleDelay unexpired = new SimpleDelay(1L, DAYS);
+        SimpleDelay expired = new SimpleDelay(0L, DAYS);
+        q.add(unexpired);
         assertNull(q.poll());
+        q.add(expired);
+        assertSame(expired, q.poll());
+        assertNull(q.poll());
+        assertSame(unexpired, q.peek());
     }
 
     /**
      * timed poll of a non-empty queue returns null if no expired elements.
      */
     public void testTimedPollDelayed() throws InterruptedException {
-        DelayQueue<NanoDelay> q = new DelayQueue<>();
-        q.add(new NanoDelay(LONG_DELAY_MS * 1000000L));
+        DelayQueue<SimpleDelay> q = new DelayQueue<>();
+        SimpleDelay unexpired = new SimpleDelay(1L, DAYS);
+        SimpleDelay expired = new SimpleDelay(0L, DAYS);
+        q.add(unexpired);
         long startTime = System.nanoTime();
         assertNull(q.poll(timeoutMillis(), MILLISECONDS));
         assertTrue(millisElapsedSince(startTime) >= timeoutMillis());
+        q.add(expired);
+        assertSame(expired, q.poll(1L, DAYS));
+        assertNull(q.poll(0L, DAYS));
+        assertSame(unexpired, q.peek());
+    }
+
+    /**
+     * q.take() waits for an expired element.
+     */
+    public void testTakeDelayed() throws InterruptedException {
+        DelayQueue<SimpleDelay> q = new DelayQueue<>();
+        SimpleDelay unexpired = new SimpleDelay(1L, DAYS);
+        SimpleDelay expired = new SimpleDelay(0L, DAYS);
+        q.add(unexpired);
+        CompletableFuture.runAsync(() -> q.add(expired));
+        assertSame(expired, q.take());
+        assertSame(unexpired, q.peek());
+    }
+
+    /**
+     * q.remove() throws NoSuchElementException if no expired elements.
+     */
+    public void testRemoveDelayed() throws InterruptedException {
+        DelayQueue<SimpleDelay> q = new DelayQueue<>();
+        SimpleDelay unexpired = new SimpleDelay(1L, DAYS);
+        SimpleDelay expired = new SimpleDelay(0L, DAYS);
+        q.add(unexpired);
+        try {
+            q.remove();
+            shouldThrow();
+        } catch (NoSuchElementException success) {}
+        q.add(expired);
+        assertSame(expired, q.remove());
+        assertSame(unexpired, q.peek());
     }
 
     /**

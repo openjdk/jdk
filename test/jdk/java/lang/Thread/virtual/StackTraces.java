@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,14 +23,13 @@
 
 /**
  * @test
- * @summary Test stack traces in exceptions and stack frames waslked by the StackWalker
+ * @summary Test stack traces in exceptions and stack frames walked by the StackWalker
  *     API do not include the carrier stack frames
  * @requires vm.continuations
  * @modules java.management
  * @library /test/lib
- * @compile --enable-preview -source ${jdk.version} StackTraces.java
- * @run testng/othervm --enable-preview StackTraces
- * @run testng/othervm --enable-preview -XX:+UnlockDiagnosticVMOptions -XX:+ShowCarrierFrames StackTraces
+ * @run junit StackTraces
+ * @run junit/othervm -XX:+UnlockDiagnosticVMOptions -XX:+ShowCarrierFrames StackTraces
  */
 
 import java.lang.management.ManagementFactory;
@@ -40,17 +39,17 @@ import java.util.concurrent.ForkJoinPool;
 import static java.lang.StackWalker.Option.*;
 
 import jdk.test.lib.thread.VThreadRunner;
-import org.testng.annotations.Test;
-import static org.testng.Assert.*;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
 
-public class StackTraces {
+class StackTraces {
 
     /**
      * Test that the stack trace in exceptions does not include the carrier thread
      * frames, except when running with -XX:+ShowCarrierFrames.
      */
     @Test
-    public void testStackTrace() throws Exception {
+    void testStackTrace() throws Exception {
         VThreadRunner.run(() -> {
             Exception e = new Exception();
             boolean found = Arrays.stream(e.getStackTrace())
@@ -64,7 +63,7 @@ public class StackTraces {
      * Test that StackWalker does not include carrier thread frames.
      */
     @Test
-    public void testStackWalker() throws Exception {
+    void testStackWalker() throws Exception {
         VThreadRunner.run(() -> {
             StackWalker walker = StackWalker.getInstance(Set.of(RETAIN_CLASS_REFERENCE));
             boolean found = walker.walk(sf ->

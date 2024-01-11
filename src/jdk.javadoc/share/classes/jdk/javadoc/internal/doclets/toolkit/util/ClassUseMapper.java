@@ -199,7 +199,7 @@ public class ClassUseMapper {
         utils = configuration.utils;
         comparators = utils.comparators;
         this.classTree = classTree;
-        classToPackage = new TreeMap<>(comparators.makeClassUseComparator());
+        classToPackage = new TreeMap<>(comparators.classUseComparator());
         // Map subclassing, subinterfacing implementing, ...
         for (TypeElement te : classTree.classes().roots()) {
             subclasses(te);
@@ -285,7 +285,7 @@ public class ClassUseMapper {
     private Collection<TypeElement> subclasses(TypeElement te) {
         Collection<TypeElement> ret = classToSubclass.get(te);
         if (ret == null) {
-            ret = new TreeSet<>(comparators.makeClassUseComparator());
+            ret = new TreeSet<>(comparators.classUseComparator());
             Set<TypeElement> subs = classTree.subClasses(te);
             if (subs != null) {
                 ret.addAll(subs);
@@ -304,7 +304,7 @@ public class ClassUseMapper {
     private Collection<TypeElement> subinterfaces(TypeElement te) {
         Collection<TypeElement> ret = classToSubinterface.get(te);
         if (ret == null) {
-            ret = new TreeSet<>(comparators.makeClassUseComparator());
+            ret = new TreeSet<>(comparators.classUseComparator());
             Set<TypeElement> subs = classTree.subInterfaces(te);
             if (subs != null) {
                 ret.addAll(subs);
@@ -325,7 +325,7 @@ public class ClassUseMapper {
     private Collection<TypeElement> implementingClasses(TypeElement te) {
         Collection<TypeElement> ret = classToImplementingClass.get(te);
         if (ret == null) {
-            ret = new TreeSet<>(comparators.makeClassUseComparator());
+            ret = new TreeSet<>(comparators.classUseComparator());
             Set<TypeElement> impl = classTree.implementingClasses(te);
             if (impl != null) {
                 ret.addAll(impl);
@@ -346,7 +346,7 @@ public class ClassUseMapper {
      */
     private void mapExecutable(ExecutableElement ee) {
         final boolean isConstructor = utils.isConstructor(ee);
-        Set<TypeMirror> classArgs = new TreeSet<>(comparators.makeTypeMirrorClassUseComparator());
+        Set<TypeMirror> classArgs = new TreeSet<>(comparators.typeMirrorClassUseComparator());
         for (VariableElement param : ee.getParameters()) {
             TypeMirror pType = param.asType();
             // primitives don't get mapped and type variables are mapped elsewhere
@@ -425,7 +425,7 @@ public class ClassUseMapper {
     private Set<PackageElement> packageSet(TypeElement te) {
         Set<PackageElement> pkgSet = classToPackage.get(te);
         if (pkgSet == null) {
-            pkgSet = new TreeSet<>(comparators.makeClassUseComparator());
+            pkgSet = new TreeSet<>(comparators.classUseComparator());
             classToPackage.put(te, pkgSet);
         }
         return pkgSet;
@@ -434,7 +434,7 @@ public class ClassUseMapper {
     private Set<TypeElement> classSet(TypeElement te) {
         Set<TypeElement> clsSet = classToClass.get(te);
         if (clsSet == null) {
-            clsSet = new TreeSet<>(comparators.makeClassUseComparator());
+            clsSet = new TreeSet<>(comparators.classUseComparator());
             classToClass.put(te, clsSet);
         }
         return clsSet;

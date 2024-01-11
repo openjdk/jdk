@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
+<!-- Copyright © 1991-2023 Unicode, Inc.
+For terms of use, see http://www.unicode.org/copyright.html
+SPDX-License-Identifier: Unicode-DFS-2016
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+-->
+<ldml>
+	<identity>
+		<version number="$Revision$"/>
+		<language type="lmo"/>
+	</identity>
+	<localeDisplayNames>
+		<languages>
+			<language type="en" draft="contributed">ingles</language>
+			<language type="lmo" draft="contributed">Lombard</language>
+		</languages>
+		<scripts>
+			<script type="Latn" draft="contributed">Latin</script>
+		</scripts>
+		<territories>
+			<territory type="IT" draft="contributed">Italia</territory>
+		</territories>
+		<measurementSystemNames>
+			<measurementSystemName type="metric" draft="contributed">metregh</measurementSystemName>
+		</measurementSystemNames>
+	</localeDisplayNames>
+	<characters>
+		<exemplarCharacters>[a b c d e f g h i j k l m n o p q r s t u v w x y z]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[áàăâåäãā æ ç éèĕêëē íìĭîïī ñ óòŏôöøō œ úùŭûüū ÿ]</exemplarCharacters>
+		<exemplarCharacters type="punctuation">[\- ‑ — , ; \: ! ? . … '’ &quot;“” « » ( ) \[ \] \{ \} @ /]</exemplarCharacters>
+	</characters>
+	<dates>
+		<calendars>
+			<calendar type="gregorian">
+				<months>
+					<monthContext type="format">
+						<monthWidth type="wide">
+							<month type="1" draft="contributed">sginer</month>
+							<month type="2" draft="contributed">fevrer</month>
+							<month type="3" draft="contributed">marz</month>
+							<month type="4" draft="contributed">avril</month>
+							<month type="5" draft="contributed">masg</month>
+							<month type="6" draft="contributed">sgiugn</month>
+							<month type="7" draft="contributed">luj</month>
+							<month type="8" draft="contributed">avost</month>
+							<month type="9" draft="contributed">setember</month>
+							<month type="10" draft="contributed">otover</month>
+							<month type="11" draft="contributed">november</month>
+							<month type="12" draft="contributed">dicember</month>
+						</monthWidth>
+					</monthContext>
+				</months>
+				<days>
+					<dayContext type="format">
+						<dayWidth type="wide">
+							<day type="sun" draft="contributed">domenega</day>
+							<day type="mon" draft="contributed">lundì</day>
+							<day type="tue" draft="contributed">mardì</day>
+							<day type="wed" draft="contributed">mercoldì</day>
+							<day type="thu" draft="contributed">sgiovedì</day>
+							<day type="fri" draft="contributed">venerdì</day>
+							<day type="sat" draft="contributed">sabet</day>
+						</dayWidth>
+					</dayContext>
+				</days>
+				<dayPeriods>
+					<dayPeriodContext type="format">
+						<dayPeriodWidth type="wide">
+							<dayPeriod type="am" draft="contributed">del matin</dayPeriod>
+							<dayPeriod type="pm" draft="contributed">de sira</dayPeriod>
+						</dayPeriodWidth>
+					</dayPeriodContext>
+				</dayPeriods>
+				<dateTimeFormats>
+					<availableFormats>
+						<dateFormatItem id="yMMMd" draft="contributed">d MMM y</dateFormatItem>
+					</availableFormats>
+				</dateTimeFormats>
+			</calendar>
+		</calendars>
+		<timeZoneNames>
+			<metazone type="GMT">
+				<long>
+					<standard draft="contributed">Temp Medi de Greenwich</standard>
+				</long>
+			</metazone>
+		</timeZoneNames>
+	</dates>
+	<numbers>
+		<symbols numberSystem="latn">
+			<decimal draft="contributed">,</decimal>
+			<group draft="contributed">’</group>
+		</symbols>
+	</numbers>
+	<personNames>
+		<sampleName item="nativeG">
+			<nameField type="given" draft="unconfirmed">Elisa</nameField>
+		</sampleName>
+		<sampleName item="nativeGS">
+			<nameField type="given" draft="unconfirmed">Pinina</nameField>
+		</sampleName>
+		<sampleName item="nativeGGS">
+			<nameField type="given" draft="unconfirmed">Matilda Bossa</nameField>
+		</sampleName>
+		<sampleName item="nativeFull">
+			<nameField type="given" draft="unconfirmed">March Brambilla</nameField>
+		</sampleName>
+		<sampleName item="foreignG">
+			<nameField type="given" draft="unconfirmed">Peder</nameField>
+		</sampleName>
+		<sampleName item="foreignGS">
+			<nameField type="given" draft="unconfirmed">Caterina</nameField>
+		</sampleName>
+		<sampleName item="foreignGGS">
+			<nameField type="given" draft="unconfirmed">Luisa</nameField>
+		</sampleName>
+		<sampleName item="foreignFull">
+			<nameField type="given" draft="unconfirmed">Luisa Verda</nameField>
+		</sampleName>
+	</personNames>
+</ldml>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -150,16 +150,21 @@ public class ProcessThread extends TestThread {
          */
         @Override
         public void xrun() throws Throwable {
-            this.process = ProcessTools.startProcess(name, processBuilder, waitfor);
-            // Release when process is started
-            latch.countDown();
-
-            // Will block...
             try {
-                this.process.waitFor();
-                output = new OutputAnalyzer(this.process);
+                this.process = ProcessTools.startProcess(name, processBuilder, waitfor);
             } catch (Throwable t) {
-                String name = Thread.currentThread().getName();
+                System.out.println(String.format("ProcessThread[%s] failed: %s", name, t.toString()));
+                throw t;
+            } finally {
+                // Release when process is started or failed
+                latch.countDown();
+            }
+
+            try {
+                output = new OutputAnalyzer(this.process);
+                // Will block...
+                this.process.waitFor();
+            } catch (Throwable t) {
                 System.out.println(String.format("ProcessThread[%s] failed: %s", name, t.toString()));
                 throw t;
             } finally {

@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2021, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2021, 2022, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +29,7 @@ import java.util.Objects;
 
 /*
  * @test
- * @bug 8259609 8276116
+ * @bug 8259609 8276116 8311932
  * @summary C2: optimize long range checks in long counted loops
  * @library /test/lib /
  * @requires vm.compiler2.enabled
@@ -37,15 +38,15 @@ import java.util.Objects;
 
 public class TestLongRangeChecks {
     public static void main(String[] args) {
-        TestFramework.runWithFlags("-XX:-UseCountedLoopSafepoints");
-        TestFramework.runWithFlags("-XX:+UseCountedLoopSafepoints", "-XX:LoopStripMiningIter=1");
-        TestFramework.runWithFlags("-XX:+UseCountedLoopSafepoints", "-XX:LoopStripMiningIter=1000");
+        TestFramework.runWithFlags("-XX:+TieredCompilation", "-XX:-UseCountedLoopSafepoints", "-XX:LoopUnrollLimit=0");
+        TestFramework.runWithFlags("-XX:+TieredCompilation", "-XX:+UseCountedLoopSafepoints", "-XX:LoopStripMiningIter=1", "-XX:LoopUnrollLimit=0");
+        TestFramework.runWithFlags("-XX:+TieredCompilation", "-XX:+UseCountedLoopSafepoints", "-XX:LoopStripMiningIter=1000", "-XX:LoopUnrollLimit=0");
     }
 
 
     @Test
     @IR(counts = { IRNode.LOOP, "1" })
-    @IR(failOn = { IRNode.COUNTEDLOOP })
+    @IR(failOn = { IRNode.COUNTED_LOOP})
     public static void testStridePosScalePos(long start, long stop, long length, long offset) {
         final long scale = 1;
         final long stride = 1;
@@ -66,7 +67,7 @@ public class TestLongRangeChecks {
 
     @Test
     @IR(counts = { IRNode.LOOP, "1" })
-    @IR(failOn = { IRNode.COUNTEDLOOP })
+    @IR(failOn = { IRNode.COUNTED_LOOP})
     public static void testStridePosScalePosInIntLoop1(int start, int stop, long length, long offset) {
         final long scale = 2;
         final int stride = 1;
@@ -84,7 +85,7 @@ public class TestLongRangeChecks {
 
     @Test
     @IR(counts = { IRNode.LOOP, "1" })
-    @IR(failOn = { IRNode.COUNTEDLOOP })
+    @IR(failOn = { IRNode.COUNTED_LOOP})
     public static void testStridePosScalePosInIntLoop2(int start, int stop, long length, long offset) {
         final int scale = 2;
         final int stride = 1;
@@ -102,7 +103,7 @@ public class TestLongRangeChecks {
 
     @Test
     @IR(counts = { IRNode.LOOP, "1"})
-    @IR(failOn = { IRNode.COUNTEDLOOP})
+    @IR(failOn = { IRNode.COUNTED_LOOP})
     public static void testStrideNegScaleNeg(long start, long stop, long length, long offset) {
         final long scale = -1;
         final long stride = 1;
@@ -118,7 +119,7 @@ public class TestLongRangeChecks {
 
     @Test
     @IR(counts = { IRNode.LOOP, "1" })
-    @IR(failOn = { IRNode.COUNTEDLOOP })
+    @IR(failOn = { IRNode.COUNTED_LOOP})
     public static void testStrideNegScaleNegInIntLoop1(int start, int stop, long length, long offset) {
         final long scale = -2;
         final int stride = 1;
@@ -135,7 +136,7 @@ public class TestLongRangeChecks {
 
     @Test
     @IR(counts = { IRNode.LOOP, "1" })
-    @IR(failOn = { IRNode.COUNTEDLOOP })
+    @IR(failOn = { IRNode.COUNTED_LOOP})
     public static void testStrideNegScaleNegInIntLoop2(int start, int stop, long length, long offset) {
         final int scale = -2;
         final int stride = 1;
@@ -152,7 +153,7 @@ public class TestLongRangeChecks {
 
     @Test
     @IR(counts = { IRNode.LOOP, "1"})
-    @IR(failOn = { IRNode.COUNTEDLOOP})
+    @IR(failOn = { IRNode.COUNTED_LOOP})
     public static void testStrideNegScalePos(long start, long stop, long length, long offset) {
         final long scale = 1;
         final long stride = 1;
@@ -168,7 +169,7 @@ public class TestLongRangeChecks {
 
     @Test
     @IR(counts = { IRNode.LOOP, "1" })
-    @IR(failOn = { IRNode.COUNTEDLOOP })
+    @IR(failOn = { IRNode.COUNTED_LOOP})
     public static void testStrideNegScalePosInIntLoop1(int start, int stop, long length, long offset) {
         final long scale = 2;
         final int stride = 1;
@@ -184,7 +185,7 @@ public class TestLongRangeChecks {
 
     @Test
     @IR(counts = { IRNode.LOOP, "1" })
-    @IR(failOn = { IRNode.COUNTEDLOOP })
+    @IR(failOn = { IRNode.COUNTED_LOOP})
     public static void testStrideNegScalePosInIntLoop2(int start, int stop, long length, long offset) {
         final int scale = 2;
         final int stride = 1;
@@ -195,12 +196,12 @@ public class TestLongRangeChecks {
 
     @Run(test = "testStrideNegScalePosInIntLoop2")
     private void testStrideNegScalePosInIntLoop2_runner() {
-        testStrideNegScalePosInIntLoop1(0, 100, 200, 0);
+        testStrideNegScalePosInIntLoop2(0, 100, 200, 0);
     }
 
     @Test
     @IR(counts = { IRNode.LOOP, "1"})
-    @IR(failOn = { IRNode.COUNTEDLOOP})
+    @IR(failOn = { IRNode.COUNTED_LOOP})
     public static void testStridePosScaleNeg(long start, long stop, long length, long offset) {
         final long scale = -1;
         final long stride = 1;
@@ -216,7 +217,7 @@ public class TestLongRangeChecks {
 
     @Test
     @IR(counts = { IRNode.LOOP, "1"})
-    @IR(failOn = { IRNode.COUNTEDLOOP})
+    @IR(failOn = { IRNode.COUNTED_LOOP})
     public static void testStridePosScaleNegInIntLoop1(int start, int stop, long length, long offset) {
         final long scale = -2;
         final int stride = 1;
@@ -232,7 +233,7 @@ public class TestLongRangeChecks {
 
     @Test
     @IR(counts = { IRNode.LOOP, "1"})
-    @IR(failOn = { IRNode.COUNTEDLOOP})
+    @IR(failOn = { IRNode.COUNTED_LOOP})
     public static void testStridePosScaleNegInIntLoop2(int start, int stop, long length, long offset) {
         final int scale = -2;
         final int stride = 1;
@@ -243,6 +244,60 @@ public class TestLongRangeChecks {
 
     @Run(test = "testStridePosScaleNegInIntLoop2")
     private void testStridePosScaleNegInIntLoop2_runner() {
-        testStridePosScaleNegInIntLoop1(0, 100, 200, 198);
+        testStridePosScaleNegInIntLoop2(0, 100, 200, 198);
+    }
+
+    @Test
+    @IR(counts = { IRNode.LONG_COUNTED_LOOP, "1" })
+    @IR(failOn = { IRNode.COUNTED_LOOP, IRNode.LOOP })
+    public static void testStridePosScalePosShortLoop(long start, long stop, long length, long offset) {
+        final long scale = 1;
+        final long stride = 1;
+
+        // Loop runs for too few iterations. Transforming it wouldn't pay off.
+        for (long i = start; i < stop; i += stride) {
+            Objects.checkIndex(scale * i + offset, length);
+        }
+    }
+
+    @Run(test = "testStridePosScalePosShortLoop")
+    private void testStridePosScalePosShortLoop_runner() {
+        testStridePosScalePosShortLoop(0, 2, 2, 0);
+    }
+
+    @Test
+    @IR(counts = { IRNode.COUNTED_LOOP, "1" })
+    @IR(failOn = { IRNode.LOOP })
+    public static void testStridePosScalePosInIntLoopShortLoop1(int start, int stop, long length, long offset) {
+        final long scale = 2;
+        final int stride = 1;
+
+        // Same but with int loop
+        for (int i = start; i < stop; i += stride) {
+            Objects.checkIndex(scale * i + offset, length);
+        }
+    }
+
+    @Run(test = "testStridePosScalePosInIntLoopShortLoop1")
+    private void testStridePosScalePosInIntLoopShortLoop1_runner() {
+        testStridePosScalePosInIntLoopShortLoop1(0, 2, 4, 0);
+    }
+
+    @Test
+    @IR(counts = { IRNode.COUNTED_LOOP, "1" })
+    @IR(failOn = { IRNode.LOOP })
+    public static void testStridePosScalePosInIntLoopShortLoop2(long length, long offset) {
+        final long scale = 2;
+        final int stride = 1;
+
+        // Same but with int loop
+        for (int i = 0; i < 3; i += stride) {
+            Objects.checkIndex(scale * i + offset, length);
+        }
+    }
+
+    @Run(test = "testStridePosScalePosInIntLoopShortLoop2")
+    private void testStridePosScalePosInIntLoopShortLoop2_runner() {
+        testStridePosScalePosInIntLoopShortLoop2(6, 0);
     }
 }

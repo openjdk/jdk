@@ -3,7 +3,7 @@
  * @bug 7022054
  *
  * @summary  Invalid compiler error on covariant overriding methods with the same erasure
- * @compile -source 7 T7022054pos2.java
+ *
  * @compile/fail/ref=T7022054pos2.out -XDrawDiagnostics T7022054pos2.java
  */
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -383,6 +383,7 @@ class VM_RedefineClasses: public VM_Operation {
   // the heavy lifting.
   elapsedTimer  _timer_rsc_phase1;
   elapsedTimer  _timer_rsc_phase2;
+  elapsedTimer  _timer_vm_op_doit;
   elapsedTimer  _timer_vm_op_prologue;
 
   // Redefinition id used by JFR
@@ -431,14 +432,12 @@ class VM_RedefineClasses: public VM_Operation {
   void append_operand(const constantPoolHandle& scratch_cp, int scratch_bootstrap_spec_index,
     constantPoolHandle *merge_cp_p, int *merge_cp_length_p);
   void finalize_operands_merge(const constantPoolHandle& merge_cp, TRAPS);
-  int find_or_append_indirect_entry(const constantPoolHandle& scratch_cp, int scratch_i,
+  u2 find_or_append_indirect_entry(const constantPoolHandle& scratch_cp, int scratch_i,
     constantPoolHandle *merge_cp_p, int *merge_cp_length_p);
   int find_or_append_operand(const constantPoolHandle& scratch_cp, int scratch_bootstrap_spec_index,
     constantPoolHandle *merge_cp_p, int *merge_cp_length_p);
-  int find_new_index(int old_index);
+  u2 find_new_index(int old_index);
   int find_new_operand_index(int old_bootstrap_spec_index);
-  bool is_unresolved_class_mismatch(const constantPoolHandle& cp1, int index1,
-    const constantPoolHandle& cp2, int index2);
   void map_index(const constantPoolHandle& scratch_cp, int old_index, int new_index);
   void map_operand_index(int old_bootstrap_spec_index, int new_bootstrap_spec_index);
   bool merge_constant_pools(const constantPoolHandle& old_cp,
@@ -539,10 +538,10 @@ class VM_RedefineClasses: public VM_Operation {
   static bool is_modifiable_class(oop klass_mirror);
 
   static jint get_cached_class_file_len(JvmtiCachedClassFileData *cache) {
-    return cache == NULL ? 0 : cache->length;
+    return cache == nullptr ? 0 : cache->length;
   }
   static unsigned char * get_cached_class_file_bytes(JvmtiCachedClassFileData *cache) {
-    return cache == NULL ? NULL : cache->data;
+    return cache == nullptr ? nullptr : cache->data;
   }
 
   // Error printing

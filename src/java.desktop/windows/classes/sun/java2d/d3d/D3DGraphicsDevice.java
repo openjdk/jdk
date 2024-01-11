@@ -112,7 +112,7 @@ public final class D3DGraphicsDevice extends Win32GraphicsDevice {
             class Result {
                 int caps;
                 String id;
-            };
+            }
             final Result res = new Result();
             rq.flushAndInvokeNow(new Runnable() {
                 public void run() {
@@ -320,7 +320,7 @@ public final class D3DGraphicsDevice extends Win32GraphicsDevice {
         try {
             class Result {
                 DisplayMode dm = null;
-            };
+            }
             final Result res = new Result();
             rq.flushAndInvokeNow(new Runnable() {
                 public void run() {
@@ -412,7 +412,7 @@ public final class D3DGraphicsDevice extends Win32GraphicsDevice {
         try {
             class Result {
                 long mem = 0L;
-            };
+            }
             final Result res = new Result();
             rq.flushAndInvokeNow(new Runnable() {
                 public void run() {
@@ -466,7 +466,7 @@ public final class D3DGraphicsDevice extends Win32GraphicsDevice {
         try {
             class Result {
                 boolean avail = false;
-            };
+            }
             final Result res = new Result();
             rq.flushAndInvokeNow(new Runnable() {
                 public void run() {

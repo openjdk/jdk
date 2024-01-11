@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -784,9 +784,9 @@ final class MarlinTileGenerator implements AATileGenerator, MarlinConst {
     }
 
     static String hex(int v, int d) {
-        String s = Integer.toHexString(v);
+        StringBuilder s = new StringBuilder(Integer.toHexString(v));
         while (s.length() < d) {
-            s = "0" + s;
+            s.insert(0, "0");
         }
         return s.substring(0, d);
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@
  */
 package sun.security.krb5.internal.ccache;
 
+import jdk.internal.util.OperatingSystem;
 import sun.security.action.GetPropertyAction;
 import sun.security.krb5.*;
 import sun.security.krb5.internal.*;
@@ -465,9 +466,6 @@ public class FileCredentialsCache extends CredentialsCache
             return name;
         }
 
-        // get cache name from system.property
-        String osname = GetPropertyAction.privilegedGetProperty("os.name");
-
         /*
          * For Unix platforms we use the default cache name to be
          * /tmp/krb5cc_uid ; for all other platforms  we use
@@ -479,7 +477,7 @@ public class FileCredentialsCache extends CredentialsCache
          * Windows.
          */
 
-        if (osname != null && !osname.startsWith("Windows")) {
+        if (!OperatingSystem.isWindows()) {
             long uid = jdk.internal.misc.VM.getuid();
             if (uid != -1) {
                 name = File.separator + "tmp" +

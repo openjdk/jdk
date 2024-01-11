@@ -213,8 +213,10 @@ public class ModuleDescriptor
         }
 
         /**
-         * {@return an unmodifiable set of the module {@linkplain AccessFlag
-         * requires flags, possibly empty}}
+         * Returns the set of the module {@linkplain AccessFlag
+         * requires flags}.
+         *
+         * @return A possibly-empty unmodifiable set of requires flags
          * @see #modifiers()
          * @jvms 4.7.25 The Module Attribute
          * @since 20
@@ -447,8 +449,10 @@ public class ModuleDescriptor
         }
 
         /**
-         * {@return an unmodifiable set of the module {@linkplain AccessFlag
-         * export flags} for this module descriptor, possibly empty}
+         * Returns the set of the module {@linkplain AccessFlag
+         * export flags} for this module descriptor.
+         *
+         * @return A possibly-empty unmodifiable set of export flags
          * @see #modifiers()
          * @jvms 4.7.25 The Module Attribute
          * @since 20
@@ -669,8 +673,10 @@ public class ModuleDescriptor
         }
 
         /**
-         * {@return an unmodifiable set of the module {@linkplain AccessFlag
-         * opens flags}, possibly empty}
+         * Returns the set of the module {@linkplain AccessFlag opens
+         * flags}.
+         *
+         * @return A possibly-empty unmodifiable set of opens flags
          * @see #modifiers()
          * @jvms 4.7.25 The Module Attribute
          * @since 20
@@ -841,26 +847,25 @@ public class ModuleDescriptor
         }
 
         /**
-         * Returns the fully qualified class name of the service type.
-         *
-         * @return The fully qualified class name of the service type
+         * {@return the {@linkplain ClassLoader##binary-name binary name} of the service type}
          */
         public String service() { return service; }
 
         /**
-         * Returns the list of the fully qualified class names of the providers
-         * or provider factories.
+         * Returns the list of the {@linkplain ClassLoader##binary-name binary names}
+         * of the providers or provider factories.
          *
-         * @return A non-empty and unmodifiable list of the fully qualified class
-         *         names of the providers or provider factories
+         * @return A non-empty and unmodifiable list of the {@linkplain ClassLoader##binary-name
+         *         binary names} of the providers or provider factories
          */
         public List<String> providers() { return providers; }
 
         /**
          * Compares this {@code Provides} to another.
          *
-         * <p> Two {@code Provides} objects are compared by comparing the fully
-         * qualified class name of the service type lexicographically. Where the
+         * <p> Two {@code Provides} objects are compared by comparing the
+         * {@linkplain ClassLoader##binary-name binary name}
+         * of the service type lexicographically. Where the
          * class names are equal then the list of the provider class names are
          * compared by comparing the corresponding elements of both lists
          * lexicographically and in sequence. Where the lists differ in size,
@@ -1354,8 +1359,9 @@ public class ModuleDescriptor
     }
 
     /**
-     * {@return an unmodifiable set of the {@linkplain AccessFlag
-     * module flags}, possibly empty}
+     * Returns the set of the {@linkplain AccessFlag module flags}.
+     *
+     * @return A possibly-empty unmodifiable set of module flags
      * @see #modifiers()
      * @jvms 4.7.25 The Module Attribute
      * @since 20
@@ -1439,8 +1445,8 @@ public class ModuleDescriptor
      * <p> If this module is an automatic module then the set of service
      * dependences is empty. </p>
      *
-     * @return  A possibly-empty unmodifiable set of the fully qualified class
-     *          names of the service types used
+     * @return  A possibly-empty unmodifiable set of the {@linkplain ClassLoader##binary-name
+     *          binary names} of the service types used
      */
     public Set<String> uses() {
         return uses;
@@ -1503,7 +1509,7 @@ public class ModuleDescriptor
     /**
      * <p> Returns the module main class. </p>
      *
-     * @return The fully qualified class name of the module's main class
+     * @return The {@linkplain ClassLoader##binary-name binary name} of the module's main class
      */
     public Optional<String> mainClass() {
         return Optional.ofNullable(mainClass);
@@ -1545,13 +1551,14 @@ public class ModuleDescriptor
      * <cite>The Java Language Specification</cite>. </p>
      *
      * <p> Example usage: </p>
-     * <pre>{@code    ModuleDescriptor descriptor = ModuleDescriptor.newModule("stats.core")
+     * {@snippet :
+     *     ModuleDescriptor descriptor = ModuleDescriptor.newModule("stats.core")
      *         .requires("java.base")
      *         .exports("org.acme.stats.core.clustering")
      *         .exports("org.acme.stats.core.regression")
      *         .packages(Set.of("org.acme.stats.core.internal"))
      *         .build();
-     * }</pre>
+     * }
      *
      * @apiNote A {@code Builder} checks the components and invariants as
      * components are added to the builder. The rationale for this is to detect
@@ -2626,7 +2633,7 @@ public class ModuleDescriptor
     private static int modsHashCode(Iterable<? extends Enum<?>> enums) {
         int h = 0;
         for (Enum<?> e : enums) {
-            h = h * 43 + Objects.hashCode(e.name());
+            h += e.name().hashCode();
         }
         return h;
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,8 @@
 package org.openjdk.foreigntest;
 
 import java.lang.foreign.*;
+import java.lang.foreign.Arena;
+import java.lang.foreign.Linker.Option;
 import java.lang.reflect.Method;
 
 public class PanamaMainReflection {
@@ -33,16 +35,17 @@ public class PanamaMainReflection {
    }
 
     public static void testReflectionnativeLinker() throws Throwable {
-        System.out.println("Trying to get Linker");
-        Method method = Linker.class.getDeclaredMethod("nativeLinker");
-        method.invoke(null);
-        System.out.println("Got Linker");
+        Linker linker = Linker.nativeLinker();
+        System.out.println("Trying to get downcall handle");
+        Method method = Linker.class.getDeclaredMethod("downcallHandle", FunctionDescriptor.class, Option[].class);
+        method.invoke(linker, FunctionDescriptor.ofVoid(), new Linker.Option[0]);
+        System.out.println("Got downcall handle");
     }
 
     public static void testReflectionMemorySegment() throws Throwable {
         System.out.println("Trying to get MemorySegment");
-        Method method = MemorySegment.class.getDeclaredMethod("ofAddress", MemoryAddress.class, long.class, MemorySession.class);
-        method.invoke(null, MemoryAddress.NULL, 4000L, MemorySession.global());
+        Method method = MemorySegment.class.getDeclaredMethod("reinterpret", long.class);
+        method.invoke(MemorySegment.NULL, 10L);
         System.out.println("Got MemorySegment");
     }
 }

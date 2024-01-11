@@ -50,7 +50,7 @@
  * Note that this shader source code includes some "holes" marked by "%s".
  * This allows us to build different shader programs (e.g. one for
  * 3x3, one for 5x5, and so on) simply by filling in these "holes" with
- * a call to sprintf().  See the OGLBufImgOps_CreateConvolveProgram() method
+ * a call to snprintf().  See the OGLBufImgOps_CreateConvolveProgram() method
  * for more details.
  *
  * REMIND: Currently this shader (and the supporting code in the
@@ -141,16 +141,16 @@ OGLBufImgOps_CreateConvolveProgram(jint flags)
 
     if (IS_SET(CONVOLVE_EDGE_ZERO_FILL)) {
         // EDGE_ZERO_FILL: fill in zero at the edges
-        sprintf(edge, "sum = vec4(0.0);");
+        snprintf(edge, sizeof(edge), "sum = vec4(0.0);");
     } else {
         // EDGE_NO_OP: use the source pixel color at the edges
-        sprintf(edge,
+        snprintf(edge, sizeof(edge),
                 "sum = texture%s(baseImage, gl_TexCoord[0].st);",
                 target);
     }
 
     // compose the final source code string from the various pieces
-    sprintf(finalSource, convolveShaderSource,
+    snprintf(finalSource, sizeof(finalSource), convolveShaderSource,
             kernelMax, target, edge, target);
 
     convolveProgram = OGLContext_CreateFragmentProgram(finalSource);
@@ -296,7 +296,7 @@ OGLBufImgOps_DisableConvolveOp(OGLContext *oglc)
  * Note that this shader source code includes some "holes" marked by "%s".
  * This allows us to build different shader programs (e.g. one for
  * GL_TEXTURE_2D targets, one for GL_TEXTURE_RECTANGLE_ARB targets, and so on)
- * simply by filling in these "holes" with a call to sprintf().  See the
+ * simply by filling in these "holes" with a call to snprintf().  See the
  * OGLBufImgOps_CreateRescaleProgram() method for more details.
  */
 static const char *rescaleShaderSource =
@@ -360,7 +360,7 @@ OGLBufImgOps_CreateRescaleProgram(jint flags)
     }
 
     // compose the final source code string from the various pieces
-    sprintf(finalSource, rescaleShaderSource,
+    snprintf(finalSource, sizeof(finalSource), rescaleShaderSource,
             target, target, preRescale, postRescale);
 
     rescaleProgram = OGLContext_CreateFragmentProgram(finalSource);
@@ -502,7 +502,7 @@ OGLBufImgOps_DisableRescaleOp(OGLContext *oglc)
  * Note that this shader source code includes some "holes" marked by "%s".
  * This allows us to build different shader programs (e.g. one for
  * GL_TEXTURE_2D targets, one for GL_TEXTURE_RECTANGLE_ARB targets, and so on)
- * simply by filling in these "holes" with a call to sprintf().  See the
+ * simply by filling in these "holes" with a call to snprintf().  See the
  * OGLBufImgOps_CreateLookupProgram() method for more details.
  */
 static const char *lookupShaderSource =
@@ -592,7 +592,7 @@ OGLBufImgOps_CreateLookupProgram(jint flags)
     }
 
     // compose the final source code string from the various pieces
-    sprintf(finalSource, lookupShaderSource,
+    snprintf(finalSource, sizeof(finalSource), lookupShaderSource,
             target, target, preLookup, alpha, postLookup);
 
     lookupProgram = OGLContext_CreateFragmentProgram(finalSource);

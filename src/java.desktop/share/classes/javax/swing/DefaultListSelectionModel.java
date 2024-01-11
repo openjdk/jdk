@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,9 @@ import java.util.BitSet;
 import java.io.Serializable;
 import java.beans.Transient;
 
-import javax.swing.event.*;
+import javax.swing.event.EventListenerList;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
 
 
 /**
@@ -334,7 +336,7 @@ public class DefaultListSelectionModel implements ListSelectionModel, Cloneable,
            We only need to check for the case when lowest entry has been cleared,
            and in this case we need to search for the first value set above it.
         */
-        if (r == minIndex) {
+        if (r == minIndex && minIndex < Integer.MAX_VALUE) {
             for(minIndex = minIndex + 1; minIndex <= maxIndex; minIndex++) {
                 if (value.get(minIndex)) {
                     break;
@@ -366,7 +368,7 @@ public class DefaultListSelectionModel implements ListSelectionModel, Cloneable,
            and therefore that the minIndex and maxIndex had 'real' values.
 
            If we have cleared the whole selection, set the minIndex and maxIndex
-           to their cannonical values so that the next set command always works
+           to their canonical values so that the next set command always works
            just by using Math.min and Math.max.
         */
         if (isSelectionEmpty()) {
@@ -448,6 +450,10 @@ public class DefaultListSelectionModel implements ListSelectionModel, Cloneable,
             }
             if (shouldClear) {
                 clear(i);
+            }
+            // Prevent Integer overflow
+            if (i == Integer.MAX_VALUE) {
+                break;
             }
         }
         fireValueChanged();
@@ -640,20 +646,32 @@ public class DefaultListSelectionModel implements ListSelectionModel, Cloneable,
      * Otherwise leave them unselected. This method is typically
      * called to sync the selection model with a corresponding change
      * in the data model.
+     *
+     * @throws IndexOutOfBoundsException if either {@code index}
+     *          or {@code length} is negative
      */
     public void insertIndexInterval(int index, int length, boolean before)
     {
+        if (length < 0 || index < 0) {
+            throw new IndexOutOfBoundsException("index or length is negative");
+        }
+        if (index == Integer.MAX_VALUE || length == 0) {
+            // Nothing to update
+            return;
+        }
         /* The first new index will appear at insMinIndex and the last
          * one will appear at insMaxIndex
          */
         int insMinIndex = (before) ? index : index + 1;
-        int insMaxIndex = (insMinIndex + length) - 1;
+        int insMaxIndex = (insMinIndex + length >= 0)
+                          ? (insMinIndex + length) - 1
+                          : Integer.MAX_VALUE;
 
         /* Right shift the entire bitset by length, beginning with
          * index-1 if before is true, index+1 if it's false (i.e. with
          * insMinIndex).
          */
-        for(int i = maxIndex; i >= insMinIndex; i--) {
+        for(int i = Math.min(maxIndex, Integer.MAX_VALUE - length); i >= insMinIndex; i--) {
             setState(i + length, value.get(i));
         }
 
@@ -661,7 +679,7 @@ public class DefaultListSelectionModel implements ListSelectionModel, Cloneable,
          */
         boolean setInsertedValues = ((getSelectionMode() == SINGLE_SELECTION) ?
                                         false : value.get(index));
-        for(int i = insMinIndex; i <= insMaxIndex; i++) {
+        for(int i = insMaxIndex; i >= insMinIndex; i--) {
             setState(i, setInsertedValues);
         }
 
@@ -686,18 +704,38 @@ public class DefaultListSelectionModel implements ListSelectionModel, Cloneable,
      * the selection model.  This is typically called to sync the selection
      * model width a corresponding change in the data model.  Note
      * that (as always) index0 need not be &lt;= index1.
+     *
+     * @throws IndexOutOfBoundsException if either index is negative
      */
     public void removeIndexInterval(int index0, int index1)
     {
+        if (index0 < 0 || index1 < 0) {
+            throw new IndexOutOfBoundsException("index is negative");
+        }
+
         int rmMinIndex = Math.min(index0, index1);
         int rmMaxIndex = Math.max(index0, index1);
+
+        if (rmMinIndex == 0 && rmMaxIndex == Integer.MAX_VALUE) {
+            for (int i = Integer.MAX_VALUE; i >= 0; i--) {
+                setState(i, false);
+            }
+
+            if (this.anchorIndex != -1 || this.leadIndex != -1) {
+                updateLeadAnchorIndices(-1, -1);
+            }
+            return;
+        }
+
         int gapLength = (rmMaxIndex - rmMinIndex) + 1;
 
         /* Shift the entire bitset to the left to close the index0, index1
          * gap.
          */
-        for(int i = rmMinIndex; i <= maxIndex; i++) {
-            setState(i, value.get(i + gapLength));
+        for (int i = rmMinIndex; i >= 0 && i <= maxIndex; i++) {
+            setState(i, (i <= Integer.MAX_VALUE - gapLength)
+                        && (i + gapLength >= minIndex)
+                        && value.get(i + gapLength));
         }
 
         int leadIndex = this.leadIndex;

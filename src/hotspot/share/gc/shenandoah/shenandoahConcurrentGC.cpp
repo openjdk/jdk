@@ -545,12 +545,9 @@ void ShenandoahConcurrentGC::op_init_mark() {
 
   // Make above changes visible to worker threads
   OrderAccess::fence();
-  // Arm nmethods for concurrent marking. When a nmethod is about to be executed,
-  // we need to make sure that all its metadata are marked. alternative is to remark
-  // thread roots at final mark pause, but it can be potential latency killer.
-  if (heap->unload_classes()) {
-    ShenandoahCodeRoots::arm_nmethods();
-  }
+
+  // Arm nmethods for concurrent mark
+  ShenandoahCodeRoots::arm_nmethods_for_mark();
 
   ShenandoahStackWatermark::change_epoch_id();
   if (ShenandoahPacing) {
@@ -603,11 +600,8 @@ void ShenandoahConcurrentGC::op_final_mark() {
       }
 
       // Arm nmethods/stack for concurrent processing
-      ShenandoahCodeRoots::arm_nmethods();
+      ShenandoahCodeRoots::arm_nmethods_for_evac();
       ShenandoahStackWatermark::change_epoch_id();
-
-      // Notify JVMTI that oops are changed.
-      JvmtiTagMap::set_needs_rehashing();
 
       if (ShenandoahPacing) {
         heap->pacer()->setup_for_evac();
@@ -711,10 +705,8 @@ void ShenandoahEvacUpdateCleanupOopStorageRootsClosure::do_oop(oop* p) {
       if (resolved == obj) {
         resolved = _heap->evacuate_object(obj, _thread);
       }
+      shenandoah_assert_not_in_cset_except(p, resolved, _heap->cancelled_gc());
       ShenandoahHeap::atomic_update_oop(resolved, p, obj);
-      assert(_heap->cancelled_gc() ||
-             _mark_context->is_marked(resolved) && !_heap->in_collection_set(resolved),
-             "Sanity");
     }
   }
 }
@@ -737,7 +729,7 @@ public:
   }
 };
 
-// This task not only evacuates/updates marked weak roots, but also "NULL"
+// This task not only evacuates/updates marked weak roots, but also "null"
 // dead weak roots.
 class ShenandoahConcurrentWeakRootsEvacUpdateTask : public WorkerTask {
 private:
@@ -773,6 +765,7 @@ public:
 
   void work(uint worker_id) {
     ShenandoahConcurrentWorkerSession worker_session(worker_id);
+    ShenandoahSuspendibleThreadSetJoiner sts_join;
     {
       ShenandoahEvacOOMScope oom;
       // jni_roots and weak_roots are OopStorage backed roots, concurrent iteration
@@ -785,7 +778,7 @@ public:
     // cleanup the weak oops in CLD and determinate nmethod's unloading state, so that we
     // can cleanup immediate garbage sooner.
     if (ShenandoahHeap::heap()->unload_classes()) {
-      // Applies ShenandoahIsCLDAlive closure to CLDs, native barrier will either NULL the
+      // Applies ShenandoahIsCLDAlive closure to CLDs, native barrier will either null the
       // CLD's holder or evacuate it.
       {
         ShenandoahIsCLDAliveClosure is_cld_alive;
@@ -834,7 +827,7 @@ void ShenandoahConcurrentGC::op_class_unloading() {
 class ShenandoahEvacUpdateCodeCacheClosure : public NMethodClosure {
 private:
   BarrierSetNMethod* const                  _bs;
-  ShenandoahEvacuateUpdateMetadataClosure<> _cl;
+  ShenandoahEvacuateUpdateMetadataClosure   _cl;
 
 public:
   ShenandoahEvacUpdateCodeCacheClosure() :
@@ -893,7 +886,7 @@ public:
       }
 
       {
-        ShenandoahEvacuateUpdateMetadataClosure<> cl;
+        ShenandoahEvacuateUpdateMetadataClosure cl;
         CLDToOopClosure clds(&cl, ClassLoaderData::_claim_strong);
         _cld_roots.cld_do(&clds, worker_id);
       }
@@ -956,7 +949,7 @@ void ShenandoahUpdateThreadClosure::do_thread(Thread* thread) {
   if (thread->is_Java_thread()) {
     JavaThread* jt = JavaThread::cast(thread);
     ResourceMark rm;
-    jt->oops_do(&_cl, NULL);
+    jt->oops_do(&_cl, nullptr);
   }
 }
 

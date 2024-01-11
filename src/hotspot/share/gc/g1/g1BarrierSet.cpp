@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -101,28 +101,33 @@ void G1BarrierSet::write_ref_field_post_slow(volatile CardValue* byte) {
   }
 }
 
-void G1BarrierSet::invalidate(MemRegion mr) {
+void G1BarrierSet::invalidate(JavaThread* thread, MemRegion mr) {
   if (mr.is_empty()) {
     return;
   }
   volatile CardValue* byte = _card_table->byte_for(mr.start());
   CardValue* last_byte = _card_table->byte_for(mr.last());
-  // skip initial young cards
-  for (; byte <= last_byte && *byte == G1CardTable::g1_young_card_val(); byte++);
 
-  if (byte <= last_byte) {
-    OrderAccess::storeload();
-    // Enqueue if necessary.
-    Thread* thr = Thread::current();
-    G1DirtyCardQueueSet& qset = G1BarrierSet::dirty_card_queue_set();
-    G1DirtyCardQueue& queue = G1ThreadLocalData::dirty_card_queue(thr);
-    for (; byte <= last_byte; byte++) {
-      CardValue bv = *byte;
-      if ((bv != G1CardTable::g1_young_card_val()) &&
-          (bv != G1CardTable::dirty_card_val())) {
-        *byte = G1CardTable::dirty_card_val();
-        qset.enqueue(queue, byte);
-      }
+  // skip young gen cards
+  if (*byte == G1CardTable::g1_young_card_val()) {
+    // MemRegion should not span multiple regions for the young gen.
+    DEBUG_ONLY(HeapRegion* containing_hr = G1CollectedHeap::heap()->heap_region_containing(mr.start());)
+    assert(containing_hr->is_young(), "it should be young");
+    assert(containing_hr->is_in(mr.start()), "it should contain start");
+    assert(containing_hr->is_in(mr.last()), "it should also contain last");
+    return;
+  }
+
+  OrderAccess::storeload();
+  // Enqueue if necessary.
+  G1DirtyCardQueueSet& qset = G1BarrierSet::dirty_card_queue_set();
+  G1DirtyCardQueue& queue = G1ThreadLocalData::dirty_card_queue(thread);
+  for (; byte <= last_byte; byte++) {
+    CardValue bv = *byte;
+    assert(bv != G1CardTable::g1_young_card_val(), "Invalid card");
+    if (bv != G1CardTable::dirty_card_val()) {
+      *byte = G1CardTable::dirty_card_val();
+      qset.enqueue(queue, byte);
     }
   }
 }
@@ -139,18 +144,18 @@ void G1BarrierSet::on_thread_destroy(Thread* thread) {
 
 void G1BarrierSet::on_thread_attach(Thread* thread) {
   BarrierSet::on_thread_attach(thread);
-  SATBMarkQueue& queue = G1ThreadLocalData::satb_mark_queue(thread);
-  assert(!queue.is_active(), "SATB queue should not be active");
-  assert(queue.buffer() == nullptr, "SATB queue should not have a buffer");
-  assert(queue.index() == 0, "SATB queue index should be zero");
-  // Can't assert that the DCQ is empty.  There is early execution on
-  // the main thread, before it gets added to the threads list, which
-  // is where this is called.  That execution may enqueue dirty cards.
+  SATBMarkQueue& satbq = G1ThreadLocalData::satb_mark_queue(thread);
+  assert(!satbq.is_active(), "SATB queue should not be active");
+  assert(satbq.buffer() == nullptr, "SATB queue should not have a buffer");
+  assert(satbq.index() == 0, "SATB queue index should be zero");
+  G1DirtyCardQueue& dirtyq = G1ThreadLocalData::dirty_card_queue(thread);
+  assert(dirtyq.buffer() == nullptr, "Dirty Card queue should not have a buffer");
+  assert(dirtyq.index() == 0, "Dirty Card queue index should be zero");
 
   // If we are creating the thread during a marking cycle, we should
   // set the active field of the SATB queue to true.  That involves
   // copying the global is_active value to this thread's queue.
-  queue.set_active(_satb_mark_queue_set.is_active());
+  satbq.set_active(_satb_mark_queue_set.is_active());
 }
 
 void G1BarrierSet::on_thread_detach(Thread* thread) {

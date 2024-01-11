@@ -346,7 +346,10 @@ public class ResponseBodyBeforeError {
 
         @Override
         public void run() {
+            int maxUnexpected = 10; // if we get there too often we may
+                                    // want to reassess the diagnosis
             while (!closed) {
+                boolean accepted = false;
                 try (Socket s = ss.accept()) {
                     out.print(name + ": got connection ");
                     InputStream is = s.getInputStream();
@@ -357,26 +360,39 @@ public class ResponseBodyBeforeError {
                     readRequestHeaders(is);
 
                     String query = uriPath.getRawQuery();
-                    assert query != null;
+                    if (query == null) {
+                        throw new IOException("expected query not found in: " + uriPath);
+                    }
                     String qv = query.split("=")[1];
                     int len;
                     if (qv.equals("all")) {
                         len = responseBody().getBytes(US_ASCII).length;
                     } else {
-                        len = Integer.parseInt(query.split("=")[1]);
+                        len = Integer.parseInt(qv);
                     }
+
+                    // if we get an exception past this point
+                    // we will rethrow it
+                    accepted = true;
 
                     OutputStream os = s.getOutputStream();
                     os.write(responseHeaders().getBytes(US_ASCII));
-                    out.println(name  + ": headers written, writing " + len  + " body bytes");
+                    out.println(name + ": headers written, writing " + len + " body bytes");
                     byte[] responseBytes = responseBody().getBytes(US_ASCII);
-                    for (int i = 0; i< len; i++) {
+                    for (int i = 0; i < len; i++) {
                         os.write(responseBytes[i]);
                         os.flush();
                     }
-                } catch (IOException e) {
-                    if (!closed)
-                        throw new UncheckedIOException("Unexpected", e);
+                } catch (IOException | RuntimeException e) {
+                    if (!closed) {
+                        if (--maxUnexpected <= 0 || accepted) {
+                            if (e instanceof IOException io)
+                                throw new UncheckedIOException(io);
+                            else throw (RuntimeException) e;
+                        }
+                        out.println("ignoring unexpected exception: " + e);
+                        continue;
+                    }
                 }
             }
         }

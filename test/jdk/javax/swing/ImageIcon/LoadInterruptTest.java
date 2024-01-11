@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,7 +72,7 @@ public class LoadInterruptTest {
         setUpOutput();
 
         Thread.currentThread().interrupt();
-        ImageIcon i = new ImageIcon("https://openjdk.java.net/images/openjdk.png");
+        ImageIcon i = new ImageIcon("https://openjdk.org/images/openjdk.png");
         int status = i.getImageLoadStatus();
         System.out.flush();
         String outString = testOut.toString(StandardCharsets.UTF_8);

@@ -22,6 +22,7 @@
  */
 package jdk.test.lib.json;
 
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -317,7 +318,7 @@ public interface JSONValue {
 
             var value = builder.toString();
             if (isInteger) {
-                Long.parseLong(value);
+                new BigInteger(value);
                 return new JSONString(value);
             } else {
                 Double.parseDouble(value);

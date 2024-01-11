@@ -29,7 +29,6 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.VarHandle;
-import java.lang.reflect.Field;
 import java.util.AbstractMap;
 import java.util.AbstractSet;
 import java.util.ArrayList;
@@ -44,10 +43,12 @@ import java.util.Map;
 import java.util.Set;
 import java.util.WeakHashMap;
 import java.util.function.Consumer;
+import java.util.function.IntFunction;
 import java.util.function.Supplier;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNull;
+import static org.testng.Assert.assertThrows;
 
 /*
  * @test
@@ -426,4 +427,27 @@ public class WhiteBoxResizeTest {
         }
     }
 
+    @DataProvider(name = "negativeNumMappings")
+    public Iterator<Object[]> negativeNumMappings() {
+        final List<Object[]> methods = new ArrayList<>();
+        methods.add(new Object[] {(IntFunction<?>) HashMap::newHashMap, "HashMap::newHashMap"});
+        methods.add(new Object[] {(IntFunction<?>) LinkedHashMap::newLinkedHashMap,
+                "LinkedHashMap::newLinkedHashMap"});
+        methods.add(new Object[] {(IntFunction<?>) WeakHashMap::newWeakHashMap,
+                "WeakHashMap::newWeakHashMap"});
+        methods.add(new Object[] {(IntFunction<?>) HashSet::newHashSet, "HashSet::newHashSet"});
+        methods.add(new Object[] {(IntFunction<?>) LinkedHashSet::newLinkedHashSet,
+                "LinkedHashSet::newLinkedHashSet"});
+        return methods.iterator();
+    }
+
+    /**
+     * Tests that the APIs that take {@code numMappings} or {@code numElements} as a parameter for
+     * creating the collection instance (for example: {@link HashMap#newHashMap(int)}), throw
+     * an {@code IllegalArgumentException} when a negative value is passed to them
+     */
+    @Test(dataProvider = "negativeNumMappings")
+    public void testNegativeNumMappings(final IntFunction<?> method, final String methodName) {
+        assertThrows(IllegalArgumentException.class, () -> method.apply(-1));
+    }
 }

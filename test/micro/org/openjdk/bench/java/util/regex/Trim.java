@@ -75,10 +75,10 @@ import java.util.regex.Pattern;
  */
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
-@Fork(1)
-@Warmup(iterations = 1)
-@Measurement(iterations = 4)
-@State(Scope.Benchmark)
+@Fork(2)
+@Warmup(iterations = 5, time = 3, timeUnit = TimeUnit.SECONDS)
+@Measurement(iterations = 5, time = 3, timeUnit = TimeUnit.SECONDS)
+@State(Scope.Thread)
 public class Trim {
     /** Run length of non-matching consecutive whitespace chars. */
     @Param({"16", "256", "4096"})

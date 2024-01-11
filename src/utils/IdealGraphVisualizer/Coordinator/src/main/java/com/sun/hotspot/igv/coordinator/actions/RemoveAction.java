@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 
 package com.sun.hotspot.igv.coordinator.actions;
 
+import com.sun.hotspot.igv.coordinator.FolderNode;
 import javax.swing.Action;
 import org.openide.nodes.Node;
 import org.openide.util.HelpCtx;
@@ -72,6 +73,14 @@ public final class RemoveAction extends NodeAction {
 
     @Override
     protected boolean enable(Node[] nodes) {
-        return nodes.length > 0;
+        if (nodes.length > 0) {
+            for (Node n : nodes) {
+                if ((n instanceof FolderNode) && ((FolderNode) n).isRootNode()) {
+                    return false;
+                }
+            }
+            return true;
+        }
+        return false;
     }
 }

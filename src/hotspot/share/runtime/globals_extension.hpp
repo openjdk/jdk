@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,6 +59,15 @@ enum JVMFlagsEnum : int {
 
 #define DEFINE_FLAG_MEMBER_SETTER(type, name, ...) FLAG_MEMBER_SETTER_(type, name)
 
+#ifdef PRODUCT
+ALL_FLAGS(IGNORE_FLAG,               // develop     : declared as const
+          IGNORE_FLAG,               // develop-pd  : declared as const
+          DEFINE_FLAG_MEMBER_SETTER,
+          DEFINE_FLAG_MEMBER_SETTER,
+          IGNORE_FLAG,               // not-product : is not declared
+          IGNORE_RANGE,
+          IGNORE_CONSTRAINT)
+#else
 ALL_FLAGS(DEFINE_FLAG_MEMBER_SETTER,
           DEFINE_FLAG_MEMBER_SETTER,
           DEFINE_FLAG_MEMBER_SETTER,
@@ -66,6 +75,7 @@ ALL_FLAGS(DEFINE_FLAG_MEMBER_SETTER,
           DEFINE_FLAG_MEMBER_SETTER,
           IGNORE_RANGE,
           IGNORE_CONSTRAINT)
+#endif
 
 #define FLAG_IS_DEFAULT(name)         (JVMFlag::is_default(FLAG_MEMBER_ENUM(name)))
 #define FLAG_IS_ERGO(name)            (JVMFlag::is_ergo(FLAG_MEMBER_ENUM(name)))
@@ -76,8 +86,11 @@ ALL_FLAGS(DEFINE_FLAG_MEMBER_SETTER,
 
 #define FLAG_SET_CMDLINE(name, value) (JVMFlag::setOnCmdLine(FLAG_MEMBER_ENUM(name)), \
                                        FLAG_MEMBER_SETTER(name)((value), JVMFlagOrigin::COMMAND_LINE))
-#define FLAG_SET_ERGO(name, value)    (FLAG_MEMBER_SETTER(name)((value), JVMFlagOrigin::ERGONOMIC))
 #define FLAG_SET_MGMT(name, value)    (FLAG_MEMBER_SETTER(name)((value), JVMFlagOrigin::MANAGEMENT))
+
+// FLAG_SET_ERGO must be always be called with a valid value. If an invalid value
+// is detected then the VM will exit.
+#define FLAG_SET_ERGO(name, value)     (void)(FLAG_MEMBER_SETTER(name)((value), JVMFlagOrigin::ERGONOMIC))
 
 #define FLAG_SET_ERGO_IF_DEFAULT(name, value) \
   do {                                        \

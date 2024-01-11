@@ -55,7 +55,7 @@ ThreadStart(jvmtiEnv *jvmti, JNIEnv *jni, jthread thread) {
   LOG(">>> %s\n", inf.name);
 
   if (inf.name != NULL && strstr(inf.name, prefix) == inf.name) {
-    sprintf(name, "%s%d", prefix, eventsCount);
+    snprintf(name, sizeof(name), "%s%d", prefix, eventsCount);
     if (strcmp(name, inf.name) != 0) {
       LOG("(#%d) wrong thread name: \"%s\"", eventsCount, inf.name);
       LOG(", expected: \"%s\"\n", name);

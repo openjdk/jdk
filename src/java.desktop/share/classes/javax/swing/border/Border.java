@@ -36,7 +36,7 @@ import java.awt.Component;
  * <a href="https://docs.oracle.com/javase/tutorial/uiswing/components/border.html">How to Use Borders</a>,
  * a section in <em>The Java Tutorial.</em>
  * <p>
- * In the Swing component set, borders supercede Insets as the
+ * In the Swing component set, borders supersede Insets as the
  * mechanism for creating a (decorated or plain) area around the
  * edge of a component.
  * <p>

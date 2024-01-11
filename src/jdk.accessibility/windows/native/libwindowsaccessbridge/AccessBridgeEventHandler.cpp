@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -161,9 +161,9 @@ AccessBridgeEventHandler::firePropertyChange(long vmID,
                                              wchar_t *newName) {
     DEBUG_CODE(char debugBuf[255]);
 #ifdef ACCESSBRIDGE_ARCH_LEGACY // JOBJECT64 is jobject (32 bit pointer)
-    DEBUG_CODE(sprintf(debugBuf, "\r\nCalling firePropertyChange(%p, %p):\r\n", event, source));
+    DEBUG_CODE(snprintf(debugBuf, sizeof(debugBuf), "\r\nCalling firePropertyChange(%p, %p):\r\n", event, source));
 #else // JOBJECT64 is jlong (64 bit)
-    DEBUG_CODE(sprintf(debugBuf, "\r\nCalling firePropertyChange(%016I64X, %016I64X):\r\n", event, source));
+    DEBUG_CODE(snprintf(debugBuf, sizeof(debugBuf), "\r\nCalling firePropertyChange(%016I64X, %016I64X):\r\n", event, source));
 #endif
     DEBUG_CODE(AppendToCallInfo(debugBuf));
 
@@ -194,7 +194,7 @@ const char fireEventDebugString[] = "[INFO]: In AccessBridgeEventHandler::%s(%01
 #define FIRE_EVENT(method, FPprototype, eventFP) \
     void AccessBridgeEventHandler::method(long vmID, JOBJECT64 event, JOBJECT64 source) { \
         DEBUG_CODE(char debugBuf[255]); \
-        DEBUG_CODE(sprintf(debugBuf, fireEventDebugString, #method, event, source, vmID)); \
+        DEBUG_CODE(snprintf(debugBuf, sizeof(debugBuf), fireEventDebugString, #method, event, source, vmID)); \
         DEBUG_CODE(AppendToCallInfo(debugBuf)); \
         if (eventFP != (FPprototype) 0) { \
             eventFP(vmID, event, source); \
@@ -205,7 +205,7 @@ const char fireEventDebugString[] = "[INFO]: In AccessBridgeEventHandler::%s(%01
 
     void AccessBridgeEventHandler::fireJavaShutdown(long vmID) {
         DEBUG_CODE(char debugBuf[255]);
-        DEBUG_CODE(sprintf(debugBuf, "[INFO]: Calling fireJavaShutdown; vmID = %X\r\n", vmID));
+        DEBUG_CODE(snprintf(debugBuf, sizeof(debugBuf), "[INFO]: Calling fireJavaShutdown; vmID = %X\r\n", vmID));
         DEBUG_CODE(AppendToCallInfo(debugBuf));
         if (javaShutdownFP != (AccessBridge_JavaShutdownFP) 0) {
             javaShutdownFP(vmID);
@@ -249,7 +249,7 @@ const char firePropertyChangeDebugString[] = "[INFO]: In AccessBridgeEventHandle
 #define FIRE_PROPERTY_CHANGE(method, FPprototype, eventFP) \
     void AccessBridgeEventHandler::method(long vmID, JOBJECT64 event, JOBJECT64 source) { \
         DEBUG_CODE(char debugBuf[255]); \
-        DEBUG_CODE(sprintf(debugBuf, firePropertyChangeDebugString, #method, event, source)); \
+        DEBUG_CODE(snprintf(debugBuf, sizeof(debugBuf), firePropertyChangeDebugString, #method, event, source)); \
         DEBUG_CODE(AppendToCallInfo(debugBuf)); \
         if (eventFP != (FPprototype) 0) { \
             eventFP(vmID, event, source); \
@@ -278,7 +278,7 @@ const char fireStringPropertyChangeDebugString[] = "[INFO]: In AccessBridgeEvent
     void AccessBridgeEventHandler::method(long vmID, JOBJECT64 event, JOBJECT64 source, \
                                           wchar_t *oldValue, wchar_t *newValue) { \
         DEBUG_CODE(char debugBuf[255]); \
-        DEBUG_CODE(sprintf(debugBuf, fireStringPropertyChangeDebugString, #method, event, source, oldValue, newValue)); \
+        DEBUG_CODE(snprintf(debugBuf, sizeof(debugBuf), fireStringPropertyChangeDebugString, #method, event, source, oldValue, newValue)); \
         DEBUG_CODE(AppendToCallInfo(debugBuf)); \
         if (eventFP != (FPprototype) 0) { \
             eventFP(vmID, event, source, oldValue, newValue); \
@@ -307,7 +307,7 @@ const char fireIntPropertyChangeDebugString[] = "[INFO]: In AccessBridgeEventHan
     void AccessBridgeEventHandler::method(long vmID, JOBJECT64 event, JOBJECT64 source,  \
                                           int oldValue, int newValue) { \
         DEBUG_CODE(char debugBuf[255]); \
-        DEBUG_CODE(sprintf(debugBuf, fireIntPropertyChangeDebugString, #method, event, source, oldValue, newValue)); \
+        DEBUG_CODE(snprintf(debugBuf, sizeof(debugBuf), fireIntPropertyChangeDebugString, #method, event, source, oldValue, newValue)); \
         DEBUG_CODE(AppendToCallInfo(debugBuf)); \
         if (eventFP != (FPprototype) 0) { \
             eventFP(vmID, event, source, oldValue, newValue); \
@@ -336,7 +336,7 @@ const char fireACPropertyChangeDebugString[] = "[INFO]: In AccessBridgeEventHand
     void AccessBridgeEventHandler::method(long vmID, JOBJECT64 event, JOBJECT64 source,  \
                                           JOBJECT64 oldValue, JOBJECT64 newValue) { \
         DEBUG_CODE(char debugBuf[255]); \
-        DEBUG_CODE(sprintf(debugBuf, fireACPropertyChangeDebugString, #method, event, source, oldValue, newValue)); \
+        DEBUG_CODE(snprintf(debugBuf, sizeof(debugBuf), fireACPropertyChangeDebugString, #method, event, source, oldValue, newValue)); \
         DEBUG_CODE(AppendToCallInfo(debugBuf)); \
         if (eventFP != (FPprototype) 0) { \
             eventFP(vmID, event, source, oldValue, newValue); \

@@ -24,6 +24,7 @@
  */
 
 package java.lang.management;
+
 import java.io.FilePermission;
 import java.io.IOException;
 import javax.management.DynamicMBean;
@@ -926,7 +927,7 @@ public class ManagementFactory {
             // get all providers
             @SuppressWarnings("removal")
             List<PlatformMBeanProvider> providers = AccessController.doPrivileged(
-                new PrivilegedAction<List<PlatformMBeanProvider>>() {
+                new PrivilegedAction<>() {
                     @Override
                     public List<PlatformMBeanProvider> run() {
                         List<PlatformMBeanProvider> all = new ArrayList<>();

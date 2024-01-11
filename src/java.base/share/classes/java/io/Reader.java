@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -189,14 +189,18 @@ public abstract class Reader implements Readable, Closeable {
      * Attempts to read characters into the specified character buffer.
      * The buffer is used as a repository of characters as-is: the only
      * changes made are the results of a put operation. No flipping or
-     * rewinding of the buffer is performed.
+     * rewinding of the buffer is performed. If the {@linkplain
+     * java.nio.CharBuffer#length length} of the specified character
+     * buffer is zero, then no characters will be read and zero will be
+     * returned.
      *
      * @param target the buffer to read characters into
-     * @return The number of characters added to the buffer, or
-     *         -1 if this source of characters is at its end
+     * @return The number of characters added to the buffer,
+     *         possibly zero, or -1 if this source of characters is at its end
      * @throws IOException if an I/O error occurs
      * @throws NullPointerException if target is null
-     * @throws java.nio.ReadOnlyBufferException if target is a read only buffer
+     * @throws java.nio.ReadOnlyBufferException if target is a read only buffer,
+     *         even if its length is zero
      * @since 1.5
      */
     public int read(CharBuffer target) throws IOException {
@@ -421,6 +425,9 @@ public abstract class Reader implements Readable, Closeable {
      * interrupted during the transfer, is highly reader and writer
      * specific, and therefore not specified.
      * <p>
+     * If the total number of characters transferred is greater than {@linkplain
+     * Long#MAX_VALUE}, then {@code Long.MAX_VALUE} will be returned.
+     * <p>
      * If an I/O error occurs reading from the reader or writing to the
      * writer, then it may do so after some characters have been read or
      * written. Consequently the reader may not be at end of the stream and
@@ -441,7 +448,13 @@ public abstract class Reader implements Readable, Closeable {
         int nRead;
         while ((nRead = read(buffer, 0, TRANSFER_BUFFER_SIZE)) >= 0) {
             out.write(buffer, 0, nRead);
-            transferred += nRead;
+            if (transferred < Long.MAX_VALUE) {
+                try {
+                    transferred = Math.addExact(transferred, nRead);
+                } catch (ArithmeticException ignore) {
+                    transferred = Long.MAX_VALUE;
+                }
+            }
         }
         return transferred;
     }

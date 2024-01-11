@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2019 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -75,8 +75,8 @@ int AbstractDisassembler::print_location(address here, address begin, address en
     if ((uintptr_t)end   < (uintptr_t)here) st->print(">>  end(" PTR_FORMAT ") < here(" PTR_FORMAT ")<<", p2i(end),   p2i(here));
     assert((uintptr_t)begin <= (uintptr_t)end, "inverted address range");
 #endif
-    const int blob_len = end - begin;
-    const int offset   = here - begin;
+    const int blob_len = pointer_delta_as_int(end, begin);
+    const int offset   = pointer_delta_as_int(here, begin);
     const int width    = (blob_len < (1<< 8)) ? 2 : (blob_len < (1<<16)) ? 4 : (blob_len < (1<<24)) ? 6 : 8;
     if (print_header) {
       st->print(" %*s", width+5, "offset");
@@ -311,11 +311,11 @@ void AbstractDisassembler::decode_range_abstract(address range_start, address ra
                                                  address start, address end,
                                                  outputStream* st,
                                                  const int max_instr_size_in_bytes) {
-  assert(st != NULL, "need an output stream (no default)!");
+  assert(st != nullptr, "need an output stream (no default)!");
   int     idx = 0;
   address pos = range_start;
 
-  while ((pos != NULL) && (pos < range_end)) {
+  while ((pos != nullptr) && (pos < range_end)) {
     int instr_size_in_bytes = Assembler::instr_len(pos);
 
     if (idx == 0) print_location(pos, start, end, st, false, false);
@@ -349,7 +349,7 @@ void AbstractDisassembler::decode_abstract(address start, address end, outputStr
   int     idx = 0;
   address pos = start;
 
-  outputStream* st = (ost == NULL) ? tty : ost;
+  outputStream* st = (ost == nullptr) ? tty : ost;
 
   //---<  Open the output (Marker for post-mortem disassembler)  >---
   st->bol();

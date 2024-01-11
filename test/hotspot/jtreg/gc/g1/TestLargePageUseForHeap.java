@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,16 +31,16 @@ package gc.g1;
  * @library /test/lib
  * @requires vm.gc.G1
  * @requires vm.opt.LargePageSizeInBytes == null
- * @build sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UseG1GC -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
-        -XX:+IgnoreUnrecognizedVMOptions -XX:+UseLargePages gc.g1.TestLargePageUseForHeap
+        -XX:+UseLargePages gc.g1.TestLargePageUseForHeap
  */
 
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 import jtreg.SkippedException;
-import sun.hotspot.WhiteBox;
+import jdk.test.whitebox.WhiteBox;
 
 public class TestLargePageUseForHeap {
     static long largePageSize;
@@ -81,33 +81,30 @@ public class TestLargePageUseForHeap {
     }
 
     static void checkHeap(OutputAnalyzer output, long expectedPageSize) throws Exception {
-        checkSize(output, expectedPageSize, "Heap: .*page_size=([^ ]+)");
+        checkSize(output, expectedPageSize, "Heap: .* page_size=(\\d+[BKMG])");
     }
 
     static void testVM(long regionSize) throws Exception {
-        ProcessBuilder pb;
         // Test with large page enabled.
-        pb = ProcessTools.createJavaProcessBuilder("-XX:+UseG1GC",
-                                                   "-XX:G1HeapRegionSize=" + regionSize,
-                                                   "-Xmx128m",
-                                                   "-Xlog:gc+init,pagesize,gc+heap+coops=debug",
-                                                   "-XX:+UseLargePages",
-                                                   "-version");
+        OutputAnalyzer output = ProcessTools.executeLimitedTestJava("-XX:+UseG1GC",
+                                                                    "-XX:G1HeapRegionSize=" + regionSize,
+                                                                    "-Xmx128m",
+                                                                    "-Xlog:gc+init,pagesize,gc+heap+coops=debug",
+                                                                    "-XX:+UseLargePages",
+                                                                    "-version");
 
-        OutputAnalyzer output = new OutputAnalyzer(pb.start());
         boolean largePageEnabled = checkLargePageEnabled(output);
         checkHeap(output, largePageEnabled ? largePageSize : smallPageSize);
         output.shouldHaveExitValue(0);
 
         // Test with large page disabled.
-        pb = ProcessTools.createJavaProcessBuilder("-XX:+UseG1GC",
-                                                   "-XX:G1HeapRegionSize=" + regionSize,
-                                                   "-Xmx128m",
-                                                   "-Xlog:gc+init,pagesize,gc+heap+coops=debug",
-                                                   "-XX:-UseLargePages",
-                                                   "-version");
+        output = ProcessTools.executeLimitedTestJava("-XX:+UseG1GC",
+                                                     "-XX:G1HeapRegionSize=" + regionSize,
+                                                     "-Xmx128m",
+                                                     "-Xlog:gc+init,pagesize,gc+heap+coops=debug",
+                                                     "-XX:-UseLargePages",
+                                                     "-version");
 
-        output = new OutputAnalyzer(pb.start());
         checkHeap(output, smallPageSize);
         output.shouldHaveExitValue(0);
     }

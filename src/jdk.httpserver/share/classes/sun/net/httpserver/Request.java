@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,11 +50,8 @@ class Request {
         os = rawout;
         do {
             startLine = readLine();
-            if (startLine == null) {
-                return;
-            }
             /* skip blank lines */
-        } while (startLine == null ? false : startLine.equals (""));
+        } while ("".equals(startLine));
     }
 
 
@@ -269,7 +266,7 @@ class Request {
 
             assert channel.isBlocking();
 
-            Objects.checkFromIndexSize(srclen, off, b.length);
+            Objects.checkFromIndexSize(off, srclen, b.length);
 
             if (reset) { /* satisfy from markBuf */
                 canreturn = markBuf.remaining ();

@@ -26,7 +26,7 @@ package compiler.lib.ir_framework.test;
 import compiler.lib.ir_framework.*;
 import compiler.lib.ir_framework.shared.TestRun;
 import compiler.lib.ir_framework.shared.TestRunException;
-import sun.hotspot.WhiteBox;
+import jdk.test.whitebox.WhiteBox;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
@@ -37,8 +37,8 @@ import java.lang.reflect.Modifier;
  */
 abstract class AbstractTest {
     protected static final WhiteBox WHITE_BOX = WhiteBox.getWhiteBox();
-    protected static final int TEST_COMPILATION_TIMEOUT = Integer.parseInt(System.getProperty("TestCompilationTimeout", "10000"));
-    protected static final int WAIT_FOR_COMPILATION_TIMEOUT = Integer.parseInt(System.getProperty("WaitForCompilationTimeout", "10000"));
+    protected static final int TEST_COMPILATION_TIMEOUT_MS = Integer.parseInt(System.getProperty("TestCompilationTimeout", "10")) * 1000;
+    protected static final int WAIT_FOR_COMPILATION_TIMEOUT_MS = Integer.parseInt(System.getProperty("WaitForCompilationTimeout", "10")) * 1000;
     protected static final boolean VERIFY_OOPS = (Boolean)WHITE_BOX.getVMFlag("VerifyOops");
 
     protected final int warmupIterations;
@@ -116,12 +116,6 @@ abstract class AbstractTest {
 
     protected void compileMethod(DeclaredTest test) {
         final Method testMethod = test.getTestMethod();
-        TestRun.check(WHITE_BOX.isMethodCompilable(testMethod, test.getCompLevel().getValue(), false),
-                      "Method " + testMethod + " not compilable at level " + test.getCompLevel()
-                      + ". Did you use compileonly without including all @Test methods?");
-        TestRun.check(WHITE_BOX.isMethodCompilable(testMethod),
-                      "Method " + testMethod + " not compilable at level " + test.getCompLevel()
-                      + ". Did you use compileonly without including all @Test methods?");
         if (TestFramework.VERBOSE) {
             System.out.println("Compile method " + testMethod + " after warm-up...");
         }
@@ -155,15 +149,18 @@ abstract class AbstractTest {
                 break;
             }
             elapsed = System.currentTimeMillis() - started;
-        } while (elapsed < TEST_COMPILATION_TIMEOUT);
-        TestRun.check(elapsed < TEST_COMPILATION_TIMEOUT,
+        } while (elapsed < TEST_COMPILATION_TIMEOUT_MS);
+        TestRun.check(elapsed < TEST_COMPILATION_TIMEOUT_MS,
                       "Could not compile " + testMethod + " at level " + test.getCompLevel() + " after "
-                      + TEST_COMPILATION_TIMEOUT/1000 + "s. Last compilation level: " + lastCompilationLevel);
+                      + TEST_COMPILATION_TIMEOUT_MS/1000 + "s. Last compilation level: " + lastCompilationLevel);
         checkCompilationLevel(test);
     }
 
     private void enqueueMethodForCompilation(DeclaredTest test) {
-        TestVM.enqueueForCompilation(test.getTestMethod(), test.getCompLevel());
+        final Method testMethod = test.getTestMethod();
+        TestRun.check(WHITE_BOX.isMethodCompilable(testMethod, test.getCompLevel().getValue(), false),
+                      "Method " + testMethod + " not compilable (anymore) at level " + test.getCompLevel());
+        TestVM.enqueueForCompilation(testMethod, test.getCompLevel());
     }
 
     protected void checkCompilationLevel(DeclaredTest test) {
@@ -197,9 +194,9 @@ abstract class AbstractTest {
                 // Don't wait for compilation if -Xcomp is enabled or if we are randomly excluding methods from compilation.
                 return;
             }
-        } while (elapsed < WAIT_FOR_COMPILATION_TIMEOUT);
+        } while (elapsed < WAIT_FOR_COMPILATION_TIMEOUT_MS);
         throw new TestRunException(testMethod + " not compiled after waiting for "
-                                   + WAIT_FOR_COMPILATION_TIMEOUT/1000 + " s");
+                                   + WAIT_FOR_COMPILATION_TIMEOUT_MS/1000 + " s");
     }
 
     /**

@@ -31,7 +31,7 @@ extern "C" {
 
 /**
  * bitsPerPixel must be 32 for now.
- * outBuf must be large enough to conatin all the rectangles.
+ * outBuf must be large enough to contain all the rectangles.
  */
 int BitmapToYXBandedRectangles(int bitsPerPixel, int width, int height, unsigned char * buf, RECT_T * outBuf)
 {

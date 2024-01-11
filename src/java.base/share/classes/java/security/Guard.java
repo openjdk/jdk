@@ -46,7 +46,7 @@ public interface Guard {
     /**
      * Determines whether to allow access to the guarded object
      * {@code object}. Returns silently if access is allowed.
-     * Otherwise, throws a SecurityException.
+     * Otherwise, throws a {@code SecurityException}.
      *
      * @param object the object being protected by the guard.
      *

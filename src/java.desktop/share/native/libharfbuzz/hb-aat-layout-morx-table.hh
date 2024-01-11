@@ -30,6 +30,7 @@
 #include "hb-open-type.hh"
 #include "hb-aat-layout-common.hh"
 #include "hb-ot-layout-common.hh"
+#include "hb-ot-layout-gdef-table.hh"
 #include "hb-aat-map.hh"
 
 /*
@@ -122,7 +123,7 @@ struct RearrangementSubtable
         bool reverse_l = 3 == (m >> 4);
         bool reverse_r = 3 == (m & 0x0F);
 
-        if (end - start >= l + r)
+        if (end - start >= l + r && end-start <= HB_MAX_CONTEXT_LENGTH)
         {
           buffer->merge_clusters (start, hb_min (buffer->idx + 1, buffer->len));
           buffer->merge_clusters (start, end);
@@ -130,14 +131,14 @@ struct RearrangementSubtable
           hb_glyph_info_t *info = buffer->info;
           hb_glyph_info_t buf[4];
 
-          memcpy (buf, info + start, l * sizeof (buf[0]));
-          memcpy (buf + 2, info + end - r, r * sizeof (buf[0]));
+          hb_memcpy (buf, info + start, l * sizeof (buf[0]));
+          hb_memcpy (buf + 2, info + end - r, r * sizeof (buf[0]));
 
           if (l != r)
             memmove (info + start + r, info + start + l, (end - start - l - r) * sizeof (buf[0]));
 
-          memcpy (info + start, buf + 2, r * sizeof (buf[0]));
-          memcpy (info + end - l, buf, l * sizeof (buf[0]));
+          hb_memcpy (info + start, buf + 2, r * sizeof (buf[0]));
+          hb_memcpy (info + end - l, buf, l * sizeof (buf[0]));
           if (reverse_l)
           {
             buf[0] = info[end - 1];
@@ -168,7 +169,7 @@ struct RearrangementSubtable
     driver_context_t dc (this);
 
     StateTableDriver<Types, EntryData> driver (machine, c->buffer, c->face);
-    driver.drive (&dc);
+    driver.drive (&dc, c);
 
     return_trace (dc.ret);
   }
@@ -215,7 +216,9 @@ struct ContextualSubtable
                              hb_aat_apply_context_t *c_) :
         ret (false),
         c (c_),
+        gdef (*c->gdef_table),
         mark_set (false),
+        has_glyph_classes (gdef.has_glyph_classes ()),
         mark (0),
         table (table_),
         subs (table+table->substitutionTables) {}
@@ -240,21 +243,21 @@ struct ContextualSubtable
       if (buffer->idx == buffer->len && !mark_set)
         return;
 
-      const HBGlyphID *replacement;
+      const HBGlyphID16 *replacement;
 
       replacement = nullptr;
       if (Types::extended)
       {
         if (entry.data.markIndex != 0xFFFF)
         {
-          const Lookup<HBGlyphID> &lookup = subs[entry.data.markIndex];
+          const Lookup<HBGlyphID16> &lookup = subs[entry.data.markIndex];
           replacement = lookup.get_value (buffer->info[mark].codepoint, driver->num_glyphs);
         }
       }
       else
       {
         unsigned int offset = entry.data.markIndex + buffer->info[mark].codepoint;
-        const UnsizedArrayOf<HBGlyphID> &subs_old = (const UnsizedArrayOf<HBGlyphID> &) subs;
+        const UnsizedArrayOf<HBGlyphID16> &subs_old = (const UnsizedArrayOf<HBGlyphID16> &) subs;
         replacement = &subs_old[Types::wordOffsetToIndex (offset, table, subs_old.arrayZ)];
         if (!replacement->sanitize (&c->sanitizer) || !*replacement)
           replacement = nullptr;
@@ -263,6 +266,9 @@ struct ContextualSubtable
       {
         buffer->unsafe_to_break (mark, hb_min (buffer->idx + 1, buffer->len));
         buffer->info[mark].codepoint = *replacement;
+        if (has_glyph_classes)
+          _hb_glyph_info_set_glyph_props (&buffer->info[mark],
+                                          gdef.get_glyph_props (*replacement));
         ret = true;
       }
 
@@ -272,14 +278,14 @@ struct ContextualSubtable
       {
         if (entry.data.currentIndex != 0xFFFF)
         {
-          const Lookup<HBGlyphID> &lookup = subs[entry.data.currentIndex];
+          const Lookup<HBGlyphID16> &lookup = subs[entry.data.currentIndex];
           replacement = lookup.get_value (buffer->info[idx].codepoint, driver->num_glyphs);
         }
       }
       else
       {
         unsigned int offset = entry.data.currentIndex + buffer->info[idx].codepoint;
-        const UnsizedArrayOf<HBGlyphID> &subs_old = (const UnsizedArrayOf<HBGlyphID> &) subs;
+        const UnsizedArrayOf<HBGlyphID16> &subs_old = (const UnsizedArrayOf<HBGlyphID16> &) subs;
         replacement = &subs_old[Types::wordOffsetToIndex (offset, table, subs_old.arrayZ)];
         if (!replacement->sanitize (&c->sanitizer) || !*replacement)
           replacement = nullptr;
@@ -287,6 +293,9 @@ struct ContextualSubtable
       if (replacement)
       {
         buffer->info[idx].codepoint = *replacement;
+        if (has_glyph_classes)
+          _hb_glyph_info_set_glyph_props (&buffer->info[idx],
+                                          gdef.get_glyph_props (*replacement));
         ret = true;
       }
 
@@ -301,10 +310,12 @@ struct ContextualSubtable
     bool ret;
     private:
     hb_aat_apply_context_t *c;
+    const OT::GDEF &gdef;
     bool mark_set;
+    bool has_glyph_classes;
     unsigned int mark;
     const ContextualSubtable *table;
-    const UnsizedOffsetListOf<Lookup<HBGlyphID>, HBUINT, false> &subs;
+    const UnsizedListOfOffset16To<Lookup<HBGlyphID16>, HBUINT, false> &subs;
   };
 
   bool apply (hb_aat_apply_context_t *c) const
@@ -314,7 +325,7 @@ struct ContextualSubtable
     driver_context_t dc (this, c);
 
     StateTableDriver<Types, EntryData> driver (machine, c->buffer, c->face);
-    driver.drive (&dc);
+    driver.drive (&dc, c);
 
     return_trace (dc.ret);
   }
@@ -348,7 +359,7 @@ struct ContextualSubtable
   protected:
   StateTable<Types, EntryData>
                 machine;
-  NNOffsetTo<UnsizedOffsetListOf<Lookup<HBGlyphID>, HBUINT, false>, HBUINT>
+  NNOffsetTo<UnsizedListOfOffset16To<Lookup<HBGlyphID16>, HBUINT, false>, HBUINT>
                 substitutionTables;
   public:
   DEFINE_SIZE_STATIC (20);
@@ -514,13 +525,13 @@ struct LigatureSubtable
           if (unlikely (!componentData.sanitize (&c->sanitizer))) break;
           ligature_idx += componentData;
 
-          DEBUG_MSG (APPLY, nullptr, "Action store %u last %u",
+          DEBUG_MSG (APPLY, nullptr, "Action store %d last %d",
                      bool (action & LigActionStore),
                      bool (action & LigActionLast));
           if (action & (LigActionStore | LigActionLast))
           {
             ligature_idx = Types::offsetToIndex (ligature_idx, table, ligature.arrayZ);
-            const HBGlyphID &ligatureData = ligature[ligature_idx];
+            const HBGlyphID16 &ligatureData = ligature[ligature_idx];
             if (unlikely (!ligatureData.sanitize (&c->sanitizer))) break;
             hb_codepoint_t lig = ligatureData;
 
@@ -554,7 +565,7 @@ struct LigatureSubtable
     const LigatureSubtable *table;
     const UnsizedArrayOf<HBUINT32> &ligAction;
     const UnsizedArrayOf<HBUINT16> &component;
-    const UnsizedArrayOf<HBGlyphID> &ligature;
+    const UnsizedArrayOf<HBGlyphID16> &ligature;
     unsigned int match_length;
     unsigned int match_positions[HB_MAX_CONTEXT_LENGTH];
   };
@@ -566,7 +577,7 @@ struct LigatureSubtable
     driver_context_t dc (this, c);
 
     StateTableDriver<Types, EntryData> driver (machine, c->buffer, c->face);
-    driver.drive (&dc);
+    driver.drive (&dc, c);
 
     return_trace (dc.ret);
   }
@@ -586,7 +597,7 @@ struct LigatureSubtable
                 ligAction;      /* Offset to the ligature action table. */
   NNOffsetTo<UnsizedArrayOf<HBUINT16>, HBUINT>
                 component;      /* Offset to the component table. */
-  NNOffsetTo<UnsizedArrayOf<HBGlyphID>, HBUINT>
+  NNOffsetTo<UnsizedArrayOf<HBGlyphID16>, HBUINT>
                 ligature;       /* Offset to the actual ligature lists. */
   public:
   DEFINE_SIZE_STATIC (28);
@@ -599,17 +610,42 @@ struct NoncontextualSubtable
   {
     TRACE_APPLY (this);
 
+    const OT::GDEF &gdef (*c->gdef_table);
+    bool has_glyph_classes = gdef.has_glyph_classes ();
+
     bool ret = false;
     unsigned int num_glyphs = c->face->get_num_glyphs ();
 
     hb_glyph_info_t *info = c->buffer->info;
     unsigned int count = c->buffer->len;
+    // If there's only one range, we already checked the flag.
+    auto *last_range = c->range_flags && (c->range_flags->length > 1) ? &(*c->range_flags)[0] : nullptr;
     for (unsigned int i = 0; i < count; i++)
     {
-      const HBGlyphID *replacement = substitute.get_value (info[i].codepoint, num_glyphs);
+      /* This block copied from StateTableDriver::drive. Keep in sync. */
+      if (last_range)
+      {
+        auto *range = last_range;
+        {
+          unsigned cluster = info[i].cluster;
+          while (cluster < range->cluster_first)
+            range--;
+          while (cluster > range->cluster_last)
+            range++;
+
+          last_range = range;
+        }
+        if (!(range->flags & c->subtable_flags))
+          continue;
+      }
+
+      const HBGlyphID16 *replacement = substitute.get_value (info[i].codepoint, num_glyphs);
       if (replacement)
       {
         info[i].codepoint = *replacement;
+        if (has_glyph_classes)
+          _hb_glyph_info_set_glyph_props (&info[i],
+                                          gdef.get_glyph_props (*replacement));
         ret = true;
       }
     }
@@ -624,7 +660,7 @@ struct NoncontextualSubtable
   }
 
   protected:
-  Lookup<HBGlyphID>     substitute;
+  Lookup<HBGlyphID16>   substitute;
   public:
   DEFINE_SIZE_MIN (2);
 };
@@ -727,7 +763,7 @@ struct InsertionSubtable
         unsigned int count = (flags & MarkedInsertCount);
         if (unlikely ((buffer->max_ops -= count) <= 0)) return;
         unsigned int start = entry.data.markedInsertIndex;
-        const HBGlyphID *glyphs = &insertionAction[start];
+        const HBGlyphID16 *glyphs = &insertionAction[start];
         if (unlikely (!c->sanitizer.check_array (glyphs, count))) count = 0;
 
         bool before = flags & MarkedInsertBefore;
@@ -755,7 +791,7 @@ struct InsertionSubtable
         unsigned int count = (flags & CurrentInsertCount) >> 5;
         if (unlikely ((buffer->max_ops -= count) <= 0)) return;
         unsigned int start = entry.data.currentInsertIndex;
-        const HBGlyphID *glyphs = &insertionAction[start];
+        const HBGlyphID16 *glyphs = &insertionAction[start];
         if (unlikely (!c->sanitizer.check_array (glyphs, count))) count = 0;
 
         bool before = flags & CurrentInsertBefore;
@@ -793,7 +829,7 @@ struct InsertionSubtable
     private:
     hb_aat_apply_context_t *c;
     unsigned int mark;
-    const UnsizedArrayOf<HBGlyphID> &insertionAction;
+    const UnsizedArrayOf<HBGlyphID16> &insertionAction;
   };
 
   bool apply (hb_aat_apply_context_t *c) const
@@ -803,7 +839,7 @@ struct InsertionSubtable
     driver_context_t dc (this, c);
 
     StateTableDriver<Types, EntryData> driver (machine, c->buffer, c->face);
-    driver.drive (&dc);
+    driver.drive (&dc, c);
 
     return_trace (dc.ret);
   }
@@ -819,7 +855,7 @@ struct InsertionSubtable
   protected:
   StateTable<Types, EntryData>
                 machine;
-  NNOffsetTo<UnsizedArrayOf<HBGlyphID>, HBUINT>
+  NNOffsetTo<UnsizedArrayOf<HBGlyphID16>, HBUINT>
                 insertionAction;        /* Byte offset from stateHeader to the start of
                                          * the insertion glyph table. */
   public:
@@ -889,11 +925,11 @@ struct ChainSubtable
     unsigned int subtable_type = get_type ();
     TRACE_DISPATCH (this, subtable_type);
     switch (subtable_type) {
-    case Rearrangement:         return_trace (c->dispatch (u.rearrangement, hb_forward<Ts> (ds)...));
-    case Contextual:            return_trace (c->dispatch (u.contextual, hb_forward<Ts> (ds)...));
-    case Ligature:              return_trace (c->dispatch (u.ligature, hb_forward<Ts> (ds)...));
-    case Noncontextual:         return_trace (c->dispatch (u.noncontextual, hb_forward<Ts> (ds)...));
-    case Insertion:             return_trace (c->dispatch (u.insertion, hb_forward<Ts> (ds)...));
+    case Rearrangement:         return_trace (c->dispatch (u.rearrangement, std::forward<Ts> (ds)...));
+    case Contextual:            return_trace (c->dispatch (u.contextual, std::forward<Ts> (ds)...));
+    case Ligature:              return_trace (c->dispatch (u.ligature, std::forward<Ts> (ds)...));
+    case Noncontextual:         return_trace (c->dispatch (u.noncontextual, std::forward<Ts> (ds)...));
+    case Insertion:             return_trace (c->dispatch (u.insertion, std::forward<Ts> (ds)...));
     default:                    return_trace (c->default_return_value ());
     }
   }
@@ -951,7 +987,7 @@ struct Chain
         // Check whether this type/setting pair was requested in the map, and if so, apply its flags.
         // (The search here only looks at the type and setting fields of feature_info_t.)
         hb_aat_map_builder_t::feature_info_t info = { type, setting, false, 0 };
-        if (map->features.bsearch (info))
+        if (map->current_features.bsearch (info))
         {
           flags &= feature.disableFlags;
           flags |= feature.enableFlags;
@@ -963,13 +999,21 @@ struct Chain
           setting = HB_AAT_LAYOUT_FEATURE_SELECTOR_LOWER_CASE_SMALL_CAPS;
           goto retry;
         }
+#ifndef HB_NO_AAT
+        else if (type == HB_AAT_LAYOUT_FEATURE_TYPE_LANGUAGE_TAG_TYPE && setting &&
+                 /* TODO: Rudimentary language matching. */
+                 hb_language_matches (map->face->table.ltag->get_language (setting - 1), map->props.language))
+        {
+          flags &= feature.disableFlags;
+          flags |= feature.enableFlags;
+        }
+#endif
       }
     }
     return flags;
   }
 
-  void apply (hb_aat_apply_context_t *c,
-              hb_mask_t flags) const
+  void apply (hb_aat_apply_context_t *c) const
   {
     const ChainSubtable<Types> *subtable = &StructAfter<ChainSubtable<Types>> (featureZ.as_array (featureCount));
     unsigned int count = subtableCount;
@@ -977,8 +1021,10 @@ struct Chain
     {
       bool reverse;
 
-      if (!(subtable->subFeatureFlags & flags))
+      if (hb_none (hb_iter (c->range_flags) |
+                   hb_map ([&subtable] (const hb_aat_map_t::range_flags_t _) -> bool { return subtable->subFeatureFlags & (_.flags); })))
         goto skip;
+      c->subtable_flags = subtable->subFeatureFlags;
 
       if (!(subtable->get_coverage() & ChainSubtable<Types>::AllDirections) &&
           HB_DIRECTION_IS_VERTICAL (c->buffer->props.direction) !=
@@ -1017,7 +1063,7 @@ struct Chain
                 bool (subtable->get_coverage () & ChainSubtable<Types>::Backwards) !=
                 HB_DIRECTION_IS_BACKWARD (c->buffer->props.direction);
 
-      if (!c->buffer->message (c->font, "start chainsubtable %d", c->lookup_index))
+      if (!c->buffer->message (c->font, "start chainsubtable %u", c->lookup_index))
         goto skip;
 
       if (reverse)
@@ -1028,7 +1074,7 @@ struct Chain
       if (reverse)
         c->buffer->reverse ();
 
-      (void) c->buffer->message (c->font, "end chainsubtable %d", c->lookup_index);
+      (void) c->buffer->message (c->font, "end chainsubtable %u", c->lookup_index);
 
       if (unlikely (!c->buffer->successful)) return;
 
@@ -1094,22 +1140,31 @@ struct mortmorx
   {
     const Chain<Types> *chain = &firstChain;
     unsigned int count = chainCount;
+    if (unlikely (!map->chain_flags.resize (count)))
+      return;
     for (unsigned int i = 0; i < count; i++)
     {
-      map->chain_flags.push (chain->compile_flags (mapper));
+      map->chain_flags[i].push (hb_aat_map_t::range_flags_t {chain->compile_flags (mapper),
+                                                             mapper->range_first,
+                                                             mapper->range_last});
       chain = &StructAfter<Chain<Types>> (*chain);
     }
   }
 
-  void apply (hb_aat_apply_context_t *c) const
+  void apply (hb_aat_apply_context_t *c,
+              const hb_aat_map_t &map) const
   {
     if (unlikely (!c->buffer->successful)) return;
+
+    c->buffer->unsafe_to_concat ();
+
     c->set_lookup_index (0);
     const Chain<Types> *chain = &firstChain;
     unsigned int count = chainCount;
     for (unsigned int i = 0; i < count; i++)
     {
-      chain->apply (c, c->plan->aat_map.chain_flags[i]);
+      c->range_flags = &map.chain_flags[i];
+      chain->apply (c);
       if (unlikely (!c->buffer->successful)) return;
       chain = &StructAfter<Chain<Types>> (*chain);
     }

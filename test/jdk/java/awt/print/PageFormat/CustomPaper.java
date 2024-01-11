@@ -25,7 +25,7 @@
  * @test
  * @bug 4355514
  * @bug 4385157
- * @author Jennifer Godinez
+ * @key printer
  * @summary Prints a rectangle to show the imageable area of a
  *          12in x 14in custom paper size.
  * @run main/manual CustomPaper

@@ -49,6 +49,46 @@ public:
   virtual void store_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
                         Address dst, Register val, Register tmp1, Register tmp2, Register tmp3);
 
+  // The copy_[load/store]_at functions are used by arraycopy stubs. Be careful to only use
+  // r10 (aka rscratch1) in a context where restore_arg_regs_using_thread has been used instead
+  // of the looser setup_arg_regs. Currently this is done when using type T_OBJECT.
+  virtual void copy_load_at(MacroAssembler* masm,
+                            DecoratorSet decorators,
+                            BasicType type,
+                            size_t bytes,
+                            Register dst,
+                            Address src,
+                            Register tmp);
+
+  virtual void copy_store_at(MacroAssembler* masm,
+                             DecoratorSet decorators,
+                             BasicType type,
+                             size_t bytes,
+                             Address dst,
+                             Register src,
+                             Register tmp);
+
+  virtual void copy_load_at(MacroAssembler* masm,
+                            DecoratorSet decorators,
+                            BasicType type,
+                            size_t bytes,
+                            XMMRegister dst,
+                            Address src,
+                            Register tmp,
+                            XMMRegister xmm_tmp);
+
+  virtual void copy_store_at(MacroAssembler* masm,
+                             DecoratorSet decorators,
+                             BasicType type,
+                             size_t bytes,
+                             Address dst,
+                             XMMRegister src,
+                             Register tmp1,
+                             Register tmp2,
+                             XMMRegister xmm_tmp);
+
+  virtual bool supports_avx3_masked_arraycopy() { return true; }
+
   // Support for jniFastGetField to try resolving a jobject/jweak in native
   virtual void try_resolve_jobject_in_native(MacroAssembler* masm, Register jni_env,
                                              Register obj, Register tmp, Label& slowpath);
@@ -59,17 +99,13 @@ public:
                              int con_size_in_bytes,
                              Register t1, Register t2,
                              Label& slow_case);
-  virtual void eden_allocate(MacroAssembler* masm,
-                             Register thread, Register obj,
-                             Register var_size_in_bytes,
-                             int con_size_in_bytes,
-                             Register t1,
-                             Label& slow_case);
 
   virtual void barrier_stubs_init() {}
 
-  virtual void nmethod_entry_barrier(MacroAssembler* masm);
+  virtual void nmethod_entry_barrier(MacroAssembler* masm, Label* slow_path, Label* continuation);
   virtual void c2i_entry_barrier(MacroAssembler* masm);
+
+  virtual void check_oop(MacroAssembler* masm, Register obj, Register tmp1, Register tmp2, Label& error);
 };
 
 #endif // CPU_X86_GC_SHARED_BARRIERSETASSEMBLER_X86_HPP

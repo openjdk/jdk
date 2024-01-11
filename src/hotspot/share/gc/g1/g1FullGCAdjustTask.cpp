@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "classfile/classLoaderData.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "gc/g1/g1CollectedHeap.hpp"
 #include "gc/g1/g1ConcurrentMarkBitMap.inline.hpp"
@@ -67,10 +68,8 @@ class G1AdjustRegionClosure : public HeapRegionClosure {
       // work distribution.
       oop obj = cast_to_oop(r->humongous_start_region()->bottom());
       obj->oop_iterate(&cl, MemRegion(r->bottom(), r->top()));
-    } else if (!r->is_closed_archive() && !r->is_free()) {
-      // Closed archive regions never change references and only contain
-      // references into other closed regions and are always live. Free
-      // regions do not contain objects to iterate. So skip both.
+    } else if (!r->is_free()) {
+      // Free regions do not contain objects to iterate. So skip them.
       G1AdjustLiveClosure adjust(&cl);
       r->apply_to_marked_objects(_bitmap, &adjust);
     }
@@ -84,8 +83,7 @@ G1FullGCAdjustTask::G1FullGCAdjustTask(G1FullCollector* collector) :
     _weak_proc_task(collector->workers()),
     _hrclaimer(collector->workers()),
     _adjust(collector) {
-  // Need cleared claim bits for the roots processing
-  ClassLoaderDataGraph::clear_claimed_marks();
+  ClassLoaderDataGraph::verify_claimed_marks_cleared(ClassLoaderData::_claim_stw_fullgc_adjust);
 }
 
 void G1FullGCAdjustTask::work(uint worker_id) {
@@ -102,7 +100,7 @@ void G1FullGCAdjustTask::work(uint worker_id) {
     _weak_proc_task.work(worker_id, &always_alive, &_adjust);
   }
 
-  CLDToOopClosure adjust_cld(&_adjust, ClassLoaderData::_claim_strong);
+  CLDToOopClosure adjust_cld(&_adjust, ClassLoaderData::_claim_stw_fullgc_adjust);
   CodeBlobToOopClosure adjust_code(&_adjust, CodeBlobToOopClosure::FixRelocations);
   _root_processor.process_all_roots(&_adjust, &adjust_cld, &adjust_code);
 

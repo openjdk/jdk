@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,7 +61,7 @@ public class CompiledICHolder extends VMObject {
   private static MetadataField holderKlass;
 
   // Accessors for declared fields
-  public Metadata getHolderMetadata() { return (Metadata) holderMetadata.getValue(this); }
+  public Metadata getHolderMetadata() { return holderMetadata.getValue(this); }
   public Klass    getHolderKlass()    { return (Klass)    holderKlass.getValue(this); }
 
   public void printValueOn(PrintStream tty) {

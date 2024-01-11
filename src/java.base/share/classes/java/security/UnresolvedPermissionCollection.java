@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
- * A UnresolvedPermissionCollection stores a collection
+ * A {@code UnresolvedPermissionCollection} stores a collection
  * of UnresolvedPermission permissions.
  *
  * @see java.security.Permission
@@ -60,7 +60,7 @@ implements java.io.Serializable
     private transient ConcurrentHashMap<String, List<UnresolvedPermission>> perms;
 
     /**
-     * Create an empty UnresolvedPermissionCollection object.
+     * Create an empty {@code UnresolvedPermissionCollection} object.
      *
      */
     public UnresolvedPermissionCollection() {
@@ -68,7 +68,7 @@ implements java.io.Serializable
     }
 
     /**
-     * Adds a permission to this UnresolvedPermissionCollection.
+     * Adds a permission to this {@code UnresolvedPermissionCollection}.
      * The key for the hash is the unresolved permission's type (class) name.
      *
      * @param permission the Permission object to add.
@@ -79,22 +79,15 @@ implements java.io.Serializable
             throw new IllegalArgumentException("invalid permission: "+
                                                permission);
 
-        // Add permission to map. NOTE: cannot use lambda for
-        // remappingFunction parameter until JDK-8076596 is fixed.
-        perms.compute(unresolvedPermission.getName(),
-            new java.util.function.BiFunction<>() {
-                @Override
-                public List<UnresolvedPermission> apply(String key,
-                                        List<UnresolvedPermission> oldValue) {
-                    if (oldValue == null) {
-                        List<UnresolvedPermission> v =
-                            new CopyOnWriteArrayList<>();
-                        v.add(unresolvedPermission);
-                        return v;
-                    } else {
-                        oldValue.add(unresolvedPermission);
-                        return oldValue;
-                    }
+        // Add permission to map.
+        perms.compute(unresolvedPermission.getName(), (key, oldValue) -> {
+                if (oldValue == null) {
+                    List<UnresolvedPermission> v = new CopyOnWriteArrayList<>();
+                    v.add(unresolvedPermission);
+                    return v;
+                } else {
+                    oldValue.add(unresolvedPermission);
+                    return oldValue;
                 }
             }
         );
@@ -109,7 +102,7 @@ implements java.io.Serializable
     }
 
     /**
-     * always returns false for unresolved permissions
+     * always returns {@code false} for unresolved permissions
      *
      */
     @Override

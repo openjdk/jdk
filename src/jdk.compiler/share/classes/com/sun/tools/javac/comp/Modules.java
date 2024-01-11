@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -117,6 +117,7 @@ import com.sun.tools.javac.code.Kinds;
 import static com.sun.tools.javac.code.Kinds.Kind.ERR;
 import static com.sun.tools.javac.code.Kinds.Kind.MDL;
 import static com.sun.tools.javac.code.Kinds.Kind.MTH;
+import com.sun.tools.javac.code.Lint;
 
 import com.sun.tools.javac.code.Symbol.ModuleResolutionFlags;
 
@@ -134,6 +135,7 @@ public class Modules extends JCTree.Visitor {
     private static final String ALL_SYSTEM = "ALL-SYSTEM";
     private static final String ALL_MODULE_PATH = "ALL-MODULE-PATH";
 
+    private final Lint lint;
     private final Log log;
     private final Names names;
     private final Symtab syms;
@@ -165,6 +167,7 @@ public class Modules extends JCTree.Visitor {
     private final String limitModsOpt;
     private final Set<String> extraLimitMods = new HashSet<>();
     private final String moduleVersionOpt;
+    private final boolean sourceLauncher;
 
     private final boolean lintOptions;
 
@@ -180,9 +183,11 @@ public class Modules extends JCTree.Visitor {
         return instance;
     }
 
+    @SuppressWarnings("this-escape")
     protected Modules(Context context) {
         context.put(Modules.class, this);
         log = Log.instance(context);
+        lint = Lint.instance(context);
         names = Names.instance(context);
         syms = Symtab.instance(context);
         attr = Attr.instance(context);
@@ -214,6 +219,7 @@ public class Modules extends JCTree.Visitor {
         addModsOpt = options.get(Option.ADD_MODULES);
         limitModsOpt = options.get(Option.LIMIT_MODULES);
         moduleVersionOpt = options.get(Option.MODULE_VERSION);
+        sourceLauncher = options.isSet("sourceLauncher");
     }
 
     int depth = -1;
@@ -1091,6 +1097,9 @@ public class Modules extends JCTree.Visitor {
                 } finally {
                     env.info.visitingServiceImplementation = prevVisitingServiceImplementation;
                 }
+                if (!it.hasTag(CLASS)) {
+                    continue;
+                }
                 ClassSymbol impl = (ClassSymbol) it.tsym;
                 if ((impl.flags_field & PUBLIC) == 0) {
                     log.error(implName.pos(), Errors.NotDefPublic(impl, impl.location()));
@@ -1221,6 +1230,10 @@ public class Modules extends JCTree.Visitor {
         Assert.checkNonNull(rootModules);
         Assert.checkNull(allModules);
 
+        //java.base may not be completed yet and computeTransitiveClosure
+        //may not complete it either, make sure it is completed:
+        syms.java_base.complete();
+
         Set<ModuleSymbol> observable;
 
         if (limitModsOpt == null && extraLimitMods.isEmpty()) {
@@ -1341,13 +1354,15 @@ public class Modules extends JCTree.Visitor {
                 .forEach(result::add);
         }
 
-        String incubatingModules = result.stream()
-                .filter(msym -> msym.resolutionFlags.contains(ModuleResolutionFlags.WARN_INCUBATING))
-                .map(msym -> msym.name.toString())
-                .collect(Collectors.joining(","));
+        if (lint.isEnabled(LintCategory.INCUBATING)) {
+            String incubatingModules = filterAlreadyWarnedIncubatorModules(result.stream()
+                    .filter(msym -> msym.resolutionFlags.contains(ModuleResolutionFlags.WARN_INCUBATING))
+                    .map(msym -> msym.name.toString()))
+                    .collect(Collectors.joining(","));
 
-        if (!incubatingModules.isEmpty()) {
-            log.warning(Warnings.IncubatingModules(incubatingModules));
+            if (!incubatingModules.isEmpty()) {
+                log.warning(Warnings.IncubatingModules(incubatingModules));
+            }
         }
 
         allModules = result;
@@ -1359,6 +1374,15 @@ public class Modules extends JCTree.Visitor {
         }
     }
     //where:
+        private Stream<String> filterAlreadyWarnedIncubatorModules(Stream<String> incubatingModules) {
+            if (!sourceLauncher) return incubatingModules;
+            Set<String> bootModules = ModuleLayer.boot()
+                                                 .modules()
+                                                 .stream()
+                                                 .map(Module::getName)
+                                                 .collect(Collectors.toSet());
+            return incubatingModules.filter(module -> !bootModules.contains(module));
+        }
         private static final Predicate<ModuleSymbol> IS_AUTOMATIC =
                 m -> (m.flags_field & Flags.AUTOMATIC_MODULE) != 0;
 

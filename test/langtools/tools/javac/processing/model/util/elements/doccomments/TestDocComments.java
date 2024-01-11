@@ -189,11 +189,8 @@ public class TestDocComments extends JavacTestingAbstractProcessor {
 
             try {
                 JavaFileObject fo = filer.createSourceFile(curr);
-                Writer out = fo.openWriter();
-                try {
+                try (Writer out = fo.openWriter()) {
                     out.write(text.toString());
-                } finally {
-                    out.close();
                 }
             } catch (IOException e) {
                 throw new Error(e);

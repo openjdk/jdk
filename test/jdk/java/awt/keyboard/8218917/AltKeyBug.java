@@ -24,6 +24,7 @@
 /*
  * @test
  * @key headful
+ * @requires (os.family != "mac")
  * @bug 8218917
  * @summary Tests whether sending an ALT_GRAPH key once, will result in the
  * system reporting only ALT_GRAPH even if an ALT was sent and vice versa.

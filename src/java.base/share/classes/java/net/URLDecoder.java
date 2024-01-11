@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -88,9 +88,6 @@ public class URLDecoder {
      */
     private URLDecoder() {}
 
-    // The default charset
-    static String dfltEncName = URLEncoder.dfltEncName;
-
     /**
      * Decodes a {@code x-www-form-urlencoded} string.
      * The default charset is used to determine what characters
@@ -101,19 +98,12 @@ public class URLDecoder {
      *          default charset. Instead, use the decode(String,String) method
      *          to specify the encoding.
      * @return the newly decoded {@code String}
+     * @throws IllegalArgumentException if the implementation encounters malformed
+     * escape sequences
      */
     @Deprecated
     public static String decode(String s) {
-
-        String str = null;
-
-        try {
-            str = decode(s, dfltEncName);
-        } catch (UnsupportedEncodingException e) {
-            // The system should always have the default charset
-        }
-
-        return str;
+        return decode(s, Charset.defaultCharset());
     }
 
     /**
@@ -125,9 +115,6 @@ public class URLDecoder {
      * except that it will {@linkplain Charset#forName look up the charset}
      * using the given encoding name.
      *
-     * @implNote This implementation will throw an {@link java.lang.IllegalArgumentException}
-     * when illegal strings are encountered.
-     *
      * @param s the {@code String} to decode
      * @param enc   The name of a supported
      *    <a href="../lang/package-summary.html#charenc">character
@@ -136,6 +123,8 @@ public class URLDecoder {
      * @throws UnsupportedEncodingException
      *             If character encoding needs to be consulted, but
      *             named character encoding is not supported
+     * @throws IllegalArgumentException if the implementation encounters malformed
+     * escape sequences
      * @see URLEncoder#encode(java.lang.String, java.lang.String)
      * @since 1.4
      */
@@ -156,8 +145,10 @@ public class URLDecoder {
      * Decodes an {@code application/x-www-form-urlencoded} string using
      * a specific {@linkplain Charset Charset}.
      * The supplied charset is used to determine
-     * what characters are represented by any consecutive sequences of the
-     * form "<i>{@code %xy}</i>".
+     * what characters are represented by any consecutive escape sequences of
+     * the form "<i>{@code %xy}</i>". Erroneous bytes are replaced with the
+     * supplied {@code Charset}'s {@linkplain java.nio.charset.CharsetDecoder##cae
+     * replacement value}.
      * <p>
      * <em><strong>Note:</strong> The <a href=
      * "http://www.w3.org/TR/html40/appendix/notes.html#non-ascii-chars">
@@ -165,15 +156,14 @@ public class URLDecoder {
      * UTF-8 should be used. Not doing so may introduce
      * incompatibilities.</em>
      *
-     * @implNote This implementation will throw an {@link java.lang.IllegalArgumentException}
-     * when illegal strings are encountered.
-     *
      * @param s the {@code String} to decode
      * @param charset the given charset
      * @return the newly decoded {@code String}
      * @throws NullPointerException if {@code s} or {@code charset} is {@code null}
-     * @throws IllegalArgumentException if the implementation encounters illegal
-     * characters
+     * @throws IllegalArgumentException if the implementation encounters malformed
+     * escape sequences
+     *
+     * @spec https://www.w3.org/TR/html4 HTML 4.01 Specification
      * @see URLEncoder#encode(java.lang.String, Charset)
      * @since 10
      */

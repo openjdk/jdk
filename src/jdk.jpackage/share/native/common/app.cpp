@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@
 namespace {
 const std::string* theLastErrorMsg = 0;
 
-NopLogAppender nopLogAppender;
+char nopLogAppenderMemory[sizeof(NopLogAppender)] = {};
 
 class StandardLogAppender : public LogAppender {
 public:
@@ -46,7 +46,9 @@ public:
             << ": " << v.message
             << std::endl;
     }
-} standardLogAppender;
+};
+
+char standardLogAppenderMemory[sizeof(StandardLogAppender)] = {};
 
 class LastErrorLogAppender : public LogAppender {
 public:
@@ -114,10 +116,13 @@ bool isWithLogging() {
 
 int launch(const std::nothrow_t&,
         LauncherFunc func, LogAppender* lastErrorLogAppender) {
+    // The log appender is set for the lifetime of the application.
+    // Use in-place new to avoid accessing destroyed instance
+    // when the shared object destructor logs something.
     if (isWithLogging()) {
-        Logger::defaultLogger().setAppender(standardLogAppender);
+        Logger::defaultLogger().setAppender(*new (standardLogAppenderMemory) StandardLogAppender());
     } else {
-        Logger::defaultLogger().setAppender(nopLogAppender);
+        Logger::defaultLogger().setAppender(*new (nopLogAppenderMemory) NopLogAppender());
     }
 
     LOG_TRACE_FUNCTION();

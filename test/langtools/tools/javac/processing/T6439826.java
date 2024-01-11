@@ -84,10 +84,8 @@ public class T6439826 extends AbstractProcessor {
     private void writeBadFile() {
         Filer filer = processingEnv.getFiler();
         Messager messager = processingEnv.getMessager();
-        try {
-            Writer out = filer.createSourceFile("Foo").openWriter();
+        try (Writer out = filer.createSourceFile("Foo").openWriter()) {
             out.write("class Foo #"); // write a file that generates a scanner error
-            out.close();
         } catch (IOException e) {
             messager.printError(e.toString());
         }

@@ -26,6 +26,7 @@
 package com.apple.laf;
 
 import java.awt.*;
+import java.awt.event.FocusEvent;
 import java.awt.event.MouseEvent;
 
 import javax.swing.*;
@@ -356,7 +357,7 @@ public class AquaSliderUI extends BasicSliderUI implements Sizeable {
             currentMouseY = e.getY();
 
             if (slider.isRequestFocusEnabled()) {
-                slider.requestFocus();
+                slider.requestFocus(FocusEvent.Cause.MOUSE_EVENT);
             }
 
             boolean isMouseEventInThumb = thumbRect.contains(currentMouseX, currentMouseY);

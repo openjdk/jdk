@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,7 @@ import sun.awt.AppContext;
  * the call to the UIManager.
  * <p>
  * <b>WARNING:</b> While this class is public, it should not be treated as
- * public API and its API may change in incompatable ways between dot dot
+ * public API and its API may change in incompatible ways between dot dot
  * releases and even patch releases. You should not rely on this class even
  * existing.
  *
@@ -78,7 +78,7 @@ public class DefaultLookup {
             }
             else if (lookup == null) {
                 // null was passed in, but someone has invoked setDefaultLookup
-                // with a non-null value, use an instance of DefautLookup
+                // with a non-null value, use an instance of DefaultLookup
                 // which will fallback to UIManager.
                 lookup = new DefaultLookup();
             }

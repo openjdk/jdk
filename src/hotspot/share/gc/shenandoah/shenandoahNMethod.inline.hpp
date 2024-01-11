@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2019, 2022, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,18 +39,6 @@ ShenandoahReentrantLock* ShenandoahNMethod::lock() {
   return &_lock;
 }
 
-int ShenandoahNMethod::oop_count() const {
-  return _oops_count + static_cast<int>(nm()->oops_end() - nm()->oops_begin());
-}
-
-bool ShenandoahNMethod::has_oops() const {
-  return oop_count() > 0;
-}
-
-void ShenandoahNMethod::mark_unregistered() {
-  _unregistered = true;
-}
-
 bool ShenandoahNMethod::is_unregistered() const {
   return _unregistered;
 }
@@ -74,15 +62,13 @@ void ShenandoahNMethod::oops_do(OopClosure* oops, bool fix_relocations) {
 }
 
 void ShenandoahNMethod::heal_nmethod_metadata(ShenandoahNMethod* nmethod_data) {
-  ShenandoahEvacuateUpdateMetadataClosure<> cl;
+  ShenandoahEvacuateUpdateMetadataClosure cl;
   nmethod_data->oops_do(&cl, true /*fix relocation*/);
 }
 
 void ShenandoahNMethod::disarm_nmethod(nmethod* nm) {
   BarrierSetNMethod* const bs = BarrierSet::barrier_set()->barrier_set_nmethod();
-  assert(bs != NULL || !ShenandoahNMethodBarrier,
-        "Must have nmethod barrier for concurrent GC");
-  if (bs != NULL && bs->is_armed(nm)) {
+  if (bs->is_armed(nm)) {
     bs->disarm(nm);
   }
 }

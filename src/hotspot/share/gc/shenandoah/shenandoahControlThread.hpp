@@ -121,12 +121,13 @@ public:
   ShenandoahControlThread();
   ~ShenandoahControlThread();
 
-  // Handle allocation failure from normal allocation.
-  // Blocks until memory is available.
-  void handle_alloc_failure(ShenandoahAllocRequest& req);
+  // Handle allocation failure from a mutator allocation.
+  // Optionally blocks while collector is handling the failure. If the GC
+  // threshold has been exceeded, the mutator allocation will not block so
+  // that the out of memory error can be raised promptly.
+  void handle_alloc_failure(ShenandoahAllocRequest& req, bool block = true);
 
   // Handle allocation failure from evacuation path.
-  // Optionally blocks while collector is handling the failure.
   void handle_alloc_failure_evac(size_t words);
 
   void request_gc(GCCause::Cause cause);
@@ -142,12 +143,6 @@ public:
   void start();
   void prepare_for_graceful_shutdown();
   bool in_graceful_shutdown();
-
-  const char* name() const { return "ShenandoahControlThread";}
-
-  // Printing
-  void print_on(outputStream* st) const;
-  void print() const;
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHCONTROLTHREAD_HPP

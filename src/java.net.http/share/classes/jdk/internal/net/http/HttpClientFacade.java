@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -165,6 +165,31 @@ public final class HttpClientFacade extends HttpClient implements Trackable {
         } finally {
             Reference.reachabilityFence(this);
         }
+    }
+
+    @Override
+    public boolean isTerminated() {
+        return impl.isTerminated();
+    }
+
+    @Override
+    public void shutdown() {
+        impl.shutdown();
+    }
+
+    @Override
+    public void shutdownNow() {
+        impl.shutdownNow();
+    }
+
+    @Override
+    public boolean awaitTermination(Duration duration) throws InterruptedException {
+        return impl.awaitTermination(duration);
+    }
+
+    @Override
+    public void close() {
+        impl.close();
     }
 
     @Override

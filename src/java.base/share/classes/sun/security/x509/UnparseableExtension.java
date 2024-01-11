@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,8 +34,8 @@ import sun.security.util.HexDumpEncoder;
  */
 class UnparseableExtension extends Extension {
     private String name;
-    private String exceptionDescription;
-    private String exceptionMessage;
+    private final String exceptionDescription;
+    private final String exceptionMessage;
 
     UnparseableExtension(Extension ext, Throwable why) {
         super(ext);
@@ -45,7 +45,7 @@ class UnparseableExtension extends Extension {
             Class<?> extClass = OIDMap.getClass(ext.getExtensionId());
             if (extClass != null) {
                 Field field = extClass.getDeclaredField("NAME");
-                name = (String)(field.get(null)) + " ";
+                name = field.get(null) + " ";
             }
         } catch (Exception e) {
             // If we cannot find the name, just ignore it

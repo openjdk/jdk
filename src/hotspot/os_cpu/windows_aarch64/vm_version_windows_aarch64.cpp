@@ -53,11 +53,11 @@ void VM_Version::get_os_cpu_info() {
   }
 
   {
-    PSYSTEM_LOGICAL_PROCESSOR_INFORMATION buffer = NULL;
+    PSYSTEM_LOGICAL_PROCESSOR_INFORMATION buffer = nullptr;
     DWORD returnLength = 0;
 
     // See https://docs.microsoft.com/en-us/windows/win32/api/sysinfoapi/nf-sysinfoapi-getlogicalprocessorinformation
-    GetLogicalProcessorInformation(NULL, &returnLength);
+    GetLogicalProcessorInformation(nullptr, &returnLength);
     assert(GetLastError() == ERROR_INSUFFICIENT_BUFFER, "Unexpected return from GetLogicalProcessorInformation");
 
     buffer = (PSYSTEM_LOGICAL_PROCESSOR_INFORMATION)os::malloc(returnLength, mtInternal);
@@ -81,9 +81,9 @@ void VM_Version::get_os_cpu_info() {
 
   {
     char* buf = ::getenv("PROCESSOR_IDENTIFIER");
-    if (buf && strstr(buf, "Ampere(TM)") != NULL) {
+    if (buf && strstr(buf, "Ampere(TM)") != nullptr) {
       _cpu = CPU_AMCC;
-    } else if (buf && strstr(buf, "Cavium Inc.") != NULL) {
+    } else if (buf && strstr(buf, "Cavium Inc.") != nullptr) {
       _cpu = CPU_CAVIUM;
     } else {
       log_info(os)("VM_Version: unknown CPU model");
@@ -100,7 +100,7 @@ void VM_Version::get_os_cpu_info() {
 }
 
 void VM_Version::get_compatible_board(char *buf, int buflen) {
-  assert(buf != NULL, "invalid argument");
+  assert(buf != nullptr, "invalid argument");
   assert(buflen >= 1, "invalid argument");
   *buf = '\0';
 }

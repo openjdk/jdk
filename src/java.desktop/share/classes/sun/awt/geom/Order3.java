@@ -581,7 +581,7 @@ final class Order3 extends Curve {
              * but not without a lot of extra work on the code that
              * coalesces chains of curves into subpaths.  The
              * simplest solution for now is to just reorder the t
-             * values and chop out a miniscule curve piece.
+             * values and chop out a minuscule curve piece.
              */
             double t = t0;
             t0 = t1;

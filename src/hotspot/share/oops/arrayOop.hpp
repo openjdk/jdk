@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -96,12 +96,12 @@ class arrayOopDesc : public oopDesc {
 
   template <typename T>
   static T* obj_offset_to_raw(arrayOop obj, size_t offset_in_bytes, T* raw) {
-    if (obj != NULL) {
-      assert(raw == NULL, "either raw or in-heap");
+    if (obj != nullptr) {
+      assert(raw == nullptr, "either raw or in-heap");
       char* base = reinterpret_cast<char*>((void*) obj);
       raw = reinterpret_cast<T*>(base + offset_in_bytes);
     } else {
-      assert(raw != NULL, "either raw or in-heap");
+      assert(raw != nullptr, "either raw or in-heap");
     }
     return raw;
   }
@@ -138,7 +138,7 @@ class arrayOopDesc : public oopDesc {
   // overflow. We also need to make sure that this will not overflow a size_t on
   // 32 bit platforms when we convert it to a byte size.
   static int32_t max_array_length(BasicType type) {
-    assert(type >= 0 && type < T_CONFLICT, "wrong type");
+    assert(type < T_CONFLICT, "wrong type");
     assert(type2aelembytes(type) != 0, "wrong type");
 
     const size_t max_element_words_per_size_t =

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -187,14 +187,9 @@ public class MethodHandlesGeneralTest extends MethodHandlesTest {
         // test some ad hoc system methods
         testFindVirtual(false, PUBLIC, Object.class, Object.class, "clone");
 
-        // ##### FIXME - disable tests for clone until we figure out how they should work with modules
-
-        /*
-        testFindVirtual(true, PUBLIC, Object[].class, Object.class, "clone");
-        testFindVirtual(true, PUBLIC, int[].class, Object.class, "clone");
-        for (Class<?> cls : new Class<?>[]{ boolean[].class, long[].class, float[].class, char[].class })
+        for (Class<?> cls : new Class<?>[]{ Object[].class, int[].class, boolean[].class, long[].class, float[].class, char[].class }) {
             testFindVirtual(true, PUBLIC, cls, Object.class, "clone");
-         */
+        }
     }
 
     void testFindVirtual(Class<?> defc, Class<?> ret, String name, Class<?>... params) throws Throwable {
@@ -264,8 +259,8 @@ public class MethodHandlesGeneralTest extends MethodHandlesTest {
             assertEquals(MethodType.methodType(Object.class, rcvc), target.type());
             Object orig = argsWithSelf[0];
             assertEquals(orig.getClass(), res.getClass());
-            if (res instanceof Object[])
-                assertArrayEquals((Object[])res, (Object[])argsWithSelf[0]);
+            if (res instanceof Object[] arr)
+                assertArrayEquals(arr, (Object[])argsWithSelf[0]);
             assert(Arrays.deepEquals(new Object[]{res}, new Object[]{argsWithSelf[0]}));
         } else {
             assert(false) : Arrays.asList(positive, lookup, rcvc, defc, ret, name, deepToString(params));

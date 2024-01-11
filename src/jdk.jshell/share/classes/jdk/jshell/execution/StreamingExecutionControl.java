@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -87,6 +87,11 @@ public class StreamingExecutionControl implements ExecutionControl {
         }
     }
 
+    /**
+     * @throws ExecutionControl.UserException {@inheritDoc}
+     * @throws ExecutionControl.ResolutionException {@inheritDoc}
+     * @throws ExecutionControl.StoppedException {@inheritDoc}
+     */
     @Override
     public String invoke(String classname, String methodname)
             throws RunException, EngineTerminationException, InternalException {
@@ -105,6 +110,11 @@ public class StreamingExecutionControl implements ExecutionControl {
         }
     }
 
+    /**
+     * @throws ExecutionControl.UserException {@inheritDoc}
+     * @throws ExecutionControl.ResolutionException {@inheritDoc}
+     * @throws ExecutionControl.StoppedException {@inheritDoc}
+     */
     @Override
     public String varValue(String classname, String varname)
             throws RunException, EngineTerminationException, InternalException {
@@ -151,6 +161,13 @@ public class StreamingExecutionControl implements ExecutionControl {
         }
     }
 
+    /**
+     * @throws ExecutionControl.UserException {@inheritDoc}
+     * @throws ExecutionControl.ResolutionException {@inheritDoc}
+     * @throws ExecutionControl.StoppedException {@inheritDoc}
+     * @throws ExecutionControl.EngineTerminationException {@inheritDoc}
+     * @throws ExecutionControl.NotImplementedException {@inheritDoc}
+     */
     @Override
     public Object extensionCommand(String command, Object arg)
             throws RunException, EngineTerminationException, InternalException {

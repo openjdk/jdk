@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,12 +70,12 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  * {@code DecimalFormat}. If you need to customize the format object, do
  * something like this:
  *
- * <blockquote><pre>
- * NumberFormat f = NumberFormat.getInstance(loc);
- * if (f instanceof DecimalFormat) {
- *     ((DecimalFormat) f).setDecimalSeparatorAlwaysShown(true);
+ * <blockquote>{@snippet lang=java :
+ * NumberFormat numFormat = NumberFormat.getInstance(loc);
+ * if (numFormat instanceof DecimalFormat decFormat) {
+ *     decFormat.setDecimalSeparatorAlwaysShown(true);
  * }
- * </pre></blockquote>
+ * }</blockquote>
  *
  * <p>A {@code DecimalFormat} comprises a <em>pattern</em> and a set of
  * <em>symbols</em>.  The pattern may be set directly using
@@ -84,9 +84,18 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  * the {@code NumberFormat} factory methods, the pattern and symbols are
  * read from localized {@code ResourceBundle}s.
  *
- * <h2>Patterns</h2>
+ * <h2 id="patterns">Patterns</h2>
  *
- * {@code DecimalFormat} patterns have the following syntax:
+ * Note: For any given {@code DecimalFormat} pattern, if the pattern is not
+ * in scientific notation, the maximum number of integer digits will not be
+ * derived from the pattern, and instead set to {@link Integer#MAX_VALUE}.
+ * Otherwise, if the pattern is in scientific notation, the maximum number of
+ * integer digits will be derived from the pattern. This derivation is detailed
+ * in the {@link ##scientific_notation Scientific Notation} section. This behavior
+ * is the typical end-user desire; {@link #setMaximumIntegerDigits(int)} can be
+ * used to manually adjust the maximum integer digits.
+ *
+ * <p> {@code DecimalFormat} patterns have the following syntax:
  * <blockquote><pre>
  * <i>Pattern:</i>
  *         <i>PositivePattern</i>
@@ -96,9 +105,11 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  * <i>NegativePattern:</i>
  *         <i>Prefix<sub>opt</sub></i> <i>Number</i> <i>Suffix<sub>opt</sub></i>
  * <i>Prefix:</i>
- *         any Unicode characters except {@code U+FFFE}, {@code U+FFFF}, and special characters
+ *         Any characters except the {@linkplain ##special_pattern_character
+ *         special pattern characters}
  * <i>Suffix:</i>
- *         any Unicode characters except {@code U+FFFE}, {@code U+FFFF}, and special characters
+ *         Any characters except the {@linkplain ##special_pattern_character
+ *         special pattern characters}
  * <i>Number:</i>
  *         <i>Integer</i> <i>Exponent<sub>opt</sub></i>
  *         <i>Integer</i> . <i>Fraction</i> <i>Exponent<sub>opt</sub></i>
@@ -245,7 +256,7 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  * </table>
  * </blockquote>
  *
- * <h3>Scientific Notation</h3>
+ * <h3 id="scientific_notation">Scientific Notation</h3>
  *
  * <p>Numbers in scientific notation are expressed as the product of a mantissa
  * and a power of ten, for example, 1234 can be expressed as 1.234 x 10^3.  The
@@ -263,6 +274,16 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  * minimum exponent digit count.  There is no maximum.  Negative exponents are
  * formatted using the localized minus sign, <em>not</em> the prefix and suffix
  * from the pattern.  This allows patterns such as {@code "0.###E0 m/s"}.
+ *
+ * <li>The <em>maximum integer</em> digits is the sum of '0's and '#'s
+ * prior to the decimal point. The <em>minimum integer</em> digits is the
+ * sum of the '0's prior to the decimal point. The <em>maximum fraction</em>
+ * and <em>minimum fraction</em> digits follow the same rules, but apply to the
+ * digits after the decimal point but before the exponent. For example, the
+ * following pattern: {@code "#00.0####E0"} would have a minimum number of
+ * integer digits = 2("00") and a maximum number of integer digits = 3("#00"). It
+ * would have a minimum number of fraction digits = 1("0") and a maximum number of fraction
+ * digits= 5("0####").
  *
  * <li>The minimum and maximum number of integer digits are interpreted
  * together:
@@ -282,12 +303,37 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  * {@code "12.3E-4"}.
  * </ul>
  *
- * <li>The number of significant digits in the mantissa is the sum of the
- * <em>minimum integer</em> and <em>maximum fraction</em> digits, and is
- * unaffected by the maximum integer digits.  For example, 12345 formatted with
- * {@code "##0.##E0"} is {@code "12.3E3"}. To show all digits, set
- * the significant digits count to zero.  The number of significant digits
+ * <li>For a given number, the amount of significant digits in
+ * the mantissa can be calculated as such
+ *
+ * <blockquote><pre>
+ * <i>Mantissa Digits:</i>
+ *         min(max(Minimum Pattern Digits, Original Number Digits), Maximum Pattern Digits)
+ * <i>Minimum pattern Digits:</i>
+ *         <i>Minimum Integer Digits</i> + <i>Minimum Fraction Digits</i>
+ * <i>Maximum pattern Digits:</i>
+ *         <i>Maximum Integer Digits</i> + <i>Maximum Fraction Digits</i>
+ * <i>Original Number Digits:</i>
+ *         The amount of significant digits in the number to be formatted
+ * </pre></blockquote>
+ *
+ * This means that generally, a mantissa will have up to the combined maximum integer
+ * and fraction digits, if the original number itself has enough significant digits. However,
+ * if there are more minimum pattern digits than significant digits in the original number,
+ * the mantissa will have significant digits that equals the combined
+ * minimum integer and fraction digits. The number of significant digits
  * does not affect parsing.
+ *
+ * <p>It should be noted, that the integer portion of the mantissa will give
+ * any excess digits to the fraction portion, whether it be for precision or
+ * for satisfying the total amount of combined minimum digits.
+ *
+ * <p>This behavior can be observed in the following example,
+ * {@snippet lang=java :
+ *     DecimalFormat df = new DecimalFormat("#000.000##E0");
+ *     df.format(12); // returns "12.0000E0"
+ *     df.format(123456789) // returns "1.23456789E8"
+ * }
  *
  * <li>Exponential patterns may not contain grouping separators.
  * </ul>
@@ -308,8 +354,8 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  *
  * <h4>Special Values</h4>
  *
- * <p>{@code NaN} is formatted as a string, which typically has a single character
- * {@code U+FFFD}.  This string is determined by the
+ * <p>Not a Number({@code NaN}) is formatted as a string, which typically has a
+ * single character {@code U+FFFD}.  This string is determined by the
  * {@code DecimalFormatSymbols} object.  This is the only value for which
  * the prefixes and suffixes are not used.
  *
@@ -338,31 +384,27 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  *
  * <h3>Example</h3>
  *
- * <blockquote><pre><strong>{@code
+ * <blockquote>{@snippet lang=java :
  * // Print out a number using the localized number, integer, currency,
- * // and percent format for each locale}</strong>{@code
+ * // and percent format for each locale
  * Locale[] locales = NumberFormat.getAvailableLocales();
  * double myNumber = -1234.56;
  * NumberFormat form;
  * for (int j = 0; j < 4; ++j) {
  *     System.out.println("FORMAT");
- *     for (int i = 0; i < locales.length; ++i) {
- *         if (locales[i].getCountry().length() == 0) {
- *            continue; // Skip language-only locales
+ *     for (Locale locale : locales) {
+ *         if (locale.getCountry().length() == 0) {
+ *             continue; // Skip language-only locales
  *         }
- *         System.out.print(locales[i].getDisplayName());
- *         switch (j) {
- *         case 0:
- *             form = NumberFormat.getInstance(locales[i]); break;
- *         case 1:
- *             form = NumberFormat.getIntegerInstance(locales[i]); break;
- *         case 2:
- *             form = NumberFormat.getCurrencyInstance(locales[i]); break;
- *         default:
- *             form = NumberFormat.getPercentInstance(locales[i]); break;
- *         }
- *         if (form instanceof DecimalFormat) {
- *             System.out.print(": " + ((DecimalFormat) form).toPattern());
+ *         System.out.print(locale.getDisplayName());
+ *         form = switch (j) {
+ *             case 0 -> NumberFormat.getInstance(locale);
+ *             case 1 -> NumberFormat.getIntegerInstance(locale);
+ *             case 2 -> NumberFormat.getCurrencyInstance(locale);
+ *             default -> NumberFormat.getPercentInstance(locale);
+ *         };
+ *         if (form instanceof DecimalFormat decForm) {
+ *             System.out.print(": " + decForm.toPattern());
  *         }
  *         System.out.print(" -> " + form.format(myNumber));
  *         try {
@@ -370,7 +412,7 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  *         } catch (ParseException e) {}
  *     }
  * }
- * }</pre></blockquote>
+ * }</blockquote>
  *
  * @see          <a href="http://docs.oracle.com/javase/tutorial/i18n/format/decimalFormat.html">Java Tutorial</a>
  * @see          NumberFormat
@@ -418,6 +460,8 @@ public class DecimalFormat extends NumberFormat {
      * for the default {@link java.util.Locale.Category#FORMAT FORMAT} locale.
      * This is a convenient way to obtain a
      * DecimalFormat when internationalization is not the main concern.
+     * The number of maximum integer digits is usually not derived from the pattern.
+     * See the note in the {@link ##patterns Patterns} section for more detail.
      * <p>
      * To obtain standard formats for a given locale, use the factory methods
      * on NumberFormat such as getNumberInstance. These factories will
@@ -443,6 +487,8 @@ public class DecimalFormat extends NumberFormat {
      * Creates a DecimalFormat using the given pattern and symbols.
      * Use this constructor when you need to completely customize the
      * behavior of the format.
+     * The number of maximum integer digits is usually not derived from the pattern.
+     * See the note in the {@link ##patterns Patterns} section for more detail.
      * <p>
      * To obtain standard formats for a given
      * locale, use the factory methods on NumberFormat such as
@@ -2882,15 +2928,28 @@ public class DecimalFormat extends NumberFormat {
     }
 
     /**
-     * Overrides equals
+     * Compares the specified object with this {@code DecimalFormat} for equality.
+     * Returns true if the object is also a {@code DecimalFormat} and the
+     * two formats would format any value the same.
+     *
+     * @implSpec This method performs an equality check with a notion of class
+     * identity based on {@code getClass()}, rather than {@code instanceof}.
+     * Therefore, in the equals methods in subclasses, no instance of this class
+     * should compare as equal to an instance of a subclass.
+     * @param  obj object to be compared for equality
+     * @return {@code true} if the specified object is equal to this {@code DecimalFormat}
+     * @see Object#equals(Object)
      */
     @Override
     public boolean equals(Object obj)
     {
-        if (obj == null)
-            return false;
+        if (this == obj) {
+            return true;
+        }
+
         if (!super.equals(obj))
-            return false; // super does class check
+            return false; // super does null and class checks
+
         DecimalFormat other = (DecimalFormat) obj;
         return ((posPrefixPattern == other.posPrefixPattern &&
                  positivePrefix.equals(other.positivePrefix))
@@ -2924,7 +2983,12 @@ public class DecimalFormat extends NumberFormat {
     }
 
     /**
-     * Overrides hashCode
+     * {@return the hash code for this {@code DecimalFormat}}
+     *
+     * @implSpec This method calculates the hash code value using the values returned from
+     * {@link #getPositivePrefix()} and {@link NumberFormat#hashCode()}.
+     * @see Object#hashCode()
+     * @see NumberFormat#hashCode()
      */
     @Override
     public int hashCode() {
@@ -3264,9 +3328,8 @@ public class DecimalFormat extends NumberFormat {
      * These properties can also be changed individually through the
      * various setter methods.
      * <p>
-     * There is no limit to integer digits set
-     * by this routine, since that is the typical end-user desire;
-     * use setMaximumInteger if you want to set a real value.
+     * The number of maximum integer digits is usually not derived from the pattern.
+     * See the note in the {@link ##patterns Patterns} section for more detail.
      * For negative numbers, use a second pattern, separated by a semicolon
      * <P>Example {@code "#,#00.0#"} &rarr; 1,234.56
      * <P>This means a minimum of 2 integer digits, 1 fraction digit, and
@@ -3291,9 +3354,8 @@ public class DecimalFormat extends NumberFormat {
      * These properties can also be changed individually through the
      * various setter methods.
      * <p>
-     * There is no limit to integer digits set
-     * by this routine, since that is the typical end-user desire;
-     * use setMaximumInteger if you want to set a real value.
+     * The number of maximum integer digits is usually not derived from the pattern.
+     * See the note in the {@link ##patterns Patterns} section for more detail.
      * For negative numbers, use a second pattern, separated by a semicolon
      * <P>Example {@code "#,#00.0#"} &rarr; 1,234.56
      * <P>This means a minimum of 2 integer digits, 1 fraction digit, and
@@ -3653,13 +3715,11 @@ public class DecimalFormat extends NumberFormat {
      */
     @Override
     public void setMaximumIntegerDigits(int newValue) {
-        maximumIntegerDigits = Math.min(Math.max(0, newValue), MAXIMUM_INTEGER_DIGITS);
-        super.setMaximumIntegerDigits((maximumIntegerDigits > DOUBLE_INTEGER_DIGITS) ?
-            DOUBLE_INTEGER_DIGITS : maximumIntegerDigits);
+        maximumIntegerDigits = Math.clamp(newValue, 0, MAXIMUM_INTEGER_DIGITS);
+        super.setMaximumIntegerDigits(Math.min(maximumIntegerDigits, DOUBLE_INTEGER_DIGITS));
         if (minimumIntegerDigits > maximumIntegerDigits) {
             minimumIntegerDigits = maximumIntegerDigits;
-            super.setMinimumIntegerDigits((minimumIntegerDigits > DOUBLE_INTEGER_DIGITS) ?
-                DOUBLE_INTEGER_DIGITS : minimumIntegerDigits);
+            super.setMinimumIntegerDigits(Math.min(minimumIntegerDigits, DOUBLE_INTEGER_DIGITS));
         }
         fastPathCheckNeeded = true;
     }
@@ -3674,13 +3734,11 @@ public class DecimalFormat extends NumberFormat {
      */
     @Override
     public void setMinimumIntegerDigits(int newValue) {
-        minimumIntegerDigits = Math.min(Math.max(0, newValue), MAXIMUM_INTEGER_DIGITS);
-        super.setMinimumIntegerDigits((minimumIntegerDigits > DOUBLE_INTEGER_DIGITS) ?
-            DOUBLE_INTEGER_DIGITS : minimumIntegerDigits);
+        minimumIntegerDigits = Math.clamp(newValue, 0, MAXIMUM_INTEGER_DIGITS);
+        super.setMinimumIntegerDigits(Math.min(minimumIntegerDigits, DOUBLE_INTEGER_DIGITS));
         if (minimumIntegerDigits > maximumIntegerDigits) {
             maximumIntegerDigits = minimumIntegerDigits;
-            super.setMaximumIntegerDigits((maximumIntegerDigits > DOUBLE_INTEGER_DIGITS) ?
-                DOUBLE_INTEGER_DIGITS : maximumIntegerDigits);
+            super.setMaximumIntegerDigits(Math.min(maximumIntegerDigits, DOUBLE_INTEGER_DIGITS));
         }
         fastPathCheckNeeded = true;
     }
@@ -3695,13 +3753,11 @@ public class DecimalFormat extends NumberFormat {
      */
     @Override
     public void setMaximumFractionDigits(int newValue) {
-        maximumFractionDigits = Math.min(Math.max(0, newValue), MAXIMUM_FRACTION_DIGITS);
-        super.setMaximumFractionDigits((maximumFractionDigits > DOUBLE_FRACTION_DIGITS) ?
-            DOUBLE_FRACTION_DIGITS : maximumFractionDigits);
+        maximumFractionDigits = Math.clamp(newValue, 0, MAXIMUM_FRACTION_DIGITS);
+        super.setMaximumFractionDigits(Math.min(maximumFractionDigits, DOUBLE_FRACTION_DIGITS));
         if (minimumFractionDigits > maximumFractionDigits) {
             minimumFractionDigits = maximumFractionDigits;
-            super.setMinimumFractionDigits((minimumFractionDigits > DOUBLE_FRACTION_DIGITS) ?
-                DOUBLE_FRACTION_DIGITS : minimumFractionDigits);
+            super.setMinimumFractionDigits(Math.min(minimumFractionDigits, DOUBLE_FRACTION_DIGITS));
         }
         fastPathCheckNeeded = true;
     }
@@ -3716,13 +3772,11 @@ public class DecimalFormat extends NumberFormat {
      */
     @Override
     public void setMinimumFractionDigits(int newValue) {
-        minimumFractionDigits = Math.min(Math.max(0, newValue), MAXIMUM_FRACTION_DIGITS);
-        super.setMinimumFractionDigits((minimumFractionDigits > DOUBLE_FRACTION_DIGITS) ?
-            DOUBLE_FRACTION_DIGITS : minimumFractionDigits);
+        minimumFractionDigits = Math.clamp(newValue, 0, MAXIMUM_FRACTION_DIGITS);
+        super.setMinimumFractionDigits(Math.min(minimumFractionDigits, DOUBLE_FRACTION_DIGITS));
         if (minimumFractionDigits > maximumFractionDigits) {
             maximumFractionDigits = minimumFractionDigits;
-            super.setMaximumFractionDigits((maximumFractionDigits > DOUBLE_FRACTION_DIGITS) ?
-                DOUBLE_FRACTION_DIGITS : maximumFractionDigits);
+            super.setMaximumFractionDigits(Math.min(maximumFractionDigits, DOUBLE_FRACTION_DIGITS));
         }
         fastPathCheckNeeded = true;
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,13 +29,17 @@
  * @modules java.base/jdk.internal.misc
  *          java.management
  *
- * @build sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
  *        compiler.codecache.stress.TestCaseImpl
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI
  *                   -XX:CompileCommand=dontinline,compiler.codecache.stress.Helper$TestCase::method
  *                   -XX:CompileCommand=exclude,java.lang.Thread::sleep
+ *                   -XX:CompileCommand=exclude,java.lang.Thread::sleepNanos
+ *                   -XX:CompileCommand=exclude,java.lang.Thread::beforeSleep
+ *                   -XX:CompileCommand=exclude,java.lang.Thread::afterSleep
+ *                   -XX:CompileCommand=exclude,java.lang.Math::min
  *                   -XX:CompileCommand=exclude,jdk.internal.event.ThreadSleepEvent::*
  *                   -XX:CompileCommand=exclude,jdk.internal.event.SleepEvent::*
  *                   -XX:CompileCommand=exclude,jdk.internal.event.Event::*
@@ -45,6 +49,10 @@
  *                   -XX:+WhiteBoxAPI
  *                   -XX:CompileCommand=dontinline,compiler.codecache.stress.Helper$TestCase::method
  *                   -XX:CompileCommand=exclude,java.lang.Thread::sleep
+ *                   -XX:CompileCommand=exclude,java.lang.Thread::sleepNanos
+ *                   -XX:CompileCommand=exclude,java.lang.Thread::beforeSleep
+ *                   -XX:CompileCommand=exclude,java.lang.Thread::afterSleep
+ *                   -XX:CompileCommand=exclude,java.lang.Math::min
  *                   -XX:CompileCommand=exclude,jdk.internal.event.ThreadSleepEvent::*
  *                   -XX:CompileCommand=exclude,jdk.internal.event.SleepEvent::*
  *                   -XX:CompileCommand=exclude,jdk.internal.event.Event::*

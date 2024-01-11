@@ -1150,7 +1150,7 @@ static void getVerdict(JNIEnv *jni_env, const char *evnt) {
     char error_msg[80];
 
     if (vm_death_occured == TRUE) {
-        sprintf(error_msg, "JVMTIagent: getVerdict: %s event occured after VMDeath",
+        snprintf(error_msg, sizeof(error_msg), "JVMTIagent: getVerdict: %s event occured after VMDeath",
             evnt);
 
         if (jni_env == NULL) { /* some event callbacks have no pointer to jni */

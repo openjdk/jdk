@@ -140,11 +140,13 @@ public:
   }
 
   static AbstractRegSet range(RegImpl start, RegImpl end) {
-    assert(start <= end, "must be");
+    int start_enc = start->encoding();
+    int   end_enc = end->encoding();
+    assert(start_enc <= end_enc, "must be");
     uint32_t bits = ~0;
-    bits <<= start->encoding();
-    bits <<= 31 - end->encoding();
-    bits >>= 31 - end->encoding();
+    bits <<= start_enc;
+    bits <<= 31 - end_enc;
+    bits >>= 31 - end_enc;
 
     return AbstractRegSet(bits);
   }
@@ -182,6 +184,10 @@ public:
     return *this;
   }
 
+  RegSetIterator<RegImpl>& operator=(const RegSetIterator<RegImpl>& mit) {
+    _regs= mit._regs;
+    return *this;
+  }
   bool operator==(const RegSetIterator& rhs) const {
     return _regs.bits() == rhs._regs.bits();
   }
@@ -191,6 +197,10 @@ public:
 
   RegImpl operator*() {
     return _regs.first();
+  }
+
+  AbstractRegSet<RegImpl> remaining() const {
+    return _regs;
   }
 };
 

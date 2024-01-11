@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -57,6 +57,7 @@ JVM_DumpAllStacks
 JVM_DumpClassListToFile
 JVM_DumpDynamicArchive
 JVM_DumpThreads
+JVM_ExpandStackFrameInfo
 JVM_FillInStackTrace
 JVM_FindClassFromCaller
 JVM_FindClassFromClass
@@ -81,6 +82,7 @@ JVM_GetClassDeclaredConstructors
 JVM_GetClassDeclaredFields
 JVM_GetClassDeclaredMethods
 JVM_GetClassFieldsCount
+JVM_GetClassFileVersion
 JVM_GetClassInterfaces
 JVM_GetClassMethodsCount
 JVM_GetClassModifiers
@@ -161,7 +163,6 @@ JVM_IsRecord
 JVM_IsSameClassPackage
 JVM_IsSharingEnabled
 JVM_IsSupportedJNIVersion
-JVM_IsThreadAlive
 JVM_IsVMGeneratedMethodIx
 JVM_LatestUserDefinedLoader
 JVM_LoadZipLibrary
@@ -181,6 +182,7 @@ JVM_NewArray
 JVM_NewInstanceFromConstructor
 JVM_NewMultiArray
 JVM_PhantomReferenceRefersTo
+JVM_PrintWarningAtDynamicAgentLoad
 JVM_RaiseSignal
 JVM_RawMonitorCreate
 JVM_RawMonitorDestroy
@@ -193,20 +195,14 @@ JVM_RegisterLambdaProxyClassForArchiving
 JVM_RegisterSignal
 JVM_ReleaseUTF
 JVM_ReportFinalizationComplete
-JVM_ResumeThread
-JVM_ExtentLocalCache
-JVM_SetExtentLocalCache
 JVM_SetArrayElement
 JVM_SetClassSigners
 JVM_SetNativeThreadName
 JVM_SetPrimitiveArrayElement
 JVM_SetStackWalkContinuation
 JVM_SetThreadPriority
-JVM_Sleep
+JVM_SleepNanos
 JVM_StartThread
-JVM_StopThread
-JVM_SupportsCX8
-JVM_SuspendThread
 JVM_TotalMemory
 JVM_UnloadLibrary
 JVM_WaitForReferencePendingList
@@ -222,8 +218,16 @@ JVM_DefineModule
 JVM_SetBootLoaderUnnamedModule
 
 # Virtual thread notifications for JVMTI
-JVM_VirtualThreadMountBegin
-JVM_VirtualThreadMountEnd
-JVM_VirtualThreadUnmountBegin
-JVM_VirtualThreadUnmountEnd
+JVM_VirtualThreadStart
+JVM_VirtualThreadEnd
+JVM_VirtualThreadMount
+JVM_VirtualThreadUnmount
+JVM_VirtualThreadHideFrames
+JVM_VirtualThreadDisableSuspend
+
+# Scoped values
+JVM_EnsureMaterializedForStackWalk_func
+JVM_FindScopedValueBindings
+JVM_ScopedValueCache
+JVM_SetScopedValueCache
 #

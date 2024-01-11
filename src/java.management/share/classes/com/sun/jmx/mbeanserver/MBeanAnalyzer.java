@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,6 @@ import static com.sun.jmx.mbeanserver.Util.*;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.security.AccessController;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
@@ -99,7 +98,7 @@ class MBeanAnalyzer<M> {
     static <M> MBeanAnalyzer<M> analyzer(Class<?> mbeanType,
             MBeanIntrospector<M> introspector)
             throws NotCompliantMBeanException {
-        return new MBeanAnalyzer<M>(mbeanType, introspector);
+        return new MBeanAnalyzer<>(mbeanType, introspector);
     }
 
     private MBeanAnalyzer(Class<?> mbeanType,
@@ -149,7 +148,7 @@ class MBeanAnalyzer<M> {
                 // Check we don't have both isX and getX
                 AttrMethods<M> am = attrMap.get(attrName);
                 if (am == null)
-                    am = new AttrMethods<M>();
+                    am = new AttrMethods<>();
                 else {
                     if (am.getter != null) {
                         final String msg = "Attribute " + attrName +
@@ -166,7 +165,7 @@ class MBeanAnalyzer<M> {
                 attrName = name.substring(3);
                 AttrMethods<M> am = attrMap.get(attrName);
                 if (am == null)
-                    am = new AttrMethods<M>();
+                    am = new AttrMethods<>();
                 else if (am.setter != null) {
                     final String msg = "Attribute " + attrName +
                             " has more than one setter";

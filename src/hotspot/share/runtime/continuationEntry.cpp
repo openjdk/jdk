@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,12 @@
  */
 
 #include "precompiled.hpp"
+#include "code/compiledIC.hpp"
 #include "code/nmethod.hpp"
+#include "oops/method.inline.hpp"
 #include "runtime/continuation.hpp"
 #include "runtime/continuationEntry.inline.hpp"
+#include "runtime/continuationHelper.inline.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/stackFrameStream.inline.hpp"
@@ -34,10 +37,32 @@
 
 int ContinuationEntry::_return_pc_offset = 0;
 address ContinuationEntry::_return_pc = nullptr;
+CompiledMethod* ContinuationEntry::_enter_special = nullptr;
+int ContinuationEntry::_interpreted_entry_offset = 0;
 
-void ContinuationEntry::set_enter_code(CompiledMethod* cm) {
+void ContinuationEntry::set_enter_code(CompiledMethod* cm, int interpreted_entry_offset) {
   assert(_return_pc_offset != 0, "");
   _return_pc = cm->code_begin() + _return_pc_offset;
+
+  _enter_special = cm;
+  _interpreted_entry_offset = interpreted_entry_offset;
+  assert(_enter_special->code_contains(compiled_entry()),    "entry not in enterSpecial");
+  assert(_enter_special->code_contains(interpreted_entry()), "entry not in enterSpecial");
+  assert(interpreted_entry() < compiled_entry(), "unexpected code layout");
+}
+
+address ContinuationEntry::compiled_entry() {
+  return _enter_special->verified_entry_point();
+}
+
+address ContinuationEntry::interpreted_entry() {
+  return _enter_special->code_begin() + _interpreted_entry_offset;
+}
+
+bool ContinuationEntry::is_interpreted_call(address call_address) {
+  assert(_enter_special->code_contains(call_address), "call not in enterSpecial");
+  assert(call_address >= interpreted_entry(), "unexpected location");
+  return call_address < compiled_entry();
 }
 
 ContinuationEntry* ContinuationEntry::from_frame(const frame& f) {
@@ -64,11 +89,6 @@ inline void maybe_flush_stack_processing(JavaThread* thread, intptr_t* sp) {
 
 void ContinuationEntry::flush_stack_processing(JavaThread* thread) const {
   maybe_flush_stack_processing(thread, (intptr_t*)((uintptr_t)entry_sp() + ContinuationEntry::size()));
-}
-
-void ContinuationEntry::setup_oopmap(OopMap* map) {
-  map->set_oop(VMRegImpl::stack2reg(in_bytes(cont_offset())  / VMRegImpl::stack_slot_size));
-  map->set_oop(VMRegImpl::stack2reg(in_bytes(chunk_offset()) / VMRegImpl::stack_slot_size));
 }
 
 #ifndef PRODUCT
@@ -99,7 +119,10 @@ bool ContinuationEntry::assert_entry_frame_laid_out(JavaThread* thread) {
   } else {
     sp = unextended_sp;
     bool interpreted_bottom = false;
-    RegisterMap map(thread, false, false, false);
+    RegisterMap map(thread,
+                    RegisterMap::UpdateMap::skip,
+                    RegisterMap::ProcessFrames::skip,
+                    RegisterMap::WalkContinuation::skip);
     frame f;
     for (f = thread->last_frame();
          !f.is_first_frame() && f.sp() <= unextended_sp && !Continuation::is_continuation_enterSpecial(f);
@@ -112,7 +135,8 @@ bool ContinuationEntry::assert_entry_frame_laid_out(JavaThread* thread) {
 
   assert(sp != nullptr, "");
   assert(sp <= entry->entry_sp(), "");
-  address pc = *(address*)(sp - frame::sender_sp_ret_address_offset());
+  address pc = ContinuationHelper::return_address_at(
+                 sp - frame::sender_sp_ret_address_offset());
 
   if (pc != StubRoutines::cont_returnBarrier()) {
     CodeBlob* cb = pc != nullptr ? CodeCache::find_blob(pc) : nullptr;

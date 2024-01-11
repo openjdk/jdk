@@ -46,10 +46,6 @@ using namespace std;
 
 #define strdup _strdup
 
-#if _MSC_VER < 1900
-#define snprintf _snprintf
-#endif
-
 #ifndef _INTPTR_T_DEFINED
 #ifdef _WIN64
 typedef __int64 intptr_t;
@@ -103,5 +99,9 @@ typedef unsigned int uintptr_t;
 // could have a backpointer to the AD but it's too complicated to pass
 // it everywhere it needs to be available.
 extern ArchDesc* globalAD;
+
+// Performs snprintf and asserts the result is non-negative (so there was not
+// an encoding error) and that the output was not truncated.
+extern int snprintf_checked(char* buf, size_t len, const char* fmt, ...);
 
 #endif // SHARE_ADLC_ADLC_HPP

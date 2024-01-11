@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1531,13 +1531,10 @@ class MutableBigInteger {
         quotient.intLen = limit;
         int[] q = quotient.value;
 
-
-        // Must insert leading 0 in rem if its length did not change
-        if (rem.intLen == nlen) {
-            rem.offset = 0;
-            rem.value[0] = 0;
-            rem.intLen++;
-        }
+        // Insert leading 0 in rem
+        rem.offset = 0;
+        rem.value[0] = 0;
+        rem.intLen++;
 
         int dh = divisor[0];
         long dhLong = dh & LONG_MASK;

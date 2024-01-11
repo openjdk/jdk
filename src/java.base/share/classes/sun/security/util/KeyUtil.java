@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,34 +25,22 @@
 
 package sun.security.util;
 
-import java.security.AlgorithmParameters;
-import java.security.Key;
-import java.security.InvalidKeyException;
-import java.security.interfaces.ECKey;
-import java.security.interfaces.EdECKey;
-import java.security.interfaces.EdECPublicKey;
-import java.security.interfaces.RSAKey;
-import java.security.interfaces.DSAKey;
-import java.security.interfaces.DSAParams;
-import java.security.interfaces.XECKey;
-import java.security.SecureRandom;
-import java.security.spec.AlgorithmParameterSpec;
-import java.security.spec.KeySpec;
-import java.security.spec.ECParameterSpec;
-import java.security.spec.InvalidParameterSpecException;
+import java.io.IOException;
+import java.math.BigInteger;
+import java.security.*;
+import java.security.interfaces.*;
+import java.security.spec.*;
+import java.util.Arrays;
 import javax.crypto.SecretKey;
 import javax.crypto.interfaces.DHKey;
 import javax.crypto.interfaces.DHPublicKey;
 import javax.crypto.spec.DHParameterSpec;
 import javax.crypto.spec.DHPublicKeySpec;
-import java.math.BigInteger;
-import java.security.spec.NamedParameterSpec;
-import java.util.Arrays;
 
 import sun.security.jca.JCAUtil;
 
 /**
- * A utility class to get key length, valiate keys, etc.
+ * A utility class to get key length, validate keys, etc.
  */
 public final class KeyUtil {
 
@@ -63,7 +51,7 @@ public final class KeyUtil {
      * @return the key size of the given key object in bits, or -1 if the
      *       key size is not accessible
      */
-    public static final int getKeySize(Key key) {
+    public static int getKeySize(Key key) {
         int size = -1;
 
         if (key instanceof Length) {
@@ -80,8 +68,7 @@ public final class KeyUtil {
         }
 
         // try to parse the length from key specification
-        if (key instanceof SecretKey) {
-            SecretKey sk = (SecretKey)key;
+        if (key instanceof SecretKey sk) {
             String format = sk.getFormat();
             if ("RAW".equals(format)) {
                 byte[] encoded = sk.getEncoded();
@@ -89,23 +76,18 @@ public final class KeyUtil {
                     size = (encoded.length * 8);
                     Arrays.fill(encoded, (byte)0);
                 }
-            }   // Otherwise, it may be a unextractable key of PKCS#11, or
+            }   // Otherwise, it may be an unextractable key of PKCS#11, or
                 // a key we are not able to handle.
-        } else if (key instanceof RSAKey) {
-            RSAKey pubk = (RSAKey)key;
+        } else if (key instanceof RSAKey pubk) {
             size = pubk.getModulus().bitLength();
-        } else if (key instanceof ECKey) {
-            ECKey pubk = (ECKey)key;
+        } else if (key instanceof ECKey pubk) {
             size = pubk.getParams().getOrder().bitLength();
-        } else if (key instanceof DSAKey) {
-            DSAKey pubk = (DSAKey)key;
+        } else if (key instanceof DSAKey pubk) {
             DSAParams params = pubk.getParams();    // params can be null
             size = (params != null) ? params.getP().bitLength() : -1;
-        } else if (key instanceof DHKey) {
-            DHKey pubk = (DHKey)key;
+        } else if (key instanceof DHKey pubk) {
             size = pubk.getParams().getP().bitLength();
-        } else if (key instanceof XECKey) {
-            XECKey pubk = (XECKey)key;
+        } else if (key instanceof XECKey pubk) {
             AlgorithmParameterSpec params = pubk.getParams();
             if (params instanceof NamedParameterSpec) {
                 String name = ((NamedParameterSpec) params).getName();
@@ -129,7 +111,7 @@ public final class KeyUtil {
             } else {
                 size = -1;
             }
-        }   // Otherwise, it may be a unextractable key of PKCS#11, or
+        }   // Otherwise, it may be an unextractable key of PKCS#11, or
             // a key we are not able to handle.
 
         return size;
@@ -144,17 +126,19 @@ public final class KeyUtil {
      */
     public static final int getKeySize(AlgorithmParameters parameters) {
 
-        String algorithm = parameters.getAlgorithm();
-        switch (algorithm) {
+        switch (parameters.getAlgorithm()) {
             case "EC":
-                try {
-                    ECKeySizeParameterSpec ps = parameters.getParameterSpec(
+                // ECKeySizeParameterSpec is SunEC internal only
+                if (parameters.getProvider().getName().equals("SunEC")) {
+                    try {
+                        ECKeySizeParameterSpec ps = parameters.getParameterSpec(
                             ECKeySizeParameterSpec.class);
-                    if (ps != null) {
-                        return ps.getKeySize();
+                        if (ps != null) {
+                            return ps.getKeySize();
+                        }
+                    } catch (InvalidParameterSpecException ipse) {
+                        // ignore
                     }
-                } catch (InvalidParameterSpecException ipse) {
-                    // ignore
                 }
 
                 try {
@@ -202,8 +186,7 @@ public final class KeyUtil {
         String result = key.getAlgorithm();
         if (key instanceof ECKey) {
             ECParameterSpec paramSpec = ((ECKey) key).getParams();
-            if (paramSpec instanceof NamedCurve) {
-                NamedCurve nc = (NamedCurve)paramSpec;
+            if (paramSpec instanceof NamedCurve nc) {
                 result += " (" + nc.getNameAndAliases()[0] + ")";
             }
         } else if (key instanceof EdECKey) {
@@ -308,7 +291,7 @@ public final class KeyUtil {
      *         contains the lower of that suggested by the client in the client
      *         hello and the highest supported by the server.
      * @param  encoded the encoded key in its "RAW" encoding format
-     * @param  isFailOver whether or not the previous decryption of the
+     * @param  isFailOver whether the previous decryption of the
      *         encrypted PreMasterSecret message run into problem
      * @return the polished PreMasterSecret key in its "RAW" encoding format
      */
@@ -356,7 +339,7 @@ public final class KeyUtil {
      * 1. Verify that y lies within the interval [2,p-1]. If it does not,
      *    the key is invalid.
      * 2. Compute y^q mod p. If the result == 1, the key is valid.
-     *    Otherwise the key is invalid.
+     *    Otherwise, the key is invalid.
      */
     private static void validateDHPublicKey(DHPublicKey publicKey)
             throws InvalidKeyException {
@@ -420,5 +403,38 @@ public final class KeyUtil {
         return t;
     }
 
+    /**
+     * Finds the hash algorithm from an HSS/LMS public key.
+     *
+     * @param publicKey the HSS/LMS public key
+     * @return the hash algorithm
+     * @throws NoSuchAlgorithmException if key is from an unknown configuration
+     */
+    public static String hashAlgFromHSS(PublicKey publicKey)
+            throws NoSuchAlgorithmException {
+        try {
+            DerValue val = new DerValue(publicKey.getEncoded());
+            val.data.getDerValue();
+            byte[] rawKey = new DerValue(val.data.getBitString()).getOctetString();
+            // According to https://www.rfc-editor.org/rfc/rfc8554.html:
+            // Section 6.1: HSS public key is u32str(L) || pub[0], where pub[0]
+            // is the LMS public key for the top-level tree.
+            // Section 5.3: LMS public key is u32str(type) || u32str(otstype) || I || T[1]
+            // Section 8: type is the numeric identifier for an LMS specification.
+            // This RFC defines 5 SHA-256 based types, value from 5 to 9.
+            if (rawKey.length < 8) {
+                throw new NoSuchAlgorithmException("Cannot decode public key");
+            }
+            int num = ((rawKey[4] & 0xff) << 24) + ((rawKey[5] & 0xff) << 16)
+                    + ((rawKey[6] & 0xff) << 8) + (rawKey[7] & 0xff);
+            return switch (num) {
+                // RFC 8554 only supports SHA_256 hash algorithm
+                case 5, 6, 7, 8, 9 -> "SHA-256";
+                default -> throw new NoSuchAlgorithmException("Unknown LMS type: " + num);
+            };
+        } catch (IOException e) {
+            throw new NoSuchAlgorithmException("Cannot decode public key", e);
+        }
+    }
 }
 

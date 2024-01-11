@@ -86,7 +86,7 @@ public class T8024415 {
     }
 
 
-    // The true-part of of a conditional expression is surrounded by ? and :
+    // The true-part of a conditional expression is surrounded by ? and :
     // and can thus always be parsed unambiguously without surrounding
     // parentheses.
     public void testPrecedence() throws IOException {

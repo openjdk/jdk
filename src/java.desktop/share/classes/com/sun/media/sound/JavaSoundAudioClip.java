@@ -79,7 +79,7 @@ public final class JavaSoundAudioClip implements AudioClip, MetaEventListener, L
 
     /**
      * used for determining how many samples is the
-     * threshhold between playing as a Clip and streaming
+     * threshold between playing as a Clip and streaming
      * from the file.
      *
      * $$jb: 11.07.99: the engine has a limit of 1M

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -89,7 +89,7 @@ int MIDI_WinCreateLongBufferQueue(MidiDeviceHandle* handle, int count, int size,
     SysExQueue* sysex;
     int i;
     UBYTE* dataPtr;
-    int structSize = sizeof(SysExQueue) + ((count - 1) * sizeof(MIDIHDR));
+    int structSize = sizeof(SysExQueue) + ((count - 1) * sizeof(MidiHeaderInfo));
 
     sysex = (SysExQueue*) malloc(structSize);
     if (!sysex) return FALSE;
@@ -112,10 +112,11 @@ int MIDI_WinCreateLongBufferQueue(MidiDeviceHandle* handle, int count, int size,
     // set up headers
     dataPtr = preAllocatedMem;
     for (i=0; i<count; i++) {
-        sysex->header[i].lpData = dataPtr;
-        sysex->header[i].dwBufferLength = size;
+        sysex->headerInfo[i].header.lpData = dataPtr;
+        sysex->headerInfo[i].header.dwBufferLength = size;
+        sysex->headerInfo[i].bufferLength = size;
         // user data is the index of the buffer
-        sysex->header[i].dwUser = (DWORD) i;
+        sysex->headerInfo[i].header.dwUser = (DWORD) i;
         dataPtr += size;
     }
     return TRUE;

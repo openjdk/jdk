@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,8 @@ import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
+
 import sun.security.krb5.internal.util.KerberosString;
 /**
  * Implements the ASN.1 KRBError type.
@@ -488,39 +490,34 @@ public class KRBError implements java.io.Serializable {
             return true;
         }
 
-        if (!(obj instanceof KRBError)) {
+        if (!(obj instanceof KRBError other)) {
             return false;
         }
 
-        KRBError other = (KRBError)obj;
         return  pvno == other.pvno &&
                 msgType == other.msgType &&
-                isEqual(cTime, other.cTime) &&
-                isEqual(cuSec, other.cuSec) &&
-                isEqual(sTime, other.sTime) &&
-                isEqual(suSec, other.suSec) &&
                 errorCode == other.errorCode &&
-                isEqual(crealm, other.crealm) &&
-                isEqual(cname, other.cname) &&
-                isEqual(sname, other.sname) &&
-                isEqual(eText, other.eText) &&
-                java.util.Arrays.equals(eData, other.eData) &&
-                isEqual(eCksum, other.eCksum);
-    }
-
-    private static boolean isEqual(Object a, Object b) {
-        return (a == null)?(b == null):(a.equals(b));
+                Objects.equals(cTime, other.cTime) &&
+                Objects.equals(cuSec, other.cuSec) &&
+                Objects.equals(sTime, other.sTime) &&
+                Objects.equals(suSec, other.suSec) &&
+                Objects.equals(crealm, other.crealm) &&
+                Objects.equals(cname, other.cname) &&
+                Objects.equals(sname, other.sname) &&
+                Objects.equals(eText, other.eText) &&
+                Arrays.equals(eData, other.eData) &&
+                Objects.equals(eCksum, other.eCksum);
     }
 
     @Override public int hashCode() {
         int result = 17;
         result = 37 * result + pvno;
         result = 37 * result + msgType;
+        result = 37 * result + errorCode;
         if (cTime != null) result = 37 * result + cTime.hashCode();
         if (cuSec != null) result = 37 * result + cuSec.hashCode();
         if (sTime != null) result = 37 * result + sTime.hashCode();
         if (suSec != null) result = 37 * result + suSec.hashCode();
-        result = 37 * result + errorCode;
         if (crealm != null) result = 37 * result + crealm.hashCode();
         if (cname != null) result = 37 * result + cname.hashCode();
         if (sname != null) result = 37 * result + sname.hashCode();

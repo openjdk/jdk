@@ -35,13 +35,7 @@
 
 import java.util.Set;
 import javax.annotation.processing.*;
-import javax.lang.model.SourceVersion;
-import static javax.lang.model.SourceVersion.*;
 import javax.lang.model.element.*;
-import javax.lang.model.util.*;
-import static javax.lang.model.util.ElementFilter.*;
-import static javax.tools.Diagnostic.Kind.*;
-import static javax.tools.StandardLocation.*;
 
 import java.io.*;
 
@@ -76,11 +70,9 @@ public class TestNames extends JavacTestingAbstractProcessor {
                 failed = true;
 
 
-            try {
-                // Force another round with a new context
-                PrintWriter pw = new PrintWriter(filer.createSourceFile("Foo").openWriter());
+            // Force another round with a new context
+            try (PrintWriter pw = new PrintWriter(filer.createSourceFile("Foo").openWriter())) {
                 pw.println("public class Foo {}");
-                pw.close();
             } catch (IOException ioe) {
                 throw new RuntimeException();
             }

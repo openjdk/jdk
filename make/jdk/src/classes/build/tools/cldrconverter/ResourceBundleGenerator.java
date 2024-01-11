@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -174,7 +174,7 @@ class ResourceBundleGenerator implements BundleGenerator {
 
         try (PrintWriter out = new PrintWriter(file, encoding)) {
             // Output copyright headers
-            out.println(CopyrightHeaders.getOpenJDKCopyright(CLDRConverter.copyrightYear));
+            out.println(getOpenJDKCopyright());
             out.println(CopyrightHeaders.getUnicodeCopyright());
 
             if (useJava) {
@@ -294,7 +294,7 @@ class ResourceBundleGenerator implements BundleGenerator {
         CLDRConverter.info("Generating file " + file);
 
         try (PrintWriter out = new PrintWriter(file, "us-ascii")) {
-            out.printf(CopyrightHeaders.getOpenJDKCopyright(CLDRConverter.copyrightYear));
+            out.printf(getOpenJDKCopyright());
 
             out.printf("""
                 package sun.util.%s;
@@ -417,11 +417,11 @@ class ResourceBundleGenerator implements BundleGenerator {
     private static final Locale.Builder LOCALE_BUILDER = new Locale.Builder();
     private static boolean isBaseLocale(String localeID) {
         localeID = localeID.replaceAll("-", "_");
-        // ignore script here
         Locale locale = LOCALE_BUILDER
                             .clear()
                             .setLanguage(CLDRConverter.getLanguageCode(localeID))
                             .setRegion(CLDRConverter.getRegionCode(localeID))
+                            .setScript(CLDRConverter.getScriptCode(localeID))
                             .build();
         return CLDRConverter.BASE_LOCALES.contains(locale);
     }
@@ -447,5 +447,13 @@ class ResourceBundleGenerator implements BundleGenerator {
             }
         });
         return tags;
+    }
+
+    private static String getOpenJDKCopyright() {
+        if (CLDRConverter.jdkHeaderTemplate != null) {
+            return String.format(CLDRConverter.jdkHeaderTemplate, CLDRConverter.copyrightYear);
+        } else {
+            return CopyrightHeaders.getOpenJDKCopyright(CLDRConverter.copyrightYear);
+        }
     }
 }

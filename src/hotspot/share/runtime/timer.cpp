@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@
 
 double TimeHelper::counter_to_seconds(jlong counter) {
   double freq  = (double) os::elapsed_frequency();
-  return counter / freq;
+  return (double)counter / freq;
 }
 
 double TimeHelper::counter_to_millis(jlong counter) {
@@ -50,6 +50,11 @@ jlong TimeHelper::micros_to_counter(jlong micros) {
 
 void elapsedTimer::add(elapsedTimer t) {
   _counter += t._counter;
+}
+
+void elapsedTimer::add_nanoseconds(jlong ns) {
+  jlong freq = os::elapsed_frequency() / NANOUNITS;
+  _counter += ns * freq;
 }
 
 void elapsedTimer::start() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -42,7 +42,7 @@ void LIR_Assembler::generic_arraycopy(Register src, Register src_pos, Register l
   arraycopy_store_args(src, src_pos, length, dst, dst_pos);
 
   address copyfunc_addr = StubRoutines::generic_arraycopy();
-  assert(copyfunc_addr != NULL, "generic arraycopy stub required");
+  assert(copyfunc_addr != nullptr, "generic arraycopy stub required");
 
   // The arguments are in java calling convention so we shift them
   // to C convention
@@ -57,7 +57,7 @@ void LIR_Assembler::generic_arraycopy(Register src, Register src_pos, Register l
   __ mv(c_rarg4, j_rarg4);
 #ifndef PRODUCT
   if (PrintC1Statistics) {
-    __ add_memory_int32(ExternalAddress((address)&Runtime1::_generic_arraycopystub_cnt), 1);
+    __ incrementw(ExternalAddress((address)&Runtime1::_generic_arraycopystub_cnt));
   }
 #endif
   __ far_call(RuntimeAddress(copyfunc_addr));
@@ -80,7 +80,7 @@ void LIR_Assembler::generic_arraycopy(Register src, Register src_pos, Register l
 void LIR_Assembler::arraycopy_simple_check(Register src, Register src_pos, Register length,
                                            Register dst, Register dst_pos, Register tmp,
                                            CodeStub *stub, int flags) {
-  // test for NULL
+  // test for null
   if (flags & LIR_OpArrayCopy::src_null_check) {
     __ beqz(src, *stub->entry(), /* is_far */ true);
   }
@@ -92,18 +92,17 @@ void LIR_Assembler::arraycopy_simple_check(Register src, Register src_pos, Regis
   // of the arraycopy is an array type, check at runtime if the source or the destination is
   // an instance type.
   if (flags & LIR_OpArrayCopy::type_check) {
+    assert(Klass::_lh_neutral_value == 0, "or replace bgez instructions");
     if (!(flags & LIR_OpArrayCopy::LIR_OpArrayCopy::dst_objarray)) {
       __ load_klass(tmp, dst);
       __ lw(t0, Address(tmp, in_bytes(Klass::layout_helper_offset())));
-      __ li(t1, Klass::_lh_neutral_value);
-      __ bge(t0, t1, *stub->entry(), /* is_far */ true);
+      __ bgez(t0, *stub->entry(), /* is_far */ true);
     }
 
     if (!(flags & LIR_OpArrayCopy::LIR_OpArrayCopy::src_objarray)) {
       __ load_klass(tmp, src);
       __ lw(t0, Address(tmp, in_bytes(Klass::layout_helper_offset())));
-      __ li(t1, Klass::_lh_neutral_value);
-      __ bge(t0, t1, *stub->entry(), /* is_far */ true);
+      __ bgez(t0, *stub->entry(), /* is_far */ true);
     }
   }
 
@@ -150,7 +149,7 @@ void LIR_Assembler::arraycopy_checkcast(Register src, Register src_pos, Register
     Address klass_lh_addr(tmp, lh_offset);
     jint objArray_lh = Klass::array_layout_helper(T_OBJECT);
     __ lw(t0, klass_lh_addr);
-    __ mvw(t1, objArray_lh);
+    __ mv(t1, objArray_lh);
     __ bne(t0, t1, *stub->entry(), /* is_far */ true);
   }
 
@@ -164,7 +163,7 @@ void LIR_Assembler::arraycopy_checkcast(Register src, Register src_pos, Register
   if (PrintC1Statistics) {
     Label failed;
     __ bnez(x10, failed);
-    __ add_memory_int32(ExternalAddress((address)&Runtime1::_arraycopy_checkcast_cnt), 1);
+    __ incrementw(ExternalAddress((address)&Runtime1::_arraycopy_checkcast_cnt));
     __ bind(failed);
   }
 #endif
@@ -173,7 +172,7 @@ void LIR_Assembler::arraycopy_checkcast(Register src, Register src_pos, Register
 
 #ifndef PRODUCT
   if (PrintC1Statistics) {
-    __ add_memory_int32(ExternalAddress((address)&Runtime1::_arraycopy_checkcast_attempt_cnt), 1);
+    __ incrementw(ExternalAddress((address)&Runtime1::_arraycopy_checkcast_attempt_cnt));
   }
 #endif
   assert_different_registers(dst, dst_pos, length, src_pos, src, x10, t0);
@@ -221,7 +220,7 @@ void LIR_Assembler::arraycopy_type_check(Register src, Register src_pos, Registe
     PUSH(src, dst);
     __ load_klass(src, src);
     __ load_klass(dst, dst);
-    __ check_klass_subtype_fast_path(src, dst, tmp, &cont, &slow, NULL);
+    __ check_klass_subtype_fast_path(src, dst, tmp, &cont, &slow, nullptr);
 
     PUSH(src, dst);
     __ far_call(RuntimeAddress(Runtime1::entry_for(Runtime1::slow_subtype_check_id)));
@@ -232,7 +231,7 @@ void LIR_Assembler::arraycopy_type_check(Register src, Register src_pos, Registe
     POP(src, dst);
 
     address copyfunc_addr = StubRoutines::checkcast_arraycopy();
-    if (copyfunc_addr != NULL) { // use stub if available
+    if (copyfunc_addr != nullptr) { // use stub if available
       arraycopy_checkcast(src, src_pos, length, dst, dst_pos, tmp, stub, basic_type, copyfunc_addr, flags);
     }
 
@@ -243,7 +242,7 @@ void LIR_Assembler::arraycopy_type_check(Register src, Register src_pos, Registe
 }
 
 void LIR_Assembler::arraycopy_assert(Register src, Register dst, Register tmp, ciArrayKlass *default_type, int flags) {
-  assert(default_type != NULL, "NULL default_type!");
+  assert(default_type != nullptr, "null default_type!");
   BasicType basic_type = default_type->element_type()->basic_type();
 
   if (basic_type == T_ARRAY) { basic_type = T_OBJECT; }
@@ -300,16 +299,16 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
 
   CodeStub* stub = op->stub();
   int flags = op->flags();
-  BasicType basic_type = default_type != NULL ? default_type->element_type()->basic_type() : T_ILLEGAL;
+  BasicType basic_type = default_type != nullptr ? default_type->element_type()->basic_type() : T_ILLEGAL;
   if (is_reference_type(basic_type)) { basic_type = T_OBJECT; }
 
   // if we don't know anything, just go through the generic arraycopy
-  if (default_type == NULL) {
+  if (default_type == nullptr) {
     generic_arraycopy(src, src_pos, length, dst, dst_pos, stub);
     return;
   }
 
-  assert(default_type != NULL && default_type->is_array_klass() && default_type->is_loaded(),
+  assert(default_type != nullptr && default_type->is_array_klass() && default_type->is_loaded(),
          "must be true at this point");
 
   arraycopy_simple_check(src, src_pos, length, dst, dst_pos, tmp, stub, flags);
@@ -324,18 +323,18 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
 
 #ifndef PRODUCT
   if (PrintC1Statistics) {
-    __ add_memory_int32(ExternalAddress(Runtime1::arraycopy_count_address(basic_type)), 1);
+    __ incrementw(ExternalAddress(Runtime1::arraycopy_count_address(basic_type)));
   }
 #endif
   arraycopy_prepare_params(src, src_pos, length, dst, dst_pos, basic_type);
 
   bool disjoint = (flags & LIR_OpArrayCopy::overlapping) == 0;
   bool aligned = (flags & LIR_OpArrayCopy::unaligned) == 0;
-  const char *name = NULL;
+  const char *name = nullptr;
   address entry = StubRoutines::select_arraycopy_function(basic_type, aligned, disjoint, name, false);
 
   CodeBlob *cb = CodeCache::find_blob(entry);
-  if (cb != NULL) {
+  if (cb != nullptr) {
     __ far_call(RuntimeAddress(entry));
   } else {
     const int args_num = 3;

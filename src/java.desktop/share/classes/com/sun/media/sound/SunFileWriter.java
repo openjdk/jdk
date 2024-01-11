@@ -148,7 +148,7 @@ abstract class SunFileWriter extends AudioFileWriter {
 
     /**
      * InputStream wrapper class which prevent source stream from being closed.
-     * The class is usefull for use with SequenceInputStream to prevent
+     * The class is useful for use with SequenceInputStream to prevent
      * closing of the source input streams.
      */
     static final class NoCloseInputStream extends InputStream {

@@ -23,6 +23,8 @@
  * questions.
  */
 
+import jdk.internal.javac.ParticipatesInPreview;
+
 /**
  * Defines the <em>{@index jlink jlink tool}</em> tool for creating run-time
  * images, the <em>{@index jmod jmod tool}</em> tool for creating and manipulating
@@ -51,6 +53,7 @@
  * @moduleGraph
  * @since 9
  */
+@ParticipatesInPreview
 module jdk.jlink {
     requires jdk.internal.opt;
     requires jdk.jdeps;
@@ -80,6 +83,6 @@ module jdk.jlink {
         jdk.tools.jlink.internal.plugins.VendorBugURLPlugin,
         jdk.tools.jlink.internal.plugins.VendorVMBugURLPlugin,
         jdk.tools.jlink.internal.plugins.VendorVersionPlugin,
-        jdk.tools.jlink.internal.plugins.CDSPlugin;
-
+        jdk.tools.jlink.internal.plugins.CDSPlugin,
+        jdk.tools.jlink.internal.plugins.SaveJlinkArgfilesPlugin;
 }

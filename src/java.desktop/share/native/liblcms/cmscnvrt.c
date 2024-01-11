@@ -30,7 +30,7 @@
 //---------------------------------------------------------------------------------
 //
 //  Little Color Management System
-//  Copyright (c) 1998-2020 Marti Maria Saguer
+//  Copyright (c) 1998-2023 Marti Maria Saguer
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -399,11 +399,11 @@ cmsBool ComputeConversion(cmsUInt32Number i,
         cmsCIEXYZ WhitePointIn, WhitePointOut;
         cmsMAT3 ChromaticAdaptationMatrixIn, ChromaticAdaptationMatrixOut;
 
-        _cmsReadMediaWhitePoint(&WhitePointIn,  hProfiles[i-1]);
-        _cmsReadCHAD(&ChromaticAdaptationMatrixIn, hProfiles[i-1]);
+        if (!_cmsReadMediaWhitePoint(&WhitePointIn, hProfiles[i - 1])) return FALSE;
+        if (!_cmsReadCHAD(&ChromaticAdaptationMatrixIn, hProfiles[i - 1])) return FALSE;
 
-        _cmsReadMediaWhitePoint(&WhitePointOut,  hProfiles[i]);
-        _cmsReadCHAD(&ChromaticAdaptationMatrixOut, hProfiles[i]);
+        if (!_cmsReadMediaWhitePoint(&WhitePointOut, hProfiles[i])) return FALSE;
+        if (!_cmsReadCHAD(&ChromaticAdaptationMatrixOut, hProfiles[i])) return FALSE;
 
         if (!ComputeAbsoluteIntent(AdaptationState,
                                   &WhitePointIn,  &ChromaticAdaptationMatrixIn,
@@ -415,7 +415,7 @@ cmsBool ComputeConversion(cmsUInt32Number i,
 
         if (BPC) {
 
-            cmsCIEXYZ BlackPointIn, BlackPointOut;
+            cmsCIEXYZ BlackPointIn = { 0, 0, 0}, BlackPointOut = { 0, 0, 0 };
 
             cmsDetectBlackPoint(&BlackPointIn,  hProfiles[i-1], Intent, 0);
             cmsDetectDestinationBlackPoint(&BlackPointOut, hProfiles[i], Intent, 0);
@@ -659,7 +659,7 @@ cmsPipeline* DefaultICCintents(cmsContext       ContextID,
                   ColorSpaceOut == cmsSigRgbData ||
                   ColorSpaceOut == cmsSigCmykData) {
 
-                  cmsStage* clip = _cmsStageClipNegatives(Result->ContextID, cmsChannelsOf(ColorSpaceOut));
+                  cmsStage* clip = _cmsStageClipNegatives(Result->ContextID, cmsChannelsOfColorSpace(ColorSpaceOut));
                   if (clip == NULL) goto Error;
 
                   if (!cmsPipelineInsertStage(Result, cmsAT_END, clip))

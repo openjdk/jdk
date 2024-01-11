@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -103,8 +103,8 @@ vmTestbase_nsk_monitoring_quick = \
   vmTestbase/nsk/monitoring/ThreadInfo/getLockName/getlockname001/TestDescription.java \
   vmTestbase/nsk/monitoring/ThreadInfo/getLockOwnerName/getlockownername001/TestDescription.java \
   vmTestbase/nsk/monitoring/ThreadInfo/isInNative/isinnative001/TestDescription.java \
-  vmTestbase/nsk/monitoring/ThreadInfo/isSuspended/issuspended001/TestDescription.java \
-  vmTestbase/nsk/monitoring/ThreadInfo/isSuspended/issuspended002/TestDescription.java \
+  vmTestbase/nsk/monitoring/ThreadInfo/isSuspended/issuspended001.java \
+  vmTestbase/nsk/monitoring/ThreadInfo/isSuspended/issuspended002.java \
   vmTestbase/nsk/monitoring/ThreadMXBean/findMonitorDeadlockedThreads/find001/TestDescription.java \
   vmTestbase/nsk/monitoring/ThreadMXBean/findMonitorDeadlockedThreads/find002/TestDescription.java \
   vmTestbase/nsk/monitoring/ThreadMXBean/findMonitorDeadlockedThreads/find003/TestDescription.java \
@@ -126,11 +126,7 @@ vmTestbase_nsk_monitoring_quick = \
   vmTestbase/nsk/monitoring/ThreadMXBean/isThreadCpuTimeSupported/thcputime003/TestDescription.java \
   vmTestbase/nsk/monitoring/ThreadMXBean/isThreadCpuTimeSupported/thcputime004/TestDescription.java \
   vmTestbase/nsk/monitoring/ThreadMXBean/isThreadCpuTimeSupported/thcputime005/TestDescription.java \
-  vmTestbase/nsk/monitoring/ThreadMXBean/resetPeakThreadCount/reset001/TestDescription.java \
-  vmTestbase/nsk/monitoring/ThreadMXBean/resetPeakThreadCount/reset002/TestDescription.java \
-  vmTestbase/nsk/monitoring/ThreadMXBean/resetPeakThreadCount/reset003/TestDescription.java \
-  vmTestbase/nsk/monitoring/ThreadMXBean/resetPeakThreadCount/reset004/TestDescription.java \
-  vmTestbase/nsk/monitoring/ThreadMXBean/resetPeakThreadCount/reset005/TestDescription.java \
+  vmTestbase/nsk/monitoring/ThreadMXBean/resetPeakThreadCount/reset001.java \
   vmTestbase/nsk/monitoring/LoggingMXBean/getLoggerLevel/getloggerlevel001/TestDescription.java \
   vmTestbase/nsk/monitoring/LoggingMXBean/getLoggerLevel/getloggerlevel002/TestDescription.java \
   vmTestbase/nsk/monitoring/LoggingMXBean/getLoggerLevel/getloggerlevel003/TestDescription.java \
@@ -866,7 +862,6 @@ vmTestbase_nsk_jvmti_quick = \
   vmTestbase/nsk/jvmti/Agent_OnLoad/agentonload002/TestDescription.java \
   vmTestbase/nsk/jvmti/Agent_OnLoad/agentonload003/TestDriver.java \
   vmTestbase/nsk/jvmti/Agent_OnUnload/agentonunload001/TestDriver.java \
-  vmTestbase/nsk/jvmti/Breakpoint/breakpoint001/TestDescription.java \
   vmTestbase/nsk/jvmti/ClassFileLoadHook/classfloadhk001/TestDescription.java \
   vmTestbase/nsk/jvmti/ClassFileLoadHook/classfloadhk002/TestDescription.java \
   vmTestbase/nsk/jvmti/ClassFileLoadHook/classfloadhk003/TestDescription.java \
@@ -876,8 +871,6 @@ vmTestbase_nsk_jvmti_quick = \
   vmTestbase/nsk/jvmti/ClassFileLoadHook/classfloadhk007/TestDescription.java \
   vmTestbase/nsk/jvmti/ClassFileLoadHook/classfloadhk008/TestDescription.java \
   vmTestbase/nsk/jvmti/ClassFileLoadHook/classfloadhk009/TestDescription.java \
-  vmTestbase/nsk/jvmti/ClassLoad/classload001/TestDescription.java \
-  vmTestbase/nsk/jvmti/ClassPrepare/classprep001/TestDescription.java \
   vmTestbase/nsk/jvmti/ClearBreakpoint/clrbrk001/TestDescription.java \
   vmTestbase/nsk/jvmti/ClearBreakpoint/clrbrk002/TestDescription.java \
   vmTestbase/nsk/jvmti/ClearBreakpoint/clrbrk005/TestDescription.java \
@@ -895,21 +888,9 @@ vmTestbase_nsk_jvmti_quick = \
   vmTestbase/nsk/jvmti/DestroyRawMonitor/drrawmon003/TestDescription.java \
   vmTestbase/nsk/jvmti/DestroyRawMonitor/drrawmon004/TestDescription.java \
   vmTestbase/nsk/jvmti/DynamicCodeGenerated/dyncodgen001/TestDescription.java \
-  vmTestbase/nsk/jvmti/Exception/exception001/TestDescription.java \
-  vmTestbase/nsk/jvmti/ExceptionCatch/excatch001/TestDescription.java \
-  vmTestbase/nsk/jvmti/FieldAccess/fieldacc001/TestDescription.java \
-  vmTestbase/nsk/jvmti/FieldAccess/fieldacc002/TestDescription.java \
-  vmTestbase/nsk/jvmti/FieldAccess/fieldacc003/TestDescription.java \
-  vmTestbase/nsk/jvmti/FieldAccess/fieldacc004/TestDescription.java \
-  vmTestbase/nsk/jvmti/FieldModification/fieldmod001/TestDescription.java \
-  vmTestbase/nsk/jvmti/FieldModification/fieldmod002/TestDescription.java \
   vmTestbase/nsk/jvmti/ForceGarbageCollection/forcegc001/TestDescription.java \
   vmTestbase/nsk/jvmti/ForceGarbageCollection/forcegc002/TestDescription.java \
-  vmTestbase/nsk/jvmti/FramePop/framepop001/TestDescription.java \
-  vmTestbase/nsk/jvmti/FramePop/framepop002/TestDescription.java \
   vmTestbase/nsk/jvmti/GenerateEvents/genevents001/TestDescription.java \
-  vmTestbase/nsk/jvmti/GetAllThreads/allthr001/TestDescription.java \
-  vmTestbase/nsk/jvmti/GetAllThreads/allthr002/TestDescription.java \
   vmTestbase/nsk/jvmti/GetAvailableProcessors/getavailproc001/TestDescription.java \
   vmTestbase/nsk/jvmti/GetArgumentsSize/argsize001/TestDescription.java \
   vmTestbase/nsk/jvmti/GetArgumentsSize/argsize002/TestDescription.java \
@@ -939,9 +920,6 @@ vmTestbase_nsk_jvmti_quick = \
   vmTestbase/nsk/jvmti/GetClassStatus/getclstat005/TestDescription.java \
   vmTestbase/nsk/jvmti/GetClassStatus/getclstat006/TestDescription.java \
   vmTestbase/nsk/jvmti/GetClassStatus/getclstat007/TestDescription.java \
-  vmTestbase/nsk/jvmti/GetCurrentContendedMonitor/contmon001/TestDescription.java \
-  vmTestbase/nsk/jvmti/GetCurrentContendedMonitor/contmon002/TestDescription.java \
-  vmTestbase/nsk/jvmti/GetCurrentContendedMonitor/contmon003/TestDescription.java \
   vmTestbase/nsk/jvmti/GetCurrentThreadCpuTime/curthrcputime001/TestDescription.java \
   vmTestbase/nsk/jvmti/GetCurrentThreadCpuTimerInfo/curthrtimerinfo001/TestDescription.java \
   vmTestbase/nsk/jvmti/GetEnvironmentLocalStorage/getenvstor001/TestDescription.java \
@@ -957,11 +935,6 @@ vmTestbase_nsk_jvmti_quick = \
   vmTestbase/nsk/jvmti/GetFieldName/getfldnm003/TestDescription.java \
   vmTestbase/nsk/jvmti/GetFieldName/getfldnm004/TestDescription.java \
   vmTestbase/nsk/jvmti/GetFieldName/getfldnm005/TestDescription.java \
-  vmTestbase/nsk/jvmti/GetFrameCount/framecnt001/TestDescription.java \
-  vmTestbase/nsk/jvmti/GetFrameCount/framecnt002/TestDescription.java \
-  vmTestbase/nsk/jvmti/GetFrameCount/framecnt003/TestDescription.java \
-  vmTestbase/nsk/jvmti/GetFrameLocation/frameloc002/TestDescription.java \
-  vmTestbase/nsk/jvmti/GetFrameLocation/frameloc003/TestDescription.java \
   vmTestbase/nsk/jvmti/GetImplementedInterfaces/getintrf005/TestDescription.java \
   vmTestbase/nsk/jvmti/GetImplementedInterfaces/getintrf006/TestDescription.java \
   vmTestbase/nsk/jvmti/GetImplementedInterfaces/getintrf007/TestDescription.java \
@@ -1017,15 +990,6 @@ vmTestbase_nsk_jvmti_quick = \
   vmTestbase/nsk/jvmti/GetSystemProperties/getsysprops002/TestDescription.java \
   vmTestbase/nsk/jvmti/GetSystemProperty/getsysprop001/TestDescription.java \
   vmTestbase/nsk/jvmti/GetSystemProperty/getsysprop002/TestDescription.java \
-  vmTestbase/nsk/jvmti/GetStackTrace/getstacktr001/TestDescription.java \
-  vmTestbase/nsk/jvmti/GetStackTrace/getstacktr002/TestDescription.java \
-  vmTestbase/nsk/jvmti/GetStackTrace/getstacktr003/TestDescription.java \
-  vmTestbase/nsk/jvmti/GetStackTrace/getstacktr004/TestDescription.java \
-  vmTestbase/nsk/jvmti/GetStackTrace/getstacktr005/TestDescription.java \
-  vmTestbase/nsk/jvmti/GetStackTrace/getstacktr006/TestDescription.java \
-  vmTestbase/nsk/jvmti/GetStackTrace/getstacktr007/TestDescription.java \
-  vmTestbase/nsk/jvmti/GetStackTrace/getstacktr008/TestDescription.java \
-  vmTestbase/nsk/jvmti/GetStackTrace/getstacktr009/TestDescription.java \
   vmTestbase/nsk/jvmti/GetTag/gettag001/TestDescription.java \
   vmTestbase/nsk/jvmti/GetThreadCpuTime/thrcputime001/TestDescription.java \
   vmTestbase/nsk/jvmti/GetThreadCpuTime/thrcputime002/TestDescription.java \
@@ -1033,14 +997,7 @@ vmTestbase_nsk_jvmti_quick = \
   vmTestbase/nsk/jvmti/GetThreadGroupChildren/getthrdgrpchld001/TestDescription.java \
   vmTestbase/nsk/jvmti/GetThreadGroupInfo/thrgrpinfo001/TestDescription.java \
   vmTestbase/nsk/jvmti/GetThreadGroupInfo/thrgrpinfo002/TestDescription.java \
-  vmTestbase/nsk/jvmti/GetThreadInfo/thrinfo001/TestDescription.java \
-  vmTestbase/nsk/jvmti/GetThreadInfo/thrinfo002/TestDescription.java \
   vmTestbase/nsk/jvmti/GetThreadLocalStorage/getthrdstor001/TestDescription.java \
-  vmTestbase/nsk/jvmti/GetThreadState/thrstat001/TestDescription.java \
-  vmTestbase/nsk/jvmti/GetThreadState/thrstat002/TestDescription.java \
-  vmTestbase/nsk/jvmti/GetThreadState/thrstat003/TestDescription.java \
-  vmTestbase/nsk/jvmti/GetThreadState/thrstat004/TestDescription.java \
-  vmTestbase/nsk/jvmti/GetThreadState/thrstat005/TestDescription.java \
   vmTestbase/nsk/jvmti/GetTime/gettime001/TestDescription.java \
   vmTestbase/nsk/jvmti/GetTimerInfo/timerinfo001/TestDescription.java \
   vmTestbase/nsk/jvmti/GetTopThreadGroups/topthrgrp001/TestDescription.java \
@@ -1092,17 +1049,6 @@ vmTestbase_nsk_jvmti_quick = \
   vmTestbase/nsk/jvmti/IterateThroughHeap/filter-class-tagged/TestDescription.java \
   vmTestbase/nsk/jvmti/IterateThroughHeap/filter-class-untagged/TestDescription.java \
   vmTestbase/nsk/jvmti/IterateThroughHeap/abort/Abort.java \
-  vmTestbase/nsk/jvmti/MethodEntry/mentry001/TestDescription.java \
-  vmTestbase/nsk/jvmti/MethodEntry/mentry002/TestDescription.java \
-  vmTestbase/nsk/jvmti/MethodExit/mexit002/TestDescription.java \
-  vmTestbase/nsk/jvmti/MonitorContendedEnter/mcontenter001/TestDescription.java \
-  vmTestbase/nsk/jvmti/MonitorContendedEntered/mcontentered001/TestDescription.java \
-  vmTestbase/nsk/jvmti/MonitorWait/monitorwait001/TestDescription.java \
-  vmTestbase/nsk/jvmti/MonitorWaited/monitorwaited001/TestDescription.java \
-  vmTestbase/nsk/jvmti/NativeMethodBind/nativemethbind001/TestDescription.java \
-  vmTestbase/nsk/jvmti/NativeMethodBind/nativemethbind002/TestDescription.java \
-  vmTestbase/nsk/jvmti/NativeMethodBind/nativemethbind003/TestDescription.java \
-  vmTestbase/nsk/jvmti/NativeMethodBind/nativemethbind004/TestDescription.java \
   vmTestbase/nsk/jvmti/NotifyFramePop/nframepop001/TestDescription.java \
   vmTestbase/nsk/jvmti/NotifyFramePop/nframepop002/TestDescription.java \
   vmTestbase/nsk/jvmti/NotifyFramePop/nframepop003/TestDescription.java \
@@ -1217,20 +1163,12 @@ vmTestbase_nsk_jvmti_quick = \
   vmTestbase/nsk/jvmti/SetThreadLocalStorage/setthrdstor003/TestDescription.java \
   vmTestbase/nsk/jvmti/SetVerboseFlag/setvrbflag001/TestDescription.java \
   vmTestbase/nsk/jvmti/SetVerboseFlag/setvrbflag002/TestDescription.java \
-  vmTestbase/nsk/jvmti/SingleStep/singlestep001/TestDescription.java \
-  vmTestbase/nsk/jvmti/SingleStep/singlestep003/TestDescription.java \
   vmTestbase/nsk/jvmti/SuspendThread/suspendthrd001/TestDescription.java \
   vmTestbase/nsk/jvmti/SuspendThreadList/suspendthrdlst001/TestDescription.java \
   vmTestbase/nsk/jvmti/StopThread/stopthrd006/TestDescription.java \
   vmTestbase/nsk/jvmti/StopThread/stopthrd007/TestDescription.java \
-  vmTestbase/nsk/jvmti/ThreadEnd/threadend001/TestDescription.java \
-  vmTestbase/nsk/jvmti/ThreadEnd/threadend002/TestDescription.java \
-  vmTestbase/nsk/jvmti/ThreadStart/threadstart001/TestDescription.java \
-  vmTestbase/nsk/jvmti/ThreadStart/threadstart002/TestDescription.java \
-  vmTestbase/nsk/jvmti/ThreadStart/threadstart003/TestDescription.java \
   vmTestbase/nsk/jvmti/VMDeath/vmdeath001/TestDescription.java \
   vmTestbase/nsk/jvmti/VMInit/vminit001/TestDescription.java \
-  vmTestbase/nsk/jvmti/VMObjectAlloc/vmobjalloc001/TestDescription.java \
   vmTestbase/nsk/jvmti/scenarios/allocation/AP01/ap01t001/TestDescription.java \
   vmTestbase/nsk/jvmti/scenarios/allocation/AP02/ap02t001/TestDescription.java \
   vmTestbase/nsk/jvmti/scenarios/allocation/AP03/ap03t001/TestDescription.java \
@@ -1546,20 +1484,14 @@ vmTestbase_vm_gc_quick = \
   vmTestbase/vm/gc/containers/LinkedBlockingDeque_Arrays/TestDescription.java \
   vmTestbase/vm/gc/containers/LinkedHashMap_Arrays/TestDescription.java \
   vmTestbase/vm/gc/containers/Combination05/TestDescription.java \
-  vmTestbase/gc/ArrayJuggle/Juggle01 \
-  vmTestbase/gc/ArrayJuggle/Juggle14 \
-  vmTestbase/gc/ArrayJuggle/Juggle22 \
-  vmTestbase/gc/ArrayJuggle/Juggle29 \
-  vmTestbase/gc/ArrayJuggle/Juggle34 \
+  vmTestbase/gc/ArrayJuggle/Juggle3Quick.java \
   vmTestbase/gc/gctests/LargeObjects/large001/large001.java \
   vmTestbase/gc/gctests/LoadUnloadGC2/LoadUnloadGC2.java \
   vmTestbase/gc/gctests/StringGC/StringGC.java \
   vmTestbase/gc/gctests/StringInternGC/StringInternGC.java \
   vmTestbase/gc/gctests/ReferencesGC/ReferencesGC.java \
   vmTestbase/gc/lock/jni/jnilock001/TestDescription.java \
-  vmTestbase/gc/lock/jniref/jnireflock04/TestDescription.java \
-  vmTestbase/gc/lock/jvmti/alloc/jvmtialloclock02/TestDescription.java \
-  vmTestbase/gc/lock/malloc/malloclock03/TestDescription.java
+  vmTestbase/gc/lock/jniref/jnireflock01/TestDescription.java
 
 vmTestbase_vm_compiler_quick = \
   vmTestbase/vm/compiler/jbe/constprop/constprop01/constprop01.java \

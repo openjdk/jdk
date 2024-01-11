@@ -126,11 +126,6 @@ public class DummyDebugger extends DebuggerBase {
     throw new DebuggerException("Unimplemented");
   }
 
-  public void writeBytesToProcess(long a, long b, byte[] buf)
-                               throws DebuggerException {
-    throw new DebuggerException("Unimplemented");
-  }
-
   //----------------------------------------------------------------------
   // Package-internal routines
   //

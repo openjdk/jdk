@@ -62,7 +62,7 @@ public class Paint9Painter extends CachedPainter {
          * regions with the top, left, bottom and right areas tiled.
          */
         PAINT9_TILE
-    };
+    }
 
     private static final Insets EMPTY_INSETS = new Insets(0, 0, 0, 0);
 
@@ -100,7 +100,7 @@ public class Paint9Painter extends CachedPainter {
     }
 
     /**
-     * Paints using the algorightm specified by <code>paintType</code>.
+     * Paints using the algorithm specified by <code>paintType</code>.
      * NOTE that this just invokes super.paint(...) with the same
      * argument ordering as this method.
      *

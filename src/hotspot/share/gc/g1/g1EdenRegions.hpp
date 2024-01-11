@@ -32,7 +32,7 @@
 
 class G1EdenRegions {
 private:
-  int    _length;
+  uint    _length;
   // Sum of used bytes from all retired eden regions.
   // I.e. updated when mutator regions are retired.
   volatile size_t _used_bytes;
@@ -41,7 +41,7 @@ private:
 public:
   G1EdenRegions() : _length(0), _used_bytes(0), _regions_on_node() { }
 
-  virtual uint add(HeapRegion* hr) {
+  uint add(HeapRegion* hr) {
     assert(!hr->is_eden(), "should not already be set");
     _length++;
     return _regions_on_node.add(hr);

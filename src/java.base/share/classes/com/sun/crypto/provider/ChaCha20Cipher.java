@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 
 package com.sun.crypto.provider;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
@@ -39,6 +38,9 @@ import javax.crypto.*;
 import javax.crypto.spec.ChaCha20ParameterSpec;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
+
+import jdk.internal.vm.annotation.ForceInline;
+import jdk.internal.vm.annotation.IntrinsicCandidate;
 import sun.security.util.DerValue;
 
 /**
@@ -58,9 +60,9 @@ abstract class ChaCha20Cipher extends CipherSpi {
     private static final int STATE_CONST_3 = 0x6b206574;
 
     // The keystream block size in bytes and as integers
-    private static final int KEYSTREAM_SIZE = 64;
-    private static final int KS_SIZE_INTS = KEYSTREAM_SIZE / Integer.BYTES;
-    private static final int CIPHERBUF_BASE = 1024;
+    private static final int KS_MAX_LEN = 1024;
+    private static final int KS_BLK_SIZE = 64;
+    private static final int KS_SIZE_INTS = KS_BLK_SIZE / Integer.BYTES;
 
     // The initialization state of the cipher
     private boolean initialized;
@@ -83,16 +85,21 @@ abstract class ChaCha20Cipher extends CipherSpi {
     // The counter
     private static final long MAX_UINT32 = 0x00000000FFFFFFFFL;
     private long finalCounterValue;
+    private long initCounterValue;
     private long counter;
 
-    // Two arrays, both implemented as 16-element integer arrays:
-    // The base state, created at initialization time, and a working
-    // state which is a clone of the start state, and is then modified
-    // with the counter and the ChaCha20 block function.
+    // The base state is created at initialization time as a 16-int array
+    // and then is copied into either local variables for computations (Java) or
+    // into SIMD registers (intrinsics).
     private final int[] startState = new int[KS_SIZE_INTS];
-    private final byte[] keyStream = new byte[KEYSTREAM_SIZE];
 
-    // The offset into the current keystream
+    // The output keystream array is sized to hold keystream output from the
+    // implChaCha20Block method.  This can range from a single block at a time
+    // (Java software) up to 16 blocks on x86_64 with AVX512 support.
+    private final byte[] keyStream = new byte[KS_MAX_LEN];
+
+    // The keystream buffer limit and offset
+    private int keyStrLimit;
     private int keyStrOffset;
 
     // AEAD-related fields and constants
@@ -328,7 +335,9 @@ abstract class ChaCha20Cipher extends CipherSpi {
                 }
                 ChaCha20ParameterSpec chaParams = (ChaCha20ParameterSpec)params;
                 newNonce = chaParams.getNonce();
-                counter = ((long)chaParams.getCounter()) & 0x00000000FFFFFFFFL;
+                initCounterValue = ((long)chaParams.getCounter()) &
+                        0x00000000FFFFFFFFL;
+                counter = initCounterValue;
                 break;
             case MODE_AEAD:
                 if (!(params instanceof IvParameterSpec)) {
@@ -537,9 +546,12 @@ abstract class ChaCha20Cipher extends CipherSpi {
         }
 
         // Make sure that the provided key and nonce are unique before
-        // assigning them to the object.
+        // assigning them to the object.  Key and nonce uniqueness
+        // protection is for encryption operations only.
         byte[] newKeyBytes = getEncodedKey(key);
-        checkKeyAndNonce(newKeyBytes, newNonce);
+        if (opmode == Cipher.ENCRYPT_MODE) {
+            checkKeyAndNonce(newKeyBytes, newNonce);
+        }
         if (this.keyBytes != null) {
             Arrays.fill(this.keyBytes, (byte)0);
         }
@@ -561,12 +573,14 @@ abstract class ChaCha20Cipher extends CipherSpi {
             }
         }
 
-        // We can also get one block's worth of keystream created
+        // We can also generate the first block (or blocks if intrinsics
+        // are capable of doing multiple blocks at a time) of keystream.
         finalCounterValue = counter + MAX_UINT32;
-        generateKeystream();
+        this.keyStrLimit = chaCha20Block(startState, counter, keyStream);
+        this.keyStrOffset = 0;
+        this.counter += (keyStrLimit / KS_BLK_SIZE);
         direction = opmode;
         aadDone = false;
-        this.keyStrOffset = 0;
         initialized = true;
     }
 
@@ -634,7 +648,7 @@ abstract class ChaCha20Cipher extends CipherSpi {
         try {
             engine.doUpdate(in, inOfs, inLen, out, 0);
         } catch (ShortBufferException | KeyException exc) {
-            throw new RuntimeException(exc);
+            throw new ProviderException(exc);
         }
 
         return out;
@@ -665,9 +679,33 @@ abstract class ChaCha20Cipher extends CipherSpi {
         try {
             bytesUpdated = engine.doUpdate(in, inOfs, inLen, out, outOfs);
         } catch (KeyException ke) {
-            throw new RuntimeException(ke);
+            throw new ProviderException(ke);
         }
         return bytesUpdated;
+    }
+
+    /**
+     * Update the currently running operation with additional data
+     *
+     * @param input the plaintext or ciphertext ByteBuffer
+     * @param output ByteBuffer that will hold the resulting data.  This
+     *      must be large enough to hold the resulting data.
+     *
+     * @return the length in bytes of the data written into the {@code out}
+     *      buffer.
+     *
+     * @throws ShortBufferException if the buffer {@code out} does not have
+     *      enough space to hold the resulting data.
+     */
+    @Override
+    protected int engineUpdate(ByteBuffer input, ByteBuffer output)
+        throws ShortBufferException {
+        try {
+            return bufferCrypt(input, output, true);
+        } catch (AEADBadTagException e) {
+            // exception is never thrown by update ops
+            throw new AssertionError(e);
+        }
     }
 
     /**
@@ -694,9 +732,8 @@ abstract class ChaCha20Cipher extends CipherSpi {
         } catch (ShortBufferException | KeyException exc) {
             throw new RuntimeException(exc);
         } finally {
-            // Regardless of what happens, the cipher cannot be used for
-            // further processing until it has been freshly initialized.
-            initialized = false;
+            // Reset the cipher's state to post-init values.
+            resetStartState();
         }
         return output;
     }
@@ -732,12 +769,123 @@ abstract class ChaCha20Cipher extends CipherSpi {
         } catch (KeyException ke) {
             throw new RuntimeException(ke);
         } finally {
-            // Regardless of what happens, the cipher cannot be used for
-            // further processing until it has been freshly initialized.
-            initialized = false;
+            // Reset the cipher's state to post-init values.
+            resetStartState();
         }
         return bytesUpdated;
     }
+
+    /**
+     * Complete the currently running operation using any final
+     * data provided by the caller.
+     *
+     * @param input the plaintext or ciphertext input bytebuffer.
+     * @param output ByteBuffer that will hold the resulting data.  This
+     *      must be large enough to hold the resulting data.
+     *
+     * @return the resulting plaintext or ciphertext bytes.
+     *
+     * @throws AEADBadTagException if, during decryption, the provided tag
+     *      does not match the calculated tag.
+     */
+    @Override
+    protected int engineDoFinal(ByteBuffer input, ByteBuffer output)
+        throws ShortBufferException, AEADBadTagException {
+        return bufferCrypt(input, output, false);
+    }
+
+    /*
+     * Optimized version of bufferCrypt from CipherSpi.java.  Direct
+     * ByteBuffers send to the engine code.
+     */
+    private int bufferCrypt(ByteBuffer input, ByteBuffer output,
+        boolean isUpdate) throws ShortBufferException, AEADBadTagException {
+        if ((input == null) || (output == null)) {
+            throw new NullPointerException
+                ("Input and output buffers must not be null");
+        }
+        int inPos = input.position();
+        int inLimit = input.limit();
+        int inLen = inLimit - inPos;
+        if (isUpdate && (inLen == 0)) {
+            return 0;
+        }
+        int outLenNeeded = engine.getOutputSize(inLen, !isUpdate);
+
+        if (output.remaining() < outLenNeeded) {
+            throw new ShortBufferException("Need at least " + outLenNeeded
+                + " bytes of space in output buffer");
+        }
+
+        int total = 0;
+
+        // Check if input bytebuffer is heap-backed
+        if (input.hasArray()) {
+            byte[] inArray = input.array();
+            int inOfs = input.arrayOffset() + inPos;
+
+            byte[] outArray;
+            // Check if output bytebuffer is heap-backed
+            if (output.hasArray()) {
+                outArray = output.array();
+                int outPos = output.position();
+                int outOfs = output.arrayOffset() + outPos;
+
+                // check array address and offsets and use temp output buffer
+                // if output offset is larger than input offset and
+                // falls within the range of input data
+                boolean useTempOut = false;
+                if (inArray == outArray &&
+                    ((inOfs < outOfs) && (outOfs < inOfs + inLen))) {
+                    useTempOut = true;
+                    outArray = new byte[outLenNeeded];
+                    outOfs = 0;
+                }
+                try {
+                    if (isUpdate) {
+                        total = engine.doUpdate(inArray, inOfs, inLen, outArray,
+                            outOfs);
+                    } else {
+                        total = engine.doFinal(inArray, inOfs, inLen, outArray,
+                            outOfs);
+                    }
+                } catch (KeyException e) {
+                    throw new ProviderException(e);
+                }
+                if (useTempOut) {
+                    output.put(outArray, outOfs, total);
+                } else {
+                    // adjust output position manually
+                    output.position(outPos + total);
+                }
+            } else { // if output is direct
+                if (isUpdate) {
+                    outArray = engineUpdate(inArray, inOfs, inLen);
+                } else {
+                    outArray = engineDoFinal(inArray, inOfs, inLen);
+                }
+                if (outArray != null && outArray.length != 0) {
+                    output.put(outArray);
+                    total = outArray.length;
+                }
+            }
+            // adjust input position manually
+            input.position(inLimit);
+        } else {  // Bytebuffers are both direct
+            try {
+                if (isUpdate) {
+                    return engine.doUpdate(input, output);
+                }
+                return engine.doFinal(input, output);
+            } catch (KeyException e) {
+                throw new ProviderException(e);
+            }
+        }
+
+        return total;
+    }
+
+
 
     /**
      * Wrap a {@code Key} using this Cipher's current encryption parameters.
@@ -831,31 +979,34 @@ abstract class ChaCha20Cipher extends CipherSpi {
         }
     }
 
-    /**
-     * Using the current state and counter create the next set of keystream
-     * bytes.  This method will generate the next 512 bits of keystream and
-     * return it in the {@code keyStream} parameter.  Following the
-     * block function the counter will be incremented.
-     */
-    private void generateKeystream() {
-        chaCha20Block(startState, counter, keyStream);
-        counter++;
+    @ForceInline
+    private static int chaCha20Block(int[] initState, long counter,
+            byte[] result) {
+        if (initState.length != KS_SIZE_INTS || result.length != KS_MAX_LEN) {
+            throw new IllegalArgumentException(
+                    "Illegal state or keystream buffer length");
+        }
+
+        // Set the counter value before sending into the underlying
+        // private block method
+        initState[12] = (int)counter;
+        return implChaCha20Block(initState, result);
     }
 
     /**
      * Perform a full 20-round ChaCha20 transform on the initial state.
      *
-     * @param initState the starting state, not including the counter
-     *      value.
-     * @param counter the counter value to apply
+     * @param initState the starting state using the current counter value.
      * @param result  the array that will hold the result of the ChaCha20
      *      block function.
      *
-     * @note it is the caller's responsibility to ensure that the workState
-     * is sized the same as the initState, no checking is performed internally.
+     * @return the number of keystream bytes generated.  In a pure Java method
+     *      this will always be 64 bytes, but intrinsics that make use of
+     *      AVX2 or AVX512 registers may generate multiple blocks of keystream
+     *      in a single call and therefore may be a larger multiple of 64.
      */
-    private static void chaCha20Block(int[] initState, long counter,
-                                      byte[] result) {
+    @IntrinsicCandidate
+    private static int implChaCha20Block(int[] initState, byte[] result) {
         // Create an initial state and clone a working copy
         int ws00 = STATE_CONST_0;
         int ws01 = STATE_CONST_1;
@@ -869,7 +1020,7 @@ abstract class ChaCha20Cipher extends CipherSpi {
         int ws09 = initState[9];
         int ws10 = initState[10];
         int ws11 = initState[11];
-        int ws12 = (int)counter;
+        int ws12 = initState[12];
         int ws13 = initState[13];
         int ws14 = initState[14];
         int ws15 = initState[15];
@@ -986,11 +1137,12 @@ abstract class ChaCha20Cipher extends CipherSpi {
         asIntLittleEndian.set(result, 36, ws09 + initState[9]);
         asIntLittleEndian.set(result, 40, ws10 + initState[10]);
         asIntLittleEndian.set(result, 44, ws11 + initState[11]);
-        // Add the counter back into workState[12]
-        asIntLittleEndian.set(result, 48, ws12 + (int)counter);
+        asIntLittleEndian.set(result, 48, ws12 + initState[12]);
         asIntLittleEndian.set(result, 52, ws13 + initState[13]);
         asIntLittleEndian.set(result, 56, ws14 + initState[14]);
         asIntLittleEndian.set(result, 60, ws15 + initState[15]);
+
+        return KS_BLK_SIZE;
     }
 
     /**
@@ -1009,12 +1161,21 @@ abstract class ChaCha20Cipher extends CipherSpi {
         int remainingData = inLen;
 
         while (remainingData > 0) {
-            int ksRemain = keyStream.length - keyStrOffset;
+            int ksRemain = keyStrLimit - keyStrOffset;
             if (ksRemain <= 0) {
                 if (counter <= finalCounterValue) {
-                    generateKeystream();
+                    // Intrinsics can do multiple blocks at once.  This means
+                    // it may overrun the counter. In order to prevent key
+                    // stream reuse, we adjust the key stream limit to only the
+                    // key stream length that is calculated from unique
+                    // counter values.
+                    keyStrLimit = chaCha20Block(startState, counter, keyStream);
+                    counter += (keyStrLimit / KS_BLK_SIZE);
+                    if (counter > finalCounterValue) {
+                        keyStrLimit -= (int)(counter - finalCounterValue) * 64;
+                    }
                     keyStrOffset = 0;
-                    ksRemain = keyStream.length;
+                    ksRemain = keyStrLimit;
                 } else {
                     throw new KeyException("Counter exhausted.  " +
                             "Reinitialize with new key and/or nonce");
@@ -1060,9 +1221,10 @@ abstract class ChaCha20Cipher extends CipherSpi {
     private void initAuthenticator() throws InvalidKeyException {
         authenticator = new Poly1305();
 
-        // Derive the Poly1305 key from the starting state
-        byte[] serializedKey = new byte[KEYSTREAM_SIZE];
-        chaCha20Block(startState, 0, serializedKey);
+        // Derive the Poly1305 key from the starting state with the counter
+        // value forced to zero.
+        byte[] serializedKey = new byte[KS_MAX_LEN];
+        chaCha20Block(startState, 0L, serializedKey);
 
         authenticator.engineInit(new SecretKeySpec(serializedKey, 0, 32,
                 authAlgName), null);
@@ -1147,6 +1309,23 @@ abstract class ChaCha20Cipher extends CipherSpi {
     }
 
     /**
+     * reset the Cipher's state to the values it had after
+     * the initial init() call.
+     *
+     * Note: The cipher's internal "initialized" field is set differently
+     * for ENCRYPT_MODE and DECRYPT_MODE in order to allow DECRYPT_MODE
+     * ciphers to reuse the key/nonce/counter values.  This kind of reuse
+     * is disallowed in ENCRYPT_MODE.
+     */
+    private void resetStartState() {
+        keyStrLimit = 0;
+        keyStrOffset = 0;
+        counter = initCounterValue;
+        aadDone = false;
+        initialized = (direction == Cipher.DECRYPT_MODE);
+    }
+
+    /**
      * Interface for the underlying processing engines for ChaCha20
      */
     interface ChaChaEngine {
@@ -1198,6 +1377,11 @@ abstract class ChaCha20Cipher extends CipherSpi {
          */
         int doFinal(byte[] in, int inOff, int inLen, byte[] out, int outOff)
                 throws ShortBufferException, AEADBadTagException, KeyException;
+
+        int doUpdate(ByteBuffer input, ByteBuffer output) throws
+            ShortBufferException, KeyException;
+        int doFinal(ByteBuffer input, ByteBuffer output) throws
+            ShortBufferException, KeyException, AEADBadTagException;
     }
 
     private final class EngineStreamOnly implements ChaChaEngine {
@@ -1240,6 +1424,22 @@ abstract class ChaCha20Cipher extends CipherSpi {
                 int outOff) throws ShortBufferException, KeyException {
             return doUpdate(in, inOff, inLen, out, outOff);
         }
+
+        @Override
+        public int doUpdate(ByteBuffer input, ByteBuffer output) throws
+            ShortBufferException, KeyException {
+            byte[] data = new byte[input.remaining()];
+            input.get(data);
+            doUpdate(data, 0, data.length, data, 0);
+            output.put(data);
+            return data.length;
+        }
+
+        @Override
+        public int doFinal(ByteBuffer input, ByteBuffer output)
+            throws ShortBufferException, KeyException {
+            return doUpdate(input, output);
+        }
     }
 
     private final class EngineAEADEnc implements ChaChaEngine {
@@ -1251,7 +1451,8 @@ abstract class ChaCha20Cipher extends CipherSpi {
 
         private EngineAEADEnc() throws InvalidKeyException {
             initAuthenticator();
-            counter = 1;
+            initCounterValue = 1;
+            counter = initCounterValue;
         }
 
         @Override
@@ -1302,11 +1503,32 @@ abstract class ChaCha20Cipher extends CipherSpi {
             aadDone = false;
             return inLen + TAG_LENGTH;
         }
+
+        @Override
+        public int doUpdate(ByteBuffer input, ByteBuffer output) throws
+            ShortBufferException, KeyException {
+            byte[] data = new byte[input.remaining()];
+            input.get(data);
+            doUpdate(data, 0, data.length, data, 0);
+            output.put(data);
+            return data.length;
+        }
+
+        @Override
+        public int doFinal(ByteBuffer input, ByteBuffer output) throws
+            ShortBufferException, KeyException {
+            int len = input.remaining();
+            byte[] data = new byte[len + TAG_LENGTH];
+            input.get(data, 0, len);
+            doFinal(data, 0, len, data, 0);
+            output.put(data);
+            return data.length;
+        }
     }
 
     private final class EngineAEADDec implements ChaChaEngine {
 
-        private final ByteArrayOutputStream cipherBuf;
+        private AEADBufferedStream cipherBuf = null;
         private final byte[] tag;
 
         @Override
@@ -1318,19 +1540,32 @@ abstract class ChaCha20Cipher extends CipherSpi {
             // size.
             return (isFinal ?
                     Integer.max(Math.addExact((inLen - TAG_LENGTH),
-                            cipherBuf.size()), 0) : 0);
+                            getBufferedLength()), 0) : 0);
+        }
+
+        private void initBuffer(int len) {
+            if (cipherBuf == null) {
+                cipherBuf = new AEADBufferedStream(len);
+            }
+        }
+
+        private int getBufferedLength() {
+            if (cipherBuf != null) {
+                return cipherBuf.size();
+            }
+            return 0;
         }
 
         private EngineAEADDec() throws InvalidKeyException {
             initAuthenticator();
-            counter = 1;
-            cipherBuf = new ByteArrayOutputStream(CIPHERBUF_BASE);
+            initCounterValue = 1;
+            counter = initCounterValue;
             tag = new byte[TAG_LENGTH];
         }
 
         @Override
         public int doUpdate(byte[] in, int inOff, int inLen, byte[] out,
-                int outOff) {
+            int outOff) {
             if (initialized) {
                 // If this is the first update since AAD updates, signal that
                 // we're done processing AAD info and pad the AAD to a multiple
@@ -1342,6 +1577,7 @@ abstract class ChaCha20Cipher extends CipherSpi {
 
                 if (in != null) {
                     Objects.checkFromIndexSize(inOff, inLen, in.length);
+                    initBuffer(inLen);
                     cipherBuf.write(in, inOff, inLen);
                 }
             } else {
@@ -1352,6 +1588,14 @@ abstract class ChaCha20Cipher extends CipherSpi {
             return 0;
         }
 
+
+        @Override
+        public int doUpdate(ByteBuffer input, ByteBuffer output) {
+            initBuffer(input.remaining());
+            cipherBuf.write(input);
+            return 0;
+        }
+
         @Override
         public int doFinal(byte[] in, int inOff, int inLen, byte[] out,
                 int outOff) throws ShortBufferException, AEADBadTagException,
@@ -1359,7 +1603,7 @@ abstract class ChaCha20Cipher extends CipherSpi {
 
             byte[] ctPlusTag;
             int ctPlusTagLen;
-            if (cipherBuf.size() == 0 && inOff == 0) {
+            if (getBufferedLength() == 0) {
                 // No previous data has been seen before doFinal, so we do
                 // not need to hold any ciphertext in a buffer.  We can
                 // process it directly from the "in" parameter.
@@ -1368,10 +1612,11 @@ abstract class ChaCha20Cipher extends CipherSpi {
                 ctPlusTagLen = inLen;
             } else {
                 doUpdate(in, inOff, inLen, out, outOff);
-                ctPlusTag = cipherBuf.toByteArray();
-                ctPlusTagLen = ctPlusTag.length;
+                ctPlusTag = cipherBuf.getBuffer();
+                inOff = 0;
+                ctPlusTagLen = cipherBuf.size();
+                cipherBuf.reset();
             }
-            cipherBuf.reset();
 
             // There must at least be a tag length's worth of ciphertext
             // data in the buffered input.
@@ -1389,18 +1634,79 @@ abstract class ChaCha20Cipher extends CipherSpi {
 
             // Calculate and compare the tag.  Only do the decryption
             // if and only if the tag matches.
-            authFinalizeData(ctPlusTag, 0, ctLen, tag, 0);
-            long tagCompare = ((long)asLongView.get(ctPlusTag, ctLen) ^
+            authFinalizeData(ctPlusTag, inOff, ctLen, tag, 0);
+            long tagCompare = ((long)asLongView.get(ctPlusTag, ctLen + inOff) ^
                     (long)asLongView.get(tag, 0)) |
-                    ((long)asLongView.get(ctPlusTag, ctLen + Long.BYTES) ^
+                    ((long)asLongView.get(ctPlusTag, ctLen + inOff + Long.BYTES) ^
                     (long)asLongView.get(tag, Long.BYTES));
             if (tagCompare != 0) {
                 throw new AEADBadTagException("Tag mismatch");
             }
-            chaCha20Transform(ctPlusTag, 0, ctLen, out, outOff);
+            chaCha20Transform(ctPlusTag, inOff, ctLen, out, outOff);
             aadDone = false;
 
             return ctLen;
+        }
+
+        @Override
+        public int doFinal(ByteBuffer input, ByteBuffer output)
+            throws ShortBufferException, AEADBadTagException, KeyException {
+            int len;
+            int inLen = input.remaining();
+            byte[] ct = null, buf = null;
+                //buf = (getBufferedLength() == 0 ? null : cipherBuf.toByteArray());
+            int bufLen = 0;
+            // The length of cipher text and tag
+            int ctLen = getBufferedLength() + inLen;
+
+            if (ctLen < TAG_LENGTH) {
+                throw new AEADBadTagException("Input too short - need tag");
+            }
+
+            if (inLen < TAG_LENGTH) {
+                if (inLen > 0) {
+                    doUpdate(input, output);
+                }
+                if (cipherBuf != null) {
+                    ct = cipherBuf.getBuffer();
+                }
+                len = ctLen;
+            } else {
+                if (cipherBuf != null) {
+                    buf = cipherBuf.getBuffer();
+                    bufLen = cipherBuf.size();
+                }
+                ct = new byte[inLen];
+                input.get(ct, 0, inLen);
+                len = inLen;
+            }
+            doUpdate(null, 0, 0, null, 0);
+
+            // If there is an internal buffer, calculate its tag contribution.
+            if (buf != null) {
+                dataLen = authUpdate(buf, 0, bufLen);
+            }
+            // Complete tag calculation
+            len -= TAG_LENGTH;
+            authFinalizeData(ct, 0, len, tag, 0);
+            // Check tag
+            if ((((long) asLongView.get(ct, len) ^
+                (long) asLongView.get(tag, 0)) |
+                ((long) asLongView.get(ct, len + Long.BYTES) ^
+                    (long) asLongView.get(tag, Long.BYTES))) != 0) {
+                throw new AEADBadTagException("Tag mismatch");
+            }
+
+            // decrypt internal buffer in-place, then put it into the bytebuffer
+            if (buf != null) {
+                chaCha20Transform(buf, 0, bufLen, buf, 0);
+                output.put(buf, 0, bufLen);
+            }
+            // decrypt input buffer in-place, append it to the bytebuffer
+            chaCha20Transform(ct, 0, len, ct, 0);
+            output.put(ct, 0, len);
+            aadDone = false;
+            return ctLen - TAG_LENGTH;
         }
     }
 

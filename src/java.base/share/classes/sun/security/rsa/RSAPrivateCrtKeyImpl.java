@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,8 @@
 package sun.security.rsa;
 
 import java.io.IOException;
+import java.io.InvalidObjectException;
+import java.io.ObjectInputStream;
 import java.math.BigInteger;
 
 import java.security.*;
@@ -43,7 +45,7 @@ import sun.security.rsa.RSAUtil.KeyType;
  * RSA private key implementation for "RSA", "RSASSA-PSS" algorithms in CRT form.
  * For non-CRT private keys, see RSAPrivateKeyImpl. We need separate classes
  * to ensure correct behavior in instanceof checks, etc.
- *
+ * <p>
  * Note: RSA keys must be at least 512 bits long
  *
  * @see RSAPrivateKeyImpl
@@ -67,12 +69,12 @@ public final class RSAPrivateCrtKeyImpl
     private BigInteger qe;      // prime exponent q
     private BigInteger coeff;   // CRT coefficient
 
-    private transient KeyType type;
+    private final transient KeyType type;
 
     // Optional parameters associated with this RSA key
     // specified in the encoding of its AlgorithmId.
     // Must be null for "RSA" keys.
-    private transient AlgorithmParameterSpec keyParams;
+    private final transient AlgorithmParameterSpec keyParams;
 
     /**
      * Generate a new RSAPrivate(Crt)Key from the specified type,
@@ -171,7 +173,7 @@ public final class RSAPrivateCrtKeyImpl
     }
 
     /**
-     * Construct a RSA key from its components. Used by the
+     * Construct an RSA key from its components. Used by the
      * RSAKeyFactory and the RSAKeyPairGenerator.
      */
     RSAPrivateCrtKeyImpl(KeyType type, AlgorithmParameterSpec keyParams,
@@ -199,49 +201,44 @@ public final class RSAPrivateCrtKeyImpl
         this.type = type;
         this.keyParams = keyParams;
 
-        try {
-            byte[][] nbytes = new byte[8][];
-            nbytes[0] = n.toByteArray();
-            nbytes[1] = e.toByteArray();
-            nbytes[2] = d.toByteArray();
-            nbytes[3] = p.toByteArray();
-            nbytes[4] = q.toByteArray();
-            nbytes[5] = pe.toByteArray();
-            nbytes[6] = qe.toByteArray();
-            nbytes[7] = coeff.toByteArray();
+        byte[][] nbytes = new byte[8][];
+        nbytes[0] = n.toByteArray();
+        nbytes[1] = e.toByteArray();
+        nbytes[2] = d.toByteArray();
+        nbytes[3] = p.toByteArray();
+        nbytes[4] = q.toByteArray();
+        nbytes[5] = pe.toByteArray();
+        nbytes[6] = qe.toByteArray();
+        nbytes[7] = coeff.toByteArray();
 
-            // Initiate with a big enough size so there's no need to
-            // reallocate memory later and thus can be cleaned up
-            // reliably.
-            DerOutputStream out = new DerOutputStream(
-                    nbytes[0].length + nbytes[1].length +
-                    nbytes[2].length + nbytes[3].length +
-                    nbytes[4].length + nbytes[5].length +
-                    nbytes[6].length + nbytes[7].length +
-                    100); // Enough for version(3) and 8 tag+length(3 or 4)
-            out.putInteger(0); // version must be 0
-            out.putInteger(nbytes[0]);
-            out.putInteger(nbytes[1]);
-            out.putInteger(nbytes[2]);
-            out.putInteger(nbytes[3]);
-            out.putInteger(nbytes[4]);
-            out.putInteger(nbytes[5]);
-            out.putInteger(nbytes[6]);
-            out.putInteger(nbytes[7]);
-            // Private values from [2] on.
-            Arrays.fill(nbytes[2], (byte)0);
-            Arrays.fill(nbytes[3], (byte)0);
-            Arrays.fill(nbytes[4], (byte)0);
-            Arrays.fill(nbytes[5], (byte)0);
-            Arrays.fill(nbytes[6], (byte)0);
-            Arrays.fill(nbytes[7], (byte)0);
-            DerValue val = DerValue.wrap(DerValue.tag_Sequence, out);
-            key = val.toByteArray();
-            val.clear();
-        } catch (IOException exc) {
-            // should never occur
-            throw new InvalidKeyException(exc);
-        }
+        // Initiate with a big enough size so there's no need to
+        // reallocate memory later and thus can be cleaned up
+        // reliably.
+        DerOutputStream out = new DerOutputStream(
+                nbytes[0].length + nbytes[1].length +
+                        nbytes[2].length + nbytes[3].length +
+                        nbytes[4].length + nbytes[5].length +
+                        nbytes[6].length + nbytes[7].length +
+                        100); // Enough for version(3) and 8 tag+length(3 or 4)
+        out.putInteger(0); // version must be 0
+        out.putInteger(nbytes[0]);
+        out.putInteger(nbytes[1]);
+        out.putInteger(nbytes[2]);
+        out.putInteger(nbytes[3]);
+        out.putInteger(nbytes[4]);
+        out.putInteger(nbytes[5]);
+        out.putInteger(nbytes[6]);
+        out.putInteger(nbytes[7]);
+        // Private values from [2] on.
+        Arrays.fill(nbytes[2], (byte) 0);
+        Arrays.fill(nbytes[3], (byte) 0);
+        Arrays.fill(nbytes[4], (byte) 0);
+        Arrays.fill(nbytes[5], (byte) 0);
+        Arrays.fill(nbytes[6], (byte) 0);
+        Arrays.fill(nbytes[7], (byte) 0);
+        DerValue val = DerValue.wrap(DerValue.tag_Sequence, out);
+        key = val.toByteArray();
+        val.clear();
     }
 
     // see JCA doc
@@ -360,5 +357,21 @@ public final class RSAPrivateCrtKeyImpl
         } catch (IOException e) {
             throw new InvalidKeyException("Invalid RSA private key", e);
         }
+    }
+
+    /**
+     * Restores the state of this object from the stream.
+     * <p>
+     * Deserialization of this object is not supported.
+     *
+     * @param  stream the {@code ObjectInputStream} from which data is read
+     * @throws IOException if an I/O error occurs
+     * @throws ClassNotFoundException if a serialized class cannot be loaded
+     */
+    @java.io.Serial
+    private void readObject(ObjectInputStream stream)
+            throws IOException, ClassNotFoundException {
+        throw new InvalidObjectException(
+                "RSAPrivateCrtKeyImpl keys are not directly deserializable");
     }
 }

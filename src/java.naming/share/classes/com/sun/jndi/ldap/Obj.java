@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -239,6 +239,10 @@ final class Obj {
                 ClassLoader cl = helper.getURLClassLoader(codebases);
                 return deserializeObject((byte[])attr.get(), cl);
             } else if ((attr = attrs.get(JAVA_ATTRIBUTES[REMOTE_LOC])) != null) {
+                 // javaRemoteLocation attribute (RMI stub will be created)
+                 if (!VersionHelper.isSerialDataAllowed()) {
+                     throw new NamingException("Object deserialization is not allowed");
+                 }
                 // For backward compatibility only
                 return decodeRmiObject(
                     (String)attrs.get(JAVA_ATTRIBUTES[CLASSNAME]).get(),

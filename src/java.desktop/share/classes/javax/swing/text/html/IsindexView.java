@@ -104,6 +104,7 @@ class IsindexView extends ComponentView implements ActionListener {
             action = hdoc.getBase().toString();
         }
         try {
+            @SuppressWarnings("deprecation")
             URL url = new URL(action+"?"+data);
             JEditorPane pane = (JEditorPane)getContainer();
             pane.setPage(url);

@@ -22,13 +22,13 @@
  */
 
 // key: compiler.err.preview.feature.disabled
-// key: compiler.misc.feature.diamond
+// key: compiler.misc.feature.case.null
 // options: -XDforcePreview
 
-import java.util.ArrayList;
-
 class PreviewFeatureDisabled {
-    void m() {
-        new ArrayList<>();
+    void m(String s) {
+        switch (s) {
+            case null:
+        }
     }
 }

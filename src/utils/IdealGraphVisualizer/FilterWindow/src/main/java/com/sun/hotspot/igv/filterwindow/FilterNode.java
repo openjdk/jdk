@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,10 +45,9 @@ import org.openide.util.lookup.InstanceContent;
  *
  * @author Thomas Wuerthinger
  */
-public class FilterNode extends CheckNode implements LookupListener, ChangedListener<FilterTopComponent> {
+public class FilterNode extends CheckNode implements ChangedListener<FilterTopComponent> {
 
-    private Filter filter;
-    private Lookup.Result<FilterChain> result;
+    private final Filter filter;
 
     public FilterNode(Filter filter) {
         this(filter, new InstanceContent());
@@ -60,22 +59,12 @@ public class FilterNode extends CheckNode implements LookupListener, ChangedList
 
         content.add(filter.getEditor());
         this.filter = filter;
-        filter.getChangedEvent().addListener(new ChangedListener<Filter>() {
-
-            @Override
-            public void changed(Filter source) {
-                update();
-            }
-        });
+        filter.getChangedEvent().addListener(source -> update());
 
         update();
 
-        Lookup.Template<FilterChain> tpl = new Lookup.Template<>(FilterChain.class);
-        result = Utilities.actionsGlobalContext().lookup(tpl);
-        result.addLookupListener(this);
-
         FilterTopComponent.findInstance().getFilterSettingsChangedEvent().addListener(this);
-        resultChanged(null);
+        changed(FilterTopComponent.findInstance());
 
         setShortDescription("Double-click to open filter");
     }
@@ -106,12 +95,7 @@ public class FilterNode extends CheckNode implements LookupListener, ChangedList
     }
 
     @Override
-    public void resultChanged(LookupEvent lookupEvent) {
-        changed(FilterTopComponent.findInstance());
-    }
-
-    @Override
     public void changed(FilterTopComponent source) {
-        setSelected(source.getFilterChain().containsFilter(filter));
+        setSelected(source.getCurrentChain().containsFilter(filter));
     }
 }

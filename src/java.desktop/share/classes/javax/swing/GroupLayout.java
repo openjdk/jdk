@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1651,7 +1651,7 @@ public class GroupLayout implements LayoutManager2 {
 
         /**
          * Used to compute how the two values representing two springs
-         * will be combined.  For example, a group that layed things out
+         * will be combined.  For example, a group that laid things out
          * one after the next would return {@code a + b}.
          */
         abstract int operator(int a, int b);
@@ -2460,7 +2460,7 @@ public class GroupLayout implements LayoutManager2 {
     public sealed class ParallelGroup extends Group
          permits BaselineGroup {
 
-        // How children are layed out.
+        // How children are laid out.
         private final Alignment childAlignment;
         // Whether or not we're resizable.
         private final boolean resizable;
@@ -3521,7 +3521,7 @@ public class GroupLayout implements LayoutManager2 {
     }
 
 
-    // LinkInfo contains the set of ComponentInfosthat are linked along a
+    // LinkInfo contains the set of ComponentInfos that are linked along a
     // particular axis.
     private static class LinkInfo {
         private final int axis;
@@ -3591,7 +3591,7 @@ public class GroupLayout implements LayoutManager2 {
      * linked.
      */
     private class ComponentInfo {
-        // Component being layed out
+        // Component being laid out
         private Component component;
 
         ComponentSpring horizontalSpring;

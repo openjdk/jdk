@@ -28,9 +28,15 @@ import java.lang.invoke.MethodType;
 
 public class CDSLambdaInvoker {
     public static void main(String args[]) throws Throwable {
+        // The following calls trigger the generation of new Species classes
+        // that are not included in the base archive (or the default modules image).
+        // - java.lang.invoke.BoundMethodHandle$Species_F
+        // - java.lang.invoke.BoundMethodHandle$Species_FL
+        // - java.lang.invoke.BoundMethodHandle$Species_J
+        // - java.lang.invoke.BoundMethodHandle$Species_JL
         invoke(MethodHandles.identity(double.class), 1.0);
         invoke(MethodHandles.identity(long.class), 1);
-        invoke(MethodHandles.identity(int.class), 1);
+        invoke(MethodHandles.identity(int.class), 1); // Note: Species_IL is in default modules image.
         invoke(MethodHandles.identity(float.class), 1.0f);
 
         MethodHandles.Lookup lookup = MethodHandles.lookup();

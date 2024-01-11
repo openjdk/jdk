@@ -29,33 +29,27 @@ import java.util.function.Function;
 /**
  * Utility class to parse a comparator either in the applyIf* or in the counts properties of an @IR rules.
  */
-public class ComparisonConstraintParser<T extends Comparable<T>> {
+public class ComparisonConstraintParser {
 
     private enum Comparator {
         ONE_CHAR, TWO_CHARS
     }
 
-    public static <T extends Comparable<T>> Comparison<T> parse(String constraint, Function<String, T> parseFunction,
-                                                                String postfixErrorMsg) {
+    public static <T extends Comparable<T>> Comparison<T> parse(String constraint, Function<String, T> parseFunction) {
         try {
             return parseConstraintAndValue(constraint, parseFunction);
         } catch (EmptyConstraintException e) {
-            TestFormat.fail("Provided empty value " + postfixErrorMsg);
-            throw new UnreachableCodeException();
+            throw new TestFormatException("Provided empty value");
         } catch (MissingConstraintValueException e) {
-            TestFormat.fail("Provided empty value after comparator \"" + e.getComparator() + "\" " + postfixErrorMsg);
-            throw new UnreachableCodeException();
+            throw new TestFormatException("Provided empty value after comparator \"" + e.getComparator() + "\"");
         } catch (InvalidComparatorException e) {
-            TestFormat.fail("Provided invalid comparator \"" + e.getComparator() + "\" " + postfixErrorMsg);
-            throw new UnreachableCodeException();
+            throw new TestFormatException("Provided invalid comparator \"" + e.getComparator() + "\"");
         } catch (InvalidConstraintValueException e) {
             String comparator = e.getComparator();
             if (!comparator.isEmpty()) {
                 comparator = " after comparator \"" + comparator + "\"";
             }
-            TestFormat.fail("Provided invalid value \"" + e.getInvalidValue() + "\""
-                                   + comparator + " " + postfixErrorMsg);
-            throw new UnreachableCodeException();
+            throw new TestFormatException("Provided invalid value \"" + e.getInvalidValue() + "\"" + comparator);
         }
     }
 

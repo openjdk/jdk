@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -61,7 +61,7 @@ class NativeInstruction {
 
 inline NativeInstruction* nativeInstruction_at(address address) {
   ShouldNotCallThis();
-  return NULL;
+  return nullptr;
 }
 
 class NativeCall : public NativeInstruction {
@@ -72,22 +72,22 @@ class NativeCall : public NativeInstruction {
 
   address instruction_address() const {
     ShouldNotCallThis();
-    return NULL;
+    return nullptr;
   }
 
   address next_instruction_address() const {
     ShouldNotCallThis();
-    return NULL;
+    return nullptr;
   }
 
   address return_address() const {
     ShouldNotCallThis();
-    return NULL;
+    return nullptr;
   }
 
   address destination() const {
     ShouldNotCallThis();
-    return NULL;
+    return nullptr;
   }
 
   void set_destination_mt_safe(address dest) {
@@ -110,19 +110,19 @@ class NativeCall : public NativeInstruction {
 
 inline NativeCall* nativeCall_before(address return_address) {
   ShouldNotCallThis();
-  return NULL;
+  return nullptr;
 }
 
 inline NativeCall* nativeCall_at(address address) {
   ShouldNotCallThis();
-  return NULL;
+  return nullptr;
 }
 
 class NativeMovConstReg : public NativeInstruction {
  public:
   address next_instruction_address() const {
     ShouldNotCallThis();
-    return NULL;
+    return nullptr;
   }
 
   intptr_t data() const {
@@ -137,7 +137,7 @@ class NativeMovConstReg : public NativeInstruction {
 
 inline NativeMovConstReg* nativeMovConstReg_at(address address) {
   ShouldNotCallThis();
-  return NULL;
+  return nullptr;
 }
 
 class NativeMovRegMem : public NativeInstruction {
@@ -158,7 +158,7 @@ class NativeMovRegMem : public NativeInstruction {
 
 inline NativeMovRegMem* nativeMovRegMem_at(address address) {
   ShouldNotCallThis();
-  return NULL;
+  return nullptr;
 }
 
 class NativeJump : public NativeInstruction {
@@ -169,7 +169,7 @@ class NativeJump : public NativeInstruction {
 
   address jump_destination() const {
     ShouldNotCallThis();
-    return NULL;
+    return nullptr;
   }
 
   void set_jump_destination(address dest) {
@@ -187,14 +187,14 @@ class NativeJump : public NativeInstruction {
 
 inline NativeJump* nativeJump_at(address address) {
   ShouldNotCallThis();
-  return NULL;
+  return nullptr;
 }
 
 class NativeGeneralJump : public NativeInstruction {
  public:
   address jump_destination() const {
     ShouldNotCallThis();
-    return NULL;
+    return nullptr;
   }
 
   static void insert_unconditional(address code_pos, address entry) {
@@ -208,7 +208,7 @@ class NativeGeneralJump : public NativeInstruction {
 
 inline NativeGeneralJump* nativeGeneralJump_at(address address) {
   ShouldNotCallThis();
-  return NULL;
+  return nullptr;
 }
 
 class NativePostCallNop: public NativeInstruction {
@@ -221,13 +221,13 @@ public:
 
 inline NativePostCallNop* nativePostCallNop_at(address address) {
   Unimplemented();
-  return NULL;
+  return nullptr;
 }
 
 class NativeDeoptInstruction: public NativeInstruction {
 public:
-  address instruction_address() const       { Unimplemented(); return NULL; }
-  address next_instruction_address() const  { Unimplemented(); return NULL; }
+  address instruction_address() const       { Unimplemented(); return nullptr; }
+  address next_instruction_address() const  { Unimplemented(); return nullptr; }
 
   void  verify() { Unimplemented(); }
 

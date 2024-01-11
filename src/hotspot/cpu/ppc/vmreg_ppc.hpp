@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2021 SAP SE. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@ inline bool is_FloatRegister() {
          value() < ConcreteRegisterImpl::max_fpr;
 }
 
-inline bool is_VectorRegister() {
+inline bool is_VectorSRegister() {
   return value() >= ConcreteRegisterImpl::max_fpr &&
          value() < ConcreteRegisterImpl::max_vsr;
 }
@@ -58,6 +58,11 @@ inline Register as_Register() {
 inline FloatRegister as_FloatRegister() {
   assert(is_FloatRegister() && is_even(value()), "must be");
   return ::as_FloatRegister((value() - ConcreteRegisterImpl::max_gpr) >> 1);
+}
+
+inline VectorSRegister as_VectorSRegister() {
+  assert(is_VectorSRegister(), "must be");
+  return ::as_VectorSRegister(value() - ConcreteRegisterImpl::max_fpr);
 }
 
 inline bool is_concrete() {

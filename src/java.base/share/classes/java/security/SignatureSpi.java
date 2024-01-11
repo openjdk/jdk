@@ -60,7 +60,7 @@ public abstract class SignatureSpi {
     protected SecureRandom appRandom = null;
 
     /**
-     * Initializes this signature object with the specified
+     * Initializes this {@code Signature} object with the specified
      * public key for verification operations.
      *
      * @param publicKey the public key of the identity whose signature is
@@ -73,12 +73,12 @@ public abstract class SignatureSpi {
         throws InvalidKeyException;
 
     /**
-     * Initializes this signature object with the specified
+     * Initializes this {@code Signature} object with the specified
      * public key for verification operations.
      *
      * @param publicKey the public key of the identity whose signature is
      * going to be verified.
-     * @param params the parameters for verifying this signature object
+     * @param params the parameters for verifying this {@code Signature} object
      *
      * @throws    InvalidKeyException if the key is improperly
      * encoded, does not work with the given parameters, and so on.
@@ -100,7 +100,7 @@ public abstract class SignatureSpi {
     }
 
     /**
-     * Initializes this signature object with the specified
+     * Initializes this {@code Signature} object with the specified
      * private key for signing operations.
      *
      * @param privateKey the private key of the identity whose signature
@@ -113,7 +113,7 @@ public abstract class SignatureSpi {
         throws InvalidKeyException;
 
     /**
-     * Initializes this signature object with the specified
+     * Initializes this {@code Signature} object with the specified
      * private key and source of randomness for signing operations.
      *
      * <p>This concrete method has been added to this previously-defined
@@ -134,7 +134,7 @@ public abstract class SignatureSpi {
     }
 
     /**
-     * Initializes this signature object with the specified
+     * Initializes this {@code Signature} object with the specified
      * private key and source of randomness for signing operations.
      *
      * <p>This concrete method has been added to this previously-defined
@@ -269,7 +269,7 @@ public abstract class SignatureSpi {
      * Both this default implementation and the SUN provider do not
      * return partial digests. If the value of this parameter is less
      * than the actual signature length, this method will throw a
-     * SignatureException.
+     * {@code SignatureException}.
      * This parameter is ignored if its value is greater than or equal to
      * the actual signature length.
      *
@@ -303,7 +303,7 @@ public abstract class SignatureSpi {
      *
      * @param sigBytes the signature bytes to be verified.
      *
-     * @return true if the signature was verified, false if not.
+     * @return {@code true} if the signature was verified, {@code false} if not.
      *
      * @throws    SignatureException if the engine is not
      * initialized properly, the passed-in signature is improperly
@@ -324,7 +324,7 @@ public abstract class SignatureSpi {
      * @param offset the offset to start from in the array of bytes.
      * @param length the number of bytes to use, starting at offset.
      *
-     * @return true if the signature was verified, false if not.
+     * @return {@code true} if the signature was verified, {@code false} if not.
      *
      * @throws    SignatureException if the engine is not
      * initialized properly, the passed-in signature is improperly
@@ -355,7 +355,7 @@ public abstract class SignatureSpi {
      * @param value the parameter value.
      *
      * @throws    InvalidParameterException if {@code param} is an
-     * invalid parameter for this signature object,
+     * invalid parameter for this {@code Signature} object,
      * the parameter is already set
      * and cannot be set again, a security exception occurs, and so on.
      *
@@ -368,7 +368,8 @@ public abstract class SignatureSpi {
             throws InvalidParameterException;
 
     /**
-     * Initializes this signature object with the specified parameter values.
+     * Initializes this {@code Signature} object with the specified parameter
+     * values.
      *
      * @param params the parameters
      *
@@ -377,7 +378,7 @@ public abstract class SignatureSpi {
      *
      * @throws    InvalidAlgorithmParameterException if this method is
      * overridden by a provider and the given parameters
-     * are inappropriate for this signature object
+     * are inappropriate for this {@code Signature} object
      */
     protected void engineSetParameter(AlgorithmParameterSpec params)
             throws InvalidAlgorithmParameterException {
@@ -385,20 +386,21 @@ public abstract class SignatureSpi {
     }
 
     /**
-     * Returns the parameters used with this signature object.
+     * Returns the parameters used with this {@code Signature} object.
      *
      * <p>The returned parameters may be the same that were used to initialize
-     * this signature object, or may contain additional default or random
-     * parameter values used by the underlying signature scheme. If the required
-     * parameters were not supplied and can be generated by the signature
-     * object, the generated parameters are returned; otherwise {@code null} is
-     * returned.
+     * this {@code Signature} object, or may contain additional default or
+     * random parameter values used by the underlying signature scheme.
+     * If the required parameters were not supplied and can be generated by
+     * the {@code Signature} object, the generated parameters are returned;
+     * otherwise {@code null} is returned.
      *
      * <p>However, if the signature scheme does not support returning
      * the parameters as {@code AlgorithmParameters}, {@code null} is always
      * returned.
      *
-     * @return the parameters used with this signature object, or {@code null}
+     * @return the parameters used with this {@code Signature} object, or
+     * {@code null}
      *
      * @throws UnsupportedOperationException if this method is not overridden
      * by a provider
@@ -421,8 +423,8 @@ public abstract class SignatureSpi {
      *
      * @param param the string name of the parameter.
      *
-     * @return the object that represents the parameter value, or {@code null} if
-     * there is none.
+     * @return the object that represents the parameter value, or {@code null}
+     * if there is none.
      *
      * @throws    InvalidParameterException if {@code param} is an
      * invalid parameter for this engine, or another exception occurs while

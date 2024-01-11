@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,9 @@
 #include "memory/allocation.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/os.inline.hpp"
+#include "os_posix.hpp"
 #include "services/attachListener.hpp"
+#include "utilities/checkedCast.hpp"
 
 #include <unistd.h>
 #include <signal.h>
@@ -82,7 +84,7 @@ class LinuxAttachListener: AllStatic {
   };
 
   static void set_path(char* path) {
-    if (path == NULL) {
+    if (path == nullptr) {
       _path[0] = '\0';
       _has_path = false;
     } else {
@@ -102,7 +104,7 @@ class LinuxAttachListener: AllStatic {
   static int listener()                 { return _listener; }
 
   // write the given buffer to a socket
-  static int write_fully(int s, char* buf, int len);
+  static int write_fully(int s, char* buf, size_t len);
 
   static LinuxAttachOperation* dequeue();
 };
@@ -145,7 +147,7 @@ class ArgumentIterator : public StackObj {
       if (_pos < _end) {
         _pos += 1;
       }
-      return NULL;
+      return nullptr;
     }
     char* res = _pos;
     char* next_pos = strchr(_pos, '\0');
@@ -170,7 +172,7 @@ extern "C" {
     }
     if (LinuxAttachListener::has_path()) {
       ::unlink(LinuxAttachListener::path());
-      LinuxAttachListener::set_path(NULL);
+      LinuxAttachListener::set_path(nullptr);
     }
   }
 }
@@ -247,7 +249,7 @@ int LinuxAttachListener::init() {
 //
 LinuxAttachOperation* LinuxAttachListener::read_request(int s) {
   char ver_str[8];
-  sprintf(ver_str, "%d", ATTACH_PROTOCOL_VER);
+  os::snprintf_checked(ver_str, sizeof(ver_str), "%d", ATTACH_PROTOCOL_VER);
 
   // The request is a sequence of strings so we first figure out the
   // expected count and the maximum possible length of the request.
@@ -256,7 +258,7 @@ LinuxAttachOperation* LinuxAttachListener::read_request(int s) {
   // where <ver> is the protocol version (1), <cmd> is the command
   // name ("load", "datadump", ...), and <arg> is an argument
   int expected_str_count = 2 + AttachOperation::arg_count_max;
-  const int max_len = (sizeof(ver_str) + 1) + (AttachOperation::name_length_max + 1) +
+  const size_t max_len = (sizeof(ver_str) + 1) + (AttachOperation::name_length_max + 1) +
     AttachOperation::arg_count_max*(AttachOperation::arg_length_max + 1);
 
   char buf[max_len];
@@ -265,21 +267,21 @@ LinuxAttachOperation* LinuxAttachListener::read_request(int s) {
   // Read until all (expected) strings have been read, the buffer is
   // full, or EOF.
 
-  int off = 0;
-  int left = max_len;
+  size_t off = 0;
+  size_t left = max_len;
 
   do {
-    int n;
+    ssize_t n;
     RESTARTABLE(read(s, buf+off, left), n);
-    assert(n <= left, "buffer was too small, impossible!");
+    assert(n <= checked_cast<ssize_t>(left), "buffer was too small, impossible!");
     buf[max_len - 1] = '\0';
     if (n == -1) {
-      return NULL;      // reset by peer or other error
+      return nullptr;      // reset by peer or other error
     }
     if (n == 0) {
       break;
     }
-    for (int i=0; i<n; i++) {
+    for (ssize_t i=0; i<n; i++) {
       if (buf[off+i] == 0) {
         // EOS found
         str_count++;
@@ -290,9 +292,9 @@ LinuxAttachOperation* LinuxAttachListener::read_request(int s) {
           if ((strlen(buf) != strlen(ver_str)) ||
               (atoi(buf) != ATTACH_PROTOCOL_VER)) {
             char msg[32];
-            sprintf(msg, "%d\n", ATTACH_ERROR_BADVERSION);
+            os::snprintf_checked(msg, sizeof(msg), "%d\n", ATTACH_ERROR_BADVERSION);
             write_fully(s, msg, strlen(msg));
-            return NULL;
+            return nullptr;
           }
         }
       }
@@ -302,7 +304,7 @@ LinuxAttachOperation* LinuxAttachListener::read_request(int s) {
   } while (left > 0 && str_count < expected_str_count);
 
   if (str_count != expected_str_count) {
-    return NULL;        // incomplete request
+    return nullptr;        // incomplete request
   }
 
   // parse request
@@ -313,20 +315,20 @@ LinuxAttachOperation* LinuxAttachListener::read_request(int s) {
   char* v = args.next();
 
   char* name = args.next();
-  if (name == NULL || strlen(name) > AttachOperation::name_length_max) {
-    return NULL;
+  if (name == nullptr || strlen(name) > AttachOperation::name_length_max) {
+    return nullptr;
   }
 
   LinuxAttachOperation* op = new LinuxAttachOperation(name);
 
   for (int i=0; i<AttachOperation::arg_count_max; i++) {
     char* arg = args.next();
-    if (arg == NULL) {
-      op->set_arg(i, NULL);
+    if (arg == nullptr) {
+      op->set_arg(i, nullptr);
     } else {
       if (strlen(arg) > AttachOperation::arg_length_max) {
         delete op;
-        return NULL;
+        return nullptr;
       }
       op->set_arg(i, arg);
     }
@@ -351,7 +353,7 @@ LinuxAttachOperation* LinuxAttachListener::dequeue() {
     socklen_t len = sizeof(addr);
     RESTARTABLE(::accept(listener(), &addr, &len), s);
     if (s == -1) {
-      return NULL;      // log a warning?
+      return nullptr;      // log a warning?
     }
 
     // get the credentials of the peer and check the effective uid/guid
@@ -372,7 +374,7 @@ LinuxAttachOperation* LinuxAttachListener::dequeue() {
 
     // peer credential look okay so we read the request
     LinuxAttachOperation* op = read_request(s);
-    if (op == NULL) {
+    if (op == nullptr) {
       ::close(s);
       continue;
     } else {
@@ -382,7 +384,7 @@ LinuxAttachOperation* LinuxAttachListener::dequeue() {
 }
 
 // write the given buffer to the socket
-int LinuxAttachListener::write_fully(int s, char* buf, int len) {
+int LinuxAttachListener::write_fully(int s, char* buf, size_t len) {
   do {
     ssize_t n = ::write(s, buf, len);
     if (n == -1) {
@@ -410,7 +412,7 @@ void LinuxAttachOperation::complete(jint result, bufferedStream* st) {
 
   // write operation result
   char msg[32];
-  sprintf(msg, "%d\n", result);
+  os::snprintf_checked(msg, sizeof(msg), "%d\n", result);
   int rc = LinuxAttachListener::write_fully(this->socket(), msg, strlen(msg));
 
   // write any result data
@@ -512,7 +514,7 @@ bool AttachListener::is_init_trigger() {
   char fn[PATH_MAX + 1];
   int ret;
   struct stat64 st;
-  sprintf(fn, ".attach_pid%d", os::current_process_id());
+  os::snprintf_checked(fn, sizeof(fn), ".attach_pid%d", os::current_process_id());
   RESTARTABLE(::stat64(fn, &st), ret);
   if (ret == -1) {
     log_trace(attach)("Failed to find attach file: %s, trying alternate", fn);
@@ -544,15 +546,6 @@ void AttachListener::abort() {
 
 void AttachListener::pd_data_dump() {
   os::signal_notify(SIGQUIT);
-}
-
-AttachOperationFunctionInfo* AttachListener::pd_find_operation(const char* n) {
-  return NULL;
-}
-
-jint AttachListener::pd_set_flag(AttachOperation* op, outputStream* out) {
-  out->print_cr("flag '%s' cannot be changed", op->arg(0));
-  return JNI_ERR;
 }
 
 void AttachListener::pd_detachall() {

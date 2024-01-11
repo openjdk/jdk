@@ -40,6 +40,7 @@ package com.sun.source.tree;
  * @since 1.6
  */
 public interface InstanceOfTree extends ExpressionTree {
+
     /**
      * Returns the expression to be tested.
      * @return the expression
@@ -73,4 +74,5 @@ public interface InstanceOfTree extends ExpressionTree {
      * @since 16
      */
     PatternTree getPattern();
+
 }

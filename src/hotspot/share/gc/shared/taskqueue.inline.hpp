@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,7 @@ inline GenericTaskQueueSet<T, F>::GenericTaskQueueSet(uint n) : _n(n) {
   typedef T* GenericTaskQueuePtr;
   _queues = NEW_C_HEAP_ARRAY(GenericTaskQueuePtr, n, F);
   for (uint i = 0; i < n; i++) {
-    _queues[i] = NULL;
+    _queues[i] = nullptr;
   }
 }
 
@@ -99,13 +99,13 @@ inline void GenericTaskQueueSet<T, F>::print_and_reset_taskqueue_stats(const cha
 
 template<class E, MEMFLAGS F, unsigned int N>
 inline GenericTaskQueue<E, F, N>::GenericTaskQueue() :
-  _elems(ArrayAllocator<E>::allocate(N, F)),
+  _elems(MallocArrayAllocator<E>::allocate(N, F)),
   _last_stolen_queue_id(InvalidQueueId),
   _seed(17 /* random number */) {}
 
 template<class E, MEMFLAGS F, unsigned int N>
 inline GenericTaskQueue<E, F, N>::~GenericTaskQueue() {
-  ArrayAllocator<E>::free(_elems, N);
+  MallocArrayAllocator<E>::free(_elems);
 }
 
 template<class E, MEMFLAGS F, unsigned int N> inline bool

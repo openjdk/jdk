@@ -27,7 +27,7 @@ import jdk.test.lib.Platform;
 import jdk.test.lib.cli.predicate.AndPredicate;
 import jdk.test.lib.cli.predicate.CPUSpecificPredicate;
 import jdk.test.lib.cli.predicate.OrPredicate;
-import sun.hotspot.WhiteBox;
+import jdk.test.whitebox.WhiteBox;
 
 import java.lang.reflect.Method;
 import java.util.function.BooleanSupplier;
@@ -61,10 +61,11 @@ public class IntrinsicPredicates {
 
     public static final BooleanSupplier MD5_INSTRUCTION_AVAILABLE
             = new OrPredicate(new CPUSpecificPredicate("aarch64.*", null, null),
+              new OrPredicate(new CPUSpecificPredicate("riscv64.*", null, null),
               // x86 variants
               new OrPredicate(new CPUSpecificPredicate("amd64.*",   null, null),
               new OrPredicate(new CPUSpecificPredicate("i386.*",    null, null),
-                              new CPUSpecificPredicate("x86.*",     null, null))));
+                              new CPUSpecificPredicate("x86.*",     null, null)))));
 
     public static final BooleanSupplier SHA1_INSTRUCTION_AVAILABLE
             = new OrPredicate(new CPUSpecificPredicate("aarch64.*", new String[] { "sha1" }, null),

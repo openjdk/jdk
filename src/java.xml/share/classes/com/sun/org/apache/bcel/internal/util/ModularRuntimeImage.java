@@ -35,7 +35,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -54,28 +53,24 @@ public class ModularRuntimeImage implements Closeable {
 
     /**
      * Constructs a default instance.
-     *
-     * @throws IOException
-     *             an I/O error occurs accessing the file system
      */
-    public ModularRuntimeImage() throws IOException {
+    @SuppressWarnings("resource") // See #close()
+    public ModularRuntimeImage() {
         this(null, FileSystems.getFileSystem(URI.create("jrt:/")));
     }
 
     /**
      * Constructs an instance using the JRT file system implementation from a specific Java Home.
      *
-     * @param javaHome
-     *            Path to a Java 9 or greater home.
+     * @param javaHome Path to a Java 9 or greater home.
      *
-     * @throws IOException
-     *             an I/O error occurs accessing the file system
+     * @throws IOException an I/O error occurs accessing the file system
      */
     public ModularRuntimeImage(final String javaHome) throws IOException {
         final Map<String, ?> emptyMap = Collections.emptyMap();
         final Path jrePath = Paths.get(javaHome);
         final Path jrtFsPath = jrePath.resolve("lib").resolve("jrt-fs.jar");
-        this.classLoader = new URLClassLoader(new URL[] {jrtFsPath.toUri().toURL() });
+        this.classLoader = URLClassLoader.newInstance(new URL[] {jrtFsPath.toUri().toURL()});
         this.fileSystem = FileSystems.newFileSystem(URI.create("jrt:/"), emptyMap, classLoader);
     }
 
@@ -94,22 +89,21 @@ public class ModularRuntimeImage implements Closeable {
         }
     }
 
+    public FileSystem getFileSystem() {
+        return fileSystem;
+    }
+
     /**
      * Lists all entries in the given directory.
      *
-     * @param dirPath
-     *            directory path.
+     * @param dirPath directory path.
      * @return a list of dir entries if an I/O error occurs
-     * @throws IOException
-     *             an I/O error occurs accessing the file system
+     * @throws IOException an I/O error occurs accessing the file system
      */
     public List<Path> list(final Path dirPath) throws IOException {
         final List<Path> list = new ArrayList<>();
         try (DirectoryStream<Path> ds = Files.newDirectoryStream(dirPath)) {
-            final Iterator<Path> iterator = ds.iterator();
-            while (iterator.hasNext()) {
-                list.add(iterator.next());
-            }
+            ds.forEach(list::add);
         }
         return list;
     }
@@ -117,11 +111,9 @@ public class ModularRuntimeImage implements Closeable {
     /**
      * Lists all entries in the given directory.
      *
-     * @param dirName
-     *            directory path.
+     * @param dirName directory path.
      * @return a list of dir entries if an I/O error occurs
-     * @throws IOException
-     *             an I/O error occurs accessing the file system
+     * @throws IOException an I/O error occurs accessing the file system
      */
     public List<Path> list(final String dirName) throws IOException {
         return list(fileSystem.getPath(dirName));
@@ -131,8 +123,7 @@ public class ModularRuntimeImage implements Closeable {
      * Lists all modules.
      *
      * @return a list of modules
-     * @throws IOException
-     *             an I/O error occurs accessing the file system
+     * @throws IOException an I/O error occurs accessing the file system
      */
     public List<Path> modules() throws IOException {
         return list(MODULES_PATH);
@@ -142,15 +133,10 @@ public class ModularRuntimeImage implements Closeable {
      * Lists all packages.
      *
      * @return a list of modules
-     * @throws IOException
-     *             an I/O error occurs accessing the file system
+     * @throws IOException an I/O error occurs accessing the file system
      */
     public List<Path> packages() throws IOException {
         return list(PACKAGES_PATH);
-    }
-
-    public FileSystem getFileSystem() {
-        return fileSystem;
     }
 
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -131,19 +131,15 @@ public class JarBuilder {
     }
 
     // Add commonly used inner classes that are often omitted by mistake. Currently
-    // we support only jdk/test/whitebox/WhiteBox$WhiteBoxPermission and
-    // sun/hotspot/WhiteBox$WhiteBoxPermission. See JDK-8199290
+    // we support only jdk/test/whitebox/WhiteBox$WhiteBoxPermission.
+    // See JDK-8199290
     private static String[] addInnerClasses(String[] classes, int startIdx) {
         boolean seenNewWb = false;
         boolean seenNewWbInner = false;
-        boolean seenOldWb = false;
-        boolean seenOldWbInner = false;
         // This method is different than ClassFileInstaller.addInnerClasses which
         // uses "." as the package delimiter :-(
         final String newWb = "jdk/test/whitebox/WhiteBox";
         final String newWbInner = newWb + "$WhiteBoxPermission";
-        final String oldWb = "sun/hotspot/WhiteBox";
-        final String oldWbInner = oldWb + "$WhiteBoxPermission";
 
         ArrayList<String> list = new ArrayList<>();
 
@@ -153,17 +149,11 @@ public class JarBuilder {
             switch (cls) {
             case newWb:      seenNewWb      = true; break;
             case newWbInner: seenNewWbInner = true; break;
-            case oldWb:      seenOldWb      = true; break;
-            case oldWbInner: seenOldWbInner = true; break;
             }
         }
         if (seenNewWb && !seenNewWbInner) {
             list.add(newWbInner);
         }
-        if (seenOldWb && !seenOldWbInner) {
-            list.add(oldWbInner);
-        }
-
         String[] array = new String[list.size()];
         list.toArray(array);
         return array;
@@ -203,6 +193,23 @@ public class JarBuilder {
         if (mainClass != null) {
             argList.add("--main-class=" + mainClass);
         }
+        argList.add("-C");
+        argList.add(classesDir);
+        argList.add(".");
+        createJar(argList);
+    }
+
+    public static void createModularJarWithManifest(String jarPath,
+                                                    String classesDir,
+                                                    String mainClass,
+                                                    String manifest) throws Exception {
+        ArrayList<String> argList = new ArrayList<String>();
+        argList.add("--create");
+        argList.add("--file=" + jarPath);
+        if (mainClass != null) {
+            argList.add("--main-class=" + mainClass);
+        }
+        argList.add("--manifest=" + manifest);
         argList.add("-C");
         argList.add(classesDir);
         argList.add(".");
@@ -269,21 +276,36 @@ public class JarBuilder {
         }
     }
 
+    static final String keyTool = JDKToolFinder.getJDKTool("keytool");
+    static final String jarSigner = JDKToolFinder.getJDKTool("jarsigner");
 
-    public static void signJar() throws Exception {
-        String keyTool = JDKToolFinder.getJDKTool("keytool");
-        String jarSigner = JDKToolFinder.getJDKTool("jarsigner");
-
+    public static void signJarWithDisabledAlgorithm(String jarName) throws Exception {
+        String keyName = "key_with_disabled_alg";
         executeProcess(keyTool,
-            "-genkey", "-keystore", "./keystore", "-alias", "mykey",
+            "-genkey", "-keystore", "./keystore", "-alias", keyName,
+            "-storepass", "abc123", "-keypass", "abc123", "-keyalg", "dsa",
+            "-sigalg", "SHA1withDSA", "-keysize", "512", "-dname", "CN=jvmtest2")
+            .shouldHaveExitValue(0);
+
+        doSigning(jarName, keyName);
+    }
+
+    public static void signJar(String jarName) throws Exception {
+        String keyName = "mykey";
+        executeProcess(keyTool,
+            "-genkey", "-keystore", "./keystore", "-alias", keyName,
             "-storepass", "abc123", "-keypass", "abc123", "-keyalg", "dsa",
             "-dname", "CN=jvmtest")
             .shouldHaveExitValue(0);
 
+        doSigning(jarName, keyName);
+    }
+
+    private static void doSigning(String jarName, String keyName) throws Exception {
         executeProcess(jarSigner,
            "-keystore", "./keystore", "-storepass", "abc123", "-keypass",
-           "abc123", "-signedjar", getJarFilePath("signed_hello"),
-           getJarFilePath("hello"), "mykey")
+           "abc123", "-signedjar", getJarFilePath("signed_" + jarName),
+           getJarFilePath(jarName), keyName)
            .shouldHaveExitValue(0);
     }
 

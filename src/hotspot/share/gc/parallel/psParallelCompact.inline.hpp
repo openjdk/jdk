@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -116,7 +116,7 @@ inline void PSParallelCompact::adjust_pointer(T* p, ParCompactionManager* cm) {
     assert(ParallelScavengeHeap::heap()->is_in(obj), "should be in heap");
 
     oop new_obj = cast_to_oop(summary_data().calc_new_pointer(obj, cm));
-    assert(new_obj != NULL, "non-null address for live objects");
+    assert(new_obj != nullptr, "non-null address for live objects");
     // Is it actually relocated at all?
     if (new_obj != obj) {
       assert(ParallelScavengeHeap::heap()->is_in_reserved(new_obj),
@@ -130,9 +130,9 @@ class PCAdjustPointerClosure: public BasicOopIterateClosure {
 public:
   PCAdjustPointerClosure(ParCompactionManager* cm) : _cm(cm) {
   }
-  template <typename T> void do_oop_nv(T* p) { PSParallelCompact::adjust_pointer(p, _cm); }
-  virtual void do_oop(oop* p)                { do_oop_nv(p); }
-  virtual void do_oop(narrowOop* p)          { do_oop_nv(p); }
+  template <typename T> void do_oop_work(T* p) { PSParallelCompact::adjust_pointer(p, _cm); }
+  virtual void do_oop(oop* p)                { do_oop_work(p); }
+  virtual void do_oop(narrowOop* p)          { do_oop_work(p); }
 
   virtual ReferenceIterationMode reference_iteration_mode() { return DO_FIELDS; }
 private:

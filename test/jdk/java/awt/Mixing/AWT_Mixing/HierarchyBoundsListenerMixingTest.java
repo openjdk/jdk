@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@ import java.io.*;
 
 /**
  * AWT Mixing test for HierarchyBoundsListener ancestors.
- * <p>See <a href="https://bugs.openjdk.java.net/browse/JDK-6768230">CR6768230</a> for details.
+ * <p>See <a href="https://bugs.openjdk.org/browse/JDK-6768230">CR6768230</a> for details.
  */
 /*
  * @test

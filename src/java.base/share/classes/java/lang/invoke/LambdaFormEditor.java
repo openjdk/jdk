@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,6 @@ import sun.invoke.util.Wrapper;
 
 import java.lang.ref.SoftReference;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
@@ -102,10 +101,10 @@ class LambdaFormEditor {
 
         @Override
         public boolean equals(Object obj) {
-            if (obj instanceof TransformKey) {
-                return equals((TransformKey) obj);
+            if (obj instanceof TransformKey key) {
+                return equals(key);
             }
-            return obj instanceof Transform && equals((Transform)obj);
+            return obj instanceof Transform transform && equals(transform);
         }
 
         private boolean equals(TransformKey that) {
@@ -355,10 +354,10 @@ class LambdaFormEditor {
 
         @Override
         public boolean equals(Object obj) {
-            if (obj instanceof TransformKey) {
-                return equals((TransformKey) obj);
+            if (obj instanceof TransformKey key) {
+                return equals(key);
             }
-            return obj instanceof Transform && equals((Transform)obj);
+            return obj instanceof Transform transform && equals(transform);
         }
 
         private boolean equals(TransformKey that) {
@@ -514,7 +513,7 @@ class LambdaFormEditor {
     }
 
     private BoundMethodHandle.SpeciesData newSpeciesData(BasicType type) {
-        return oldSpeciesData().extendWith((byte) type.ordinal());
+        return oldSpeciesData().extendWith(type);
     }
 
     BoundMethodHandle bindArgumentL(BoundMethodHandle mh, int pos, Object value) {
@@ -1146,7 +1145,7 @@ class LambdaFormEditor {
             }
         }
 
-        form = new LambdaForm(arity2, names2, result2);
+        form = LambdaForm.create(arity2, names2, result2);
         return putInCache(key, form);
     }
 

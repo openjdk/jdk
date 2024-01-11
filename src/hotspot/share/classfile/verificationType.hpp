@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@
 #include "runtime/handles.hpp"
 #include "runtime/signature.hpp"
 
-enum {
+enum : uint {
   // As specified in the JVM spec
   ITEM_Top = 0,
   ITEM_Integer = 1,
@@ -67,7 +67,7 @@ class VerificationType {
     };
 
     // Enum for the _data field
-    enum {
+    enum : uint {
       // Bottom two bits determine if the type is a reference, primitive,
       // uninitialized or a query-type.
       TypeMask           = 0x00000003,

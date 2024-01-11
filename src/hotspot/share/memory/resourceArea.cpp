@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,9 @@
 #include "precompiled.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.inline.hpp"
+#include "nmt/memTracker.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/javaThread.hpp"
-#include "services/memTracker.hpp"
 #include "utilities/vmError.hpp"
 
 void ResourceArea::bias_to(MEMFLAGS new_flags) {
@@ -42,6 +42,18 @@ void ResourceArea::bias_to(MEMFLAGS new_flags) {
 }
 
 #ifdef ASSERT
+
+ResourceMark::ResourceMark(ResourceArea* area, Thread* thread) :
+    _impl(area),
+    _thread(thread),
+    _previous_resource_mark(nullptr)
+{
+  if (_thread != nullptr) {
+    assert(_thread == Thread::current(), "not the current thread");
+    _previous_resource_mark = _thread->current_resource_mark();
+    _thread->set_current_resource_mark(this);
+  }
+}
 
 void ResourceArea::verify_has_resource_mark() {
   if (_nesting <= 0 && !VMError::is_error_reported()) {
@@ -74,6 +86,6 @@ extern char* resource_reallocate_bytes( char *old, size_t old_size, size_t new_s
   return (char*)Thread::current()->resource_area()->Arealloc(old, old_size, new_size, alloc_failmode);
 }
 
-extern void resource_free_bytes( char *old, size_t size ) {
-  Thread::current()->resource_area()->Afree(old, size);
+extern void resource_free_bytes( Thread* thread, char *old, size_t size ) {
+  thread->resource_area()->Afree(old, size);
 }

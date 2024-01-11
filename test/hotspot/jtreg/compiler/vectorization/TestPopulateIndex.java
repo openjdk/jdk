@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,7 +60,7 @@ public class TestPopulateIndex {
     }
 
     @Test
-    @IR(counts = {"PopulateIndex", ">= 1"})
+    @IR(counts = {IRNode.POPULATE_INDEX, "> 0"})
     public void indexArrayFill() {
         for (int i = 0; i < count; i++) {
             idx[i] = i;
@@ -78,7 +78,7 @@ public class TestPopulateIndex {
     }
 
     @Test
-    @IR(counts = {"PopulateIndex", ">= 1"})
+    @IR(counts = {IRNode.POPULATE_INDEX, "> 0"})
     public void exprWithIndex1() {
         for (int i = 0; i < count; i++) {
             dst[i] = src[i] * (i & 7);
@@ -96,7 +96,7 @@ public class TestPopulateIndex {
     }
 
     @Test
-    @IR(counts = {"PopulateIndex", ">= 1"})
+    @IR(counts = {IRNode.POPULATE_INDEX, "> 0"})
     public void exprWithIndex2() {
         for (int i = 0; i < count; i++) {
             f[i] = i * i + 100;

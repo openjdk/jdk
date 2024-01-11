@@ -29,10 +29,10 @@ package com.sun.hotspot.igv.data;
  */
 public class InputBytecode {
 
-    private int bci;
-    private String name;
-    private String operands;
-    private String comment;
+    private final int bci;
+    private final String name;
+    private final String operands;
+    private final String comment;
     private InputMethod inlined;
 
     public InputBytecode(int bci, String name, String operands, String comment) {

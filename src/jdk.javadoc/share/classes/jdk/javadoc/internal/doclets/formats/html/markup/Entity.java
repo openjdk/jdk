@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 
 package jdk.javadoc.internal.doclets.formats.html.markup;
 
-import jdk.javadoc.internal.doclets.toolkit.Content;
+import jdk.javadoc.internal.doclets.formats.html.Content;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -41,12 +41,22 @@ public class Entity extends Content {
 
     public final String text;
 
+    /**
+     * Creates an entity with a given name or numeric value.
+     *
+     * @param name the name, or numeric value
+     * @return the entity
+     */
+    public static Entity of(CharSequence name) {
+        return new Entity("&" + name + ";");
+    }
+
     private Entity(String text) {
         this.text = text;
     }
 
     @Override
-    public boolean write(Writer writer, boolean atNewline) throws IOException {
+    public boolean write(Writer writer, String newline, boolean atNewline) throws IOException {
         writer.write(text);
         return false;
     }
@@ -60,7 +70,6 @@ public class Entity extends Content {
     public int charCount() {
         return 1;
     }
-
 
     /**
      * Escapes the special HTML characters in a given string using the appropriate
@@ -76,10 +85,11 @@ public class Entity extends Content {
             char ch = str.charAt(i);
             switch (ch) {
                 // only start building a new string if we need to
-                case '<': case '>': case '&':
+                case '<', '>', '&' -> {
                     StringBuilder sb = new StringBuilder(str.substring(0, i));
                     escapeHtmlChars(str, i, sb);
                     return sb.toString();
+                }
             }
         }
         return str;
@@ -100,10 +110,10 @@ public class Entity extends Content {
         for (int i = start ; i < s.length(); i++) {
             char ch = s.charAt(i);
             switch (ch) {
-                case '<': sb.append(Entity.LESS_THAN.text);     break;
-                case '>': sb.append(Entity.GREATER_THAN.text);  break;
-                case '&': sb.append(Entity.AMPERSAND.text);     break;
-                default:  sb.append(ch);                        break;
+                case '<' -> sb.append(Entity.LESS_THAN.text);
+                case '>' -> sb.append(Entity.GREATER_THAN.text);
+                case '&' -> sb.append(Entity.AMPERSAND.text);
+                default ->  sb.append(ch);
             }
         }
     }

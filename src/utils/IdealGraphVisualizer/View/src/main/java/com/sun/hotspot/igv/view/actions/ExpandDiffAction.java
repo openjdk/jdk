@@ -23,20 +23,31 @@
  */
 package com.sun.hotspot.igv.view.actions;
 
-import com.sun.hotspot.igv.data.ChangedListener;
-import com.sun.hotspot.igv.util.ContextAction;
 import com.sun.hotspot.igv.view.DiagramViewModel;
-import javax.swing.Action;
-import javax.swing.ImageIcon;
-import org.openide.util.*;
+import org.openide.awt.ActionID;
+import org.openide.awt.ActionReference;
+import org.openide.awt.ActionReferences;
+import org.openide.awt.ActionRegistration;
+import org.openide.util.NbBundle;
+import org.openide.util.NbBundle.Messages;
 
-public final class ExpandDiffAction extends ContextAction<DiagramViewModel> implements ChangedListener<DiagramViewModel> {
 
-    private DiagramViewModel model;
+@ActionID(category = "View", id = "com.sun.hotspot.igv.view.actions.ExpandDiffAction")
+@ActionRegistration(displayName = "#CTL_ExpandDiffAction")
+@ActionReferences({
+        @ActionReference(path = "Menu/View", position = 250),
+        @ActionReference(path = "Shortcuts", name = "DS-RIGHT"),
+        @ActionReference(path = "Shortcuts", name = "D-UP")
+})
+@Messages({
+        "CTL_ExpandDiffAction=Expand difference selection",
+        "HINT_ExpandDiffAction=Expand the difference selection"
+})
+public final class ExpandDiffAction extends ModelAwareAction {
 
-    public ExpandDiffAction() {
-        putValue(Action.SHORT_DESCRIPTION, "Expand the difference selection");
-        putValue(Action.SMALL_ICON, new ImageIcon(ImageUtilities.loadImage("com/sun/hotspot/igv/view/images/expand_right.png")));
+    @Override
+    protected String iconResource() {
+        return "com/sun/hotspot/igv/view/images/expand_right.png"; // NOI18N
     }
 
     @Override
@@ -45,13 +56,8 @@ public final class ExpandDiffAction extends ContextAction<DiagramViewModel> impl
     }
 
     @Override
-    public HelpCtx getHelpCtx() {
-        return HelpCtx.DEFAULT_HELP;
-    }
-
-    @Override
-    public Class<DiagramViewModel> contextClass() {
-        return DiagramViewModel.class;
+    protected String getDescription() {
+        return NbBundle.getMessage(ExpandDiffAction.class, "HINT_ExpandDiffAction");
     }
 
     @Override
@@ -62,33 +68,7 @@ public final class ExpandDiffAction extends ContextAction<DiagramViewModel> impl
     }
 
     @Override
-    public void update(DiagramViewModel model) {
-        super.update(model);
-
-        if (this.model != model) {
-            if (this.model != null) {
-                this.model.getDiagramChangedEvent().removeListener(this);
-            }
-
-            this.model = model;
-            if (this.model != null) {
-                this.model.getDiagramChangedEvent().addListener(this);
-            }
-        }
-    }
-
-    @Override
     public boolean isEnabled(DiagramViewModel model) {
         return model.getSecondPosition() != model.getPositions().size() - 1;
-    }
-
-    @Override
-    public Action createContextAwareInstance(Lookup arg0) {
-        return new ExpandDiffAction();
-    }
-
-    @Override
-    public void changed(DiagramViewModel source) {
-        update(source);
     }
 }

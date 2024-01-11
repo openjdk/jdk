@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,9 +78,9 @@ void PSPromotionLAB::flush() {
   HeapWord* tlab_end = end() + CollectedHeap::min_dummy_object_size();
   CollectedHeap::fill_with_object(top(), tlab_end, trueInDebug);
 
-  set_bottom(NULL);
-  set_end(NULL);
-  set_top(NULL);
+  set_bottom(nullptr);
+  set_end(nullptr);
+  set_top(nullptr);
 
   _state = flushed;
 }
@@ -113,9 +113,10 @@ void PSOldPromotionLAB::flush() {
 
   PSPromotionLAB::flush();
 
-  assert(_start_array != NULL, "Sanity");
+  assert(_start_array != nullptr, "Sanity");
 
-  _start_array->allocate_block(obj);
+  // filler obj
+  _start_array->update_for_block(obj, obj + cast_to_oop(obj)->size());
 }
 
 #ifdef ASSERT
@@ -132,17 +133,11 @@ bool PSYoungPromotionLAB::lab_is_valid(MemRegion lab) {
 }
 
 bool PSOldPromotionLAB::lab_is_valid(MemRegion lab) {
-  assert(_start_array->covered_region().contains(lab), "Sanity");
-
   ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
   PSOldGen* old_gen = heap->old_gen();
   MemRegion used = old_gen->object_space()->used_region();
 
-  if (used.contains(lab)) {
-    return true;
-  }
-
-  return false;
+  return used.contains(lab);
 }
 
 #endif /* ASSERT */

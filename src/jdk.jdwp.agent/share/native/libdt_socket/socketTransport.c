@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -220,11 +220,7 @@ handshake(int fd, jlong timeout) {
     if (strncmp(b, hello, received) != 0) {
         char msg[80+2*16];
         b[received] = '\0';
-        /*
-         * We should really use snprintf here but it's not available on Windows.
-         * We can't use jio_snprintf without linking the transport against the VM.
-         */
-        sprintf(msg, "handshake failed - received >%s< - expected >%s<", b, hello);
+        snprintf(msg, sizeof(msg), "handshake failed - received >%s< - expected >%s<", b, hello);
         setLastError(0, msg);
         return JDWPTRANSPORT_ERROR_IO_ERROR;
     }
@@ -690,7 +686,7 @@ static jdwpTransportError startListening(struct addrinfo *ai, int *socket, char*
         }
 
         portNum = getPort((struct sockaddr *)&addr);
-        sprintf(buf, "%d", portNum);
+        snprintf(buf, sizeof(buf), "%d", portNum);
         *actualAddress = (*callback->alloc)((int)strlen(buf) + 1);
         if (*actualAddress == NULL) {
             RETURN_ERROR(JDWPTRANSPORT_ERROR_OUT_OF_MEMORY, "out of memory");
@@ -731,30 +727,27 @@ socketTransport_startListening(jdwpTransportEnv* env, const char* address,
         return err;
     }
 
-    // Try to find bind address of preferred address family first.
-    for (ai = addrInfo; ai != NULL; ai = ai->ai_next) {
-        if (ai->ai_family == preferredAddressFamily) {
-            listenAddr = ai;
-            break;
+    // Try to find bind address of preferred address family first (if java.net.preferIPv6Addresses != "system").
+    if (preferredAddressFamily != AF_UNSPEC) {
+        for (ai = addrInfo; ai != NULL; ai = ai->ai_next) {
+            if (ai->ai_family == preferredAddressFamily) {
+                listenAddr = ai;
+                break;
+            }
         }
     }
 
     if (listenAddr == NULL) {
-        // No address of preferred address family found, grab the fist one.
+        // No address of preferred address family found, grab the first one.
         listenAddr = &(addrInfo[0]);
-    }
-
-    if (listenAddr == NULL) {
-        dbgsysFreeAddrInfo(addrInfo);
-        RETURN_ERROR(JDWPTRANSPORT_ERROR_INTERNAL, "listen failed: wrong address");
     }
 
     // Binding to IN6ADDR_ANY allows to serve both IPv4 and IPv6 connections,
     // but binding to mapped INADDR_ANY (::ffff:0.0.0.0) allows to serve IPv4
     // connections only. Make sure that IN6ADDR_ANY is preferred over
-    // mapped INADDR_ANY if preferredAddressFamily is AF_INET6 or not set.
+    // mapped INADDR_ANY if preferIPv4Stack is false.
 
-    if (preferredAddressFamily != AF_INET) {
+    if (!allowOnlyIPv4) {
         inet_pton(AF_INET6, "::ffff:0.0.0.0", &mappedAny);
 
         if (isEqualIPv6Addr(listenAddr, mappedAny)) {
@@ -858,7 +851,7 @@ socketTransport_accept(jdwpTransportEnv* env, jlong acceptTimeout, jlong handsha
                 int err2 = getnameinfo((struct sockaddr *)&clientAddr, clientAddrLen,
                                        addrStr, sizeof(addrStr), NULL, 0,
                                        NI_NUMERICHOST);
-                sprintf(ebuf, "ERROR: Peer not allowed to connect: %s\n",
+                snprintf(ebuf, sizeof(ebuf), "ERROR: Peer not allowed to connect: %s\n",
                         (err2 != 0) ? "<bad address>" : addrStr);
                 dbgsysSocketClose(socketFD);
                 socketFD = -1;
@@ -976,8 +969,10 @@ socketTransport_attach(jdwpTransportEnv* env, const char* addressString, jlong a
         return err;
     }
 
-    /* 1st pass - preferredAddressFamily (by default IPv4), 2nd pass - the rest */
-    for (pass = 0; pass < 2 && socketFD < 0; pass++) {
+    // 1st pass - preferredAddressFamily (by default IPv4), 2nd pass - the rest;
+    // if java.net.preferIPv6Addresses == "system", only 2nd pass is needed
+    pass = preferredAddressFamily != AF_UNSPEC ? 0 : 1;
+    for (; pass < 2 && socketFD < 0; pass++) {
         for (ai = addrInfo; ai != NULL; ai = ai->ai_next) {
             if ((pass == 0 && ai->ai_family == preferredAddressFamily) ||
                 (pass == 1 && ai->ai_family != preferredAddressFamily))
@@ -1314,6 +1309,43 @@ static int readBooleanSysProp(int *result, int trueValue, int falseValue,
     return JNI_OK;
 }
 
+/*
+ * Reads java.net.preferIPv6Addresses system value, sets preferredAddressFamily to
+ *  - AF_INET6 if the property is "true";
+ *  - AF_INET if the property is "false".
+ *  - AF_UNSPEC if the property is "system".
+ * Doesn't change preferredAddressFamily if the property is not set or failed to read.
+ */
+static int readPreferIPv6Addresses(JNIEnv* jniEnv,
+    jclass sysClass, jmethodID getPropMethod, const char *propName)
+{
+    jstring value;
+    jstring name = (*jniEnv)->NewStringUTF(jniEnv, propName);
+
+    if (name == NULL) {
+        return JNI_ERR;
+    }
+    value = (jstring)(*jniEnv)->CallStaticObjectMethod(jniEnv, sysClass, getPropMethod, name);
+    if ((*jniEnv)->ExceptionCheck(jniEnv)) {
+        return JNI_ERR;
+    }
+    if (value != NULL) {
+        const char *theValue = (*jniEnv)->GetStringUTFChars(jniEnv, value, NULL);
+        if (theValue == NULL) {
+            return JNI_ERR;
+        }
+        if (strcmp(theValue, "true") == 0) {
+            preferredAddressFamily = AF_INET6;
+        } else if (strcmp(theValue, "false") == 0) {
+            preferredAddressFamily = AF_INET;
+        } else if (strcmp(theValue, "system") == 0) {
+            preferredAddressFamily = AF_UNSPEC;
+        }
+        (*jniEnv)->ReleaseStringUTFChars(jniEnv, value, theValue);
+    }
+    return JNI_OK;
+}
+
 JNIEXPORT jint JNICALL
 jdwpTransport_OnLoad(JavaVM *vm, jdwpTransportCallback* cbTablePtr,
                      jint version, jdwpTransportEnv** env)
@@ -1371,7 +1403,7 @@ jdwpTransport_OnLoad(JavaVM *vm, jdwpTransportCallback* cbTablePtr,
         }
         readBooleanSysProp(&allowOnlyIPv4, 1, 0,
             jniEnv, sysClass, getPropMethod, "java.net.preferIPv4Stack");
-        readBooleanSysProp(&preferredAddressFamily, AF_INET6, AF_INET,
+        readPreferIPv6Addresses(
             jniEnv, sysClass, getPropMethod, "java.net.preferIPv6Addresses");
     } while (0);
 

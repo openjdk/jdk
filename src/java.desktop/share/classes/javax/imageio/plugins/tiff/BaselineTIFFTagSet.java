@@ -222,7 +222,8 @@ public final class BaselineTIFFTagSet extends TIFFTagSet {
      * A value to be used with the "Compression" tag.
      *
      * @see #TAG_COMPRESSION
-     * @see <a href="https://tools.ietf.org/html/rfc1951">DEFLATE specification</a>
+     * @spec https://www.rfc-editor.org/info/rfc1951
+     *      RFC 1951: DEFLATE Compressed Data Format Specification version 1.3
      */
     public static final int COMPRESSION_DEFLATE = 32946;
 

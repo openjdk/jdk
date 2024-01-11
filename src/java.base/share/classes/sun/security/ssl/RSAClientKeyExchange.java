@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -116,12 +116,13 @@ final class RSAClientKeyExchange {
         @Override
         public String toString() {
             MessageFormat messageFormat = new MessageFormat(
-                "\"RSA ClientKeyExchange\": '{'\n" +
-                "  \"client_version\":  {0}\n" +
-                "  \"encncrypted\": '{'\n" +
-                "{1}\n" +
-                "  '}'\n" +
-                "'}'",
+                    """
+                            "RSA ClientKeyExchange": '{'
+                              "client_version":  {0}
+                              "encrypted": '{'
+                            {1}
+                              '}'
+                            '}'""",
                 Locale.ENGLISH);
 
             HexDumpEncoder hexEncoder = new HexDumpEncoder();
@@ -253,9 +254,6 @@ final class RSAClientKeyExchange {
                     break;
                 } else if (possession instanceof X509Possession) {
                     x509Possession = (X509Possession)possession;
-                    if (rsaPossession != null) {
-                        break;
-                    }
                 }
             }
 

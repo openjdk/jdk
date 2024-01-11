@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,22 +26,18 @@
 package sun.security.provider;
 
 import java.io.*;
-import java.security.PublicKey;
-import java.util.*;
-import java.security.cert.*;
 
-import jdk.internal.event.EventHelper;
-import jdk.internal.event.X509CertificateEvent;
-import sun.security.util.KeyUtil;
-import sun.security.util.Pem;
-import sun.security.x509.*;
+import java.security.cert.*;
+import java.util.*;
+
 import sun.security.pkcs.PKCS7;
+import sun.security.pkcs.ParsingException;
 import sun.security.provider.certpath.X509CertPath;
 import sun.security.provider.certpath.X509CertificatePair;
-import sun.security.util.DerValue;
 import sun.security.util.Cache;
-import java.util.Base64;
-import sun.security.pkcs.ParsingException;
+import sun.security.util.DerValue;
+import sun.security.x509.X509CRLImpl;
+import sun.security.x509.X509CertImpl;
 
 /**
  * This class defines a certificate factory for X.509 v3 certificates {@literal &}
@@ -116,8 +112,6 @@ public class X509Factory extends CertificateFactorySpi {
         }
         cert = new X509CertImpl(encoding);
         addToCache(certCache, cert.getEncodedInternal(), cert);
-        // record cert details if necessary
-        commitEvent(cert);
         return cert;
     }
 
@@ -130,7 +124,7 @@ public class X509Factory extends CertificateFactorySpi {
         int read = 0;
         byte[] buffer = new byte[2048];
         while (length > 0) {
-            int n = in.read(buffer, 0, length<2048?length:2048);
+            int n = in.read(buffer, 0, Math.min(length, 2048));
             if (n <= 0) {
                 break;
             }
@@ -478,7 +472,7 @@ public class X509Factory extends CertificateFactorySpi {
             }
         } catch (ParsingException e) {
             while (data != null) {
-                coll.add(new X509CertImpl(data));
+                coll.add(X509CertImpl.newX509CertImpl(data));
                 data = readOneBlock(pbis);
             }
         }
@@ -676,7 +670,7 @@ public class X509Factory extends CertificateFactorySpi {
 
     /**
      * Read one BER data block. This method is aware of indefinite-length BER
-     * encoding and will read all of the sub-sections in a recursive way
+     * encoding and will read all the subsections in a recursive way
      *
      * @param is    Read from this InputStream
      * @param bout  Write into this OutputStream
@@ -771,44 +765,5 @@ public class X509Factory extends CertificateFactorySpi {
             }
         }
         return tag;
-    }
-
-    private static void commitEvent(X509CertImpl info) {
-        X509CertificateEvent xce = new X509CertificateEvent();
-        if (xce.shouldCommit() || EventHelper.isLoggingSecurity()) {
-            PublicKey pKey = info.getPublicKey();
-            String algId = info.getSigAlgName();
-            String serNum = info.getSerialNumber().toString(16);
-            String subject = info.getSubjectDN().getName();
-            String issuer = info.getIssuerDN().getName();
-            String keyType = pKey.getAlgorithm();
-            int length = KeyUtil.getKeySize(pKey);
-            int hashCode = info.hashCode();
-            long beginDate = info.getNotBefore().getTime();
-            long endDate = info.getNotAfter().getTime();
-            if (xce.shouldCommit()) {
-                xce.algorithm = algId;
-                xce.serialNumber = serNum;
-                xce.subject = subject;
-                xce.issuer = issuer;
-                xce.keyType = keyType;
-                xce.keyLength = length;
-                xce.certificateId = hashCode;
-                xce.validFrom = beginDate;
-                xce.validUntil = endDate;
-                xce.commit();
-            }
-            if (EventHelper.isLoggingSecurity()) {
-                EventHelper.logX509CertificateEvent(algId,
-                        serNum,
-                        subject,
-                        issuer,
-                        keyType,
-                        length,
-                        hashCode,
-                        beginDate,
-                        endDate);
-            }
-        }
     }
 }

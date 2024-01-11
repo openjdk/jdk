@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2013, 2016 SAP SE. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,19 +26,17 @@
 #ifndef OS_AIX_OS_AIX_HPP
 #define OS_AIX_OS_AIX_HPP
 
-// Information about the protection of the page at address '0' on this os.
-static bool zero_page_read_protected() { return false; }
+#include "runtime/os.hpp"
 
 // Class Aix defines the interface to the Aix operating systems.
 
-class Aix {
+class os::Aix {
   friend class os;
 
  private:
 
   static julong _physical_memory;
   static pthread_t _main_thread;
-  static int _page_size;
 
   // -1 = uninitialized, 0 = AIX, 1 = OS/400 (PASE)
   static int _on_pase;
@@ -61,6 +59,7 @@ class Aix {
   static int _extshm;
 
   static julong available_memory();
+  static julong free_memory();
   static julong physical_memory() { return _physical_memory; }
   static void initialize_system_info();
 
@@ -86,11 +85,6 @@ class Aix {
 
   // Given an address, returns the size of the page backing that address
   static size_t query_pagesize(void* p);
-
-  static int page_size(void) {
-    assert(_page_size != -1, "not initialized");
-    return _page_size;
-  }
 
   static intptr_t* ucontext_get_sp(const ucontext_t* uc);
   static intptr_t* ucontext_get_fp(const ucontext_t* uc);
@@ -177,6 +171,12 @@ class Aix {
   // (on AIX, using libperfstat, on PASE with libo4.so).
   // Returns true if ok, false if error.
   static bool get_meminfo(meminfo_t* pmi);
+
+  static bool platform_print_native_stack(outputStream* st, const void* context, char *buf, int buf_size, address& lastpc);
+  static void* resolve_function_descriptor(void* p);
+
+  // Simulate the library search algorithm of dlopen() (in os::dll_load)
+  static int stat64x_via_LIBPATH(const char* path, struct stat64x* stat);
 };
 
 #endif // OS_AIX_OS_AIX_HPP

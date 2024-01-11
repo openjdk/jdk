@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007, 2008, 2009, 2010, 2011 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -34,7 +34,6 @@
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/vframeArray.hpp"
 #include "vmreg_zero.inline.hpp"
-
 #ifdef COMPILER1
 #include "c1/c1_Runtime1.hpp"
 #endif
@@ -75,7 +74,7 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
                                                 VMRegPair *regs,
                                                 BasicType ret_type) {
   ShouldNotCallThis();
-  return NULL;
+  return nullptr;
 }
 
 int Deoptimization::last_frame_adjust(int callee_parameters,
@@ -119,7 +118,6 @@ RuntimeStub* SharedRuntime::generate_resolve_blob(address destination, const cha
 
 int SharedRuntime::c_calling_convention(const BasicType *sig_bt,
                                          VMRegPair *regs,
-                                         VMRegPair *regs2,
                                          int total_args_passed) {
   ShouldNotCallThis();
   return 0;

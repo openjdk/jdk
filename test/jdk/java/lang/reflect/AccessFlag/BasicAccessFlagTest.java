@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8266670
+ * @bug 8266670 8293626
  * @summary Basic tests of AccessFlag
  */
 
@@ -42,6 +42,7 @@ public class BasicAccessFlagTest {
         testMaskOrdering();
         testDisjoint();
         testMaskToAccessFlagsPositive();
+        testLocationsNullHandling();
     }
 
     /*
@@ -144,6 +145,17 @@ public class BasicAccessFlagTest {
                     throw new RuntimeException("Bad set computation on " +
                                                accessFlag + ", " + location);
                 }
+            }
+        }
+    }
+
+    private static void testLocationsNullHandling() {
+        for (var flag : AccessFlag.values() ) {
+            try {
+                flag.locations(null);
+                throw new RuntimeException("Did not get NPE on " + flag + ".location(null)");
+            } catch (NullPointerException npe ) {
+                ; // Expected
             }
         }
     }

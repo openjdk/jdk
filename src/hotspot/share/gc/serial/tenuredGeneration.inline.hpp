@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,7 +49,7 @@ inline bool TenuredGeneration::is_in(const void* p) const {
   return space()->is_in(p);
 }
 
-inline CompactibleSpace* TenuredGeneration::first_compaction_space() const {
+inline ContiguousSpace* TenuredGeneration::first_compaction_space() const {
   return space();
 }
 
@@ -63,15 +63,6 @@ HeapWord* TenuredGeneration::par_allocate(size_t word_size,
                                                      bool is_tlab) {
   assert(!is_tlab, "TenuredGeneration does not support TLAB allocation");
   return _the_space->par_allocate(word_size);
-}
-
-size_t TenuredGeneration::block_size(const HeapWord* addr) const {
-  if (addr < _the_space->top()) {
-    return cast_to_oop(addr)->size();
-  } else {
-    assert(addr == _the_space->top(), "non-block head arg to block_size");
-    return _the_space->end() - _the_space->top();
-  }
 }
 
 bool TenuredGeneration::block_is_obj(const HeapWord* addr) const {

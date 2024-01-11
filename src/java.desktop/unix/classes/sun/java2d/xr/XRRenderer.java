@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,7 @@ import static sun.java2d.xr.XRUtils.clampToShort;
 import static sun.java2d.xr.XRUtils.clampToUShort;
 
 /**
- * XRender provides only accalerated rectangles. To emulate higher "order"
+ * XRender provides only accelerated rectangles. To emulate higher "order"
  *  geometry we have to pass everything else to DoPath/FillSpans.
  *
  * TODO: DrawRect could be instrified

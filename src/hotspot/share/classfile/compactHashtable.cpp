@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,17 +23,19 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm.h"
 #include "cds/archiveBuilder.hpp"
-#include "cds/heapShared.inline.hpp"
+#include "cds/cds_globals.hpp"
+#include "cds/cdsConfig.hpp"
 #include "classfile/compactHashtable.hpp"
 #include "classfile/javaClasses.hpp"
+#include "jvm.h"
 #include "logging/logMessage.hpp"
 #include "memory/metadataFactory.hpp"
-#include "runtime/arguments.hpp"
 #include "runtime/globals.hpp"
+#include "runtime/java.hpp"
 #include "runtime/vmThread.hpp"
 #include "utilities/numberSeq.hpp"
+
 #include <sys/stat.h>
 
 #if INCLUDE_CDS
@@ -43,7 +45,7 @@
 //
 CompactHashtableWriter::CompactHashtableWriter(int num_entries,
                                                CompactHashtableStats* stats) {
-  Arguments::assert_is_dumping_archive();
+  assert(CDSConfig::is_dumping_archive(), "sanity");
   assert(num_entries >= 0, "sanity");
   _num_buckets = calculate_num_buckets(num_entries);
   assert(_num_buckets > 0, "no buckets");
@@ -51,12 +53,12 @@ CompactHashtableWriter::CompactHashtableWriter(int num_entries,
   _num_entries_written = 0;
   _buckets = NEW_C_HEAP_ARRAY(GrowableArray<Entry>*, _num_buckets, mtSymbol);
   for (int i=0; i<_num_buckets; i++) {
-    _buckets[i] = new (ResourceObj::C_HEAP, mtSymbol) GrowableArray<Entry>(0, mtSymbol);
+    _buckets[i] = new (mtSymbol) GrowableArray<Entry>(0, mtSymbol);
   }
 
   _stats = stats;
-  _compact_buckets = NULL;
-  _compact_entries = NULL;
+  _compact_buckets = nullptr;
+  _compact_entries = nullptr;
   _num_empty_buckets = 0;
   _num_value_only_buckets = 0;
   _num_other_buckets = 0;
@@ -212,8 +214,8 @@ void SimpleCompactHashtable::serialize_header(SerializeClosure* soc) {
   // calculate_header_size() accordingly.
   soc->do_u4(&_entry_count);
   soc->do_u4(&_bucket_count);
-  soc->do_ptr((void**)&_buckets);
-  soc->do_ptr((void**)&_entries);
+  soc->do_ptr(&_buckets);
+  soc->do_ptr(&_entries);
   if (soc->reading()) {
     _base_address = (address)SharedBaseAddress;
   }
@@ -238,8 +240,8 @@ HashtableTextDump::HashtableTextDump(const char* filename) : _fd(-1) {
   if (_fd < 0) {
     quit("Unable to open hashtable dump file", filename);
   }
-  _base = os::map_memory(_fd, filename, 0, NULL, _size, true, false);
-  if (_base == NULL) {
+  _base = os::map_memory(_fd, filename, 0, nullptr, _size, true, false);
+  if (_base == nullptr) {
     quit("Unable to map hashtable dump file", filename);
   }
   _p = _base;
@@ -364,8 +366,8 @@ int HashtableTextDump::scan_symbol_prefix() {
   return utf8_length;
 }
 
-jchar HashtableTextDump::unescape(const char* from, const char* end, int count) {
-  jchar value = 0;
+int HashtableTextDump::unescape(const char* from, const char* end, int count) {
+  int value = 0;
 
   corrupted_if(from + count > end, "Truncated");
 
@@ -408,7 +410,7 @@ void HashtableTextDump::get_utf8(char* utf8_buffer, int utf8_length) {
       switch (c) {
       case 'x':
         {
-          jchar value = unescape(from, end, 2);
+          int value = unescape(from, end, 2);
           from += 2;
           assert(value <= 0xff, "sanity");
           *to++ = (char)(value & 0xff);

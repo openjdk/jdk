@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,93 +24,62 @@
 #include "precompiled.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/os.hpp"
-#include "utilities/globalCounter.hpp"
-#include "utilities/globalCounter.inline.hpp"
 #include "threadHelper.inline.hpp"
+#include "utilities/globalCounter.inline.hpp"
 
-#define GOOD_VALUE 1337
-#define BAD_VALUE  4711
+constexpr const int good_value = 1337;
+constexpr const int bad_value =  4711;
 
 struct TestData {
   long test_value;
 };
 
-class RCUReaderThread : public JavaTestThread {
-public:
-  static volatile bool _exit;
-  volatile TestData** _test;
-  Semaphore* _wrt_start;
-  RCUReaderThread(Semaphore* post, volatile TestData** test, Semaphore* wrt_start)
-    : JavaTestThread(post), _test(test), _wrt_start(wrt_start) {};
-  virtual ~RCUReaderThread(){}
-  void main_run() {
-    _wrt_start->signal();
-    while (!_exit) {
-      GlobalCounter::CSContext cs_context = GlobalCounter::critical_section_begin(this);
-      volatile TestData* test = Atomic::load_acquire(_test);
-      long value = Atomic::load_acquire(&test->test_value);
-      ASSERT_EQ(value, GOOD_VALUE);
-      GlobalCounter::critical_section_end(this, cs_context);
+TEST_VM(GlobalCounter, critical_section) {
+  constexpr int number_of_readers = 4;
+  volatile bool rt_exit = false;
+  Semaphore wrt_start;
+  volatile TestData* test = nullptr;
+
+  auto rcu_reader = [&](Thread* current, int _id) {
+    volatile TestData** _test = &test;
+    wrt_start.signal();
+    while (!rt_exit) {
+      GlobalCounter::CSContext cs_context = GlobalCounter::critical_section_begin(current);
+      volatile TestData* read_test = Atomic::load_acquire(_test);
+      long value = Atomic::load_acquire(&read_test->test_value);
+      ASSERT_EQ(value, good_value);
+      GlobalCounter::critical_section_end(current, cs_context);
       {
-        GlobalCounter::CriticalSection cs(this);
+        GlobalCounter::CriticalSection cs(current);
         volatile TestData* test = Atomic::load_acquire(_test);
         long value = Atomic::load_acquire(&test->test_value);
-        ASSERT_EQ(value, GOOD_VALUE);
+        ASSERT_EQ(value, good_value);
       }
     }
-  }
-};
-
-volatile bool RCUReaderThread::_exit = false;
-
-class RCUWriterThread : public JavaTestThread {
-public:
-  RCUWriterThread(Semaphore* post) : JavaTestThread(post) {
   };
-  virtual ~RCUWriterThread(){}
-  void main_run() {
-    static const int NUMBER_OF_READERS = 4;
-    Semaphore post;
-    Semaphore wrt_start;
-    volatile TestData* test = NULL;
 
-    RCUReaderThread* reader1 = new RCUReaderThread(&post, &test, &wrt_start);
-    RCUReaderThread* reader2 = new RCUReaderThread(&post, &test, &wrt_start);
-    RCUReaderThread* reader3 = new RCUReaderThread(&post, &test, &wrt_start);
-    RCUReaderThread* reader4 = new RCUReaderThread(&post, &test, &wrt_start);
+  TestThreadGroup<decltype(rcu_reader)> ttg(rcu_reader, number_of_readers);
 
-    TestData* tmp = new TestData();
-    tmp->test_value = GOOD_VALUE;
-    Atomic::release_store_fence(&test, tmp);
-
-    reader1->doit();
-    reader2->doit();
-    reader3->doit();
-    reader4->doit();
-
-    int nw = NUMBER_OF_READERS;
-    while (nw > 0) {
-      wrt_start.wait();
-      --nw;
-    }
-    jlong stop_ms = os::javaTimeMillis() + 1000; // 1 seconds max test time
-    for (int i = 0; i < 100000 && stop_ms > os::javaTimeMillis(); i++) {
-      volatile TestData* free_tmp = test;
-      tmp = new TestData();
-      tmp->test_value = GOOD_VALUE;
-      Atomic::release_store(&test, tmp);
-      GlobalCounter::write_synchronize();
-      free_tmp->test_value = BAD_VALUE;
-      delete free_tmp;
-    }
-    RCUReaderThread::_exit = true;
-    for (int i = 0; i < NUMBER_OF_READERS; i++) {
-      post.wait();
-    }
+  TestData* tmp = new TestData();
+  tmp->test_value = good_value;
+  Atomic::release_store(&test, tmp);
+  rt_exit = false;
+  ttg.doit();
+  int nw = number_of_readers;
+  while (nw > 0) {
+    wrt_start.wait();
+    --nw;
   }
-};
-
-TEST_VM(GlobalCounter, critical_section) {
-  RCUReaderThread::_exit = false;
-  mt_test_doer<RCUWriterThread>();
+  jlong stop_ms = os::javaTimeMillis() + 1000; // 1 seconds max test time
+  for (int i = 0; i < 100000 && stop_ms > os::javaTimeMillis(); i++) {
+    volatile TestData* free_tmp = test;
+    tmp = new TestData();
+    tmp->test_value = good_value;
+    Atomic::release_store(&test, tmp);
+    GlobalCounter::write_synchronize();
+    free_tmp->test_value = bad_value;
+    delete free_tmp;
+  }
+  rt_exit = true;
+  ttg.join();
 }

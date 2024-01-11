@@ -10,6 +10,7 @@
         <folder name="Window">
             <file name="ControlFlowAction.shadow">
                 <attr name="originalFile" stringvalue="Actions/Window/com-sun-hotspot-igv-controlflow-ControlFlowAction.instance"/>
+                <attr name="position" intvalue="2"/>
             </file>
         </folder>
     </folder>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2017, 2021 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -74,13 +74,9 @@ public:
 
 #ifdef _LP64
 
-  // Reserve a range of memory at an address suitable for en/decoding narrow
-  // Klass pointers (see: CompressedClassPointers::is_valid_base()).
-  // The returned address shall both be suitable as a compressed class pointers
-  //  base, and aligned to Metaspace::reserve_alignment (which is equal to or a
-  //  multiple of allocation granularity).
-  // On error, returns an unreserved space.
-  static ReservedSpace reserve_address_space_for_compressed_classes(size_t size);
+  // Reserve a range of memory that is to contain narrow Klass IDs. If "try_in_low_address_ranges"
+  // is true, we will attempt to reserve memory suitable for zero-based encoding.
+  static ReservedSpace reserve_address_space_for_compressed_classes(size_t size, bool optimize_for_zero_base);
 
   // Given a prereserved space, use that to set up the compressed class space list.
   static void initialize_class_space(ReservedSpace rs);
@@ -113,7 +109,7 @@ public:
                             MetaspaceObj::Type type, TRAPS);
 
   // Non-TRAPS version of allocate which can be called by a non-Java thread, that returns
-  // NULL on failure.
+  // null on failure.
   static MetaWord* allocate(ClassLoaderData* loader_data, size_t word_size,
                             MetaspaceObj::Type type);
 
@@ -121,7 +117,7 @@ public:
   static bool contains_non_shared(const void* ptr);
 
   // Free empty virtualspaces
-  static void purge();
+  static void purge(bool classes_unloaded);
 
   static void report_metadata_oome(ClassLoaderData* loader_data, size_t word_size,
                                    MetaspaceObj::Type type, MetadataType mdtype, TRAPS);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,14 +26,10 @@
 package javax.xml.validation;
 
 import com.sun.org.apache.xerces.internal.jaxp.validation.XMLSchemaFactory;
-import java.io.File;
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
 import java.security.AccessControlContext;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
-import java.util.Properties;
 import java.util.ServiceConfigurationError;
 import java.util.ServiceLoader;
 import java.util.function.Supplier;
@@ -51,15 +47,6 @@ class SchemaFactoryFinder  {
     private static boolean debug = false;
 
     private static final String DEFAULT_PACKAGE = "com.sun.org.apache.xerces.internal";
-    /**
-     * <p>Cache properties for performance.</p>
-     */
-    private static final Properties cacheProps = new Properties();
-
-    /**
-     * <p>First time requires initialization overhead.</p>
-     */
-    private static volatile boolean firstTime = true;
 
     static {
         // Use try/catch block to support applets
@@ -179,37 +166,12 @@ class SchemaFactoryFinder  {
             }
         }
 
-        String javah = SecuritySupport.getSystemProperty( "java.home" );
-        String configFile = javah + File.separator +
-        "conf" + File.separator + "jaxp.properties";
-
-
-        // try to read from $java.home/conf/jaxp.properties
-        try {
-            if(firstTime){
-                synchronized(cacheProps){
-                    if(firstTime){
-                        File f=new File( configFile );
-                        firstTime = false;
-                        if(SecuritySupport.doesFileExist(f)){
-                            debugPrintln(()->"Read properties file " + f);
-                            cacheProps.load(SecuritySupport.getFileInputStream(f));
-                        }
-                    }
-                }
-            }
-            final String factoryClassName = cacheProps.getProperty(propertyName);
-            debugPrintln(()->"found " + factoryClassName + " in $java.home/conf/jaxp.properties");
-
-            if (factoryClassName != null) {
-                sf = createInstance(factoryClassName);
-                if(sf != null){
-                    return sf;
-                }
-            }
-        } catch (Exception ex) {
-            if (debug) {
-                ex.printStackTrace();
+        // try to read from the configuration file
+        String factoryClassName = SecuritySupport.readConfig(propertyName);
+        if (factoryClassName != null) {
+            sf = createInstance(factoryClassName);
+            if(sf != null){
+                return sf;
             }
         }
 

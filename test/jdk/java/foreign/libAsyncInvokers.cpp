@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,27 +21,40 @@
  * questions.
  */
 
-#include <thread>
+#include "testlib_threads.h"
 
 #include "shared.h"
 
 template<typename CB>
+void proc_v(void* v_cb) {
+    ((CB) v_cb)();
+}
+
+template<typename CB>
 void launch_v(CB cb) {
-    std::thread thrd(cb);
-    thrd.join();
+    run_in_new_thread_and_join(&proc_v<CB>, (void*) cb);
 }
 
 template<typename O, typename CB>
-void start(O& out, CB cb) {
-    out = cb();
+struct Context {
+    CB cb;
+    O o;
+};
+
+template<typename O, typename CB>
+void proc(void* context) {
+    Context<O, CB>* ctxt = (Context<O, CB>*) context;
+    ctxt->o = ctxt->cb();
 }
 
 template<typename O, typename CB>
 O launch(CB cb) {
-    O result;
-    std::thread thrd(&start<O, CB>, std::ref(result), cb);
-    thrd.join();
-    return result;
+    Context<O, CB> ctxt;
+    ctxt.cb = cb;
+
+    run_in_new_thread_and_join(&proc<O, CB>, &ctxt);
+
+    return ctxt.o;
 }
 
 extern "C" {

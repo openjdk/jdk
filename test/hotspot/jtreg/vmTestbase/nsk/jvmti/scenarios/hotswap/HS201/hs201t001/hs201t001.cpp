@@ -390,7 +390,7 @@ int readNewBytecode(jvmtiEnv* jvmti, int testcase) {
         return NSK_FALSE;
     }
 
-    sprintf(filename,"%s/%s%02d/%s.class",
+    snprintf(filename, sizeof(filename), "%s/%s%02d/%s.class",
                 pathToByteCode, "newclass", testcase, EXPECTED_CLASS_NAME);
 
     NSK_DISPLAY1("\treading new bytecode for the tested class\n\tfile name: %s\n",

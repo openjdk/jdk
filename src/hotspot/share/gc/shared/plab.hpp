@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
 #define SHARE_GC_SHARED_PLAB_HPP
 
 #include "gc/shared/collectedHeap.hpp"
-#include "gc/shared/gcUtil.hpp"
 #include "memory/allocation.hpp"
 #include "utilities/globalDefinitions.hpp"
 
@@ -69,6 +68,8 @@ protected:
   void undo_last_allocation(HeapWord* obj, size_t word_sz);
 
 public:
+  static void startup_initialization();
+
   // Initializes the buffer to be empty, but with the given "word_sz".
   // Must get initialized with "set_buf" for an allocation to succeed.
   PLAB(size_t word_sz);
@@ -83,14 +84,14 @@ public:
   // If an allocation of the given "word_sz" can be satisfied within the
   // buffer, do the allocation, returning a pointer to the start of the
   // allocated block.  If the allocation request cannot be satisfied,
-  // return NULL.
+  // return null.
   HeapWord* allocate(size_t word_sz) {
     HeapWord* res = _top;
     if (pointer_delta(_end, _top) >= word_sz) {
       _top = _top + word_sz;
       return res;
     } else {
-      return NULL;
+      return nullptr;
     }
   }
 
@@ -137,21 +138,21 @@ public:
   // Fills in the unallocated portion of the buffer with a garbage object and updates
   // statistics. To be called during GC.
   void retire();
+
+  HeapWord* top() const {
+    return _top;
+  }
 };
 
 // PLAB book-keeping.
 class PLABStats : public CHeapObj<mtGC> {
- protected:
+protected:
   const char* _description;   // Identifying string.
 
   size_t _allocated;          // Total allocated
   size_t _wasted;             // of which wasted (internal fragmentation)
   size_t _undo_wasted;        // of which wasted on undo (is not used for calculation of PLAB size)
   size_t _unused;             // Unused in last buffer
-  size_t _default_plab_sz;
-  size_t _desired_net_plab_sz;// Output of filter (below), suitably trimmed and quantized
-  AdaptiveWeightedAverage
-         _filter;             // Integrator with decay
 
   virtual void reset() {
     _allocated   = 0;
@@ -160,22 +161,13 @@ class PLABStats : public CHeapObj<mtGC> {
     _unused      = 0;
   }
 
-  virtual void log_plab_allocation();
-  virtual void log_sizing(size_t calculated, size_t net_desired);
-
-  // helper for adjust_desired_plab_sz().
-  virtual size_t compute_desired_plab_sz();
-
- public:
-  PLABStats(const char* description, size_t default_per_thread_plab_size, size_t desired_net_plab_sz, unsigned wt) :
+public:
+  PLABStats(const char* description) :
     _description(description),
     _allocated(0),
     _wasted(0),
     _undo_wasted(0),
-    _unused(0),
-    _default_plab_sz(default_per_thread_plab_size),
-    _desired_net_plab_sz(desired_net_plab_sz),
-    _filter(wt)
+    _unused(0)
   { }
 
   virtual ~PLABStats() { }
@@ -186,20 +178,13 @@ class PLABStats : public CHeapObj<mtGC> {
   size_t used() const { return allocated() - (wasted() + unused()); }
   size_t undo_wasted() const { return _undo_wasted; }
 
-  static const size_t min_size() {
+  static size_t min_size() {
     return PLAB::min_size();
   }
 
-  static const size_t max_size() {
+  static size_t max_size() {
     return PLAB::max_size();
   }
-
-  // Calculates plab size for current number of gc worker threads.
-  size_t desired_plab_sz(uint no_of_gc_workers);
-
-  // Updates the current desired PLAB size. Computes the new desired PLAB size with one gc worker thread,
-  // updates _desired_plab_sz and clears sensor accumulators.
-  void adjust_desired_plab_sz();
 
   inline void add_allocated(size_t v);
 

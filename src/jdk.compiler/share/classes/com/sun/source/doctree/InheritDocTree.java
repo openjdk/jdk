@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,8 +30,21 @@ package com.sun.source.doctree;
  *
  * <pre>
  *    {&#064;inheritDoc}
+ *    {&#064;inheritDoc supertype}
  * </pre>
  *
  * @since 1.8
  */
-public interface InheritDocTree extends InlineTagTree { }
+public interface InheritDocTree extends InlineTagTree {
+
+    /**
+     * {@return the reference to a superclass or superinterface from which
+     * to inherit documentation, or {@code null} if no reference was provided}
+     *
+     * @implSpec this implementation returns {@code null}.
+     * @since 22
+     */
+    default ReferenceTree getSupertype() {
+        return null;
+    }
+}

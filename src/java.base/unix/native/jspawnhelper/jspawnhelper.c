@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,10 @@
  * questions.
  */
 
+#include <assert.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -71,9 +73,6 @@ void shutItDown() {
  * - the data strings for fields in ChildStuff
  */
 void initChildStuff (int fdin, int fdout, ChildStuff *c) {
-    int n;
-    int argvBytes, nargv, envvBytes, nenvv;
-    int dirlen;
     char *buf;
     SpawnInfo sp;
     int bufsize, offset=0;
@@ -85,11 +84,15 @@ void initChildStuff (int fdin, int fdout, ChildStuff *c) {
         error (fdout, ERR_PIPE);
     }
 
-    if (readFully (fdin, c, sizeof(*c)) == -1) {
+#ifdef DEBUG
+    jtregSimulateCrash(0, 5);
+#endif
+
+    if (readFully (fdin, c, sizeof(*c)) != sizeof(*c)) {
         error (fdout, ERR_PIPE);
     }
 
-    if (readFully (fdin, &sp, sizeof(sp)) == -1) {
+    if (readFully (fdin, &sp, sizeof(sp)) != sizeof(sp)) {
         error (fdout, ERR_PIPE);
     }
 
@@ -98,7 +101,7 @@ void initChildStuff (int fdin, int fdout, ChildStuff *c) {
 
     ALLOC(buf, bufsize);
 
-    if (readFully (fdin, buf, bufsize) == -1) {
+    if (readFully (fdin, buf, bufsize) != bufsize) {
         error (fdout, ERR_PIPE);
     }
 
@@ -132,20 +135,39 @@ void initChildStuff (int fdin, int fdout, ChildStuff *c) {
 
 int main(int argc, char *argv[]) {
     ChildStuff c;
-    int t;
     struct stat buf;
-    /* argv[0] contains the fd number to read all the child info */
-    int r, fdin, fdout;
+    /* argv[1] contains the fd number to read all the child info */
+    int r, fdinr, fdinw, fdout;
+    sigset_t unblock_signals;
 
-    r = sscanf (argv[argc-1], "%d:%d", &fdin, &fdout);
-    if (r == 2 && fcntl(fdin, F_GETFD) != -1) {
-        fstat(fdin, &buf);
+#ifdef DEBUG
+    jtregSimulateCrash(0, 4);
+#endif
+    r = sscanf (argv[1], "%d:%d:%d", &fdinr, &fdinw, &fdout);
+    if (r == 3 && fcntl(fdinr, F_GETFD) != -1 && fcntl(fdinw, F_GETFD) != -1) {
+        fstat(fdinr, &buf);
         if (!S_ISFIFO(buf.st_mode))
             shutItDown();
     } else {
         shutItDown();
     }
-    initChildStuff (fdin, fdout, &c);
+
+    // Reset any mask signals from parent
+    sigemptyset(&unblock_signals);
+    sigprocmask(SIG_SETMASK, &unblock_signals, NULL);
+
+    // Close the writing end of the pipe we use for reading from the parent.
+    // We have to do this before we start reading from the parent to avoid
+    // blocking in the case the parent exits before we finished reading from it.
+    close(fdinw); // Deliberately ignore errors (see https://lwn.net/Articles/576478/).
+    initChildStuff (fdinr, fdout, &c);
+    // Now set the file descriptor for the pipe's writing end to -1
+    // for the case that somebody tries to close it again.
+    assert(c.childenv[1] == fdinw);
+    c.childenv[1] = -1;
+    // The file descriptor for reporting errors back to our parent we got on the command
+    // line should be the same like the one in the ChildStuff struct we've just read.
+    assert(c.fail[1] == fdout);
 
     childProcess (&c);
     return 0; /* NOT REACHED */

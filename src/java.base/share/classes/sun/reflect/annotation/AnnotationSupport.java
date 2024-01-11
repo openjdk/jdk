@@ -281,4 +281,13 @@ public final class AnnotationSupport {
             }
         }
     }
+
+    /**
+     * Gets an unmodifiable view of {@code a}'s elements.
+     *
+     * @return a map from element names to element values
+     */
+    public static Map<String, Object> memberValues(Annotation a) {
+        return ((AnnotationInvocationHandler) Proxy.getInvocationHandler(a)).memberValues();
+    }
 }
