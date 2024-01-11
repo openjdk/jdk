@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,8 +54,8 @@ public class TestNavigation extends JavadocTester {
     }
 
     @Test
-    public void testOverview(Path ignore) {
-        javadoc("-d", "out-overview",
+    public void testOverview(Path base) {
+        javadoc("-d", base.resolve("api").toString(),
                 "-overview", testSrc("overview.html"),
                 "-sourcepath", testSrc,
                 "pkg");
@@ -172,7 +172,7 @@ public class TestNavigation extends JavadocTester {
                     package pkg1; public interface InterfaceWithNoMembers {
                     }""");
 
-        javadoc("-d", "out-navlinks",
+        javadoc("-d", base.resolve("api").toString(),
                 "-sourcepath", src.toString(),
                 "pkg1");
         checkExit(Exit.OK);
@@ -299,8 +299,8 @@ public class TestNavigation extends JavadocTester {
     }
 
     @Test
-    public void testSinglePackage(Path ignore) {
-        javadoc("-d", "out-single-package",
+    public void testSinglePackage(Path base) {
+        javadoc("-d", base.resolve("api").toString(),
                 "-sourcepath", testSrc,
                 "pkg");
         checkExit(Exit.OK);
@@ -373,7 +373,7 @@ public class TestNavigation extends JavadocTester {
                 .setModifiers("public", "class")
                 .write(src);
 
-        javadoc("-d", "out-unnamed-package",
+        javadoc("-d", base.resolve("api").toString(),
                 src.resolve("C.java").toString());
         checkExit(Exit.OK);
 

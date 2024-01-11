@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.Stack;
 import java.util.TreeMap;
 import java.util.function.Function;
@@ -271,7 +272,7 @@ public class TestSingletonLists extends JavadocTester {
                 case "ul": case "ol": case "dl":
                     counts.push(new TreeMap<>());
                     String classAttr = attrs.get("class");
-                    if ("tag-list".equals(classAttr) || "toc-list".equals(classAttr) || "sub-nav-list".equals(classAttr)) {
+                    if (classAttr != null && Set.of("tag-list", "toc-list", "sub-nav-list").contains(classAttr)) {
                         inSeeOrTocList++;
                     }
                     break;

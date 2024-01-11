@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import java.io.IOException;
 import java.io.Writer;
 import java.util.ArrayDeque;
 import java.util.Deque;
+import java.util.NoSuchElementException;
 import java.util.Objects;
 
 import jdk.javadoc.internal.doclets.formats.html.Content;
@@ -102,6 +103,7 @@ public class ListBuilder extends Content {
      * Pops the current list from the stack and returns to adding list items to the parent list.
      *
      * @return this list builder
+     * @throws NoSuchElementException if the stack is empty
      */
     public ListBuilder popNested() {
         currentList = stack.pop();

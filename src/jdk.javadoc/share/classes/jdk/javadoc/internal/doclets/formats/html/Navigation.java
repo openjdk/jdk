@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -198,7 +198,7 @@ public class Navigation {
                 }
                 addActivePageLink(target, contents.useLabel, options.classUse());
                 if (options.createTree()) {
-                    if (element instanceof PackageElement) {
+                    if (configuration.utils.isPackage(element)) {
                         addItemToList(target, links.createLink(DocPaths.PACKAGE_TREE, contents.treeLabel));
                     } else {
                         addItemToList(target, configuration.utils.isEnclosingPackageIncluded((TypeElement) element)
@@ -215,10 +215,10 @@ public class Navigation {
                 break;
             case TREE:
                 addOverviewLink(target);
-                if (element != null && !(element instanceof ModuleElement)) {
+                if (element != null && !configuration.utils.isModule(element)) {
                     addPageElementLink(target);
                     if (options.classUse()) {
-                        if (element instanceof PackageElement || element instanceof TypeElement) {
+                        if (configuration.utils.isPackage(element) || configuration.utils.isTypeElement(element)) {
                             addItemToList(target, links.createLink(DocPaths.PACKAGE_USE, contents.useLabel));
                         }
                     }
@@ -294,16 +294,16 @@ public class Navigation {
                 if (element != null) {
                     addPageElementLink(target);
                     if (options.classUse()) {
-                        if (element instanceof PackageElement pkg) {
+                        if (configuration.utils.isPackage(element)) {
                             addItemToList(target, links.createLink(pathToRoot.resolve(
-                                    configuration.docPaths.forPackage(pkg).resolve(DocPaths.PACKAGE_USE)),
-                                    contents.useLabel));
+                                    configuration.docPaths.forPackage((PackageElement) element)
+                                            .resolve(DocPaths.PACKAGE_USE)), contents.useLabel));
                         }
                     }
-                    if (options.createTree() && element instanceof PackageElement pkg) {
+                    if (options.createTree() && configuration.utils.isPackage(element)) {
                         addItemToList(target, links.createLink(pathToRoot.resolve(
-                                configuration.docPaths.forPackage(pkg).resolve(DocPaths.PACKAGE_TREE)),
-                                contents.treeLabel));
+                                configuration.docPaths.forPackage((PackageElement) element)
+                                        .resolve(DocPaths.PACKAGE_TREE)), contents.treeLabel));
                     } else {
                         addTreeLink(target);
                     }

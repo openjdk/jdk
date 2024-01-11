@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
 package jdk.javadoc.internal.doclets.formats.html;
 
 import javax.lang.model.element.Element;
-import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.PackageElement;
 
 import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
@@ -135,7 +134,7 @@ public class PackageTreeWriter extends AbstractTreeWriter {
     protected Navigation getNavBar(PageMode pageMode, Element element) {
         List<Content> subnavLinks = new ArrayList<>();
         if (configuration.showModules) {
-            ModuleElement mdle = configuration.docEnv.getElementUtils().getModuleOf(packageElement);
+            var mdle = utils.elementUtils.getModuleOf(packageElement);
             subnavLinks.add(getModuleLink(mdle, Text.of(mdle.getQualifiedName())));
         }
         subnavLinks.add(links.createLink(pathString(packageElement, DocPaths.PACKAGE_SUMMARY),
