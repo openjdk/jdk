@@ -57,6 +57,13 @@ public:
   }
   int stack_slot() const { return _slot; }
 
+  // Check if a RegMask is big enough to represent a synchronization entry at
+  // the index reg. Analogous to can_represent and can_represent_arg in
+  // regmask.hpp.
+  static bool can_represent_sync(OptoReg::Name reg) {
+    return (int)reg < (int)(RegMask::CHUNK_SIZE - 1 - Compile::current()->sync_stack_slots());
+  }
+
   bool is_eliminated() const { return _is_eliminated; }
   // mark lock as eliminated.
   void set_eliminated()      { _is_eliminated = true; }
