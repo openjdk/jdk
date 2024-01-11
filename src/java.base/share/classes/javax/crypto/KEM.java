@@ -537,7 +537,7 @@ public final class KEM {
      */
     public static KEM getInstance(String algorithm)
             throws NoSuchAlgorithmException {
-        List<Provider.Service> list = GetInstance.getServices(
+        Iterable<Provider.Service> list = GetInstance.getServices(
                 "KEM",
                 Objects.requireNonNull(algorithm, "null algorithm name"));
         List<Provider.Service> allowed = new ArrayList<>();

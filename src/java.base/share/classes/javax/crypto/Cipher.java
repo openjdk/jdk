@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -539,7 +539,7 @@ public class Cipher {
         for (Transform transform : transforms) {
             cipherServices.add(new ServiceId("Cipher", transform.transform));
         }
-        List<Service> services = GetInstance.getServices(cipherServices);
+        Iterable<Service> services = GetInstance.getServices(cipherServices);
         // make sure there is at least one service from a signed provider
         // and that it can use the specified mode and padding
         Iterator<Service> t = services.iterator();

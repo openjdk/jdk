@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -109,7 +109,7 @@ public class GetInstance {
      * and Provider loading and lookup is only triggered when
      * necessary.
      */
-    public static List<Service> getServices(String type, String algorithm) {
+    public static Iterable<Service> getServices(String type, String algorithm) {
         ProviderList list = Providers.getProviderList();
         return list.getServices(type, algorithm);
     }
@@ -120,7 +120,7 @@ public class GetInstance {
      * @deprecated use {@code getServices(List<ServiceId>)} instead
      */
     @Deprecated
-    public static List<Service> getServices(String type,
+    public static Iterable<Service> getServices(String type,
             List<String> algorithms) {
         ProviderList list = Providers.getProviderList();
         return list.getServices(type, algorithms);
@@ -130,7 +130,7 @@ public class GetInstance {
      * Return a List of all the available Services that implement any of
      * the specified algorithms. See getServices(String, String) for details.
      */
-    public static List<Service> getServices(List<ServiceId> ids) {
+    public static Iterable<Service> getServices(List<ServiceId> ids) {
         ProviderList list = Providers.getProviderList();
         return list.getServices(ids);
     }
@@ -183,7 +183,7 @@ public class GetInstance {
 
     public static Instance getInstance(String type, Class<?> clazz,
             String algorithm, Object param) throws NoSuchAlgorithmException {
-        List<Service> services = getServices(type, algorithm);
+        Iterable<Service> services = getServices(type, algorithm);
         NoSuchAlgorithmException failure = null;
         for (Service s : services) {
             try {
