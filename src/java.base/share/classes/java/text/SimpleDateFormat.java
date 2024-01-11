@@ -2430,7 +2430,7 @@ public class SimpleDateFormat extends DateFormat {
         return
             """
             SimpleDateFormat [locale: "%s", pattern: "%s"]
-            """.formatted(locale.getDisplayName(), toPattern());
+            """.formatted(locale == null ? "None" :locale.getDisplayName(), toPattern());
     }
 
     /**
