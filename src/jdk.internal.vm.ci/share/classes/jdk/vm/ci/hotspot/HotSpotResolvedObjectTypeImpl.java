@@ -265,7 +265,12 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
      * @return true if the type is a leaf class
      */
     private boolean isLeafClass() {
-        return compilerToVM().getResolvedJavaType(this, config().subklassOffset, false) == null;
+        // In general, compilerToVM().getResolvedJavaType should always be used to read a Klass*
+        // from HotSpot data structures but that has the side effect of creating a strong reference
+        // to the Class which we do not want since it can cause class unloading problems.  Since
+        // this code is only checking for null vs non-null so it should be safe to perform this
+        // check directly.
+        return UNSAFE.getLong(this.getKlassPointer() + config().subklassOffset) == 0;
     }
 
     /**

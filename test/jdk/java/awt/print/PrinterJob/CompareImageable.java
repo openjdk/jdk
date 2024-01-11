@@ -24,6 +24,7 @@
 /*
   @test
   @bug 4748055
+  @key printer
   @summary   PASS if the values are same in both cases (2 and 3) below.
   @run main/manual CompareImageable
 */

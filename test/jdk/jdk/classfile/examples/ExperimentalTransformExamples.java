@@ -23,16 +23,16 @@
 
 /*
  * @test
- * @summary Testing Classfile ExperimentalTransformExamples compilation.
+ * @summary Testing ClassFile ExperimentalTransformExamples compilation.
  * @compile ExperimentalTransformExamples.java
  */
 import java.net.URI;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
 
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.attribute.RuntimeInvisibleAnnotationsAttribute;
-import jdk.internal.classfile.attribute.RuntimeVisibleAnnotationsAttribute;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.RuntimeInvisibleAnnotationsAttribute;
+import java.lang.classfile.attribute.RuntimeVisibleAnnotationsAttribute;
 
 /**
  * ExperimentalTransformExamples
@@ -52,7 +52,7 @@ public class ExperimentalTransformExamples {
     };
 
     public byte[] deleteAnnotations(ClassModel cm) {
-        return Classfile.of().transform(cm, (cb, ce) -> {
+        return ClassFile.of().transform(cm, (cb, ce) -> {
             switch (ce) {
                 case MethodModel m -> cb.transformMethod(m, dropMethodAnnos);
                 case FieldModel f -> cb.transformField(f, dropFieldAnnos);

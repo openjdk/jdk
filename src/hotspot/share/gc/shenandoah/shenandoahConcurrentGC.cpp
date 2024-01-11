@@ -705,10 +705,8 @@ void ShenandoahEvacUpdateCleanupOopStorageRootsClosure::do_oop(oop* p) {
       if (resolved == obj) {
         resolved = _heap->evacuate_object(obj, _thread);
       }
+      shenandoah_assert_not_in_cset_except(p, resolved, _heap->cancelled_gc());
       ShenandoahHeap::atomic_update_oop(resolved, p, obj);
-      assert(_heap->cancelled_gc() ||
-             _mark_context->is_marked(resolved) && !_heap->in_collection_set(resolved),
-             "Sanity");
     }
   }
 }

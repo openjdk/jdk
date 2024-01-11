@@ -678,7 +678,6 @@ Zone	Asia/Shanghai	8:05:43	-	LMT	1901
 			8:00	PRC	C%sT
 # Xinjiang time, used by many in western China; represented by Ürümqi / Ürümchi
 # / Wulumuqi.  (Please use Asia/Shanghai if you prefer Beijing time.)
-# Vostok base in Antarctica matches this since 1970.
 Zone	Asia/Urumqi	5:50:20	-	LMT	1928
 			6:00	-	+06
 
@@ -3450,6 +3449,9 @@ Zone	Asia/Karachi	4:28:12 -	LMT	1907
 # From Heba Hamad (2023-03-22):
 # ... summer time will begin in Palestine from Saturday 04-29-2023,
 # 02:00 AM by 60 minutes forward.
+# From Heba Hemad (2023-10-09):
+# ... winter time will begin in Palestine from Saturday 10-28-2023,
+# 02:00 AM by 60 minutes back.
 #
 # From Paul Eggert (2023-03-22):
 # For now, guess that spring and fall transitions will normally
@@ -3571,13 +3573,13 @@ Rule Palestine	2070	only	-	Oct	 4	2:00	0	-
 Rule Palestine	2071	only	-	Sep	19	2:00	0	-
 Rule Palestine	2072	only	-	Sep	10	2:00	0	-
 Rule Palestine	2072	only	-	Oct	15	2:00	1:00	S
+Rule Palestine	2072	max	-	Oct	Sat<=30	2:00	0	-
 Rule Palestine	2073	only	-	Sep	 2	2:00	0	-
 Rule Palestine	2073	only	-	Oct	 7	2:00	1:00	S
 Rule Palestine	2074	only	-	Aug	18	2:00	0	-
 Rule Palestine	2074	only	-	Sep	29	2:00	1:00	S
 Rule Palestine	2075	only	-	Aug	10	2:00	0	-
 Rule Palestine	2075	only	-	Sep	14	2:00	1:00	S
-Rule Palestine	2075	max	-	Oct	Sat<=30	2:00	0	-
 Rule Palestine	2076	only	-	Jul	25	2:00	0	-
 Rule Palestine	2076	only	-	Sep	 5	2:00	1:00	S
 Rule Palestine	2077	only	-	Jul	17	2:00	0	-

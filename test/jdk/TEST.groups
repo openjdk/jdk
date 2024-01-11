@@ -647,3 +647,7 @@ jdk_containers_extended = \
     :jdk_io \
     :jdk_nio \
     :jdk_svc
+
+jdk_core_no_security = \
+   :jdk_core \
+   -:jdk_security

@@ -78,10 +78,14 @@ JNI_ENTRY(jlong, NEP_makeDowncallStub(JNIEnv* env, jclass _unused, jobject metho
     output_regs.push(ForeignGlobals::parse_vmstorage(ret_moves_oop->obj_at(i)));
   }
 
-  return (jlong) DowncallLinker::make_downcall_stub(basic_type, pslots, ret_bt, abi,
-                                                    input_regs, output_regs,
-                                                    needs_return_buffer, captured_state_mask,
-                                                    needs_transition)->code_begin();
+  RuntimeStub* stub = DowncallLinker::make_downcall_stub(basic_type, pslots, ret_bt, abi,
+                                                         input_regs, output_regs,
+                                                         needs_return_buffer, captured_state_mask,
+                                                         needs_transition);
+  if (stub == nullptr) {
+    return 0;
+  }
+  return (jlong) stub->code_begin();
 JNI_END
 
 JNI_ENTRY(jboolean, NEP_freeDowncallStub(JNIEnv* env, jclass _unused, jlong invoker))

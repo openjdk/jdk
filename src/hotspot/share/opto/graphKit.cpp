@@ -1439,8 +1439,7 @@ Node* GraphKit::cast_not_null(Node* obj, bool do_replace_in_map) {
   // Object is already not-null?
   if( t == t_not_null ) return obj;
 
-  Node *cast = new CastPPNode(obj,t_not_null);
-  cast->init_req(0, control());
+  Node* cast = new CastPPNode(control(), obj,t_not_null);
   cast = _gvn.transform( cast );
 
   // Scan for instances of 'obj' in the current JVM mapping.
@@ -1563,6 +1562,11 @@ Node* GraphKit::make_load(Node* ctl, Node* adr, const Type* t, BasicType bt,
   if (((bt == T_OBJECT) && C->do_escape_analysis()) || C->eliminate_boxing()) {
     // Improve graph before escape analysis and boxing elimination.
     record_for_igvn(ld);
+    if (ld->is_DecodeN()) {
+      // Also record the actual load (LoadN) in case ld is DecodeN
+      assert(ld->in(1)->Opcode() == Op_LoadN, "Assumption invalid: input to DecodeN is not LoadN");
+      record_for_igvn(ld->in(1));
+    }
   }
   return ld;
 }
