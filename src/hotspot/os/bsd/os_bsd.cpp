@@ -2039,12 +2039,12 @@ jint os::init_2(void) {
     if (status != 0) {
       log_info(os)("os::init_2 getrlimit failed: %s", os::strerror(errno));
     } else {
-#ifdef __APPLE__
       rlim_t rlim_org = nbr_files.rlim_cur;
-      // according to setrlimit(2), OPEN_MAX must be used instead
+
+      // on macOS according to setrlimit(2), OPEN_MAX must be used instead
       // of RLIM_INFINITY, but testing on macOS >= 10.6, reveals that
       // we can, in fact, use even RLIM_INFINITY, so try the max value
-      // that the system claims can be used first.
+      // that the system claims can be used first, same as other BSD OSes.
       nbr_files.rlim_cur = nbr_files.rlim_max;
 
       // WORKAROUND: some terminals (ksh) will internally use "int" type
@@ -2058,12 +2058,8 @@ jint os::init_2(void) {
         // if that fails then try lowering the limit to either OPEN_MAX
         // (which is safe) or the original limit, whichever was greater.
         nbr_files.rlim_cur = MAX(OPEN_MAX, rlim_org);
+        status = setrlimit(RLIMIT_NOFILE, &nbr_files);
       }
-#else
-      nbr_files.rlim_cur = nbr_files.rlim_max;
-#endif
-
-      status = setrlimit(RLIMIT_NOFILE, &nbr_files);
       if (status != 0) {
         log_info(os)("os::init_2 setrlimit failed: %s", os::strerror(errno));
       }
