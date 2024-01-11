@@ -116,107 +116,94 @@ public class PKCS9Attribute implements DerEncoder {
         }
     }
 
-    private static final Class<?> BYTE_ARRAY_CLASS;
-
     static {
-        try {
-            BYTE_ARRAY_CLASS = Class.forName("[B");
-            Class<?> str = Class.forName("[Ljava.lang.String;");
+        add(EMAIL_ADDRESS_OID, false, String[].class,
+            a -> Arrays.stream(a).map(
+                Throws.unchecked(DerValue::getAsString)).toArray(),
+            (v,t) -> t.putIA5String((String) v),
+            DerValue.tag_IA5String);
 
-            add(EMAIL_ADDRESS_OID, false, str,
-                a -> Arrays.stream(a).map(
-                    Throws.unchecked(DerValue::getAsString)).toArray(),
-                (v,t) -> t.putIA5String((String) v),
-                DerValue.tag_IA5String);
+        add(UNSTRUCTURED_NAME_OID, false, String[].class,
+            a -> Arrays.stream(a).map(
+                Throws.unchecked(DerValue::getAsString)).toArray(),
+            (v,t) -> t.putIA5String((String) v),
+            DerValue.tag_IA5String,
+            DerValue.tag_PrintableString,
+            DerValue.tag_T61String,
+            DerValue.tag_BMPString,
+            DerValue.tag_UniversalString,
+            DerValue.tag_UTF8String);
 
-            add(UNSTRUCTURED_NAME_OID, false, str,
-                a -> Arrays.stream(a).map(
-                    Throws.unchecked(DerValue::getAsString)).toArray(),
-                (v,t) -> t.putIA5String((String) v),
-                DerValue.tag_IA5String,
-                DerValue.tag_PrintableString,
-                DerValue.tag_T61String,
-                DerValue.tag_BMPString,
-                DerValue.tag_UniversalString,
-                DerValue.tag_UTF8String);
+        add(CONTENT_TYPE_OID, true, sun.security.util.ObjectIdentifier.class,
+            Throws.unchecked(a -> a[0].getOID()),
+            (v,t) -> mkDerStream(t, new DerOutputStream().putOID((ObjectIdentifier) v)),
+            DerValue.tag_ObjectId);
 
-            add(CONTENT_TYPE_OID, true, Class.forName("sun.security.util.ObjectIdentifier"),
-                Throws.unchecked(a -> a[0].getOID()),
-                (v,t) -> mkDerStream(t, new DerOutputStream().putOID((ObjectIdentifier) v)),
-                DerValue.tag_ObjectId);
+        add(MESSAGE_DIGEST_OID, true, byte[].class,
+            Throws.unchecked(a -> a[0].getOctetString()),
+            (v,t) -> mkDerStream(t, new DerOutputStream().putOctetString((byte[]) v)),
+            DerValue.tag_OctetString);
 
-            add(MESSAGE_DIGEST_OID, true, byte[].class,
-                Throws.unchecked(a -> a[0].getOctetString()),
-                (v,t) -> mkDerStream(t, new DerOutputStream().putOctetString((byte[]) v)),
-                DerValue.tag_OctetString);
+        //CHECK - Original converts to DerInputStream and back??
+        add(SIGNING_TIME_OID, true, java.util.Date.class,
+            Throws.unchecked(a -> a[0].getTime()),
+            (v,t) -> mkDerStream(t, new DerOutputStream().putTime((Date) v)),
+            DerValue.tag_UtcTime,
+            DerValue.tag_GeneralizedTime);
 
-            //CHECK - Original converts to DerInputStream and back??
-            add(SIGNING_TIME_OID, true, Class.forName("java.util.Date"),
-                Throws.unchecked(a -> a[0].getTime()),
-                (v,t) -> mkDerStream(t, new DerOutputStream().putTime((Date) v)),
-                DerValue.tag_UtcTime,
-                DerValue.tag_GeneralizedTime);
+        add(COUNTERSIGNATURE_OID, false, sun.security.pkcs.SignerInfo[].class,
+            a -> Arrays.stream(a).map(Throws.unchecked(
+                e -> new SignerInfo(e.toDerInputStream()))).toArray(),
+            (v,t) -> t.putOrderedSetOf(DerValue.tag_Set, (DerEncoder[]) v),
+            DerValue.tag_Sequence);
 
-            add(COUNTERSIGNATURE_OID, false,
-                Class.forName("[Lsun.security.pkcs.SignerInfo;"),
-                a -> Arrays.stream(a).map(Throws.unchecked(
-                    e -> new SignerInfo(e.toDerInputStream()))).toArray(),
-                (v,t) -> t.putOrderedSetOf(DerValue.tag_Set, (DerEncoder[]) v),
-                DerValue.tag_Sequence);
+        add(CHALLENGE_PASSWORD_OID, true, String.class,
+            Throws.unchecked(a -> a[0].getAsString()),
+            (v,t) -> mkDerStream(t, new DerOutputStream().putPrintableString((String) v)),
+            DerValue.tag_PrintableString,
+            DerValue.tag_T61String,
+            DerValue.tag_BMPString,
+            DerValue.tag_UniversalString,
+            DerValue.tag_UTF8String);
 
-            add(CHALLENGE_PASSWORD_OID, true, Class.forName("java.lang.String"),
-                Throws.unchecked(a -> a[0].getAsString()),
-                (v,t) -> mkDerStream(t, new DerOutputStream().putPrintableString((String) v)),
-                DerValue.tag_PrintableString,
-                DerValue.tag_T61String,
-                DerValue.tag_BMPString,
-                DerValue.tag_UniversalString,
-                DerValue.tag_UTF8String);
+        add(UNSTRUCTURED_ADDRESS_OID, false, String[].class,
+            a -> Arrays.stream(a).map(
+                Throws.unchecked(DerValue::getAsString)).toArray(String[]::new),
+            (v,t) -> t.putPrintableString((String) v),
+            DerValue.tag_PrintableString,
+            DerValue.tag_T61String,
+            DerValue.tag_BMPString,
+            DerValue.tag_UniversalString,
+            DerValue.tag_UTF8String);
 
-            add(UNSTRUCTURED_ADDRESS_OID, false, str,
-                a -> Arrays.stream(a).map(
-                    Throws.unchecked(DerValue::getAsString)).toArray(String[]::new),
-                (v,t) -> t.putPrintableString((String) v),
-                DerValue.tag_PrintableString,
-                DerValue.tag_T61String,
-                DerValue.tag_BMPString,
-                DerValue.tag_UniversalString,
-                DerValue.tag_UTF8String);
+        add(EXTENSION_REQUEST_OID, true, sun.security.x509.CertificateExtensions.class,
+            Throws.unchecked(a -> new CertificateExtensions(
+                new DerInputStream(a[0].toByteArray()))),
+            (v,t) -> {
+                DerOutputStream temp = new DerOutputStream();
+                CertificateExtensions exts = (CertificateExtensions) v;
+                exts.encode(temp, true);
+                return mkDerStream(t, temp);},
+            DerValue.tag_Sequence);
 
-            add(EXTENSION_REQUEST_OID, true,
-                Class.forName("sun.security.x509.CertificateExtensions"),
-                Throws.unchecked(a -> new CertificateExtensions(
-                    new DerInputStream(a[0].toByteArray()))),
-                (v,t) -> {
-                    DerOutputStream temp = new DerOutputStream();
-                    CertificateExtensions exts = (CertificateExtensions) v;
-                    exts.encode(temp, true);
-                    return mkDerStream(t, temp);},
-                DerValue.tag_Sequence);
+        add(SIGNING_CERTIFICATE_OID, true, sun.security.pkcs.SigningCertificateInfo.class,
+            Throws.unchecked(a -> new SigningCertificateInfo(a[0].toByteArray())),
+            (v,t) -> {
+                DerOutputStream temp = new DerOutputStream();
+                SigningCertificateInfo info = (SigningCertificateInfo) v;
+                temp.writeBytes(info.toByteArray());
+                return mkDerStream(t, temp);},
+            DerValue.tag_Sequence);
 
-            add(SIGNING_CERTIFICATE_OID, true,
-                Class.forName("sun.security.pkcs.SigningCertificateInfo"),
-                Throws.unchecked(a -> new SigningCertificateInfo(a[0].toByteArray())),
-                (v,t) -> {
-                    DerOutputStream temp = new DerOutputStream();
-                    SigningCertificateInfo info = (SigningCertificateInfo) v;
-                    temp.writeBytes(info.toByteArray());
-                    return mkDerStream(t, temp);},
-                DerValue.tag_Sequence);
+        add(SIGNATURE_TIMESTAMP_TOKEN_OID, true, byte[].class,
+            a -> a[0].toByteArray(),
+            (v,t) -> t.write(DerValue.tag_Set, (byte[]) v),
+            DerValue.tag_Sequence);
 
-            add(SIGNATURE_TIMESTAMP_TOKEN_OID, true, byte[].class,
-                a -> a[0].toByteArray(),
-                (v,t) -> t.write(DerValue.tag_Set, (byte[]) v),
-                DerValue.tag_Sequence);
-
-            add(CMS_ALGORITHM_PROTECTION_OID, true, byte[].class,
-                a -> a[0].toByteArray(),
-                (v,t) -> t.write(DerValue.tag_Set, (byte[]) v),
-                DerValue.tag_Sequence);
-
-        } catch (ClassNotFoundException e) {
-            throw new ExceptionInInitializerError(e.toString());
-        }
+        add(CMS_ALGORITHM_PROTECTION_OID, true, byte[].class,
+            a -> a[0].toByteArray(),
+            (v,t) -> t.write(DerValue.tag_Set, (byte[]) v),
+            DerValue.tag_Sequence);
     }
 
     /**
@@ -255,7 +242,7 @@ public class PKCS9Attribute implements DerEncoder {
 
         this.oid = oid;
         this.info = infoMap.get(oid);
-        Class<?> clazz = info == null ? BYTE_ARRAY_CLASS : info.valueClass();
+        Class<?> clazz = info == null ? byte[].class : info.valueClass();
         if (!clazz.isInstance(value)) {
             throw new IllegalArgumentException(
                 "Wrong value class " +
