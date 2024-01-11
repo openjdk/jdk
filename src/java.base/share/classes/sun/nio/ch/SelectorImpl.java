@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -140,14 +140,13 @@ public abstract class SelectorImpl
     private int lockAndDoSelect(Consumer<SelectionKey> action, long timeout)
         throws IOException
     {
-        // filter selectNow ops from consideration (timeout == 0)
+        // no JFR event for selectNow
         if ((timeout == 0) || (!SelectorSelectEvent.enabled())) {
             return implLockAndDoSelect(action, timeout);
         }
         long start = SelectorSelectEvent.timestamp();
         int n = implLockAndDoSelect(action, timeout);
         long duration = SelectorSelectEvent.timestamp() - start;
-        // always send event if timed out (n == 0)
         if ((n == 0) || (SelectorSelectEvent.shouldCommit(duration))) {
             timeout = (timeout < 0) ? 0 : timeout;
             SelectorSelectEvent.commit(start, duration, n, timeout);
