@@ -112,6 +112,8 @@ public class SynthTreeUI extends BasicTreeUI
     @Override
     protected void installDefaults() {
         updateStyle(tree);
+        expandedIconWrapper = new IconWrapper(expandedIcon);
+        collapsedIconWrapper = new IconWrapper(collapsedIcon);
     }
 
     private void updateStyle(JTree tree) {
@@ -156,9 +158,6 @@ public class SynthTreeUI extends BasicTreeUI
                     context, "Tree.showsRootHandles", Boolean.TRUE);
             LookAndFeel.installProperty(
                     tree, JTree.SHOWS_ROOT_HANDLES_PROPERTY, showsRootHandles);
-
-            expandedIconWrapper = new IconWrapper(expandedIcon);
-            collapsedIconWrapper = new IconWrapper(collapsedIcon);
 
             if (oldStyle != null) {
                 uninstallKeyboardActions();
@@ -794,6 +793,7 @@ public class SynthTreeUI extends BasicTreeUI
     //
     private class IconWrapper implements SynthIcon {
         Icon iconType;
+
         public IconWrapper(Icon type) {
             super();
             iconType = type;
@@ -803,35 +803,22 @@ public class SynthTreeUI extends BasicTreeUI
                               int y, int w, int h) {
             if (context == null) {
                 context = getContext(tree);
-                SynthGraphicsUtils.paintIcon(iconType, context, g, x, y, w, h);
             }
-            else {
-                SynthGraphicsUtils.paintIcon(iconType, context, g, x, y, w, h);
-            }
+            SynthGraphicsUtils.paintIcon(iconType, context, g, x, y, w, h);
         }
 
         public int getIconWidth(SynthContext context) {
-            int width;
             if (context == null) {
                 context = getContext(tree);
-                width = SynthGraphicsUtils.getIconWidth(iconType, context);
             }
-            else {
-                width = SynthGraphicsUtils.getIconWidth(iconType, context);
-            }
-            return width;
+            return SynthGraphicsUtils.getIconWidth(iconType, context);
         }
 
         public int getIconHeight(SynthContext context) {
-            int height;
             if (context == null) {
                 context = getContext(tree);
-                height = SynthGraphicsUtils.getIconHeight(iconType, context);
             }
-            else {
-                height = SynthGraphicsUtils.getIconHeight(iconType, context);
-            }
-            return height;
+            return SynthGraphicsUtils.getIconHeight(iconType, context);
         }
     }
 }
