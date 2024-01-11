@@ -401,7 +401,7 @@ public final class ForwardBuilder extends Builder {
      *    trusted certificate is checked.
      *    a) Issuer: ou=G,ou=C,o=B,c=A  [links=2]
      *    b) Issuer: ou=H,o=B,c=A       [links=3]
-     *    c) Issuer: ou=H,o=D,c=A	[skipped, only geographical c=A is same]
+     *    c) Issuer: ou=H,o=D,c=A       [skipped, only geographical c=A is same]
      *
      * 4) Any other certificates
      */
@@ -475,8 +475,8 @@ public final class ForwardBuilder extends Builder {
              * preferable.
              */
             if (debug != null) {
-                debug.println(METHOD_NME + " o1 Issuer:  " + cIssuer1);
-                debug.println(METHOD_NME + " o2 Issuer:  " + cIssuer2);
+                debug.println(METHOD_NME + " cert1 Issuer:  " + cIssuer1);
+                debug.println(METHOD_NME + " cert2 Issuer:  " + cIssuer2);
                 debug.println(METHOD_NME + " MATCH TRUSTED SUBJECT TEST...");
             }
 
@@ -491,8 +491,11 @@ public final class ForwardBuilder extends Builder {
              * subject, then it is preferable, in order of increasing naming
              * distance.
              */
+            String debugMsg = null;
             if (debug != null) {
                 debug.println(METHOD_NME +" SAME NAMESPACE AS TRUSTED TEST...");
+                debugMsg = METHOD_NME + " distance (number of " +
+                    "RDNS) from cert%1$s issuer to trusted subject %2$s: %3$d";
             }
 
             X500Name cIssuer1Name = X500Name.asX500Name(cIssuer1);
@@ -510,14 +513,16 @@ public final class ForwardBuilder extends Builder {
                     continue;
                 }
                 if (d1 != -1) {
+                    if (debug != null) {
+                        debug.println(String.format(debugMsg, "1", tSubject, d1));
+                    }
                     if (d2 != -1) {
+                        if (debug != null) {
+                            debug.println(String.format(debugMsg, "2", tSubject, d2));
+                        }
                         // both certs share a common non-geographical ancestor
                         // with trust anchor. Prefer the one that is closer
                         // to the trust anchor.
-                        if (debug != null) {
-                            debug.println(METHOD_NME +" cert1 links: " + d1);
-                            debug.println(METHOD_NME +" cert2 links: " + d2);
-                        }
                         return (d1 > d2) ? 1 : -1;
                     } else {
                         // cert1 shares a common non-geographical ancestor with
@@ -525,6 +530,9 @@ public final class ForwardBuilder extends Builder {
                         return -1;
                     }
                 } else if (d2 != -1) {
+                    if (debug != null) {
+                        debug.println(String.format(debugMsg, "2", tSubject, d2));
+                    }
                     // cert2 shares a common non-geographical ancestor with
                     // trust anchor, so it is preferred.
                     return 1;
@@ -582,7 +590,7 @@ public final class ForwardBuilder extends Builder {
            }
         }
 
-        return issuer.size() - anchorRdns.subList(0, i).size();
+        return issuer.size() - i;
     }
 
     /**
