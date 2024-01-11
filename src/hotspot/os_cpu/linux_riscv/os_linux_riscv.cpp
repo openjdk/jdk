@@ -232,7 +232,7 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
         CompiledMethod* nm = (cb != nullptr) ? cb->as_compiled_method_or_null() : nullptr;
         bool is_unsafe_arraycopy = (thread->doing_unsafe_access() && UnsafeCopyMemory::contains_pc(pc));
         if ((nm != nullptr && nm->has_unsafe_access()) || is_unsafe_arraycopy) {
-          address next_pc = pc + NativeCall::instruction_size;
+          address next_pc = Assembler::locate_next_instruction(pc);
           if (is_unsafe_arraycopy) {
             next_pc = UnsafeCopyMemory::page_error_continue_pc(pc);
           }
@@ -271,7 +271,7 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
                 thread->thread_state() == _thread_in_native) &&
                 sig == SIGBUS && /* info->si_code == BUS_OBJERR && */
                 thread->doing_unsafe_access()) {
-      address next_pc = pc + NativeCall::instruction_size;
+      address next_pc = Assembler::locate_next_instruction(pc);
       if (UnsafeCopyMemory::contains_pc(pc)) {
         next_pc = UnsafeCopyMemory::page_error_continue_pc(pc);
       }

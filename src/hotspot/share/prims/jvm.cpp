@@ -3933,8 +3933,6 @@ JVM_ENTRY(void, JVM_VirtualThreadStart(JNIEnv* env, jobject vthread))
     // set VTMS transition bit value in JavaThread and java.lang.VirtualThread object
     JvmtiVTMSTransitionDisabler::set_is_in_VTMS_transition(thread, vthread, false);
   }
-#else
-  fatal("Should only be called with JVMTI enabled");
 #endif
 JVM_END
 
@@ -3950,8 +3948,6 @@ JVM_ENTRY(void, JVM_VirtualThreadEnd(JNIEnv* env, jobject vthread))
     // set VTMS transition bit value in JavaThread and java.lang.VirtualThread object
     JvmtiVTMSTransitionDisabler::set_is_in_VTMS_transition(thread, vthread, true);
   }
-#else
-  fatal("Should only be called with JVMTI enabled");
 #endif
 JVM_END
 
@@ -3969,8 +3965,6 @@ JVM_ENTRY(void, JVM_VirtualThreadMount(JNIEnv* env, jobject vthread, jboolean hi
     // set VTMS transition bit value in JavaThread and java.lang.VirtualThread object
     JvmtiVTMSTransitionDisabler::set_is_in_VTMS_transition(thread, vthread, hide);
   }
-#else
-  fatal("Should only be called with JVMTI enabled");
 #endif
 JVM_END
 
@@ -3988,8 +3982,6 @@ JVM_ENTRY(void, JVM_VirtualThreadUnmount(JNIEnv* env, jobject vthread, jboolean 
     // set VTMS transition bit value in JavaThread and java.lang.VirtualThread object
     JvmtiVTMSTransitionDisabler::set_is_in_VTMS_transition(thread, vthread, hide);
   }
-#else
-  fatal("Should only be called with JVMTI enabled");
 #endif
 JVM_END
 
@@ -4003,8 +3995,20 @@ JVM_ENTRY(void, JVM_VirtualThreadHideFrames(JNIEnv* env, jobject vthread, jboole
   assert(!thread->is_in_VTMS_transition(), "sanity check");
   assert(thread->is_in_tmp_VTMS_transition() != (bool)hide, "sanity check");
   thread->toggle_is_in_tmp_VTMS_transition();
-#else
-  fatal("Should only be called with JVMTI enabled");
+#endif
+JVM_END
+
+// Notification from VirtualThread about disabling JVMTI Suspend in a sync critical section.
+// Needed to avoid deadlocks with JVMTI suspend mechanism.
+JVM_ENTRY(void, JVM_VirtualThreadDisableSuspend(JNIEnv* env, jobject vthread, jboolean enter))
+#if INCLUDE_JVMTI
+  if (!DoJVMTIVirtualThreadTransitions) {
+    assert(!JvmtiExport::can_support_virtual_threads(), "sanity check");
+    return;
+  }
+  assert(thread->is_disable_suspend() != (bool)enter,
+         "nested or unbalanced monitor enter/exit is not allowed");
+  thread->toggle_is_disable_suspend();
 #endif
 JVM_END
 

@@ -32,6 +32,9 @@ field name RELEASE_22 descriptor Ljavax/lang/model/SourceVersion; flags 4019
 class name javax/lang/model/element/RecordComponentElement
 method name asType descriptor ()Ljavax/lang/model/type/TypeMirror; flags 401
 
+class name javax/lang/model/element/TypeElement
+-method name isUnnamed descriptor ()Z
+
 class name javax/lang/model/element/VariableElement
 -method name isUnnamed descriptor ()Z
 method name isUnnamed descriptor ()Z flags 1

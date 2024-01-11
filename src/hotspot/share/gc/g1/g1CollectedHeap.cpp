@@ -2517,6 +2517,7 @@ void G1CollectedHeap::unload_classes_and_code(const char* description, BoolObjec
   GCTraceTime(Debug, gc, phases) debug(description, timer);
 
   ClassUnloadingContext ctx(workers()->active_workers(),
+                            false /* unregister_nmethods_during_purge */,
                             false /* lock_codeblob_free_separately */);
   {
     CodeCache::UnlinkingScope scope(is_alive);
@@ -2529,6 +2530,10 @@ void G1CollectedHeap::unload_classes_and_code(const char* description, BoolObjec
     ctx.purge_nmethods();
   }
   {
+    GCTraceTime(Debug, gc, phases) ur("Unregister NMethods", timer);
+    G1CollectedHeap::heap()->bulk_unregister_nmethods();
+  }
+  {
     GCTraceTime(Debug, gc, phases) t("Free Code Blobs", timer);
     ctx.free_code_blobs();
   }
@@ -2539,6 +2544,33 @@ void G1CollectedHeap::unload_classes_and_code(const char* description, BoolObjec
   }
 }
 
+class G1BulkUnregisterNMethodTask : public WorkerTask {
+  HeapRegionClaimer _hrclaimer;
+
+  class UnregisterNMethodsHeapRegionClosure : public HeapRegionClosure {
+  public:
+
+    bool do_heap_region(HeapRegion* hr) {
+      hr->rem_set()->bulk_remove_code_roots();
+      return false;
+    }
+  } _cl;
+
+public:
+  G1BulkUnregisterNMethodTask(uint num_workers)
+  : WorkerTask("G1 Remove Unlinked NMethods From Code Root Set Task"),
+    _hrclaimer(num_workers) { }
+
+  void work(uint worker_id) {
+    G1CollectedHeap::heap()->heap_region_par_iterate_from_worker_offset(&_cl, &_hrclaimer, worker_id);
+  }
+};
+
+void G1CollectedHeap::bulk_unregister_nmethods() {
+  uint num_workers = workers()->active_workers();
+  G1BulkUnregisterNMethodTask t(num_workers);
+  workers()->run_task(&t);
+}
 
 bool G1STWSubjectToDiscoveryClosure::do_object_b(oop obj) {
   assert(obj != nullptr, "must not be null");
@@ -2963,31 +2995,6 @@ public:
   void do_oop(narrowOop* p) { ShouldNotReachHere(); }
 };
 
-class UnregisterNMethodOopClosure: public OopClosure {
-  G1CollectedHeap* _g1h;
-  nmethod* _nm;
-
-public:
-  UnregisterNMethodOopClosure(G1CollectedHeap* g1h, nmethod* nm) :
-    _g1h(g1h), _nm(nm) {}
-
-  void do_oop(oop* p) {
-    oop heap_oop = RawAccess<>::oop_load(p);
-    if (!CompressedOops::is_null(heap_oop)) {
-      oop obj = CompressedOops::decode_not_null(heap_oop);
-      HeapRegion* hr = _g1h->heap_region_containing(obj);
-      assert(!hr->is_continues_humongous(),
-             "trying to remove code root " PTR_FORMAT " in continuation of humongous region " HR_FORMAT
-             " starting at " HR_FORMAT,
-             p2i(_nm), HR_FORMAT_PARAMS(hr), HR_FORMAT_PARAMS(hr->humongous_start_region()));
-
-      hr->remove_code_root(_nm);
-    }
-  }
-
-  void do_oop(narrowOop* p) { ShouldNotReachHere(); }
-};
-
 void G1CollectedHeap::register_nmethod(nmethod* nm) {
   guarantee(nm != nullptr, "sanity");
   RegisterNMethodOopClosure reg_cl(this, nm);
@@ -2995,9 +3002,8 @@ void G1CollectedHeap::register_nmethod(nmethod* nm) {
 }
 
 void G1CollectedHeap::unregister_nmethod(nmethod* nm) {
-  guarantee(nm != nullptr, "sanity");
-  UnregisterNMethodOopClosure reg_cl(this, nm);
-  nm->oops_do(&reg_cl, true);
+  // We always unregister nmethods in bulk during code unloading only.
+  ShouldNotReachHere();
 }
 
 void G1CollectedHeap::update_used_after_gc(bool evacuation_failed) {

@@ -48,11 +48,10 @@ public class TestHeapFreeRatio {
   }
 
   private static void testMinMaxFreeRatio(String min, String max, Validation type) throws Exception {
-    ProcessBuilder pb = GCArguments.createTestJavaProcessBuilder(
+    OutputAnalyzer output = GCArguments.executeTestJava(
         "-Xminf" + min,
         "-Xmaxf" + max,
         "-version");
-    OutputAnalyzer output = new OutputAnalyzer(pb.start());
 
     switch (type) {
     case VALID:
