@@ -853,7 +853,7 @@ void CodeCacheDCmd::execute(DCmdSource source, TRAPS) {
 #ifdef LINUX
 PerfMapDCmd::PerfMapDCmd(outputStream* output, bool heap) :
              DCmdWithParser(output, heap),
-  _filename("filename", "Name of the map file", "STRING", false)
+  _filename("filename", "Name of the map file", "STRING", false, "/tmp/perf-<pid>.map")
 {
   _dcmdparser.add_dcmd_argument(&_filename);
 }
@@ -994,7 +994,8 @@ void ClassesDCmd::execute(DCmdSource source, TRAPS) {
 DumpSharedArchiveDCmd::DumpSharedArchiveDCmd(outputStream* output, bool heap) :
                                      DCmdWithParser(output, heap),
   _suboption("subcmd", "static_dump | dynamic_dump", "STRING", true),
-  _filename("filename", "Name of shared archive to be dumped", "STRING", false)
+  _filename("filename", "Name of shared archive to be dumped", "STRING", false,
+            "java_pid<pid>_<subcmd>.jsa")
 {
   _dcmdparser.add_dcmd_argument(&_suboption);
   _dcmdparser.add_dcmd_argument(&_filename);
