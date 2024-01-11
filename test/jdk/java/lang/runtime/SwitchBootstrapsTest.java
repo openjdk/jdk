@@ -33,7 +33,7 @@ import java.lang.invoke.MethodType;
 import java.lang.reflect.AccessFlag;
 import java.lang.runtime.SwitchBootstraps;
 import java.util.concurrent.atomic.AtomicBoolean;
-import jdk.internal.classfile.Classfile;
+import java.lang.classfile.ClassFile;
 
 import org.testng.annotations.Test;
 
@@ -46,7 +46,6 @@ import static org.testng.Assert.fail;
  * @test
  * @bug 8318144
  * @enablePreview
- * @modules java.base/jdk.internal.classfile
  * @compile SwitchBootstrapsTest.java
  * @run testng/othervm SwitchBootstrapsTest
  */
@@ -368,11 +367,11 @@ public class SwitchBootstrapsTest {
     }
 
     private static byte[] createClass() {
-        return Classfile.of().build(ClassDesc.of("C"), clb -> {
+        return ClassFile.of().build(ClassDesc.of("C"), clb -> {
             clb.withFlags(AccessFlag.SYNTHETIC)
                .withMethodBody("<init>",
                                MethodTypeDesc.of(ConstantDescs.CD_void),
-                               Classfile.ACC_PUBLIC,
+                               ClassFile.ACC_PUBLIC,
                                cb -> {
                                    cb.aload(0);
                                    cb.invokespecial(ConstantDescs.CD_Object,

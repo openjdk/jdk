@@ -52,10 +52,16 @@ class JfrNativeLibraryEventBase : public StackObj {
 class NativeLibraryLoadEvent : public JfrNativeLibraryEventBase {
  private:
   void** _result;
+  bool _fp_env_correction_attempt;
+  bool _fp_env_correction_success;
  public:
   NativeLibraryLoadEvent(const char* name, void** result);
   ~NativeLibraryLoadEvent();
   bool success() const;
+  bool get_fp_env_correction_attempt() const { return _fp_env_correction_attempt; }
+  bool get_fp_env_correction_success() const { return _fp_env_correction_success; }
+  void set_fp_env_correction_attempt(bool v) { _fp_env_correction_attempt = v; }
+  void set_fp_env_correction_success(bool v) { _fp_env_correction_success = v; }
 };
 
 class NativeLibraryUnloadEvent : public JfrNativeLibraryEventBase {

@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
- * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
+ * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,12 +67,7 @@ int StubAssembler::call_RT(Register oop_result, Register metadata_result, addres
   set_last_Java_frame(sp, fp, retaddr, t0);
 
   // do the call
-  RuntimeAddress target(entry);
-  relocate(target.rspec(), [&] {
-    int32_t offset;
-    la_patchable(t0, target, offset);
-    jalr(x1, t0, offset);
-  });
+  rt_call(entry);
   bind(retaddr);
   int call_offset = offset();
   // verify callee-saved register
@@ -578,12 +573,7 @@ OopMapSet* Runtime1::generate_patching(StubAssembler* sasm, address target) {
   Label retaddr;
   __ set_last_Java_frame(sp, fp, retaddr, t0);
   // do the call
-  RuntimeAddress addr(target);
-  __ relocate(addr.rspec(), [&] {
-    int32_t offset;
-    __ la_patchable(t0, addr, offset);
-    __ jalr(x1, t0, offset);
-  });
+  __ rt_call(target);
   __ bind(retaddr);
   OopMapSet* oop_maps = new OopMapSet();
   assert_cond(oop_maps != nullptr);

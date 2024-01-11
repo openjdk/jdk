@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -162,7 +162,7 @@ void NativeMovConstReg::set_data(intptr_t x, address pc) {
     unsigned int hi = (unsigned int)(x >> 16);
     this->set_encoding((this->encoding() & 0xfff0f000) | (lo & 0xf000) << 4 | (lo & 0xfff));
     next->set_encoding((next->encoding() & 0xfff0f000) | (hi & 0xf000) << 4 | (hi & 0xfff));
-  } else if (oop_addr == nullptr & metadata_addr == nullptr) {
+  } else if (oop_addr == nullptr && metadata_addr == nullptr) {
     // A static ldr_literal (without oop or metadata relocation)
     assert(is_ldr_literal(), "must be");
     int offset = ldr_offset();
@@ -339,10 +339,6 @@ NativeCall* rawNativeCall_before(address return_address) {
 
 void NativePostCallNop::make_deopt() {
   NativeDeoptInstruction::insert(addr_at(0));
-}
-
-void NativePostCallNop::patch(jint diff) {
-  // unsupported for now
 }
 
 void NativeDeoptInstruction::verify() {

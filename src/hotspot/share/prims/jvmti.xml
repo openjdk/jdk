@@ -742,7 +742,11 @@ Agent_OnUnload_L(JavaVM *vm)</example>
         <li>The pair of quote marks is not included in the option.</li>
     </ul>
     <code>JNI_CreateJavaVM</code> (in the JNI Invocation API) will prepend these options to the options supplied
-    in its <code>JavaVMInitArgs</code> argument. Platforms may disable this feature in cases where security is
+    in its <code>JavaVMInitArgs</code> argument. Note that module related options must be expressed in their
+    "option=value" format (note the required '=' between "option" and "value") for <code>JNI_CreateJavaVM</code>
+    to process them correctly.
+    <p/>
+    Platforms may disable this feature in cases where security is
     a concern; for example, the Reference Implementation disables this feature on Unix systems when
     the effective user or group ID differs from the real ID.
     This feature is intended to support the initialization of tools -- specifically including the
@@ -11035,7 +11039,7 @@ myInit() {
             <functionlink id="GetCurrentThreadCpuTimerInfo"/> vs
             <functionlink id="GetThreadCpuTimerInfo"/>).
             An implementation is not required to support this function
-            when the current thread is a virtual thread, in which case 
+            when the current thread is a virtual thread, in which case
             <errorlink id="JVMTI_ERROR_UNSUPPORTED_OPERATION"></errorlink> will be returned.
             On many platforms this call will be equivalent to:
 <example>
