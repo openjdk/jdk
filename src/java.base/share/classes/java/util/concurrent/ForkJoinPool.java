@@ -1201,13 +1201,7 @@ public class ForkJoinPool extends AbstractExecutorService {
         if (w != null) {
             int p = w.phase, r = w.stackPred; // seed from registerWorker
             int cfg = w.config & (FIFO|CLEAR_TLS);
-            for (boolean running = false;;) {
-                long stat = scan(w, p, r, cfg, running);
-                r = (int)(stat >>> 32);
-                if (!(running = (p = (int)stat) != 0) &&
-                    (r == 0 || (p = awaitWork(w)) == 0))
-                    break;
-            }
+            while ((r = scan(w, p, r, cfg)) != 0 && (p = awaitWork(w)) != 0);
         }
     }
 
@@ -1219,41 +1213,40 @@ public class ForkJoinPool extends AbstractExecutorService {
      * @param r random seed
      * @param cfg config bits
      * @param running true if ran task since last signal
-     * @return zero for exit, else w's phase if stole, or zero if no
-     * task found, along with random seed, packed as long
+     * @return zero for exit, else random seed
      */
-    private long scan(WorkQueue w, int p, int r, int cfg, boolean running) {
-        if (w == null)                          // currently impossible
-            return 0L;
+    private int scan(WorkQueue w, int p, int r, int cfg) {
         int active = p;                         // w's phase value when active
-        for (boolean reactivating = false;;) {
+        int src = r;                            // scan origin
+        boolean deactivated = false;            // after empty scan
+        boolean reactivating = false;           // when self-signal enabled
+        boolean running = false;                // ran task since activating
+        for (;;) {
             boolean rescan = false;
-            int e = runState, n;
+            int e = runState, stop = e & STOP, n;
             WorkQueue[] qs = queues;
-            if ((e & STOP) != 0 || qs == null || (n = qs.length) <= 0)
-                return 0L;
+            if (stop != 0 || qs == null || w == null || (n = qs.length) <= 0)
+                return 0;
             r ^= r << 13; r ^= r >>> 17; r ^= r << 5; // xorshift
-            for (int i = r, step = (r << 1) | 1, l = n; l > 0; --l, i += step) {
-                int j; WorkQueue q;
+            int step = (r >>> 16) | 1;
+            scan: for (int i = src, l = n; l > 0; --l, i += step) {
+                WorkQueue q; int j;
                 if ((q = qs[j = i & (n - 1)]) != null) {
-                    boolean taken = false;
                     for (int b = q.base, miss = b - 1;;) {
-                        ForkJoinTask<?>[] a; int cap;
+                        ForkJoinTask<?>[] a; int cap, k;
                         if ((a = q.array) == null || (cap = a.length) <= 0)
                             break;
-                        int nb = b + 1, nk = nb & (cap - 1), k =  b & (cap - 1);
-                        if (k < 0 || k >= cap || nk < 0 || nk >= cap)
-                            break;              // always false; help compiler
+                        ForkJoinTask<?> t = a[k = b & (cap - 1)];
                         long kp = slotOffset(k);
-                        ForkJoinTask<?> t = a[k];
+                        int nb = b + 1, nk = nb & (cap - 1);
                         U.loadFence();          // re-read
                         if (b != (b = q.base))
                             ;                   // inconsistent
-                        else if (t == null) {   // revisit if more
+                        else if (t == null) {
                             if (q.array == a && a[k] == null) {
-                                if (a[nk] != null && miss != b)
+                                if (a[nk] != null && (miss != b || deactivated))
                                     rescan = true;
-                                break;
+                                break;          // stalled or contended
                             }
                         }
                         else if (p != active) {
@@ -1268,47 +1261,47 @@ public class ForkJoinPool extends AbstractExecutorService {
                                 break;          // already taken
                             else if (compareAndSetCtl(
                                          c, sp | ((c + RC_UNIT) & UMASK))) {
-                                rescan = true;  // self-signalled
+                                rescan = true;  // self-signal
                                 w.phase = p = active;
                             }
                         }
-                        else if (U.compareAndSetReference(a, kp, t, null)) {
-                            q.base = b = nb;
-                            w.source = j;
-                            boolean signal = !running;
-                            taken = running = true;
-                            if (a[nk] != null && signal)
+                        else if (!U.compareAndSetReference(a, kp, t, null))
+                            b = miss = q.base;  // for next rescan check
+                        else {
+                            q.base = nb;
+                            w.source = src = j; // volatile write
+                            boolean propagate = !running;
+                            running = rescan = true;
+                            if (propagate)
                                 signalWork(a, nk);
                             w.topLevelExec(t, cfg);
-                            if (q.base != b)
-                                break;          // interference
+                            break scan;
                         }
-                        else if (!rescan)
-                            miss = b = q.base;  // for rescan check
-                        else
-                            break;              // retry later
                     }
-                    if (taken)                  // restart
-                        return ((long)r << 32) | (p & LMASK);
                 }
             }
-            if (p != active) {
+            if (p != active && (p = w.phase) != active) {
                 if (!rescan && (reactivating || (e & SHUTDOWN) != 0))
-                    return (long)r << 32;       // possibly block in awaitWork
+                    return r;               // possibly block in awaitWork
                 int spins = n | ((n - 1) & (r ^ (r >>> 16)) & SMASK);
-                while ((p = w.phase) != active && --spins > 0)
-                    Thread.onSpinWait();        // reduce flailing
+                do {
+                    Thread.onSpinWait();    // reduce flailing
+                } while ((p = w.phase) != active && --spins > 0);
             }
-            if (!(reactivating = (p != active)) && !rescan && runState == e) {
-                long pc = ctl;                  // try to deactivate
-                int xp = p;
-                active = (w.phase = p |= IDLE) + IDLE;
-                w.stackPred = (int)pc;          // set ctl stack link
-                long qc = (active & LMASK) | ((pc - RC_UNIT) & UMASK);
-                if (compareAndSetCtl(pc, qc))
-                    running = false;
-                else
-                    w.phase = p = active = xp;  // contended; back out
+            if (!(reactivating = (p != active))) {
+                if (deactivated)           // rescan after reactivating
+                    deactivated = false;
+                else if (!rescan && runState == e) {
+                    long pc = ctl;         // try to deactivate
+                    int backout = p;
+                    active = (w.phase = p |= IDLE) + IDLE;
+                    w.stackPred = (int)pc; // set ctl stack link
+                    long qc = (active & LMASK) | ((pc - RC_UNIT) & UMASK);
+                    if (deactivated = compareAndSetCtl(pc, qc))
+                        running = false;
+                    else                   // contended
+                        w.phase = p = active = backout;
+                }
             }
         }
     }
