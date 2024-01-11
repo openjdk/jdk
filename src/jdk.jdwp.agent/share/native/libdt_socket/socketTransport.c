@@ -415,37 +415,20 @@ static void convertIPv4ToIPv6(const struct sockaddr *addr4, struct in6_addr *add
  */
 static jdwpTransportError
 parseAllowedAddr(const char *buffer, struct in6_addr *result, int *isIPv4) {
-    struct addrinfo hints;
-    struct addrinfo *addrInfo = NULL;
-    jdwpTransportError err;
-
-    /*
-     * To parse both IPv4 and IPv6 need to specify AF_UNSPEC family
-     * (with AF_INET6 IPv4 addresses are not parsed even with AI_V4MAPPED and AI_ALL flags).
-     */
-    memset (&hints, 0, sizeof(hints));
-    hints.ai_family = AF_UNSPEC;            // IPv6 or mapped IPv4
-    hints.ai_socktype = SOCK_STREAM;
-    hints.ai_protocol = IPPROTO_TCP;
-    hints.ai_flags = AI_NUMERICHOST;        // only numeric addresses, no resolution
-
-    err = getAddrInfo(buffer, strlen(buffer), NULL, &hints, &addrInfo);
-
-    if (err != JDWPTRANSPORT_ERROR_NONE) {
-        return err;
-    }
-
-    if (addrInfo->ai_family == AF_INET6) {
-        memcpy(result, &(((struct sockaddr_in6 *)(addrInfo->ai_addr))->sin6_addr), sizeof(*result));
+    struct in_addr addr;
+    struct in6_addr addr6;
+    if (inet_pton (AF_INET6, buffer, &addr6) == 1) {
         *isIPv4 = 0;
-    } else {    // IPv4 address - convert to mapped IPv6
-        struct in6_addr addr6;
-        convertIPv4ToIPv6(addrInfo->ai_addr, &addr6);
-        memcpy(result, &addr6, sizeof(*result));
+    } else if (inet_pton (AF_INET, buffer, &addr) == 1) {
+        // IPv4 address - convert to mapped IPv6
+        struct sockaddr sa;
+        memcpy(&(((struct sockaddr_in*)&sa)->sin_addr), &addr, 4);
+        convertIPv4ToIPv6(&sa, &addr6);
         *isIPv4 = 1;
-    }
+    } else
+         return JDWPTRANSPORT_ERROR_IO_ERROR;
 
-    dbgsysFreeAddrInfo(addrInfo);
+    memcpy(result, &addr6, sizeof(*result));
 
     return JDWPTRANSPORT_ERROR_NONE;
 }
