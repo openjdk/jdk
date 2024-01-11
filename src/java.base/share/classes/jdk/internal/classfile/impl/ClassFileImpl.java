@@ -39,6 +39,7 @@ import java.lang.classfile.ClassTransform;
 import java.lang.classfile.constantpool.ClassEntry;
 import java.lang.classfile.constantpool.ConstantPoolBuilder;
 import java.lang.classfile.constantpool.Utf8Entry;
+import jdk.internal.classfile.impl.verifier.VerifierImpl;
 
 public record ClassFileImpl(StackMapsOption stackMapsOption,
                             DebugElementsOption debugElementsOption,
@@ -128,6 +129,21 @@ public record ClassFileImpl(StackMapsOption stackMapsOption,
                     }
                 });
     }
+
+    @Override
+    public List<VerifyError> verify(ClassModel model) {
+        return VerifierImpl.verify(model, classHierarchyResolverOption().classHierarchyResolver(), null);
+    }
+
+    @Override
+    public List<VerifyError> verify(byte[] bytes) {
+        try {
+            return verify(parse(bytes));
+        } catch (IllegalArgumentException parsingError) {
+            return List.of(new VerifyError(parsingError.getMessage()));
+        }
+    }
+
     public record AttributeMapperOptionImpl(Function<Utf8Entry, AttributeMapper<?>> attributeMapper)
             implements AttributeMapperOption {
     }

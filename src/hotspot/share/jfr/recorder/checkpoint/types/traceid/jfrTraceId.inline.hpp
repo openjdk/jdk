@@ -44,8 +44,16 @@ inline traceid JfrTraceId::load(const Method* method) {
   return JfrTraceIdLoadBarrier::load(method);
 }
 
+inline traceid JfrTraceId::load_no_enqueue(const Method* method) {
+  return JfrTraceIdLoadBarrier::load_no_enqueue(method);
+}
+
 inline traceid JfrTraceId::load(const Klass* klass, const Method* method) {
   return JfrTraceIdLoadBarrier::load(klass, method);
+}
+
+inline traceid JfrTraceId::load_no_enqueue(const Klass* klass, const Method* method) {
+  return JfrTraceIdLoadBarrier::load_no_enqueue(klass, method);
 }
 
 inline traceid JfrTraceId::load(const ModuleEntry* module) {
@@ -62,6 +70,10 @@ inline traceid JfrTraceId::load(const ClassLoaderData* cld) {
 
 inline traceid JfrTraceId::load_leakp(const Klass* klass, const Method* method) {
   return JfrTraceIdLoadBarrier::load_leakp(klass, method);
+}
+
+inline traceid JfrTraceId::load_leakp_previous_epoch(const Klass* klass, const Method* method) {
+  return JfrTraceIdLoadBarrier::load_leakp_previuos_epoch(klass, method);
 }
 
 template <typename T>

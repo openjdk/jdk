@@ -53,10 +53,9 @@ JMH_UNPACKED_DIR := $(MICROBENCHMARK_OUTPUT)/jmh_jars
 JMH_UNPACKED_JARS_DONE := $(JMH_UNPACKED_DIR)/_unpacked.marker
 
 # External dependencies
-JMH_COMPILE_JARS := $(JMH_CORE_JAR) $(JMH_GENERATOR_JAR)
+WHITEBOX_JAR := $(SUPPORT_OUTPUTDIR)/test/lib/wb.jar
+JMH_COMPILE_JARS := $(JMH_CORE_JAR) $(JMH_GENERATOR_JAR) $(WHITEBOX_JAR)
 JMH_RUNTIME_JARS := $(JMH_CORE_JAR) $(JMH_COMMONS_MATH_JAR) $(JMH_JOPT_SIMPLE_JAR)
-
-MICROBENCHMARK_CLASSPATH := $(call PathList, $(JMH_COMPILE_JARS))
 
 # Native dependencies
 MICROBENCHMARK_NATIVE_SRC_DIRS := $(MICROBENCHMARK_SRC)
@@ -92,24 +91,28 @@ $(eval $(call SetupJavaCompilation, BUILD_INDIFY, \
 $(eval $(call SetupJavaCompilation, BUILD_JDK_MICROBENCHMARK, \
     TARGET_RELEASE := $(TARGET_RELEASE_NEWJDK_UPGRADED), \
     SMALL_JAVA := false, \
-    CLASSPATH := $(MICROBENCHMARK_CLASSPATH), \
-    DISABLED_WARNINGS := restricted this-escape processing rawtypes cast serial preview, \
+    CLASSPATH := $(JMH_COMPILE_JARS), \
+    DISABLED_WARNINGS := restricted this-escape processing rawtypes cast \
+        serial preview, \
     SRC := $(MICROBENCHMARK_SRC), \
     BIN := $(MICROBENCHMARK_CLASSES), \
-    JAVAC_FLAGS := --add-exports java.base/sun.security.util=ALL-UNNAMED \
-        --add-exports java.base/sun.invoke.util=ALL-UNNAMED \
+    JAVAC_FLAGS := \
         --add-exports java.base/jdk.internal.classfile.impl=ALL-UNNAMED \
-        --add-exports java.base/jdk.internal.org.objectweb.asm=ALL-UNNAMED \
-        --add-exports java.base/jdk.internal.org.objectweb.asm.tree=ALL-UNNAMED \
-        --add-exports java.base/jdk.internal.vm=ALL-UNNAMED \
-        --add-exports java.base/jdk.internal.misc=ALL-UNNAMED \
         --add-exports java.base/jdk.internal.event=ALL-UNNAMED \
         --add-exports java.base/jdk.internal.foreign=ALL-UNNAMED \
+        --add-exports java.base/jdk.internal.misc=ALL-UNNAMED \
+        --add-exports java.base/jdk.internal.org.objectweb.asm.tree=ALL-UNNAMED \
+        --add-exports java.base/jdk.internal.org.objectweb.asm=ALL-UNNAMED \
+        --add-exports java.base/jdk.internal.vm=ALL-UNNAMED \
+        --add-exports java.base/sun.invoke.util=ALL-UNNAMED \
+        --add-exports java.base/sun.security.util=ALL-UNNAMED \
         --enable-preview \
         -processor org.openjdk.jmh.generators.BenchmarkProcessor, \
-    JAVA_FLAGS := --add-modules jdk.unsupported --limit-modules java.management \
+    JAVA_FLAGS := \
         --add-exports java.base/jdk.internal.vm=ALL-UNNAMED \
-        --enable-preview, \
+        --add-modules jdk.unsupported \
+        --enable-preview \
+        --limit-modules java.management, \
 ))
 
 $(BUILD_JDK_MICROBENCHMARK): $(JMH_COMPILE_JARS)

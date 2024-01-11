@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -282,7 +282,8 @@ void LIR_Assembler::osr_entry() {
         __ bind(L);
       }
 #endif
-      __ ldp(r19, r20, Address(OSR_buf, slot_offset));
+      __ ldr(r19, Address(OSR_buf, slot_offset));
+      __ ldr(r20, Address(OSR_buf, slot_offset + BytesPerWord));
       __ str(r19, frame_map()->address_for_monitor_lock(i));
       __ str(r20, frame_map()->address_for_monitor_object(i));
     }

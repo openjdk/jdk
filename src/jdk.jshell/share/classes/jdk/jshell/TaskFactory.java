@@ -80,8 +80,13 @@ import com.sun.tools.javac.comp.AttrContext;
 import com.sun.tools.javac.comp.Enter;
 import com.sun.tools.javac.comp.Env;
 import com.sun.tools.javac.comp.Resolve;
+import com.sun.tools.javac.parser.JavacParser;
+import com.sun.tools.javac.parser.Lexer;
 import com.sun.tools.javac.parser.Parser;
 import com.sun.tools.javac.parser.ParserFactory;
+import com.sun.tools.javac.parser.ScannerFactory;
+import static com.sun.tools.javac.parser.Tokens.TokenKind.AMP;
+import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.JCTree.JCExpression;
 import com.sun.tools.javac.tree.JCTree.JCTypeCast;
 import com.sun.tools.javac.tree.JCTree.JCVariableDecl;
@@ -363,7 +368,7 @@ class TaskFactory {
                           JavacTaskImpl task,
                           DiagnosticCollector<JavaFileObject> diagnostics,
                           boolean forceExpression) {
-            super(sh, task, diagnostics);
+            super(sh, task, diagnostics, false);
             ReplParserFactory.preRegister(context, forceExpression);
             cuts = parse();
             units = Util.stream(cuts)
@@ -402,7 +407,7 @@ class TaskFactory {
         private AnalyzeTask(SourceHandler<OuterWrap> sh,
                             JavacTaskImpl task,
                             DiagnosticCollector<JavaFileObject> diagnostics) {
-            super(sh, task, diagnostics);
+            super(sh, task, diagnostics, true);
             cuts = analyze();
         }
 
@@ -440,7 +445,7 @@ class TaskFactory {
         CompileTask(SourceHandler<OuterWrap>sh,
                     JavacTaskImpl jti,
                     DiagnosticCollector<JavaFileObject> diagnostics) {
-            super(sh, jti, diagnostics);
+            super(sh, jti, diagnostics, true);
         }
 
         boolean compile() {
@@ -504,11 +509,15 @@ class TaskFactory {
 
         private BaseTask(SourceHandler<S> sh,
                             JavacTaskImpl task,
-                            DiagnosticCollector<JavaFileObject> diagnostics) {
+                            DiagnosticCollector<JavaFileObject> diagnostics,
+                            boolean analyzeParserFactory) {
             this.sourceHandler = sh;
             this.task = task;
             context = task.getContext();
             this.diagnostics = diagnostics;
+            if (analyzeParserFactory) {
+                JShellAnalyzeParserFactory.preRegister(context);
+            }
         }
 
         abstract Iterable<? extends CompilationUnitTree> cuTrees();
@@ -693,7 +702,7 @@ class TaskFactory {
             Symtab syms = Symtab.instance(context);
             Names names = Names.instance(context);
             Log log  = Log.instance(context);
-            ParserFactory parserFactory = ParserFactory.instance(context);
+            JShellAnalyzeParserFactory parserFactory = (JShellAnalyzeParserFactory) ParserFactory.instance(context);
             Attr attr = Attr.instance(context);
             Enter enter = Enter.instance(context);
             DisableAccessibilityResolve rs = (DisableAccessibilityResolve) Resolve.instance(context);
@@ -709,26 +718,28 @@ class TaskFactory {
                 //ignore any errors:
                 JavaFileObject prev = log.useSource(null);
                 DiscardDiagnosticHandler h = new DiscardDiagnosticHandler(log);
-                try {
-                    //parse the type as a cast, i.e. "(<typeName>) x". This is to support
-                    //intersection types:
-                    CharBuffer buf = CharBuffer.wrap(("(" + typeName +")x\u0000").toCharArray(), 0, typeName.length() + 3);
-                    Parser parser = parserFactory.newParser(buf, false, false, false);
-                    JCExpression expr = parser.parseExpression();
-                    if (expr.hasTag(Tag.TYPECAST)) {
-                        //if parsed OK, attribute and set the type:
-                        var2OriginalType.put(field, field.type);
+                parserFactory.runPermitIntersectionTypes(() -> {
+                    try {
+                        //parse the type as a cast, i.e. "(<typeName>) x". This is to support
+                        //intersection types:
+                        CharBuffer buf = CharBuffer.wrap(("(" + typeName +")x\u0000").toCharArray(), 0, typeName.length() + 3);
+                        Parser parser = parserFactory.newParser(buf, false, false, false);
+                        JCExpression expr = parser.parseExpression();
+                        if (expr.hasTag(Tag.TYPECAST)) {
+                            //if parsed OK, attribute and set the type:
+                            var2OriginalType.put(field, field.type);
 
-                        JCTypeCast tree = (JCTypeCast) expr;
-                        rs.runWithoutAccessChecks(() -> {
-                            field.type = attr.attribType(tree.clazz,
-                                                         enter.getEnvs().iterator().next().enclClass.sym);
-                        });
+                            JCTypeCast tree = (JCTypeCast) expr;
+                            rs.runWithoutAccessChecks(() -> {
+                                field.type = attr.attribType(tree.clazz,
+                                                             enter.getEnvs().iterator().next().enclClass.sym);
+                            });
+                        }
+                    } finally {
+                        log.popDiagnosticHandler(h);
+                        log.useSource(prev);
                     }
-                } finally {
-                    log.popDiagnosticHandler(h);
-                    log.useSource(prev);
-                }
+                });
             }
         }
     }
@@ -777,4 +788,52 @@ class TaskFactory {
         private static final class Marker {}
     }
 
+    private static final class JShellAnalyzeParserFactory extends ParserFactory {
+        public static void preRegister(Context context) {
+            if (context.get(Marker.class) == null) {
+                context.put(parserFactoryKey, ((Factory<ParserFactory>) c -> new JShellAnalyzeParserFactory(c)));
+                context.put(Marker.class, new Marker());
+            }
+        }
+
+        private final ScannerFactory scannerFactory;
+        private boolean permitIntersectionTypes;
+
+        public JShellAnalyzeParserFactory(Context context) {
+            super(context);
+            this.scannerFactory = ScannerFactory.instance(context);
+        }
+
+        /**Run the given Runnable with intersection type permitted.
+         *
+         * @param r Runnnable to run
+         */
+        public void runPermitIntersectionTypes(Runnable r) {
+            boolean prevPermitIntersectionTypes = permitIntersectionTypes;
+            try {
+                permitIntersectionTypes = true;
+                r.run();
+            } finally {
+                permitIntersectionTypes = prevPermitIntersectionTypes;
+            }
+        }
+
+        @Override
+        public JavacParser newParser(CharSequence input, boolean keepDocComments, boolean keepEndPos, boolean keepLineMap, boolean parseModuleInfo) {
+            com.sun.tools.javac.parser.Lexer lexer = scannerFactory.newScanner(input, keepDocComments);
+            return new JavacParser(this, lexer, keepDocComments, keepLineMap, keepEndPos, parseModuleInfo) {
+                @Override
+                public JCExpression parseType(boolean allowVar, com.sun.tools.javac.util.List<JCTree.JCAnnotation> annotations) {
+                    int pos = token.pos;
+                    JCExpression t = super.parseType(allowVar, annotations);
+                    if (permitIntersectionTypes) {
+                        t = parseIntersectionType(pos, t);
+                    }
+                    return t;
+                }
+            };
+        }
+
+        private static final class Marker {}
+    }
 }

@@ -851,8 +851,15 @@ void CodeCacheDCmd::execute(DCmdSource source, TRAPS) {
 }
 
 #ifdef LINUX
+PerfMapDCmd::PerfMapDCmd(outputStream* output, bool heap) :
+             DCmdWithParser(output, heap),
+  _filename("filename", "Name of the map file", "STRING", false)
+{
+  _dcmdparser.add_dcmd_argument(&_filename);
+}
+
 void PerfMapDCmd::execute(DCmdSource source, TRAPS) {
-  CodeCache::write_perf_map();
+  CodeCache::write_perf_map(_filename.value());
 }
 #endif // LINUX
 

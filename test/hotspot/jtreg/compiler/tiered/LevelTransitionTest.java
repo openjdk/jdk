@@ -204,7 +204,8 @@ public class LevelTransitionTest extends TieredLevelsTest {
         }
 
         private static class CompileMethodHolder {
-            private final int iter = 10;
+            // Make sure that loop backedge is never taken to prevent unexpected OSR compilations.
+            private final int iter = 1;
             private int field = 42;
 
             /**

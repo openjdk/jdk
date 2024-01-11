@@ -37,6 +37,7 @@
 #include "compiler/compilerDefinitions.inline.hpp"
 #include "compiler/oopMap.hpp"
 #include "gc/shared/barrierSetNMethod.hpp"
+#include "gc/shared/classUnloadingContext.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "jvm_io.h"
@@ -354,16 +355,8 @@ void CodeCache::initialize_heaps() {
 }
 
 size_t CodeCache::page_size(bool aligned, size_t min_pages) {
-  if (os::can_execute_large_page_memory()) {
-    if (InitialCodeCacheSize < ReservedCodeCacheSize) {
-      // Make sure that the page size allows for an incremental commit of the reserved space
-      min_pages = MAX2(min_pages, (size_t)8);
-    }
-    return aligned ? os::page_size_for_region_aligned(ReservedCodeCacheSize, min_pages) :
-                     os::page_size_for_region_unaligned(ReservedCodeCacheSize, min_pages);
-  } else {
-    return os::vm_page_size();
-  }
+  return aligned ? os::page_size_for_region_aligned(ReservedCodeCacheSize, min_pages) :
+                   os::page_size_for_region_unaligned(ReservedCodeCacheSize, min_pages);
 }
 
 ReservedCodeSpace CodeCache::reserve_heap_memory(size_t size, size_t rs_ps) {
@@ -609,7 +602,7 @@ void CodeCache::free(CodeBlob* cb) {
 
   cb->~CodeBlob();
   // Get heap for given CodeBlob and deallocate
-  get_code_heap(cb)->deallocate(cb);
+  heap->deallocate(cb);
 
   assert(heap->blob_count() >= 0, "sanity check");
 }
@@ -965,36 +958,8 @@ void CodeCache::purge_exception_caches() {
   _exception_cache_purge_list = nullptr;
 }
 
-// Register an is_unloading nmethod to be flushed after unlinking
-void CodeCache::register_unlinked(nmethod* nm) {
-  assert(nm->unlinked_next() == nullptr, "Only register for unloading once");
-  for (;;) {
-    // Only need acquire when reading the head, when the next
-    // pointer is walked, which it is not here.
-    nmethod* head = Atomic::load(&_unlinked_head);
-    nmethod* next = head != nullptr ? head : nm; // Self looped means end of list
-    nm->set_unlinked_next(next);
-    if (Atomic::cmpxchg(&_unlinked_head, head, nm) == head) {
-      break;
-    }
-  }
-}
-
-// Flush all the nmethods the GC unlinked
-void CodeCache::flush_unlinked_nmethods() {
-  nmethod* nm = _unlinked_head;
-  _unlinked_head = nullptr;
-  size_t freed_memory = 0;
-  while (nm != nullptr) {
-    nmethod* next = nm->unlinked_next();
-    freed_memory += nm->total_size();
-    nm->flush();
-    if (next == nm) {
-      // Self looped means end of list
-      break;
-    }
-    nm = next;
-  }
+// Restart compiler if possible and required..
+void CodeCache::maybe_restart_compiler(size_t freed_memory) {
 
   // Try to start the compiler again if we freed any memory
   if (!CompileBroker::should_compile_new_jobs() && freed_memory != 0) {
@@ -1008,7 +973,6 @@ void CodeCache::flush_unlinked_nmethods() {
 }
 
 uint8_t CodeCache::_unloading_cycle = 1;
-nmethod* volatile CodeCache::_unlinked_head = nullptr;
 
 void CodeCache::increment_unloading_cycle() {
   // 2-bit value (see IsUnloadingState in nmethod.cpp for details)
@@ -1199,7 +1163,11 @@ void CodeCache::initialize() {
     FLAG_SET_ERGO(NonNMethodCodeHeapSize, (uintx)os::vm_page_size());
     FLAG_SET_ERGO(ProfiledCodeHeapSize, 0);
     FLAG_SET_ERGO(NonProfiledCodeHeapSize, 0);
-    ReservedCodeSpace rs = reserve_heap_memory(ReservedCodeCacheSize, page_size(false, 8));
+
+    // If InitialCodeCacheSize is equal to ReservedCodeCacheSize, then it's more likely
+    // users want to use the largest available page.
+    const size_t min_pages = (InitialCodeCacheSize == ReservedCodeCacheSize) ? 1 : 8;
+    ReservedCodeSpace rs = reserve_heap_memory(ReservedCodeCacheSize, page_size(false, min_pages));
     // Register CodeHeaps with LSan as we sometimes embed pointers to malloc memory.
     LSAN_REGISTER_ROOT_REGION(rs.base(), rs.size());
     add_heap(rs, "CodeCache", CodeBlobType::All);
@@ -1847,16 +1815,20 @@ void CodeCache::log_state(outputStream* st) {
 }
 
 #ifdef LINUX
-void CodeCache::write_perf_map() {
+void CodeCache::write_perf_map(const char* filename) {
   MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
 
-  // Perf expects to find the map file at /tmp/perf-<pid>.map.
+  // Perf expects to find the map file at /tmp/perf-<pid>.map
+  // if the file name is not specified.
   char fname[32];
-  jio_snprintf(fname, sizeof(fname), "/tmp/perf-%d.map", os::current_process_id());
+  if (filename == nullptr) {
+    jio_snprintf(fname, sizeof(fname), "/tmp/perf-%d.map", os::current_process_id());
+    filename = fname;
+  }
 
-  fileStream fs(fname, "w");
+  fileStream fs(filename, "w");
   if (!fs.is_open()) {
-    log_warning(codecache)("Failed to create %s for perf map", fname);
+    log_warning(codecache)("Failed to create %s for perf map", filename);
     return;
   }
 

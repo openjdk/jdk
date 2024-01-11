@@ -73,6 +73,7 @@ import jdk.dynalink.linker.support.TypeUtilities;
 /**
  * Interface for services provided to {@link GuardingDynamicLinker} instances by
  * the {@link DynamicLinker} that owns them.
+ * @since 9
  */
 public interface LinkerServices {
     /**
