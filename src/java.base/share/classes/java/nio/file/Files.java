@@ -1358,6 +1358,9 @@ public final class Files {
      *     associated with a different provider to this object. </td>
      * </tbody>
      * </table>
+     * If the {@code ATOMIC_MOVE} option is not specified, then the check for
+     * an existing file and the actual move might not be atomic with respect
+     * to other filesystem activities.
      *
      * <p> An implementation of this interface may support additional
      * implementation specific options.
@@ -1389,15 +1392,6 @@ public final class Files {
      *     Files.move(source, newdir.resolve(source.getFileName()), REPLACE_EXISTING);
      * }
      *
-     * @apiNote
-     * If the options array contains the {@code REPLACE_EXISTING} option, but
-     * the file cannot be moved as an atomic file system operation, then it
-     * might be moved by first deleting the target file and then copying or
-     * renaming the source file to the target location. If some other process
-     * creates a file at the target location after the deletion but before the
-     * copying or renaming, then a {@code FileAlreadyExistsException} may be
-     * thrown despite the {@code REPLACE_EXISTING} option having been specified.
-     *
      * @param   source
      *          the path to the file to move
      * @param   target
@@ -1412,8 +1406,12 @@ public final class Files {
      *          if the array contains a copy option that is not supported
      * @throws  FileAlreadyExistsException
      *          if the target file exists but cannot be replaced because the
-     *          {@code REPLACE_EXISTING} option is not specified <i>(optional
-     *          specific exception)</i>
+     *          {@code REPLACE_EXISTING} option is <i>not</i> specified,
+     *          or if the {@code REPLACE_EXISTING} option <i>is</i> specified,
+     *          the target file does not exist, the move is not an atomic file
+     *          system operation, and a file is created at the target location
+     *          between the existence check and actually moving the source
+     *          <i>(optional specific exceptions)</i>
      * @throws  DirectoryNotEmptyException
      *          the {@code REPLACE_EXISTING} option is specified but the file
      *          cannot be replaced because it is a non-empty directory, or the
