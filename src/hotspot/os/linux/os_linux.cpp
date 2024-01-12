@@ -2956,18 +2956,20 @@ void os::pd_pretouch_memory(void* first, void* last, size_t page_size) {
   // common method if unsupported. THP can form right after madvise rather than
   // being assembled later.
   if (HugePages::thp_mode() == THPMode::always || UseTransparentHugePages) {
-    if (::madvise(first, len, MADV_POPULATE_WRITE) == -1) {
-      int err = errno;
-      if (err == EINVAL) { // Not supported
-        // When using THP we need to always pre-touch using small pages as the
-        // OS will initially always use small pages.
-        pretouch_memory_common(first, last, os::vm_page_size());
-      } else {
-        log_warning(gc, os)("::madvise(" PTR_FORMAT ", " SIZE_FORMAT
-                            ", %d) failed; error='%s' (errno=%d)",
-                            p2i(first), len, MADV_POPULATE_WRITE,
-                            os::strerror(err), err);
-      }
+    int err = 0;
+    if (UseMadvPopulateWrite &&
+	::madvise(first, len, MADV_POPULATE_WRITE) == -1) {
+      err = errno;
+    }
+    if (err == 0 || err == EINVAL) { // Not to use or not supported
+      // When using THP we need to always pre-touch using small pages as the
+      // OS will initially always use small pages.
+      pretouch_memory_common(first, last, os::vm_page_size());
+    } else {
+      log_warning(gc, os)("::madvise(" PTR_FORMAT ", " SIZE_FORMAT
+			  ", %d) failed; error='%s' (errno=%d)",
+			  p2i(first), len, MADV_POPULATE_WRITE,
+			  os::strerror(err), err);
     }
   } else {
     pretouch_memory_common(first, last, page_size);
