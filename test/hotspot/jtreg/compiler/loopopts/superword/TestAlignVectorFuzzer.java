@@ -556,15 +556,15 @@ public class TestAlignVectorFuzzer {
         tests.put("testUU_unsafe_BasIH", () -> { return testUU_unsafe_BasIH(aB.clone(), bB.clone(), cB.clone()); });
 
 
-        // Only run for 90% of the time, and subtract some margin. This ensures the shutdown has sufficient time,
+        // Only run for 40% of the time, and subtract some margin. This ensures the shutdown has sufficient time,
         // even for very slow runs.
         System.out.println("Adjusted Timeout: " + Utils.adjustTimeout(Utils.DEFAULT_TEST_TIMEOUT));
-        long test_time_allowance_diff = (long)(Utils.adjustTimeout(Utils.DEFAULT_TEST_TIMEOUT) * 0.6) -
+        long test_time_allowance_diff = (long)(Utils.adjustTimeout(Utils.DEFAULT_TEST_TIMEOUT) * 0.4) -
                                         20_000;
         System.out.println("Time Allowance:   " + test_time_allowance_diff);
         long test_time_allowance = System.currentTimeMillis() + test_time_allowance_diff;
         long test_hard_timeout = System.currentTimeMillis() +
-                                Utils.adjustTimeout(Utils.DEFAULT_TEST_TIMEOUT);
+                                 Utils.adjustTimeout(Utils.DEFAULT_TEST_TIMEOUT);
 
         for (int i = 1; i <= ITERATIONS_MAX; i++) {
             setRandomConstants();
