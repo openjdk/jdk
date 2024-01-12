@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2024 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,8 @@
 /*
  * @test
  * @bug 6384984 8004032
- * @library ../regtesthelpers
- * @build PassFailJFrame
+ * @library ../regtesthelpers /test/lib
+ * @build PassFailJFrame jtreg.SkippedException
  * @summary TrayIcon try to dispay a tooltip when is not visible
  * @run main/manual ShowAfterDisposeTest
 */
@@ -43,20 +43,18 @@ import javax.swing.SwingUtilities;
 
 public class ShowAfterDisposeTest {
     JFrame frame;
-    boolean traySupported;
 
     public static void main(String[] args) throws Exception {
+        boolean traySupported = SystemTray.isSupported();
+        if (!traySupported) {
+            throw new jtreg.SkippedException("The test cannot be run because SystemTray is not supported.");
+        }
+
         ShowAfterDisposeTest test = new ShowAfterDisposeTest();
         test.startTest();
     }
 
     public void startTest() throws Exception {
-        traySupported = SystemTray.isSupported();
-        if (!traySupported) {
-            System.out.println("The test cannot be run because SystemTray is not supported.");
-            return;
-        }
-
         String instructions =
             "1) When the test starts an icon is added to the SystemTray area.\n" +
             "2a) If you use Apple OS X,\n" +
