@@ -212,8 +212,8 @@ public class JFileChooserSetLocationTest {
     public static void createUI() {
         Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
 
-        int screenWidth = (int) screenSize.getWidth() / 2;
-        int screenHeight = (int) screenSize.getHeight() / 2;
+        int width = (int) screenSize.getWidth() / 2;
+        int height = (int) screenSize.getHeight() / 2;
         frame = new JFrame("FileChooser set location test");
         panel = new JPanel();
         btn = new JButton(SHOW_DIALOG_OUTSIDE_THE_PANEL);
@@ -243,7 +243,7 @@ public class JFileChooserSetLocationTest {
         frame.setLocationRelativeTo(null);
         frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         frame.pack();
-        frame.setLocation(screenWidth, screenHeight - 200);
+        frame.setLocation(width, height - 200);
         frame.setVisible(true);
     }
 
