@@ -396,17 +396,16 @@ parseAddress(const char *address, struct addrinfo **result) {
 }
 
 /*
- * Input is sockaddr just because all clients have it.
+ * Input is in_addr just because all clients have it.
  */
-static void convertIPv4ToIPv6(const struct sockaddr *addr4, struct in6_addr *addr6) {
+static void convertIPv4ToIPv6(const struct in_addr *addr4, struct in6_addr *addr6) {
     // Implement in a platform-independent way.
     // Spec requires in_addr has s_addr member, in6_addr has s6_addr[16] member.
-    struct in_addr *a4 = &(((struct sockaddr_in*)addr4)->sin_addr);
     memset(addr6, 0, sizeof(*addr6));   // for safety
 
     // Mapped address contains 80 zero bits, then 16 "1" bits, then IPv4 address (4 bytes).
     addr6->s6_addr[10] = addr6->s6_addr[11] = 0xFF;
-    memcpy(&(addr6->s6_addr[12]), &(a4->s_addr), 4);
+    memcpy(&(addr6->s6_addr[12]), &(addr4->s_addr), 4);
 }
 
 /*
@@ -417,13 +416,11 @@ static jdwpTransportError
 parseAllowedAddr(const char *buffer, struct in6_addr *result, int *isIPv4) {
     struct in_addr addr;
     struct in6_addr addr6;
-    if (inet_pton (AF_INET6, buffer, &addr6) == 1) {
+    if (inet_pton(AF_INET6, buffer, &addr6) == 1) {
         *isIPv4 = 0;
-    } else if (inet_pton (AF_INET, buffer, &addr) == 1) {
+    } else if (inet_pton(AF_INET, buffer, &addr) == 1) {
         // IPv4 address - convert to mapped IPv6
-        struct sockaddr sa;
-        memcpy(&(((struct sockaddr_in*)&sa)->sin_addr), &addr, 4);
-        convertIPv4ToIPv6(&sa, &addr6);
+        convertIPv4ToIPv6(&addr, &addr6);
         *isIPv4 = 1;
     } else {
         return JDWPTRANSPORT_ERROR_IO_ERROR;
@@ -587,7 +584,8 @@ isPeerAllowed(struct sockaddr_storage *peer) {
     int i;
     // _peers contains IPv6 subnet and mask (IPv4 is converted to mapped IPv6)
     if (peer->ss_family == AF_INET) {
-        convertIPv4ToIPv6((struct sockaddr *)peer, &tmp);
+        struct in_addr *addr4 = &(((struct sockaddr_in*)peer)->sin_addr);
+        convertIPv4ToIPv6(addr4, &tmp);
         addr6 = &tmp;
     } else {
         addr6 = &(((struct sockaddr_in6 *)peer)->sin6_addr);
