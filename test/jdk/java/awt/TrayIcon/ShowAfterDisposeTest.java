@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 6384984 8004032
- * @library ../../regtesthelpers
+ * @library ../regtesthelpers
  * @build PassFailJFrame
  * @summary TrayIcon try to dispay a tooltip when is not visible
  * @run main/manual ShowAfterDisposeTest
@@ -96,7 +96,6 @@ public class ShowAfterDisposeTest {
         g.setColor(Color.RED);
         g.fillRect(6, 6, 20, 20);
         g.dispose();
-
 
         final SystemTray tray = SystemTray.getSystemTray();
         final TrayIcon icon = new TrayIcon(img);
