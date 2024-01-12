@@ -2959,7 +2959,7 @@ void os::pd_pretouch_memory(void* first, void* last, size_t page_size) {
     int err = 0;
     if (UseMadvPopulateWrite) {
       if (::madvise(first, len, MADV_POPULATE_WRITE) == 0) {
-	return;
+        return;
       }
       err = errno;
     }
@@ -2969,9 +2969,9 @@ void os::pd_pretouch_memory(void* first, void* last, size_t page_size) {
       pretouch_memory_common(first, last, os::vm_page_size());
     } else {
       log_warning(gc, os)("::madvise(" PTR_FORMAT ", " SIZE_FORMAT
-			  ", %d) failed; error='%s' (errno=%d)",
-			  p2i(first), len, MADV_POPULATE_WRITE,
-			  os::strerror(err), err);
+                          ", %d) failed; error='%s' (errno=%d)",
+                          p2i(first), len, MADV_POPULATE_WRITE,
+                          os::strerror(err), err);
     }
   } else {
     pretouch_memory_common(first, last, page_size);
