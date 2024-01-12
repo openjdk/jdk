@@ -90,7 +90,5 @@ public class LoadInterruptTest {
         if (!interrupted) {
             throw new RuntimeException("Interrupted state of the thread is not preserved");
         }
-
     }
 }
-
