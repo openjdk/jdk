@@ -77,13 +77,21 @@ public class PKCS9Attribute implements DerEncoder {
     public static final ObjectIdentifier CMS_ALGORITHM_PROTECTION_OID =
         ObjectIdentifier.of(KnownOIDs.CMSAlgorithmProtection);
 
+    /**
+     * Contains information for encoding and getting the value
+     * of a given PKCS9 attribute
+     */
     private record AttributeInfo(boolean singleValued, Class<?> valueClass,
                                  Function<DerValue[], Object> getValue,
                                  BiFunction<Object, DerOutputStream, DerOutputStream> encoder,
                                  byte... valueTags) {}
 
+    /**
+     * Map containing the AttributeInfo for supported OIDs
+     */
     private static final Map<ObjectIdentifier, AttributeInfo> infoMap = new HashMap<>();
 
+    /* Helper function for building infoMap */
     private static void add(ObjectIdentifier oid, boolean singleValued,
                             Class<?> valueClass, Function<DerValue[], Object> getValue,
                             BiFunction<Object, DerOutputStream, DerOutputStream> encoder,
@@ -97,10 +105,7 @@ public class PKCS9Attribute implements DerEncoder {
         }
     }
 
-    private static DerOutputStream mkDerStream(DerOutputStream t, DerOutputStream r) {
-        return t.write(DerValue.tag_Set, r.toByteArray());
-    }
-
+    /* Interface for handling errors within lambda expression */
     @FunctionalInterface
     public interface Throws<T, R, E extends Throwable> {
         R apply(T t) throws E;
@@ -116,6 +121,12 @@ public class PKCS9Attribute implements DerEncoder {
         }
     }
 
+    /* Simplifies lambda expressions when setting AttributeInfo */
+    private static DerOutputStream mkDerStream(DerOutputStream t, DerOutputStream r) {
+        return t.write(DerValue.tag_Set, r.toByteArray());
+    }
+
+    /* Set AttributeInfo for supported PKCS9 attributes */
     static {
         add(EMAIL_ADDRESS_OID, false, String[].class,
             a -> Arrays.stream(a).map(
@@ -144,9 +155,8 @@ public class PKCS9Attribute implements DerEncoder {
             (v,t) -> mkDerStream(t, new DerOutputStream().putOctetString((byte[]) v)),
             DerValue.tag_OctetString);
 
-        //CHECK - Original converts to DerInputStream and back??
         add(SIGNING_TIME_OID, true, java.util.Date.class,
-            Throws.unchecked(a -> a[0].getTime()),
+            Throws.unchecked(a -> new DerInputStream(a[0].toByteArray()).getTime()),
             (v,t) -> mkDerStream(t, new DerOutputStream().putTime((Date) v)),
             DerValue.tag_UtcTime,
             DerValue.tag_GeneralizedTime);
