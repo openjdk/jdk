@@ -1790,21 +1790,21 @@ public class MessageFormat extends Format {
         LIST("list"),
 
         // Pre-defined DateTimeFormatter types
-        BASIC_ISO_DATE("basic_iso_date"),
-        ISO_LOCAL_DATE("iso_local_date"),
-        ISO_OFFSET_DATE ("iso_offset_date"),
-        ISO_DATE("iso_date"),
-        ISO_LOCAL_TIME("iso_local_time"),
-        ISO_OFFSET_TIME("iso_offset_time"),
-        ISO_TIME("iso_time"),
-        ISO_LOCAL_DATE_TIME("iso_local_date_time"),
-        ISO_OFFSET_DATE_TIME("iso_offset_date_time"),
-        ISO_ZONED_DATE_TIME("iso_zoned_date_time"),
-        ISO_DATE_TIME("iso_date_time"),
-        ISO_ORDINAL_DATE("iso_ordinal_date"),
-        ISO_WEEK_DATE("iso_week_date"),
-        ISO_INSTANT("iso_instant"),
-        RFC_1123_DATE_TIME("rfc_1123_date_time");
+        BASIC_ISO_DATE("BASIC_ISO_DATE"),
+        ISO_LOCAL_DATE("ISO_LOCAL_DATE"),
+        ISO_OFFSET_DATE ("ISO_OFFSET_DATE"),
+        ISO_DATE("ISO_DATE"),
+        ISO_LOCAL_TIME("ISO_LOCAL_TIME"),
+        ISO_OFFSET_TIME("ISO_OFFSET_TIME"),
+        ISO_TIME("ISO_TIME"),
+        ISO_LOCAL_DATE_TIME("ISO_LOCAL_DATE_TIME"),
+        ISO_OFFSET_DATE_TIME("ISO_OFFSET_DATE_TIME"),
+        ISO_ZONED_DATE_TIME("ISO_ZONED_DATE_TIME"),
+        ISO_DATE_TIME("ISO_DATE_TIME"),
+        ISO_ORDINAL_DATE("ISO_ORDINAL_DATE"),
+        ISO_WEEK_DATE("ISO_WEEK_DATE"),
+        ISO_INSTANT("ISO_INSTANT"),
+        RFC_1123_DATE_TIME("RFC_1123_DATE_TIME");
 
         private final String text;
 
