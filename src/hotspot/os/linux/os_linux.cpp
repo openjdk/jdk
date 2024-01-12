@@ -2957,8 +2957,10 @@ void os::pd_pretouch_memory(void* first, void* last, size_t page_size) {
   // being assembled later.
   if (HugePages::thp_mode() == THPMode::always || UseTransparentHugePages) {
     int err = 0;
-    if (UseMadvPopulateWrite &&
-	::madvise(first, len, MADV_POPULATE_WRITE) == -1) {
+    if (UseMadvPopulateWrite) {
+      if (::madvise(first, len, MADV_POPULATE_WRITE) == 0) {
+	return;
+      }
       err = errno;
     }
     if (err == 0 || err == EINVAL) { // Not to use or not supported
