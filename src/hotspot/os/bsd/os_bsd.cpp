@@ -2039,15 +2039,13 @@ jint os::init_2(void) {
     if (status != 0) {
       log_info(os)("os::init_2 getrlimit failed: %s", os::strerror(errno));
     } else {
-      rlim_t rlim_org = nbr_files.rlim_cur;
+      rlim_t rlim_original = nbr_files.rlim_cur;
 
       // on macOS according to setrlimit(2), OPEN_MAX must be used instead
       // of RLIM_INFINITY, but testing on macOS >= 10.6, reveals that
       // we can, in fact, use even RLIM_INFINITY, so try the max value
       // that the system claims can be used first, same as other BSD OSes.
-      nbr_files.rlim_cur = nbr_files.rlim_max;
-
-      // WORKAROUND: some terminals (ksh) will internally use "int" type
+      // However, some terminals (ksh) will internally use "int" type
       // to store this value and since RLIM_INFINITY overflows an "int"
       // we might end up with a negative value, so cap the system limit max
       // at INT_MAX instead, just in case, for everyone.
@@ -2057,7 +2055,7 @@ jint os::init_2(void) {
       if (status != 0) {
         // if that fails then try lowering the limit to either OPEN_MAX
         // (which is safe) or the original limit, whichever was greater.
-        nbr_files.rlim_cur = MAX(OPEN_MAX, rlim_org);
+        nbr_files.rlim_cur = MAX(OPEN_MAX, rlim_original);
         status = setrlimit(RLIMIT_NOFILE, &nbr_files);
       }
       if (status != 0) {
