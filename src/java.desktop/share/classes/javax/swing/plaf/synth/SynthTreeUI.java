@@ -787,10 +787,12 @@ public class SynthTreeUI extends BasicTreeUI
     }
 
     //
-    // BasicTreeUI directly uses expandIcon outside of the Synth methods.
+    // BasicTreeUI directly uses expandIcon and collapsedIcon outside of the
+    // Synth methods.
     // To get the correct context we return an instance of this that fetches
     // the SynthContext as needed.
     //
+
     private class IconWrapper implements SynthIcon {
         Icon iconType;
 
