@@ -352,6 +352,14 @@ AC_DEFUN_ONCE([TOOLCHAIN_PRE_DETECTION],
   # autoconf magic only relies on PATH, so update it if tools dir is specified
   OLD_PATH="$PATH"
 
+  # autoconf can ass unwanted flags to CC and CXX based on what it deems to be
+  # appropriate for the language level to enable; Seen on macOS with autoconf 2.72
+  # ac_prog_cc_stdc and ac_prog_cxx_stdcxx are undocumented fields that the autoconf
+  # logic for this depends on and setting them both to empty strings completely
+  # disables the check meaning the unwanted flags are never added
+  readonly ac_prog_cc_stdc=
+  readonly ac_prog_cxx_stdcxx=
+
   if test "x$OPENJDK_BUILD_OS" = "xmacosx"; then
     if test "x$XCODEBUILD" != x; then
       XCODE_VERSION_OUTPUT=`"$XCODEBUILD" -version 2> /dev/null | $HEAD -n 1`
@@ -380,7 +388,7 @@ AC_DEFUN_ONCE([TOOLCHAIN_POST_DETECTION],
 [
   # Restore old path, except for the microsoft toolchain, which requires the
   # toolchain path to remain in place. Otherwise the compiler will not work in
-  # some siutations in later configure checks.
+  # some situations in later configure checks.
   if test "x$TOOLCHAIN_TYPE" != "xmicrosoft"; then
     PATH="$OLD_PATH"
   fi
@@ -389,10 +397,6 @@ AC_DEFUN_ONCE([TOOLCHAIN_POST_DETECTION],
   # This is necessary since AC_PROG_CC defaults CFLAGS to "-g -O2"
   CFLAGS="$ORG_CFLAGS"
   CXXFLAGS="$ORG_CXXFLAGS"
-
-  # filter out some unwanted additions autoconf may add to CXX; we saw this on macOS with autoconf 2.72
-  UTIL_GET_NON_MATCHING_VALUES(cxx_filtered, $CXX, -std=c++11 -std=gnu++11)
-  CXX="$cxx_filtered"
 ])
 
 # Check if a compiler is of the toolchain type we expect, and save the version
