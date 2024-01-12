@@ -330,6 +330,7 @@ public class ImageIcon implements Icon, Serializable, Accessible {
                 mTracker.waitForID(id, 0);
             } catch (InterruptedException e) {
                 interrupted = true;
+                Thread.currentThread().interrupt();
             }
 
             loadStatus = mTracker.statusID(id, false);
