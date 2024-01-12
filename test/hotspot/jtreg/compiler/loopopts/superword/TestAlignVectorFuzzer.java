@@ -558,9 +558,11 @@ public class TestAlignVectorFuzzer {
 
         // Only run for 90% of the time, and subtract some margin. This ensures the shutdown has sufficient time,
         // even for very slow runs.
-        long test_time_allowance = System.currentTimeMillis() +
-                                   (long)(Utils.adjustTimeout(Utils.DEFAULT_TEST_TIMEOUT) * 0.9) -
-                                   20_000;
+        System.out.println("Adjusted Timeout: " + Utils.adjustTimeout(Utils.DEFAULT_TEST_TIMEOUT));
+        long test_time_allowance_diff = (long)(Utils.adjustTimeout(Utils.DEFAULT_TEST_TIMEOUT) * 0.6) -
+                                        20_000;
+        System.out.println("Time Allowance:   " + test_time_allowance_diff);
+        long test_time_allowance = System.currentTimeMillis() + test_time_allowance_diff;
         long test_hard_timeout = System.currentTimeMillis() +
                                 Utils.adjustTimeout(Utils.DEFAULT_TEST_TIMEOUT);
 
