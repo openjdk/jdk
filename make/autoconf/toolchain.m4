@@ -352,7 +352,7 @@ AC_DEFUN_ONCE([TOOLCHAIN_PRE_DETECTION],
   # autoconf magic only relies on PATH, so update it if tools dir is specified
   OLD_PATH="$PATH"
 
-  # autoconf can ass unwanted flags to CC and CXX based on what it deems to be
+  # autoconf can add unwanted flags to CC and CXX based on what it deems to be
   # appropriate for the language level to enable; Seen on macOS with autoconf 2.72
   # ac_prog_cc_stdc and ac_prog_cxx_stdcxx are undocumented fields that the autoconf
   # logic for this depends on and setting them both to empty strings completely
