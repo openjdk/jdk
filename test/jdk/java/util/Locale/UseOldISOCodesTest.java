@@ -41,7 +41,7 @@ public class UseOldISOCodesTest {
     // Ensure java.locale.useOldISOCodes is only interpreted at runtime startup
     @Test
     public void staticInitializationTest() throws Exception {
-        ProcessTools.executeTestJvm("-Djava.locale.useOldISOCodes=true", "UseOldISOCodesTest$Runner")
+        ProcessTools.executeTestJava("-Djava.locale.useOldISOCodes=true", "UseOldISOCodesTest$Runner")
                 .outputTo(System.out)
                 .errorTo(System.err)
                 .shouldHaveExitValue(0);

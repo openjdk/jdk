@@ -303,8 +303,8 @@ TenuredGeneration::TenuredGeneration(ReservedSpace rs,
   // If this wasn't true, a single card could span more than on generation,
   // which would cause problems when we commit/uncommit memory, and when we
   // clear and dirty cards.
-  guarantee(_rs->is_card_aligned(reserved_mr.start()), "generation must be card aligned");
-  guarantee(_rs->is_card_aligned(reserved_mr.end()), "generation must be card aligned");
+  guarantee(CardTable::is_card_aligned(reserved_mr.start()), "generation must be card aligned");
+  guarantee(CardTable::is_card_aligned(reserved_mr.end()), "generation must be card aligned");
   _min_heap_delta_bytes = MinHeapDeltaBytes;
   _capacity_at_prologue = initial_byte_size;
   _used_at_prologue = 0;

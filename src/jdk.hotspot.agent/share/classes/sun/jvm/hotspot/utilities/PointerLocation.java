@@ -28,6 +28,7 @@ import java.io.*;
 import sun.jvm.hotspot.code.*;
 import sun.jvm.hotspot.debugger.*;
 import sun.jvm.hotspot.debugger.cdbg.*;
+import sun.jvm.hotspot.gc.serial.*;
 import sun.jvm.hotspot.gc.shared.*;
 import sun.jvm.hotspot.interpreter.*;
 import sun.jvm.hotspot.memory.*;
@@ -111,11 +112,11 @@ public class PointerLocation {
   }
 
   public boolean isInNewGen() {
-    return ((gen != null) && (gen.equals(((GenCollectedHeap)heap).getGen(0))));
+    return ((gen != null) && (gen.equals(((SerialHeap)heap).getGen(0))));
   }
 
   public boolean isInOldGen() {
-    return ((gen != null) && (gen.equals(((GenCollectedHeap)heap).getGen(1))));
+    return ((gen != null) && (gen.equals(((SerialHeap)heap).getGen(1))));
   }
 
   public boolean inOtherGen() {

@@ -77,8 +77,7 @@ public class TestRemsetLoggingTools {
         finalargs.add(VerifySummaryOutput.class.getName());
         finalargs.add(String.valueOf(numGCs));
 
-        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(finalargs);
-        OutputAnalyzer output = new OutputAnalyzer(pb.start());
+        OutputAnalyzer output = ProcessTools.executeLimitedTestJava(finalargs);
 
         output.shouldHaveExitValue(0);
 

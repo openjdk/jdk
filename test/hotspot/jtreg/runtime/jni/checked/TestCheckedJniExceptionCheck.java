@@ -205,9 +205,9 @@ public class TestCheckedJniExceptionCheck {
         }
 
         // launch and check output
-        checkOuputForCorrectWarnings(ProcessTools.executeTestJvm("-Xcheck:jni",
-                                                                 "-Djava.library.path=" + Utils.TEST_NATIVE_PATH,
-                                                                 "TestCheckedJniExceptionCheck"));
+        checkOuputForCorrectWarnings(ProcessTools.executeTestJava("-Xcheck:jni",
+                                                                  "-Djava.library.path=" + Utils.TEST_NATIVE_PATH,
+                                                                  "TestCheckedJniExceptionCheck"));
     }
 
 }

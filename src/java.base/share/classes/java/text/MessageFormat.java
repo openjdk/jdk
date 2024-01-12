@@ -308,20 +308,16 @@ import java.util.Objects;
  * <h3>Usage Information</h3>
  *
  * <p>
- * For more sophisticated patterns, you can use a {@code ChoiceFormat}
- * to produce correct forms for singular and plural:
+ * For more sophisticated patterns, {@link ChoiceFormat} can be used with
+ * {@code MessageFormat} to produce accurate forms for singular and plural:
  * {@snippet lang=java :
- * MessageFormat form = new MessageFormat("The disk \"{1}\" contains {0}.");
- * double[] filelimits = {0,1,2};
- * String[] filepart = {"no files","one file","{0,number} files"};
- * ChoiceFormat fileform = new ChoiceFormat(filelimits, filepart);
- * form.setFormatByArgumentIndex(0, fileform);
- *
- * int fileCount = 1273;
- * String diskName = "MyDisk";
- * Object[] testArgs = {Long.valueOf(fileCount), diskName};
- *
- * System.out.println(form.format(testArgs));
+ * MessageFormat msgFmt = new MessageFormat("The disk \"{0}\" contains {1}.");
+ * double[] fileLimits = {0,1,2};
+ * String[] filePart = {"no files","one file","{1,number} files"};
+ * ChoiceFormat fileChoices = new ChoiceFormat(fileLimits, filePart);
+ * msgFmt.setFormatByArgumentIndex(1, fileChoices);
+ * Object[] args = {"MyDisk", 1273};
+ * System.out.println(msgFmt.format(args));
  * }
  * The output with different values for {@code fileCount}:
  * <blockquote><pre>
@@ -335,14 +331,19 @@ import java.util.Objects;
  * above example, or by using a pattern. See {@link ChoiceFormat}
  * for more information.
  * {@snippet lang=java :
- * form.applyPattern(
- *    "There {0,choice,0#are no files|1#is one file|1<are {0,number,integer} files}.");
+ * msgFmt.applyPattern(
+ *    "There {0,choice,0#are no files|1#is one file|1<are {1,number,integer} files}.");
  * }
  *
  * <p>
- * <strong>Note:</strong> As we see above, the string produced
- * by a {@code ChoiceFormat} in {@code MessageFormat} is treated as special;
- * occurrences of '{' are used to indicate subformats, and cause recursion.
+ * <strong id="pattern_caveats">Notes:</strong> As seen in the previous snippet,
+ * the string produced by a {@code ChoiceFormat} in {@code MessageFormat} is
+ * treated as special; occurrences of '{' are used to indicate subformats, and
+ * cause recursion. If a {@code FormatElement} is defined in the {@code ChoiceFormat}
+ * pattern, it will only be formatted according to the {@code FormatType} and
+ * {@code FormatStyle} pattern provided. The associated subformats of the
+ * top level {@code MessageFormat} will not be applied to the {@code FormatElement}
+ * defined in the {@code ChoiceFormat} pattern.
  * If you create both a {@code MessageFormat} and {@code ChoiceFormat}
  * programmatically (instead of using the string patterns), then be careful not to
  * produce a format that recurses on itself, which will cause an infinite loop.
