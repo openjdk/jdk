@@ -36,8 +36,6 @@
 #ifndef SHARE_LOGGING_CIRCULARSTRINGBUFFER_HPP
 #define SHARE_LOGGING_CIRCULARSTRINGBUFFER_HPP
 
-// TODO:
-// Need an explicit lock for the statistics also.
 class CircularStringBuffer {
 public:
     // account for dropped messages
