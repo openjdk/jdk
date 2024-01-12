@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -851,15 +851,21 @@ void CodeCacheDCmd::execute(DCmdSource source, TRAPS) {
 }
 
 #ifdef LINUX
+#define DEFAULT_PERFMAP_FILENAME "/tmp/perf-<pid>.map"
+
 PerfMapDCmd::PerfMapDCmd(outputStream* output, bool heap) :
              DCmdWithParser(output, heap),
-  _filename("filename", "Name of the map file", "STRING", false, "/tmp/perf-<pid>.map")
+  _filename("filename", "Name of the map file", "STRING", false, DEFAULT_PERFMAP_FILENAME)
 {
   _dcmdparser.add_dcmd_argument(&_filename);
 }
 
 void PerfMapDCmd::execute(DCmdSource source, TRAPS) {
-  CodeCache::write_perf_map(_filename.value());
+  const char* filename = _filename.value();
+  if (strncmp(filename, DEFAULT_PERFMAP_FILENAME, strlen(DEFAULT_PERFMAP_FILENAME)) == 0) {
+      filename = nullptr; // use the default filename based on the pid
+  }
+  CodeCache::write_perf_map(filename);
 }
 #endif // LINUX
 
@@ -991,11 +997,13 @@ void ClassesDCmd::execute(DCmdSource source, TRAPS) {
 }
 
 #if INCLUDE_CDS
+#define DEFAULT_CDS_ARCHIVE_FILENAME "java_pid<pid>_<subcmd>.jsa"
+
 DumpSharedArchiveDCmd::DumpSharedArchiveDCmd(outputStream* output, bool heap) :
                                      DCmdWithParser(output, heap),
   _suboption("subcmd", "static_dump | dynamic_dump", "STRING", true),
   _filename("filename", "Name of shared archive to be dumped", "STRING", false,
-            "java_pid<pid>_<subcmd>.jsa")
+            DEFAULT_CDS_ARCHIVE_FILENAME)
 {
   _dcmdparser.add_dcmd_argument(&_suboption);
   _dcmdparser.add_dcmd_argument(&_filename);
@@ -1005,6 +1013,10 @@ void DumpSharedArchiveDCmd::execute(DCmdSource source, TRAPS) {
   jboolean is_static;
   const char* scmd = _suboption.value();
   const char* file = _filename.value();
+
+  if (strncmp(file, DEFAULT_PERFMAP_FILENAME, strlen(DEFAULT_PERFMAP_FILENAME)) == 0) {
+    file = nullptr; // use the default filename based on the suboption and pid
+  }
 
   if (strcmp(scmd, "static_dump") == 0) {
     is_static = JNI_TRUE;
