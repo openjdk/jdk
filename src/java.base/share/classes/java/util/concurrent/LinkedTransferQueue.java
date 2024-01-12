@@ -1157,8 +1157,9 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
      * @throws NullPointerException if the specified element is null
      */
     public boolean offer(E e, long timeout, TimeUnit unit) {
-        return offer(e);
-    }
+        Objects.requireNonNull(e);
+        xfer(e, -1L);
+        return true;    }
 
     /**
      * Inserts the specified element at the tail of this queue.

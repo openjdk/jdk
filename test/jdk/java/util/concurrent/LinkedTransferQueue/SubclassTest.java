@@ -33,6 +33,7 @@
  */
 
 import java.util.concurrent.LinkedTransferQueue;
+import java.util.concurrent.TimeUnit;
 import org.testng.annotations.Test;
 import static org.testng.Assert.assertEquals;
 
@@ -48,6 +49,12 @@ public class SubclassTest {
     public void testAdd() {
         var queue = new TestLinkedTransferQueue();
         queue.add(new Object());
+        assertEquals(queue.size(), 1);
+    }
+
+    public void testTimedOffer() {
+        var queue = new TestLinkedTransferQueue();
+        queue.offer(new Object(), 60, TimeUnit.SECONDS);
         assertEquals(queue.size(), 1);
     }
 
