@@ -28,16 +28,34 @@
 #ifdef LINUX
 FILE* make_buffer(size_t size) {
   FILE* f = tmpfile();
+  if (f == nullptr) {
+    // TODO: Fail
+  }
   const int fd = fileno(f);
-  ftruncate(fd, size);
+  if (fd == -1) {
+    // TODO: Fail
+  }
+  int ret = ftruncate(fd, size);
+  if (ret != 0) {
+    // TODO: Fail
+  }
   return f;
 }
 char* make_mirrored_mapping(size_t size, FILE* file) {
   const int fd = fileno(file);
   char* buffer = (char*)mmap(nullptr, size * 2, PROT_READ | PROT_WRITE,
                              MAP_NORESERVE | MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+  if (buffer == MAP_FAILED) {
+    vm_exit_out_of_memory(size * 2, OOM_MMAP_ERROR, "Failed to allocate async logging buffer");
+  }
   void* ret = mmap(buffer, size, PROT_READ | PROT_WRITE, MAP_SHARED | MAP_FIXED, fd, 0);
+  if (ret == MAP_FAILED) {
+    vm_exit_out_of_memory(size*2, OOM_MMAP_ERROR, "Failed to allocate async logging buffer");
+  }
   ret = mmap(buffer + size, size, PROT_READ | PROT_WRITE, MAP_SHARED | MAP_FIXED, fd, 0);
+  if (ret == MAP_FAILED) {
+    vm_exit_out_of_memory(size * 2, OOM_MMAP_ERROR, "Failed to allocate async logging buffer");
+  }
   return buffer;
 }
 #endif
