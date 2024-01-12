@@ -154,10 +154,10 @@ final class JceSecurity {
 
     static Instance getInstance(String type, Class<?> clazz, String algorithm)
             throws NoSuchAlgorithmException {
-        Iterator<Service> services = GetInstance.getServices(type, algorithm);
+        Iterator<Service> t = GetInstance.getServices(type, algorithm);
         NoSuchAlgorithmException failure = null;
-        while (services.hasNext()) {
-            Service s = services.next();
+        while (t.hasNext()) {
+            Service s = t.next();
             if (canUseProvider(s.getProvider()) == false) {
                 // allow only signed providers
                 continue;

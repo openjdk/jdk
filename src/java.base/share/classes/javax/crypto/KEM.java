@@ -538,12 +538,12 @@ public final class KEM {
      */
     public static KEM getInstance(String algorithm)
             throws NoSuchAlgorithmException {
-        Iterator<Provider.Service> list = GetInstance.getServices(
+        Iterator<Provider.Service> t = GetInstance.getServices(
                 "KEM",
                 Objects.requireNonNull(algorithm, "null algorithm name"));
         List<Provider.Service> allowed = new ArrayList<>();
-        while (list.hasNext()) {
-            Provider.Service s = list.next();
+        while (t.hasNext()) {
+            Provider.Service s = t.next();
             if (!JceSecurity.canUseProvider(s.getProvider())) {
                 continue;
             }
