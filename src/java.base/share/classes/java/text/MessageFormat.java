@@ -85,9 +85,9 @@ import java.util.Objects;
  * <i>FormatType: one of </i>
  *         number
  *         date
- *         j_date
+ *         java_time_date
  *         time
- *         j_time
+ *         java_time_time
  *         choice
  *         list
  *         <i>the DateTimeFormatter predefined formats</i>
@@ -215,7 +215,7 @@ import java.util.Objects;
  *       <th scope="row" style="font-weight:normal"><i>SubformatPattern</i>
  *       <td>{@code new} {@link SimpleDateFormat#SimpleDateFormat(String,Locale) SimpleDateFormat}{@code (subformatPattern, getLocale())}
  *    <tr>
- *       <th scope="row" style="font-weight:normal" rowspan=6>{@code j_date}
+ *       <th scope="row" style="font-weight:normal" rowspan=6>{@code java_time_date}
  *       <th scope="row" style="font-weight:normal"><i>(none)</i>
  *       <td>{@link DateTimeFormatter#ofLocalizedDate(java.time.format.FormatStyle) DateTimeFormatter.ofLocalizedDate(}{@link java.time.format.FormatStyle#MEDIUM}{@code ).withLocale(getLocale()).toFormat()}
  *    <tr>
@@ -253,7 +253,7 @@ import java.util.Objects;
  *       <th scope="row" style="font-weight:normal"><i>SubformatPattern</i>
  *       <td>{@code new} {@link SimpleDateFormat#SimpleDateFormat(String,Locale) SimpleDateFormat}{@code (subformatPattern, getLocale())}
  *    <tr>
- *       <th scope="row" style="font-weight:normal" rowspan=6>{@code j_time}
+ *       <th scope="row" style="font-weight:normal" rowspan=6>{@code java_time_time}
  *       <th scope="row" style="font-weight:normal"><i>(none)</i>
  *       <td>{@link DateTimeFormatter#ofLocalizedTime(java.time.format.FormatStyle) DateTimeFormatter.ofLocalizedTime(}{@link java.time.format.FormatStyle#MEDIUM}{@code ).withLocale(getLocale()).toFormat()}
  *    <tr>
@@ -288,12 +288,12 @@ import java.util.Objects;
  * </tbody>
  * </table>
  *
- * @apiNote For the <i>j_date</i> and <i>j_time</i> {@code FormatTypes} with a
+ * @apiNote For the <i>java_time_date</i> and <i>java_time_time</i> {@code FormatTypes} with a
  * <i>SubformatPattern</i> {@code FormatStyle}, either {@code FormatType} will work with a
  * time, date, or date and time <i>SubformatPattern</i>. As the same method is invoked
- * for both <i>j_date</i> and <i>j_time</i> when using a <i>SubformatPattern</i>,
- * a <i>j_date</i> with a time only <i>SubformatPattern</i> is equivalent to
- * <i>j_time</i> with the same <i>SubformatPattern</i>. This behavior applies to
+ * for both <i>java_time_date</i> and <i>java_time_time</i> when using a <i>SubformatPattern</i>,
+ * a <i>java_time_date</i> with a time only <i>SubformatPattern</i> is equivalent to
+ * <i>java_time_time</i> with the same <i>SubformatPattern</i>. This behavior applies to
  * the <i>date</i> and <i>time</i> {@code FormatTypes} as well.
  *
  * <h3>DateTimeFormatter Predefined Formatters (ISO and RFC1123)</h3>
@@ -302,7 +302,7 @@ import java.util.Objects;
  * constant field name can be used as a {@code FormatType}. There are no associated {@code FormatStyles}
  * for these {@code FormatTypes}. For example, the {@code FormatType} <i>iso_date_time</i>
  * returns {@link DateTimeFormatter#ISO_DATE_TIME}{@code .toFormat()}. Similar
- * to <i>j_time</i> and <i>j_date</i>, these {@code FormatTypes} should not be used
+ * to <i>java_time_time</i> and <i>java_time_date</i>, these {@code FormatTypes} should not be used
  * with {@link Date} and are intended to be used with the {@link java.time} package.
  *
  * <h3>Usage Information</h3>
@@ -382,10 +382,10 @@ import java.util.Objects;
  * fmt.format(arg); // returns "The date was Thursday, November 16, 2023"
  * }
  *
- * <p>2) a <i>j_date</i> {@code FormatType} with a <i>full</i> {@code FormatStyle},
+ * <p>2) a <i>java_time_date</i> {@code FormatType} with a <i>full</i> {@code FormatStyle},
  * {@snippet lang=java :
  * Object[] arg = {LocalDate.now()};
- * var fmt = new MessageFormat("The date was {0,j_date,full}");
+ * var fmt = new MessageFormat("The date was {0,java_time_date,full}");
  * fmt.format(arg); // returns "The date was Thursday, November 16, 2023"
  * }
  *
@@ -1657,7 +1657,7 @@ public class MessageFormat extends Format {
                         DateFormat.getTimeInstance(DateFormat.FULL, locale);
                 default -> formatFromSubformatPattern(fType, style);
             };
-            case J_DATE -> switch (fStyle) {
+            case JAVA_TIME_DATE -> switch (fStyle) {
                 case DEFAULT, MEDIUM ->
                         DateTimeFormatter.ofLocalizedDate(java.time.format.FormatStyle.MEDIUM).withLocale(locale).toFormat();
                 case SHORT ->
@@ -1668,7 +1668,7 @@ public class MessageFormat extends Format {
                         DateTimeFormatter.ofLocalizedDate(java.time.format.FormatStyle.FULL).withLocale(locale).toFormat();
                 default -> formatFromSubformatPattern(fType, style);
             };
-            case J_TIME -> switch (fStyle) {
+            case JAVA_TIME_TIME -> switch (fStyle) {
                 case DEFAULT, MEDIUM ->
                         DateTimeFormatter.ofLocalizedTime(java.time.format.FormatStyle.MEDIUM).withLocale(locale).toFormat();
                 case SHORT ->
@@ -1732,7 +1732,7 @@ public class MessageFormat extends Format {
             return switch(fType) {
                 case NUMBER -> new DecimalFormat(pattern, DecimalFormatSymbols.getInstance(locale));
                 case DATE, TIME -> new SimpleDateFormat(pattern, locale);
-                case J_DATE, J_TIME -> DateTimeFormatter.ofPattern(pattern).toFormat();
+                case JAVA_TIME_DATE, JAVA_TIME_TIME -> DateTimeFormatter.ofPattern(pattern).toFormat();
                 case CHOICE -> new ChoiceFormat(pattern);
                 default ->  throw new IllegalArgumentException(String.format(
                             "Unexpected modifier for %s: %s", type, pattern));
@@ -1784,8 +1784,8 @@ public class MessageFormat extends Format {
         NUMBER("number"),
         DATE("date"),
         TIME("time"),
-        J_DATE("j_date"),
-        J_TIME("j_time"),
+        JAVA_TIME_DATE("java_time_date"),
+        JAVA_TIME_TIME("java_time_time"),
         CHOICE("choice"),
         LIST("list"),
 
