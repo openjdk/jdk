@@ -985,6 +985,9 @@ void *os::Bsd::dlopen_helper(const char *filename, int mode, char *ebuf, int ebu
   if (!ieee_handling) {
     Events::log_dll_message(nullptr, "IEEE subnormal handling check failed before loading %s", filename);
     log_info(os)("IEEE subnormal handling check failed before loading %s", filename);
+    if (CheckJNICalls) {
+      tty->print_cr("WARNING: IEEE subnormal handling check failed before loading %s", filename);
+    }
   }
 
   // Save and restore the floating-point environment around dlopen().
@@ -1038,6 +1041,9 @@ void *os::Bsd::dlopen_helper(const char *filename, int mode, char *ebuf, int ebu
       } else {
         Events::log_dll_message(nullptr, "IEEE subnormal handling could not be corrected after loading %s", filename);
         log_info(os)("IEEE subnormal handling could not be corrected after loading %s", filename);
+        if (CheckJNICalls) {
+          tty->print_cr("WARNING: IEEE subnormal handling could not be corrected after loading %s", filename);
+        }
         assert(false, "fesetenv didn't work");
       }
     }
