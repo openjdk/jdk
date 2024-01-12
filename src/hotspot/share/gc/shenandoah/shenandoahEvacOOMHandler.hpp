@@ -72,7 +72,7 @@ public:
  *     we will pay the price of a full GC.
  *
  *  2. If any thread A fails to evacuate object X, it will wait to see if some
- *     other mutator or GC worker thread can successfully evacuate object X.  At the
+ *     other mutator or GC worker thread can successfully evacuate object X.  At the moment
  *     thread A fails to allocate, it launches the OOM-during-evacuation protocol.  There
  *     is no going back (even though some other thread may successfully evacuate object X).
  *
@@ -82,8 +82,8 @@ public:
  *        encountered.
  *     b) Thread A now waits for all other threads to finish any ongoing allocations
  *        for evacuation that might be in process.
- *     c) Other threads that announce intent to allocate for evacuation are informed
- *        that the OOM-during-evac protocol has been initated.  As with thread A,
+ *     c) Other threads that subsequently announce intent to allocate for evacuation are
+ *        informed that the OOM-during-evac protocol has been initated.  As with thread A,
  *        these threads also wait for all other threads to finish any ongoing allocations
  *        for evacuation that might be in process.
  *     d) After all threads have finished whatever allocations for evacuation they
@@ -94,7 +94,7 @@ public:
  *     e) Now, all of the threads that were waiting for evacuating threads to finish
  *        allocations that were in progress are allowed to run, but they are not allowed
  *        to allocate for evacuation.  Additional threads that newly announce intent to
- *        allocate for evacuation are immediately allowed to continue running, but without
+ *        allocate for evacuation are immediately allowed to continue running, also without
  *        authorization to allocate.
  *     f) Threads that desire to allocate for evacuation but are not authorized to do so
  *        simply consult the head of each cset object.  If the header denotes that the
@@ -143,12 +143,12 @@ public:
 /*
  * For most service workloads, OOM-during-evac will be very rare.  Most services are provisioned
  * with enough memory and CPU cores to avoid experiencing OOM during evac.  The typical cause for
- * OOM during evac is a spike in client requests, possibly related to a DOS attack.  When OOM during
- * evac does occur, there are opportunities to make the protocol more efficient.  In some cases,
+ * OOM during evac is a spike in client requests, possibly related to a DOS attack.  In some cases,
  * OOM during evac can also occur because the heap becomes fragmented.  For example, it may not be
- * possible to find contiguous memory to evacuate an object that is 50% of the heap region size, even
+ * possible to find contiguous memory to evacuate an object that is 50% of the heap region size even
  * though there is an abundance of "fragmented" memory available to support evacuation of thousands of
- * smaller (more normal-sized) objects.
+ * smaller (more normal-sized) objects.  When OOM during evac does occur, there are opportunities to
+ * make the protocol more efficient.
  *
  * TODO: make refinements to the OOM-during-evac protocol so that it is less disruptive and more efficient.
  *
@@ -157,8 +157,8 @@ public:
  *     threads continue to evacuate other objects.  A draft solution is described here, along with discussion
  *     of prerequisites required for full implementation:  https://github.com/openjdk/jdk/pull/12881
  *     This allows all threads, including the one that failed to evacuate a single object, to fully utilize
- *     all of the memory available within their existing GCLABs.  This allows more of evacuation to be
- *     performed concurrently rather than requiring STW operation.
+ *     all of the memory available within their existing GCLABs and allows more of evacuation to be
+ *     performed concurrently rather than requiring STW Full GC.
  *
  *  2. At the end of evacuation, if there were any failures to evacuate, fixup the cset before
  *     we go to update-refs.  This can be done concurrently.  Fixup consists of:
@@ -166,6 +166,7 @@ public:
  *     a. Take region out of cset if it contains objects that failed to evacuate.
  *
  *     b. For each such region, set top to be address following last object that failed to evacuate.
+ *        Mangle memory above the new top as appropriate.
  *
  *     c. For each such region, make the garbage found below and between uncopied objects parseable:
  *        overwrite each run of garbage with array-of-integer object of appropriate size.  Generational
@@ -199,7 +200,7 @@ public:
   /**
    * Enter a protected evacuation path.
    *
-   * Upon return: 
+   * Upon return:
    *
    *  1. Thread t has authorization to allocate for evacuation and the count of evacuating threads includes thread t, or
    *
@@ -211,7 +212,7 @@ public:
    * Authority to allocate for evacuation is represented by thread-local flag is_oom_during_evac(t) equal to false.
    * If this thread is not authorized to allocate and it encounters an object residing within the cset, it uses
    * the most current location of the object, as represented by the object's header.  If the object was not previously
-   * allocated, the evac-OOM protocol assures that the object will not be subsequently evacuated during the remainder
+   * evacuated, the evac-OOM protocol assures that the object will not be subsequently evacuated during the remainder
    * of the concurrent evacuation phase.
    */
   inline void enter_evacuation(Thread* t);

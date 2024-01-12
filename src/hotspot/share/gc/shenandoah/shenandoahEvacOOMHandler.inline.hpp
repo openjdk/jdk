@@ -39,7 +39,7 @@ jint ShenandoahEvacOOMCounter::unmasked_count() {
   return Atomic::load_acquire(&_bits) & ~OOM_MARKER_MASK;
 }
 
-// Announce the intent by thread thr to perform allocations for evacuation.  
+// Announce the intent by thread thr to perform allocations for evacuation.
 //
 // Upon return:
 //
@@ -49,7 +49,7 @@ jint ShenandoahEvacOOMCounter::unmasked_count() {
 //
 // Thread-local flag is_oom_during_evac(thr) is false iff thread thr is authorized to allocate for evacuation.
 //
-// Notes: If this thread subsequently encounters a "need" to allocate memory for evacuation but it is not authorized to 
+// Notes: If this thread subsequently encounters a "need" to allocate memory for evacuation but it is not authorized to
 //        allocate for evacuation, this thread will simply treat the relevant cset object as "frozen within from-space".
 //        If this thread is forbidden to allocate, then all threads are forbidden to allocate.  As soon as a first thread
 //        begins to execute within an "evacuation region" without authorization to allocate, the evac-OOM protocol requires
@@ -82,7 +82,7 @@ void ShenandoahEvacOOMHandler::enter_evacuation(Thread* thr) {
 //    b. This thread is authorized to allocate for evacuation.
 //
 // Notes: A thread that has already entered evacuation and not left may make a nested re-entry into evacuation.  Each nested
-// invocation of enter_evacuation should be matched by invocation of leave_evacuation.
+//        invocation of enter_evacuation should be matched by invocation of leave_evacuation.
 
 void ShenandoahEvacOOMHandler::leave_evacuation(Thread* thr) {
   uint8_t level = ShenandoahThreadLocalData::pop_evac_oom_scope(thr);
