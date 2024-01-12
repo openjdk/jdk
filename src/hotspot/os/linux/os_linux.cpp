@@ -2957,17 +2957,15 @@ void os::pd_pretouch_memory(void* first, void* last, size_t page_size) {
   // being assembled later.
   if (HugePages::thp_mode() == THPMode::always || UseTransparentHugePages) {
     int err = 0;
-    if (UseMadvPopulateWrite) {
-      if (::madvise(first, len, MADV_POPULATE_WRITE) == 0) {
-        return;
-      }
+    if (UseMadvPopulateWrite &&
+        ::madvise(first, len, MADV_POPULATE_WRITE) == -1) {
       err = errno;
     }
-    if (err == 0 || err == EINVAL) { // Not to use or not supported
+    if (!UseMadvPopulateWrite || err == EINVAL) { // Not to use or not supported
       // When using THP we need to always pre-touch using small pages as the
       // OS will initially always use small pages.
       pretouch_memory_common(first, last, os::vm_page_size());
-    } else {
+    } else if (err != 0) {
       log_warning(gc, os)("::madvise(" PTR_FORMAT ", " SIZE_FORMAT
                           ", %d) failed; error='%s' (errno=%d)",
                           p2i(first), len, MADV_POPULATE_WRITE,
