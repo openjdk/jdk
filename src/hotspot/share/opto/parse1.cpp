@@ -706,6 +706,11 @@ void Parse::do_all_blocks() {
 
       progress = true;
       if (block->is_loop_head() || block->is_handler() || (has_irreducible && !block->is_ready())) {
+        // mark live objects 'Escaped' in map before mounting phi nodes.
+        if (DoPartialEscapeAnalysis && block->is_loop_head()) {
+          PEAState& as = jvms()->alloc_state();
+          as.mark_all_live_objects_escaped(PEA(), map());
+        }
         // Not all preds have been parsed.  We must build phis everywhere.
         // (Note that dead locals do not get phis built, ever.)
         ensure_phis_everywhere();
@@ -734,11 +739,6 @@ void Parse::do_all_blocks() {
 
         // Leave behind an undisturbed copy of the map, for future merges.
         set_map(clone_map());
-
-        if (DoPartialEscapeAnalysis && block->is_loop_head()) {
-          PEAState& as = jvms()->alloc_state();
-          as.mark_all_live_objects_escaped(PEA(), block->start_map());
-        }
       }
 
       if (control()->is_Region() && !block->is_loop_head() && !has_irreducible && !block->is_handler()) {
