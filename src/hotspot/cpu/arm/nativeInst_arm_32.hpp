@@ -438,8 +438,8 @@ inline NativeCall* nativeCall_before(address return_address) {
 class NativePostCallNop: public NativeInstruction {
 public:
   bool check() const { return is_nop(); }
-  int displacement() const { return 0; }
-  void patch(jint diff);
+  bool decode(int32_t& oopmap_slot, int32_t& cb_offset) const { return false; }
+  bool patch(int32_t oopmap_slot, int32_t cb_offset) { return false; }
   void make_deopt();
 };
 

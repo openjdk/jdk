@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,17 +21,26 @@
  * questions.
  */
 
-import java.util.zip.*;
-import java.io.File;
+/*
+ * @test
+ * @bug 8248695
+ * @summary Test any java.time.DateTimeFormatter Locale provider related issues
+ * @library /test/lib
+ * @build LocaleProviders
+ * @modules java.base/sun.util.locale.provider
+ * @run junit/othervm LocaleProvidersDateTimeFormatter
+ */
 
-public class Available
-{
-    public static void main (String argv[]) throws Exception {
-        ZipFile zf = new ZipFile(new File(System.getProperty("test.src"),
-                                          "input.jar"));
-        ZipEntry e = zf.getEntry("ReleaseInflater.java");
-        if (e.getSize() != zf.getInputStream(e).available()) {
-            throw new Exception("wrong return value of available");
-        }
+import org.junit.jupiter.api.Test;
+
+public class LocaleProvidersDateTimeFormatter {
+
+    /*
+     * 8248695: Ensure DateTimeFormatter::ofLocalizedDate does not throw exception
+     * under HOST (date only pattern leaks time field)
+     */
+    @Test
+    public void dateOnlyJavaTimePattern() throws Throwable {
+        LocaleProviders.test("HOST", "bug8248695Test");
     }
 }

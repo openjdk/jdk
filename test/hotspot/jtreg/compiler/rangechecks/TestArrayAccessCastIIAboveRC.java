@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,29 +21,37 @@
  * questions.
  */
 
-/* @test
-   @bug 4290060
-   @summary Check if the zip file is closed before access any
-            elements in the Enumeration.
+/*
+ * @test
+ * @bug 8319793
+ * @summary Replacing a test with a dominating test can cause an array access CastII to float above a range check that guards it
+ * @run main/othervm -Xbatch -XX:-TieredCompilation TestArrayAccessCastIIAboveRC
  */
 
-import java.io.*;
-import java.util.zip.*;
-import java.util.Enumeration;
+public class TestArrayAccessCastIIAboveRC {
+    static int N = 400;
+    static int iArrFld[] = new int[N];
 
-public class EnumAfterClose {
-    public static void main(String args[]) throws Exception {
-        Enumeration e;
-        try (ZipFile zf = new ZipFile(new File(System.getProperty("test.src", "."),
-                                               "input.zip"))) {
-            e = zf.entries();
-        }
-        // ensure that the ZipFile is closed before checking the Enumeration
-        try {
-            if (e.hasMoreElements()) {
-                ZipEntry ze = (ZipEntry)e.nextElement();
+    static void test() {
+        float fArr[] = new float[N];
+        int i9, i10, i12;
+        long lArr1[] = new long[N];
+        for (i9 = 7; i9 < 43; i9++) {
+            try {
+                i10 = 7 % i9;
+                iArrFld[i9 + 1] = i9 / i10;
+            } catch (ArithmeticException a_e) {
             }
-        } catch (IllegalStateException ie) {
+            for (i12 = 1; 7 > i12; i12++)
+                lArr1[i9 - 1] = 42;
+            iArrFld[i12] = 4;
+            fArr[i9 - 1] = 0;
+        }
+    }
+
+    public static void main(String[] args) {
+        for (int i = 0; i < 50_000; ++i) {
+            test();
         }
     }
 }

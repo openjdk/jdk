@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,31 +21,29 @@
  * questions.
  */
 
-/* @test
-   @bug 4528128 6846616
-   @summary Test if reading InputStream of a closed ZipFile crashes VM
-   @author kladko
-   */
+/*
+ * @test
+ * @bug 8245241 8246721 8261919
+ * @summary Test the Locale provider preference is logged
+ * @library /test/lib
+ * @build LocaleProviders
+ * @modules java.base/sun.util.locale.provider
+ * @run junit/othervm -Djdk.lang.Process.allowAmbiguousCommands=false LocaleProvidersLogger
+ */
 
+import org.junit.jupiter.api.Test;
 
-import java.util.zip.*;
-import java.io.*;
-import java.util.*;
+public class LocaleProvidersLogger {
 
-public class ReadAfterClose {
-    public static void main(String[] argv) throws Exception {
-        InputStream in;
-        try (ZipFile zf = new ZipFile(
-                 new File(System.getProperty("test.src","."),"crash.jar"))) {
-            ZipEntry zent = zf.getEntry("Test.java");
-            in = zf.getInputStream(zent);
-        }
-        // ensure zf is closed at this point
-        try {
-            in.read();
-        } catch (IOException e) {
-            return;
-        }
-        throw new Exception("Test failed.");
+    /*
+     * 8245241 8246721 8261919: Ensure if an incorrect system property for locale providers is set,
+     * it should be logged and presented to the user. The option
+     * jdk.lang.Process.allowAmbiguousCommands=false is needed for properly escaping
+     * double quotes in the string argument.
+     */
+    @Test
+    public void logIncorrectLocaleProvider() throws Throwable {
+        LocaleProviders.test("FOO", "bug8245241Test",
+                "Invalid locale provider adapter \"FOO\" ignored.");
     }
 }
