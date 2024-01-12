@@ -94,7 +94,7 @@ import static com.sun.tools.javac.jvm.ByteCodes.string_add;
  *  This code and its internal interfaces are subject to change or
  *  deletion without notice.</b>
  */
-public abstract class Symbol extends AnnoConstruct implements PoolConstant, Element {
+public abstract non-sealed class Symbol extends AnnoConstruct implements PoolConstant, Element {
 
     /** The kind of this symbol.
      *  @see Kinds

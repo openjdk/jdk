@@ -80,7 +80,7 @@ import static com.sun.tools.javac.code.TypeTag.*;
  *
  *  @see TypeTag
  */
-public abstract class Type extends AnnoConstruct implements TypeMirror, PoolConstant {
+public abstract non-sealed class Type extends AnnoConstruct implements TypeMirror, PoolConstant {
 
     /**
      * Type metadata,  Should be {@code null} for the default value.
@@ -463,20 +463,6 @@ public abstract class Type extends AnnoConstruct implements TypeMirror, PoolCons
     @Override @DefinedBy(Api.LANGUAGE_MODEL)
     public List<Attribute.TypeCompound> getAnnotationMirrors() {
         return getMetadata(TypeMetadata.Annotations.class, Annotations::annotations, List.nil());
-    }
-
-
-    @Override @DefinedBy(Api.LANGUAGE_MODEL)
-    public <A extends Annotation> A getAnnotation(Class<A> annotationType) {
-        return null;
-    }
-
-
-    @Override @DefinedBy(Api.LANGUAGE_MODEL)
-    public <A extends Annotation> A[] getAnnotationsByType(Class<A> annotationType) {
-        @SuppressWarnings("unchecked")
-        A[] tmp = (A[]) java.lang.reflect.Array.newInstance(annotationType, 0);
-        return tmp;
     }
 
     /** Return the base types of a list of types.
