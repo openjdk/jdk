@@ -44,8 +44,10 @@ public final class NonICCFilterTest {
     private enum ColorSpaceSelector {
         GRAY,
         RGB,
+        PYCC,
         WRAPPED_GRAY,
-        WRAPPED_RGB
+        WRAPPED_RGB,
+        WRAPPED_PYCC
     }
 
     private static final class TestColorSpace extends ColorSpace {
@@ -101,6 +103,9 @@ public final class NonICCFilterTest {
 
             case RGB -> ColorSpace.getInstance(ColorSpace.CS_sRGB);
             case WRAPPED_RGB -> new TestColorSpace(ColorSpace.getInstance(ColorSpace.CS_sRGB));
+
+            case PYCC -> ColorSpace.getInstance(ColorSpace.CS_PYCC);
+            case WRAPPED_PYCC -> new TestColorSpace(ColorSpace.getInstance(ColorSpace.CS_PYCC));
         };
     }
 
@@ -127,7 +132,7 @@ public final class NonICCFilterTest {
         BufferedImage srcGold = createTestImage(createCS(ColorSpaceSelector.GRAY));
         BufferedImage destGold = createTestImage(createCS(ColorSpaceSelector.RGB));
 
-        ColorSpace mid = ColorSpace.getInstance(ColorSpace.CS_PYCC);
+        ColorSpace mid = createCS(ColorSpaceSelector.PYCC);
         ColorConvertOp test = new ColorConvertOp(mid, null);
         test.filter(srcTest, destTest);
 
@@ -135,7 +140,18 @@ public final class NonICCFilterTest {
         gold.filter(srcGold, destGold);
 
         if (!areImagesEqual(destTest, destGold)) {
-            throw new RuntimeException("Test failed");
+            throw new RuntimeException("ICC test failed");
+        }
+
+        mid = createCS(ColorSpaceSelector.WRAPPED_PYCC);
+        test = new ColorConvertOp(mid, null);
+        test.filter(srcTest, destTest);
+
+        gold = new ColorConvertOp(mid, null);
+        gold.filter(srcGold, destGold);
+
+        if (!areImagesEqual(destTest, destGold)) {
+            throw new RuntimeException("Wrapper test failed");
         }
     }
 }
