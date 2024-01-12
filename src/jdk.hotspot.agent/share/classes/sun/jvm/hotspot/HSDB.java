@@ -36,6 +36,7 @@ import sun.jvm.hotspot.debugger.*;
 import sun.jvm.hotspot.gc.epsilon.*;
 import sun.jvm.hotspot.gc.parallel.*;
 import sun.jvm.hotspot.gc.shared.*;
+import sun.jvm.hotspot.gc.serial.*;
 import sun.jvm.hotspot.gc.shenandoah.*;
 import sun.jvm.hotspot.gc.g1.*;
 import sun.jvm.hotspot.gc.x.*;
@@ -1076,8 +1077,8 @@ public class HSDB implements ObjectHistogramPanel.Listener, SAListener {
                         CollectedHeap collHeap = VM.getVM().getUniverse().heap();
                         boolean bad = true;
                         anno = "BAD OOP";
-                        if (collHeap instanceof GenCollectedHeap) {
-                          GenCollectedHeap heap = (GenCollectedHeap) collHeap;
+                        if (collHeap instanceof SerialHeap) {
+                          SerialHeap heap = (SerialHeap) collHeap;
                           for (int i = 0; i < heap.nGens(); i++) {
                             if (heap.getGen(i).isIn(handle)) {
                               if (i == 0) {
