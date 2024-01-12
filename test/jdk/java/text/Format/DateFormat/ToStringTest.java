@@ -32,6 +32,7 @@
 import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.text.DateFormat;
+import java.text.DateFormatSymbols;
 import java.text.SimpleDateFormat;
 import java.util.Locale;
 
@@ -47,6 +48,16 @@ public class ToStringTest {
         String expectedStr =
                 "SimpleDateFormat [locale: \"English (Canada)\", pattern: \"MMM d, y\"]\n";
         var s = DateFormat.getDateInstance(DateFormat.DEFAULT, Locale.CANADA);
+        assertEquals(expectedStr, s.toString());
+    }
+
+    // Check an odd value. SimpleDateFormat constructor that takes DFS, will use
+    // the default locale, not the locale from the DFS.
+    @Test
+    public void oddValueTest() {
+        String expectedStr =
+                "SimpleDateFormat [locale: \""+Locale.getDefault().getDisplayName()+"\", pattern: \"MMM d, y\"]\n";
+        var s = new SimpleDateFormat("MMM d, y", new DateFormatSymbols(Locale.JAPAN));
         assertEquals(expectedStr, s.toString());
     }
 

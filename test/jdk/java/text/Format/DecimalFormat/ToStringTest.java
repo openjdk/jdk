@@ -30,6 +30,7 @@
 
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
+import java.text.NumberFormat;
 import java.util.Locale;
 
 import org.junit.jupiter.api.Test;
@@ -46,5 +47,10 @@ public class ToStringTest {
                 "DecimalFormat [locale: \"English (Canada)\", pattern: \"foo#00.00bar\"]\n";
         var d = new DecimalFormat("foo#00.00bar", new DecimalFormatSymbols(Locale.CANADA));
         assertEquals(expectedStr, d.toString());
+
+        String expectedStr2 =
+                "DecimalFormat [locale: \"English (Canada)\", pattern: \"#,##0.###\"]\n";
+        var d2 = NumberFormat.getInstance(Locale.CANADA);
+        assertEquals(expectedStr2, d2.toString());
     }
 }
