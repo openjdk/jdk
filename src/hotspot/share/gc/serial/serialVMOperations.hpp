@@ -25,8 +25,8 @@
 #ifndef SHARE_GC_SERIAL_SERIALVMOPERATIONS_HPP
 #define SHARE_GC_SERIAL_SERIALVMOPERATIONS_HPP
 
-#include "gc/shared/gcVMOperations.hpp"
 #include "gc/serial/serialHeap.hpp"
+#include "gc/shared/gcVMOperations.hpp"
 
 class VM_GenCollectForAllocation : public VM_CollectForAllocation {
  private:
