@@ -45,7 +45,7 @@ public class TestSkipRebuildRemsetPhase {
                                                                              "-XX:+UnlockExperimentalVMOptions",
                                                                              "-XX:+UnlockDiagnosticVMOptions",
                                                                              "-XX:+WhiteBoxAPI",
-                                                                             "-XX:G1MixedGCLiveThresholdPercent=20",
+                                                                             "-XX:G1MixedGCLiveThresholdPercent=0",
                                                                              "-Xlog:gc+marking=debug,gc+phases=debug,gc+remset+tracking=trace",
                                                                              "-Xms10M",
                                                                              "-Xmx10M",
