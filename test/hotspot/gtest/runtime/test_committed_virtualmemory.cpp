@@ -32,7 +32,6 @@
 class CommittedVirtualMemoryTest {
 public:
   static void test() {
-    // See JDK-8202772: temporarily disabled.
     Thread* thr = Thread::current();
     address stack_end = thr->stack_end();
     size_t  stack_size = thr->stack_size();
