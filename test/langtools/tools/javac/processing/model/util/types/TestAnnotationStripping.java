@@ -67,8 +67,8 @@ public class TestAnnotationStripping extends JavacTestingAbstractProcessor {
 
                 checkExpectedTypeAnnotations(returnType, expectedAnnotation);
 
-//                 System.err.print("\tasElement()");
-//                 checkEmptyAnnotations(typeUtils.asElement(returnType));
+                System.err.print("\tasElement()");
+                checkEmptyAnnotations(typeUtils.asElement(returnType));
 
                 System.err.print("\tcapture()");
                 checkEmptyAnnotations(typeUtils.capture(returnType));
@@ -76,8 +76,8 @@ public class TestAnnotationStripping extends JavacTestingAbstractProcessor {
                 System.err.print("\terasure()");
                 checkEmptyAnnotations(typeUtils.erasure(returnType));
 
-//                 System.err.print("\tgetArrayType()");
-//                 checkEmptyAnnotations(typeUtils.getArrayType(returnType));
+                System.err.print("\tgetArrayType()");
+                checkEmptyAnnotations(typeUtils.getArrayType(returnType));
 
                 // System.out.println(returnType.getAnnotation(TypeAnnotation.class));
                 // System.out.println(returnType.getAnnotationsByType(TypeAnnotation.class).length);
@@ -99,9 +99,8 @@ public class TestAnnotationStripping extends JavacTestingAbstractProcessor {
         List<? extends AnnotationMirror> annotations = ac.getAnnotationMirrors();
         if (annotations.size() != 1) {
             failures++;
-            System.err.println("\t\t\tUnexpected annotations size: " + annotations);
-        }
-        if (!typeUtils.isSameType(annotations.get(0).getAnnotationType(), expectedAnnotation)) {
+            System.err.println("\t\t\tUnexpected annotations size: " + annotations.size());
+        } else if (!typeUtils.isSameType(annotations.get(0).getAnnotationType(), expectedAnnotation)) {
             failures++;
             System.err.println("\t\t\tUnexpected annotations type: " + annotations);
         }
@@ -113,7 +112,14 @@ public class TestAnnotationStripping extends JavacTestingAbstractProcessor {
             return;
         else {
             List<? extends AnnotationMirror> annotations = ac.getAnnotationMirrors();
-            if (annotations.size() != 0) {
+            int count = 0;
+            for (AnnotationMirror annotation : annotations) {
+              if (((TypeElement) annotation.getAnnotationType().asElement()).getQualifiedName().contentEquals("jdk.internal.ValueBased")) {
+                continue;
+              }
+              count++;
+            }
+            if (count != 0) {
                 failures++;
                 System.err.println(ac.getClass());
                 System.err.println("\t\t\tUnexpected nonzero annotations size: " + annotations);
@@ -134,10 +140,9 @@ class HostClass {
 
     public static  java.util.@TypeAnnotation("foo4")Set foo4() {return null;}
 
-    // Erasure on an annotated array not acting properly
-    //    public static  String@TypeAnnotation("foo5")[] foo5() {return null;}
+    public static  String @TypeAnnotation("foo5")[]  foo5() {return null;}
 
-    // public static java.util.Set < @TypeAnnotation("foo5") String> foo6() {return null;}
+    public static  java.util. @TypeAnnotation("foo6") Set < @TypeAnnotation("foo7") String> foo6() {return null;}
 }
 
 @Retention(RetentionPolicy.RUNTIME)
