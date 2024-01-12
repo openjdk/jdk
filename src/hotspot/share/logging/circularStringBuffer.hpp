@@ -23,7 +23,7 @@
  */
 
 #include "logging/logFileStreamOutput.hpp"
-#include "mutex_posix.hpp"
+#include "runtime/mutex.hpp"
 #include "runtime/semaphore.hpp"
 #include "utilities/resourceHash.hpp"
 #include <stddef.h>
