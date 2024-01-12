@@ -327,11 +327,11 @@ uint ZBarrierSetC2::estimated_barrier_size(const Node* node) const {
   if ((barrier_data & ZBarrierElided) != 0) {
     return uncolor_or_color_size;
   }
-  // A compare and branch corresponds to approximately five Ideal nodes (Cmp,
-  // Bool, If, IfTrue, IfFalse). The runtime call corresponds to approximately
-  // seven more nodes (CallLeaf, control Proj, memory Proj, data Proj, Region,
-  // memory Phi, data Phi).
-  return uncolor_or_color_size + 12;
+  // A compare and branch corresponds to approximately four fast-path Ideal
+  // nodes (Cmp, Bool, If, If projection). The slow path (If projection and
+  // runtime call) is excluded since the corresponding code is laid out
+  // separately and does not directly affect performance.
+  return uncolor_or_color_size + 4;
 }
 
 void* ZBarrierSetC2::create_barrier_state(Arena* comp_arena) const {
