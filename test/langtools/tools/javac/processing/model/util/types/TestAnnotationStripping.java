@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,6 +50,8 @@ import static javax.tools.StandardLocation.*;
  * Test if annotations are stripped from the results of Types' methods
  */
 public class TestAnnotationStripping extends JavacTestingAbstractProcessor {
+    private Types vacuousTypes = new VacuousTypes();
+
     /**
      * Check expected behavior on classes and packages.
      */
@@ -57,13 +59,15 @@ public class TestAnnotationStripping extends JavacTestingAbstractProcessor {
                            RoundEnvironment roundEnv) {
         if (!roundEnv.processingOver()) {
             TypeElement hostClassElt = eltUtils.getTypeElement("HostClass");
-            TypeMirror expectedAnnotation = eltUtils.getTypeElement("TypeAnnotation").asType();
+            TypeMirror expectedAnnotation = eltUtils.getTypeElement("TestTypeAnnotation").asType();
 
             for (ExecutableElement m : methodsIn(hostClassElt.getEnclosedElements())) {
                 TypeMirror returnType = m.getReturnType();
 
                 System.err.println("Checking " + returnType);
 
+                testVacuous(returnType);
+                checkEmptyAnnotations(typeUtils.stripAnnotations(returnType));
 
                 checkExpectedTypeAnnotations(returnType, expectedAnnotation);
 
@@ -77,11 +81,29 @@ public class TestAnnotationStripping extends JavacTestingAbstractProcessor {
                 checkEmptyAnnotations(typeUtils.erasure(returnType));
 
                 System.err.print("\tgetArrayType()");
-                checkEmptyAnnotations(typeUtils.getArrayType(returnType));
+                ArrayType arrayType = typeUtils.getArrayType(returnType);
+                checkEmptyAnnotations(arrayType);
+                /*
+                 * "Annotations on the component type are preserved."
+                 */
+                checkEqualTypeAndAnnotations(returnType, arrayType.getComponentType());
 
-                // System.out.println(returnType.getAnnotation(TypeAnnotation.class));
-                // System.out.println(returnType.getAnnotationsByType(TypeAnnotation.class).length);
-                // TypeAnnotation ta = requireNonNull(returnType.getAnnotation(TypeAnnotation.class));
+                if (!returnType.getKind().isPrimitive()) {
+                    /*
+                     * "Annotations on the bounds are preserved."
+                     */
+                    WildcardType wcType;
+                    checkEmptyAnnotations(wcType = typeUtils.getWildcardType(returnType, null));
+                    checkEqualTypeAndAnnotations(returnType, wcType.getExtendsBound());
+
+                    checkEmptyAnnotations(wcType = typeUtils.getWildcardType(null,       returnType));
+                    checkEqualTypeAndAnnotations(returnType, wcType.getSuperBound());
+                }
+
+                 System.out.println(returnType.getAnnotation(TestTypeAnnotation.class));
+                 System.out.println(returnType.getAnnotationsByType(TestTypeAnnotation.class).length);
+                 TestTypeAnnotation ta = requireNonNull(returnType.getAnnotation(TestTypeAnnotation.class),
+                                                        returnType.toString());
 
                 System.err.println();
                 System.err.println();
@@ -91,6 +113,15 @@ public class TestAnnotationStripping extends JavacTestingAbstractProcessor {
                 throw new RuntimeException(failures + " failures occured.");
         }
         return true;
+    }
+
+    void testVacuous(TypeMirror tm ) {
+        try {
+            var result = vacuousTypes.stripAnnotations(tm);
+            messager.printError("Unexpected non-exceptional result returned" +  result);
+        } catch(UnsupportedOperationException uoe) {
+            ; // Expected
+        }
     }
 
     private int failures = 0;
@@ -126,27 +157,40 @@ public class TestAnnotationStripping extends JavacTestingAbstractProcessor {
             }
         }
     }
+
+    void checkEqualTypeAndAnnotations(TypeMirror tm1, TypeMirror tm2) {
+        if (!typeUtils.isSameType(tm1, tm2)) {
+            failures++;
+            System.err.printf("Unequal types %s and %s.%n", tm1, tm2);
+        }
+
+        if (!Objects.equals(tm1.getAnnotationMirrors(), tm1.getAnnotationMirrors())) {
+            failures++;
+            System.err.printf("Unequal annotations on and %s.%n", tm1, tm2);
+        }
+    }
+
 }
 
 /*
  * Class to host annotations for testing
  */
 class HostClass {
-    public static @TypeAnnotation("foo") Integer foo() {return null;}
+    public static @TestTypeAnnotation("foo") Integer foo() {return null;}
 
-    public static @TypeAnnotation("foo2") int foo2() {return 0;}
+    public static @TestTypeAnnotation("foo2") int foo2() {return 0;}
 
-    public static @TypeAnnotation("foo3") String foo3() {return null;}
+    public static @TestTypeAnnotation("foo3") String foo3() {return null;}
 
-    public static  java.util.@TypeAnnotation("foo4")Set foo4() {return null;}
+    public static  java.util.@TestTypeAnnotation("foo4")Set foo4() {return null;}
 
-    public static  String @TypeAnnotation("foo5")[]  foo5() {return null;}
+    public static  String @TestTypeAnnotation("foo5")[]  foo5() {return null;}
 
-    public static  java.util. @TypeAnnotation("foo6") Set < @TypeAnnotation("foo7") String> foo6() {return null;}
+    public static  java.util. @TestTypeAnnotation("foo6") Set < @TestTypeAnnotation("foo7") String> foo6() {return null;}
 }
 
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE_USE)
-@interface TypeAnnotation {
+@interface TestTypeAnnotation {
     String value() default "";
 }
