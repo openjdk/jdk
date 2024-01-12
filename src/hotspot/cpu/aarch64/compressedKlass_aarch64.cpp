@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2023, Red Hat, Inc. All rights reserved.
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,9 @@
 
 #include "precompiled.hpp"
 #include "asm/assembler.hpp"
+#if INCLUDE_CDS
+#include "cds/cdsConfig.hpp"
+#endif
 #include "logging/log.hpp"
 #include "oops/compressedKlass.hpp"
 #include "memory/metaspace.hpp"
@@ -58,6 +61,19 @@ static char* reserve_at_eor_compatible_address(size_t size, bool aslr) {
       0x7ffc, 0x7ffe, 0x7fff
   };
   static constexpr int num_immediates = sizeof(immediates) / sizeof(immediates[0]);
+  if (aslr) {
+    // With aslr enabled, call os::init_random so that we get a different start_index
+    // in each run.
+#if INCLUDE_CDS
+    if (!CDSConfig::is_dumping_static_archive()) {
+      // To ensure we have a deterministic static archive on aarch64 platform, call
+      // os::init_random when not dumping static archive.
+#endif
+      os::init_random((int)os::javaTimeNanos());
+#if INCLUDE_CDS
+    }
+#endif
+  }
   const int start_index = aslr ? os::random() : 0;
   constexpr int max_tries = 64;
   for (int ntry = 0; result == nullptr && ntry < max_tries; ntry ++) {
