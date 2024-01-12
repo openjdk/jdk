@@ -68,7 +68,7 @@ public class ToStringTest {
     @Test
     public void nullLocaleTest() {
         String expectedStr =
-                "SimpleDateFormat [locale: \"None\", pattern: \"yyyy.MM.dd E hh.mm.ss zzz\"]\n";
+                "SimpleDateFormat [locale: \"null\", pattern: \"yyyy.MM.dd E hh.mm.ss zzz\"]\n";
         // Borrowed from DateFormatSymbolsSerializationTest
         SimpleDateFormat s;
         try (InputStream is = HexDumpReader.getStreamFromHexDump("SDFserialized.ser.txt");

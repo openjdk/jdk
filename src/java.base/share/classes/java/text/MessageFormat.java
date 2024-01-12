@@ -1192,7 +1192,7 @@ public class MessageFormat extends Format {
         return
             """
             MessageFormat [locale: "%s", pattern: "%s"]
-            """.formatted(locale == null ? "None" : locale.getDisplayName(), toPattern());
+            """.formatted(locale == null ? "null" : locale.getDisplayName(), toPattern());
     }
 
 

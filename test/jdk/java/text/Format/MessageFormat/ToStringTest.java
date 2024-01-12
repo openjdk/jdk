@@ -50,7 +50,7 @@ public class ToStringTest {
     @Test
     public void nullLocaleTest() {
         String expectedStr =
-                "MessageFormat [locale: \"None\", pattern: \"foo {0}\"]\n";
+                "MessageFormat [locale: \"null\", pattern: \"foo {0}\"]\n";
         var m = new MessageFormat("foo {0}", null);
         assertEquals(expectedStr, m.toString());
     }
