@@ -43,7 +43,7 @@ public final class SimpleSRGBToFromCIEXYZ {
                 System.err.println("Expected color:\t" + Arrays.toString(rgb));
                 System.err.println("XYZ color:\t\t" + Arrays.toString(xyz));
                 System.err.println("Actual color:\t" + Arrays.toString(inv));
-                throw new java.lang.Error("Wrong color");
+                throw new Error("Wrong color");
             }
         }
     }
