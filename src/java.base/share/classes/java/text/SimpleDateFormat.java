@@ -2429,8 +2429,8 @@ public class SimpleDateFormat extends DateFormat {
     public String toString() {
         return
             """
-            SimpleDateFormat [locale: "%s", pattern: "%s"]
-            """.formatted(locale == null ? "null" :locale.getDisplayName(), toPattern());
+            SimpleDateFormat [locale: %s, pattern: "%s"]
+            """.formatted(locale == null ? null : '"'+locale.getDisplayName()+'"', toPattern());
     }
 
     /**

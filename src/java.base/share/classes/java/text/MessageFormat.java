@@ -1191,8 +1191,8 @@ public class MessageFormat extends Format {
     public String toString() {
         return
             """
-            MessageFormat [locale: "%s", pattern: "%s"]
-            """.formatted(locale == null ? "null" : locale.getDisplayName(), toPattern());
+            MessageFormat [locale: %s, pattern: "%s"]
+            """.formatted(locale == null ? null : '"'+locale.getDisplayName()+'"', toPattern());
     }
 
 
