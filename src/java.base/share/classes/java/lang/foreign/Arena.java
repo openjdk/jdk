@@ -221,7 +221,7 @@ public interface Arena extends SegmentAllocator, AutoCloseable {
      * Calling {@link #close()} on the returned arena will result in an {@link UnsupportedOperationException}.
      * <p>
      * Memory segments {@linkplain #allocate(long, long) allocated} by the returned arena
-     * are zero initialized.
+     * are zero-initialized.
      *
      * @return a new arena that is managed, automatically, by the garbage collector
      */
@@ -236,7 +236,7 @@ public interface Arena extends SegmentAllocator, AutoCloseable {
      *          an {@link UnsupportedOperationException}.
      * <p>
      * Memory segments {@linkplain #allocate(long, long) allocated} by the returned arena
-     * are zero initialized.
+     * are zero-initialized.
      */
     static Arena global() {
         class Holder {
@@ -251,7 +251,7 @@ public interface Arena extends SegmentAllocator, AutoCloseable {
      *          that created the arena, the arena's <em>owner thread</em>.
      * <p>
      * Memory segments {@linkplain #allocate(long, long) allocated} by the returned arena
-     * are zero initialized.
+     * are zero-initialized.
      */
     static Arena ofConfined() {
         return MemorySessionImpl.createConfined(Thread.currentThread()).asArena();
@@ -262,7 +262,7 @@ public interface Arena extends SegmentAllocator, AutoCloseable {
      *          {@linkplain MemorySegment#isAccessibleBy(Thread) accessed} by any thread.
      * <p>
      * Memory segments {@linkplain #allocate(long, long) allocated} by the returned arena
-     * are zero initialized.
+     * are zero-initialized.
      */
     static Arena ofShared() {
         return MemorySessionImpl.createShared().asArena();
