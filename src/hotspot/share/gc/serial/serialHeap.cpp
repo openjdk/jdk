@@ -90,26 +90,24 @@ SerialHeap* SerialHeap::heap() {
 }
 
 SerialHeap::SerialHeap() :
-    CollectedHeap(),
-    _young_gen(nullptr),
-    _old_gen(nullptr),
-    _rem_set(nullptr),
-    _soft_ref_policy(),
-    _gc_policy_counters(new GCPolicyCounters("Copy:MSC", 2, 2)),
-    _incremental_collection_failed(false),
-    _full_collections_completed(0),
-    _young_manager(nullptr),
-    _old_manager(nullptr),
-
-    _eden_pool(nullptr),
-    _survivor_pool(nullptr),
-    _old_pool(nullptr) {
+  CollectedHeap(),
+  _young_gen(nullptr),
+  _old_gen(nullptr),
+  _rem_set(nullptr),
+  _soft_ref_policy(),
+  _gc_policy_counters(new GCPolicyCounters("Copy:MSC", 2, 2)),
+  _incremental_collection_failed(false),
+  _full_collections_completed(0),
+  _young_manager(nullptr),
+  _old_manager(nullptr),
+  _eden_pool(nullptr),
+  _survivor_pool(nullptr),
+  _old_pool(nullptr) {
   _young_manager = new GCMemoryManager("Copy");
   _old_manager = new GCMemoryManager("MarkSweepCompact");
 }
 
 void SerialHeap::initialize_serviceability() {
-
   DefNewGeneration* young = young_gen();
 
   // Add a memory pool for each space and young gen doesn't
@@ -133,7 +131,6 @@ void SerialHeap::initialize_serviceability() {
   _old_manager->add_pool(_survivor_pool);
   _old_manager->add_pool(_old_pool);
   old->set_gc_manager(_old_manager);
-
 }
 
 GrowableArray<GCMemoryManager*> SerialHeap::memory_managers() {
@@ -329,7 +326,7 @@ bool SerialHeap::should_try_older_generation_allocation(size_t word_size) const 
          || incremental_collection_failed();
 }
 
-HeapWord* SerialHeap::expand_heap_and_allocate(size_t size, bool   is_tlab) {
+HeapWord* SerialHeap::expand_heap_and_allocate(size_t size, bool is_tlab) {
   HeapWord* result = nullptr;
   if (_old_gen->should_allocate(size, is_tlab)) {
     result = _old_gen->expand_and_allocate(size, is_tlab);
@@ -344,7 +341,7 @@ HeapWord* SerialHeap::expand_heap_and_allocate(size_t size, bool   is_tlab) {
 }
 
 HeapWord* SerialHeap::mem_allocate_work(size_t size,
-                                              bool is_tlab) {
+                                        bool is_tlab) {
 
   HeapWord* result = nullptr;
 
@@ -441,8 +438,8 @@ HeapWord* SerialHeap::mem_allocate_work(size_t size,
 }
 
 HeapWord* SerialHeap::attempt_allocation(size_t size,
-                                               bool is_tlab,
-                                               bool first_only) {
+                                         bool is_tlab,
+                                         bool first_only) {
   HeapWord* res = nullptr;
 
   if (_young_gen->should_allocate(size, is_tlab)) {
@@ -460,7 +457,7 @@ HeapWord* SerialHeap::attempt_allocation(size_t size,
 }
 
 HeapWord* SerialHeap::mem_allocate(size_t size,
-                                         bool* gc_overhead_limit_was_exceeded) {
+                                   bool* gc_overhead_limit_was_exceeded) {
   return mem_allocate_work(size,
                            false /* is_tlab */);
 }
@@ -471,7 +468,7 @@ bool SerialHeap::must_clear_all_soft_refs() {
 }
 
 void SerialHeap::collect_generation(Generation* gen, bool full, size_t size,
-                                          bool is_tlab, bool run_verification, bool clear_soft_refs) {
+                                    bool is_tlab, bool run_verification, bool clear_soft_refs) {
   FormatBuffer<> title("Collect gen: %s", gen->short_name());
   GCTraceTime(Trace, gc, phases) t1(title);
   TraceCollectorStats tcs(gen->counters());
@@ -510,11 +507,11 @@ void SerialHeap::collect_generation(Generation* gen, bool full, size_t size,
   }
 }
 
-void SerialHeap::do_collection(bool           full,
-                                     bool           clear_all_soft_refs,
-                                     size_t         size,
-                                     bool           is_tlab,
-                                     GenerationType max_generation) {
+void SerialHeap::do_collection(bool full,
+                               bool clear_all_soft_refs,
+                               size_t size,
+                               bool is_tlab,
+                               GenerationType max_generation) {
   ResourceMark rm;
   DEBUG_ONLY(Thread* my_thread = Thread::current();)
 
@@ -664,7 +661,7 @@ void SerialHeap::do_collection(bool           full,
 }
 
 bool SerialHeap::should_do_full_collection(size_t size, bool full, bool is_tlab,
-                                                 SerialHeap::GenerationType max_gen) const {
+                                           SerialHeap::GenerationType max_gen) const {
   return max_gen == OldGen && _old_gen->should_collect(full, size, is_tlab);
 }
 
@@ -776,10 +773,10 @@ static AssertNonScavengableClosure assert_is_non_scavengable_closure;
 #endif
 
 void SerialHeap::process_roots(ScanningOption so,
-                                     OopClosure* strong_roots,
-                                     CLDClosure* strong_cld_closure,
-                                     CLDClosure* weak_cld_closure,
-                                     CodeBlobToOopClosure* code_roots) {
+                               OopClosure* strong_roots,
+                               CLDClosure* strong_cld_closure,
+                               CLDClosure* weak_cld_closure,
+                               CodeBlobToOopClosure* code_roots) {
   // General roots.
   assert(code_roots != nullptr, "code root closure should always be set");
 
@@ -845,7 +842,7 @@ void SerialHeap::collect(GCCause::Cause cause) {
 
   while (true) {
     VM_GenCollectFull op(gc_count_before, full_gc_count_before,
-                        cause, max_generation);
+                         cause, max_generation);
     VMThread::execute(&op);
 
     if (!GCCause::is_explicit_full_gc(cause)) {
@@ -872,7 +869,7 @@ void SerialHeap::do_full_collection(bool clear_all_soft_refs) {
 }
 
 void SerialHeap::do_full_collection(bool clear_all_soft_refs,
-                                          GenerationType last_generation) {
+                                    GenerationType last_generation) {
   do_collection(true,                   // full
                 clear_all_soft_refs,    // clear_all_soft_refs
                 0,                      // size
@@ -965,8 +962,8 @@ size_t SerialHeap::unsafe_max_tlab_alloc(Thread* thr) const {
 }
 
 HeapWord* SerialHeap::allocate_new_tlab(size_t min_size,
-                                              size_t requested_size,
-                                              size_t* actual_size) {
+                                        size_t requested_size,
+                                        size_t* actual_size) {
   HeapWord* result = mem_allocate_work(requested_size /* size */,
                                        true /* is_tlab */);
   if (result != nullptr) {
@@ -981,7 +978,7 @@ void SerialHeap::prepare_for_verify() {
 }
 
 void SerialHeap::generation_iterate(GenClosure* cl,
-                                          bool old_to_young) {
+                                    bool old_to_young) {
   if (old_to_young) {
     cl->do_generation(_old_gen);
     cl->do_generation(_young_gen);
