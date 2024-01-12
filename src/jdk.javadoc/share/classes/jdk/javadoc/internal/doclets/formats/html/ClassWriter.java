@@ -51,7 +51,6 @@ import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlAttr;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
-import jdk.javadoc.internal.doclets.formats.html.markup.ListBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
 import jdk.javadoc.internal.doclets.formats.html.markup.Text;
 import jdk.javadoc.internal.doclets.toolkit.CommentUtils;
@@ -97,7 +96,7 @@ public class ClassWriter extends SubWriterHolderWriter {
         this.classTree = classTree;
 
         pHelper = new PropertyUtils.PropertyHelper(configuration, typeElement);
-        tocBuilder = new ListBuilder(HtmlTree.OL(HtmlStyle.tocList));
+        tableOfContents = new TableOfContents(this);
 
         switch (typeElement.getKind()) {
             case ENUM   -> setEnumDocumentation(typeElement);
@@ -498,12 +497,13 @@ public class ClassWriter extends SubWriterHolderWriter {
 
     protected void addClassDescription(Content classInfo) {
         addPreviewInfo(classInfo);
-        addToTableOfContents(HtmlIds.TOP_OF_PAGE, contents.descriptionLabel);
+        tableOfContents.addLink(HtmlIds.TOP_OF_PAGE, contents.descriptionLabel);
         if (!options.noComment()) {
             // generate documentation for the class.
             if (!utils.getFullBody(typeElement).isEmpty()) {
+                tableOfContents.pushNestedList();
                 addInlineComment(typeElement, classInfo);
-                addToTableOfContents(headings);
+                tableOfContents.popNestedList();
             }
         }
     }
@@ -515,7 +515,9 @@ public class ClassWriter extends SubWriterHolderWriter {
     protected void addClassTagInfo(Content classInfo) {
         if (!options.noComment()) {
             // Print Information about all the tags here
+            tableOfContents.pushNestedList();
             addTagsInfo(typeElement, classInfo);
+            tableOfContents.popNestedList();
         }
     }
 

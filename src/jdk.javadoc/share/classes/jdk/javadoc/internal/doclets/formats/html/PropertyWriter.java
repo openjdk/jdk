@@ -74,8 +74,8 @@ public class PropertyWriter extends AbstractMemberWriter {
         if (!properties.isEmpty()) {
             Content propertyDetailsHeader = getPropertyDetailsHeader(detailsList);
             Content memberList = getMemberList();
-            writer.addToTableOfContents(HtmlIds.PROPERTY_DETAIL, contents.propertyDetailsLabel);
-            writer.tocBuilder.pushNested(HtmlTree.OL(HtmlStyle.tocList));
+            writer.tableOfContents.addLink(HtmlIds.PROPERTY_DETAIL, contents.propertyDetailsLabel);
+            writer.tableOfContents.pushNestedList();
 
             for (Element property : properties) {
                 currentProperty = (ExecutableElement)property;
@@ -88,12 +88,12 @@ public class PropertyWriter extends AbstractMemberWriter {
                 buildTagInfo(div);
                 propertyContent.add(div);
                 memberList.add(getMemberListItem(propertyContent));
-                writer.addToTableOfContents(htmlIds.forProperty(currentProperty),
+                writer.tableOfContents.addLink(htmlIds.forProperty(currentProperty),
                         Text.of(utils.getPropertyLabel(name(property))));
             }
             Content propertyDetails = getPropertyDetails(propertyDetailsHeader, memberList);
             detailsList.add(propertyDetails);
-            writer.tocBuilder.popNested();
+            writer.tableOfContents.popNestedList();
         }
     }
 

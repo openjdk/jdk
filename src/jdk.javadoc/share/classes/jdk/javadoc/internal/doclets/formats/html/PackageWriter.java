@@ -43,7 +43,6 @@ import com.sun.source.doctree.DocTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.BodyContents;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
-import jdk.javadoc.internal.doclets.formats.html.markup.ListBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
@@ -97,7 +96,7 @@ public class PackageWriter extends HtmlDocletWriter {
                 configuration.docPaths.forPackage(packageElement)
                 .resolve(DocPaths.PACKAGE_SUMMARY));
         this.packageElement = packageElement;
-        this.tocBuilder = new ListBuilder(HtmlTree.OL(HtmlStyle.tocList));
+        this.tableOfContents = new TableOfContents(this);
         computePackageData();
     }
 
@@ -180,12 +179,13 @@ public class PackageWriter extends HtmlDocletWriter {
      *                       be added
      */
     protected void buildPackageDescription(Content packageContent) {
-        addToTableOfContents(HtmlIds.TOP_OF_PAGE, contents.navDescription);
+        tableOfContents.addLink(HtmlIds.TOP_OF_PAGE, contents.navDescription);
         if (options.noComment()) {
             return;
         }
+        tableOfContents.pushNestedList();
         addPackageDescription(packageContent);
-        addToTableOfContents(headings);
+        tableOfContents.popNestedList();
     }
 
     /**
@@ -352,7 +352,7 @@ public class PackageWriter extends HtmlDocletWriter {
             }
         }
         if (!table.isEmpty()) {
-            addToTableOfContents(HtmlIds.CLASS_SUMMARY, contents.navClassesAndInterfaces);
+            tableOfContents.addLink(HtmlIds.CLASS_SUMMARY, contents.navClassesAndInterfaces);
             target.add(HtmlTree.LI(table));
         }
     }
@@ -360,7 +360,7 @@ public class PackageWriter extends HtmlDocletWriter {
     protected void addRelatedPackageSummary(TableHeader tableHeader, Content summaryContent,
                                      boolean showModules) {
         if (!relatedPackages.isEmpty()) {
-            addToTableOfContents(HtmlIds.RELATED_PACKAGE_SUMMARY, contents.relatedPackages);
+            tableOfContents.addLink(HtmlIds.RELATED_PACKAGE_SUMMARY, contents.relatedPackages);
             var table = new Table<Void>(HtmlStyle.summaryTable)
                     .setId(HtmlIds.RELATED_PACKAGE_SUMMARY)
                     .setCaption(contents.relatedPackages)
@@ -421,7 +421,7 @@ public class PackageWriter extends HtmlDocletWriter {
 
     protected void addPackageContent(Content packageContent) {
         bodyContents.addMainContent(packageContent);
-        bodyContents.setSideContent(getSideBar(tocBuilder, false));
+        bodyContents.setSideContent(tableOfContents.getSideBar(false));
     }
 
     protected void addPackageFooter() {

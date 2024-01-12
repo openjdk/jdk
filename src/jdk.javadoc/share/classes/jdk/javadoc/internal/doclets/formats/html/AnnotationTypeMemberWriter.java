@@ -90,8 +90,8 @@ public class AnnotationTypeMemberWriter extends AbstractMemberWriter {
             addAnnotationDetailsMarker(target);
             Content annotationDetailsHeader = getAnnotationDetailsHeader();
             Content memberList = getMemberList();
-            writer.addToTableOfContents(HtmlIds.ANNOTATION_TYPE_ELEMENT_DETAIL, contents.annotationTypeDetailsLabel);
-            writer.tocBuilder.pushNested(HtmlTree.OL(HtmlStyle.tocList));
+            writer.tableOfContents.addLink(HtmlIds.ANNOTATION_TYPE_ELEMENT_DETAIL, contents.annotationTypeDetailsLabel);
+            writer.tableOfContents.pushNestedList();
 
             for (Element member : members) {
                 currentMember = member;
@@ -100,12 +100,12 @@ public class AnnotationTypeMemberWriter extends AbstractMemberWriter {
                 buildAnnotationTypeMemberChildren(div);
                 annotationContent.add(div);
                 memberList.add(writer.getMemberListItem(annotationContent));
-                writer.addToTableOfContents(htmlIds.forMember(typeElement, (ExecutableElement) member),
+                writer.tableOfContents.addLink(htmlIds.forMember(typeElement, (ExecutableElement) member),
                         Text.of(name(member)));
             }
             Content annotationDetails = getAnnotationDetails(annotationDetailsHeader, memberList);
             target.add(annotationDetails);
-            writer.tocBuilder.popNested();
+            writer.tableOfContents.popNestedList();
         }
     }
 

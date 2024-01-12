@@ -220,7 +220,7 @@ public abstract class AbstractMemberWriter {
             Content member = getMemberSummaryHeader(target);
             summaryTreeList.forEach(member::add);
             buildSummary(target, member);
-            writer.addToTableOfContents(HtmlIds.forMemberSummary(kind), getSummaryLabel());
+            writer.tableOfContents.addLink(HtmlIds.forMemberSummary(kind), getSummaryLabel());
         }
     }
 

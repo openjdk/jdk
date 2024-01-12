@@ -36,14 +36,15 @@ import jdk.javadoc.internal.doclets.formats.html.Content;
 
 /**
  * A utility class for building nested HTML lists. This class is implemented as a
- * stack of nested list elements where list items are added to the inner-most
- * list. Lists can be added to and removed from the stack using the {@code pushNested}
- * and {@code popNested} methods.
+ * stack of nested list/item pairs where list items are added to the inner-most
+ * list and nested lists are added to the current list item of the inner-most list.
+ * Lists can be added to and removed from the stack using the {@link #pushNestedList}
+ * and {@link #popNestedList} methods.
  */
 public class ListBuilder extends Content {
 
     private final HtmlTree root;
-    private final Deque<HtmlTree> stack = new ArrayDeque<>();
+    private final Deque<HtmlTree[]> stack = new ArrayDeque<>();
     private HtmlTree currentList;
     private HtmlTree currentItem;
 
@@ -71,18 +72,6 @@ public class ListBuilder extends Content {
     }
 
     /**
-     * Adds a new nested list to the current list item without pushing it to the list stack and
-     * making it the recipient for new list items.
-     * @param list the nested list
-     * @return this list builder
-     */
-    public ListBuilder addNested(HtmlTree list) {
-        Objects.requireNonNull(currentItem, "List item required for nested list");
-        currentItem.add(list);
-        return this;
-    }
-
-    /**
      * Adds a new nested list to the current list item and makes it the recipient for new list items.
      * Note that the nested list is added even if empty; use {@code addNested} to avoid adding empty
      * lists.
@@ -90,10 +79,9 @@ public class ListBuilder extends Content {
      * @param list the nested list
      * @return this list builder
      */
-    public ListBuilder pushNested(HtmlTree list) {
+    public ListBuilder pushNestedList(HtmlTree list) {
         Objects.requireNonNull(currentItem, "List item required for nested list");
-        currentItem.addUnchecked(list);
-        stack.push(currentList);
+        stack.push(new HtmlTree[] {currentList, currentItem});
         currentList = list;
         currentItem = null;
         return this;
@@ -105,9 +93,12 @@ public class ListBuilder extends Content {
      * @return this list builder
      * @throws NoSuchElementException if the stack is empty
      */
-    public ListBuilder popNested() {
-        currentList = stack.pop();
-        currentItem = null;
+    public ListBuilder popNestedList() {
+        HtmlTree[] listAndItem = stack.pop();
+        // First restore currentItem and add nested list to it before restoring currentList to outer list.
+        currentItem = listAndItem[1];
+        currentItem.add(currentList);
+        currentList = listAndItem[0];
         return this;
     }
 

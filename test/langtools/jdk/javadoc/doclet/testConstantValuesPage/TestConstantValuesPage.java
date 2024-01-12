@@ -110,10 +110,10 @@ public class TestConstantValuesPage extends JavadocTester {
                     <nav role="navigation" class="toc" aria-label="Table of contents">
                     <div class="toc-header">Contents&nbsp;""",
                 """
-                    <li><a href="#">Constant Field Values</a>
+                    <li><a href="#" tabindex="0">Constant Field Values</a>
                     <ol class="toc-list">
-                    <li><a href="#p1.p2a">p1.p2a.*</a></li>
-                    <li><a href="#p1.p2b">p1.p2b.*</a></li>
+                    <li><a href="#p1.p2a" tabindex="0">p1.p2a.*</a></li>
+                    <li><a href="#p1.p2b" tabindex="0">p1.p2b.*</a></li>
                     </ol>
                     </li>
                     </ol>
@@ -147,9 +147,9 @@ public class TestConstantValuesPage extends JavadocTester {
                     <nav role="navigation" class="toc" aria-label="Table of contents">
                     <div class="toc-header">Contents&nbsp;""",
                 """
-                    <li><a href="#">Constant Field Values</a>
+                    <li><a href="#" tabindex="0">Constant Field Values</a>
                     <ol class="toc-list">
-                    <li><a href="#unnamed-package">Unnamed Package</a></li>
+                    <li><a href="#unnamed-package" tabindex="0">Unnamed Package</a></li>
                     </ol>
                     </li>
                     </ol>
@@ -190,10 +190,10 @@ public class TestConstantValuesPage extends JavadocTester {
                     <nav role="navigation" class="toc" aria-label="Table of contents">
                     <div class="toc-header">Contents&nbsp;""",
                 """
-                   <li><a href="#">Constant Field Values</a>
+                   <li><a href="#" tabindex="0">Constant Field Values</a>
                    <ol class="toc-list">
-                   <li><a href="#unnamed-package">Unnamed Package</a></li>
-                   <li><a href="#p1.p2a">p1.p2a.*</a></li>
+                   <li><a href="#unnamed-package" tabindex="0">Unnamed Package</a></li>
+                   <li><a href="#p1.p2a" tabindex="0">p1.p2a.*</a></li>
                    </ol>
                    </li>
                    </ol>
@@ -260,11 +260,11 @@ public class TestConstantValuesPage extends JavadocTester {
                     <nav role="navigation" class="toc" aria-label="Table of contents">
                     <div class="toc-header">Contents&nbsp;""",
                 """
-                    <li><a href="#">Constant Field Values</a>
+                    <li><a href="#" tabindex="0">Constant Field Values</a>
                     <ol class="toc-list">
-                    <li><a href="#p.a">p.a.*</a></li>
-                    <li><a href="#p.b">p.b.*</a></li>
-                    <li><a href="#p.q">p.q.*</a></li>
+                    <li><a href="#p.a" tabindex="0">p.a.*</a></li>
+                    <li><a href="#p.b" tabindex="0">p.b.*</a></li>
+                    <li><a href="#p.q" tabindex="0">p.q.*</a></li>
                     </ol>
                     </li>
                     </ol>

@@ -166,9 +166,7 @@ public abstract class HtmlDocletWriter {
 
     private final Set<String> headingIds = new HashSet<>();
 
-    protected final Map<String, String> headings = new LinkedHashMap<>();
-
-    protected ListBuilder tocBuilder;
+    protected TableOfContents tableOfContents;
 
     /**
      * To check whether the repeated annotations is documented or not.
@@ -557,61 +555,6 @@ public abstract class HtmlDocletWriter {
     protected Navigation getNavBar(Navigation.PageMode pageMode, Element element) {
         return new Navigation(element, configuration, pageMode, path)
                 .setUserHeader(RawHtml.of(replaceDocRootDir(options.header())));
-    }
-
-    /**
-     * Returns a sidebar content object containing a header with various controls as well as
-     * the given {@code content}.
-     *
-     * @param content the sidebar content
-     * @param hasFilterInput whether or not to add a filter text input
-     * @return a content builder
-     */
-    protected Content getSideBar(Content content, boolean hasFilterInput) {
-        var sidebar = HtmlTree.NAV()
-                .setStyle(HtmlStyle.toc)
-                .put(HtmlAttr.ARIA_LABEL, resources.getText("doclet.table_of_contents"));
-        var sidebarHeader = HtmlTree.DIV(HtmlStyle.tocHeader, contents.contentsHeading);
-        if (hasFilterInput) {
-            sidebarHeader.add(Entity.NO_BREAK_SPACE)
-                    .add(HtmlTree.INPUT(HtmlAttr.InputType.TEXT, HtmlStyle.filterInput)
-                            .put(HtmlAttr.PLACEHOLDER, resources.getText("doclet.filter_label"))
-                            .put(HtmlAttr.ARIA_LABEL, resources.getText("doclet.filter_table_of_contents"))
-                            .put(HtmlAttr.AUTOCOMPLETE, "off")
-                            .put(HtmlAttr.AUTOCAPITALIZE, "off"))
-                    .add(HtmlTree.INPUT(HtmlAttr.InputType.RESET, HtmlStyle.resetFilter)
-                            .put(HtmlAttr.VALUE, resources.getText("doclet.filter_reset")));
-        }
-        sidebar.add(sidebarHeader);
-        sidebar.add(new HtmlTree(TagName.BUTTON).addStyle(HtmlStyle.hideSidebar)
-                .add(HtmlTree.SPAN(contents.hideSidebar).add(Entity.NO_BREAK_SPACE))
-                .add(Entity.LEFT_POINTING_ANGLE));
-        sidebar.add(new HtmlTree(TagName.BUTTON).addStyle(HtmlStyle.showSidebar)
-                .add(Entity.RIGHT_POINTING_ANGLE)
-                .add(HtmlTree.SPAN(Entity.NO_BREAK_SPACE).add(contents.showSidebar)));
-        return sidebar.add(content);
-    }
-
-    /**
-     * Adds a link to the table of contents.
-     * @param id the link fragment
-     * @param label the link label
-     */
-    public void addToTableOfContents(HtmlId id, Content label) {
-        tocBuilder.add(links.createLink(id, label).put(HtmlAttr.TABINDEX, "0"));
-    }
-
-    /**
-     * Adds all entries in {@code sections} to the table of contents where keys represent
-     * fragment ids and values represent link labels.
-     * @param sections a map containing id -> label pairs
-     */
-    public void addToTableOfContents(Map<String, String> sections) {
-        if (!sections.isEmpty()) {
-            tocBuilder.addNested(HtmlTree.UL(HtmlStyle.tocList, sections.keySet(),
-                    id -> HtmlTree.LI(links.createLink(HtmlId.of(id), Text.of(sections.get(id)))
-                            .put(HtmlAttr.TABINDEX, "0"))));
-        }
     }
 
     /**
@@ -1568,8 +1511,8 @@ public abstract class HtmlDocletWriter {
             configuration.indexBuilder.add(item);
         }
         // Record second-level headings for use in table of contents
-        if (node.getName().toString().equalsIgnoreCase("h2")) {
-            headings.put(id, headingContent);
+        if (tableOfContents != null && node.getName().toString().equalsIgnoreCase("h2")) {
+            tableOfContents.addLink(HtmlId.of(id), Text.of(headingContent));
         }
     }
 

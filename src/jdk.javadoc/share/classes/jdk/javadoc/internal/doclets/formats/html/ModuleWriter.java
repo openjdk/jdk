@@ -46,7 +46,6 @@ import jdk.javadoc.internal.doclets.formats.html.markup.BodyContents;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.Entity;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
-import jdk.javadoc.internal.doclets.formats.html.markup.ListBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
@@ -163,7 +162,7 @@ public class ModuleWriter extends HtmlDocletWriter {
         super(configuration, configuration.docPaths.moduleSummary(mdle));
         this.mdle = mdle;
         this.moduleMode = configuration.docEnv.getModuleMode();
-        this.tocBuilder = new ListBuilder(HtmlTree.OL(HtmlStyle.tocList));
+        this.tableOfContents = new TableOfContents(this);
         computeModulesData();
     }
 
@@ -253,10 +252,11 @@ public class ModuleWriter extends HtmlDocletWriter {
      *                      be added
      */
     protected void buildModuleDescription(Content moduleContent) {
-        addToTableOfContents(HtmlIds.TOP_OF_PAGE, contents.navDescription);
+        tableOfContents.addLink(HtmlIds.TOP_OF_PAGE, contents.navDescription);
         if (!options.noComment()) {
+            tableOfContents.pushNestedList();
             addModuleDescription(moduleContent);
-            addToTableOfContents(headings);
+            tableOfContents.popNestedList();
         }
     }
 
@@ -534,7 +534,7 @@ public class ModuleWriter extends HtmlDocletWriter {
 
     protected void addModulesSummary(Content summariesList) {
         if (display(requires) || display(indirectModules)) {
-            addToTableOfContents(HtmlIds.MODULES, contents.navModules);
+            tableOfContents.addLink(HtmlIds.MODULES, contents.navModules);
             TableHeader requiresTableHeader =
                     new TableHeader(contents.modifierLabel, contents.moduleLabel,
                             contents.descriptionLabel);
@@ -579,7 +579,7 @@ public class ModuleWriter extends HtmlDocletWriter {
     protected void addPackagesSummary(Content summariesList) {
         if (display(packages)
                 || display(indirectPackages) || display(indirectOpenPackages)) {
-            addToTableOfContents(HtmlIds.PACKAGES, contents.navPackages);
+            tableOfContents.addLink(HtmlIds.PACKAGES, contents.navPackages);
             var section = HtmlTree.SECTION(HtmlStyle.packagesSummary)
                     .setId(HtmlIds.PACKAGES);
             addSummaryHeader(MarkerComments.START_OF_PACKAGES_SUMMARY, contents.navPackages, section);
@@ -750,7 +750,7 @@ public class ModuleWriter extends HtmlDocletWriter {
         boolean haveProvides = displayServices(provides.keySet(), providesTrees);
 
         if (haveProvides || haveUses) {
-            addToTableOfContents(HtmlIds.SERVICES, contents.navServices);
+            tableOfContents.addLink(HtmlIds.SERVICES, contents.navServices);
             var section = HtmlTree.SECTION(HtmlStyle.servicesSummary)
                     .setId(HtmlIds.SERVICES);
             addSummaryHeader(MarkerComments.START_OF_SERVICES_SUMMARY, contents.navServices, section);
@@ -890,7 +890,7 @@ public class ModuleWriter extends HtmlDocletWriter {
 
     protected void addModuleContent(Content source) {
         bodyContents.addMainContent(source);
-        bodyContents.setSideContent(getSideBar(tocBuilder, false));
+        bodyContents.setSideContent(tableOfContents.getSideBar(false));
     }
 
     protected void addModuleFooter() {

@@ -44,14 +44,12 @@ import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.Entity;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlId;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
-import jdk.javadoc.internal.doclets.formats.html.markup.ListBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
 import jdk.javadoc.internal.doclets.formats.html.markup.Text;
 import jdk.javadoc.internal.doclets.toolkit.DocletException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
-import jdk.javadoc.internal.doclets.toolkit.util.DocLink;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
 import jdk.javadoc.internal.doclets.toolkit.util.IndexItem;
 import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable;
@@ -111,7 +109,7 @@ public class ConstantsSummaryWriter extends HtmlDocletWriter {
 
         this.typeElementsWithConstFields = new HashSet<>();
         this.packageGroupHeadings = new TreeSet<>(utils::compareStrings);
-        this.tocBuilder = new ListBuilder(HtmlTree.OL(HtmlStyle.tocList));
+        this.tableOfContents = new TableOfContents(this);
     }
 
     @Override
@@ -146,18 +144,18 @@ public class ConstantsSummaryWriter extends HtmlDocletWriter {
      * Builds the list of contents for the groups of packages appearing in the constants summary page.
      */
     protected void buildContents() {
-        tocBuilder.add(links.createLink(DocLink.fragment(""),
-                        Text.of(resources.getText("doclet.Constants_Summary"))))
-                .pushNested(HtmlTree.OL(HtmlStyle.tocList));
+        tableOfContents.addLink(HtmlIds.TOP_OF_PAGE, Text.of(resources.getText("doclet.Constants_Summary")))
+                .pushNestedList();
         packageGroupHeadings.clear();
         for (PackageElement pkg : configuration.packages) {
             String abbrevPackageName = getAbbrevPackageName(pkg);
             if (hasConstantField(pkg) && !packageGroupHeadings.contains(abbrevPackageName)) {
-                addLinkToPackageContent(abbrevPackageName);
+                addLinkToTableOfContents(abbrevPackageName);
                 packageGroupHeadings.add(abbrevPackageName);
             }
         }
-        bodyContents.setSideContent(getSideBar(tocBuilder, true));
+        tableOfContents.popNestedList();
+        bodyContents.setSideContent(tableOfContents.getSideBar(true));
     }
 
     /**
@@ -337,22 +335,16 @@ public class ConstantsSummaryWriter extends HtmlDocletWriter {
          return body;
     }
 
-     Content getContentsHeader() {
+    Content getContentsHeader() {
         return HtmlTree.UL(HtmlStyle.contentsList);
     }
 
-     void addLinkToPackageContent(String abbrevPackageName) {
-        //add link to summary
-        Content link;
+    void addLinkToTableOfContents(String abbrevPackageName) {
         if (abbrevPackageName.isEmpty()) {
-            link = links.createLink(HtmlIds.UNNAMED_PACKAGE_ANCHOR,
-                    contents.defaultPackageLabel, "");
+            tableOfContents.addLink(HtmlIds.UNNAMED_PACKAGE_ANCHOR, contents.defaultPackageLabel);
         } else {
-            Content packageNameContent = Text.of(abbrevPackageName + ".*");
-            link = links.createLink(DocLink.fragment(abbrevPackageName),
-                    packageNameContent, "");
+            tableOfContents.addLink(HtmlId.of(abbrevPackageName), Text.of(abbrevPackageName + ".*"));
         }
-        tocBuilder.add(link);
     }
 
      void addPackageGroup(String abbrevPackageName, Content toContent) {

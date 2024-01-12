@@ -31,13 +31,11 @@ import jdk.javadoc.internal.doclets.formats.html.markup.BodyContents;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlId;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
-import jdk.javadoc.internal.doclets.formats.html.markup.ListBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
 import jdk.javadoc.internal.doclets.formats.html.markup.Text;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
-import jdk.javadoc.internal.doclets.toolkit.util.DocLink;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
 
@@ -74,7 +72,7 @@ public class HelpWriter extends HtmlDocletWriter {
                 ? DocPaths.INDEX_FILES.resolve(DocPaths.indexN(1))
                 : DocPaths.INDEX_ALL;
         indexLink = links.createLink(dp, resources.getText("doclet.Index"));
-        tocBuilder = new ListBuilder(HtmlTree.OL(HtmlStyle.tocList));
+        tableOfContents = new TableOfContents(this);
     }
 
     @Override
@@ -86,7 +84,7 @@ public class HelpWriter extends HtmlDocletWriter {
         body.add(new BodyContents()
                 .setHeader(getHeader(PageMode.HELP))
                 .addMainContent(helpFileContent)
-                .setSideContent(getSideBar(tocBuilder, false))
+                .setSideContent(tableOfContents.getSideBar(false))
                 .setFooter(getFooter()));
         printHtmlDocument(null, "help", body);
     }
@@ -104,8 +102,8 @@ public class HelpWriter extends HtmlDocletWriter {
      */
     protected void addHelpFileContents(Content content) {
         var mainHeading = getContent("doclet.help.main_heading");
-        tocBuilder.add(links.createLink(DocLink.fragment(""), mainHeading));
-        tocBuilder.pushNested(HtmlTree.OL(HtmlStyle.tocList));
+        tableOfContents.addLink(HtmlIds.TOP_OF_PAGE, mainHeading);
+        tableOfContents.pushNestedList();
         content.add(HtmlTree.HEADING(Headings.PAGE_TITLE_HEADING, HtmlStyle.title, mainHeading))
                 .add(new HtmlTree(TagName.HR))
                 .add(getNavigationSection())
@@ -114,6 +112,7 @@ public class HelpWriter extends HtmlDocletWriter {
                 .add(new HtmlTree(TagName.HR))
                 .add(HtmlTree.SPAN(HtmlStyle.helpFootnote,
                         getContent("doclet.help.footnote")));
+        tableOfContents.popNestedList();
     }
 
     /**
@@ -146,8 +145,8 @@ public class HelpWriter extends HtmlDocletWriter {
         }
         content.add(navSection);
 
-        tocBuilder.add(links.createLink(DocLink.fragment(HtmlIds.HELP_NAVIGATION.name()), navHeading));
-        tocBuilder.pushNested(HtmlTree.OL(HtmlStyle.tocList));
+        tableOfContents.addLink(HtmlIds.HELP_NAVIGATION, navHeading);
+        tableOfContents.pushNestedList();
 
         HtmlTree section;
 
@@ -170,7 +169,7 @@ public class HelpWriter extends HtmlDocletWriter {
                     .add(searchRefer);
             navSection.add(section);
         }
-        tocBuilder.popNested();
+        tableOfContents.popNestedList();
 
         return content;
     }
@@ -196,8 +195,8 @@ public class HelpWriter extends HtmlDocletWriter {
                 .add(HtmlTree.HEADING(Headings.CONTENT_HEADING, pageKindsHeading).setId(HtmlIds.HELP_PAGES))
                 .add(contents.getContent("doclet.help.page_kinds.intro"));
 
-        tocBuilder.add(links.createLink(DocLink.fragment(HtmlIds.HELP_PAGES.name()), pageKindsHeading));
-        tocBuilder.pushNested(HtmlTree.OL(HtmlStyle.tocList));
+        tableOfContents.addLink(HtmlIds.HELP_PAGES, pageKindsHeading);
+        tableOfContents.pushNestedList();
 
         HtmlTree section;
 
@@ -394,7 +393,7 @@ public class HelpWriter extends HtmlDocletWriter {
                     .add(HtmlTree.P(getContent("doclet.help.index.body", indexLink, links)));
             pageKindsSection.add(section);
         }
-        tocBuilder.popNested();
+        tableOfContents.popNestedList();
 
         return pageKindsSection;
     }
@@ -412,7 +411,7 @@ public class HelpWriter extends HtmlDocletWriter {
     }
 
     private HtmlTree newHelpSection(Content headingContent, HtmlId id) {
-        tocBuilder.add(links.createLink(DocLink.fragment(id.name()), headingContent));
+        tableOfContents.addLink(id, headingContent);
 
         return HtmlTree.SECTION(HtmlStyle.helpSection,
                 HtmlTree.HEADING(Headings.SUB_HEADING, headingContent))

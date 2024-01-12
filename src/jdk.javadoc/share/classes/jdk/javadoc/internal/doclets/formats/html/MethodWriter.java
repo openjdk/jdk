@@ -101,8 +101,8 @@ public class MethodWriter extends AbstractExecutableMemberWriter {
         if (!methods.isEmpty()) {
             Content methodDetailsHeader = getMethodDetailsHeader(detailsList);
             Content memberList = writer.getMemberList();
-            writer.addToTableOfContents(HtmlIds.METHOD_DETAIL, contents.methodDetailLabel);
-            writer.tocBuilder.pushNested(HtmlTree.OL(HtmlStyle.tocList));
+            writer.tableOfContents.addLink(HtmlIds.METHOD_DETAIL, contents.methodDetailLabel);
+            writer.tableOfContents.pushNestedList();
 
             for (Element method : methods) {
                 currentMethod = (ExecutableElement)method;
@@ -116,13 +116,13 @@ public class MethodWriter extends AbstractExecutableMemberWriter {
                 buildTagInfo(div);
                 methodContent.add(div);
                 memberList.add(writer.getMemberListItem(methodContent));
-                writer.addToTableOfContents(htmlIds.forMember(currentMethod),
+                writer.tableOfContents.addLink(htmlIds.forMember(currentMethod),
                         Text.of(utils.getSimpleName(method)
                                 + utils.makeSignature(currentMethod, typeElement, false, true)));
             }
             Content methodDetails = getMethodDetails(methodDetailsHeader, memberList);
             detailsList.add(methodDetails);
-            writer.tocBuilder.popNested();
+            writer.tableOfContents.popNestedList();
         }
     }
 
