@@ -73,12 +73,12 @@
 #include "runtime/mutexLocker.hpp"
 #include "runtime/threads.hpp"
 #include "runtime/vmThread.hpp"
+#include "services/memoryManager.hpp"
 #include "services/memoryService.hpp"
 #include "utilities/autoRestore.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/formatBuffer.hpp"
 #include "utilities/macros.hpp"
-#include "services/memoryManager.hpp"
 #include "utilities/stack.inline.hpp"
 #include "utilities/vmError.hpp"
 #if INCLUDE_JVMCI
