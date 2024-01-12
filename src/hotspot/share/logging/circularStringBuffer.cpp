@@ -25,6 +25,23 @@
 #include "precompiled.hpp"
 #include "logging/circularStringBuffer.hpp"
 
+#ifdef LINUX
+FILE* make_buffer(size_t size) {
+  FILE* f = tmpfile();
+  const int fd = fileno(f);
+  ftruncate(fd, size);
+  return f;
+}
+char* make_mirrored_mapping(size_t size, FILE* file) {
+  const int fd = fileno(file);
+  char* buffer = (char*)mmap(nullptr, size * 2, PROT_READ | PROT_WRITE,
+                             MAP_NORESERVE | MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+  void* ret = mmap(buffer, size, PROT_READ | PROT_WRITE, MAP_SHARED | MAP_FIXED, fd, 0);
+  ret = mmap(buffer + size, size, PROT_READ | PROT_WRITE, MAP_SHARED | MAP_FIXED, fd, 0);
+  return buffer;
+}
+#endif
+
 // LogDecorator::None applies to 'constant initialization' because of its constexpr constructor.
 const LogDecorations& CircularStringBuffer::None = LogDecorations(
     LogLevel::Warning, LogTagSetMapping<LogTag::__NO_TAG>::tagset(), LogDecorators::None);
@@ -38,13 +55,8 @@ CircularStringBuffer::CircularStringBuffer(StatisticsMap& map, PlatformMonitor& 
     bufsize(size) {
   assert(is_aligned(size, os::vm_page_size()), "must");
 
-  underlying_buffer = tmpfile();
-  const int fd = fileno(underlying_buffer);
-  ftruncate(fd, size);
-  buffer = (char*)mmap(nullptr, size * 2, PROT_READ | PROT_WRITE,
-                       MAP_NORESERVE | MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
-  void* ret = mmap(buffer, size, PROT_READ | PROT_WRITE, MAP_SHARED | MAP_FIXED, fd, 0);
-  ret = mmap(buffer + size, size, PROT_READ | PROT_WRITE, MAP_SHARED | MAP_FIXED, fd, 0);
+  underlying_buffer = make_buffer(size);
+  buffer = make_mirrored_mapping(size, underlying_buffer);
 }
 
 CircularStringBuffer::~CircularStringBuffer() {
