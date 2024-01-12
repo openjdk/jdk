@@ -30,7 +30,6 @@
 #include <string.h>
 #include <algorithm>
 #include <sys/mman.h>
-#include <stdio.h>
 #include <unistd.h>
 
 #ifndef SHARE_LOGGING_CIRCULARSTRINGBUFFER_HPP

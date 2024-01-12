@@ -23,7 +23,6 @@
  */
 
 #include "precompiled.hpp"
-#include "runtime/mutex.hpp"
 #include "logging/circularStringBuffer.hpp"
 
 #ifdef LINUX
