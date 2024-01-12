@@ -86,14 +86,14 @@ public:
 private:
   ShenandoahSharedFlag _allow_old_preemption;
   ShenandoahSharedFlag _preemption_requested;
-  ShenandoahSharedFlag _gc_requested;
   ShenandoahSharedFlag _alloc_failure_gc;
   ShenandoahSharedFlag _humongous_alloc_failure_gc;
   ShenandoahSharedFlag _graceful_shutdown;
   ShenandoahSharedFlag _do_counters_update;
   ShenandoahSharedFlag _force_counters_update;
-  GCCause::Cause       _requested_gc_cause;
-  ShenandoahGenerationType _requested_generation;
+
+  GCCause::Cause  _requested_gc_cause;
+  volatile ShenandoahGenerationType _requested_generation;
   ShenandoahGC::ShenandoahDegenPoint _degen_point;
   ShenandoahGeneration* _degen_generation;
 
@@ -123,9 +123,6 @@ private:
 
   // True if allocation failure flag has been set.
   bool is_alloc_failure_gc();
-
-  // True if humongous allocation failure flag has been set.
-  bool is_humongous_alloc_failure_gc();
 
   void reset_gc_id();
   void update_gc_id();
