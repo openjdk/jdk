@@ -25,11 +25,11 @@
  * @test TestTransparentHugePageUsage
  * @bug 8315923
  * @library /test/lib
- * @requires vm.gc.Parallel & os.family == "linux" & os.maxMemory > 2G
- * @summary Check if the usage of THP is zero when enabled.
- * @comment The test is not ParallelGC-specific, but a multi-threaded GC is
- *          required. So ParallelGC is used here.
- * @run driver runtime.os.TestTransparentHugePageUsage ${os.processors}
+ * @requires vm.gc.Serial & os.family == "linux" & os.maxMemory > 2G
+ * @summary Check that a pretouched java heap appears to use THPs by checking
+ *          AnonHugePages in smaps
+ * @comment Use SerialGC to increase the time window for pretouching
+ * @run driver runtime.os.TestTransparentHugePageUsage
  */
 
 package runtime.os;
@@ -49,14 +49,11 @@ public class TestTransparentHugePageUsage {
   private static final String[] fixedCmdLine = {
     "-XX:+UseTransparentHugePages", "-XX:+AlwaysPreTouch",
     "-Xlog:startuptime,pagesize,gc+heap=debug",
-    "-XX:+UseParallelGC", "-Xms1G", "-Xmx1G",
+    "-XX:+UseSerialGC", "-Xms1G", "-Xmx1G",
   };
 
   public static void main(String[] args) throws Exception {
     ArrayList<String> cmdLine = new ArrayList<>(Arrays.asList(fixedCmdLine));
-    if (args.length > 0) {
-      cmdLine.add("-XX:ParallelGCThreads=" + args[0]);
-    }
     cmdLine.add("runtime.os.TestTransparentHugePageUsage$CatSmaps");
     ProcessBuilder builder = ProcessTools.createTestJavaProcessBuilder(cmdLine);
     checkUsage(new BufferedReader(new InputStreamReader(builder.start().getInputStream())));
