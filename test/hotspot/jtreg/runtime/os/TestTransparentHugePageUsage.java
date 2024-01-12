@@ -90,7 +90,7 @@ public class TestTransparentHugePageUsage {
           .findFirst()
           .map(e -> Long.valueOf(e.getKey().substring(e.getValue().start(1), e.getValue().end(1))));
       if (!usage.isPresent()) throw new RuntimeException("The usage of THP was not found.");
-      if (usage.get() == 0) throw new RuntimeException("The usage of THP should not be zero.");
+      if (usage.get() >= 524288) throw new RuntimeException("The usage of THP is not enough.");
     }
   }
 
