@@ -29,96 +29,107 @@
  */
 
 import java.io.IOException;
-import java.security.PEMDecoder;
-import java.security.PEMEncoder;
-import java.security.SecurityObject;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.security.*;
+import java.util.*;
 import java.util.regex.Pattern;
 
 public class PEMEncoderTest {
 
     static Map<String, SecurityObject> keymap;
+    final static Pattern CRLF = Pattern.compile("\r\n");
+    final static Pattern CR = Pattern.compile("\r");
+    final static Pattern LF = Pattern.compile("\n");
 
-    public static void main(String[] args) {
-        keymap = new HashMap<>();
+
+    public static void main(String[] args) throws Exception {
+        keymap = generateObjKeyMap(PEMCerts.entryList);
+        PEMEncoder encoder = new PEMEncoder();
+        System.out.println("Same instance Encoder test:");
+        keymap.keySet().stream().forEach(key -> test(key, encoder));
+        System.out.println("New instance Encoder test:");
+        keymap.keySet().stream().forEach(key -> test(key, new PEMEncoder()));
+
+        keymap = generateObjKeyMap(PEMCerts.encryptedList);
+        System.out.println("Same instance Encoder new withEnc test:");
+        keymap.keySet().stream().forEach(key -> testEncrypted(key, encoder));
+        System.out.println("New instance Encoder and withEnc test:");
+        keymap.keySet().stream().forEach(key -> testEncrypted(key, new PEMEncoder()));
+        System.out.println("Same instance Encoder and withEnc test:");
+        PEMEncoder encEncoder = encoder.withEncryption(PEMCerts.encryptedList.getFirst().password());
+        keymap.keySet().stream().forEach(key -> test(key, encEncoder));
+    }
+
+    static Map generateObjKeyMap(List<PEMCerts.Entry> list) {
+        Map<String, SecurityObject> keymap = new HashMap<>();
         PEMDecoder pemd = new PEMDecoder();
-        List<String> keylist = new ArrayList<>();
-        for (PEMCerts.Entry entry : PEMCerts.entryList) {
+        for (PEMCerts.Entry entry : list) {
             try {
-                keymap.put(entry.name(), pemd.decode(entry.pem()));
+                if (entry.password() != null) {
+                    keymap.put(entry.name(), pemd.withDecryption(entry.password()).decode(entry.pem()));
+                } else {
+                    keymap.put(entry.name(), pemd.decode(entry.pem()));
+                }
             } catch (Exception e) {
+                System.err.println("Verify PEMDecoderTest passes before debugging this test.");
                 throw new AssertionError("Failed to initialize map on" +
                     " entry \"" + entry.name() + "\"", e);
             }
         }
-        test();
+        return keymap;
     }
 
-    enum lineSep {NONE, CR, LF, CRLF}
+    static void test(String key, PEMEncoder encoder) {
+        String result;
+        PEMCerts.Entry entry = PEMCerts.getEntry(key);
+        try {
+            result = encoder.encode(keymap.get(key));
+        } catch (IOException e) {
+            throw new AssertionError("Encoder use failure with " + entry.name(), e);
+        }
 
-    static void test() {
-        PEMEncoder pemE = new PEMEncoder();
+        checkResults(entry, result);
+        System.out.println("PASS: " + entry.name());
+    }
 
-        for (String k : keymap.keySet()) {
-            String cont, inst;
-            PEMCerts.Entry entry = PEMCerts.getEntry(k);
-            try {
-                cont = pemE.encode(keymap.get(k));
-                inst = new PEMEncoder().encode(keymap.get(k));
-            } catch (IOException e) {
-                throw new AssertionError("Continuous encoder use failure with " + entry.name(), e);
+    static void testEncrypted(String key, PEMEncoder encoder) {
+        String result;
+        PEMCerts.Entry entry = PEMCerts.getEntry(key);
+        try {
+            result = encoder.withEncryption(entry.password()).encode(keymap.get(key));
+        } catch (IOException e) {
+            throw new AssertionError("Encrypted encoder use failure with " + entry.name(), e);
+        }
+
+        checkResults(entry, result);
+        System.out.println("PASS: " + entry.name());
+    }
+
+    static void checkResults(PEMCerts.Entry entry, String result) {
+        String pem = entry.pem();
+        // The below matches the \r\n generated PEM with the PEM passed
+        // into the test.
+        if (pem.indexOf("\r\n") > 0) {
+            // Do nothing, generated and passed in PEM must be the same
+        } else if (pem.indexOf('\r') > 0) {
+            result = CR.matcher(pem).replaceAll("");
+        } else if (pem.indexOf('\n') > 0) {
+            // This one is strange.  Apparently Pattern("\n") removes both
+            // "\r\n".  To compensate, replacing it with "\n" just removes
+            // the "\r"
+            result = LF.matcher(pem).replaceAll("\n");
+        } else {
+            // Remove all \r\n to match the passed in pem
+            result = CRLF.matcher(pem).replaceAll("");
+        }
+
+        try {
+            if (pem.compareTo(result) != 0) {
+                System.out.println("expected:\n" + pem);
+                System.out.println("generated:\n" + result);
+                indexDiff(pem, result);
             }
-
-            String pem = entry.pem();
-            lineSep type;
-            Pattern crlf = Pattern.compile("\r\n");
-
-            if (pem.indexOf("\r\n") > 0) {
-                type = lineSep.CRLF;
-            } else if (pem.indexOf('\r') > 0) {
-                type = lineSep.CR;
-                Pattern p = Pattern.compile("\r");
-                cont = p.matcher(pem).replaceAll("");
-                inst = p.matcher(pem).replaceAll("");
-            } else if (pem.indexOf('\n') > 0) {
-                // This one is strange.  Apparently Pattern("\n") removes both
-                // "\r\n".  To compensate, replacing it with "\n" just removes
-                // the "\r"
-                type = lineSep.LF;
-                Pattern p = Pattern.compile("\n");
-                cont = p.matcher(pem).replaceAll("\n");
-                inst = p.matcher(pem).replaceAll("\n");
-            } else {
-                type = lineSep.NONE;
-                Pattern p = Pattern.compile("\r\n");
-                cont = crlf.matcher(pem).replaceAll("");
-                inst = crlf.matcher(pem).replaceAll("");
-            }
-
-            try {
-                if (pem.compareTo(cont) != 0) {
-                    System.err.println("expected:\n" + pem);
-                    System.err.println("generated:\n" + cont);
-                    indexDiff(pem, cont);
-                }
-            } catch (AssertionError e) {
-                throw new AssertionError("Continuous encoder PEM mismatch " + entry.name(), e);
-            }
-
-            try {
-                if (pem.compareTo(inst) != 0) {
-                    System.err.println("expected:\n" + pem);
-                    System.err.println("generated:\n" + inst);
-                    indexDiff(pem, inst);
-                }
-            } catch (AssertionError e) {
-                throw new AssertionError("New encoder PEM mismatch " + entry.name());
-            }
-            System.err.println("Success: " + entry.name());
-
+        } catch (AssertionError e) {
+            throw new AssertionError("Encoder PEM mismatch " + entry.name(), e);
         }
     }
 

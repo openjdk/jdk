@@ -30,12 +30,7 @@
 
 import javax.crypto.EncryptedPrivateKeyInfo;
 import java.io.IOException;
-import java.rmi.RemoteException;
-import java.security.PEMDecoder;
-import java.security.PrivateKey;
-import java.security.PublicKey;
-import java.security.SecurityObject;
-import java.security.interfaces.ECPrivateKey;
+import java.security.*;
 import java.security.interfaces.ECPublicKey;
 import java.security.interfaces.RSAPublicKey;
 import java.util.*;
@@ -50,17 +45,16 @@ public class PEMDecoderTest {
 
     public static void main(String[] args) throws IOException {
         PEMCerts.entryList.stream().forEach(entry -> test(entry));
-        PEMCerts.entryList.stream().forEach(entry -> testSecurityObject(entry));
+        PEMCerts.entryList.stream().forEach(entry -> test(entry, SecurityObject.class));
+        PEMCerts.encryptedList.stream().forEach(entry -> testEncrypted(entry));
         testTwoKeys();
         testFailure(PEMCerts.getEntry("ecprivpem"), ECPublicKey.class, false);
         testFailure(PEMCerts.getEntry(PEMCerts.failureEntryList, "rsaOpenSSL"), RSAPublicKey.class, false);
-        testEncrypted(PEMCerts.getEntry(PEMCerts.encryptedList, "encECKey"), PrivateKey.class, "fish".toCharArray());
-        testEncrypted(PEMCerts.getEntry(PEMCerts.encryptedList, "encECKey"), EncryptedPrivateKeyInfo.class, "fish".toCharArray());
     }
 
     static void testFailure(PEMCerts.Entry entry, Class c, boolean expected) {
         try {
-            test(entry.pem(), c, expected);
+            test(entry.pem(), c, new PEMDecoder());
             throw new AssertionError("Failure with " +
                 entry.name() + ":  Not supposed to succeed.");
         } catch (Exception e) {
@@ -68,17 +62,29 @@ public class PEMDecoderTest {
         }
     }
 
-    static void test(String pem) {
+    static void testEncrypted(PEMCerts.Entry entry) {
+        PEMDecoder decoder = new PEMDecoder();
+        if (entry.clazz() != EncryptedPrivateKeyInfo.class) {
+            decoder = decoder.withDecryption(entry.password());
+        }
+
         try {
-            new PEMDecoder().decode(pem);
-        } catch (IOException e) {
-            throw new AssertionError(e);
+            test(entry.pem(), entry.clazz(), decoder);
+        } catch (Exception|AssertionError e) {
+            throw new RuntimeException("Error with PEM (" + entry.name() +
+                "):  " + e.getMessage(), e);
         }
     }
 
+    // Change the Entry to use the given class as the expected class returned
+    static void test(PEMCerts.Entry entry, Class c) {
+        test(entry.newEntry(entry, c));
+    }
+
+    // Run test with a given Entry
     static void test(PEMCerts.Entry entry) {
         try {
-            test(entry.pem(), entry.type(), true);
+            test(entry.pem(), entry.clazz(), new PEMDecoder());
             System.out.println("PASS (" + entry.name() + ")");
         } catch (Exception|AssertionError e) {
             throw new RuntimeException("Error with PEM (" + entry.name() +
@@ -86,24 +92,13 @@ public class PEMDecoderTest {
         }
     }
 
-    static void test(String pem, Class c) throws IOException {
-            test(pem, c, true);
-    }
-
-    static void testSecurityObject(PEMCerts.Entry entry) {
-        try {
-            test(entry.pem(), SecurityObject.class, true);
-        } catch (Exception|AssertionError e) {
-            throw new RuntimeException("Error with " + entry.name() + ":  " +
-                e.getMessage(), e);
-        }
-    }
-
     static List getInterfaceList(Class ccc) {
         Class<?>[] interfaces = ccc.getInterfaces();
         List<Class> list = new ArrayList<>(Arrays.asList(interfaces));
-        //Arrays.stream(interfaces).forEach(cl -> list.add(cl));
-        list.add(ccc.getSuperclass());
+        var x = ccc.getSuperclass();
+        if (x != null) {
+            list.add(x);
+        }
         List<Class> results = new ArrayList<>(list);
         if (list.size() > 0) {
             for (Class cname : list) {
@@ -120,20 +115,28 @@ public class PEMDecoderTest {
         return results;
     }
 
-    static void test(String pem, Class c, boolean expected) throws IOException {
-        var pk = new PEMDecoder().decode(pem);
-        if (pk.getClass().equals(c)) {
+    /**
+     * Perform the decoding test with the given decoder, on the given pem, and
+     * expect the clazz to be returned.
+     */
+    static void test(String pem, Class clazz, PEMDecoder decoder) throws IOException {
+        var pk = decoder.decode(pem);
+
+        // Check that clazz matches what pk returned.
+        if (pk.getClass().equals(clazz)) {
             return;
         }
+
+        // Search interfaces and inheritance to find a match with clazz
         List<Class> list = getInterfaceList(pk.getClass());
-        list.add(pk.getClass());
         for(Class cc : list) {
-            if (cc != null && cc.equals(c)) {
+            if (cc != null && cc.equals(clazz)) {
                 return;
             }
         }
+
         throw new RuntimeException("Entry did not contain expected: " +
-            c.getName());
+            clazz.getName());
     }
 
     // Run the same key twice through the same decoder and make sure the
@@ -150,20 +153,5 @@ public class PEMDecoderTest {
             throw new AssertionError("Two decoding of the same key failed to" +
                 " match: ");
         }
-    }
-
-    static void testEncrypted(PEMCerts.Entry entry, Class c, char[] password) throws IOException {
-        PEMDecoder pd = new PEMDecoder();
-        if (c != EncryptedPrivateKeyInfo.class) {
-            pd = pd.withDecryption(password);
-        }
-        var pk = pd.decode(entry.pem());
-        List<Class> list = getInterfaceList(pk.getClass());
-        for(Class cc : list) {
-            if (cc.equals(c)) {
-                return;
-            }
-        }
-        throw new RuntimeException("Entry did not contain expected: PrivateKey.class");
     }
 }

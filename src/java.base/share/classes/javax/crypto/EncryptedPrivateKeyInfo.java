@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -216,13 +216,13 @@ public class EncryptedPrivateKeyInfo implements SecurityObject {
             throw new NullPointerException("algParams must be non-null");
         }
         AlgorithmId tmp;
-        List<KnownOIDs> list = getPBES2(algParams.getAlgorithm());
+//        List<KnownOIDs> list = getPBES2(algParams.getAlgorithm());
         try {
-            if (list == null) {
+//            if (list == null) {
                 tmp = AlgorithmId.get(algParams);
-            } else {
-                tmp = AlgorithmId.get("PBES2");
-            }
+ //           } else {
+ //               tmp = AlgorithmId.get("PBES2");
+ //           }
         } catch (IllegalStateException e) {
             // This exception is thrown when algParams.getEncoded() fails.
             // While the spec of this constructor requires that
@@ -615,7 +615,7 @@ public class EncryptedPrivateKeyInfo implements SecurityObject {
      *
      * @param algo the algo
      * @return the pbes 2
-     */
+     *//*
     List<KnownOIDs> getPBES2(String algo) {
         List<KnownOIDs> list = null;
         if (!algo.startsWith(PBES2Header)) {
@@ -636,5 +636,5 @@ public class EncryptedPrivateKeyInfo implements SecurityObject {
         }
         return list;
     }
-
+*/
 }

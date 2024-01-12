@@ -28,7 +28,6 @@ import java.security.SecurityObject;
 import java.security.cert.Certificate;
 import java.security.interfaces.*;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Pattern;
 
@@ -284,7 +283,7 @@ class PEMCerts {
         -----END RSA PRIVATE KEY-----\
         """;
 
-    private static final String encECKey = """
+    private static final String encEdECKey = """
         -----BEGIN ENCRYPTED PRIVATE KEY-----
         MIGbMFcGCSqGSIb3DQEFDTBKMCkGCSqGSIb3DQEFDDAcBAiN0IkLjCkMPgICCAAw
         DAYIKoZIhvcNAgkFADAdBglghkgBZQMEASoEEEXsbu8teaHGYhCaRv46T40EQJpL
@@ -355,15 +354,17 @@ class PEMCerts {
         -----END CERTIFICATE-----
         """;
 
-    public record Entry(String name, String pem, Class type) {
+    public record Entry(String name, String pem, Class clazz, char[] password) {
+
+        public Entry newEntry(Entry e, Class c) {
+            return new Entry(e.name, e.pem, c, e.password);
+        }
+
+
     }
 
-    static List<Entry> entryList = new ArrayList<>();
-    static List<Entry> encryptedList = new ArrayList<>();
-    static List<Entry> failureEntryList = new ArrayList<>();
-
     static public Entry getEntry(String varname) {
-        return getEntry(entryList, varname);
+        return getEntry(passList, varname);
     }
 
     static public Entry getEntry(List<Entry> list, String varname) {
@@ -381,28 +382,45 @@ class PEMCerts {
 
     static String makeNoCRLF(String pem) {
          return Pattern.compile("/n").matcher(pem).replaceAll("");
-}
+    }
+
+    static List<Entry> passList = new ArrayList<>();
+    static List<Entry> entryList = new ArrayList<>();
+    static List<Entry> pubList = new ArrayList<>();
+    static List<Entry> privList = new ArrayList<>();
+    static List<Entry> oasList = new ArrayList<>();
+    static List<Entry> certList = new ArrayList<>();
+    static List<Entry> encryptedList = new ArrayList<>();
+    static List<Entry> failureEntryList = new ArrayList<>();
 
     static {
-        entryList.add(new Entry("pubrsapem", pubrsapem, RSAPublicKey.class));
-        entryList.add(new Entry("pubrsapembc", pubrsapembc, RSAPublicKey.class));
-        entryList.add(new Entry("pubecpem-n", makeCRLF(pubecpem), ECPublicKey.class));
-        entryList.add(new Entry("pubecpem-no", makeNoCRLF(pubecpem), ECPublicKey.class));
-        entryList.add(new Entry("pubecpem-rn", makeCRLF(pubecpem), ECPublicKey.class));
-        entryList.add(new Entry("privpem", privpem, RSAPrivateKey.class));
-        entryList.add(new Entry("privpembc", privpembc, RSAPrivateKey.class));
-        entryList.add(new Entry("ecprivpem", ecprivpem, ECPrivateKey.class));
-        entryList.add(new Entry("privpemed25519", privpemed25519, EdECPrivateKey.class));
-        entryList.add(new Entry("oasrfc8410", oasrfc8410, SecurityObject.class));
-        entryList.add(new Entry("oasbcpem", oasbcpem, SecurityObject.class));
-        entryList.add(new Entry("encECKey", encECKey, EncryptedPrivateKeyInfo.class));
+        pubList.add(new Entry("pubrsapem", pubrsapem, RSAPublicKey.class, null));
+        pubList.add(new Entry("pubrsapembc", pubrsapembc, RSAPublicKey.class, null));
+        pubList.add(new Entry("pubecpem-n", makeCRLF(pubecpem), ECPublicKey.class, null));
+        pubList.add(new Entry("pubecpem-no", makeNoCRLF(pubecpem), ECPublicKey.class, null));
+        pubList.add(new Entry("pubecpem-rn", makeCRLF(pubecpem), ECPublicKey.class, null));
+        privList.add(new Entry("privpem", privpem, RSAPrivateKey.class, null));
+        privList.add(new Entry("privpembc", privpembc, RSAPrivateKey.class, null));
+        privList.add(new Entry("ecprivpem", ecprivpem, ECPrivateKey.class, null));
+        privList.add(new Entry("privpemed25519", privpemed25519, EdECPrivateKey.class, null));
+        privList.add(new Entry("encEdECKey-EPKI", encEdECKey, EncryptedPrivateKeyInfo.class, null));
+        oasList.add(new Entry("oasrfc8410", oasrfc8410, SecurityObject.class, null));
+        oasList.add(new Entry("oasbcpem", oasbcpem, SecurityObject.class, null));
 
-        entryList.add(new Entry("rsaCert", rsaCert, Certificate.class));
-        entryList.add(new Entry("ecCert", ecCert, Certificate.class));
+        certList.add(new Entry("rsaCert", rsaCert, Certificate.class, null));
+        certList.add(new Entry("ecCert", ecCert, Certificate.class, null));
 
-        encryptedList.add(new Entry("encECKey", encECKey, ECPrivateKey.class));
-        encryptedList.add(new Entry("encECKey", encECKey, EncryptedPrivateKeyInfo.class));
+        entryList.addAll(pubList);
+        entryList.addAll(privList);
+        entryList.addAll(oasList);
+        entryList.addAll(certList);
 
-        failureEntryList.add(new Entry("rsaOpenSSL", rsaOpenSSL, RSAPrivateKey.class));
+        encryptedList.add(new Entry("encEdECKey", encEdECKey, EdECPrivateKey.class, "fish".toCharArray()));
+        encryptedList.add(new Entry("encEdECKey2", encEdECKey, EncryptedPrivateKeyInfo.class, "fish".toCharArray()));
+
+        passList.addAll(entryList);
+        passList.addAll(encryptedList);
+
+        failureEntryList.add(new Entry("rsaOpenSSL", rsaOpenSSL, RSAPrivateKey.class, null));
     }
 }

@@ -107,7 +107,7 @@ final public class PEMDecoder implements Decoder<SecurityObject> {
             }
         }
 
-        Base64.Decoder decoder = Base64.getDecoder();
+        Base64.Decoder decoder = Base64.getMimeDecoder();
 
         return switch (keyType) {
             case PUBLIC -> {

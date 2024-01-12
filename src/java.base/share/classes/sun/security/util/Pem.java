@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -120,14 +120,31 @@ public class Pem {
     }
 
     public static Pem readPEM(InputStream is) throws IOException {
-        return readPEM(new InputStreamReader(is));
+        return readPEM(new InputStreamReader(is), false);
+    }
+
+    public static Pem readPEM(InputStream is, boolean shortHeader) throws IOException {
+        return readPEM(new InputStreamReader(is), shortHeader);
     }
 
     public static Pem readPEM(Reader reader) throws IOException {
+        return readPEM(reader, false);
+    }
+
+    /**
+     * Read the PEM text and return it in it's three components:  header,
+     * base64, and footer
+     * @param reader The pem data
+     * @param shortHeader if true, the hyphen length is 4 because the first
+     *                    hyphen is assumed to have been read.
+     * @return A new Pem object containing the three components
+     * @throws IOException on read errors
+     */
+    public static Pem readPEM(Reader reader, boolean shortHeader) throws IOException {
         Objects.requireNonNull(reader);
 
         BufferedReader br = new BufferedReader(reader);
-        int hyphen = 0;
+        int hyphen = (shortHeader ? 1 : 0);
 
         // Find starting hyphens
         do {
@@ -171,11 +188,14 @@ public class Pem {
         hyphen = 0;
         sb = new StringBuilder(1024);
 
-        // Read data until we find the hyphens for END
+        // Read data until we find the hyphens for END.
+        // Leading \r and/or \n are problematic for the Base64 decoder, but it
+        // is ok to remove them all.
         do {
             switch (c = br.read()) {
                 case -1 -> throw new IOException("Incomplete header");
                 case '-' -> hyphen++;
+                case '\n', '\r' -> {;} // Needed to remove leading \r & \n
                 default -> sb.append((char)c);
             }
         } while (hyphen == 0);
