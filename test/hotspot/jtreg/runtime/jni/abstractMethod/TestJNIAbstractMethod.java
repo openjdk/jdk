@@ -51,19 +51,18 @@ public class TestJNIAbstractMethod {
     public static void main(String[] args) {
         AbstractMethodClass obj = new AbstractMethodClass();
         try {
-            System.out.println("Attempting direct invocation via JNI");
-            invokeAbstractM(obj.getClass(), obj);
-            throw new RuntimeException("Did not get AbstractMethodError!");
+            System.out.println("Attempting direct invocation via Java");
+            obj.abstractM();
+            throw new RuntimeException("Did not get AbstractMethodError from Java!");
         } catch (AbstractMethodError expected) {
             System.out.println("ok - got expected exception: " + expected);
         }
         try {
-            System.out.println("Attempting direct invocation via Java");
-            obj.abstractM();
-            throw new RuntimeException("Did not get AbstractMethodError!");
+            System.out.println("Attempting direct invocation via JNI");
+            invokeAbstractM(obj.getClass(), obj);
+            throw new RuntimeException("Did not get AbstractMethodError from JNI!");
         } catch (AbstractMethodError expected) {
             System.out.println("ok - got expected exception: " + expected);
         }
-
     }
 }
