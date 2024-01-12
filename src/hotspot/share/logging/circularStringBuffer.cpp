@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "logging/circularStringBuffer.hpp"
+#include "runtime/os.inline.hpp"
 
 #ifdef LINUX
 FILE* make_buffer(size_t size) {

@@ -23,6 +23,8 @@
  */
 
 #include "logging/logFileStreamOutput.hpp"
+#include "utilities/globalDefinitions.hpp"
+#include "runtime/os.inline.hpp"
 #include "runtime/mutex.hpp"
 #include "runtime/semaphore.hpp"
 #include "utilities/resourceHash.hpp"
