@@ -86,8 +86,8 @@ public class JFrameBackgroundRefreshTest {
         frame.setContentPane(new TranslucentPane());
         frame.addMouseMotionListener(new MouseDragListener());
         frame.setVisible(true);
-
     }
+
     private static class MouseDragListener extends MouseAdapter {
         @Override
         public void mouseMoved(MouseEvent e) {
@@ -98,7 +98,9 @@ public class JFrameBackgroundRefreshTest {
 
     /** Capture an image of any component **/
     private static BufferedImage getImage(Component c) {
-        if(c==null) return null;
+        if (c == null) {
+            return null;
+        }
         BufferedImage image = new BufferedImage(c.getWidth(),
                 c.getHeight(),
                 BufferedImage.TYPE_INT_ARGB);
@@ -120,6 +122,7 @@ public class JFrameBackgroundRefreshTest {
         public TranslucentPane() {
             setOpaque(false);
         }
+
         @Override
         protected void paintComponent(Graphics g) {
             super.paintComponent(g);
@@ -127,6 +130,7 @@ public class JFrameBackgroundRefreshTest {
             g2d.setColor(new Color(0,0,0,0));
             g2d.fillRect(0, 0, getWidth(), getHeight());
             g2d.drawImage(test, p.x, p.y, this);
+            g2d.dispose();
         }
     }
 }
