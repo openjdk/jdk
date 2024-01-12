@@ -84,8 +84,7 @@ public:
 
 //
 // CollectedHeap
-//   GenCollectedHeap
-//     SerialHeap
+//   SerialHeap
 //   G1CollectedHeap
 //   ParallelScavengeHeap
 //   ShenandoahHeap
