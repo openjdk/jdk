@@ -170,7 +170,6 @@ void AwtList::ReleaseDragCapture(UINT flags)
 void AwtList::Reshape(int x, int y, int w, int h)
 {
     AwtComponent::Reshape(x, y, w, h);
-
 }
 
 //Netscape : Override the AwtComponent method so we can set the item height
