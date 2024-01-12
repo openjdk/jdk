@@ -1748,6 +1748,10 @@ void CodeCache::print() {
 
 void CodeCache::print_summary(outputStream* st, bool detailed) {
   int full_count = 0;
+  julong total_used = 0;
+  julong total_max_used = 0;
+  julong total_free = 0;
+  julong total_size = 0;
   FOR_ALL_HEAPS(heap_iterator) {
     CodeHeap* heap = (*heap_iterator);
     size_t total = (heap->high_boundary() - heap->low_boundary());
@@ -1756,10 +1760,17 @@ void CodeCache::print_summary(outputStream* st, bool detailed) {
     } else {
       st->print("CodeCache:");
     }
+    size_t size = total/K;
+    size_t used = (total - heap->unallocated_capacity())/K;
+    size_t max_used = heap->max_allocated_capacity()/K;
+    size_t free = heap->unallocated_capacity()/K;
+    total_size += size;
+    total_used += used;
+    total_max_used += max_used;
+    total_free += free;
     st->print_cr(" size=" SIZE_FORMAT "Kb used=" SIZE_FORMAT
                  "Kb max_used=" SIZE_FORMAT "Kb free=" SIZE_FORMAT "Kb",
-                 total/K, (total - heap->unallocated_capacity())/K,
-                 heap->max_allocated_capacity()/K, heap->unallocated_capacity()/K);
+                 size, used, max_used, free);
 
     if (detailed) {
       st->print_cr(" bounds [" INTPTR_FORMAT ", " INTPTR_FORMAT ", " INTPTR_FORMAT "]",
@@ -1784,6 +1795,10 @@ void CodeCache::print_summary(outputStream* st, bool detailed) {
                  CompileBroker::get_total_compiler_restarted_count());
     st->print_cr(" full_count=%d", full_count);
   }
+  st->print_cr("Total CodeHeap:");
+  st->print_cr(" size=" SIZE_FORMAT "Kb, used=" SIZE_FORMAT
+               "Kb, max used=" SIZE_FORMAT "Kb, free=" SIZE_FORMAT "Kb",
+               total_size, total_used, total_max_used, total_free);
 }
 
 void CodeCache::print_codelist(outputStream* st) {
