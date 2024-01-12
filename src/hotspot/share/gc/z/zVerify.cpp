@@ -21,7 +21,6 @@
  * questions.
  */
 
-#include "memory/allocation.hpp"
 #include "precompiled.hpp"
 #include "classfile/classLoaderData.hpp"
 #include "gc/shared/gc_globals.hpp"
@@ -37,6 +36,7 @@
 #include "gc/z/zStoreBarrierBuffer.inline.hpp"
 #include "gc/z/zStat.hpp"
 #include "gc/z/zVerify.hpp"
+#include "memory/allocation.hpp"
 #include "memory/iterator.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/oop.hpp"
