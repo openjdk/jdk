@@ -23,6 +23,7 @@
  */
 
 import java.awt.color.ColorSpace;
+import java.util.Arrays;
 
 /**
  * @test
@@ -39,20 +40,11 @@ public final class SimpleSRGBToFromCIEXYZ {
             float[] inv = cs.fromCIEXYZ(xyz);
 
             if (inv[0] != 0 || Math.abs(inv[1] - g) > 0.0001f || inv[2] != 0) {
-                System.err.println("Expected color:\t" + toString(rgb));
-                System.err.println("XYZ color:\t\t" + toString(xyz));
-                System.err.println("Actual color:\t" + toString(inv));
-                throw new Error("Wrong color");
+                System.err.println("Expected color:\t" + Arrays.toString(rgb));
+                System.err.println("XYZ color:\t\t" + Arrays.toString(xyz));
+                System.err.println("Actual color:\t" + Arrays.toString(inv));
+                throw new java.lang.Error("Wrong color");
             }
         }
-    }
-
-    private static String toString(float[] color) {
-        StringBuilder buffer = new StringBuilder();
-        for (int i = 0; i < color.length; i++) {
-            if (i > 0) buffer.append(' ');
-            buffer.append(color[i]);
-        }
-        return buffer.toString();
     }
 }
