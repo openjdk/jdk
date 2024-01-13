@@ -1465,6 +1465,7 @@ void C2_MacroAssembler::arrays_hashcode(Register ary, Register cnt, Register res
                                         Register tmp4, Register tmp5, Register tmp6,
                                         BasicType eltype)
 {
+  assert(!UseRVV, "sanity");
   assert_different_registers(ary, cnt, result, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6, t0, t1);
 
   const int elsize = arrays_hashcode_elsize(eltype);
@@ -1539,6 +1540,137 @@ void C2_MacroAssembler::arrays_hashcode(Register ary, Register cnt, Register res
   BLOCK_COMMENT("} // arrays_hashcode");
 }
 
+void C2_MacroAssembler::arrays_hashcode_v(Register ary, Register cnt, Register result,
+                                          Register tmp1, Register tmp2, Register tmp3,
+                                          Register tmp4, Register tmp5, Register tmp6,
+                                          BasicType eltype)
+{
+  assert(UseRVV, "sanity");
+  assert(StubRoutines::riscv::arrays_hashcode_powers_of_31() != nullptr, "sanity");
+  assert_different_registers(ary, cnt, result, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6, t0, t1);
+
+  const int num_8b_elems_in_vec = MaxVectorSize;
+  const int elsize_bytes = arrays_hashcode_elsize(eltype);
+  const int elsize_shift = exact_log2(elsize_bytes);
+  const int vec_step_bytes = num_8b_elems_in_vec << elsize_shift;
+  const address adr_pows31 = StubRoutines::riscv::arrays_hashcode_powers_of_31()
+                           + sizeof(jint);
+
+  switch (eltype) {
+  case T_BOOLEAN: BLOCK_COMMENT("arrays_hashcode_v(unsigned byte) {"); break;
+  case T_CHAR:    BLOCK_COMMENT("arrays_hashcode_v(char) {");          break;
+  case T_BYTE:    BLOCK_COMMENT("arrays_hashcode_v(byte) {");          break;
+  case T_SHORT:   BLOCK_COMMENT("arrays_hashcode_v(short) {");         break;
+  case T_INT:     BLOCK_COMMENT("arrays_hashcode_v(int) {");           break;
+  default:
+    ShouldNotReachHere();
+  }
+
+  const int scalar_stride = 4;
+  const Register pow31_4 = tmp1;
+  const Register pow31_3 = tmp2;
+  const Register pow31_2 = tmp3;
+  const Register chunks  = tmp4;
+  const Register chunks_end = chunks;
+
+  const Register pows31  = tmp1;
+  const VectorRegister v_coeffs =  v4;
+  const VectorRegister v_src    =  v8;
+  const VectorRegister v_sum    = v12;
+  const VectorRegister v_powmax = v16;
+  const VectorRegister v_result = v20;
+  const VectorRegister v_tmp    = v24;
+  const VectorRegister v_zred   = v28;
+
+  Label DONE, TAIL, TAIL_LOOP, WIDE_TAIL, WIDE_LOOP, VEC_LOOP;
+
+  // result has a value initially
+
+  beqz(cnt, DONE);
+
+  andi(chunks, cnt, ~(num_8b_elems_in_vec-1));
+  beqz(chunks, WIDE_TAIL);
+
+  subw(cnt, cnt, chunks);
+  slli(chunks_end, chunks, elsize_shift);
+  add(chunks_end, ary, chunks_end);
+
+  // load pre-calculated powers of 31:
+  //   31^^MaxVectorSize             ==> scalar register
+  //   31^^(MaxVectorSize-1)...31^^0 ==> vector registers
+  la(pows31, ExternalAddress(adr_pows31));
+  mv(t1, num_8b_elems_in_vec);
+  vsetvli(t0, t1, Assembler::e32, Assembler::m4);
+  vle32_v(v_coeffs, pows31);
+  lw(pows31, Address(pows31, -1 * sizeof(jint)));
+  // clear vector registers used in intermediate calculations
+  vmv_v_i(v_sum, 0);
+  vmv_v_i(v_powmax, 0);
+  vmv_v_i(v_result, 0);
+  vmv_s_x(v_zred, x0);
+  // set initial values
+  vmv_s_x(v_powmax, pows31);
+  vmv_s_x(v_result, result);
+
+  bind(VEC_LOOP);
+  vmul_vv(v_result, v_result, v_powmax);
+  arrays_hashcode_vec_elload(v_src, v_tmp, ary, eltype);
+  vmul_vv(v_src, v_src, v_coeffs);
+  vredsum_vs(v_sum, v_src, v_zred);
+  vadd_vv(v_result, v_result, v_sum);
+  addi(ary, ary, vec_step_bytes);
+  bne(ary, chunks_end, VEC_LOOP);
+  // finally remember calculated result value in scalar register
+  vmv_x_s(result, v_result);
+  beqz(cnt, DONE);
+
+  bind(WIDE_TAIL);
+  andi(chunks, cnt, ~(scalar_stride-1));
+  beqz(chunks, TAIL);
+
+  mv(pow31_4, 923521);           // [31^^4]
+  mv(pow31_3,  29791);           // [31^^3]
+  mv(pow31_2,    961);           // [31^^2]
+
+  slli(chunks_end, chunks, elsize_shift);
+  add(chunks_end, ary, chunks_end);
+  andi(cnt, cnt, scalar_stride-1);      // don't forget about tail!
+
+  bind(WIDE_LOOP);
+  mulw(result, result, pow31_4); // 31^^4 * h
+  arrays_hashcode_elload(t0,   Address(ary, 0 * elsize_bytes), eltype);
+  arrays_hashcode_elload(t1,   Address(ary, 1 * elsize_bytes), eltype);
+  arrays_hashcode_elload(tmp5, Address(ary, 2 * elsize_bytes), eltype);
+  arrays_hashcode_elload(tmp6, Address(ary, 3 * elsize_bytes), eltype);
+  mulw(t0, t0, pow31_3);         // 31^^3 * ary[i+0]
+  addw(result, result, t0);
+  mulw(t1, t1, pow31_2);         // 31^^2 * ary[i+1]
+  addw(result, result, t1);
+  slli(t0, tmp5, 5);             // optimize 31^^1 * ary[i+2]
+  subw(tmp5, t0, tmp5);          // with ary[i+2]<<5 - ary[i+2]
+  addw(result, result, tmp5);
+  addw(result, result, tmp6);    // 31^^4 * h + 31^^3 * ary[i+0] + 31^^2 * ary[i+1]
+                                 //           + 31^^1 * ary[i+2] + 31^^0 * ary[i+3]
+  addi(ary, ary, elsize_bytes * scalar_stride);
+  bne(ary, chunks_end, WIDE_LOOP);
+  beqz(cnt, DONE);
+
+  bind(TAIL);
+  slli(chunks_end, cnt, elsize_shift);
+  add(chunks_end, ary, chunks_end);
+
+  bind(TAIL_LOOP);
+  arrays_hashcode_elload(t0, Address(ary), eltype);
+  slli(t1, result, 5);           // optimize 31 * result
+  subw(result, t1, result);      // with result<<5 - result
+  addw(result, result, t0);
+  addi(ary, ary, elsize_bytes);
+  bne(ary, chunks_end, TAIL_LOOP);
+
+  bind(DONE);
+  BLOCK_COMMENT("} // arrays_hashcode_v");
+}
+
 int C2_MacroAssembler::arrays_hashcode_elsize(BasicType eltype) {
   switch (eltype) {
   case T_BOOLEAN: return sizeof(jboolean);
@@ -1560,6 +1692,36 @@ void C2_MacroAssembler::arrays_hashcode_elload(Register dst, Address src, BasicT
   case T_SHORT:    lh(dst, src);   break;
   case T_CHAR:    lhu(dst, src);   break;
   case T_INT:      lw(dst, src);   break;
+  default:
+    ShouldNotReachHere();
+  }
+}
+
+void C2_MacroAssembler::arrays_hashcode_vec_elload(VectorRegister varr,
+                                                   VectorRegister vtmp,
+                                                   Register array,
+                                                   BasicType eltype) {
+  assert((T_INT == eltype) || (varr != vtmp), "should be");
+  switch (eltype) {
+  case T_BOOLEAN:
+    vle8_v(vtmp, array);
+    vzext_vf4(varr, vtmp);
+    break;
+  case T_BYTE:
+    vle8_v(vtmp, array);
+    vsext_vf4(varr, vtmp);
+    break;
+  case T_CHAR:
+    vle16_v(vtmp, array);
+    vzext_vf2(varr, vtmp);
+    break;
+  case T_SHORT:
+    vle16_v(vtmp, array);
+    vsext_vf2(varr, vtmp);
+    break;
+  case T_INT:
+    vle32_v(varr, array);
+    break;
   default:
     ShouldNotReachHere();
   }

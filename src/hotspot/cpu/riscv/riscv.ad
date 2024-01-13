@@ -954,6 +954,71 @@ reg_class v15_reg(
     V15, V15_H, V15_J, V15_K
 );
 
+// class for vector register v16
+reg_class v16_reg(
+    V16, V16_H, V16_J, V16_K
+);
+
+// class for vector register v17
+reg_class v17_reg(
+    V17, V17_H, V17_J, V17_K
+);
+
+// class for vector register v18
+reg_class v18_reg(
+    V18, V18_H, V18_J, V18_K
+);
+
+// class for vector register v19
+reg_class v19_reg(
+    V19, V19_H, V19_J, V19_K
+);
+
+// class for vector register v20
+reg_class v20_reg(
+    V20, V20_H, V20_J, V20_K
+);
+
+// class for vector register v21
+reg_class v21_reg(
+    V21, V21_H, V21_J, V21_K
+);
+
+// class for vector register v22
+reg_class v22_reg(
+    V22, V22_H, V22_J, V22_K
+);
+
+// class for vector register v23
+reg_class v23_reg(
+    V23, V23_H, V23_J, V23_K
+);
+
+// class for vector register v24
+reg_class v24_reg(
+    V24, V24_H, V24_J, V24_K
+);
+
+// class for vector register v25
+reg_class v25_reg(
+    V25, V25_H, V25_J, V25_K
+);
+
+// class for vector register v26
+reg_class v26_reg(
+    V26, V26_H, V26_J, V26_K
+);
+
+// class for vector register v27
+reg_class v27_reg(
+    V27, V27_H, V27_J, V27_K
+);
+
+// class for vector register v28
+reg_class v28_reg(
+    V28, V28_H, V28_J, V28_K
+);
+
 // class for condition codes
 reg_class reg_flags(RFLAGS);
 
@@ -3566,6 +3631,136 @@ operand vReg_V14()
 operand vReg_V15()
 %{
   constraint(ALLOC_IN_RC(v15_reg));
+  match(VecA);
+  match(vReg);
+  op_cost(0);
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+operand vReg_V16()
+%{
+  constraint(ALLOC_IN_RC(v16_reg));
+  match(VecA);
+  match(vReg);
+  op_cost(0);
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+operand vReg_V17()
+%{
+  constraint(ALLOC_IN_RC(v17_reg));
+  match(VecA);
+  match(vReg);
+  op_cost(0);
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+operand vReg_V18()
+%{
+  constraint(ALLOC_IN_RC(v18_reg));
+  match(VecA);
+  match(vReg);
+  op_cost(0);
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+operand vReg_V19()
+%{
+  constraint(ALLOC_IN_RC(v19_reg));
+  match(VecA);
+  match(vReg);
+  op_cost(0);
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+operand vReg_V20()
+%{
+  constraint(ALLOC_IN_RC(v20_reg));
+  match(VecA);
+  match(vReg);
+  op_cost(0);
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+operand vReg_V21()
+%{
+  constraint(ALLOC_IN_RC(v21_reg));
+  match(VecA);
+  match(vReg);
+  op_cost(0);
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+operand vReg_V22()
+%{
+  constraint(ALLOC_IN_RC(v22_reg));
+  match(VecA);
+  match(vReg);
+  op_cost(0);
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+operand vReg_V23()
+%{
+  constraint(ALLOC_IN_RC(v23_reg));
+  match(VecA);
+  match(vReg);
+  op_cost(0);
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+operand vReg_V24()
+%{
+  constraint(ALLOC_IN_RC(v24_reg));
+  match(VecA);
+  match(vReg);
+  op_cost(0);
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+operand vReg_V25()
+%{
+  constraint(ALLOC_IN_RC(v25_reg));
+  match(VecA);
+  match(vReg);
+  op_cost(0);
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+operand vReg_V26()
+%{
+  constraint(ALLOC_IN_RC(v26_reg));
+  match(VecA);
+  match(vReg);
+  op_cost(0);
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+operand vReg_V27()
+%{
+  constraint(ALLOC_IN_RC(v27_reg));
+  match(VecA);
+  match(vReg);
+  op_cost(0);
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+operand vReg_V28()
+%{
+  constraint(ALLOC_IN_RC(v28_reg));
   match(VecA);
   match(vReg);
   op_cost(0);
@@ -10406,6 +10601,7 @@ instruct arrays_hashcode(iRegP_R11 ary, iRegI_R12 cnt, iRegI_R10 result, immI ba
                          iRegLNoSp tmp3, iRegLNoSp tmp4,
                          iRegLNoSp tmp5, iRegLNoSp tmp6, rFlagsReg cr)
 %{
+  predicate(!UseRVV);
   match(Set result (VectorizedHashCode (Binary ary cnt) (Binary result basic_type)));
   effect(TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4, TEMP tmp5, TEMP tmp6,
          USE_KILL ary, USE_KILL cnt, USE basic_type, KILL cr);

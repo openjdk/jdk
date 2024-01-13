@@ -69,6 +69,7 @@ class riscv {
   static address _string_indexof_linear_uu;
   static address _string_indexof_linear_ul;
   static address _large_byte_array_inflate;
+  static address _arrays_hashcode_powers_of_31;
 
   static bool _completed;
 
@@ -144,6 +145,10 @@ class riscv {
 
   static address large_byte_array_inflate() {
     return _large_byte_array_inflate;
+  }
+
+  static address arrays_hashcode_powers_of_31() {
+    return _arrays_hashcode_powers_of_31;
   }
 
   static bool complete() {

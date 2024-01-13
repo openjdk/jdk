@@ -53,5 +53,6 @@ address StubRoutines::riscv::_string_indexof_linear_ll = nullptr;
 address StubRoutines::riscv::_string_indexof_linear_uu = nullptr;
 address StubRoutines::riscv::_string_indexof_linear_ul = nullptr;
 address StubRoutines::riscv::_large_byte_array_inflate = nullptr;
+address StubRoutines::riscv::_arrays_hashcode_powers_of_31 = nullptr;
 
 bool StubRoutines::riscv::_completed = false;

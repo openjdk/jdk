@@ -2666,6 +2666,37 @@ instruct varray_equalsC(iRegP_R11 ary1, iRegP_R12 ary2, iRegI_R10 result,
   ins_pipe(pipe_class_memory);
 %}
 
+// fast ArraysSupport.vectorizedHashCode
+instruct varrays_hashcode(iRegP_R11 ary, iRegI_R12 cnt, iRegI_R10 result, immI basic_type,
+                          vReg_V4   v4, vReg_V5   v5, vReg_V6   v6, vReg_V7   v7,
+                          vReg_V8   v8, vReg_V9   v9, vReg_V10 v10, vReg_V11 v11,
+                          vReg_V12 v12, vReg_V13 v13, vReg_V14 v14, vReg_V15 v15,
+                          vReg_V16 v16, vReg_V17 v17, vReg_V18 v18, vReg_V19 v19,
+                          vReg_V20 v20, vReg_V21 v21, vReg_V22 v22, vReg_V23 v23,
+                          vReg_V24 v24, vReg_V25 v25, vReg_V26 v26, vReg_V27 v27,
+                          vReg_V28 v28,
+                          iRegLNoSp tmp1, iRegLNoSp tmp2, iRegLNoSp tmp3,
+                          iRegLNoSp tmp4, iRegLNoSp tmp5, iRegLNoSp tmp6, rFlagsReg cr)
+%{
+  predicate(UseRVV && (MaxVectorSize >= 16));
+  match(Set result (VectorizedHashCode (Binary ary cnt) (Binary result basic_type)));
+  effect(USE_KILL ary, USE_KILL cnt, USE basic_type,
+         TEMP  v4, TEMP  v5, TEMP  v6, TEMP  v7, TEMP  v8, TEMP  v9, TEMP v10, TEMP v11,
+         TEMP v12, TEMP v13, TEMP v14, TEMP v15, TEMP v16, TEMP v17, TEMP v18, TEMP v19,
+         TEMP v20, TEMP v21, TEMP v22, TEMP v23, TEMP v24, TEMP v25, TEMP v26, TEMP v27,
+         TEMP v28, TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4, TEMP tmp5, TEMP tmp6,
+         KILL cr);
+
+  format %{ "Array HashCode array[] $ary,$cnt,$result,$basic_type -> $result   // KILL all" %}
+  ins_encode %{
+    __ arrays_hashcode_v($ary$$Register, $cnt$$Register, $result$$Register,
+                         $tmp1$$Register, $tmp2$$Register, $tmp3$$Register,
+                         $tmp4$$Register, $tmp5$$Register, $tmp6$$Register,
+                         (BasicType)$basic_type$$constant);
+  %}
+  ins_pipe(pipe_class_memory);
+%}
+
 instruct vstring_compareU(iRegP_R11 str1, iRegI_R12 cnt1, iRegP_R13 str2, iRegI_R14 cnt2,
                           iRegI_R10 result, vReg_V2 v2, vReg_V3 v3, vReg_V4 v4, vReg_V5 v5,
                           iRegP_R28 tmp1, iRegL_R29 tmp2)

@@ -5015,6 +5015,22 @@ static const int64_t right_3_bits = right_n_bits(3);
     return start;
   }
 
+  address generate_arrays_hashcode_powers_of_31() {
+    const int num_8b_elems_in_vec = MaxVectorSize;
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", "arrays_hashcode_powers_of_31");
+    address start = __ pc();
+    for (int i = num_8b_elems_in_vec; i >= 0; i--) {
+        jint power_of_31 = 1;
+        for (int j = i; j > 0; j--) {
+          power_of_31 = java_multiply(power_of_31, 31);
+        }
+        __ emit_int32(power_of_31);
+    }
+
+    return start;
+  }
+
 #endif // COMPILER2
 
 #if INCLUDE_JFR
@@ -5245,6 +5261,10 @@ static const int64_t right_3_bits = right_n_bits(3);
     if (UseRVVForBigIntegerShiftIntrinsics) {
       StubRoutines::_bigIntegerLeftShiftWorker = generate_bigIntegerLeftShift();
       StubRoutines::_bigIntegerRightShiftWorker = generate_bigIntegerRightShift();
+    }
+
+    if (UseVectorizedHashCodeIntrinsic && UseRVV && (MaxVectorSize >= 16)) {
+      StubRoutines::riscv::_arrays_hashcode_powers_of_31 = generate_arrays_hashcode_powers_of_31();
     }
 #endif // COMPILER2
 
