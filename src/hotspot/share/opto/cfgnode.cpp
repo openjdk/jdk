@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1779,6 +1779,62 @@ static Node* is_absolute( PhaseGVN *phase, PhiNode *phi_root, int true_path) {
   return x;
 }
 
+static Node* is_minmax(PhaseGVN* phase, PhiNode* phi_root, int true_path) {
+  assert(true_path != 0, "only diamond shape graph expected");
+
+  BoolNode* bol = phi_root->in(0)->in(1)->in(0)->in(1)->as_Bool();
+  Node* cmp = bol->in(1);
+
+  int false_path = 3 - true_path;
+  bool is_min = false;
+  int opcode = cmp->Opcode();
+  bool is_long = opcode == Op_CmpL;
+
+  // Ensure comparison is an integral type
+  if (opcode == Op_CmpI || opcode == Op_CmpL) {
+    int test = bol->_test._test;
+    // Only accept canonicalized le and lt comparisons
+    if (test != BoolTest::le && test != BoolTest::lt) {
+      return nullptr;
+    }
+  } else {
+    return nullptr;
+  }
+
+  Node* cmp_true = cmp->in(true_path);
+  Node* cmp_false = cmp->in(false_path);
+
+  // Identify which path would result in a minimum being created for "a < b ? a : b" and "a < b ? b : a"
+  // If neither structure is found, exit
+  int min_path;
+  if ((cmp_true == phi_root->in(true_path)) && (cmp_false == phi_root->in(false_path))) {
+    min_path = 1;
+  } else if (cmp_true == phi_root->in(false_path) && cmp_false == phi_root->in(true_path)) {
+    min_path = 2;
+  } else {
+    return nullptr;
+  }
+
+  if (true_path == min_path) {
+    is_min = true;
+  }
+
+  // Create the Min/Max node based on the type and kind
+  if (is_long) {
+    if (is_min) {
+      return new MinLNode(phase->C, cmp_true, cmp_false);
+    } else {
+      return new MaxLNode(phase->C, cmp_true, cmp_false);
+    }
+  } else {
+    if (is_min) {
+      return new MinINode(cmp_true, cmp_false);
+    } else {
+      return new MaxINode(cmp_true, cmp_false);
+    }
+  }
+}
+
 //------------------------------split_once-------------------------------------
 // Helper for split_flow_path
 static void split_once(PhaseIterGVN *igvn, Node *phi, Node *val, Node *n, Node *newn) {
@@ -2220,20 +2276,29 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     // Check for CMove'ing identity. If it would be unsafe,
     // handle it here. In the safe case, let Identity handle it.
     Node* unsafe_id = is_cmove_id(phase, true_path);
-    if( unsafe_id != nullptr && is_unsafe_data_reference(unsafe_id) )
+    if (unsafe_id != nullptr && is_unsafe_data_reference(unsafe_id)) {
       opt = unsafe_id;
+    }
 
     // Check for simple convert-to-boolean pattern
-    if( opt == nullptr )
+    if (opt == nullptr) {
       opt = is_x2logic(phase, this, true_path);
+    }
 
     // Check for absolute value
-    if( opt == nullptr )
+    if (opt == nullptr) {
       opt = is_absolute(phase, this, true_path);
+    }
+
+    // Check for min/max patterns
+    if (opt == nullptr) {
+      opt = is_minmax(phase, this, true_path);
+    }
 
     // Check for conditional add
-    if( opt == nullptr && can_reshape )
+    if (opt == nullptr && can_reshape) {
       opt = is_cond_add(phase, this, true_path);
+    }
 
     // These 4 optimizations could subsume the phi:
     // have to check for a dead data loop creation.

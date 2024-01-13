@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -401,6 +401,11 @@ public class IRNode {
     static {
         beforeMatchingNameRegex(CMOVE_I, "CMoveI");
     }
+
+    public static final String CMOVE_L = PREFIX + "CMOVE_L" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(CMOVE_L, "CMoveL");
+   }
 
     public static final String CMP_I = PREFIX + "CMP_I" + POSTFIX;
     static {
