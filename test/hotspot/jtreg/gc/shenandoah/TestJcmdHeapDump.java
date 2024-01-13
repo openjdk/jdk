@@ -140,6 +140,7 @@
  */
 
 import jdk.test.lib.JDKToolLauncher;
+import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
 
 import java.io.File;
@@ -154,11 +155,7 @@ public class TestJcmdHeapDump {
         jcmd.addToolArg(dumpFileName);
 
         try {
-            ProcessBuilder pb = new ProcessBuilder(jcmd.getCommand());
-            Process jcmdProc = pb.start();
-
-            OutputAnalyzer output = new OutputAnalyzer(jcmdProc);
-            jcmdProc.waitFor();
+            OutputAnalyzer output = ProcessTools.executeProcess(jcmd.getCommand());
             output.shouldHaveExitValue(0);
         } catch (Exception e) {
             throw new RuntimeException("Test failed: " + e);

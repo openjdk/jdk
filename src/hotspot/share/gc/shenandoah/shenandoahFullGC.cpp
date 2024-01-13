@@ -1358,6 +1358,9 @@ public:
       }
       // else, generational mode compaction has already established affiliation.
       r->make_regular_bypass();
+      if (ZapUnusedHeapArea) {
+        SpaceMangler::mangle_region(MemRegion(r->top(), r->end()));
+      }
     }
 
     // Reclaim regular regions that became empty

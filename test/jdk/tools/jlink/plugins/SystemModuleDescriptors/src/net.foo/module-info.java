@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,15 +21,6 @@
  * questions.
  */
 
-#include <jni.h>
-
-JNIEXPORT void JNICALL
-Java_gc_stress_gclocker_GCLockerStresser_fillWithRandomValues(JNIEnv* env, jclass clz, jbyteArray arr) {
-  jsize size = (*env)->GetArrayLength(env, arr);
-  jbyte* p = (*env)->GetPrimitiveArrayCritical(env, arr, NULL);
-  jsize i;
-  for (i = 0; i < size; i++) {
-    p[i] = i % 128;
-  }
-  (*env)->ReleasePrimitiveArrayCritical(env, arr, p, 0);
+module net.foo {
+    requires jdk.jfr;
 }

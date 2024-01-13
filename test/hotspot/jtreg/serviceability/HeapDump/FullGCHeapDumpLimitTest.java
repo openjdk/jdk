@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024 Alibaba Group Holding Limited. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,17 +21,23 @@
  * questions.
  */
 
-import java.util.zip.*;
+/**
+ * @test
+ * @requires vm.gc.Serial & (vm.opt.DisableExplicitGC != "true")
+ * @summary Test of option -XX:FullGCHeapDumpLimit
+ * @library /test/lib
+ * @run main/othervm -XX:+UseSerialGC -XX:+HeapDumpBeforeFullGC -XX:+HeapDumpAfterFullGC -XX:HeapDumpPath=test.hprof -XX:FullGCHeapDumpLimit=1 FullGCHeapDumpLimitTest
+ */
+
 import java.io.File;
 
-public class Available
-{
-    public static void main (String argv[]) throws Exception {
-        ZipFile zf = new ZipFile(new File(System.getProperty("test.src"),
-                                          "input.jar"));
-        ZipEntry e = zf.getEntry("ReleaseInflater.java");
-        if (e.getSize() != zf.getInputStream(e).available()) {
-            throw new Exception("wrong return value of available");
-        }
+import jdk.test.lib.Asserts;
+
+public class FullGCHeapDumpLimitTest {
+
+    public static void main(String[] args) throws Exception {
+        System.gc();
+        Asserts.assertTrue(new File("test.hprof").exists());
+        Asserts.assertFalse(new File("test.hprof.1").exists());
     }
 }

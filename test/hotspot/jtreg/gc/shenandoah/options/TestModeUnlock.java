@@ -53,7 +53,7 @@ public class TestModeUnlock {
 
     private static void testWith(String h, Mode mode) throws Exception {
         {
-            ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+            OutputAnalyzer output = ProcessTools.executeLimitedTestJava(
                     "-Xmx128m",
                     "-XX:-UnlockDiagnosticVMOptions",
                     "-XX:-UnlockExperimentalVMOptions",
@@ -61,7 +61,6 @@ public class TestModeUnlock {
                     h,
                     "-version"
             );
-            OutputAnalyzer output = new OutputAnalyzer(pb.start());
             switch (mode) {
                 case PRODUCT:
                     output.shouldHaveExitValue(0);
@@ -74,7 +73,7 @@ public class TestModeUnlock {
         }
 
         {
-            ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+            OutputAnalyzer output = ProcessTools.executeLimitedTestJava(
                     "-Xmx128m",
                     "-XX:+UnlockDiagnosticVMOptions",
                     "-XX:-UnlockExperimentalVMOptions",
@@ -82,7 +81,6 @@ public class TestModeUnlock {
                     h,
                     "-version"
             );
-            OutputAnalyzer output = new OutputAnalyzer(pb.start());
             switch (mode) {
                 case PRODUCT:
                 case DIAGNOSTIC:
@@ -95,7 +93,7 @@ public class TestModeUnlock {
         }
 
         {
-            ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+            OutputAnalyzer output = ProcessTools.executeLimitedTestJava(
                     "-Xmx128m",
                     "-XX:-UnlockDiagnosticVMOptions",
                     "-XX:+UnlockExperimentalVMOptions",
@@ -103,7 +101,6 @@ public class TestModeUnlock {
                     h,
                     "-version"
             );
-            OutputAnalyzer output = new OutputAnalyzer(pb.start());
             switch (mode) {
                 case PRODUCT:
                 case EXPERIMENTAL:
