@@ -100,10 +100,10 @@ public class TestAnnotationStripping extends JavacTestingAbstractProcessor {
                     checkEqualTypeAndAnnotations(returnType, wcType.getSuperBound());
                 }
 
-                 System.out.println(returnType.getAnnotation(TestTypeAnnotation.class));
-                 System.out.println(returnType.getAnnotationsByType(TestTypeAnnotation.class).length);
-                 TestTypeAnnotation ta = requireNonNull(returnType.getAnnotation(TestTypeAnnotation.class),
-                                                        returnType.toString());
+//                  System.out.println(returnType.getAnnotation(TestTypeAnnotation.class));
+//                  System.out.println(returnType.getAnnotationsByType(TestTypeAnnotation.class).length);
+//                  TestTypeAnnotation ta = requireNonNull(returnType.getAnnotation(TestTypeAnnotation.class),
+//                                                         returnType.toString());
 
                 System.err.println();
                 System.err.println();
