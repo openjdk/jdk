@@ -214,6 +214,17 @@ jlong CgroupV1Subsystem::memory_max_usage_in_bytes() {
   return memmaxusage;
 }
 
+jlong CgroupV1Subsystem::rss_usage_in_bytes() {
+  GET_CONTAINER_INFO_LINE(julong, _memory->controller(), "/memory.stat",
+                          "rss", JULONG_FORMAT, JULONG_FORMAT, rss);
+  return rss;
+}
+
+jlong CgroupV1Subsystem::cache_usage_in_bytes() {
+  GET_CONTAINER_INFO_LINE(julong, _memory->controller(), "/memory.stat",
+                          "cache", JULONG_FORMAT, JULONG_FORMAT, cache);
+  return cache;
+}
 
 jlong CgroupV1Subsystem::kernel_memory_usage_in_bytes() {
   GET_CONTAINER_INFO(jlong, _memory->controller(), "/memory.kmem.usage_in_bytes",

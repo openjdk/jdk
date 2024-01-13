@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,22 +19,39 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
-
-package gc.stress.gclocker;
 
 /*
- * @test TestGCLockerWithSerial
- * @library /
- * @requires vm.gc.Serial
- * @requires vm.flavor != "minimal"
- * @summary Stress Serial's GC locker by calling GetPrimitiveArrayCritical while concurrently filling up old gen.
- * @run main/native/othervm/timeout=200 -Xlog:gc*=info -Xms1500m -Xmx1500m -XX:+UseSerialGC gc.stress.gclocker.TestGCLockerWithSerial
+ * @test
+ * @bug 8319793
+ * @summary Replacing a test with a dominating test can cause an array access CastII to float above a range check that guards it
+ * @run main/othervm -Xbatch -XX:-TieredCompilation TestArrayAccessCastIIAboveRC
  */
-public class TestGCLockerWithSerial {
+
+public class TestArrayAccessCastIIAboveRC {
+    static int N = 400;
+    static int iArrFld[] = new int[N];
+
+    static void test() {
+        float fArr[] = new float[N];
+        int i9, i10, i12;
+        long lArr1[] = new long[N];
+        for (i9 = 7; i9 < 43; i9++) {
+            try {
+                i10 = 7 % i9;
+                iArrFld[i9 + 1] = i9 / i10;
+            } catch (ArithmeticException a_e) {
+            }
+            for (i12 = 1; 7 > i12; i12++)
+                lArr1[i9 - 1] = 42;
+            iArrFld[i12] = 4;
+            fArr[i9 - 1] = 0;
+        }
+    }
+
     public static void main(String[] args) {
-        String[] testArgs = {"2", "Tenured Gen"};
-        TestGCLocker.main(testArgs);
+        for (int i = 0; i < 50_000; ++i) {
+            test();
+        }
     }
 }
