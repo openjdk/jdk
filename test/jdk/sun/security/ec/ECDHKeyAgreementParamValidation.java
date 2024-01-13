@@ -87,11 +87,10 @@ public class ECDHKeyAgreementParamValidation {
 
         KeyAgreement ka = KeyAgreement.getInstance("ECDH");
         ka.init(kpP256.getPrivate());
-        try {
-            ka.doPhase(kpP384.getPublic(), true);
-        } catch (InvalidKeyException e) {
-            // Do nothing
-        }
+
+        Assertions.assertThrows(
+                InvalidKeyException.class,
+                () -> ka.doPhase(kpP384.getPublic(), true));
 
         // Should not generate share key with SECP256R1 private key and SECP384R1 public key
         Assertions.assertThrows(IllegalStateException.class, ka::generateSecret);
