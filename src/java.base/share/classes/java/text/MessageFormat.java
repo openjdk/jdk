@@ -564,6 +564,7 @@ public class MessageFormat extends Format {
             lastOffset = offsets[i];
             result.append('{').append(argumentNumbers[i]);
             Format fmt = formats[i];
+            String subformatPattern = null;
             if (fmt == null) {
                 // do nothing, string format
             } else if (fmt instanceof NumberFormat) {
@@ -577,9 +578,11 @@ public class MessageFormat extends Format {
                     result.append(",number,integer");
                 } else {
                     if (fmt instanceof DecimalFormat) {
-                        result.append(",number,").append(((DecimalFormat)fmt).toPattern());
+                        result.append(",number");
+                        subformatPattern = ((DecimalFormat)fmt).toPattern();
                     } else if (fmt instanceof ChoiceFormat) {
-                        result.append(",choice,").append(((ChoiceFormat)fmt).toPattern());
+                        result.append(",choice");
+                        subformatPattern = ((ChoiceFormat)fmt).toPattern();
                     } else {
                         // UNKNOWN
                     }
@@ -602,7 +605,8 @@ public class MessageFormat extends Format {
                 }
                 if (index >= DATE_TIME_MODIFIERS.length) {
                     if (fmt instanceof SimpleDateFormat) {
-                        result.append(",date,").append(((SimpleDateFormat)fmt).toPattern());
+                        result.append(",date");
+                        subformatPattern = ((SimpleDateFormat)fmt).toPattern();
                     } else {
                         // UNKNOWN
                     }
@@ -611,6 +615,10 @@ public class MessageFormat extends Format {
                 }
             } else {
                 //result.append(", unknown");
+            }
+            if (subformatPattern != null) {
+                result.append(',');
+                copyAndQuoteExtraClosingBraces(subformatPattern, result);
             }
             result.append('}');
         }
@@ -1637,6 +1645,44 @@ public class MessageFormat extends Format {
         }
         if (quoted) {
             target.append('\'');
+        }
+    }
+
+    // Quote runs of extra unquoted closing braces, where "extra" means not matching some unquoted opening brace.
+    // Why? Because when a subformat pattern with unquoted extra closing braces is concatenated into a larger
+    // containing pattern, the extra closing braces suddenly become significant because they can now match an
+    // opening brace in the containing pattern. See JDK-8323699 for an example.
+    private static void copyAndQuoteExtraClosingBraces(String source, StringBuilder target) {
+        int braceDepth = 0;
+        boolean quoted = false;
+        for (int i = 0; i < source.length(); i++) {
+            char ch = source.charAt(i);
+            switch (ch) {
+            case '\'':
+                quoted = !quoted;
+                break;
+            case '{':
+                if (!quoted)
+                    braceDepth++;
+                break;
+            case '}':
+                if (quoted)
+                    break;
+                if (braceDepth > 0) {
+                    braceDepth--;
+                    break;
+                }
+                target.append("'}");
+                while (i + 1 < source.length() && source.charAt(i + 1) == '}') {
+                    target.append('}');
+                    i++;
+                }
+                target.append('\'');
+                continue;
+            default:
+                break;
+            }
+            target.append(ch);
         }
     }
 
