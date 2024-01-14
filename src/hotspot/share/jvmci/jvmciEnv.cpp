@@ -189,7 +189,7 @@ void JVMCIEnv::init_env_mode_runtime(JavaThread* thread, JNIEnv* parent_env) {
   JNIAccessMark jni(this, thread);
   jint result = _env->PushLocalFrame(32);
   if (result != JNI_OK) {
-    JVMCI_event_1("[%s:%d] Error pushing local JNI frame (err: %d)", _file, _line, _init_error);
+    JVMCI_event_1("[%s:%d] Error pushing local JNI frame (err: %d)", _file, _line, result);
     return;
   }
   _pop_frame_on_close = true;

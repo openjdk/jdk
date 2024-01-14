@@ -692,11 +692,14 @@ nav {
 /*
  * Styles for javadoc search.
  */
-.ui-state-active {
+.ui-menu .ui-state-active {
     /* Overrides the color of selection used in jQuery UI */
     background: var(--selected-background-color);
-    border: 1px solid var(--selected-background-color);
     color: var(--selected-text-color);
+    /* Workaround for browser bug, see JDK-8275889 */
+    margin: -1px 0;
+    border-top: 1px solid var(--selected-background-color);
+    border-bottom: 1px solid var(--selected-background-color);
 }
 .ui-autocomplete-category {
     font-weight:bold;
@@ -704,15 +707,16 @@ nav {
     padding:7px 0 7px 3px;
     background-color:var(--navbar-background-color);
     color:var(--navbar-text-color);
+    box-sizing: border-box;
 }
 .ui-autocomplete {
     max-height:85%;
     max-width:65%;
     overflow-y:auto;
     overflow-x:auto;
-    scrollbar-width: thin;
     white-space:nowrap;
     box-shadow: 0 3px 6px rgba(0,0,0,0.16), 0 3px 6px rgba(0,0,0,0.23);
+    overscroll-behavior: contain;
 }
 ul.ui-autocomplete {
     position:fixed;
@@ -723,6 +727,7 @@ ul.ui-autocomplete li {
     float:left;
     clear:both;
     min-width:100%;
+    box-sizing: border-box;
 }
 ul.ui-autocomplete li.ui-static-link {
     position:sticky;
@@ -746,6 +751,10 @@ li.ui-static-link a, li.ui-static-link a:visited {
 }
 .ui-autocomplete .result-highlight {
     font-weight:bold;
+}
+.ui-menu .ui-menu-item-wrapper {
+    padding-top: 0.4em;
+    padding-bottom: 0.4em;
 }
 #search-input, #page-search-input {
     background-image:url('glass.png');

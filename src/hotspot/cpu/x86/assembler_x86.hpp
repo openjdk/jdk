@@ -316,7 +316,7 @@ class Address {
   }
 
   bool xmmindex_needs_rex() const {
-    return _xmmindex->is_valid() && _xmmindex->encoding() >= 8;
+    return _xmmindex->is_valid() && ((_xmmindex->encoding() & 8) == 8);
   }
 
   relocInfo::relocType reloc() const { return _rspec.type(); }
@@ -1524,6 +1524,8 @@ private:
   void kordl(KRegister dst, KRegister src1, KRegister src2);
   void korql(KRegister dst, KRegister src1, KRegister src2);
 
+  void kxnorwl(KRegister dst, KRegister src1, KRegister src2);
+
   void kxorbl(KRegister dst, KRegister src1, KRegister src2);
   void kxorwl(KRegister dst, KRegister src1, KRegister src2);
   void kxordl(KRegister dst, KRegister src1, KRegister src2);
@@ -1614,6 +1616,9 @@ private:
   void evmovdqul(XMMRegister dst, KRegister mask, XMMRegister src, bool merge, int vector_len);
   void evmovdqul(XMMRegister dst, KRegister mask, Address src, bool merge, int vector_len);
   void evmovdqul(Address dst, KRegister mask, XMMRegister src, bool merge, int vector_len);
+
+  void evmovntdquq(Address dst, KRegister mask, XMMRegister src, bool merge, int vector_len);
+  void evmovntdquq(Address dst, XMMRegister src, int vector_len);
 
   void evmovdquq(Address dst, XMMRegister src, int vector_len);
   void evmovdquq(XMMRegister dst, Address src, int vector_len);

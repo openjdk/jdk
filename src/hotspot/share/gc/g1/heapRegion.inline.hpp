@@ -167,6 +167,13 @@ inline size_t HeapRegion::block_size(const HeapWord* p, HeapWord* const pb) cons
   return cast_to_oop(p)->size();
 }
 
+inline void HeapRegion::prepare_for_full_gc() {
+  // After marking and class unloading the heap temporarily contains dead objects
+  // with unloaded klasses. Moving parsable_bottom makes some (debug) code correctly
+  // skip dead objects.
+  _parsable_bottom = top();
+}
+
 inline void HeapRegion::reset_compacted_after_full_gc(HeapWord* new_top) {
   set_top(new_top);
   // After a compaction the mark bitmap in a movable region is invalid.
@@ -188,7 +195,7 @@ inline void HeapRegion::reset_skip_compacting_after_full_gc() {
 
 inline void HeapRegion::reset_after_full_gc_common() {
   // Everything above bottom() is parsable and live.
-  _parsable_bottom = bottom();
+  reset_parsable_bottom();
 
   // Clear unused heap memory in debug builds.
   if (ZapUnusedHeapArea) {
@@ -544,6 +551,14 @@ inline void HeapRegion::uninstall_surv_rate_group() {
 inline void HeapRegion::record_surv_words_in_group(size_t words_survived) {
   uint age = age_in_surv_rate_group();
   _surv_rate_group->record_surviving_words(age, words_survived);
+}
+
+inline void HeapRegion::increment_pinned_object_count() {
+  Atomic::add(&_pinned_object_count, 1u, memory_order_relaxed);
+}
+
+inline void HeapRegion::decrement_pinned_object_count() {
+  Atomic::sub(&_pinned_object_count, 1u, memory_order_relaxed);
 }
 
 #endif // SHARE_GC_G1_HEAPREGION_INLINE_HPP

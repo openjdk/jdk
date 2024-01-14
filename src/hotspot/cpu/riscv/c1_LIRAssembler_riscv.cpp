@@ -363,7 +363,7 @@ int LIR_Assembler::emit_unwind_handler() {
     if (LockingMode == LM_MONITOR) {
       __ j(*stub->entry());
     } else {
-      __ unlock_object(x15, x14, x10, *stub->entry());
+      __ unlock_object(x15, x14, x10, x16, *stub->entry());
     }
     __ bind(*stub->continuation());
   }
@@ -1251,7 +1251,6 @@ void LIR_Assembler::emit_opTypeCheck(LIR_OpTypeCheck* op) {
 }
 
 void LIR_Assembler::emit_compare_and_swap(LIR_OpCompareAndSwap* op) {
-  assert(VM_Version::supports_cx8(), "wrong machine");
   Register addr;
   if (op->addr()->is_register()) {
     addr = as_reg(op->addr());
@@ -1426,7 +1425,7 @@ void LIR_Assembler::throw_op(LIR_Opr exceptionPC, LIR_Opr exceptionOop, CodeEmit
   InternalAddress pc_for_athrow(__ pc());
   __ relocate(pc_for_athrow.rspec(), [&] {
     int32_t offset;
-    __ la_patchable(exceptionPC->as_register(), pc_for_athrow, offset);
+    __ la(exceptionPC->as_register(), pc_for_athrow.target(), offset);
     __ addi(exceptionPC->as_register(), exceptionPC->as_register(), offset);
   });
   add_call_info(pc_for_athrow_offset, info); // for exception handler
@@ -1512,6 +1511,7 @@ void LIR_Assembler::emit_lock(LIR_OpLock* op) {
   Register obj = op->obj_opr()->as_register();  // may not be an oop
   Register hdr = op->hdr_opr()->as_register();
   Register lock = op->lock_opr()->as_register();
+  Register temp = op->scratch_opr()->as_register();
   if (LockingMode == LM_MONITOR) {
     if (op->info() != nullptr) {
       add_debug_info_for_null_check_here(op->info());
@@ -1521,13 +1521,13 @@ void LIR_Assembler::emit_lock(LIR_OpLock* op) {
   } else if (op->code() == lir_lock) {
     assert(BasicLock::displaced_header_offset_in_bytes() == 0, "lock_reg must point to the displaced header");
     // add debug info for NullPointerException only if one is possible
-    int null_check_offset = __ lock_object(hdr, obj, lock, *op->stub()->entry());
+    int null_check_offset = __ lock_object(hdr, obj, lock, temp, *op->stub()->entry());
     if (op->info() != nullptr) {
       add_debug_info_for_null_check(null_check_offset, op->info());
     }
   } else if (op->code() == lir_unlock) {
     assert(BasicLock::displaced_header_offset_in_bytes() == 0, "lock_reg must point to the displaced header");
-    __ unlock_object(hdr, obj, lock, *op->stub()->entry());
+    __ unlock_object(hdr, obj, lock, temp, *op->stub()->entry());
   } else {
     Unimplemented();
   }
@@ -1653,10 +1653,11 @@ void LIR_Assembler::check_conflict(ciKlass* exact_klass, intptr_t current_klass,
       __ beqz(t1, none);
       __ mv(t0, (u1)TypeEntries::null_seen);
       __ beq(t0, t1, none);
-      // There is a chance that the checks above (re-reading profiling
-      // data from memory) fail if another thread has just set the
+      // There is a chance that the checks above
+      // fail if another thread has just set the
       // profiling to this obj's klass
       __ membar(MacroAssembler::LoadLoad);
+      __ xorr(tmp, tmp, t1); // get back original value before XOR
       __ ld(t1, mdo_addr);
       __ xorr(tmp, tmp, t1);
       __ andi(t0, tmp, TypeEntries::type_klass_mask);
@@ -1683,6 +1684,10 @@ void LIR_Assembler::check_conflict(ciKlass* exact_klass, intptr_t current_klass,
     __ bind(none);
     // first time here. Set profile type.
     __ sd(tmp, mdo_addr);
+#ifdef ASSERT
+    __ andi(tmp, tmp, TypeEntries::type_mask);
+    __ verify_klass_ptr(tmp);
+#endif
   }
 }
 
@@ -1717,6 +1722,10 @@ void LIR_Assembler::check_no_conflict(ciKlass* exact_klass, intptr_t current_kla
 #endif
     // first time here. Set profile type.
     __ sd(tmp, mdo_addr);
+#ifdef ASSERT
+    __ andi(tmp, tmp, TypeEntries::type_mask);
+    __ verify_klass_ptr(tmp);
+#endif
   } else {
     assert(ciTypeEntries::valid_ciklass(current_klass) != nullptr &&
            ciTypeEntries::valid_ciklass(current_klass) != exact_klass, "inconsistent");
@@ -1859,7 +1868,7 @@ void LIR_Assembler::rt_call(LIR_Opr result, address dest, const LIR_OprList* arg
     RuntimeAddress target(dest);
     __ relocate(target.rspec(), [&] {
       int32_t offset;
-      __ la_patchable(t0, target, offset);
+      __ movptr(t0, target.target(), offset);
       __ jalr(x1, t0, offset);
     });
   }

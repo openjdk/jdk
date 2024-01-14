@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1315,8 +1315,8 @@ void GraphBuilder::if_node(Value x, If::Condition cond, Value y, ValueStack* sta
   Instruction *i = append(new If(x, cond, false, y, tsux, fsux, (is_bb || compilation()->is_optimistic()) ? state_before : nullptr, is_bb));
 
   assert(i->as_Goto() == nullptr ||
-         (i->as_Goto()->sux_at(0) == tsux  && i->as_Goto()->is_safepoint() == tsux->bci() < stream()->cur_bci()) ||
-         (i->as_Goto()->sux_at(0) == fsux  && i->as_Goto()->is_safepoint() == fsux->bci() < stream()->cur_bci()),
+         (i->as_Goto()->sux_at(0) == tsux  && i->as_Goto()->is_safepoint() == (tsux->bci() < stream()->cur_bci())) ||
+         (i->as_Goto()->sux_at(0) == fsux  && i->as_Goto()->is_safepoint() == (fsux->bci() < stream()->cur_bci())),
          "safepoint state of Goto returned by canonicalizer incorrect");
 
   if (is_profiling()) {
@@ -1451,7 +1451,7 @@ void GraphBuilder::table_switch() {
     if (res->as_Goto()) {
       for (i = 0; i < l; i++) {
         if (sux->at(i) == res->as_Goto()->sux_at(0)) {
-          assert(res->as_Goto()->is_safepoint() == sw.dest_offset_at(i) < 0, "safepoint state of Goto returned by canonicalizer incorrect");
+          assert(res->as_Goto()->is_safepoint() == (sw.dest_offset_at(i) < 0), "safepoint state of Goto returned by canonicalizer incorrect");
         }
       }
     }
@@ -1500,7 +1500,7 @@ void GraphBuilder::lookup_switch() {
     if (res->as_Goto()) {
       for (i = 0; i < l; i++) {
         if (sux->at(i) == res->as_Goto()->sux_at(0)) {
-          assert(res->as_Goto()->is_safepoint() == sw.pair_at(i).offset() < 0, "safepoint state of Goto returned by canonicalizer incorrect");
+          assert(res->as_Goto()->is_safepoint() == (sw.pair_at(i).offset() < 0), "safepoint state of Goto returned by canonicalizer incorrect");
         }
       }
     }
@@ -2316,7 +2316,6 @@ void GraphBuilder::instance_of(int klass_index) {
 void GraphBuilder::monitorenter(Value x, int bci) {
   // save state before locking in case of deoptimization after a NullPointerException
   ValueStack* state_before = copy_state_for_exception_with_bci(bci);
-  compilation()->set_has_monitors(true);
   append_with_bci(new MonitorEnter(x, state()->lock(x), state_before), bci);
   kill_all();
 }
@@ -2517,6 +2516,8 @@ XHandlers* GraphBuilder::handle_exception(Instruction* instruction) {
 
         // xhandler start with an empty expression stack
         if (cur_state->stack_size() != 0) {
+          // locals are preserved
+          // stack will be truncated
           cur_state = cur_state->copy(ValueStack::ExceptionState, cur_state->bci());
         }
         if (instruction->exception_state() == nullptr) {
@@ -2566,15 +2567,19 @@ XHandlers* GraphBuilder::handle_exception(Instruction* instruction) {
       // This scope and all callees do not handle exceptions, so the local
       // variables of this scope are not needed. However, the scope itself is
       // required for a correct exception stack trace -> clear out the locals.
-      if (_compilation->env()->should_retain_local_variables()) {
-        cur_state = cur_state->copy(ValueStack::ExceptionState, cur_state->bci());
-      } else {
-        cur_state = cur_state->copy(ValueStack::EmptyExceptionState, cur_state->bci());
-      }
+      // Stack and locals are invalidated but not truncated in caller state.
       if (prev_state != nullptr) {
+        assert(instruction->exception_state() != nullptr, "missed set?");
+        ValueStack::Kind exc_kind = ValueStack::empty_exception_kind(true /* caller */);
+        cur_state = cur_state->copy(exc_kind, cur_state->bci());
+        // reset caller exception state
         prev_state->set_caller_state(cur_state);
-      }
-      if (instruction->exception_state() == nullptr) {
+      } else {
+        assert(instruction->exception_state() == nullptr, "already set");
+        // set instruction exception state
+        // truncate stack
+        ValueStack::Kind exc_kind = ValueStack::empty_exception_kind();
+        cur_state = cur_state->copy(exc_kind, cur_state->bci());
         instruction->set_exception_state(cur_state);
       }
     }
@@ -3487,11 +3492,9 @@ ValueStack* GraphBuilder::copy_state_exhandling_with_bci(int bci) {
 ValueStack* GraphBuilder::copy_state_for_exception_with_bci(int bci) {
   ValueStack* s = copy_state_exhandling_with_bci(bci);
   if (s == nullptr) {
-    if (_compilation->env()->should_retain_local_variables()) {
-      s = state()->copy(ValueStack::ExceptionState, bci);
-    } else {
-      s = state()->copy(ValueStack::EmptyExceptionState, bci);
-    }
+    // no handler, no need to retain locals
+    ValueStack::Kind exc_kind = ValueStack::empty_exception_kind();
+    s = state()->copy(exc_kind, bci);
   }
   return s;
 }
@@ -3506,6 +3509,14 @@ int GraphBuilder::recursive_inline_level(ciMethod* cur_callee) const {
   return recur_level;
 }
 
+static void set_flags_for_inlined_callee(Compilation* compilation, ciMethod* callee) {
+  if (callee->has_reserved_stack_access()) {
+    compilation->set_has_reserved_stack_access(true);
+  }
+  if (callee->is_synchronized() || callee->has_monitor_bytecodes()) {
+    compilation->set_has_monitors(true);
+  }
+}
 
 bool GraphBuilder::try_inline(ciMethod* callee, bool holder_known, bool ignore_return, Bytecodes::Code bc, Value receiver) {
   const char* msg = nullptr;
@@ -3523,9 +3534,7 @@ bool GraphBuilder::try_inline(ciMethod* callee, bool holder_known, bool ignore_r
   // method handle invokes
   if (callee->is_method_handle_intrinsic()) {
     if (try_method_handle_inline(callee, ignore_return)) {
-      if (callee->has_reserved_stack_access()) {
-        compilation()->set_has_reserved_stack_access(true);
-      }
+      set_flags_for_inlined_callee(compilation(), callee);
       return true;
     }
     return false;
@@ -3536,9 +3545,7 @@ bool GraphBuilder::try_inline(ciMethod* callee, bool holder_known, bool ignore_r
       callee->check_intrinsic_candidate()) {
     if (try_inline_intrinsics(callee, ignore_return)) {
       print_inlining(callee, "intrinsic");
-      if (callee->has_reserved_stack_access()) {
-        compilation()->set_has_reserved_stack_access(true);
-      }
+      set_flags_for_inlined_callee(compilation(), callee);
       return true;
     }
     // try normal inlining
@@ -3556,9 +3563,7 @@ bool GraphBuilder::try_inline(ciMethod* callee, bool holder_known, bool ignore_r
     bc = code();
   }
   if (try_inline_full(callee, holder_known, ignore_return, bc, receiver)) {
-    if (callee->has_reserved_stack_access()) {
-      compilation()->set_has_reserved_stack_access(true);
-    }
+    set_flags_for_inlined_callee(compilation(), callee);
     return true;
   }
 
@@ -4465,7 +4470,9 @@ void GraphBuilder::append_unsafe_get_and_set(ciMethod* callee, bool is_add) {
 
 #ifndef PRODUCT
 void GraphBuilder::print_stats() {
-  vmap()->print();
+  if (UseLocalValueNumbering) {
+    vmap()->print();
+  }
 }
 #endif // PRODUCT
 

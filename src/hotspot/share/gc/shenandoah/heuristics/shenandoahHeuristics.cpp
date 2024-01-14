@@ -54,11 +54,6 @@ ShenandoahHeuristics::ShenandoahHeuristics(ShenandoahSpaceInfo* space_info) :
   _gc_time_history(new TruncatedSeq(10, ShenandoahAdaptiveDecayFactor)),
   _metaspace_oom()
 {
-  // No unloading during concurrent mark? Communicate that to heuristics
-  if (!ClassUnloadingWithConcurrentMark) {
-    FLAG_SET_DEFAULT(ShenandoahUnloadClassesFrequency, 0);
-  }
-
   size_t num_regions = ShenandoahHeap::heap()->num_regions();
   assert(num_regions > 0, "Sanity");
 
@@ -263,23 +258,10 @@ bool ShenandoahHeuristics::can_unload_classes() {
   return true;
 }
 
-bool ShenandoahHeuristics::can_unload_classes_normal() {
+bool ShenandoahHeuristics::should_unload_classes() {
   if (!can_unload_classes()) return false;
   if (has_metaspace_oom()) return true;
-  if (!ClassUnloadingWithConcurrentMark) return false;
-  if (ShenandoahUnloadClassesFrequency == 0) return false;
-  return true;
-}
-
-bool ShenandoahHeuristics::should_unload_classes() {
-  if (!can_unload_classes_normal()) return false;
-  if (has_metaspace_oom()) return true;
-  size_t cycle = ShenandoahHeap::heap()->shenandoah_policy()->cycle_counter();
-  // Unload classes every Nth GC cycle.
-  // This should not happen in the same cycle as process_references to amortize costs.
-  // Offsetting by one is enough to break the rendezvous when periods are equal.
-  // When periods are not equal, offsetting by one is just as good as any other guess.
-  return (cycle + 1) % ShenandoahUnloadClassesFrequency == 0;
+  return ClassUnloadingWithConcurrentMark;
 }
 
 void ShenandoahHeuristics::initialize() {

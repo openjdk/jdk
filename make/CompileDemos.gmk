@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -58,7 +58,7 @@ DEMO_MANIFEST := $(SUPPORT_OUTPUTDIR)/demos/java-main-manifest.mf
 # This rule will be depended on due to the MANIFEST line in SetupBuildDemo
 # and SetupBuildJvmtiDemo.
 $(eval $(call SetupTextFileProcessing, BUILD_JAVA_MANIFEST, \
-  SOURCE_FILES := $(TOPDIR)/make/data/mainmanifest/manifest.mf, \
+  SOURCE_FILES := $(TOPDIR)/make/data/mainmanifest/manifest.mf.template, \
   OUTPUT_FILE := $(DEMO_MANIFEST), \
   REPLACEMENTS := \
       @@VERSION_SPECIFICATION@@ => $(VERSION_SPECIFICATION) ; \

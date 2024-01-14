@@ -79,7 +79,7 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
     RebuildFreeList,
     SampleCollectionSetCandidates,
     MergePSS,
-    RestoreRetainedRegions,
+    RestoreEvacuationFailedRegions,
     RemoveSelfForwards,
     ClearCardTable,
     RecalculateUsed,
@@ -146,9 +146,10 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
     MergePSSEvacFailExtra
   };
 
-  enum RestoreRetainedRegionsWorkItems {
-    RestoreRetainedRegionsFailedNum,
-    RestoreRetainedRegionsRetainedNum
+  enum RestoreEvacFailureRegionsWorkItems {
+    RestoreEvacFailureRegionsEvacFailedNum,       // How many regions experienced an evacuation failure (pinned or allocation failure)
+    RestoreEvacFailureRegionsPinnedNum,           // How many regions were found as pinned.
+    RestoreEvacFailureRegionsAllocFailedNum       // How many regions were found experiencing an allocation failure.
   };
 
   enum RemoveSelfForwardsWorkItems {

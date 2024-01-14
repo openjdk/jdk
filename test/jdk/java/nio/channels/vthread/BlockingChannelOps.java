@@ -808,7 +808,7 @@ class BlockingChannelOps {
                 SocketChannel sc1 = SocketChannel.open();
                 SocketChannel sc2 = null;
                 try {
-                    sc1.socket().connect(listener.getLocalAddress(), 10_000);
+                    sc1.socket().connect(listener.getLocalAddress());
                     sc2 = listener.accept();
                 } catch (IOException ioe) {
                     sc1.close();

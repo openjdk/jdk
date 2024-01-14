@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -610,6 +610,13 @@ Node *AndINode::Ideal(PhaseGVN *phase, bool can_reshape) {
     return progress;
   }
 
+  // Convert "(~a) & (~b)" into "~(a | b)"
+  if (AddNode::is_not(phase, in(1), T_INT) && AddNode::is_not(phase, in(2), T_INT)) {
+    Node* or_a_b = new OrINode(in(1)->in(1), in(2)->in(1));
+    Node* tn = phase->transform(or_a_b);
+    return AddNode::make_not(phase, tn, T_INT);
+  }
+
   // Special case constant AND mask
   const TypeInt *t2 = phase->type( in(2) )->isa_int();
   if( !t2 || !t2->is_con() ) return MulNode::Ideal(phase, can_reshape);
@@ -748,6 +755,13 @@ Node *AndLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   Node* progress = AndIL_add_shift_and_mask(phase, T_LONG);
   if (progress != nullptr) {
     return progress;
+  }
+
+  // Convert "(~a) & (~b)" into "~(a | b)"
+  if (AddNode::is_not(phase, in(1), T_LONG) && AddNode::is_not(phase, in(2), T_LONG)) {
+    Node* or_a_b = new OrLNode(in(1)->in(1), in(2)->in(1));
+    Node* tn = phase->transform(or_a_b);
+    return AddNode::make_not(phase, tn, T_LONG);
   }
 
   // Special case constant AND mask
@@ -1297,15 +1311,12 @@ const Type* RShiftINode::Value(PhaseGVN* phase) const {
   if (t1 == Type::BOTTOM || t2 == Type::BOTTOM)
     return TypeInt::INT;
 
-  if (t2 == TypeInt::INT)
-    return TypeInt::INT;
-
   const TypeInt *r1 = t1->is_int(); // Handy access
   const TypeInt *r2 = t2->is_int(); // Handy access
 
   // If the shift is a constant, just shift the bounds of the type.
   // For example, if the shift is 31, we just propagate sign bits.
-  if (r2->is_con()) {
+  if (!r1->is_con() && r2->is_con()) {
     uint shift = r2->get_con();
     shift &= BitsPerJavaInteger-1;  // semantics of Java shifts
     // Shift by a multiple of 32 does nothing:
@@ -1327,11 +1338,22 @@ const Type* RShiftINode::Value(PhaseGVN* phase) const {
     return ti;
   }
 
-  if( !r1->is_con() || !r2->is_con() )
+  if (!r1->is_con() || !r2->is_con()) {
+    // If the left input is non-negative the result must also be non-negative, regardless of what the right input is.
+    if (r1->_lo >= 0) {
+      return TypeInt::make(0, r1->_hi, MAX2(r1->_widen, r2->_widen));
+    }
+
+    // Conversely, if the left input is negative then the result must be negative.
+    if (r1->_hi <= -1) {
+      return TypeInt::make(r1->_lo, -1, MAX2(r1->_widen, r2->_widen));
+    }
+
     return TypeInt::INT;
+  }
 
   // Signed shift right
-  return TypeInt::make( r1->get_con() >> (r2->get_con()&31) );
+  return TypeInt::make(r1->get_con() >> (r2->get_con() & 31));
 }
 
 //=============================================================================
@@ -1359,15 +1381,12 @@ const Type* RShiftLNode::Value(PhaseGVN* phase) const {
   if (t1 == Type::BOTTOM || t2 == Type::BOTTOM)
     return TypeLong::LONG;
 
-  if (t2 == TypeInt::INT)
-    return TypeLong::LONG;
-
   const TypeLong *r1 = t1->is_long(); // Handy access
   const TypeInt  *r2 = t2->is_int (); // Handy access
 
   // If the shift is a constant, just shift the bounds of the type.
   // For example, if the shift is 63, we just propagate sign bits.
-  if (r2->is_con()) {
+  if (!r1->is_con() && r2->is_con()) {
     uint shift = r2->get_con();
     shift &= (2*BitsPerJavaInteger)-1;  // semantics of Java shifts
     // Shift by a multiple of 64 does nothing:
@@ -1389,7 +1408,21 @@ const Type* RShiftLNode::Value(PhaseGVN* phase) const {
     return tl;
   }
 
-  return TypeLong::LONG;                // Give up
+  if (!r1->is_con() || !r2->is_con()) {
+    // If the left input is non-negative the result must also be non-negative, regardless of what the right input is.
+    if (r1->_lo >= 0) {
+      return TypeLong::make(0, r1->_hi, MAX2(r1->_widen, r2->_widen));
+    }
+
+    // Conversely, if the left input is negative then the result must be negative.
+    if (r1->_hi <= -1) {
+      return TypeLong::make(r1->_lo, -1, MAX2(r1->_widen, r2->_widen));
+    }
+
+    return TypeLong::LONG;
+  }
+
+  return TypeLong::make(r1->get_con() >> (r2->get_con() & 63));
 }
 
 //=============================================================================

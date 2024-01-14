@@ -577,9 +577,12 @@ public:
 };
 
 #ifdef LINUX
-class PerfMapDCmd : public DCmd {
+class PerfMapDCmd : public DCmdWithParser {
+protected:
+  DCmdArgument<char*> _filename;
 public:
-  PerfMapDCmd(outputStream* output, bool heap) : DCmd(output, heap) {}
+  static int num_arguments() { return 1; }
+  PerfMapDCmd(outputStream* output, bool heap);
   static const char* name() {
     return "Compiler.perfmap";
   }
