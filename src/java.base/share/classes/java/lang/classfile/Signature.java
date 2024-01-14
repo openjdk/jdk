@@ -282,7 +282,6 @@ public sealed interface Signature {
         }
     }
 
-
     /**
      * Models the signature of a type variable.
      *
