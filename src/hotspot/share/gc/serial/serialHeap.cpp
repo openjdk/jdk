@@ -90,19 +90,19 @@ SerialHeap* SerialHeap::heap() {
 }
 
 SerialHeap::SerialHeap() :
-  CollectedHeap(),
-  _young_gen(nullptr),
-  _old_gen(nullptr),
-  _rem_set(nullptr),
-  _soft_ref_policy(),
-  _gc_policy_counters(new GCPolicyCounters("Copy:MSC", 2, 2)),
-  _incremental_collection_failed(false),
-  _full_collections_completed(0),
-  _young_manager(nullptr),
-  _old_manager(nullptr),
-  _eden_pool(nullptr),
-  _survivor_pool(nullptr),
-  _old_pool(nullptr) {
+    CollectedHeap(),
+    _young_gen(nullptr),
+    _old_gen(nullptr),
+    _rem_set(nullptr),
+    _soft_ref_policy(),
+    _gc_policy_counters(new GCPolicyCounters("Copy:MSC", 2, 2)),
+    _incremental_collection_failed(false),
+    _full_collections_completed(0),
+    _young_manager(nullptr),
+    _old_manager(nullptr),
+    _eden_pool(nullptr),
+    _survivor_pool(nullptr),
+    _old_pool(nullptr) {
   _young_manager = new GCMemoryManager("Copy");
   _old_manager = new GCMemoryManager("MarkSweepCompact");
 }
