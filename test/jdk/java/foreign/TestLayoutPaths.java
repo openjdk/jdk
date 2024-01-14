@@ -311,6 +311,42 @@ public class TestLayoutPaths {
         assertEquals(actualByteOffset, expectedByteOffset);
     }
 
+    @Test
+    public void testGroupElementIndexToString() {
+        PathElement e = PathElement.groupElement(2);
+        assertEquals(e.toString(), "group element 2");
+    }
+
+    @Test
+    public void testGroupElementNameToString() {
+        PathElement e = PathElement.groupElement("x");
+        assertEquals(e.toString(), "group element \"x\"");
+    }
+
+    @Test
+    public void testSequenceElementToString() {
+        PathElement e = PathElement.sequenceElement();
+        assertEquals(e.toString(), "unbound sequence element");
+    }
+
+    @Test
+    public void testSequenceElementIndexToString() {
+        PathElement e = PathElement.sequenceElement(2);
+        assertEquals(e.toString(), "bound sequence element 2");
+    }
+
+    @Test
+    public void testSequenceElementRangeToString() {
+        PathElement e = PathElement.sequenceElement(2, 4);
+        assertEquals(e.toString(), "sequence range 2 + N * 4, N >= 0");
+    }
+
+    @Test
+    public void testDerefereceElementToString() {
+        PathElement e = PathElement.dereferenceElement();
+        assertEquals(e.toString(), "dereference element");
+    }
+
     @DataProvider
     public static Object[][] testLayouts() {
         List<Object[]> testCases = new ArrayList<>();
