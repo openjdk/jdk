@@ -1190,7 +1190,7 @@ Java_sun_nio_fs_UnixNativeDispatcher_realpath0(JNIEnv* env, jclass this,
     return result;
 }
 
-JNIEXPORT void JNICALL
+JNIEXPORT jint JNICALL
 Java_sun_nio_fs_UnixNativeDispatcher_access0(JNIEnv* env, jclass this,
     jlong pathAddress, jint amode)
 {
@@ -1198,17 +1198,8 @@ Java_sun_nio_fs_UnixNativeDispatcher_access0(JNIEnv* env, jclass this,
     const char* path = (const char*)jlong_to_ptr(pathAddress);
 
     RESTARTABLE(access(path, (int)amode), err);
-    if (err == -1) {
-        throwUnixException(env, errno);
-    }
-}
 
-JNIEXPORT jboolean JNICALL
-Java_sun_nio_fs_UnixNativeDispatcher_exists0(JNIEnv* env, jclass this, jlong pathAddress) {
-    int err;
-    const char* path = (const char*)jlong_to_ptr(pathAddress);
-    RESTARTABLE(access(path, F_OK), err);
-    return (err == 0) ? JNI_TRUE : JNI_FALSE;
+    return (err == -1) ? errno : 0;
 }
 
 JNIEXPORT void JNICALL

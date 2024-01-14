@@ -51,7 +51,7 @@
 class DefNewGeneration;
 class GCMemoryManager;
 class ContiguousSpace;
-class CompactPoint;
+
 class OopClosure;
 class GCStats;
 
@@ -228,7 +228,7 @@ class Generation: public CHeapObj<mtGC> {
   // this generation. See comment below.
   // This is a generic implementation which can be overridden.
   //
-  // Note: in the current (1.4) implementation, when genCollectedHeap's
+  // Note: in the current (1.4) implementation, when serialHeap's
   // incremental_collection_will_fail flag is set, all allocations are
   // slow path (the only fast-path place to allocate is DefNew, which
   // will be full if the flag is set).
@@ -285,13 +285,6 @@ class Generation: public CHeapObj<mtGC> {
   // the collection of the young generation has completed.
   GCStats* gc_stats() const { return _gc_stats; }
   virtual void update_gc_stats(Generation* current_generation, bool full) {}
-
-  // Mark sweep support phase2
-  virtual void prepare_for_compaction(CompactPoint* cp);
-  // Mark sweep support phase3
-  virtual void adjust_pointers();
-  // Mark sweep support phase4
-  virtual void compact();
 
   // Accessing "marks".
 

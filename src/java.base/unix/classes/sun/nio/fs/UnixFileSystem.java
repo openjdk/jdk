@@ -893,7 +893,9 @@ abstract class UnixFileSystem
             sourceAttrs = UnixFileAttributes.get(source, false);
             if (sourceAttrs.isDirectory()) {
                 // ensure source can be moved
-                access(source, W_OK);
+                int errno = access(source, W_OK);
+                if (errno != 0)
+                    new UnixException(errno).rethrowAsIOException(source);
             }
         } catch (UnixException x) {
             x.rethrowAsIOException(source);
@@ -1024,13 +1026,11 @@ abstract class UnixFileSystem
 
         // ensure source can be copied
         if (!sourceAttrs.isSymbolicLink() || flags.followLinks) {
-            try {
-                // the access(2) system call always follows links so it
-                // is suppressed if the source is an unfollowed link
-                access(source, R_OK);
-            } catch (UnixException exc) {
-                exc.rethrowAsIOException(source);
-            }
+            // the access(2) system call always follows links so it
+            // is suppressed if the source is an unfollowed link
+            int errno = access(source, R_OK);
+            if (errno != 0)
+                new UnixException(errno).rethrowAsIOException(source);
         }
 
         // get attributes of target file (don't follow links)

@@ -125,7 +125,7 @@ class G1MonotonicArena::Segment {
   char* _bottom;  // Actual data.
   // Do not add class member variables beyond this point
 
-  static size_t header_size() { return align_up(sizeof(Segment), DEFAULT_CACHE_LINE_SIZE); }
+  static size_t header_size() { return align_up(sizeof(Segment), DEFAULT_PADDING_SIZE); }
 
   static size_t payload_size(uint slot_size, uint num_slots) {
     // The cast (size_t) is required to guard against overflow wrap around.

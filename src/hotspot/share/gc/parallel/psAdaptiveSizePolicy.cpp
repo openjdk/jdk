@@ -51,7 +51,6 @@ PSAdaptiveSizePolicy::PSAdaptiveSizePolicy(size_t init_eden_size,
      _avg_major_pause(new AdaptivePaddedAverage(AdaptiveTimeWeight, PausePadding)),
      _avg_base_footprint(new AdaptiveWeightedAverage(AdaptiveSizePolicyWeight)),
      _gc_stats(),
-     _collection_cost_margin_fraction(AdaptiveSizePolicyCollectionCostMargin / 100.0),
      _major_pause_old_estimator(new LinearLeastSquareFit(AdaptiveSizePolicyWeight)),
      _major_pause_young_estimator(new LinearLeastSquareFit(AdaptiveSizePolicyWeight)),
      _latest_major_mutator_interval_seconds(0),
@@ -281,11 +280,11 @@ void PSAdaptiveSizePolicy::compute_eden_space_size(
     //
     // Make changes only to affect one of the pauses (the larger)
     // at a time.
-    adjust_eden_for_pause_time(is_full_gc, &desired_promo_size, &desired_eden_size);
+    adjust_eden_for_pause_time(&desired_eden_size);
 
   } else if (_avg_minor_pause->padded_average() > gc_minor_pause_goal_sec()) {
     // Adjust only for the minor pause time goal
-    adjust_eden_for_minor_pause_time(is_full_gc, &desired_eden_size);
+    adjust_eden_for_minor_pause_time(&desired_eden_size);
 
   } else if(adjusted_mutator_cost() < _throughput_goal) {
     // This branch used to require that (mutator_cost() > 0.0 in 1.4.2.
@@ -456,7 +455,7 @@ void PSAdaptiveSizePolicy::compute_old_gen_free_space(
     // at a time.
     if (is_full_gc) {
       set_decide_at_full_gc(decide_at_full_gc_true);
-      adjust_promo_for_pause_time(is_full_gc, &desired_promo_size, &desired_eden_size);
+      adjust_promo_for_pause_time(&desired_promo_size);
     }
   } else if (adjusted_mutator_cost() < _throughput_goal) {
     // This branch used to require that (mutator_cost() > 0.0 in 1.4.2.
@@ -571,9 +570,7 @@ void PSAdaptiveSizePolicy::decay_supplemental_growth(bool is_full_gc) {
   }
 }
 
-void PSAdaptiveSizePolicy::adjust_eden_for_minor_pause_time(bool is_full_gc,
-    size_t* desired_eden_size_ptr) {
-
+void PSAdaptiveSizePolicy::adjust_eden_for_minor_pause_time(size_t* desired_eden_size_ptr) {
   // Adjust the young generation size to reduce pause time of
   // of collections.
   //
@@ -586,25 +583,17 @@ void PSAdaptiveSizePolicy::adjust_eden_for_minor_pause_time(bool is_full_gc,
           decrease_young_gen_for_min_pauses_true);
     *desired_eden_size_ptr = *desired_eden_size_ptr -
       eden_decrement_aligned_down(*desired_eden_size_ptr);
-    } else {
-      // EXPERIMENTAL ADJUSTMENT
-      // Only record that the estimator indicated such an action.
-      // *desired_eden_size_ptr = *desired_eden_size_ptr + eden_heap_delta;
-      set_change_young_gen_for_min_pauses(
-          increase_young_gen_for_min_pauses_true);
   }
 }
 
-void PSAdaptiveSizePolicy::adjust_promo_for_pause_time(bool is_full_gc,
-                                             size_t* desired_promo_size_ptr,
-                                             size_t* desired_eden_size_ptr) {
+void PSAdaptiveSizePolicy::adjust_promo_for_pause_time(size_t* desired_promo_size_ptr) {
 
   size_t promo_heap_delta = 0;
   // Add some checks for a threshold for a change.  For example,
   // a change less than the required alignment is probably not worth
   // attempting.
 
-  if (_avg_minor_pause->padded_average() <= _avg_major_pause->padded_average() && is_full_gc) {
+  if (_avg_minor_pause->padded_average() <= _avg_major_pause->padded_average()) {
     // Adjust for the major pause time only at full gc's because the
     // affects of a change can only be seen at full gc's.
 
@@ -614,12 +603,6 @@ void PSAdaptiveSizePolicy::adjust_promo_for_pause_time(bool is_full_gc,
       set_change_old_gen_for_maj_pauses(decrease_old_gen_for_maj_pauses_true);
       promo_heap_delta = promo_decrement_aligned_down(*desired_promo_size_ptr);
       *desired_promo_size_ptr = _promo_size - promo_heap_delta;
-    } else {
-      // EXPERIMENTAL ADJUSTMENT
-      // Only record that the estimator indicated such an action.
-      // *desired_promo_size_ptr = _promo_size +
-      //   promo_increment_aligned_up(*desired_promo_size_ptr);
-      set_change_old_gen_for_maj_pauses(increase_old_gen_for_maj_pauses_true);
     }
   }
 
@@ -631,16 +614,14 @@ void PSAdaptiveSizePolicy::adjust_promo_for_pause_time(bool is_full_gc,
     *desired_promo_size_ptr, promo_heap_delta);
 }
 
-void PSAdaptiveSizePolicy::adjust_eden_for_pause_time(bool is_full_gc,
-                                             size_t* desired_promo_size_ptr,
-                                             size_t* desired_eden_size_ptr) {
+void PSAdaptiveSizePolicy::adjust_eden_for_pause_time(size_t* desired_eden_size_ptr) {
 
   size_t eden_heap_delta = 0;
   // Add some checks for a threshold for a change.  For example,
   // a change less than the required alignment is probably not worth
   // attempting.
   if (_avg_minor_pause->padded_average() > _avg_major_pause->padded_average()) {
-    adjust_eden_for_minor_pause_time(is_full_gc, desired_eden_size_ptr);
+    adjust_eden_for_minor_pause_time(desired_eden_size_ptr);
   }
   log_trace(gc, ergo)(
     "PSAdaptiveSizePolicy::adjust_eden_for_pause_time "
@@ -707,14 +688,6 @@ void PSAdaptiveSizePolicy::adjust_promo_for_throughput(bool is_full_gc,
           set_change_old_gen_for_throughput(
               increase_old_gen_for_throughput_true);
               _old_gen_change_for_major_throughput++;
-        } else {
-          // EXPERIMENTAL ADJUSTMENT
-          // Record that decreasing the old gen size would decrease
-          // the major collection cost but don't do it.
-          // *desired_promo_size_ptr = _promo_size -
-          //   promo_decrement_aligned_down(*desired_promo_size_ptr);
-          set_change_old_gen_for_throughput(
-                decrease_old_gen_for_throughput_true);
         }
 
         break;
@@ -794,14 +767,6 @@ void PSAdaptiveSizePolicy::adjust_eden_for_throughput(bool is_full_gc,
         set_change_young_gen_for_throughput(
           increase_young_gen_for_througput_true);
         _young_gen_change_for_minor_throughput++;
-      } else {
-        // EXPERIMENTAL ADJUSTMENT
-        // Record that decreasing the young gen size would decrease
-        // the minor collection cost but don't do it.
-        // *desired_eden_size_ptr = _eden_size -
-        //   eden_decrement_aligned_down(*desired_eden_size_ptr);
-        set_change_young_gen_for_throughput(
-          decrease_young_gen_for_througput_true);
       }
           break;
     default:
@@ -880,17 +845,6 @@ size_t PSAdaptiveSizePolicy::scale_down(size_t change,
   return reduced_change;
 }
 
-size_t PSAdaptiveSizePolicy::eden_increment(size_t cur_eden,
-                                            uint percent_change) {
-  size_t eden_heap_delta;
-  eden_heap_delta = cur_eden / 100 * percent_change;
-  return eden_heap_delta;
-}
-
-size_t PSAdaptiveSizePolicy::eden_increment(size_t cur_eden) {
-  return eden_increment(cur_eden, YoungGenerationSizeIncrement);
-}
-
 size_t PSAdaptiveSizePolicy::eden_increment_with_supplement_aligned_up(
   size_t cur_eden) {
   size_t result = eden_increment(cur_eden,
@@ -903,23 +857,6 @@ size_t PSAdaptiveSizePolicy::eden_decrement_aligned_down(size_t cur_eden) {
   return align_down(eden_heap_delta, _space_alignment);
 }
 
-size_t PSAdaptiveSizePolicy::eden_decrement(size_t cur_eden) {
-  size_t eden_heap_delta = eden_increment(cur_eden) /
-    AdaptiveSizeDecrementScaleFactor;
-  return eden_heap_delta;
-}
-
-size_t PSAdaptiveSizePolicy::promo_increment(size_t cur_promo,
-                                             uint percent_change) {
-  size_t promo_heap_delta;
-  promo_heap_delta = cur_promo / 100 * percent_change;
-  return promo_heap_delta;
-}
-
-size_t PSAdaptiveSizePolicy::promo_increment(size_t cur_promo) {
-  return promo_increment(cur_promo, TenuredGenerationSizeIncrement);
-}
-
 size_t PSAdaptiveSizePolicy::promo_increment_with_supplement_aligned_up(
   size_t cur_promo) {
   size_t result =  promo_increment(cur_promo,
@@ -930,12 +867,6 @@ size_t PSAdaptiveSizePolicy::promo_increment_with_supplement_aligned_up(
 size_t PSAdaptiveSizePolicy::promo_decrement_aligned_down(size_t cur_promo) {
   size_t promo_heap_delta = promo_decrement(cur_promo);
   return align_down(promo_heap_delta, _space_alignment);
-}
-
-size_t PSAdaptiveSizePolicy::promo_decrement(size_t cur_promo) {
-  size_t promo_heap_delta = promo_increment(cur_promo);
-  promo_heap_delta = promo_heap_delta / AdaptiveSizeDecrementScaleFactor;
-  return promo_heap_delta;
 }
 
 uint PSAdaptiveSizePolicy::compute_survivor_space_size_and_threshold(
