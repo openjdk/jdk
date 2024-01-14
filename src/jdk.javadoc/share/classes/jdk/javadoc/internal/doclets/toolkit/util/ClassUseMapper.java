@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -92,7 +92,17 @@ public class ClassUseMapper {
     /**
      * Mapping of TypeElements to list of TypeElements which implement this interface.
      */
-    public Map<TypeElement, List<TypeElement>> classToImplementingClass = new HashMap<>();
+    public final Map<TypeElement, List<TypeElement>> classToImplementingClass = new HashMap<>();
+
+    /**
+     * Mapping of TypeElements to list of TypeElements which uses this class in a superclass type parameter
+     */
+    public final Map<TypeElement, List<TypeElement>> classToSuperclassTypeParam = new HashMap<>();
+
+    /**
+     * Mapping of TypeElements to list of TypeElements which uses this interface in a superinterface type parameter
+     */
+    public final Map<TypeElement, List<TypeElement>> classToInterfaceTypeParam = new HashMap<>();
 
     /**
      * Mapping of TypeElements to list of VariableElements declared as that class.
@@ -214,6 +224,10 @@ public class ClassUseMapper {
             PackageElement pkg = elementUtils.getPackageOf(aClass);
             mapAnnotations(classToPackageAnnotations, pkg, pkg);
             mapTypeParameters(classToClassTypeParam, aClass, aClass);
+            mapTypeParameters(classToSuperclassTypeParam, aClass.getSuperclass(), aClass);
+            for (var superinterface : aClass.getInterfaces()) {
+                mapTypeParameters(classToInterfaceTypeParam, superinterface, aClass);
+            }
             mapAnnotations(classToClassAnnotations, aClass, aClass);
             VisibleMemberTable vmt = configuration.getVisibleMemberTable(aClass);
 

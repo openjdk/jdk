@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,10 @@
  */
 
 import javadoc.tester.JavadocTester;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 public class TestUseOption extends JavadocTester {
 
@@ -190,5 +194,62 @@ public class TestUseOption extends JavadocTester {
                     <a href="../C1.html#umethod3(unique.UseMe,unique.UseMe)" class="member-name-link">""",
                 """
                     <a href="../C1.html#%3Cinit%3E(unique.UseMe,unique.UseMe)" class="member-name-link">""");
+    }
+
+    @Test
+    public void testSuperclassAndInterfaceTypeArgument(Path base) throws IOException {
+        Files.createDirectories(base);
+        Path out = base.resolve("out");
+        Path src = base.resolve("src");
+
+        Files.createDirectories(out);
+        Files.createDirectories(src);
+        Path one = src.resolve("One.java");
+        Files.writeString(one, """
+            public class One {}
+            """);
+        Path two = src.resolve("Two.java");
+        Files.writeString(two, """
+            import java.util.*;
+            public class Two extends ArrayList<One> implements Comparator<One> {
+            }
+            """);
+
+        javadoc(
+                "-use",
+                "-d", out.toString(),
+                one.toString(), two.toString()
+        );
+        checkExit(Exit.OK);
+
+        checkOrder("class-use/One.html", """
+                <div class="caption"><span>Classes in <a href="../package-summary.html">Unnamed Package</a> \
+                that extend types with arguments of type <a href="../One.html" title="class in Unnamed Package">\
+                One</a></span></div>
+                """, """
+                <div class="summary-table three-column-summary">
+                <div class="table-header col-first">Modifier and Type</div>
+                <div class="table-header col-second">Class</div>
+                <div class="table-header col-last">Description</div>
+                <div class="col-first even-row-color"><code>class&nbsp;</code></div>
+                <div class="col-second even-row-color"><code><a href="../Two.html" class="type-name-link" \
+                title="class in Unnamed Package">Two</a></code></div>
+                <div class="col-last even-row-color">&nbsp;</div>
+                </div>
+                """, """
+                <div class="caption"><span>Classes in <a href="../package-summary.html">Unnamed Package</a> \
+                that implement types with arguments of type <a href="../One.html" title="class in Unnamed \
+                Package">One</a></span></div>
+                """, """
+                <div class="summary-table three-column-summary">
+                <div class="table-header col-first">Modifier and Type</div>
+                <div class="table-header col-second">Class</div>
+                <div class="table-header col-last">Description</div>
+                <div class="col-first even-row-color"><code>class&nbsp;</code></div>
+                <div class="col-second even-row-color"><code><a href="../Two.html" class="type-name-link" \
+                title="class in Unnamed Package">Two</a></code></div>
+                <div class="col-last even-row-color">&nbsp;</div>
+                </div>
+                """);
     }
 }
