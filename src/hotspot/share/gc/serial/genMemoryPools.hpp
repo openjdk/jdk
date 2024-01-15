@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_GC_SHARED_GENMEMORYPOOLS_HPP
-#define SHARE_GC_SHARED_GENMEMORYPOOLS_HPP
+#ifndef SHARE_GC_SERIAL_GENMEMORYPOOLS_HPP
+#define SHARE_GC_SERIAL_GENMEMORYPOOLS_HPP
 
 #include "services/memoryPool.hpp"
 
@@ -72,4 +72,4 @@ public:
   size_t used_in_bytes();
 };
 
-#endif // SHARE_GC_SHARED_GENMEMORYPOOLS_HPP
+#endif // SHARE_GC_SERIAL_GENMEMORYPOOLS_HPP
