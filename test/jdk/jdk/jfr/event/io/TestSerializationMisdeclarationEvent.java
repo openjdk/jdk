@@ -61,9 +61,7 @@ public class TestSerializationMisdeclarationEvent {
     @BeforeAll
     static void recordEvents() {
         try (var rs = new RecordingStream()) {
-            rs.enable(SerializationMisdeclaration)
-                    .withoutThreshold()
-                    .withoutStackTrace();
+            rs.enable(SerializationMisdeclaration);
             rs.onEvent(SerializationMisdeclaration, events::add);
             rs.startAsync();
             doLookups();
