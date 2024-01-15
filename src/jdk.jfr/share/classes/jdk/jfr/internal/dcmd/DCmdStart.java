@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,8 @@ import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.security.AccessControlContext;
+import java.security.AccessController;
 import java.text.ParseException;
 import java.time.Duration;
 import java.util.HashSet;
@@ -165,11 +167,12 @@ final class DCmdStart extends AbstractDCmd {
                     dumpOnExit = Boolean.TRUE;
                 }
                 Path p = Paths.get(path);
-                if (Files.isDirectory(p) && Boolean.TRUE.equals(dumpOnExit)) {
+                if (Files.isDirectory(p)) {
                     // Decide destination filename at dump time
                     // Purposely avoid generating filename in Recording#setDestination due to
                     // security concerns
-                    PrivateAccess.getInstance().getPlatformRecording(recording).setDumpOnExitDirectory(new SafePath(p));
+                    PlatformRecording pr = PrivateAccess.getInstance().getPlatformRecording(recording);
+                    pr.setDumpDirectory(new SafePath(p));
                 } else {
                     safePath = resolvePath(recording, path);
                     recording.setDestination(safePath.toPath());
