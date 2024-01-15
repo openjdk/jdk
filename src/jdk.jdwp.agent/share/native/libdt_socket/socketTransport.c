@@ -395,9 +395,6 @@ parseAddress(const char *address, struct addrinfo **result) {
     return getAddrInfo(address, hostnameLen, port, &hints, result);
 }
 
-/*
- * Input is in_addr just because all clients have it.
- */
 static void convertIPv4ToIPv6(const struct in_addr *addr4, struct in6_addr *addr6) {
     // Implement in a platform-independent way.
     // Spec requires in_addr has s_addr member, in6_addr has s6_addr[16] member.
