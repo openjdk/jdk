@@ -50,7 +50,6 @@
 
 class DefNewGeneration;
 class GCMemoryManager;
-class GenerationSpec;
 class ContiguousSpace;
 class CompactPoint;
 class OopClosure;
@@ -113,8 +112,6 @@ class Generation: public CHeapObj<mtGC> {
 
   virtual Generation::Name kind() { return Generation::Other; }
 
-  // Space inquiries (results in bytes)
-  size_t initial_size();
   virtual size_t capacity() const = 0;  // The maximum number of object bytes the
                                         // generation can currently hold.
   virtual size_t used() const = 0;      // The number of used bytes in the gen.

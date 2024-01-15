@@ -265,10 +265,12 @@ private:
   bool _deferred_emit;
   bool _test_and_branch_reachable;
 
+  ZLoadBarrierStubC2Aarch64(const MachNode* node, Address ref_addr, Register ref);
   ZLoadBarrierStubC2Aarch64(const MachNode* node, Address ref_addr, Register ref, int offset);
 
   int get_stub_size();
 public:
+  static ZLoadBarrierStubC2Aarch64* create(const MachNode* node, Address ref_addr, Register ref);
   static ZLoadBarrierStubC2Aarch64* create(const MachNode* node, Address ref_addr, Register ref, int offset);
 
   virtual void emit_code(MacroAssembler& masm);

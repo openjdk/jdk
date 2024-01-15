@@ -31,7 +31,6 @@
 #include "gc/shared/gcLocker.hpp"
 #include "gc/shared/gcTimer.hpp"
 #include "gc/shared/gcTrace.hpp"
-#include "gc/shared/generationSpec.hpp"
 #include "gc/shared/space.inline.hpp"
 #include "gc/shared/spaceDecorator.inline.hpp"
 #include "logging/log.hpp"
@@ -55,14 +54,6 @@ Generation::Generation(ReservedSpace rs, size_t initial_size) :
   }
   _reserved = MemRegion((HeapWord*)_virtual_space.low_boundary(),
           (HeapWord*)_virtual_space.high_boundary());
-}
-
-size_t Generation::initial_size() {
-  SerialHeap* serial_heap = SerialHeap::heap();
-  if (serial_heap->is_young_gen(this)) {
-    return serial_heap->young_gen_spec()->init_size();
-  }
-  return serial_heap->old_gen_spec()->init_size();
 }
 
 size_t Generation::max_capacity() const {

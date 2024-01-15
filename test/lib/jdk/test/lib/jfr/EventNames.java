@@ -88,6 +88,7 @@ public class EventNames {
     public static final String NativeMemoryUsageTotal = PREFIX + "NativeMemoryUsageTotal";
     public static final String JavaAgent = PREFIX + "JavaAgent";
     public static final String NativeAgent = PREFIX + "NativeAgent";
+    public static final String DeprecatedInvocation = PREFIX + "DeprecatedInvocation";
 
     // This event is hard to test
     public static final String ReservedStackActivation = PREFIX + "ReservedStackActivation";

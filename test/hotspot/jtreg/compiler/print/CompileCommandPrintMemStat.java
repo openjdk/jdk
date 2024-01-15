@@ -24,6 +24,7 @@
 /*
  * @test
  * @summary Checks that -XX:CompileCommand=PrintMemStat,... works
+ * @requires vm.compiler1.enabled | vm.compiler2.enabled
  * @library /test/lib
  * @run driver compiler.print.CompileCommandPrintMemStat
  */

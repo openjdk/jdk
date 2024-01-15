@@ -38,12 +38,12 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
-import jdk.internal.classfile.ClassSignature;
-import jdk.internal.classfile.Classfile;
-import jdk.internal.classfile.MethodSignature;
-import jdk.internal.classfile.Signature;
-import jdk.internal.classfile.Signature.*;
-import jdk.internal.classfile.Attributes;
+import java.lang.classfile.ClassSignature;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.MethodSignature;
+import java.lang.classfile.Signature;
+import java.lang.classfile.Signature.*;
+import java.lang.classfile.Attributes;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static helpers.ClassRecord.assertEqualsDeep;
@@ -128,7 +128,7 @@ class SignaturesTest {
                 .flatMap(p -> p)
                 .filter(p -> Files.isRegularFile(p) && p.toString().endsWith(".class")).forEach(path -> {
             try {
-                var cm = Classfile.of().parse(path);
+                var cm = ClassFile.of().parse(path);
                 cm.findAttribute(Attributes.SIGNATURE).ifPresent(csig -> {
                     assertEquals(
                             ClassSignature.parseFrom(csig.signature().stringValue()).signatureString(),
@@ -177,7 +177,7 @@ class SignaturesTest {
 
     @Test
     void testClassSignatureClassDesc() throws IOException {
-        var observerCf = Classfile.of().parse(Path.of(System.getProperty("test.classes"), "SignaturesTest$Observer.class"));
+        var observerCf = ClassFile.of().parse(Path.of(System.getProperty("test.classes"), "SignaturesTest$Observer.class"));
         var sig = observerCf.findAttribute(Attributes.SIGNATURE).orElseThrow().asClassSignature();
         var innerSig = (ClassTypeSig) ((ClassTypeSig) sig.superclassSignature()) // ArrayList
                 .typeArgs().getFirst() // Outer<String>.Inner<Long>

@@ -35,7 +35,7 @@
 . ftr VB CB
 . ftr VBI CBI
 .\}
-.TH "JCMD" "1" "2024" "JDK 22-ea" "JDK Commands"
+.TH "JCMD" "1" "2024" "JDK 23-ea" "JDK Commands"
 .hy
 .SH NAME
 .PP
@@ -178,11 +178,21 @@ Prints all compiled methods in code cache that are alive.
 Impact: Medium
 .RE
 .TP
-\f[V]Compiler.perfmap\f[R] (Linux only)
+\f[V]Compiler.perfmap\f[R] [\f[I]arguments\f[R]] (Linux only)
 Write map file for Linux perf tool.
 .RS
 .PP
 Impact: Low
+.PP
+\f[I]arguments\f[R]:
+.IP \[bu] 2
+\f[V]filename\f[R]: (Optional) Name of the map file (STRING, no default
+value)
+.PP
+If \f[V]filename\f[R] is not specified, a default file name is chosen
+using the pid of the target JVM process.
+For example, if the pid is \f[V]12345\f[R], then the default
+\f[V]filename\f[R] will be \f[V]/tmp/perf-12345.map\f[R].
 .RE
 .TP
 \f[V]Compiler.queue\f[R]

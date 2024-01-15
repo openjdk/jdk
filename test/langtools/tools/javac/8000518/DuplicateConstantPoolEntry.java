@@ -26,18 +26,15 @@
  * @bug 8000518
  * @summary Javac generates duplicate name_and_type constant pool entry for
  * class BinaryOpValueExp.java
- * @modules java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.constantpool
- *          java.base/jdk.internal.classfile.instruction
- *          java.base/jdk.internal.classfile.components
- *          java.base/jdk.internal.classfile.impl
+ * @enablePreview
+ * @modules java.base/jdk.internal.classfile.impl
  * @run main DuplicateConstantPoolEntry
  */
 
 import com.sun.source.util.JavacTask;
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.constantpool.ConstantPool;
+import java.lang.classfile.*;
+import java.lang.classfile.constantpool.ConstantPool;
+import java.lang.classfile.constantpool.PoolEntry;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
@@ -47,7 +44,6 @@ import javax.tools.JavaCompiler;
 import javax.tools.JavaFileObject;
 import javax.tools.SimpleJavaFileObject;
 import javax.tools.ToolProvider;
-import jdk.internal.classfile.constantpool.PoolEntry;
 
 /*
  * This bug was reproduced having two classes B and C referenced from a class A
@@ -95,7 +91,7 @@ public class DuplicateConstantPoolEntry {
 
     void checkReference() throws IOException {
         File file = new File("A.class");
-        ClassModel classFile = Classfile.of().parse(file.toPath());
+        ClassModel classFile = ClassFile.of().parse(file.toPath());
         ConstantPool constantPool = classFile.constantPool();
         for (PoolEntry pe1 : constantPool) {
             for (PoolEntry pe2 : constantPool) {

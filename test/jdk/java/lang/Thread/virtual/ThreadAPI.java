@@ -23,7 +23,7 @@
 
 /*
  * @test id=default
- * @bug 8284161 8286788
+ * @bug 8284161 8286788 8321270
  * @summary Test Thread API with virtual threads
  * @modules java.base/java.lang:+open
  * @library /test/lib
@@ -267,64 +267,6 @@ class ThreadAPI {
         });
         try {
             assertThrows(UnsupportedOperationException.class, thread::stop);
-        } finally {
-            thread.interrupt();
-            thread.join();
-        }
-    }
-
-    /**
-     * Test Thread::suspend from current thread.
-     */
-    @Test
-    void testSuspend1() throws Exception {
-        VThreadRunner.run(() -> {
-            Thread t = Thread.currentThread();
-            assertThrows(UnsupportedOperationException.class, t::suspend);
-        });
-    }
-
-    /**
-     * Test Thread::suspend from another thread.
-     */
-    @Test
-    void testSuspend2() throws Exception {
-        var thread = Thread.ofVirtual().start(() -> {
-            try {
-                Thread.sleep(20*1000);
-            } catch (InterruptedException e) { }
-        });
-        try {
-            assertThrows(UnsupportedOperationException.class, () -> thread.suspend());
-        } finally {
-            thread.interrupt();
-            thread.join();
-        }
-    }
-
-    /**
-     * Test Thread::resume from current thread.
-     */
-    @Test
-    void testResume1() throws Exception {
-        VThreadRunner.run(() -> {
-            Thread t = Thread.currentThread();
-            assertThrows(UnsupportedOperationException.class, t::resume);
-        });
-    }
-
-    /**
-     * Test Thread::resume from another thread.
-     */
-    @Test
-    void testResume2() throws Exception {
-        var thread = Thread.ofVirtual().start(() -> {
-            try {
-                Thread.sleep(20*1000);
-            } catch (InterruptedException e) { }
-        });
-        try {
-            assertThrows(UnsupportedOperationException.class, () -> thread.resume());
         } finally {
             thread.interrupt();
             thread.join();
@@ -1189,6 +1131,36 @@ class ThreadAPI {
             thread.join();
         }
         assertEquals(List.of("A", "A", "B"), list);
+    }
+
+    /**
+     * Test that Thread.yield does not consume the thread's parking permit.
+     */
+    @Test
+    void testYield3() throws Exception {
+        var thread = Thread.ofVirtual().start(() -> {
+            LockSupport.unpark(Thread.currentThread());
+            Thread.yield();
+            LockSupport.park();  // should not park
+        });
+        thread.join();
+    }
+
+    /**
+     * Test that Thread.yield does not make available the thread's parking permit.
+     */
+    @Test
+    void testYield4() throws Exception {
+        var thread = Thread.ofVirtual().start(() -> {
+            Thread.yield();
+            LockSupport.park();  // should park
+        });
+        try {
+            await(thread, Thread.State.WAITING);
+        } finally {
+            LockSupport.unpark(thread);
+            thread.join();
+        }
     }
 
     /**

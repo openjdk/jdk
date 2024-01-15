@@ -76,12 +76,21 @@ public class TestSegmentCopy {
         }
     }
 
-    @Test(expectedExceptions = UnsupportedOperationException.class, dataProvider = "segmentKinds")
+    @Test(expectedExceptions = IllegalArgumentException.class, dataProvider = "segmentKinds")
     public void testReadOnlyCopy(SegmentKind kind1, SegmentKind kind2) {
         MemorySegment s1 = kind1.makeSegment(TEST_BYTE_SIZE);
         MemorySegment s2 = kind2.makeSegment(TEST_BYTE_SIZE);
         // check failure with read-only dest
         MemorySegment.copy(s1, Type.BYTE.layout, 0, s2.asReadOnly(), Type.BYTE.layout, 0, 0);
+    }
+
+    @Test(expectedExceptions = IllegalArgumentException.class,
+            expectedExceptionsMessageRegExp = ".*Attempt to write a read-only segment.*")
+    public void badCopy6Arg() {
+        try (Arena scope = Arena.ofConfined()) {
+            MemorySegment dest = scope.allocate(ValueLayout.JAVA_INT).asReadOnly();
+            MemorySegment.copy(new int[1],0, dest, ValueLayout.JAVA_INT, 0 ,1); // should throw
+        }
     }
 
     @Test(expectedExceptions = IndexOutOfBoundsException.class, dataProvider = "types")

@@ -55,7 +55,7 @@ public:
   void initialize(HeapRegion* hr);
   void update();
   void forward(oop object, size_t size);
-  uint forward_humongous(HeapRegion* hr);
+  void forward_humongous(HeapRegion* hr);
   void add(HeapRegion* hr);
   void add_humongous(HeapRegion* hr);
 

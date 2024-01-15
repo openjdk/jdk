@@ -1510,9 +1510,6 @@ bool Matcher::match_rule_supported(int opcode) {
 #ifdef _LP64
     case Op_CompareAndSwapP:
 #endif
-      if (!VM_Version::supports_cx8()) {
-        return false;
-      }
       break;
     case Op_StrIndexOf:
       if (!UseSSE42Intrinsics) {
@@ -4056,24 +4053,16 @@ instruct gather(legVec dst, memory mem, legVec idx, rRegP tmp, legVec mask) %{
   effect(TEMP dst, TEMP tmp, TEMP mask);
   format %{ "load_vector_gather $dst, $mem, $idx\t! using $tmp and $mask as TEMP" %}
   ins_encode %{
-    assert(UseAVX >= 2, "sanity");
-
     int vlen_enc = vector_length_encoding(this);
     BasicType elem_bt = Matcher::vector_element_basic_type(this);
-
-    assert(Matcher::vector_length_in_bytes(this) >= 16, "sanity");
     assert(!is_subword_type(elem_bt), "sanity"); // T_INT, T_LONG, T_FLOAT, T_DOUBLE
-
-    if (vlen_enc == Assembler::AVX_128bit) {
-      __ movdqu($mask$$XMMRegister, ExternalAddress(vector_all_bits_set()), noreg);
-    } else {
-      __ vmovdqu($mask$$XMMRegister, ExternalAddress(vector_all_bits_set()), noreg);
-    }
+    __ vpcmpeqd($mask$$XMMRegister, $mask$$XMMRegister, $mask$$XMMRegister, vlen_enc);
     __ lea($tmp$$Register, $mem$$Address);
     __ vgather(elem_bt, $dst$$XMMRegister, $tmp$$Register, $idx$$XMMRegister, $mask$$XMMRegister, vlen_enc);
   %}
   ins_pipe( pipe_slow );
 %}
+
 
 instruct evgather(vec dst, memory mem, vec idx, rRegP tmp, kReg ktmp) %{
   predicate(VM_Version::supports_avx512vl() || Matcher::vector_length_in_bytes(n) == 64);
@@ -4081,14 +4070,9 @@ instruct evgather(vec dst, memory mem, vec idx, rRegP tmp, kReg ktmp) %{
   effect(TEMP dst, TEMP tmp, TEMP ktmp);
   format %{ "load_vector_gather $dst, $mem, $idx\t! using $tmp and ktmp as TEMP" %}
   ins_encode %{
-    assert(UseAVX > 2, "sanity");
-
     int vlen_enc = vector_length_encoding(this);
     BasicType elem_bt = Matcher::vector_element_basic_type(this);
-
-    assert(!is_subword_type(elem_bt), "sanity"); // T_INT, T_LONG, T_FLOAT, T_DOUBLE
-
-    __ kmovwl($ktmp$$KRegister, ExternalAddress(vector_all_bits_set()), noreg);
+    __ kxnorwl($ktmp$$KRegister, $ktmp$$KRegister, $ktmp$$KRegister);
     __ lea($tmp$$Register, $mem$$Address);
     __ evgather(elem_bt, $dst$$XMMRegister, $ktmp$$KRegister, $tmp$$Register, $idx$$XMMRegister, vlen_enc);
   %}
@@ -4096,6 +4080,7 @@ instruct evgather(vec dst, memory mem, vec idx, rRegP tmp, kReg ktmp) %{
 %}
 
 instruct evgather_masked(vec dst, memory mem, vec idx, kReg mask, kReg ktmp, rRegP tmp) %{
+  predicate(VM_Version::supports_avx512vl() || Matcher::vector_length_in_bytes(n) == 64);
   match(Set dst (LoadVectorGatherMasked mem (Binary idx mask)));
   effect(TEMP_DEF dst, TEMP tmp, TEMP ktmp);
   format %{ "load_vector_gather_masked $dst, $mem, $idx, $mask\t! using $tmp and ktmp as TEMP" %}
@@ -7804,7 +7789,7 @@ instruct blendvp(vec dst, vec src, vec mask, rxmm0 tmp) %{
 %}
 
 instruct vblendvpI(legVec dst, legVec src1, legVec src2, legVec mask) %{
-  predicate(UseAVX > 0 &&
+  predicate(UseAVX > 0 && !EnableX86ECoreOpts &&
             n->in(2)->bottom_type()->isa_vectmask() == NULL &&
             Matcher::vector_length_in_bytes(n) <= 32 &&
             is_integral_type(Matcher::vector_element_basic_type(n)));
@@ -7818,7 +7803,7 @@ instruct vblendvpI(legVec dst, legVec src1, legVec src2, legVec mask) %{
 %}
 
 instruct vblendvpFD(legVec dst, legVec src1, legVec src2, legVec mask) %{
-  predicate(UseAVX > 0 &&
+  predicate(UseAVX > 0 && !EnableX86ECoreOpts &&
             n->in(2)->bottom_type()->isa_vectmask() == NULL &&
             Matcher::vector_length_in_bytes(n) <= 32 &&
             !is_integral_type(Matcher::vector_element_basic_type(n)));
@@ -7827,6 +7812,22 @@ instruct vblendvpFD(legVec dst, legVec src1, legVec src2, legVec mask) %{
   ins_encode %{
     int vlen_enc = vector_length_encoding(this);
     __ vblendvps($dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, $mask$$XMMRegister, vlen_enc);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vblendvp(legVec dst, legVec src1, legVec src2, legVec mask, legVec vtmp) %{
+  predicate(UseAVX > 0 && EnableX86ECoreOpts &&
+            n->in(2)->bottom_type()->isa_vectmask() == NULL &&
+            Matcher::vector_length_in_bytes(n) <= 32);
+  match(Set dst (VectorBlend (Binary src1 src2) mask));
+  format %{ "vector_blend  $dst,$src1,$src2,$mask\t! using $vtmp as TEMP" %}
+  effect(TEMP vtmp, TEMP dst);
+  ins_encode %{
+    int vlen_enc = vector_length_encoding(this);
+    __ vpandn($vtmp$$XMMRegister, $mask$$XMMRegister, $src1$$XMMRegister, vlen_enc);
+    __ vpand ($dst$$XMMRegister,  $mask$$XMMRegister, $src2$$XMMRegister, vlen_enc);
+    __ vpor  ($dst$$XMMRegister,  $dst$$XMMRegister,  $vtmp$$XMMRegister, vlen_enc);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -10119,5 +10120,3 @@ instruct DoubleClassCheck_reg_reg_vfpclass(rRegI dst, regD src, kReg ktmp, rFlag
   %}
   ins_pipe(pipe_slow);
 %}
-
-

@@ -176,9 +176,6 @@ class SpaceInfo
   // Allows new_top to be set.
   HeapWord** new_top_addr() { return &_new_top; }
 
-  // Where the smallest allowable dense prefix ends (used only for perm gen).
-  HeapWord* min_dense_prefix() const { return _min_dense_prefix; }
-
   // Where the dense prefix ends, or the compacted region begins.
   HeapWord* dense_prefix() const { return _dense_prefix; }
 
@@ -190,7 +187,6 @@ class SpaceInfo
 
   void set_space(MutableSpace* s)           { _space = s; }
   void set_new_top(HeapWord* addr)          { _new_top = addr; }
-  void set_min_dense_prefix(HeapWord* addr) { _min_dense_prefix = addr; }
   void set_dense_prefix(HeapWord* addr)     { _dense_prefix = addr; }
   void set_start_array(ObjectStartArray* s) { _start_array = s; }
 
@@ -199,7 +195,6 @@ class SpaceInfo
  private:
   MutableSpace*     _space;
   HeapWord*         _new_top;
-  HeapWord*         _min_dense_prefix;
   HeapWord*         _dense_prefix;
   ObjectStartArray* _start_array;
   SplitInfo         _split_info;
@@ -1373,7 +1368,6 @@ MoveAndUpdateShadowClosure::MoveAndUpdateShadowClosure(ParMarkBitMap *bitmap,
 
 class UpdateOnlyClosure: public ParMarkBitMapClosure {
  private:
-  const PSParallelCompact::SpaceId _space_id;
   ObjectStartArray* const          _start_array;
 
  public:

@@ -22,19 +22,15 @@
  */
 
 import java.io.*;
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.Attributes;
-import jdk.internal.classfile.attribute.*;
+import java.lang.classfile.*;
+import java.lang.classfile.Attributes;
+import java.lang.classfile.attribute.*;
 
 /*
  * @test Visibility
  * @bug 6843077
  * @summary test that type annotations are recorded in the classfile
- * @modules java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.constantpool
- *          java.base/jdk.internal.classfile.instruction
- *          java.base/jdk.internal.classfile.components
+ * @enablePreview
  */
 
 public class Visibility {
@@ -46,7 +42,7 @@ public class Visibility {
         File javaFile = writeTestFile();
         File classFile = compileTestFile(javaFile);
 
-        ClassModel cm = Classfile.of().parse(classFile.toPath());
+        ClassModel cm = ClassFile.of().parse(classFile.toPath());
         for (MethodModel mm: cm.methods()) {
             test(mm);
         }

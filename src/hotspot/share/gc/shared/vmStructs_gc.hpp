@@ -29,7 +29,6 @@
 #include "gc/shared/cardTable.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/genCollectedHeap.hpp"
-#include "gc/shared/generationSpec.hpp"
 #include "gc/shared/oopStorage.hpp"
 #include "gc/shared/space.hpp"
 #if INCLUDE_EPSILONGC
@@ -114,14 +113,8 @@
   nonstatic_field(Generation::StatRecord,      invocations,                                   int)                                   \
   nonstatic_field(Generation::StatRecord,      accumulated_time,                              elapsedTimer)                          \
                                                                                                                                      \
-  nonstatic_field(GenerationSpec,              _name,                                         Generation::Name)                      \
-  nonstatic_field(GenerationSpec,              _init_size,                                    size_t)                                \
-  nonstatic_field(GenerationSpec,              _max_size,                                     size_t)                                \
-                                                                                                                                     \
   nonstatic_field(GenCollectedHeap,            _young_gen,                                    Generation*)                           \
   nonstatic_field(GenCollectedHeap,            _old_gen,                                      Generation*)                           \
-  nonstatic_field(GenCollectedHeap,            _young_gen_spec,                               GenerationSpec*)                       \
-  nonstatic_field(GenCollectedHeap,            _old_gen_spec,                                 GenerationSpec*)                       \
                                                                                                                                      \
   nonstatic_field(MemRegion,                   _start,                                        HeapWord*)                             \
   nonstatic_field(MemRegion,                   _word_size,                                    size_t)                                \
@@ -172,7 +165,6 @@
   declare_toplevel_type(AgeTable)                                         \
   declare_toplevel_type(CardTable::CardValue)                             \
   declare_toplevel_type(Generation::StatRecord)                           \
-  declare_toplevel_type(GenerationSpec)                                   \
   declare_toplevel_type(HeapWord)                                         \
   declare_toplevel_type(MemRegion)                                        \
   declare_toplevel_type(ThreadLocalAllocBuffer)                           \
@@ -190,7 +182,6 @@
   declare_toplevel_type(DefNewGeneration*)                                \
   declare_toplevel_type(GenCollectedHeap*)                                \
   declare_toplevel_type(Generation*)                                      \
-  declare_toplevel_type(GenerationSpec**)                                 \
   declare_toplevel_type(HeapWord*)                                        \
   declare_toplevel_type(HeapWord* volatile)                               \
   declare_toplevel_type(MemRegion*)                                       \

@@ -244,6 +244,7 @@ address* TemplateInterpreter::invoke_return_entry_table_for(Bytecodes::Code code
   case Bytecodes::_invokespecial:
   case Bytecodes::_invokevirtual:
   case Bytecodes::_invokehandle:
+  case Bytecodes::_fast_invokevfinal:
     return Interpreter::invoke_return_entry_table();
   case Bytecodes::_invokeinterface:
     return Interpreter::invokeinterface_return_entry_table();

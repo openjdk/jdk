@@ -183,6 +183,7 @@ public class VThreadInHeapDump {
 
             List<String> extraVMArgs = new ArrayList<>();
             extraVMArgs.add("-Djdk.virtualThreadScheduler.parallelism=1");
+            extraVMArgs.add("-Xlog:heapdump");
             extraVMArgs.addAll(Arrays.asList(extraOptions));
             LingeredApp.startApp(theApp, extraVMArgs.toArray(new String[0]));
 
@@ -252,8 +253,7 @@ public class VThreadInHeapDump {
             // Verify objects from thread stacks are dumped.
             test(snapshot, VThreadInHeapDumpTarg.VThreadMountedReferenced.class);
             test(snapshot, VThreadInHeapDumpTarg.PThreadReferenced.class);
-            // Dumping of unmounted vthreads is not implemented yet
-            //test(snapshot, VThreadInHeapDumpTarg.VThreadUnmountedReferenced.class);
+            test(snapshot, VThreadInHeapDumpTarg.VThreadUnmountedReferenced.class);
         }
 
     }

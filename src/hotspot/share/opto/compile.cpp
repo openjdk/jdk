@@ -590,10 +590,12 @@ void Compile::print_ideal_ir(const char* phase_name) {
                compile_id(),
                is_osr_compilation() ? " compile_kind='osr'" : "",
                phase_name);
-    xtty->print("%s", ss.as_string()); // print to tty would use xml escape encoding
+  }
+
+  tty->print("%s", ss.as_string());
+
+  if (xtty != nullptr) {
     xtty->tail("ideal");
-  } else {
-    tty->print("%s", ss.as_string());
   }
 }
 #endif
@@ -738,7 +740,7 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
     TracePhase tp("parse", &timers[_t_parser]);
 
     // Put top into the hash table ASAP.
-    initial_gvn()->transform_no_reclaim(top());
+    initial_gvn()->transform(top());
 
     // Set up tf(), start(), and find a CallGenerator.
     CallGenerator* cg = nullptr;
@@ -976,7 +978,7 @@ Compile::Compile( ciEnv* ci_env,
   {
     PhaseGVN gvn;
     set_initial_gvn(&gvn);    // not significant, but GraphKit guys use it pervasively
-    gvn.transform_no_reclaim(top());
+    gvn.transform(top());
 
     GraphKit kit;
     kit.gen_stub(stub_function, stub_name, is_fancy_jump, pass_tls, return_pc);
@@ -1038,6 +1040,10 @@ void Compile::Init(bool aliasing) {
   set_clear_upper_avx(false);  //false as default for clear upper bits of ymm registers
   Copy::zero_to_bytes(_trap_hist, sizeof(_trap_hist));
   set_decompile_count(0);
+
+#ifndef PRODUCT
+  Copy::zero_to_bytes(_igv_phase_iter, sizeof(_igv_phase_iter));
+#endif
 
   set_do_freq_based_layout(_directive->BlockLayoutByFrequencyOption);
   _loop_opts_cnt = LoopOptsCount;
@@ -2395,6 +2401,7 @@ void Compile::Optimize() {
   if (failing())  return;
 
   // Conditional Constant Propagation;
+  print_method(PHASE_BEFORE_CCP1, 2);
   PhaseCCP ccp( &igvn );
   assert( true, "Break here to ccp.dump_nodes_and_types(_root,999,1)");
   {
@@ -2970,6 +2977,8 @@ void Compile::Code_Gen() {
     if (failing()) {
       return;
     }
+
+    print_method(PHASE_REGISTER_ALLOCATION, 2);
   }
 
   // Prior to register allocation we kept empty basic blocks in case the
@@ -2987,6 +2996,7 @@ void Compile::Code_Gen() {
     cfg.fixup_flow();
     cfg.remove_unreachable_blocks();
     cfg.verify_dominator_tree();
+    print_method(PHASE_BLOCK_ORDERING, 3);
   }
 
   // Apply peephole optimizations
@@ -2994,12 +3004,14 @@ void Compile::Code_Gen() {
     TracePhase tp("peephole", &timers[_t_peephole]);
     PhasePeephole peep( _regalloc, cfg);
     peep.do_transform();
+    print_method(PHASE_PEEPHOLE, 3);
   }
 
   // Do late expand if CPU requires this.
   if (Matcher::require_postalloc_expand) {
     TracePhase tp("postalloc_expand", &timers[_t_postalloc_expand]);
     cfg.postalloc_expand(_regalloc);
+    print_method(PHASE_POSTALLOC_EXPAND, 3);
   }
 
   // Convert Nodes to instruction bits in a buffer
@@ -4459,12 +4471,11 @@ Node* Compile::conv_I2X_index(PhaseGVN* phase, Node* idx, const TypeInt* sizetyp
 Node* Compile::constrained_convI2L(PhaseGVN* phase, Node* value, const TypeInt* itype, Node* ctrl, bool carry_dependency) {
   if (ctrl != nullptr) {
     // Express control dependency by a CastII node with a narrow type.
-    value = new CastIINode(value, itype, carry_dependency ? ConstraintCastNode::StrongDependency : ConstraintCastNode::RegularDependency, true /* range check dependency */);
     // Make the CastII node dependent on the control input to prevent the narrowed ConvI2L
     // node from floating above the range check during loop optimizations. Otherwise, the
     // ConvI2L node may be eliminated independently of the range check, causing the data path
     // to become TOP while the control path is still there (although it's unreachable).
-    value->set_req(0, ctrl);
+    value = new CastIINode(ctrl, value, itype, carry_dependency ? ConstraintCastNode::StrongDependency : ConstraintCastNode::RegularDependency, true /* range check dependency */);
     value = phase->transform(value);
   }
   const TypeLong* ltype = TypeLong::make(itype->_lo, itype->_hi, itype->_widen);
@@ -5100,6 +5111,10 @@ void Compile::print_method(CompilerPhaseType cpt, int level, Node* n) {
   ResourceMark rm;
   stringStream ss;
   ss.print_raw(CompilerPhaseTypeHelper::to_description(cpt));
+  int iter = ++_igv_phase_iter[cpt];
+  if (iter > 1) {
+    ss.print(" %d", iter);
+  }
   if (n != nullptr) {
     ss.print(": %d %s ", n->_idx, NodeClassNames[n->Opcode()]);
   }
@@ -5141,7 +5156,7 @@ void Compile::end_method() {
 
 bool Compile::should_print_phase(CompilerPhaseType cpt) {
 #ifndef PRODUCT
-  if ((_directive->ideal_phase_mask() & CompilerPhaseTypeHelper::to_bitmask(cpt)) != 0) {
+  if (_directive->should_print_phase(cpt)) {
     return true;
   }
 #endif

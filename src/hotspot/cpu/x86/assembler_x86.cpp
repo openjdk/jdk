@@ -920,6 +920,7 @@ address Assembler::locate_operand(address inst, WhichOperand which) {
     case 0x11: // movups
     case 0x12: // movlps
     case 0x28: // movaps
+    case 0x29: // movaps
     case 0x2E: // ucomiss
     case 0x2F: // comiss
     case 0x54: // andps
@@ -969,7 +970,7 @@ address Assembler::locate_operand(address inst, WhichOperand which) {
       assert(which == call32_operand, "jcc has no disp32 or imm");
       return ip;
     default:
-      ShouldNotReachHere();
+      fatal("not handled: 0x0F%2X", 0xFF & *(ip-1));
     }
     break;
 
@@ -2845,6 +2846,13 @@ void Assembler::kxorbl(KRegister dst, KRegister src1, KRegister src2) {
   emit_int16(0x47, (0xC0 | encode));
 }
 
+void Assembler::kxnorwl(KRegister dst, KRegister src1, KRegister src2) {
+  assert(VM_Version::supports_evex(), "");
+  InstructionAttr attributes(AVX_256bit, /* rex_w */ false, /* legacy_mode */ true, /* no_mask_reg */ true, /* uses_vl */ false);
+  int encode = vex_prefix_and_encode(dst->encoding(), src1->encoding(), src2->encoding(), VEX_SIMD_NONE, VEX_OPCODE_0F, &attributes);
+  emit_int16(0x46, (0xC0 | encode));
+}
+
 void Assembler::kxorwl(KRegister dst, KRegister src1, KRegister src2) {
   assert(VM_Version::supports_evex(), "");
   InstructionAttr attributes(AVX_256bit, /* rex_w */ false, /* legacy_mode */ true, /* no_mask_reg */ true, /* uses_vl */ false);
@@ -3415,6 +3423,27 @@ void Assembler::evmovdquq(XMMRegister dst, KRegister mask, Address src, bool mer
   vex_prefix(src, 0, dst->encoding(), VEX_SIMD_F3, VEX_OPCODE_0F, &attributes);
   emit_int8(0x6F);
   emit_operand(dst, src, 0);
+}
+
+void Assembler::evmovntdquq(Address dst, XMMRegister src, int vector_len) {
+  // Unmasked instruction
+  evmovntdquq(dst, k0, src, /*merge*/ true, vector_len);
+}
+
+void Assembler::evmovntdquq(Address dst, KRegister mask, XMMRegister src, bool merge, int vector_len) {
+  assert(VM_Version::supports_evex(), "");
+  assert(src != xnoreg, "sanity");
+  InstructionMark im(this);
+  InstructionAttr attributes(vector_len, /* vex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ false, /* uses_vl */ true);
+  attributes.set_address_attributes(/* tuple_type */ EVEX_FVM, /* input_size_in_bits */ EVEX_NObit);
+  attributes.set_embedded_opmask_register_specifier(mask);
+  if (merge) {
+    attributes.reset_is_clear_context();
+  }
+  attributes.set_is_evex_instruction();
+  vex_prefix(dst, 0, src->encoding(), VEX_SIMD_66, VEX_OPCODE_0F, &attributes);
+  emit_int8(0xE7);
+  emit_operand(src, dst, 0);
 }
 
 void Assembler::evmovdquq(Address dst, XMMRegister src, int vector_len) {
@@ -10749,7 +10778,7 @@ void Assembler::vpgatherdd(XMMRegister dst, Address src, XMMRegister mask, int v
   assert(src.isxmmindex(),"expected to be xmm index");
   assert(dst != src.xmmindex(), "instruction will #UD if dst and index are the same");
   InstructionMark im(this);
-  InstructionAttr attributes(vector_len, /* vex_w */ false, /* legacy_mode */ true, /* no_mask_reg */ true, /* uses_vl */ true);
+  InstructionAttr attributes(vector_len, /* vex_w */ false, /* legacy_mode */ true, /* no_mask_reg */ true, /* uses_vl */ false);
   vex_prefix(src, mask->encoding(), dst->encoding(), VEX_SIMD_66, VEX_OPCODE_0F_38, &attributes);
   emit_int8((unsigned char)0x90);
   emit_operand(dst, src, 0);
@@ -10762,7 +10791,7 @@ void Assembler::vpgatherdq(XMMRegister dst, Address src, XMMRegister mask, int v
   assert(src.isxmmindex(),"expected to be xmm index");
   assert(dst != src.xmmindex(), "instruction will #UD if dst and index are the same");
   InstructionMark im(this);
-  InstructionAttr attributes(vector_len, /* vex_w */ true, /* legacy_mode */ true, /* no_mask_reg */ true, /* uses_vl */ true);
+  InstructionAttr attributes(vector_len, /* vex_w */ true, /* legacy_mode */ true, /* no_mask_reg */ true, /* uses_vl */ false);
   vex_prefix(src, mask->encoding(), dst->encoding(), VEX_SIMD_66, VEX_OPCODE_0F_38, &attributes);
   emit_int8((unsigned char)0x90);
   emit_operand(dst, src, 0);
@@ -10775,7 +10804,7 @@ void Assembler::vgatherdpd(XMMRegister dst, Address src, XMMRegister mask, int v
   assert(src.isxmmindex(),"expected to be xmm index");
   assert(dst != src.xmmindex(), "instruction will #UD if dst and index are the same");
   InstructionMark im(this);
-  InstructionAttr attributes(vector_len, /* vex_w */ true, /* legacy_mode */ true, /* no_mask_reg */ true, /* uses_vl */ true);
+  InstructionAttr attributes(vector_len, /* vex_w */ true, /* legacy_mode */ true, /* no_mask_reg */ true, /* uses_vl */ false);
   vex_prefix(src, mask->encoding(), dst->encoding(), VEX_SIMD_66, VEX_OPCODE_0F_38, &attributes);
   emit_int8((unsigned char)0x92);
   emit_operand(dst, src, 0);
@@ -10788,7 +10817,7 @@ void Assembler::vgatherdps(XMMRegister dst, Address src, XMMRegister mask, int v
   assert(src.isxmmindex(),"expected to be xmm index");
   assert(dst != src.xmmindex(), "instruction will #UD if dst and index are the same");
   InstructionMark im(this);
-  InstructionAttr attributes(vector_len, /* vex_w */ false, /* legacy_mode */ true, /* no_mask_reg */ false, /* uses_vl */ true);
+  InstructionAttr attributes(vector_len, /* vex_w */ false, /* legacy_mode */ true, /* no_mask_reg */ false, /* uses_vl */ false);
   vex_prefix(src, mask->encoding(), dst->encoding(), VEX_SIMD_66, VEX_OPCODE_0F_38, &attributes);
   emit_int8((unsigned char)0x92);
   emit_operand(dst, src, 0);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -120,6 +120,7 @@ public interface OutputBuffer {
     private final StreamTask outTask;
     private final StreamTask errTask;
     private final Process p;
+    private volatile Integer exitValue; // null implies we don't yet know
 
     private final void logProgress(String state) {
         System.out.println("[" + Instant.now().toString() + "] " + state
@@ -146,14 +147,17 @@ public interface OutputBuffer {
 
     @Override
     public int getExitValue() {
+      if (exitValue != null) {
+        return exitValue;
+      }
       try {
           logProgress("Waiting for completion");
           boolean aborted = true;
           try {
-              int result = p.waitFor();
+              exitValue = p.waitFor();
               logProgress("Waiting for completion finished");
               aborted = false;
-              return result;
+              return exitValue;
           } finally {
               if (aborted) {
                   logProgress("Waiting for completion FAILED");

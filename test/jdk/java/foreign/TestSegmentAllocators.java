@@ -100,6 +100,16 @@ public class TestSegmentAllocators {
 
     static final int SIZE_256M = 1024 * 1024 * 256;
 
+    @Test(expectedExceptions = IllegalArgumentException.class)
+    public void testReadOnlySlicingAllocator() {
+        SegmentAllocator.slicingAllocator(MemorySegment.ofArray(new int[0]).asReadOnly());
+    }
+
+    @Test(expectedExceptions = IllegalArgumentException.class)
+    public void testReadOnlyPrefixAllocator() {
+        SegmentAllocator.prefixAllocator(MemorySegment.ofArray(new int[0]).asReadOnly());
+    }
+
     @Test
     public void testBigAllocationInUnboundedSession() {
         try (Arena arena = Arena.ofConfined()) {
@@ -157,6 +167,25 @@ public class TestSegmentAllocators {
     public void testBadArenaNullReturn() {
         try (Arena arena = Arena.ofConfined()) {
             arena.allocate(Long.MAX_VALUE, 2);
+        }
+    }
+
+    @Test(expectedExceptions = IllegalArgumentException.class,
+            expectedExceptionsMessageRegExp = ".*Heap segment not allowed.*")
+    public void testArenaAllocateFromHeapSegment() {
+        try (Arena arena = Arena.ofConfined()) {
+            var heapSegment = MemorySegment.ofArray(new int[]{1});
+            arena.allocateFrom(ValueLayout.ADDRESS, heapSegment);
+        }
+    }
+
+    @Test(expectedExceptions = IllegalArgumentException.class,
+            expectedExceptionsMessageRegExp = ".*Heap segment not allowed.*")
+    public void testAllocatorAllocateFromHeapSegment() {
+        try (Arena arena = Arena.ofConfined()) {
+            SegmentAllocator allocator = SegmentAllocator.prefixAllocator(arena.allocate(16));
+            var heapSegment = MemorySegment.ofArray(new int[]{1});
+            allocator.allocateFrom(ValueLayout.ADDRESS, heapSegment);
         }
     }
 

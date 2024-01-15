@@ -631,6 +631,9 @@ public sealed interface MemoryLayout
      *     <li>The accessed memory segment must be
      *     {@link MemorySegment#isAccessibleBy(Thread) accessible} from the thread
      *     performing the access operation, or a {@link WrongThreadException} is thrown.</li>
+     *     <li>For write operations, the accessed memory segment must not be
+     *     {@link MemorySegment#isReadOnly() read only}, or an
+     *     {@link IllegalArgumentException} is thrown.</li>
      *     <li>The {@linkplain MemorySegment#scope() scope} associated with the accessed
      *     segment must be {@linkplain MemorySegment.Scope#isAlive() alive}, or an
      *     {@link IllegalStateException} is thrown.</li>

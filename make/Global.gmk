@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -52,7 +52,6 @@ help:
 	$(info $(_) make docs              # Create all docs)
 	$(info $(_) make docs-jdk-api      # Create just JDK javadocs)
 	$(info $(_) make bootcycle-images  # Build images twice, second time with newly built JDK)
-	$(info $(_) make install           # Install the generated images locally)
 	$(info $(_) make check             # Run basic testing (currently tier1))
 	$(info $(_) make test-<test>       # Run test, e.g. test-tier1)
 	$(info $(_) make test TEST=<t>     # Run test(s) given by TEST specification)

@@ -68,6 +68,7 @@
 #include "prims/resolvedMethodTable.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/cpuTimeCounters.hpp"
 #include "runtime/flags/jvmFlagLimit.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/init.hpp"
@@ -337,7 +338,7 @@ void Universe::genesis(TRAPS) {
       // Initialization of the fillerArrayKlass must come before regular
       // int-TypeArrayKlass so that the int-Array mirror points to the
       // int-TypeArrayKlass.
-      _fillerArrayKlassObj = TypeArrayKlass::create_klass(T_INT, "Ljdk/internal/vm/FillerArray;", CHECK);
+      _fillerArrayKlassObj = TypeArrayKlass::create_klass(T_INT, "[Ljdk/internal/vm/FillerElement;", CHECK);
       for (int i = T_BOOLEAN; i < T_LONG+1; i++) {
         _typeArrayKlassObjs[i] = TypeArrayKlass::create_klass((BasicType)i, CHECK);
       }
@@ -780,6 +781,9 @@ jint universe_init() {
   initialize_global_behaviours();
 
   GCLogPrecious::initialize();
+
+  // Initialize CPUTimeCounters object, which must be done before creation of the heap.
+  CPUTimeCounters::initialize();
 
 #ifdef _LP64
   MetaspaceShared::adjust_heap_sizes_for_dumping();

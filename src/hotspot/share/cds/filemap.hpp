@@ -170,7 +170,7 @@ public:
   BitMapView ptrmap_view();
   bool has_ptrmap()                  { return _ptrmap_size_in_bits != 0; }
 
-  bool check_region_crc() const;
+  bool check_region_crc(char* base) const;
   void print(outputStream* st, int region_index);
 };
 

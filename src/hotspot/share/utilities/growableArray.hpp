@@ -209,17 +209,29 @@ public:
     return -1;
   }
 
-  int  find(void* token, bool f(void*, E)) const {
+  // Find first element that matches the given predicate.
+  //
+  // Predicate: bool predicate(const E& elem)
+  //
+  // Returns the index of the element or -1 if no element matches the predicate
+  template<typename Predicate>
+  int find_if(Predicate predicate) const {
     for (int i = 0; i < _len; i++) {
-      if (f(token, _data[i])) return i;
+      if (predicate(_data[i])) return i;
     }
     return -1;
   }
 
-  int  find_from_end(void* token, bool f(void*, E)) const {
+  // Find last element that matches the given predicate.
+  //
+  // Predicate: bool predicate(const E& elem)
+  //
+  // Returns the index of the element or -1 if no element matches the predicate
+  template<typename Predicate>
+  int find_from_end_if(Predicate predicate) const {
     // start at the end of the array
     for (int i = _len-1; i >= 0; i--) {
-      if (f(token, _data[i])) return i;
+      if (predicate(_data[i])) return i;
     }
     return -1;
   }

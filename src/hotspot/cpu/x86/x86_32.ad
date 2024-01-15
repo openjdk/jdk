@@ -7281,7 +7281,6 @@ instruct castDD_PR( regDPR dst ) %{
 // No flag versions for CompareAndSwap{P,I,L} because matcher can't match them
 
 instruct compareAndSwapL( rRegI res, eSIRegP mem_ptr, eADXRegL oldval, eBCXRegL newval, eFlagsReg cr ) %{
-  predicate(VM_Version::supports_cx8());
   match(Set res (CompareAndSwapL mem_ptr (Binary oldval newval)));
   match(Set res (WeakCompareAndSwapL mem_ptr (Binary oldval newval)));
   effect(KILL cr, KILL oldval);
@@ -7350,7 +7349,6 @@ instruct compareAndSwapI( rRegI res, pRegP mem_ptr, eAXRegI oldval, eCXRegI newv
 %}
 
 instruct compareAndExchangeL( eSIRegP mem_ptr, eADXRegL oldval, eBCXRegL newval, eFlagsReg cr ) %{
-  predicate(VM_Version::supports_cx8());
   match(Set oldval (CompareAndExchangeL mem_ptr (Binary oldval newval)));
   effect(KILL cr);
   format %{ "CMPXCHG8 [$mem_ptr],$newval\t# If EDX:EAX==[$mem_ptr] Then store $newval into [$mem_ptr]\n\t" %}

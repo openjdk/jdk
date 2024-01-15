@@ -91,6 +91,8 @@ class ClearArtifact {
   bool operator()(T const& value) {
     CLEAR_SERIALIZED(value);
     assert(IS_NOT_SERIALIZED(value), "invariant");
+    assert(IS_NOT_LEAKP(value), "invariant");
+    assert(IS_NOT_TRANSIENT(value), "invariant");
     SET_PREVIOUS_EPOCH_CLEARED_BIT(value);
     CLEAR_PREVIOUS_EPOCH_METHOD_AND_CLASS(value);
     return true;
@@ -103,7 +105,9 @@ class ClearArtifact<const Method*> {
   bool operator()(const Method* method) {
     assert(METHOD_FLAG_USED_PREVIOUS_EPOCH(method), "invariant");
     CLEAR_SERIALIZED_METHOD(method);
-    assert(METHOD_NOT_SERIALIZED(method), "invariant");
+    assert(METHOD_IS_NOT_SERIALIZED(method), "invariant");
+    assert(METHOD_IS_NOT_LEAKP(method), "invariant");
+    assert(METHOD_IS_NOT_TRANSIENT(method), "invariant");
     SET_PREVIOUS_EPOCH_METHOD_CLEARED_BIT(method);
     CLEAR_PREVIOUS_EPOCH_METHOD_FLAG(method);
     return true;
@@ -128,7 +132,7 @@ class SerializePredicate<const Method*> {
   SerializePredicate(bool class_unload) : _class_unload(class_unload) {}
   bool operator()(const Method* method) {
     assert(method != nullptr, "invariant");
-    return _class_unload ? true : METHOD_NOT_SERIALIZED(method);
+    return _class_unload ? true : METHOD_IS_NOT_SERIALIZED(method);
   }
 };
 
@@ -162,9 +166,9 @@ class MethodFlagPredicate {
   MethodFlagPredicate(bool current_epoch) : _current_epoch(current_epoch) {}
   bool operator()(const Method* method) {
     if (_current_epoch) {
-      return leakp ? IS_METHOD_LEAKP_USED(method) : METHOD_FLAG_USED_THIS_EPOCH(method);
+      return leakp ? METHOD_IS_LEAKP(method) : METHOD_FLAG_USED_THIS_EPOCH(method);
     }
-    return leakp ? IS_METHOD_LEAKP_USED(method) : METHOD_FLAG_USED_PREVIOUS_EPOCH(method);
+    return leakp ? METHOD_IS_LEAKP(method) : METHOD_FLAG_USED_PREVIOUS_EPOCH(method);
   }
 };
 
@@ -183,7 +187,7 @@ class LeakPredicate<const Method*> {
   LeakPredicate(bool class_unload) {}
   bool operator()(const Method* method) {
     assert(method != nullptr, "invariant");
-    return IS_METHOD_LEAKP_USED(method);
+    return METHOD_IS_LEAKP(method);
   }
 };
 

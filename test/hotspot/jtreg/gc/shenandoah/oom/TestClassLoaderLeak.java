@@ -140,14 +140,10 @@ public class TestClassLoaderLeak {
 
                 // Even when concurrent unloading is disabled, Full GC has to recover
                 passWith("-XX:ShenandoahGCMode=" + mode, "-XX:ShenandoahGCHeuristics=" + h, "-XX:+ClassUnloading", "-XX:-ClassUnloadingWithConcurrentMark");
-                passWith("-XX:ShenandoahGCMode=" + mode, "-XX:ShenandoahGCHeuristics=" + h, "-XX:+ClassUnloading", "-XX:-ClassUnloadingWithConcurrentMark", "-XX:ShenandoahUnloadClassesFrequency=0");
-                passWith("-XX:ShenandoahGCMode=" + mode, "-XX:ShenandoahGCHeuristics=" + h, "-XX:+ClassUnloading", "-XX:+ClassUnloadingWithConcurrentMark", "-XX:ShenandoahUnloadClassesFrequency=0");
 
                 // Should OOME when unloading forcefully disabled, even if local flags try to enable it back
                 failWith("-XX:ShenandoahGCMode=" + mode, "-XX:ShenandoahGCHeuristics=" + h, "-XX:-ClassUnloading");
                 failWith("-XX:ShenandoahGCMode=" + mode, "-XX:ShenandoahGCHeuristics=" + h, "-XX:-ClassUnloading", "-XX:+ClassUnloadingWithConcurrentMark");
-                failWith("-XX:ShenandoahGCMode=" + mode, "-XX:ShenandoahGCHeuristics=" + h, "-XX:-ClassUnloading", "-XX:+ClassUnloadingWithConcurrentMark", "-XX:ShenandoahUnloadClassesFrequency=1");
-                failWith("-XX:ShenandoahGCMode=" + mode, "-XX:ShenandoahGCHeuristics=" + h, "-XX:-ClassUnloading", "-XX:-ClassUnloadingWithConcurrentMark", "-XX:ShenandoahUnloadClassesFrequency=1");
             }
         }
     }

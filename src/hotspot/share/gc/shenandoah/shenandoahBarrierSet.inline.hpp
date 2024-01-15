@@ -123,7 +123,7 @@ inline oop ShenandoahBarrierSet::load_reference_barrier(DecoratorSet decorators,
   }
 
   oop fwd = load_reference_barrier(obj);
-  if (ShenandoahSelfFixing && load_addr != nullptr && fwd != obj) {
+  if (load_addr != nullptr && fwd != obj) {
     // Since we are here and we know the load address, update the reference.
     ShenandoahHeap::atomic_update_oop(fwd, load_addr, obj);
   }

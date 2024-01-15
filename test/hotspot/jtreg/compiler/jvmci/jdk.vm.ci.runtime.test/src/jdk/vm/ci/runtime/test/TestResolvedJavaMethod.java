@@ -32,13 +32,11 @@
  * @clean jdk.internal.vm.test.AnnotationTestInput$Missing
  * @compile ../../../../../../../../../../../jdk/jdk/internal/vm/AnnotationEncodingDecoding/alt/MemberDeleted.java
  *          ../../../../../../../../../../../jdk/jdk/internal/vm/AnnotationEncodingDecoding/alt/MemberTypeChanged.java
+ * @enablePreview
  * @modules jdk.internal.vm.ci/jdk.vm.ci.meta
  *          jdk.internal.vm.ci/jdk.vm.ci.runtime
  *          jdk.internal.vm.ci/jdk.vm.ci.common
  *          jdk.internal.vm.ci/jdk.vm.ci.hotspot
- *          java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.constantpool
  *          java.base/jdk.internal.reflect
  *          java.base/jdk.internal.misc
  *          java.base/jdk.internal.vm
@@ -87,13 +85,13 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import jdk.internal.vm.test.AnnotationTestInput;
-import jdk.internal.classfile.Attributes;
-import jdk.internal.classfile.Classfile;
-import jdk.internal.classfile.ClassModel;
-import jdk.internal.classfile.CodeElement;
-import jdk.internal.classfile.MethodModel;
-import jdk.internal.classfile.Instruction;
-import jdk.internal.classfile.attribute.CodeAttribute;
+import java.lang.classfile.Attributes;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.ClassModel;
+import java.lang.classfile.CodeElement;
+import java.lang.classfile.MethodModel;
+import java.lang.classfile.Instruction;
+import java.lang.classfile.attribute.CodeAttribute;
 
 import jdk.vm.ci.meta.ConstantPool;
 import jdk.vm.ci.meta.ExceptionHandler;
@@ -601,11 +599,11 @@ public class TestResolvedJavaMethod extends MethodUniverse {
             final String[] parts = uri.toString().split("!");
             if (parts.length == 2) {
                 try (FileSystem fs = FileSystems.newFileSystem(URI.create(parts[0]), new HashMap<>())) {
-                    return Classfile.of().parse(fs.getPath(parts[1]));
+                    return ClassFile.of().parse(fs.getPath(parts[1]));
                 }
             }
         }
-        return Classfile.of().parse(Paths.get(uri));
+        return ClassFile.of().parse(Paths.get(uri));
     }
 
     public static void methodWithManyArgs(

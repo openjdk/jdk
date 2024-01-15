@@ -77,20 +77,33 @@ bool JfrRecorder::is_enabled() {
   return _enabled;
 }
 
+bool JfrRecorder::is_started_on_commandline() {
+  return StartFlightRecording != nullptr;
+}
+
 bool JfrRecorder::create_oop_storages() {
   // currently only a single weak oop storage for Leak Profiler
   return ObjectSampler::create_oop_storage();
 }
 
+// Subsystem
+static JfrCheckpointManager* _checkpoint_manager = nullptr;
+
 bool JfrRecorder::on_create_vm_1() {
   if (!is_disabled()) {
-    if (FlightRecorder || StartFlightRecording != nullptr) {
+    if (FlightRecorder || is_started_on_commandline()) {
       enable();
     }
   }
   if (!create_oop_storages()) {
     return false;
   }
+
+  _checkpoint_manager = JfrCheckpointManager::create();
+  if (_checkpoint_manager == nullptr || !_checkpoint_manager->initialize_early()) {
+    return false;
+  }
+
   // fast time initialization
   return JfrTime::initialize();
 }
@@ -303,7 +316,6 @@ bool JfrRecorder::create_components() {
 // subsystems
 static JfrPostBox* _post_box = nullptr;
 static JfrStorage* _storage = nullptr;
-static JfrCheckpointManager* _checkpoint_manager = nullptr;
 static JfrRepository* _repository = nullptr;
 static JfrStackTraceRepository* _stack_trace_repository;
 static JfrStringPool* _stringpool = nullptr;
@@ -345,10 +357,9 @@ bool JfrRecorder::create_storage() {
 }
 
 bool JfrRecorder::create_checkpoint_manager() {
-  assert(_checkpoint_manager == nullptr, "invariant");
+  assert(_checkpoint_manager != nullptr, "invariant");
   assert(_repository != nullptr, "invariant");
-  _checkpoint_manager = JfrCheckpointManager::create(_repository->chunkwriter());
-  return _checkpoint_manager != nullptr && _checkpoint_manager->initialize();
+  return _checkpoint_manager->initialize(&_repository->chunkwriter());
 }
 
 bool JfrRecorder::create_stacktrace_repository() {
@@ -390,7 +401,7 @@ void JfrRecorder::destroy_components() {
   }
   if (_checkpoint_manager != nullptr) {
     JfrCheckpointManager::destroy();
-    _checkpoint_manager = nullptr;
+    // do not delete the _checkpoint_manager instance
   }
   if (_stack_trace_repository != nullptr) {
     JfrStackTraceRepository::destroy();

@@ -145,7 +145,7 @@ void G1FullGCCompactionPoint::add_humongous(HeapRegion* hr) {
                                      });
 }
 
-uint G1FullGCCompactionPoint::forward_humongous(HeapRegion* hr) {
+void G1FullGCCompactionPoint::forward_humongous(HeapRegion* hr) {
   assert(hr->is_starts_humongous(), "Sanity!");
 
   oop obj = cast_to_oop(hr->bottom());
@@ -153,7 +153,7 @@ uint G1FullGCCompactionPoint::forward_humongous(HeapRegion* hr) {
   uint num_regions = (uint)G1CollectedHeap::humongous_obj_size_in_regions(obj_size);
 
   if (!has_regions()) {
-    return num_regions;
+    return;
   }
 
   // Find contiguous compaction target regions for the humongous object.
@@ -161,7 +161,7 @@ uint G1FullGCCompactionPoint::forward_humongous(HeapRegion* hr) {
 
   if (range_begin == UINT_MAX) {
     // No contiguous compaction target regions found, so the object cannot be moved.
-    return num_regions;
+    return;
   }
 
   // Preserve the mark for the humongous object as the region was initially not compacting.
@@ -177,7 +177,7 @@ uint G1FullGCCompactionPoint::forward_humongous(HeapRegion* hr) {
   // Remove covered regions from compaction target candidates.
   _compaction_regions->remove_range(range_begin, (range_begin + num_regions));
 
-  return num_regions;
+  return;
 }
 
 uint G1FullGCCompactionPoint::find_contiguous_before(HeapRegion* hr, uint num_regions) {

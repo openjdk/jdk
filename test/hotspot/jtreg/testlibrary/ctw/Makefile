@@ -77,7 +77,7 @@ $(DST_DIR):
 	@mkdir -p $@
 
 $(DST_DIR)/ctw.sh: $(DST_DIR)
-	echo '$${JAVA_HOME}/bin/java $${JAVA_OPTIONS} $(EXPORTS) -XX:-UseCounterDecay -Xbatch "-XX:CompileCommand=exclude,java/lang/invoke/MethodHandle.*" -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:wb.jar -jar ctw.jar $$@' > $@
+	echo '$${JAVA_HOME}/bin/java $${JAVA_OPTIONS} $(EXPORTS) -Xbatch "-XX:CompileCommand=exclude,java/lang/invoke/MethodHandle.*" -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:wb.jar -jar ctw.jar $$@' > $@
 	chmod a+x $@
 
 $(DST_DIR)/ctwrunner.sh: $(DST_DIR)

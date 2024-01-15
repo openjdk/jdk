@@ -25,7 +25,7 @@
  * @test
  * @bug 4399442
  * @summary Brackets should be quoted in Postscript output
- * @author prr
+ * @key printer
  * @run main/manual PrintParenString
  */
 

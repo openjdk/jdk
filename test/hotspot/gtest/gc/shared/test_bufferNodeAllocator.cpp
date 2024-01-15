@@ -185,16 +185,21 @@ public:
 };
 
 static void run_test(BufferNode::Allocator* allocator, CompletedList* cbl) {
-  const uint nthreads = 4;
-  const uint milliseconds_to_run = 1000;
+
+  // deallocation is slower than allocation, so lets create
+  // more deallocation threads to prevent too large buildup of
+  // free nodes (footprint)
+  constexpr uint num_allocator_threads = 4;
+  constexpr uint num_processor_threads = 6;
+  constexpr uint milliseconds_to_run = 1000;
 
   Semaphore post;
   volatile size_t total_allocations = 0;
   volatile bool allocator_running = true;
   volatile bool processor_running = true;
 
-  ProcessorThread* proc_threads[nthreads] = {};
-  for (uint i = 0; i < nthreads; ++i) {
+  ProcessorThread* proc_threads[num_processor_threads] = {};
+  for (uint i = 0; i < num_processor_threads; ++i) {
     proc_threads[i] = new ProcessorThread(&post,
                                           allocator,
                                           cbl,
@@ -202,8 +207,8 @@ static void run_test(BufferNode::Allocator* allocator, CompletedList* cbl) {
     proc_threads[i]->doit();
   }
 
-  AllocatorThread* alloc_threads[nthreads] = {};
-  for (uint i = 0; i < nthreads; ++i) {
+  AllocatorThread* alloc_threads[num_allocator_threads] = {};
+  for (uint i = 0; i < num_allocator_threads; ++i) {
     alloc_threads[i] = new AllocatorThread(&post,
                                            allocator,
                                            cbl,
@@ -219,12 +224,12 @@ static void run_test(BufferNode::Allocator* allocator, CompletedList* cbl) {
     this_thread->sleep(milliseconds_to_run);
   }
   Atomic::release_store(&allocator_running, false);
-  for (uint i = 0; i < nthreads; ++i) {
+  for (uint i = 0; i < num_allocator_threads; ++i) {
     ThreadInVMfromNative invm(this_thread);
     post.wait_with_safepoint_check(this_thread);
   }
   Atomic::release_store(&processor_running, false);
-  for (uint i = 0; i < nthreads; ++i) {
+  for (uint i = 0; i < num_processor_threads; ++i) {
     ThreadInVMfromNative invm(this_thread);
     post.wait_with_safepoint_check(this_thread);
   }
@@ -234,7 +239,7 @@ static void run_test(BufferNode::Allocator* allocator, CompletedList* cbl) {
 }
 
 TEST_VM(BufferNodeAllocatorTest, stress_free_list_allocator) {
-  const size_t buffer_capacity = 1024;
+  const size_t buffer_capacity = DEFAULT_CACHE_LINE_SIZE / sizeof(void*);
   BufferNode::Allocator allocator("Test Allocator", buffer_capacity);
   CompletedList completed;
   run_test(&allocator, &completed);

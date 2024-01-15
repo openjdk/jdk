@@ -55,8 +55,7 @@ public abstract sealed class MemorySessionImpl
         implements Scope
         permits ConfinedSession, GlobalSession, SharedSession {
     static final int OPEN = 0;
-    static final int CLOSING = -1;
-    static final int CLOSED = -2;
+    static final int CLOSED = -1;
 
     static final VarHandle STATE;
     static final int MAX_FORKS = Integer.MAX_VALUE;

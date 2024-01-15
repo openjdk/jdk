@@ -861,7 +861,7 @@ BUILD_HOTSPOT_JTREG_EXECUTABLES_LIBS_exesigtest := -ljvm
 
 ifeq ($(call isTargetOs, windows), true)
   BUILD_HOTSPOT_JTREG_EXECUTABLES_CFLAGS_exeFPRegs := -MT
-  BUILD_HOTSPOT_JTREG_EXCLUDE += exesigtest.c libterminatedThread.c libTestJNI.c libCompleteExit.c libTestPsig.c exeGetCreatedJavaVMs.c
+  BUILD_HOTSPOT_JTREG_EXCLUDE += exesigtest.c libterminatedThread.c libTestJNI.c libCompleteExit.c libMonitorWithDeadObjectTest.c libTestPsig.c exeGetCreatedJavaVMs.c
   BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libatExit := jvm.lib
   BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libnativeStack := jvm.lib
   BUILD_HOTSPOT_JTREG_EXECUTABLES_LIBS_exedaemonDestroy := jvm.lib
@@ -1503,6 +1503,7 @@ else
   BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libterminatedThread += -lpthread
   BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libatExit += -ljvm
   BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libCompleteExit += -lpthread
+  BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libMonitorWithDeadObjectTest += -lpthread
   BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libnativeStack += -lpthread
   BUILD_HOTSPOT_JTREG_EXECUTABLES_LIBS_exeGetCreatedJavaVMs := -ljvm -lpthread
 

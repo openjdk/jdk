@@ -42,6 +42,8 @@ const bool CCallingConventionRequiresIntsAsLongs = false;
 // and Operational Models for ARMv8"
 #define CPU_MULTI_COPY_ATOMIC
 
+#define DEFAULT_CACHE_LINE_SIZE 64
+
 // According to the ARMv8 ARM, "Concurrent modification and execution
 // of instructions can lead to the resulting instruction performing
 // any behavior that can be achieved by executing any sequence of

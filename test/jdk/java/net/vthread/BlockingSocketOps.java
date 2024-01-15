@@ -685,7 +685,7 @@ class BlockingSocketOps {
                 Socket s1 = new Socket();
                 Socket s2;
                 try {
-                    s1.connect(listener.getLocalSocketAddress(), 10_000);
+                    s1.connect(listener.getLocalSocketAddress());
                     s2 = listener.accept();
                 } catch (IOException ioe) {
                     s1.close();
