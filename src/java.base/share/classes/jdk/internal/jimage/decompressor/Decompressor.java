@@ -94,7 +94,7 @@ public final class Decompressor {
                 }
                 try {
                     content = decompressor.decompress(provider, content,
-                            CompressedResourceHeader.getSize(), header.getUncompressedSize());
+                            header.getHeaderSize(), header.getUncompressedSize());
                 } catch (Exception ex) {
                     throw new IOException(ex);
                 }
