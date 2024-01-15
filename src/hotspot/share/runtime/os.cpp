@@ -2123,8 +2123,8 @@ void os::pretouch_memory(void* start, void* end, size_t page_size) {
       // avoid overflow if the last page abuts the end of the address range.
       last = align_down(static_cast<char*>(end) - 1, pd_page_size);
       for (char* cur = static_cast<char*>(first); /* break */; cur += pd_page_size) {
-	Atomic::add(reinterpret_cast<int*>(cur), 0, memory_order_relaxed);
-	if (cur >= last) break;
+        Atomic::add(reinterpret_cast<int*>(cur), 0, memory_order_relaxed);
+        if (cur >= last) break;
       }
     }
   }
