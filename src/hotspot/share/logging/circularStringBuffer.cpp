@@ -82,18 +82,17 @@ CircularStringBuffer::~CircularStringBuffer() {
   munmap(buffer, bufsize * 2);
   fclose(underlying_buffer);
 }
-size_t CircularStringBuffer::used() {
-  // Load the state
-  size_t h = Atomic::load(&head);
-  size_t t = Atomic::load(&tail);
+size_t CircularStringBuffer::used_locked() {
+  size_t h = head;
+  size_t t = tail;
   if (h <= t) {
     return t - h;
   } else {
     return bufsize - (h - t);
   }
 }
-size_t CircularStringBuffer::unused() {
-  return bufsize - used();
+size_t CircularStringBuffer::unused_locked() {
+  return bufsize - used_locked();
 }
 
 size_t CircularStringBuffer::calc_mem(size_t sz) {
@@ -105,7 +104,7 @@ void CircularStringBuffer::enqueue_locked(const char* msg, size_t size, LogFileS
                                    const LogDecorations decorations) {
   const size_t required_memory = calc_mem(size);
   // We need space for an additional Descriptor in case of a flush token
-  if (unused() < (required_memory + sizeof(Message))) {
+  if (unused_locked() < (required_memory + sizeof(Message))) {
     _stats_lock.lock();
     bool p_created;
     uint32_t* counter = _stats.put_if_absent(output, 0, &p_created);

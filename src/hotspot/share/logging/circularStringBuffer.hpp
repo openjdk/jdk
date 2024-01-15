@@ -82,8 +82,8 @@ private:
   size_t bufsize;
   FILE* underlying_buffer;
 
-  size_t used();
-  size_t unused();
+  size_t used_locked();
+  size_t unused_locked();
   size_t calc_mem(size_t sz);
 
 public:
