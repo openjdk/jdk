@@ -42,7 +42,7 @@ public:
   void test_asynclog_raw() {
     Log(logging) logger;
 #define LOG_LEVEL(level, name) logger.name("1" #level);
-    LOG_LEVEL_LIST
+LOG_LEVEL_LIST
 #undef LOG_LEVEL
 
     LogTarget(Trace, logging) t;
@@ -55,18 +55,15 @@ public:
     log_debug(logging)("log_debug-test");
   }
 
-  // Caveat: BufferUpdater is not MT-safe. We use it only for testing.
-  // We would observe missing loglines if we interleaved buffers.
-  // Emit all logs between oconstructor and destructor of BufferUpdater.
   void test_asynclog_drop_messages() {
-    // Restrict buffer to os::vm_page_size until end of test.
-    CircularStringBuffer::BufferUpdater mapdate(
-        &AsyncLogWriter::instance()->_circular_buffer.circular_mapping);
     // Write more messages than available in buffer.
-    // msg is 64 bytes.
-    const char* msg = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
-    const int msg_number = os::vm_page_size() / strlen(msg);
+    // msg is 128 bytes.
+    const char* msg = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                      "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+    test_asynclog_ls(); // roughly 200 bytes.
+    const int msg_number = AsyncLogBufferSize / strlen(msg);
     LogMessage(logging) lm;
+    // + 5 to go past the buffer size, forcing it to drop the message.
     for (int i = 0; i < (msg_number + 5); i++) {
       lm.debug("%s", msg);
     }
@@ -122,8 +119,7 @@ template <typename F>
     EXPECT_TRUE(file_contains_substring(TestLogFileName, "logStream newline"));
 
     if (async) {
-      EXPECT_TRUE(
-          file_contains_substring(TestLogFileName, "messages dropped due to async logging"));
+      EXPECT_TRUE(file_contains_substring(TestLogFileName, "messages dropped due to async logging"));
     }
   }
 };
@@ -149,7 +145,6 @@ TEST_VM_F(AsyncLogTest, logMessage) {
   AsyncLogWriter::flush();
 
   ResourceMark rm;
-  LogMessageBuffer buffer;
   const char* strs[MULTI_LINES + 1];
   strs[MULTI_LINES] = NULL;
   for (int i = 0; i < MULTI_LINES; ++i) {

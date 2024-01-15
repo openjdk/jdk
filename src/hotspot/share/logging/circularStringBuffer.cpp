@@ -92,7 +92,7 @@ void CircularStringBuffer::enqueue(LogFileStreamOutput& output, LogMessageBuffer
   for (; !msg_iterator.is_at_end(); msg_iterator++) {
     const char* str = msg_iterator.message();
     size_t len = strlen(str);
-    enqueue_locked(str, len, &output, msg_iterator.decorations());
+    enqueue_locked(str, len+1, &output, msg_iterator.decorations());
   }
 }
 

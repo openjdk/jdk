@@ -47,7 +47,8 @@ struct CircularMapping {
   : file(nullptr), buffer(nullptr), size(0) {
   };
 
-  CircularMapping(size_t size) {
+  CircularMapping(size_t size)
+  : size(size) {
     assert(is_aligned(size, os::vm_page_size()), "must be");
     file = tmpfile();
     if (file == nullptr) {
@@ -168,19 +169,6 @@ private:
   };
   // Opaque circular mapping of our buffer.
   CircularMapping circular_mapping;
-  // Used for testing ONLY!
-  struct BufferUpdater {
-    CircularMapping old;
-    CircularMapping* ptr;
-    BufferUpdater(CircularMapping* ptr) {
-      old = *ptr;
-      new (ptr) CircularMapping(os::vm_page_size());
-    }
-    ~BufferUpdater() {
-      ptr->~CircularMapping();
-      *ptr = old;
-    }
-  };
 
   // Shared memory:
   // Reader reads tail, writes to head.
