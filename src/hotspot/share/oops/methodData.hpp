@@ -2313,8 +2313,7 @@ public:
   intx arg_stack()                               { return _arg_stack; }
   intx arg_returned()                            { return _arg_returned; }
   uint arg_modified(int a)                       { // Lock and avoid breaking lock with Safepoint
-                                                   MutexLocker ml(extra_data_lock(), Mutex::_no_safepoint_check_flag);
-                                                   NoSafepointVerifier no_safepoint;
+                                                   NoSafepointMutexLocker ml(extra_data_lock(), Mutex::_no_safepoint_check_flag);
                                                    ArgInfoData *aid = arg_info();
                                                    assert(aid != nullptr, "arg_info must be not null");
                                                    assert(a >= 0 && a < aid->number_of_args(), "valid argument number");
@@ -2325,8 +2324,7 @@ public:
   void set_arg_stack(intx v)                     { _arg_stack = v; }
   void set_arg_returned(intx v)                  { _arg_returned = v; }
   void set_arg_modified(int a, uint v)           { // Lock and avoid breaking lock with Safepoint
-                                                   MutexLocker ml(extra_data_lock(), Mutex::_no_safepoint_check_flag);
-                                                   NoSafepointVerifier no_safepoint;
+                                                   NoSafepointMutexLocker ml(extra_data_lock(), Mutex::_no_safepoint_check_flag);
                                                    ArgInfoData *aid = arg_info();
                                                    assert(aid != nullptr, "arg_info must be not null");
                                                    assert(a >= 0 && a < aid->number_of_args(), "valid argument number");

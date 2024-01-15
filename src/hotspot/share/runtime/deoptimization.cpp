@@ -1798,8 +1798,7 @@ address Deoptimization::deoptimize_for_missing_exception_handler(CompiledMethod*
   MethodData* imm_mdo = get_method_data(thread, methodHandle(thread, imm_scope->method()), true);
   if (imm_mdo != nullptr) {
     // Lock to read ProfileData, and ensure lock is not broken by a safepoint
-    MutexLocker ml(imm_mdo->extra_data_lock(), Mutex::_no_safepoint_check_flag);
-    NoSafepointVerifier no_safepoint;
+    NoSafepointMutexLocker ml(imm_mdo->extra_data_lock(), Mutex::_no_safepoint_check_flag);
 
     ProfileData* pdata = imm_mdo->allocate_bci_to_data(imm_scope->bci(), nullptr);
     if (pdata != nullptr && pdata->is_BitData()) {
@@ -2110,8 +2109,7 @@ JRT_ENTRY(void, Deoptimization::uncommon_trap_inner(JavaThread* current, jint tr
       // Lock to read ProfileData, and ensure lock is not broken by a safepoint
       // We must do this already now, since we cannot acquire this lock while
       // holding the tty lock (lock ordering by rank).
-      MutexLocker ml(trap_mdo->extra_data_lock(), Mutex::_no_safepoint_check_flag);
-      NoSafepointVerifier no_safepoint;
+      NoSafepointMutexLocker ml(trap_mdo->extra_data_lock(), Mutex::_no_safepoint_check_flag);
 
       ttyLocker ttyl;
 
@@ -2329,10 +2327,9 @@ JRT_ENTRY(void, Deoptimization::uncommon_trap_inner(JavaThread* current, jint tr
     bool inc_recompile_count = false;
 
     // Lock to read ProfileData, and ensure lock is not broken by a safepoint
-    ConditionalMutexLocker ml((trap_mdo != nullptr) ? trap_mdo->extra_data_lock() : nullptr,
+    NoSafepointMutexLocker ml((trap_mdo != nullptr) ? trap_mdo->extra_data_lock() : nullptr,
                               (trap_mdo != nullptr),
                               Mutex::_no_safepoint_check_flag);
-    NoSafepointVerifier no_safepoint;
     ProfileData* pdata = nullptr;
     if (ProfileTraps && CompilerConfig::is_c2_or_jvmci_compiler_enabled() && update_trap_state && trap_mdo != nullptr) {
       assert(trap_mdo == get_method_data(current, profiled_method, false), "sanity");
@@ -2581,8 +2578,7 @@ Deoptimization::update_method_data_from_interpreter(MethodData* trap_mdo, int tr
   bool update_total_counts = true JVMCI_ONLY( && !UseJVMCICompiler);
 
   // Lock to read ProfileData, and ensure lock is not broken by a safepoint
-  MutexLocker ml(trap_mdo->extra_data_lock(), Mutex::_no_safepoint_check_flag);
-  NoSafepointVerifier no_safepoint;
+  NoSafepointMutexLocker ml(trap_mdo->extra_data_lock(), Mutex::_no_safepoint_check_flag);
 
   query_update_method_data(trap_mdo, trap_bci,
                            (DeoptReason)reason,

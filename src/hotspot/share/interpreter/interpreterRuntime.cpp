@@ -550,8 +550,7 @@ JRT_ENTRY(address, InterpreterRuntime::exception_handler_for_exception(JavaThrea
     MethodData* mdo = h_method->method_data();
 
     // Lock to read ProfileData, and ensure lock is not broken by a safepoint
-    MutexLocker ml(mdo->extra_data_lock(), Mutex::_no_safepoint_check_flag);
-    NoSafepointVerifier no_safepoint;
+    NoSafepointMutexLocker ml(mdo->extra_data_lock(), Mutex::_no_safepoint_check_flag);
 
     ProfileData* pdata = mdo->allocate_bci_to_data(current_bci, nullptr);
     if (pdata != nullptr && pdata->is_BitData()) {

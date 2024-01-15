@@ -1851,8 +1851,7 @@ void MethodData::clean_method_data(bool always_clean) {
   CleanExtraDataKlassClosure cl(always_clean);
 
   // Lock to modify extra data, and prevent Safepoint from breaking the lock
-  MutexLocker ml(extra_data_lock(), Mutex::_no_safepoint_check_flag);
-  NoSafepointVerifier no_safepoint;
+  NoSafepointMutexLocker ml(extra_data_lock(), Mutex::_no_safepoint_check_flag);
 
   clean_extra_data(&cl);
   verify_extra_data_clean(&cl);
@@ -1865,8 +1864,7 @@ void MethodData::clean_weak_method_links() {
   CleanExtraDataMethodClosure cl;
 
   // Lock to modify extra data, and prevent Safepoint from breaking the lock
-  MutexLocker ml(extra_data_lock(), Mutex::_no_safepoint_check_flag);
-  NoSafepointVerifier no_safepoint;
+  NoSafepointMutexLocker ml(extra_data_lock(), Mutex::_no_safepoint_check_flag);
 
   clean_extra_data(&cl);
   verify_extra_data_clean(&cl);

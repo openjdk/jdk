@@ -28,6 +28,7 @@
 #include "memory/allocation.hpp"
 #include "runtime/flags/flagSetting.hpp"
 #include "runtime/mutex.hpp"
+#include "runtime/safepointVerifiers.hpp"
 
 // Mutexes used in the VM.
 
@@ -252,6 +253,20 @@ class ConditionalMutexLocker: public MutexLockerImpl {
      MutexLockerImpl(thread, condition ? mutex : nullptr, flag) {
      assert(!condition || mutex != nullptr, "null mutex not allowed when locking");
    }
+};
+
+// Mutex locker with NoSafePointVerifyer
+// At Safepoints locks can be broken. The verifier checks that there is no Safepoint in the scope
+// where the lock is held, and therefore the lock is not broken.
+class NoSafepointMutexLocker : public StackObj {
+  NoSafepointVerifier _nsv;
+  ConditionalMutexLocker _ml;
+
+public:
+  NoSafepointMutexLocker(Mutex* mutex, bool condition, Mutex::SafepointCheckFlag flag = Mutex::_safepoint_check_flag) :
+    _ml(mutex, condition, flag) {}
+  NoSafepointMutexLocker(Mutex* mutex, Mutex::SafepointCheckFlag flag = Mutex::_safepoint_check_flag) :
+    NoSafepointMutexLocker(mutex, true, flag) {}
 };
 
 // A MonitorLocker is like a MutexLocker above, except it allows
