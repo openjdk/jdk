@@ -29,6 +29,7 @@
 #include "utilities/bitMap.inline.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/debug.hpp"
+#include "utilities/population_count.hpp"
 
 using bm_word_t = BitMap::bm_word_t;
 using idx_t = BitMap::idx_t;

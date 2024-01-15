@@ -356,8 +356,6 @@ protected:
   // aligned to bitsizeof(bm_word_t).
   idx_t find_last_set_bit_aligned_left(idx_t beg, idx_t end) const;
 
-  inline idx_t count_one_bits_within_aligned_word(idx_t beg) const;
-
   // Returns the number of bits set in the bitmap.
   idx_t count_one_bits() const;
 

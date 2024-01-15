@@ -587,12 +587,6 @@ inline void BitMap2D::at_put_grow(idx_t slot_index, idx_t bit_within_slot_index,
   _map.at_put(bit, value);
 }
 
-inline BitMap::idx_t BitMap::count_one_bits_within_aligned_word(idx_t idx) const {
-  assert(is_aligned(idx, BitsPerWord), "idx must be word-aligned");
-  bm_word_t w = *word_addr(idx);
-  return population_count(w);
-}
-
 inline BitMap::idx_t BitMap::count_one_bits_within_word(idx_t beg, idx_t end) const {
   if (beg != end) {
     assert(end > beg, "must be");

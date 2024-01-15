@@ -231,10 +231,12 @@ private:
   HeapWord* _first_dead;
   HeapWord* _end_of_live;
 
+public:
   // This the function to invoke when an allocation of an object covering
   // "start" to "end" occurs to update other internal data structures.
   virtual void update_for_block(HeapWord* start, HeapWord* the_end) { }
 
+protected:
   GenSpaceMangler* mangler() { return _mangler; }
 
   // Allocation helpers (return null if full).

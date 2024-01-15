@@ -101,11 +101,7 @@ public:
   void clear_range(MemRegion mr)       { do_clear(mr, false);      }
   void clear_range_large(MemRegion mr) { do_clear(mr, true);       }
 
-  // Count the number of marked words in the range [start, start+64).
-  // NOTE: start must be the beginning of a 64-word region, such
-  // that a single 64-bit word in the marking bitmap covers the
-  // region.
-  inline size_t count_marked_words_64(HeapWord* start) const;
+  // Count the number of marked words in the range [start, end).
   inline size_t count_marked_words(HeapWord* start, HeapWord* end) const;
 };
 
