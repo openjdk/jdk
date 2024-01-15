@@ -2334,7 +2334,6 @@ JRT_ENTRY(void, Deoptimization::uncommon_trap_inner(JavaThread* current, jint tr
                               Mutex::_no_safepoint_check_flag);
     NoSafepointVerifier no_safepoint;
     ProfileData* pdata = nullptr;
-
     if (ProfileTraps && CompilerConfig::is_c2_or_jvmci_compiler_enabled() && update_trap_state && trap_mdo != nullptr) {
       assert(trap_mdo == get_method_data(current, profiled_method, false), "sanity");
       uint this_trap_count = 0;
