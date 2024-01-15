@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,12 +53,15 @@
   nonstatic_field(SerialBlockOffsetSharedArray,      _vs,                    VirtualSpace)                  \
   nonstatic_field(SerialBlockOffsetSharedArray,      _offset_array,          u_char*)                       \
                                                                                                             \
-  nonstatic_field(TenuredSpace,                      _offsets,               SerialBlockOffsetTable)
+  nonstatic_field(TenuredSpace,                      _offsets,               SerialBlockOffsetTable)        \
+                                                                                                            \
+  nonstatic_field(SerialHeap,                        _young_gen,             DefNewGeneration*)             \
+  nonstatic_field(SerialHeap,                        _old_gen,               TenuredGeneration*)            \
 
 #define VM_TYPES_SERIALGC(declare_type,                                       \
                           declare_toplevel_type,                              \
                           declare_integer_type)                               \
-  declare_type(SerialHeap,                   GenCollectedHeap)                \
+  declare_type(SerialHeap,                   CollectedHeap)                   \
   declare_type(TenuredGeneration,            Generation)                      \
   declare_type(TenuredSpace,                 ContiguousSpace)                 \
                                                                               \
