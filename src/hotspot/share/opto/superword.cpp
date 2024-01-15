@@ -3428,23 +3428,21 @@ void SuperWord::remove_pack_at(int pos) {
 
 void SuperWord::packset_sort(int n) {
   // simple bubble sort so that we capitalize with O(n) when its already sorted
-  while (n != 0) {
-    bool swapped = false;
+  do {
+    int max_swap_index = 0;
     for (int i = 1; i < n; i++) {
       Node_List* q_low = _packset.at(i-1);
       Node_List* q_i = _packset.at(i);
 
       // only swap when we find something to swap
       if (alignment(q_low->at(0)) > alignment(q_i->at(0))) {
-        Node_List* t = q_i;
         *(_packset.adr_at(i)) = q_low;
         *(_packset.adr_at(i-1)) = q_i;
-        swapped = true;
+        max_swap_index = i;
       }
     }
-    if (swapped == false) break;
-    n--;
-  }
+    n = max_swap_index;
+  } while (n > 1);
 }
 
 LoadNode::ControlDependency SuperWord::control_dependency(Node_List* p) {
