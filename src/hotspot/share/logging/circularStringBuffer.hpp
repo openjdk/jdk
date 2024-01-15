@@ -40,8 +40,13 @@
 #ifdef LINUX
 struct CircularMapping {
   FILE* file;
-  size_t size;
   char* buffer;
+  size_t size;
+
+  CircularMapping()
+  : file(nullptr), buffer(nullptr), size(0) {
+  };
+
   CircularMapping(size_t size) {
     assert(is_aligned(size, os::vm_page_size()), "must be");
     file = tmpfile();
@@ -91,6 +96,9 @@ struct CircularMapping {
 struct CircularMapping {
   char* buffer;
   size_t size;
+  CircularMapping()
+  : buffer(nullptr), size(0) {
+  };
   CircularMapping(size_t size) {
     buffer = os::reserve_memory(size, false, mtLogging);
     if (buffer == nullptr) {
@@ -123,6 +131,7 @@ struct CircularMapping {
 #endif
 
 class CircularStringBuffer {
+  friend class AsyncLogTest;
 public:
     // account for dropped messages
   using StatisticsMap = ResourceHashtable<LogFileStreamOutput*, uint32_t, 17, /*table_size*/
@@ -159,6 +168,19 @@ private:
   };
   // Opaque circular mapping of our buffer.
   CircularMapping circular_mapping;
+  // Used for testing ONLY!
+  struct BufferUpdater {
+    CircularMapping old;
+    CircularMapping* ptr;
+    BufferUpdater(CircularMapping* ptr) {
+      old = *ptr;
+      new (ptr) CircularMapping(os::vm_page_size());
+    }
+    ~BufferUpdater() {
+      ptr->~CircularMapping();
+      *ptr = old;
+    }
+  };
 
   // Shared memory:
   // Reader reads tail, writes to head.
