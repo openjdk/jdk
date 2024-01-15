@@ -248,8 +248,6 @@ public:
     _old_gen->update_gc_stats(current_generation, full);
   }
 
-  bool no_gc_in_progress() { return !is_gc_active(); }
-
   void prepare_for_verify() override;
   void verify(VerifyOption option) override;
 
