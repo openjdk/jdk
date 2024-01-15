@@ -1,4 +1,5 @@
 /*
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -19,30 +20,31 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#include "precompiled.hpp"
-#include "gc/serial/serialVMOperations.hpp"
-#include "gc/shared/gcLocker.hpp"
+import java.awt.color.ColorSpace;
+import java.util.Arrays;
 
-void VM_GenCollectForAllocation::doit() {
-  SvcGCMarker sgcm(SvcGCMarker::MINOR);
+/**
+ * @test
+ * @bug 4760025
+ * @summary Verifies sRGB conversions to and from CIE XYZ
+ */
+public final class SimpleSRGBToFromCIEXYZ {
 
-  SerialHeap* gch = SerialHeap::heap();
-  GCCauseSetter gccs(gch, _gc_cause);
-  _result = gch->satisfy_failed_allocation(_word_size, _tlab);
-  assert(_result == nullptr || gch->is_in_reserved(_result), "result not in heap");
+    public static void main(String[] args) {
+        ColorSpace cs = ColorSpace.getInstance(ColorSpace.CS_sRGB);
+        for (float g : new float[]{1.0f, 0.8f, 0.6f}) {
+            float[] rgb = {0, g, 0};
+            float[] xyz = cs.toCIEXYZ(rgb);
+            float[] inv = cs.fromCIEXYZ(xyz);
 
-  if (_result == nullptr && GCLocker::is_active_and_needs_gc()) {
-    set_gc_locked();
-  }
-}
-
-void VM_GenCollectFull::doit() {
-  SvcGCMarker sgcm(SvcGCMarker::FULL);
-
-  SerialHeap* gch = SerialHeap::heap();
-  GCCauseSetter gccs(gch, _gc_cause);
-  gch->do_full_collection(gch->must_clear_all_soft_refs(), _max_generation);
+            if (inv[0] != 0 || Math.abs(inv[1] - g) > 0.0001f || inv[2] != 0) {
+                System.err.println("Expected color:\t" + Arrays.toString(rgb));
+                System.err.println("XYZ color:\t\t" + Arrays.toString(xyz));
+                System.err.println("Actual color:\t" + Arrays.toString(inv));
+                throw new Error("Wrong color");
+            }
+        }
+    }
 }

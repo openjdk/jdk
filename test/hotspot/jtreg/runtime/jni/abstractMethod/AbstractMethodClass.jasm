@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,19 +21,23 @@
  * questions.
  *
  */
+/*
+ *  This is a non-abstract class with an abstract method.
+ *
+ */
+super public class AbstractMethodClass
+      extends java/lang/Object
+              version 51:0  // Java 7 version
+{
 
-#ifndef SHARE_GC_SHENANDOAH_SHENANDOAHINITLOGGER_HPP
-#define SHARE_GC_SHENANDOAH_SHENANDOAHINITLOGGER_HPP
+    public Method "<init>":"()V"
+       stack 1 locals 1
+    {
+        aload_0;
+        invokespecial Method java/lang/Object."<init>":"()V";
+        return;
+    }
 
-#include "gc/shared/gcInitLogger.hpp"
+    public abstract Method "abstractM":"()V";
 
-class ShenandoahInitLogger : public GCInitLogger {
-protected:
-  void print_heap() override;
-  void print_gc_specific() override;
-
-public:
-  static void print();
-};
-
-#endif // SHARE_GC_SHENANDOAH_SHENANDOAHINITLOGGER_HPP
+}
