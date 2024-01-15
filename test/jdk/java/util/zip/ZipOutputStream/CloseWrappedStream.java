@@ -44,7 +44,7 @@ public class CloseWrappedStream {
      * also when the wrapped stream throws while remaining data is flushed
      */
     @Test
-    public void exceptionDuringFinish()  {
+    public void exceptionDuringFinish() {
         // A wrapped stream which should be closed even after a write failure
         WrappedOutputStream wrappedStream = new WrappedOutputStream();
 
