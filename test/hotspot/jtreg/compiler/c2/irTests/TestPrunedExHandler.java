@@ -30,6 +30,7 @@ import compiler.lib.ir_framework.*;
  * @bug 8267532
  * @summary check that uncommon trap is generated for unhandled catch block
  * @library /test/lib /
+ * @requires vm.opt.DeoptimizeALot != true
  * @run driver compiler.c2.irTests.TestPrunedExHandler
  */
 
