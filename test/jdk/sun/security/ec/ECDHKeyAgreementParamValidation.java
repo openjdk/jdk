@@ -25,7 +25,8 @@
  * @test
  * @bug 8320449
  * @summary ECDHKeyAgreement should validate parameters before assigning them to fields.
- * @run junit ECDHKeyAgreementParamValidation
+ * @library /test/lib
+ * @run main ECDHKeyAgreementParamValidation
  */
 
 import javax.crypto.KeyAgreement;
@@ -34,17 +35,14 @@ import java.security.InvalidKeyException;
 import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
-import java.security.ProviderException;
 import java.security.interfaces.ECPrivateKey;
 import java.security.spec.ECPrivateKeySpec;
 
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
+import jdk.test.lib.Asserts;
 
 public class ECDHKeyAgreementParamValidation {
 
-    @Test
-    public void testInitWithInvalidKey() throws Exception {
+    private static void testInitWithInvalidKey() throws Exception {
         KeyPairGenerator kpg = KeyPairGenerator.getInstance("EC");
         kpg.initialize(256);
         KeyPair kp = kpg.generateKeyPair();
@@ -63,18 +61,17 @@ public class ECDHKeyAgreementParamValidation {
 
         // The second initiation should fail with invalid private key,
         // and the private key assigned by the first initiation should be cleared.
-        Assertions.assertThrows(
+        Asserts.assertThrows(
                 InvalidKeyException.class,
                 () -> ka.init(invalidPrivateKey));
 
         // Cannot doPhase due to no private key.
-        Assertions.assertThrows(
+        Asserts.assertThrows(
                 IllegalStateException.class,
                 ()->ka.doPhase(kp.getPublic(), true));
     }
 
-    @Test
-    public void testDoPhaseWithInvalidKey() throws Exception {
+    private static void testDoPhaseWithInvalidKey() throws Exception {
         // SECP256R1 key pair
         KeyPairGenerator kpgP256 = KeyPairGenerator.getInstance("EC");
         kpgP256.initialize(256);
@@ -88,11 +85,33 @@ public class ECDHKeyAgreementParamValidation {
         KeyAgreement ka = KeyAgreement.getInstance("ECDH");
         ka.init(kpP256.getPrivate());
 
-        Assertions.assertThrows(
+        Asserts.assertThrows(
                 InvalidKeyException.class,
                 () -> ka.doPhase(kpP384.getPublic(), true));
 
         // Should not generate share key with SECP256R1 private key and SECP384R1 public key
-        Assertions.assertThrows(IllegalStateException.class, ka::generateSecret);
+        Asserts.assertThrows(IllegalStateException.class, ka::generateSecret);
+    }
+
+    public static void main(String[] args) {
+        boolean failed = false;
+
+        try {
+            testInitWithInvalidKey();
+        } catch (Exception e) {
+            failed = true;
+            e.printStackTrace();
+        }
+
+        try {
+            testDoPhaseWithInvalidKey();
+        } catch (Exception e) {
+            failed = true;
+            e.printStackTrace();
+        }
+
+        if (failed) {
+            throw new RuntimeException("Test failed");
+        }
     }
 }
