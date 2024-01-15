@@ -18,7 +18,7 @@
 #include "gc/shared/markBitMap.inline.hpp"
 #include "gc/shared/referenceProcessor.hpp"
 #include "gc/shared/referenceProcessorPhaseTimes.hpp"
-#include "gc/shared/space.hpp"
+#include "gc/shared/space.inline.hpp"
 #include "gc/shared/strongRootsScope.hpp"
 #include "gc/shared/taskqueue.hpp"
 #include "gc/shared/weakProcessor.hpp"
@@ -33,120 +33,278 @@
 #include "jvmci/jvmci.hpp"
 #endif
 
+// Return the number of heap words covered by each block.
+static inline int words_per_block() {
+  return BitsPerWord << LogMinObjAlignment;
+}
+
+static inline int bytes_per_block() {
+  return BitsPerWord << (LogMinObjAlignment + LogBytesPerWord);
+}
+
 static HeapWord** allocate_table() {
   MemRegion covered = SerialHeap::heap()->reserved_region();
   HeapWord* start = covered.start();
   HeapWord* end = covered.end();
-  int words_per_block = SCBlockOffsetTable::words_per_block();
-  size_t num_blocks = align_up(pointer_delta(end, start), words_per_block) / words_per_block;
+  size_t num_blocks = align_up(pointer_delta(end, start), words_per_block()) / words_per_block();
   return NEW_C_HEAP_ARRAY(HeapWord*, num_blocks, mtGC);
 }
 
-SCBlockOffsetTable::SCBlockOffsetTable(MarkBitMap& mark_bitmap) :
-  _table(allocate_table()),
-  _mark_bitmap(mark_bitmap),
-  _covered(SerialHeap::heap()->reserved_region()) { }
+class SCUpdateRefsClosure;
 
-SCBlockOffsetTable::~SCBlockOffsetTable() {
-  FREE_C_HEAP_ARRAY(HeapWord*, _table);
-}
+// Implement the "compaction" part of the compressor GC algorithm.
+class SCCompacter {
+  friend class SCUpdateRefsClosure;
 
-inline size_t SCBlockOffsetTable::addr_to_block_idx(HeapWord* addr) const {
-  assert(addr >= _covered.start() && addr <= _covered.end(), "address must be in heap");
-  return pointer_delta(addr, _covered.start()) / words_per_block();
-}
+  // There are four spaces in total, but only the first three can be used after
+  // compact. IOW, old and eden/from must be enough for all live objs
+  static constexpr uint max_num_spaces = 4;
 
-void SCBlockOffsetTable::build_table_for_space(ContiguousSpace* space, CompactPoint& cp) {
-  HeapWord* bottom = space->bottom();
-  HeapWord* top = space->top();
+  struct CompactionSpace {
+    ContiguousSpace* _space;
+    // Will be the new top after compaction is complete.
+    HeapWord* _compaction_top;
+    // The first dead word in this contiguous space. It's an optimization to
+    // skip large chunk of live objects at the beginning.
+    HeapWord* _first_dead;
 
-  // We're sure to be here before any objects are compacted into this
-  // space, so this is a good time to initialize this:
-  space->set_compaction_top(bottom);
+    void init(ContiguousSpace* space) {
+      _space = space;
+      _compaction_top = space->bottom();
+      _first_dead = nullptr;
+    }
+  };
 
-  // Init compaction-space, if necessary.
-  if (cp.space == nullptr) {
-    assert(cp.gen != nullptr, "need a generation");
-    assert(cp.gen->first_compaction_space() == space, "just checking");
-    cp.space = cp.gen->first_compaction_space();
-    cp.space->set_compaction_top(cp.space->bottom());
+  // The block offset table.
+  HeapWord** _bot;
+
+  // The marking bitmap.
+  const MarkBitMap& _mark_bitmap;
+
+  // The heap region covered by the BOT.
+  const MemRegion _covered;
+
+  CompactionSpace _spaces[max_num_spaces];
+
+  // The num of spaces to be compacted, i.e. containing live objs.
+  uint _num_spaces;
+
+  uint _index;
+
+  // For a given heap address, compute the index of the
+  // corresponding block in the table.
+  inline size_t addr_to_block_idx(HeapWord* addr) const {
+    assert(addr >= _covered.start() && addr <= _covered.end(), "address must be in heap");
+    return pointer_delta(addr, _covered.start()) / words_per_block();
   }
 
-  // Clear table.
-  size_t bottom_block = addr_to_block_idx(bottom);
-  size_t top_block = addr_to_block_idx(MIN2(space->end(), align_up(space->top(), words_per_block() * BytesPerWord)));
-  Copy::fill_to_words(reinterpret_cast<HeapWord*>(&_table[bottom_block]), top_block - bottom_block);
+  inline HeapWord* forwardee(HeapWord* addr) const {
+    assert(_mark_bitmap.is_marked(addr), "must be marked");
+    HeapWord* block_base = align_down(addr, bytes_per_block());
+    size_t block = addr_to_block_idx(addr);
+    assert(_bot[block] != nullptr, "must have initialized BOT entry");
+    return _bot[block] + _mark_bitmap.count_marked_words(block_base, addr);
+  }
 
-  HeapWord* compact_top = cp.space->compaction_top();
-  HeapWord* current = _mark_bitmap.get_next_marked_addr(bottom, top);
-  // Scan all live objects in the space.
-  while (current < top) {
-    size_t idx = addr_to_block_idx(current);
-    assert(_table[idx] == nullptr, "must be new block");
-    HeapWord* block_end = MIN2(top, align_up(current + 1, words_per_block() * BytesPerWord));
-    size_t live_in_block = 0;
-    HeapWord* first_in_block = current;
-    HeapWord* compact = compact_top;
-    // Scan all live objects in the block to calculate the number of live words of all
-    // objects in the block. Note that this can be larger than the block when a
-    // trailing object spans into subsequent block(s). This is intentional:
-    // All objects which start in a block will share the same block-base-address,
-    // and thus must be compacted into the same destinatioin space.
-    while (current < block_end) {
-      oop obj = cast_to_oop(current);
-      assert(oopDesc::is_oop(obj), "must be oop start");
-      size_t obj_size = obj->size();
-      live_in_block += obj_size;
+  void clear(HeapWord* from, HeapWord* to) {
+    size_t from_block = addr_to_block_idx(from);
+    size_t to_block = addr_to_block_idx(align_up(to, bytes_per_block()));
+    Copy::fill_to_words(reinterpret_cast<HeapWord*>(&_bot[from_block]), to_block - from_block);
+  }
 
-      // Advance to next live object.
-      current = _mark_bitmap.get_next_marked_addr(current + obj_size, top);
-    }
-
-    // Check if block fits into current compaction space, and switch to next,
-    // if necessary. The compaction space must have enough space left to
-    // accomodate all objects that start in the block.
-    while (live_in_block > pointer_delta(cp.space->end(), compact_top)) {
-      cp.space->set_compaction_top(compact_top);
-      cp.space = cp.space->next_compaction_space();
-      if (cp.space == nullptr) {
-        cp.gen = GenCollectedHeap::heap()->young_gen();
-        assert(cp.gen != nullptr, "compaction must succeed");
-        cp.space = cp.gen->first_compaction_space();
-        assert(cp.space != nullptr, "generation must have a first compaction space");
-      }
-      compact_top = cp.space->bottom();
-      cp.space->set_compaction_top(compact_top);
-    }
-
-    // Record address of the first live word in this block.
-    HeapWord* block_start = align_down(first_in_block, words_per_block() * BytesPerWord);
+  void record(HeapWord* first_in_block, HeapWord* to) {
+    HeapWord* block_start = align_down(first_in_block, bytes_per_block());
     // Count number of live words preceding the first object in the block. This must
     // be subtracted, because the BOT stores the forwarding address of the first live
     // *word*, not the first live *object* in the block.
     size_t num_live = _mark_bitmap.count_marked_words(block_start, first_in_block);
     // Note that we only record the address for blocks where objects start. That
     // is ok, because we only ask for forwarding address of first word of objects.
-    _table[idx] = compact_top - num_live;
-    assert(forwardee(first_in_block) == compact_top, "must match");
-
-    compact_top += live_in_block;
+    _bot[addr_to_block_idx(first_in_block)] = to - num_live;
+    assert(forwardee(first_in_block) == to, "must match");
   }
-  cp.space->set_compaction_top(compact_top);
-}
 
-inline HeapWord* SCBlockOffsetTable::forwardee(HeapWord* addr) const {
-  assert(_mark_bitmap.is_marked(addr), "must be marked");
-  HeapWord* block_base = align_down(addr, words_per_block() * BytesPerWord);
-  size_t block = addr_to_block_idx(addr);
-  assert(_table[block] != nullptr, "must have initialized BOT entry");
-  return _table[block] + _mark_bitmap.count_marked_words(block_base, addr);
+  HeapWord* get_compaction_top(uint index) const {
+    return _spaces[index]._compaction_top;
+  }
+
+  HeapWord* get_first_dead(uint index) const {
+    return _spaces[index]._first_dead;
+  }
+
+  ContiguousSpace* get_space(uint index) const {
+    return _spaces[index]._space;
+  }
+
+  void record_first_dead(uint index, HeapWord* first_dead) {
+    assert(_spaces[index]._first_dead == nullptr, "should write only once");
+    _spaces[index]._first_dead = first_dead;
+  }
+
+  void build_table_for_space(ContiguousSpace* space) {
+    HeapWord* bottom = space->bottom();
+    HeapWord* top = space->top();
+
+    // Clear table.
+    clear(bottom, space->top());
+
+    HeapWord* compact_top = get_compaction_top(_index);
+    HeapWord* current = _mark_bitmap.get_next_marked_addr(bottom, top);
+    // Scan all live objects in the space.
+    while (current < top) {
+      assert(_bot[addr_to_block_idx(current)] == nullptr, "must be new block");
+      HeapWord* block_end = MIN2(top, align_up(current + 1, bytes_per_block()));
+      size_t live_in_block = 0;
+      HeapWord* first_in_block = current;
+      // Scan all live objects in the block to calculate the number of live words of all
+      // objects in the block. Note that this can be larger than the block when a
+      // trailing object spans into subsequent block(s). This is intentional:
+      // All objects which start in a block will share the same block-base-address,
+      // and thus must be compacted into the same destinatioin space.
+      while (current < block_end) {
+	oop obj = cast_to_oop(current);
+	assert(oopDesc::is_oop(obj), "must be oop start");
+	size_t obj_size = obj->size();
+	live_in_block += obj_size;
+
+	// Advance to next live object.
+	current = _mark_bitmap.get_next_marked_addr(current + obj_size, top);
+      }
+
+      // Check if block fits into current compaction space, and switch to next,
+      // if necessary. The compaction space must have enough space left to
+      // accomodate all objects that start in the block.
+      while (live_in_block > pointer_delta(_spaces[_index]._space->end(),
+	                                   _spaces[_index]._compaction_top)) {
+        // out-of-memory in this space
+	_index++;
+	assert(_index < max_num_spaces - 1, "the last space should not be used");
+      }
+
+      // Record address of the first live word in this block.
+      record(first_in_block, _spaces[_index]._compaction_top);
+
+      _spaces[_index]._compaction_top += live_in_block;
+    }
+  }
+
+public:
+  explicit SCCompacter(SerialHeap* heap, MarkBitMap& mark_bitmap) :
+    _bot(allocate_table()),
+    _mark_bitmap(mark_bitmap),
+    _covered(heap->reserved_region())
+ {
+    // In this order so that heap is compacted towards old-gen.
+    _spaces[0].init(heap->old_gen()->space());
+    _spaces[1].init(heap->young_gen()->eden());
+    _spaces[2].init(heap->young_gen()->from());
+
+    bool is_promotion_failed = (heap->young_gen()->from()->next_compaction_space() != nullptr);
+    if (is_promotion_failed) {
+      _spaces[3].init(heap->young_gen()->to());
+      _num_spaces = 4;
+    } else {
+      _num_spaces = 3;
+    }
+    _index = 0;
+  }
+
+  ~SCCompacter() {
+    FREE_C_HEAP_ARRAY(HeapWord*, _bot);
+  }
+
+  void phase2_prepare() {
+    for (uint i = 0; i < _num_spaces; ++i) {
+      ContiguousSpace* space = get_space(i);
+      build_table_for_space(space);
+    }
+  }
+
+  // Compact live objects in a space.
+  void compact_space(uint idx) const;
+
+  void phase3_compact() {
+    for (uint i = 0; i < _num_spaces; ++i) {
+      compact_space(i);
+    }
+  }
+};
+
+class SCUpdateRefsClosure : public BasicOopIterateClosure {
+private:
+  const SCCompacter& _compacter;
+
+  template<class T>
+  void do_oop_work(T* p) {
+    T heap_oop = RawAccess<>::oop_load(p);
+    if (!CompressedOops::is_null(heap_oop)) {
+      oop obj = CompressedOops::decode_raw_not_null(heap_oop);
+      assert(SerialHeap::heap()->is_in_reserved(obj), "should be in heap");
+      oop forwardee = cast_to_oop(_compacter.forwardee(cast_from_oop<HeapWord*>(obj)));
+      if (forwardee != obj) {
+        RawAccess<IS_NOT_NULL>::oop_store(p, forwardee);
+      }
+    }
+  }
+public:
+  SCUpdateRefsClosure(const SCCompacter& compacter) :
+    _compacter(compacter) {}
+
+  void do_oop(oop* p) {
+    do_oop_work(p);
+  }
+  void do_oop(narrowOop* p) {
+    do_oop_work(p);
+  }
+};
+
+// Compact live objects in a space.
+void SCCompacter::compact_space(uint idx) const {
+  ContiguousSpace* space = get_space(idx);
+  HeapWord* bottom = space->bottom();
+  HeapWord* top = space->top();
+  HeapWord* current = _mark_bitmap.get_next_marked_addr(bottom, top);
+  SCUpdateRefsClosure cl(*this);
+
+  TenuredSpace* tenured_space = SerialHeap::heap()->old_gen()->space();
+
+  // Visit all live objects in the space.
+  while (current < top) {
+    oop obj = cast_to_oop(current);
+    assert(oopDesc::is_oop(obj), "must be oop");
+    size_t size_in_words = obj->size();
+
+    // Update references of object.
+    obj->oop_iterate(&cl);
+
+    // Copy object itself.
+    HeapWord* fwd = forwardee(current);
+    if (current != fwd) {
+      Copy::aligned_conjoint_words(current, fwd, size_in_words);
+    }
+
+    // We need to update the offset table so that the beginnings of objects can be
+    // found during scavenge.  Note that we are updating the offset table based on
+    // where the object will be once the compaction phase finishes.
+    if (tenured_space->is_in_reserved(fwd)) {
+      tenured_space->update_for_block(fwd, fwd + size_in_words);
+    }
+
+    // Advance to next live object.
+    current = _mark_bitmap.get_next_marked_addr(current + size_in_words, top);
+  }
+
+  // Reset top and unused memory
+  space->set_top(get_compaction_top(idx));
+  if (ZapUnusedHeapArea) {
+    space->mangle_unused_area();
+  }
 }
 
 SerialCompressor::SerialCompressor(STWGCTimer* gc_timer):
   _mark_bitmap(),
   _marking_stack(),
   _objarray_stack(),
-  _bot(_mark_bitmap),
   _string_dedup_requests(),
   _gc_timer(gc_timer),
   _gc_tracer() {
@@ -154,7 +312,7 @@ SerialCompressor::SerialCompressor(STWGCTimer* gc_timer):
   SerialHeap* heap = SerialHeap::heap();
   MemRegion reserved = heap->reserved_region();
   size_t bitmap_size = MarkBitMap::compute_size(reserved.byte_size());
-  ReservedSpace bitmap(bitmap_size, MAX2(os::vm_page_size(), (size_t)SCBlockOffsetTable::words_per_block() * BytesPerWord));
+  ReservedSpace bitmap(bitmap_size, MAX2(os::vm_page_size(), (size_t)bytes_per_block()));
   _mark_bitmap_region = MemRegion((HeapWord*) bitmap.base(), bitmap.size() / HeapWordSize);
   os::commit_memory_or_exit((char *)_mark_bitmap_region.start(), _mark_bitmap_region.byte_size(), false,
                             "Cannot commit bitmap memory");
@@ -163,6 +321,23 @@ SerialCompressor::SerialCompressor(STWGCTimer* gc_timer):
 
 SerialCompressor::~SerialCompressor() {
   os::release_memory((char*)_mark_bitmap_region.start(), _mark_bitmap_region.byte_size());
+}
+
+
+// Update all GC roots.
+static void update_roots(SCCompacter& compacter) {
+  ClassLoaderDataGraph::verify_claimed_marks_cleared(ClassLoaderData::_claim_stw_fullgc_adjust);
+  SerialHeap* heap = SerialHeap::heap();
+  SCUpdateRefsClosure adjust_pointer_closure(compacter);
+  CLDToOopClosure adjust_cld_closure(&adjust_pointer_closure, ClassLoaderData::_claim_stw_fullgc_adjust);
+  CodeBlobToOopClosure code_closure(&adjust_pointer_closure, CodeBlobToOopClosure::FixRelocations);
+  heap->process_roots(SerialHeap::SO_AllCodeCache,
+                      &adjust_pointer_closure,
+                      &adjust_cld_closure,
+                      &adjust_cld_closure,
+                      &code_closure);
+
+  WeakProcessor::oops_do(&adjust_pointer_closure);
 }
 
 // Entry point.
@@ -184,7 +359,12 @@ void SerialCompressor::invoke_at_safepoint(bool clear_all_softrefs) {
   gch->save_used_regions();
 
   phase1_mark(clear_all_softrefs);
-  phase2_build_bot();
+
+  SCCompacter compacter{gch, _mark_bitmap};
+  {
+    GCTraceTime(Info, gc, phases) tm("Phase 2: Build block-offset-table", _gc_timer);
+    compacter.phase2_prepare();
+  }
 
   // Don't add any more derived pointers during phase3
 #if COMPILER2_OR_JVMCI
@@ -192,7 +372,11 @@ void SerialCompressor::invoke_at_safepoint(bool clear_all_softrefs) {
   DerivedPointerTable::set_active(false);
 #endif
 
-  phase3_compact_and_update();
+  {
+    GCTraceTime(Info, gc, phases) tm("Phase 3: Compact heap", _gc_timer);
+    update_roots(compacter);
+    compacter.phase3_compact();
+  }
 
   // Set saved marks for allocation profiler (and other things? -- dld)
   // (Should this be in general part?)
@@ -481,155 +665,4 @@ void SerialCompressor::iterate_spaces(CSpaceClosure& cl) const {
   SerialHeap* heap = SerialHeap::heap();
   iterate_spaces_of_generation(cl, heap->old_gen());
   iterate_spaces_of_generation(cl, heap->young_gen());
-}
-
-class BuildBOTClosure : public CSpaceClosure {
-private:
-  SCBlockOffsetTable& _bot;
-  CompactPoint _compact_point;
-public:
-  BuildBOTClosure(SCBlockOffsetTable& bot) :
-    _bot(bot),
-    _compact_point(SerialHeap::heap()->old_gen()) { }
-
-  void do_space(ContiguousSpace* space) override {
-    _bot.build_table_for_space(space, _compact_point);
-  }
-};
-
-void SerialCompressor::phase2_build_bot() {
-  GCTraceTime(Info, gc, phases) tm("Phase 2: Build block-offset-table", _gc_timer);
-  BuildBOTClosure cl(_bot);
-  iterate_spaces(cl);
-}
-
-class SCUpdateRefsClosure : public BasicOopIterateClosure {
-private:
-  const SCBlockOffsetTable& _bot;
-
-  template<class T>
-  void do_oop_work(T* p) {
-    T heap_oop = RawAccess<>::oop_load(p);
-    if (!CompressedOops::is_null(heap_oop)) {
-      oop obj = CompressedOops::decode_raw_not_null(heap_oop);
-      assert(SerialHeap::heap()->is_in_reserved(obj), "should be in heap");
-      oop forwardee = cast_to_oop(_bot.forwardee(cast_from_oop<HeapWord*>(obj)));
-      if (forwardee != obj) {
-        RawAccess<IS_NOT_NULL>::oop_store(p, forwardee);
-      }
-    }
-  }
-public:
-  SCUpdateRefsClosure(const SCBlockOffsetTable& bot) :
-    _bot(bot) {}
-
-  void do_oop(oop* p) {
-    do_oop_work(p);
-  }
-  void do_oop(narrowOop* p) {
-    do_oop_work(p);
-  }
-};
-
-// Copied from space.inline.hpp to avoid exposing the method.
-static void clear_empty_region(ContiguousSpace* space) {
-  // Let's remember if we were empty before we did the compaction.
-  bool was_empty = space->used_region().is_empty();
-  // Reset space after compaction is complete
-  space->reset_after_compaction();
-  // We do this clear, below, since it has overloaded meanings for some
-  // space subtypes.  For example, TenuredSpace's that were
-  // compacted into will have had their offset table thresholds updated
-  // continuously, but those that weren't need to have their thresholds
-  // re-initialized.  Also mangles unused area for debugging.
-  if (space->used_region().is_empty()) {
-    if (!was_empty) space->clear(SpaceDecorator::Mangle);
-  } else {
-    if (ZapUnusedHeapArea) space->mangle_unused_area();
-  }
-}
-
-// Find space that contains the address.
-// Note: we could use a CSpaceClosure, but then we would
-// not get the fast return.
-static ContiguousSpace* space_containing(HeapWord* addr) {
-  SerialHeap* heap = SerialHeap::heap();
-  Generation* gen = heap->old_gen();
-  if (!gen->is_in_reserved(addr)) {
-    gen = heap->young_gen();
-  }
-  assert(gen->is_in_reserved(addr), "must be");
-  ContiguousSpace* space = gen->first_compaction_space();
-  while (!space->is_in_reserved(addr)) {
-    assert(space != nullptr, "must succeed");
-    space = space->next_compaction_space();
-  }
-  return space;
-}
-
-// Compact live objects in a space.
-void SerialCompressor::compact_space(ContiguousSpace* space) const {
-  HeapWord* bottom = space->bottom();
-  HeapWord* top = space->top();
-  HeapWord* current = _mark_bitmap.get_next_marked_addr(bottom, top);
-  SCUpdateRefsClosure cl(_bot);
-  // Visit all live objects in the space.
-  while (current < top) {
-    oop obj = cast_to_oop(current);
-    assert(oopDesc::is_oop(obj), "must be oop");
-    size_t size_in_words = obj->size();
-
-    // Update references of object.
-    obj->oop_iterate(&cl);
-
-    // Copy object itself.
-    HeapWord* forwardee = _bot.forwardee(current);
-    if (current != forwardee) {
-      Copy::aligned_conjoint_words(current, forwardee, size_in_words);
-    }
-
-    // We need to update the offset table so that the beginnings of objects can be
-    // found during scavenge.  Note that we are updating the offset table based on
-    // where the object will be once the compaction phase finishes.
-    space_containing(forwardee)->update_for_block(forwardee, forwardee + size_in_words);
-
-    // Advance to next live object.
-    current = _mark_bitmap.get_next_marked_addr(current + size_in_words, top);
-  }
-  clear_empty_region(space);
-}
-
-// Update all GC roots.
-void SerialCompressor::update_roots() {
-  ClassLoaderDataGraph::verify_claimed_marks_cleared(ClassLoaderData::_claim_stw_fullgc_adjust);
-  SerialHeap* heap = SerialHeap::heap();
-  SCUpdateRefsClosure adjust_pointer_closure(_bot);
-  CLDToOopClosure adjust_cld_closure(&adjust_pointer_closure, ClassLoaderData::_claim_stw_fullgc_adjust);
-  CodeBlobToOopClosure code_closure(&adjust_pointer_closure, CodeBlobToOopClosure::FixRelocations);
-  heap->process_roots(SerialHeap::SO_AllCodeCache,
-                      &adjust_pointer_closure,
-                      &adjust_cld_closure,
-                      &adjust_cld_closure,
-                      &code_closure);
-
-  heap->gen_process_weak_roots(&adjust_pointer_closure);
-}
-
-class SCCompactClosure : public CSpaceClosure {
-private:
-  const SerialCompressor& _compressor;
-public:
-  SCCompactClosure(const SerialCompressor& compressor) :
-    _compressor(compressor) {}
-
-  void do_space(ContiguousSpace* space) override {
-    _compressor.compact_space(space);
-  }
-};
-
-void SerialCompressor::phase3_compact_and_update() {
-  GCTraceTime(Info, gc, phases) tm("Phase 3: Compact heap", _gc_timer);
-  update_roots();
-  SCCompactClosure compact(*this);
-  iterate_spaces(compact);
 }

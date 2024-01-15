@@ -80,37 +80,15 @@ public:
   virtual void do_space(ContiguousSpace* space) = 0;
 };
 
-/**
- * The block-offset-table stores the forwarding address for the first live
- * word in each heap block.
- */
-class SCBlockOffsetTable {
-private:
-  // The block offset table.
-  HeapWord** _table;
-
-  // The marking bitmap.
-  const MarkBitMap& _mark_bitmap;
-
-  // The heap region covered by this BOT.
-  const MemRegion _covered;
-
-  // For a given heap address, compute the index of the
-  // corresponding block in the table.
-  inline size_t addr_to_block_idx(HeapWord* addr) const;
-
+// A structure to represent a point at which objects are being copied
+// during compaction.
+class CompactPoint : public StackObj {
 public:
-  // Return the number of heap words covered by each block.
-  static int words_per_block() {
-    return BitsPerWord << LogMinObjAlignment;
-  }
+  Generation* gen;
+  ContiguousSpace* space;
 
-  SCBlockOffsetTable(MarkBitMap& mark_bitmap);
-  ~SCBlockOffsetTable();
-
-  void build_table_for_space(ContiguousSpace* space, CompactPoint& cp);
-
-  inline HeapWord* forwardee(HeapWord* addr) const;
+  CompactPoint(Generation* g = nullptr) :
+    gen(g), space(nullptr) {}
 };
 
 class SerialCompressor : public StackObj {
@@ -129,9 +107,6 @@ private:
   Stack<oop,mtGC> _marking_stack;
   // Separate marking stack for object-array-chunks.
   Stack<ObjArrayTask, mtGC> _objarray_stack;
-
-  // The block-offset table.
-  SCBlockOffsetTable _bot;
 
   // String-dedup support.
   StringDedup::Requests _string_dedup_requests;
@@ -163,7 +138,6 @@ private:
   void mark_and_push(T* p);
 
   // Update GC roots.
-  void update_roots();
   void compact_space(ContiguousSpace* space) const;
 
 public:
