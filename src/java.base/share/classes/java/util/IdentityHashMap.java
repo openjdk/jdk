@@ -267,7 +267,7 @@ public class IdentityHashMap<K,V>
     }
 
     /**
-     * Constructs a new identity hash map containing the keys-value mappings
+     * Constructs a new identity hash map containing the key-value mappings
      * in the specified map.
      *
      * @param m the map whose mappings are to be placed into this map

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -354,7 +354,6 @@ jrawMonitorID debugMonitorCreate(char *name);
 void debugMonitorEnter(jrawMonitorID theLock);
 void debugMonitorExit(jrawMonitorID theLock);
 void debugMonitorWait(jrawMonitorID theLock);
-void debugMonitorTimedWait(jrawMonitorID theLock, jlong millis);
 void debugMonitorNotify(jrawMonitorID theLock);
 void debugMonitorNotifyAll(jrawMonitorID theLock);
 void debugMonitorDestroy(jrawMonitorID theLock);

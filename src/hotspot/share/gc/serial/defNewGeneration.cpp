@@ -1104,11 +1104,6 @@ const char* DefNewGeneration::name() const {
   return "def new generation";
 }
 
-// Moved from inline file as they are not called inline
-ContiguousSpace* DefNewGeneration::first_compaction_space() const {
-  return eden();
-}
-
 HeapWord* DefNewGeneration::allocate(size_t word_size, bool is_tlab) {
   // This is the slow-path allocation for the DefNewGeneration.
   // Most allocations are fast-path in compiled code.
