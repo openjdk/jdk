@@ -302,8 +302,7 @@ public:
   static uint   LogOfHRGrainBytes;
   static uint   LogCardsPerRegion;
 
-  inline void increment_pinned_object_count();
-  inline void decrement_pinned_object_count();
+  inline void add_pinned_object_count(size_t value);
 
   static size_t GrainBytes;
   static size_t GrainWords;

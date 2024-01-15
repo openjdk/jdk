@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 
 #include "gc/g1/g1BarrierSet.hpp"
 #include "gc/g1/g1DirtyCardQueue.hpp"
+#include "gc/g1/g1RegionPinCache.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "gc/shared/satbMarkQueue.hpp"
 #include "runtime/javaThread.hpp"
@@ -37,9 +38,15 @@ private:
   SATBMarkQueue _satb_mark_queue;
   G1DirtyCardQueue _dirty_card_queue;
 
+  // Per-thread cache of pinned object count to reduce atomic operation traffic
+  // due to region pinning. Holds the last region where the mutator pinned an
+  // object and the number of pin operations since the last change of the region.
+  G1RegionPinCache _pin_cache;
+
   G1ThreadLocalData() :
       _satb_mark_queue(&G1BarrierSet::satb_mark_queue_set()),
-      _dirty_card_queue(&G1BarrierSet::dirty_card_queue_set()) {}
+      _dirty_card_queue(&G1BarrierSet::dirty_card_queue_set()),
+      _pin_cache() {}
 
   static G1ThreadLocalData* data(Thread* thread) {
     assert(UseG1GC, "Sanity");
@@ -89,6 +96,32 @@ public:
 
   static ByteSize dirty_card_queue_buffer_offset() {
     return dirty_card_queue_offset() + G1DirtyCardQueue::byte_offset_of_buf();
+  }
+
+  static uint cached_pinned_region_idx(Thread* thread) {
+    return data(thread)->_pin_cache.region_idx();
+  }
+
+#ifdef ASSERT
+  static size_t cached_pin_count(Thread* thread) {
+    return data(thread)->_pin_cache.count();
+  }
+#endif
+
+  static void inc_cached_pin_count(Thread* thread) {
+    data(thread)->_pin_cache.inc_count();
+  }
+
+  static void dec_cached_pin_count(Thread* thread) {
+    data(thread)->_pin_cache.dec_count();
+  }
+
+  static size_t get_and_set_pin_cache(Thread* thread, uint region_idx, size_t new_count) {
+    return data(thread)->_pin_cache.get_and_set(region_idx, new_count);
+  }
+
+  static Pair<uint, size_t> get_and_reset_pin_cache(Thread* thread) {
+    return data(thread)->_pin_cache.get_and_reset();
   }
 };
 

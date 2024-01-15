@@ -1,5 +1,5 @@
-/*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ /*
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -266,15 +266,37 @@ inline void G1CollectedHeap::pin_object(JavaThread* thread, oop obj) {
   assert(obj != nullptr, "obj must not be null");
   assert(!is_gc_active(), "must not pin objects during a GC");
   assert(obj->is_typeArray(), "must be typeArray");
-  HeapRegion *r = heap_region_containing(obj);
-  r->increment_pinned_object_count();
+  HeapRegion* r = heap_region_containing(obj);
+  uint obj_region_idx = r->hrm_index();
+
+  uint cache_region_idx = G1ThreadLocalData::cached_pinned_region_idx(thread);
+  if (cache_region_idx == obj_region_idx) {
+    G1ThreadLocalData::inc_cached_pin_count(thread);
+  } else {
+    // Flush old.
+    size_t cache_pin_count = G1ThreadLocalData::get_and_set_pin_cache(thread, obj_region_idx, (size_t)1);
+    if (cache_pin_count != 0) {
+      region_at(cache_region_idx)->add_pinned_object_count(cache_pin_count);
+    }
+  }
 }
 
 inline void G1CollectedHeap::unpin_object(JavaThread* thread, oop obj) {
   assert(obj != nullptr, "obj must not be null");
   assert(!is_gc_active(), "must not unpin objects during a GC");
-  HeapRegion *r = heap_region_containing(obj);
-  r->decrement_pinned_object_count();
+  HeapRegion* r = heap_region_containing(obj);
+  uint obj_region_idx = r->hrm_index();
+
+  uint cache_region_idx = G1ThreadLocalData::cached_pinned_region_idx(thread);
+  if (cache_region_idx == obj_region_idx) {
+    G1ThreadLocalData::dec_cached_pin_count(thread);
+  } else {
+    // Flush old.
+    size_t cache_pin_count = G1ThreadLocalData::get_and_set_pin_cache(thread, obj_region_idx, ~(size_t)0);
+    if (cache_pin_count != 0) {
+      region_at(cache_region_idx)->add_pinned_object_count(cache_pin_count);
+    }
+  }
 }
 
 inline bool G1CollectedHeap::is_obj_dead(const oop obj) const {

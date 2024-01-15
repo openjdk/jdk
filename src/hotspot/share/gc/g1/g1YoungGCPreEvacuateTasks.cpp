@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
 #include "gc/g1/g1ConcurrentRefineStats.hpp"
 #include "gc/g1/g1DirtyCardQueue.hpp"
 #include "gc/g1/g1YoungGCPreEvacuateTasks.hpp"
+#include "gc/g1/g1ThreadLocalData.hpp"
 #include "gc/shared/barrierSet.inline.hpp"
 #include "gc/shared/threadLocalAllocBuffer.inline.hpp"
 #include "memory/allocation.inline.hpp"
@@ -57,12 +58,18 @@ class G1PreEvacuateCollectionSetBatchTask::JavaThreadRetireTLABAndFlushLogs : pu
       assert(thread->is_Java_thread(), "must be");
       // Flushes deferred card marks, so must precede concatenating logs.
       BarrierSet::barrier_set()->make_parsable((JavaThread*)thread);
+      // Retire TLABs.
       if (UseTLAB) {
         thread->tlab().retire(&_tlab_stats);
       }
-
+      // Concatenate logs.
       G1DirtyCardQueueSet& qset = G1BarrierSet::dirty_card_queue_set();
       _refinement_stats += qset.concatenate_log_and_stats(thread);
+      // Flush region pincount cache.
+      Pair<uint, size_t> region_pin_cache = G1ThreadLocalData::get_and_reset_pin_cache(thread);
+      if (region_pin_cache.second != 0) {
+        G1CollectedHeap::heap()->region_at(region_pin_cache.first)->add_pinned_object_count(region_pin_cache.second);
+      }
     }
   };
 
@@ -132,6 +139,8 @@ class G1PreEvacuateCollectionSetBatchTask::NonJavaThreadFlushLogs : public G1Abs
     void do_thread(Thread* thread) override {
       G1DirtyCardQueueSet& qset = G1BarrierSet::dirty_card_queue_set();
       _refinement_stats += qset.concatenate_log_and_stats(thread);
+
+      assert(G1ThreadLocalData::cached_pin_count(thread) == 0, "NonJava thread has pinned Java objects");
     }
   } _tc;
 

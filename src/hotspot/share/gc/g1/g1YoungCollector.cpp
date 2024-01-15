@@ -1087,6 +1087,12 @@ void G1YoungCollector::collect() {
 
     pre_evacuate_collection_set(jtm.evacuation_info());
 
+#ifdef ASSERT
+    for (JavaThreadIteratorWithHandle jtiwh; JavaThread *thread = jtiwh.next(); ) {
+      assert(G1ThreadLocalData::cached_pin_count(thread) == 0, "must be flushed");
+    }
+#endif
+
     G1ParScanThreadStateSet per_thread_states(_g1h,
                                               workers()->active_workers(),
                                               collection_set(),

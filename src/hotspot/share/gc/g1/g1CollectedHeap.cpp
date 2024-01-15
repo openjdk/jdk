@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2469,6 +2469,15 @@ void G1CollectedHeap::prepare_for_mutator_after_young_collection() {
 
 void G1CollectedHeap::retire_tlabs() {
   ensure_parsability(true);
+}
+
+void G1CollectedHeap::flush_region_pin_cache() {
+  for (JavaThreadIteratorWithHandle jtiwh; JavaThread *thread = jtiwh.next(); ) {
+    Pair<uint, size_t> stats = G1ThreadLocalData::get_and_reset_pin_cache(thread);
+    if (stats.second != 0) {
+      region_at(stats.first)->add_pinned_object_count(stats.second);
+    }
+  }
 }
 
 void G1CollectedHeap::do_collection_pause_at_safepoint_helper() {
