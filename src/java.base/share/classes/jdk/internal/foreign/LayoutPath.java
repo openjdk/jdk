@@ -392,16 +392,11 @@ public class LayoutPath {
         final String additionalInfo;
 
         public PathElementImpl(PathKind kind,
-                               UnaryOperator<LayoutPath> pathOp) {
-            this(kind, pathOp, null);
-        }
-
-        public PathElementImpl(PathKind kind,
                                UnaryOperator<LayoutPath> pathOp,
-                               String additionalInfo) {
+                               String stringRepresentation) {
             this.kind = kind;
             this.pathOp = pathOp;
-            this.additionalInfo = additionalInfo;
+            this.additionalInfo = stringRepresentation;
         }
 
         @Override
@@ -415,10 +410,7 @@ public class LayoutPath {
 
         @Override
         public String toString() {
-            return kind.description() +
-                    (additionalInfo != null
-                            ? " " + additionalInfo
-                            : "");
+            return additionalInfo;
         }
     }
 }
