@@ -2327,17 +2327,21 @@ JRT_ENTRY(void, Deoptimization::uncommon_trap_inner(JavaThread* current, jint tr
     // to use the MDO to detect hot deoptimization points and control
     // aggressive optimization.
     bool inc_recompile_count = false;
+
+    // Lock to read ProfileData, and ensure lock is not broken by a safepoint
+    ConditionalMutexLocker ml((trap_mdo != nullptr) ? trap_mdo->extra_data_lock() : nullptr,
+                              (trap_mdo != nullptr),
+                              Mutex::_no_safepoint_check_flag);
+    NoSafepointVerifier no_safepoint;
+    ProfileData* pdata = nullptr;
+
     if (ProfileTraps && CompilerConfig::is_c2_or_jvmci_compiler_enabled() && update_trap_state && trap_mdo != nullptr) {
       assert(trap_mdo == get_method_data(current, profiled_method, false), "sanity");
       uint this_trap_count = 0;
       bool maybe_prior_trap = false;
       bool maybe_prior_recompile = false;
 
-      // Lock to read ProfileData, and ensure lock is not broken by a safepoint
-      MutexLocker ml(trap_mdo->extra_data_lock(), Mutex::_no_safepoint_check_flag);
-      NoSafepointVerifier no_safepoint;
-
-      ProfileData* pdata = query_update_method_data(trap_mdo, trap_bci, reason, true,
+      pdata = query_update_method_data(trap_mdo, trap_bci, reason, true,
 #if INCLUDE_JVMCI
                                    nm->is_compiled_by_jvmci() && nm->is_osr_method(),
 #endif
@@ -2403,15 +2407,6 @@ JRT_ENTRY(void, Deoptimization::uncommon_trap_inner(JavaThread* current, jint tr
       if (make_not_entrant && maybe_prior_recompile && maybe_prior_trap) {
         reprofile = true;
       }
-
-      if (make_not_entrant && pdata != nullptr) {
-        // Record the recompilation event, if any.
-        int tstate0 = pdata->trap_state();
-        int tstate1 = trap_state_set_recompiled(tstate0, true);
-        if (tstate1 != tstate0) {
-          pdata->set_trap_state(tstate1);
-        }
-      }
     }
 
     // Take requested actions on the method:
@@ -2420,6 +2415,14 @@ JRT_ENTRY(void, Deoptimization::uncommon_trap_inner(JavaThread* current, jint tr
     if (make_not_entrant) {
       if (!nm->make_not_entrant()) {
         return; // the call did not change nmethod's state
+      }
+
+      if (pdata != nullptr) {
+        // Record the recompilation event, if any.
+        int tstate0 = pdata->trap_state();
+        int tstate1 = trap_state_set_recompiled(tstate0, true);
+        if (tstate1 != tstate0)
+          pdata->set_trap_state(tstate1);
       }
 
 #if INCLUDE_RTM_OPT
