@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,14 +26,13 @@
 #define SHARE_GC_SERIAL_SERIALHEAP_HPP
 
 #include "gc/serial/defNewGeneration.hpp"
-#include "gc/serial/tenuredGeneration.hpp"
-#include "utilities/growableArray.hpp"
-
 #include "gc/serial/generation.hpp"
+#include "gc/serial/tenuredGeneration.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/oopStorageParState.hpp"
 #include "gc/shared/preGCValues.hpp"
 #include "gc/shared/softRefPolicy.hpp"
+#include "utilities/growableArray.hpp"
 
 class CardTableRS;
 class GCPolicyCounters;
@@ -248,8 +247,6 @@ public:
   void update_gc_stats(Generation* current_generation, bool full) {
     _old_gen->update_gc_stats(current_generation, full);
   }
-
-  bool no_gc_in_progress() { return !is_gc_active(); }
 
   void prepare_for_verify() override;
   void verify(VerifyOption option) override;
