@@ -92,7 +92,7 @@
   develop(bool, DelayThreadStartALot, false,                            \
           "Artificially delay thread starts randomly for testing.")     \
                                                                         \
-  product(bool, UseMadvPopulateWrite, true, DIAGNOSTIC,                 \
+  product(bool, UseMadvPopulateWrite, false, DIAGNOSTIC,                \
           "Use MADV_POPULATE_WRITE in os::pd_pretouch_memory.")         \
                                                                         \
 

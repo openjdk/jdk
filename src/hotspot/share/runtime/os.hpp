@@ -223,12 +223,10 @@ class os: AllStatic {
   static bool   pd_unmap_memory(char *addr, size_t bytes);
   static void   pd_free_memory(char *addr, size_t bytes, size_t alignment_hint);
   static void   pd_realign_memory(char *addr, size_t bytes, size_t alignment_hint);
-  static void   pd_pretouch_memory(void* first, void* last, size_t page_size);
 
-  // Some platforms may have special treatment for pretouch, while most
-  // platforms do the same thing. So the common part of the code was extracted
-  // here to avoid copying it around.
-  static void   pretouch_memory_common(void* first, void* last, size_t page_size);
+  // Returns 0 if pretouch is done via platform dependent method, or otherwise
+  // returns page_size that should be used for the common method.
+  static size_t pd_pretouch_memory(void* first, void* last, size_t page_size);
 
   static char*  pd_reserve_memory_special(size_t size, size_t alignment, size_t page_size,
 

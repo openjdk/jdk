@@ -90,7 +90,8 @@ public class TestTransparentHugePageUsage {
           .findFirst()
           .map(e -> Long.valueOf(e.getKey().substring(e.getValue().start(1), e.getValue().end(1))));
       if (!usage.isPresent()) throw new RuntimeException("The usage of THP was not found.");
-      if (usage.get() >= 524288) throw new RuntimeException("The usage of THP is not enough.");
+      // Even with MADV_POPULATE_WRITE, the usage of THP is still one page less than the whole heap.
+      if (usage.get() < 524288) throw new RuntimeException("The usage of THP is not enough.");
     }
   }
 

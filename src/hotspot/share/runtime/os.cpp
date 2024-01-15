@@ -2117,19 +2117,16 @@ void os::pretouch_memory(void* start, void* end, size_t page_size) {
     void* first = align_down(start, page_size);
     void* last = align_down(static_cast<char*>(end) - 1, page_size);
     assert(first <= last, "invariant");
-    // Iterate from first page through last (inclusive), being careful to
-    // avoid overflow if the last page abuts the end of the address range.
-    pd_pretouch_memory(first, last, page_size);
-  }
-}
-
-void os::pretouch_memory_common(void* first, void* last, size_t page_size) {
-  assert(is_aligned(first, page_size), "pointer " PTR_FORMAT " is not page-aligned by %zu", p2i(first), page_size);
-  assert(is_aligned(last, page_size), "pointer " PTR_FORMAT " is not page-aligned by %zu", p2i(last), page_size);
-  assert(first <= last, "invalid range: " PTR_FORMAT " -> " PTR_FORMAT, p2i(first), p2i(last));
-  for (char* cur = static_cast<char*>(first); /* break */; cur += page_size) {
-    Atomic::add(reinterpret_cast<int*>(cur), 0, memory_order_relaxed);
-    if (cur >= last) break;
+    const size_t pd_page_size = pd_pretouch_memory(first, last, page_size);
+    if (pd_page_size > 0) {
+      // Iterate from first page through last (inclusive), being careful to
+      // avoid overflow if the last page abuts the end of the address range.
+      last = align_down(static_cast<char*>(end) - 1, pd_page_size);
+      for (char* cur = static_cast<char*>(first); /* break */; cur += pd_page_size) {
+	Atomic::add(reinterpret_cast<int*>(cur), 0, memory_order_relaxed);
+	if (cur >= last) break;
+      }
+    }
   }
 }
 

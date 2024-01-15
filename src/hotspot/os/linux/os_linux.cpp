@@ -2950,7 +2950,7 @@ void os::pd_free_memory(char *addr, size_t bytes, size_t alignment_hint) {
   }
 }
 
-void os::pd_pretouch_memory(void* first, void* last, size_t page_size) {
+size_t os::pd_pretouch_memory(void* first, void* last, size_t page_size) {
   const size_t len = pointer_delta(last, first, sizeof(char)) + page_size;
   // Use madvise to pretouch on Linux when THP is used, and fallback to the
   // common method if unsupported. THP can form right after madvise rather than
@@ -2964,16 +2964,16 @@ void os::pd_pretouch_memory(void* first, void* last, size_t page_size) {
     if (!UseMadvPopulateWrite || err == EINVAL) { // Not to use or not supported
       // When using THP we need to always pre-touch using small pages as the
       // OS will initially always use small pages.
-      pretouch_memory_common(first, last, os::vm_page_size());
+      return os::vm_page_size();
     } else if (err != 0) {
       log_warning(gc, os)("::madvise(" PTR_FORMAT ", " SIZE_FORMAT
                           ", %d) failed; error='%s' (errno=%d)",
                           p2i(first), len, MADV_POPULATE_WRITE,
                           os::strerror(err), err);
     }
-  } else {
-    pretouch_memory_common(first, last, page_size);
+    return 0;
   }
+  return page_size;
 }
 
 void os::numa_make_global(char *addr, size_t bytes) {
@@ -4397,6 +4397,9 @@ void os::init(void) {
     (int(*)(pthread_t, const char*))dlsym(RTLD_DEFAULT, "pthread_setname_np");
 
   check_pax();
+
+  // Check the availability of MADV_POPULATE_WRITE.
+  UseMadvPopulateWrite = (::madvise(0, 0, MADV_POPULATE_WRITE) == 0);
 
   os::Posix::init();
 }
