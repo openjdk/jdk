@@ -30,10 +30,10 @@ import jtreg.SkippedException;
 /**
  * @test
  * @bug 8318682
- * @summary Test clhsdb 'testdebuginfodecode' command
+ * @summary Test clhsdb that decoding of AllocationMerge objects in debug info works correctly
  * @requires vm.hasSA
  * @library /test/lib
- * @run main/othervm -XX:CompileThresholdScaling=0.01 -XX:CompileCommand=compileonly,compiler.c2.HeapDumper::testIt -XX:CompileCommand=exclude,compiler.c2.HeapDumper::dummy ClhsdbTestAllocationMerge
+ * @run main/othervm -XX:CompileThresholdScaling=0.01 -XX:CompileCommand=compileonly,ClhsdbTestAllocationMerge::testIt -XX:CompileCommand=exclude,ClhsdbTestAllocationMerge::dummy ClhsdbTestAllocationMerge
  */
 
 public class ClhsdbTestAllocationMerge {
