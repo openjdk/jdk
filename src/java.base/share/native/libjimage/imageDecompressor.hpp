@@ -56,7 +56,7 @@
 struct ResourceHeader {
     /* magic bytes that identifies a compressed resource header*/
     static const u4 resource_header_magic = 0xCAFEFAFA;
-    u4 _magic; // Resource header
+    static const u4 tiny_resource_header_magic = 0xCAFEDADA;
     u8 _size;    // Resource size
     u8 _uncompressed_size;  // Expected uncompressed size
     u4 _decompressor_name_offset;    // Strings table decompressor offset
@@ -101,6 +101,7 @@ private:
 
     static u8 getU8(u1* ptr, Endian *endian);
     static u4 getU4(u1* ptr, Endian *endian);
+    static u2 getU2(u1* ptr, Endian *endian);
 
 protected:
     ImageDecompressor(const char* name) : _name(name) {
