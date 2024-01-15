@@ -80,7 +80,7 @@ public class StackMapDecoder {
         } else {
             vtis = new VerificationTypeInfo[methodType.parameterCount()];
         }
-        for(int pi = 0; pi < methodType.parameterCount(); pi++) {
+        for (int pi = 0; pi < methodType.parameterCount(); pi++) {
             var arg = methodType.parameterType(pi);
             vtis[i++] = switch (arg.descriptorString().charAt(0)) {
                 case 'I', 'S', 'C' ,'B', 'Z' -> SimpleVerificationTypeInfo.ITEM_INTEGER;
