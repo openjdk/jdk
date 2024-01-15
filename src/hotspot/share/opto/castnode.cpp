@@ -281,6 +281,15 @@ void CastIINode::dump_spec(outputStream* st) const {
 }
 #endif
 
+CastIINode* CastIINode::pin_array_access_node() const {
+  assert(_dependency == RegularDependency, "already pinned");
+  if (has_range_check()) {
+    return new CastIINode(in(0), in(1), bottom_type(), StrongDependency, has_range_check());
+  }
+  return nullptr;
+}
+
+
 const Type* CastLLNode::Value(PhaseGVN* phase) const {
   const Type* res = ConstraintCastNode::Value(phase);
   if (res == Type::TOP) {

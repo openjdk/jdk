@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,29 +21,31 @@
  * questions.
  */
 
-/* @test
-   @bug 4290060
-   @summary Check if the zip file is closed before access any
-            elements in the Enumeration.
+/*
+ * @test
+ * @bug 8000245 8000615
+ * @summary Test any TimeZone Locale provider related issues
+ * @library /test/lib
+ * @build LocaleProviders
+ *        providersrc.spi.src.tznp
+ *        providersrc.spi.src.tznp8013086
+ * @modules java.base/sun.util.locale.provider
+ * @run junit/othervm LocaleProvidersTimeZone
  */
 
-import java.io.*;
-import java.util.zip.*;
-import java.util.Enumeration;
+import org.junit.jupiter.api.Test;
 
-public class EnumAfterClose {
-    public static void main(String args[]) throws Exception {
-        Enumeration e;
-        try (ZipFile zf = new ZipFile(new File(System.getProperty("test.src", "."),
-                                               "input.zip"))) {
-            e = zf.entries();
-        }
-        // ensure that the ZipFile is closed before checking the Enumeration
-        try {
-            if (e.hasMoreElements()) {
-                ZipEntry ze = (ZipEntry)e.nextElement();
-            }
-        } catch (IllegalStateException ie) {
-        }
+public class LocaleProvidersTimeZone {
+
+    /*
+     * 8000245 and 8000615: Ensure preference is followed, even with a custom
+     * SPI defined.
+     */
+    @Test
+    public void timeZoneWithCustomProvider() throws Throwable {
+        LocaleProviders.test("JRE", "tzNameTest", "Europe/Moscow");
+        LocaleProviders.test("COMPAT", "tzNameTest", "Europe/Moscow");
+        LocaleProviders.test("JRE", "tzNameTest", "America/Los_Angeles");
+        LocaleProviders.test("COMPAT", "tzNameTest", "America/Los_Angeles");
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -228,7 +228,7 @@ class Generation: public CHeapObj<mtGC> {
   // this generation. See comment below.
   // This is a generic implementation which can be overridden.
   //
-  // Note: in the current (1.4) implementation, when genCollectedHeap's
+  // Note: in the current (1.4) implementation, when serialHeap's
   // incremental_collection_will_fail flag is set, all allocations are
   // slow path (the only fast-path place to allocate is DefNew, which
   // will be full if the flag is set).

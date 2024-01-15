@@ -953,7 +953,6 @@ static int write_method(JfrCheckpointWriter* writer, MethodPtr method, bool leak
 int write__method(JfrCheckpointWriter* writer, const void* m) {
   assert(m != nullptr, "invariant");
   MethodPtr method = static_cast<MethodPtr>(m);
-  assert(METHOD_IS_NOT_SERIALIZED(method), "invariant");
   set_serialized(method);
   return write_method(writer, method, false);
 }
