@@ -113,14 +113,14 @@ void CircularStringBuffer::enqueue_locked(const char* msg, size_t size, LogFileS
     _stats_lock.unlock();
     return;
   }
-  // Load the tail, no need for atomic load as we're using the lock.
-  size_t t = Atomic::load(&tail);
+  // Load the tail.
+  size_t t = tail;
   // Write the Descriptor
   new (&buffer[t]) Message{required_memory, output, decorations};
   // Write the string
   memcpy(&buffer[t] + sizeof(Message), msg, size);
   // Finally move the tail, making the message available for consumers.
-  Atomic::store(&tail, (t + required_memory + sizeof(Message)) % bufsize);
+  tail = (t + required_memory + sizeof(Message)) % bufsize;
   // We're done, notify the writer.
   _write_lock.notify();
   return;
@@ -144,8 +144,8 @@ void CircularStringBuffer::enqueue(LogFileStreamOutput& output, LogMessageBuffer
 void CircularStringBuffer::dequeue(Message* out_descriptor, char* out, size_t out_size) {
   ReadLocker rl(this);
 
-  size_t h = Atomic::load(&head);
-  size_t t = Atomic::load(&tail);
+  size_t h = head;
+  size_t t = tail;
   // Check if there's something to read
   if (h == t) {
     return;
@@ -163,7 +163,7 @@ void CircularStringBuffer::dequeue(Message* out_descriptor, char* out, size_t ou
   char* str = &buffer[h] + sizeof(Message);
   memcpy(out, str, str_size);
   // Done, move the head
-  Atomic::store(&head, (h + desc->size + sizeof(Message)) % bufsize);
+  head = (h + desc->size + sizeof(Message)) % bufsize;
   // Release the lock
   return;
 }

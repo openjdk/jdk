@@ -45,7 +45,7 @@ public:
 private:
   static const LogDecorations& None;
 
-  // Need to perform accounting of statistics.
+  // Need to perform accounting of statistics under a separate lock.
   StatisticsMap& _stats;
   PlatformMonitor& _stats_lock;
 
@@ -73,8 +73,9 @@ private:
     }
   };
 
-  // Reader may read tail, writer may read head.
-  // Therefore need atomic access.
+  // Shared memory:
+  // Reader reads tail, writes to head.
+  // Writer reads head, writes to tail.
   volatile size_t tail; // Where new writes happen
   volatile size_t head; // Where new reads happen
   char* buffer;
