@@ -1159,7 +1159,8 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
     public boolean offer(E e, long timeout, TimeUnit unit) {
         Objects.requireNonNull(e);
         xfer(e, -1L);
-        return true;    }
+        return true;
+    }
 
     /**
      * Inserts the specified element at the tail of this queue.
