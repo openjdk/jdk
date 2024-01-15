@@ -55,16 +55,6 @@ class ContiguousSpace;
 class OopClosure;
 class GCStats;
 
-// A "ScratchBlock" represents a block of memory in one generation usable by
-// another.  It represents "num_words" free words, starting at and including
-// the address of "this".
-struct ScratchBlock {
-  ScratchBlock* next;
-  size_t num_words;
-  HeapWord scratch_space[1];  // Actually, of size "num_words-2" (assuming
-                              // first two fields are word-sized.)
-};
-
 class Generation: public CHeapObj<mtGC> {
   friend class VMStructs;
  private:
@@ -174,10 +164,6 @@ class Generation: public CHeapObj<mtGC> {
 
   // Iteration - do not use for time critical operations
   virtual void space_iterate(SpaceClosure* blk, bool usedOnly = false) = 0;
-
-  // Returns the first space, if any, in the generation that can participate
-  // in compaction, or else "null".
-  virtual ContiguousSpace* first_compaction_space() const = 0;
 
   // Returns "true" iff this generation should be used to allocate an
   // object of the given size.  Young generations might

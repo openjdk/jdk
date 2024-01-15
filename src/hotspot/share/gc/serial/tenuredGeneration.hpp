@@ -101,8 +101,6 @@ class TenuredGeneration: public Generation {
 
   bool is_in(const void* p) const;
 
-  ContiguousSpace* first_compaction_space() const;
-
   TenuredGeneration(ReservedSpace rs,
                     size_t initial_byte_size,
                     size_t min_byte_size,
