@@ -283,7 +283,7 @@ public class NMethod extends CompiledMethod {
   public void decodeAllScopeDescs() {
     for (Address p = scopesPCsBegin(); p.lessThan(scopesPCsEnd()); p = p.addOffsetTo(pcDescSize)) {
       PCDesc pd = new PCDesc(p);
-      if (pd.getPCOffset()  == -1) {
+      if (pd.getPCOffset() == -1) {
         break;
       }
       ScopeDesc sd = new ScopeDesc(this, pd.getScopeDecodeOffset(), pd.getObjDecodeOffset(), pd.getReexecute());
