@@ -29,7 +29,7 @@
  *
  * @modules java.base/jdk.internal.misc
  *
- * @run main/othervm -XX:-TieredCompilation -Xbatch -XX:CompileCommand=quiet -XX:CompileCommand=compileonly,compiler.unsafe.UnsafeArrayCopy::test
+ * @run main/othervm -XX:-TieredCompilation -Xbatch -XX:CompileCommand=quiet -XX:CompileCommand=compileonly,compiler.unsafe.UnsafeArrayCopy::test*
  *                   compiler.unsafe.UnsafeArrayCopy
  */
 
@@ -59,9 +59,20 @@ public class UnsafeArrayCopy {
         return obj.x;
     }
 
+    static int[] test2() {
+         int[] src = new int[4];
+         int[] dst = new int[4];
+         MyClass obj = new MyClass();
+         UNSAFE.copyMemory(src, 0, dst, 0, 4);
+         obj.x = 42;
+         dst[1] = obj.x;
+         return dst;
+    }
+
     public static void main(String[] args) {
         for (int i = 0; i < 50_000; ++i) {
             test();
+            test2();
         }
     }
 }
