@@ -23,13 +23,13 @@
 
 /*
  * @test
- * @run testng SubclassTest
  * @bug 8323659
  * @summary Ensures that the implementation of LTQ add and put methods does
  *  not call overridable offer. This test specifically asserts implementation
  *  details of LTQ. It's not that such impl details cannot change, just that
  *  such a change should be deliberately done with suitable consideration
  *  to compatibility.
+ * @run testng SubclassTest
  */
 
 import java.util.concurrent.LinkedTransferQueue;
