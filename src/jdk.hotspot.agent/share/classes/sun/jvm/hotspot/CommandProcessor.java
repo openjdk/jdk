@@ -1659,7 +1659,7 @@ public class CommandProcessor {
                                 return;
                             }
                             if (blob instanceof NMethod) {
-                                NMethod nm = (NMethod)  blob;
+                                NMethod nm = (NMethod) blob;
                                 try {
                                     nm.decodeAllScopeDescs();
                                 } catch (Throwable t) {
