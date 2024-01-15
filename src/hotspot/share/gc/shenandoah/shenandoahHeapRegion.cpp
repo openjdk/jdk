@@ -607,26 +607,8 @@ size_t ShenandoahHeapRegion::setup_sizes(size_t max_heap_size) {
   HumongousThresholdBytes = HumongousThresholdWords * HeapWordSize;
   assert (HumongousThresholdBytes <= RegionSizeBytes, "sanity");
 
-  // The rationale for trimming the TLAB sizes has to do with the raciness in
-  // TLAB allocation machinery. It may happen that TLAB sizing policy polls Shenandoah
-  // about next free size, gets the answer for region #N, goes away for a while, then
-  // tries to allocate in region #N, and fail because some other thread have claimed part
-  // of the region #N, and then the freeset allocation code has to retire the region #N,
-  // before moving the allocation to region #N+1.
-  //
-  // The worst case realizes when "answer" is "region size", which means it could
-  // prematurely retire an entire region. Having smaller TLABs does not fix that
-  // completely, but reduces the probability of too wasteful region retirement.
-  // With current divisor, we will waste no more than 1/8 of region size in the worst
-  // case. This also has a secondary effect on collection set selection: even under
-  // the race, the regions would be at least 7/8 used, which allows relying on
-  // "used" - "live" for cset selection. Otherwise, we can get the fragmented region
-  // below the garbage threshold that would never be considered for collection.
-  //
-  // The whole thing is mitigated if Elastic TLABs are enabled.
-  //
   guarantee(MaxTLABSizeWords == 0, "we should only set it once");
-  MaxTLABSizeWords = MIN2(ShenandoahElasticTLAB ? RegionSizeWords : (RegionSizeWords / 8), HumongousThresholdWords);
+  MaxTLABSizeWords = MIN2(RegionSizeWords, HumongousThresholdWords);
   MaxTLABSizeWords = align_down(MaxTLABSizeWords, MinObjAlignment);
 
   guarantee(MaxTLABSizeBytes == 0, "we should only set it once");

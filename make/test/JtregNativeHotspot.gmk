@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -857,11 +857,16 @@ else
       exeinvoke.c exestack-gap.c exestack-tls.c libAsyncGetCallTraceTest.cpp
 endif
 
+ifeq ($(call And, $(call isTargetOs, linux) $(call isTargetCpu, aarch64)), false)
+  BUILD_HOTSPOT_JTREG_EXCLUDE += libTestSVEWithJNI.c
+endif
+
+
 BUILD_HOTSPOT_JTREG_EXECUTABLES_LIBS_exesigtest := -ljvm
 
 ifeq ($(call isTargetOs, windows), true)
   BUILD_HOTSPOT_JTREG_EXECUTABLES_CFLAGS_exeFPRegs := -MT
-  BUILD_HOTSPOT_JTREG_EXCLUDE += exesigtest.c libterminatedThread.c libTestJNI.c libCompleteExit.c libTestPsig.c exeGetCreatedJavaVMs.c
+  BUILD_HOTSPOT_JTREG_EXCLUDE += exesigtest.c libterminatedThread.c libTestJNI.c libCompleteExit.c libMonitorWithDeadObjectTest.c libTestPsig.c exeGetCreatedJavaVMs.c
   BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libatExit := jvm.lib
   BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libnativeStack := jvm.lib
   BUILD_HOTSPOT_JTREG_EXECUTABLES_LIBS_exedaemonDestroy := jvm.lib
@@ -1503,6 +1508,7 @@ else
   BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libterminatedThread += -lpthread
   BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libatExit += -ljvm
   BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libCompleteExit += -lpthread
+  BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libMonitorWithDeadObjectTest += -lpthread
   BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libnativeStack += -lpthread
   BUILD_HOTSPOT_JTREG_EXECUTABLES_LIBS_exeGetCreatedJavaVMs := -ljvm -lpthread
 

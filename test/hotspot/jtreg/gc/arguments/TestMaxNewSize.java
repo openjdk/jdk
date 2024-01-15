@@ -95,8 +95,7 @@ public class TestMaxNewSize {
     finalargs.add("-XX:+PrintFlagsFinal");
     finalargs.add("-version");
 
-    ProcessBuilder pb = GCArguments.createTestJavaProcessBuilder(finalargs);
-    OutputAnalyzer output = new OutputAnalyzer(pb.start());
+    OutputAnalyzer output = GCArguments.executeTestJava(finalargs);
     output.shouldHaveExitValue(0);
     String stdout = output.getStdout();
     return getFlagValue("MaxNewSize", stdout);

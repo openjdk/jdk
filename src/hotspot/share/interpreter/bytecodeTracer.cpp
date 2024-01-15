@@ -37,6 +37,7 @@
 #include "oops/method.hpp"
 #include "oops/resolvedFieldEntry.hpp"
 #include "oops/resolvedIndyEntry.hpp"
+#include "oops/resolvedMethodEntry.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/osThread.hpp"
@@ -326,13 +327,6 @@ void BytecodePrinter::print_bsm(int cp_index, outputStream* st) {
   st->print_cr("  }");
 }
 
-void BytecodePrinter::print_cpcache_entry(int cpc_index, outputStream* st) {
-  ConstantPool* constants = method()->constants();
-  ConstantPoolCacheEntry* cpce = constants->cache()->entry_at(cpc_index);
-  st->print("  ConstantPoolCacheEntry: ");
-  cpce->print(st, cpc_index, constants->cache());
-}
-
 void BytecodePrinter::print_attributes(int bci, outputStream* st) {
   // Show attributes of pre-rewritten codes
   Bytecodes::Code code = Bytecodes::java_code(raw_code());
@@ -516,20 +510,24 @@ void BytecodePrinter::print_attributes(int bci, outputStream* st) {
     case Bytecodes::_invokestatic:
       {
         int cp_index;
-        int cpcache_index;
         if (is_linked()) {
-          cpcache_index = get_native_index_u2();
-          cp_index = cpcache()->entry_at(cpcache_index)->constant_pool_index();
+          int method_index = get_native_index_u2();
+          ResolvedMethodEntry* method_entry = cpcache()->resolved_method_entry_at(method_index);
+          cp_index = method_entry->constant_pool_index();
+          print_field_or_method(cp_index, st);
+
+          if (raw_code() == Bytecodes::_invokehandle &&
+              ClassPrinter::has_mode(_flags, ClassPrinter::PRINT_METHOD_HANDLE)) {
+            assert(is_linked(), "invokehandle is only in rewritten methods");
+            method_entry->print_on(st);
+            if (method_entry->has_appendix()) {
+              st->print("  appendix: ");
+              constants()->resolved_reference_from_method(method_index)->print_on(st);
+            }
+          }
         } else {
-          cpcache_index = -1;
           cp_index = get_Java_index_u2();
-        }
-        print_field_or_method(cp_index, st);
-        if (raw_code() == Bytecodes::_invokehandle &&
-            ClassPrinter::has_mode(_flags, ClassPrinter::PRINT_METHOD_HANDLE)) {
-          assert(is_linked(), "invokehandle is only in rewritten methods");
-          assert(cpcache_index >= 0, "must be");
-          print_cpcache_entry(cpcache_index, st);
+          print_field_or_method(cp_index, st);
         }
       }
       break;
@@ -538,8 +536,8 @@ void BytecodePrinter::print_attributes(int bci, outputStream* st) {
       {
         int cp_index;
         if (is_linked()) {
-          int cpcache_index = get_native_index_u2();
-          cp_index = cpcache()->entry_at(cpcache_index)->constant_pool_index();
+          int method_index = get_native_index_u2();
+          cp_index = cpcache()->resolved_method_entry_at(method_index)->constant_pool_index();
         } else {
           cp_index = get_Java_index_u2();
         }

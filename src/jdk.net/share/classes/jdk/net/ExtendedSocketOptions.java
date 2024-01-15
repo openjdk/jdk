@@ -220,6 +220,8 @@ public final class ExtendedSocketOptions {
      * by the sending and receiving nodes exclusively. Setting this option for
      * an IPv6 socket ensures that packets to be sent are never fragmented, in
      * which case, the local network MTU must be observed.
+     *
+     * @since 19
      */
     public static final SocketOption<Boolean> IP_DONTFRAGMENT =
         new ExtSocketOption<Boolean>("IP_DONTFRAGMENT", Boolean.class);

@@ -132,8 +132,6 @@ class x86 {
 
   static address _verify_mxcsr_entry;
 
-  static address _method_entry_barrier;
-
   // masks and table for CRC32
   static const uint64_t _crc_by128_masks[];
   static const juint    _crc_table[];

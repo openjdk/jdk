@@ -35,12 +35,10 @@
 #include "runtime/atomic.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/jniHandles.inline.hpp"
-#include "runtime/vm_version.hpp"
 #include "utilities/growableArray.hpp"
 
 // returns updated value
 static traceid atomic_inc(traceid volatile* const dest, traceid stride = 1) {
-  assert(VM_Version::supports_cx8(), "invariant");
   traceid compare_value;
   traceid exchange_value;
   do {
@@ -294,4 +292,3 @@ void JfrTraceId::untag_jdk_jfr_event_sub(const Klass* k) {
   }
   assert(IS_NOT_AN_EVENT_SUB_KLASS(k), "invariant");
 }
-

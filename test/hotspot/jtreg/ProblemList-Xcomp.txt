@@ -42,9 +42,9 @@ vmTestbase/vm/mlvm/indy/func/jvmti/mergeCP_indy2manyDiff_a/TestDescription.java 
 vmTestbase/vm/mlvm/indy/func/jvmti/mergeCP_indy2manySame_a/TestDescription.java 8308367 windows-x64
 vmTestbase/vm/mlvm/indy/func/jvmti/redefineClassInTarget/TestDescription.java 8308367 windows-x64
 
+vmTestbase/nsk/jdi/StepRequest/addClassFilter_rt/filter_rt001/TestDescription.java 8043571 generic-all
+vmTestbase/nsk/jdi/StepRequest/addClassFilter_rt/filter_rt003/TestDescription.java 8043571 generic-all
+
 vmTestbase/nsk/jvmti/scenarios/capability/CM03/cm03t001/TestDescription.java 8299493 macosx-x64
 
 gc/arguments/TestNewSizeFlags.java 8299116 macosx-aarch64
-compiler/interpreter/TestVerifyStackAfterDeopt.java 8316392 macosx-aarch64
-
-gc/cslocker/TestCSLocker.java 8310480 linux-x64

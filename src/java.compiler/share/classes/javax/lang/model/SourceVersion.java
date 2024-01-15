@@ -74,7 +74,8 @@ public enum SourceVersion {
      *  21: pattern matching for switch and record patterns (string
      *      templates in preview, unnamed patterns and variables in
      *      preview, unnamed classes and instance main methods in preview)
-     *  22: tbd
+     *  22: Unnamed Variables & Patterns (Statements before super(...)
+     *      in Preview)
      */
 
     /**
@@ -392,9 +393,9 @@ public enum SourceVersion {
      * href="https://docs.oracle.com/javase/specs/jls/se21/html/index.html">
      * <cite>The Java Language Specification, Java SE 21 Edition</cite></a>
      * @see <a href="https://openjdk.org/jeps/440">
-     * Record Patterns</a>
+     * JEP 440: Record Patterns</a>
      * @see <a href="https://openjdk.org/jeps/441">
-     * Pattern Matching for switch</a>
+     * JEP 441: Pattern Matching for switch</a>
      */
     RELEASE_21,
 
@@ -402,13 +403,30 @@ public enum SourceVersion {
      * The version introduced by the Java Platform, Standard Edition
      * 22.
      *
+     * Additions in this release include unnamed variables and unnamed
+     * patterns.
+     *
      * @since 22
      *
      * @see <a
      * href="https://docs.oracle.com/javase/specs/jls/se22/html/index.html">
      * <cite>The Java Language Specification, Java SE 22 Edition</cite></a>
+     * @see <a href="https://openjdk.org/jeps/456">
+     * JEP 456: Unnamed Variables &amp; Patterns</a>
      */
     RELEASE_22,
+
+    /**
+     * The version introduced by the Java Platform, Standard Edition
+     * 23.
+     *
+     * @since 23
+     *
+     * @see <a
+     * href="https://docs.oracle.com/javase/specs/jls/se23/html/index.html">
+     * <cite>The Java Language Specification, Java SE 23 Edition</cite></a>
+     */
+    RELEASE_23,
     ; // Reduce code churn when appending new constants
 
     // Note that when adding constants for newer releases, the
@@ -418,7 +436,7 @@ public enum SourceVersion {
      * {@return the latest source version that can be modeled}
      */
     public static SourceVersion latest() {
-        return RELEASE_22;
+        return RELEASE_23;
     }
 
     private static final SourceVersion latestSupported = getLatestSupported();
@@ -433,7 +451,7 @@ public enum SourceVersion {
     private static SourceVersion getLatestSupported() {
         int intVersion = Runtime.version().feature();
         return (intVersion >= 11) ?
-            valueOf("RELEASE_" + Math.min(22, intVersion)):
+            valueOf("RELEASE_" + Math.min(23, intVersion)):
             RELEASE_10;
     }
 

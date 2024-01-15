@@ -107,6 +107,7 @@ public abstract class CanonicalizerBase extends CanonicalizerSpi {
      * @param writer OutputStream to write the canonicalization result
      * @throws CanonicalizationException
      */
+    @Override
     public void engineCanonicalizeSubTree(Node rootNode, OutputStream writer)
         throws CanonicalizationException {
         engineCanonicalizeSubTree(rootNode, (Node)null, writer);
@@ -119,6 +120,7 @@ public abstract class CanonicalizerBase extends CanonicalizerSpi {
      * @param writer OutputStream to write the canonicalization result
      * @throws CanonicalizationException
      */
+    @Override
     public void engineCanonicalizeXPathNodeSet(Set<Node> xpathNodeSet, OutputStream writer)
         throws CanonicalizationException {
         this.xpathNodeSet = xpathNodeSet;
@@ -457,8 +459,7 @@ public abstract class CanonicalizerBase extends CanonicalizerSpi {
         } while(true);
     }
 
-    protected int isVisibleDO(Node currentNode, int level)
-            throws CanonicalizationException {
+    protected int isVisibleDO(Node currentNode, int level) throws CanonicalizationException {
         if (nodeFilter != null) {
             for (NodeFilter filter : nodeFilter) {
                 try {
@@ -477,8 +478,7 @@ public abstract class CanonicalizerBase extends CanonicalizerSpi {
         return 1;
     }
 
-    protected int isVisibleInt(Node currentNode)
-            throws CanonicalizationException {
+    protected int isVisibleInt(Node currentNode) throws CanonicalizationException {
         if (nodeFilter != null) {
             for (NodeFilter filter : nodeFilter) {
                 try {

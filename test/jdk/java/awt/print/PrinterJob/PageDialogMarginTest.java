@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug      6801613
+ * @key printer
  * @summary  Verifies if cross-platform pageDialog and printDialog top margin
  *           entry is working
  * @run      main/manual PageDialogMarginTest

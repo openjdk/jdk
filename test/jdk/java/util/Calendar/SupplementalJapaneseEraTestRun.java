@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,10 +34,15 @@ import java.util.Calendar;
 import java.util.List;
 import java.util.Locale;
 import java.util.TimeZone;
-import static java.util.Calendar.*;
+import java.util.stream.Stream;
+
+import static java.util.Calendar.DAY_OF_YEAR;
+import static java.util.Calendar.ERA;
+import static java.util.Calendar.FEBRUARY;
+import static java.util.Calendar.LONG;
+import static java.util.Calendar.YEAR;
 
 import jdk.test.lib.process.ProcessTools;
-import jdk.test.lib.JDKToolLauncher;
 import jdk.test.lib.Utils;
 
 import org.testng.annotations.DataProvider;
@@ -91,19 +96,18 @@ public class SupplementalJapaneseEraTestRun {
     }
 
     private static void testRun(String property, List<String> javaParam)
-            throws Throwable{
-        JDKToolLauncher launcher = JDKToolLauncher.createUsingTestJDK("java");
-        launcher.addToolArg("-ea")
-                .addToolArg("-esa")
-                .addToolArg("-cp")
-                .addToolArg(Utils.TEST_CLASS_PATH)
-                .addToolArg("-Djdk.calendar.japanese.supplemental.era=" + property)
-                .addToolArg("SupplementalJapaneseEraTest");
-        for (String para: javaParam) {
-            launcher.addToolArg(para);
-        }
-        int exitCode = ProcessTools.executeCommand(launcher.getCommand())
-                .getExitValue();
+            throws Throwable {
+        List<String> params = List.of(
+                "-ea", "-esa",
+                "-cp", Utils.TEST_CLASS_PATH,
+                "-Djdk.calendar.japanese.supplemental.era=" + property,
+                "SupplementalJapaneseEraTest");
+        // Build process (with VM flags)
+        ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
+                Stream.concat(params.stream(), javaParam.stream()).toList());
+        // Evaluate process status
+        int exitCode = ProcessTools.executeCommand(pb).getExitValue();
+
         System.out.println(property + ":pass");
         if (exitCode != 0) {
             System.out.println(property + ":fail");

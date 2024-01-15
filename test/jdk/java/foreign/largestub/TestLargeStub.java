@@ -36,20 +36,37 @@ import java.lang.foreign.MemoryLayout;
 import java.util.stream.Stream;
 
 public class TestLargeStub extends NativeTestHelper {
+
+    MemoryLayout STRUCT_LL = MemoryLayout.structLayout(
+        C_LONG_LONG,
+        C_LONG_LONG
+    ); // 16 byte struct triggers return buffer usage on SysV
+
     @Test
     public void testDowncall() {
         // Link a handle with a large number of arguments, to try and overflow the code buffer
         Linker.nativeLinker().downcallHandle(
-                FunctionDescriptor.of(C_LONG_LONG,
-                        Stream.generate(() -> C_DOUBLE).limit(50).toArray(MemoryLayout[]::new)),
+                FunctionDescriptor.of(STRUCT_LL,
+                        Stream.generate(() -> C_DOUBLE).limit(124).toArray(MemoryLayout[]::new)),
                 Linker.Option.captureCallState("errno"));
+    }
+
+    @Test
+    public void testDowncallAllowHeap() {
+        // Link a handle with a large number of address arguments, to try and overflow the code buffer
+        // Using 83 parameters should get us 255 parameter slots in total:
+        // 83 oops + 166 for offsets + 2 for the target address + 2 for return buffer + MH recv. + NEP
+        Linker.nativeLinker().downcallHandle(
+                FunctionDescriptor.of(STRUCT_LL,
+                        Stream.generate(() -> C_POINTER).limit(83).toArray(MemoryLayout[]::new)),
+                Linker.Option.critical(true));
     }
 
     @Test
     public void testUpcall() {
         // Link a handle with a large number of arguments, to try and overflow the code buffer
         Linker.nativeLinker().downcallHandle(
-                FunctionDescriptor.of(C_LONG_LONG,
-                        Stream.generate(() -> C_DOUBLE).limit(50).toArray(MemoryLayout[]::new)));
+                FunctionDescriptor.of(STRUCT_LL,
+                        Stream.generate(() -> C_DOUBLE).limit(125).toArray(MemoryLayout[]::new)));
     }
 }

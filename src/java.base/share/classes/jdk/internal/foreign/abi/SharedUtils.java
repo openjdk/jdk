@@ -314,10 +314,14 @@ public final class SharedUtils {
         }
     }
 
-    public static long unboxSegment(MemorySegment segment) {
+    public static void checkNative(MemorySegment segment) {
         if (!segment.isNative()) {
             throw new IllegalArgumentException("Heap segment not allowed: " + segment);
         }
+    }
+
+    public static long unboxSegment(MemorySegment segment) {
+        checkNative(segment);
         return segment.address();
     }
 

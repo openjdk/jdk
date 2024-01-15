@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8041488 8316974 8318569
+ * @bug 8041488 8316974 8318569 8306116
  * @summary Tests for ListFormat class
  * @run junit TestListFormat
  */
@@ -172,7 +172,7 @@ public class TestListFormat {
                 arguments(Locale.JAPAN, ListFormat.Type.OR, ListFormat.Style.FULL,
                         "foo\u3001bar\u3001\u307e\u305f\u306fbaz", true),
                 arguments(Locale.JAPAN, ListFormat.Type.UNIT, ListFormat.Style.FULL,
-                        "foo bar baz", true),
+                        "foo\u3001bar\u3001baz", true),
                 arguments(Locale.JAPAN, ListFormat.Type.STANDARD, ListFormat.Style.SHORT,
                         "foo\u3001bar\u3001baz", true),
                 arguments(Locale.JAPAN, ListFormat.Type.OR, ListFormat.Style.SHORT,
