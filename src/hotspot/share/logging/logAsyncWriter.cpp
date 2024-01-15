@@ -58,14 +58,20 @@ AsyncLogWriter::AsyncLogWriter()
   }
 }
 
-void AsyncLogWriter::write(AsyncLogMap<AnyObj::RESOURCE_AREA>& snapshot,
+bool AsyncLogWriter::write(AsyncLogMap<AnyObj::RESOURCE_AREA>& snapshot,
                            char* write_buffer, size_t write_buffer_size) {
   int req = 0;
-  CircularStringBuffer::Message desc;
+  CircularStringBuffer::Message msg;
   while (_circular_buffer.has_message()) {
-    _circular_buffer.dequeue(&desc, write_buffer, write_buffer_size);
-    if (!desc.is_token()) {
-      desc.output->write_blocking(desc.decorations, write_buffer);
+    CircularStringBuffer::DequeueResult result = _circular_buffer.dequeue(&msg, write_buffer, write_buffer_size);
+    assert(result != CircularStringBuffer::DequeueResult::NoMessage, "Race detected but there is only one reading thread");
+    if (result == CircularStringBuffer::DequeueResult::TooSmall) {
+      // Need a larger buffer
+      return false;
+    }
+
+    if (!msg.is_token()) {
+      msg.output->write_blocking(msg.decorations, write_buffer);
     } else {
       // This is a flush token. Record that we found it and then
       // signal the flushing thread after the loop.
@@ -88,10 +94,12 @@ void AsyncLogWriter::write(AsyncLogMap<AnyObj::RESOURCE_AREA>& snapshot,
     assert(req == 1, "Only one token is allowed in queue. AsyncLogWriter::flush() is NOT MT-safe!");
     _circular_buffer.signal_flush();
   }
+  return true;
 }
 
 void AsyncLogWriter::run() {
-  const size_t write_buffer_size = 16 * 1024;
+  // 16KiB ought to be enough.
+  size_t write_buffer_size = 16 * 1024;
   char* write_buffer = NEW_C_HEAP_ARRAY(char, write_buffer_size, mtLogging);
 
   while (true) {
@@ -114,7 +122,13 @@ void AsyncLogWriter::run() {
         _stats_lock.unlock();
       }
     }
-    write(snapshot, write_buffer, write_buffer_size);
+    bool success = write(snapshot, write_buffer, write_buffer_size);
+    if (!success) {
+      // Buffer was too small, double it.
+      FREE_C_HEAP_ARRAY(char, write_buffer);
+      write_buffer_size *= 2;
+      write_buffer = NEW_C_HEAP_ARRAY(char, write_buffer_size, mtLogging);
+    }
   }
 }
 

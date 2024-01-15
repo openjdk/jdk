@@ -37,6 +37,91 @@
 #ifndef SHARE_LOGGING_CIRCULARSTRINGBUFFER_HPP
 #define SHARE_LOGGING_CIRCULARSTRINGBUFFER_HPP
 
+#ifdef LINUX
+struct CircularMapping {
+  FILE* file;
+  size_t size;
+  char* buffer;
+  CircularMapping(size_t size) {
+    assert(is_aligned(size, os::vm_page_size()), "must be");
+    file = tmpfile();
+    if (file == nullptr) {
+      vm_exit_out_of_memory(size, OOM_MMAP_ERROR, "Failed to allocate async logging buffer");
+    }
+    const int fd = fileno(file);
+    if (fd == -1) {
+      vm_exit_out_of_memory(size, OOM_MMAP_ERROR, "Failed to allocate async logging buffer");
+    }
+    int ret = ftruncate(fd, size);
+    if (ret != 0) {
+      vm_exit_out_of_memory(size, OOM_MMAP_ERROR, "Failed to allocate async logging buffer");
+    }
+
+    buffer = (char*)mmap(nullptr, size * 2, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+    if (buffer == MAP_FAILED) {
+      vm_exit_out_of_memory(size, OOM_MMAP_ERROR, "Failed to allocate async logging buffer");
+    }
+    void* mmap_ret = mmap(buffer, size, PROT_READ | PROT_WRITE, MAP_SHARED | MAP_FIXED, fd, 0);
+    if (mmap_ret == MAP_FAILED) {
+      vm_exit_out_of_memory(size, OOM_MMAP_ERROR, "Failed to allocate async logging buffer");
+    }
+    mmap_ret = mmap(buffer + size, size, PROT_READ | PROT_WRITE, MAP_SHARED | MAP_FIXED, fd, 0);
+    if (mmap_ret == MAP_FAILED) {
+      vm_exit_out_of_memory(size, OOM_MMAP_ERROR, "Failed to allocate async logging buffer");
+    }
+  }
+  ~CircularMapping() {
+    munmap(buffer, size * 2);
+    fclose(file);
+  }
+
+  void write_bytes(size_t at, const char* bytes, size_t size) {
+    memcpy(&buffer[at], bytes, size);
+  }
+
+  void read_bytes(size_t at, char* out, size_t size) {
+    memcpy(out, &buffer[at], size);
+  }
+
+  char* start() {
+    return buffer;
+  }
+};
+#else
+struct CircularMapping {
+  char* buffer;
+  size_t size;
+  CircularMapping(size_t size) {
+    buffer = os::reserve_memory(size, false, mtLogging);
+    if (buffer == nullptr) {
+      vm_exit_out_of_memory(size, OOM_MMAP_ERROR, "Failed to allocate async logging buffer");
+    }
+    bool ret = os::commit_memory(buffer, size, false);
+    if (!ret) {
+      vm_exit_out_of_memory(size, OOM_MMAP_ERROR, "Failed to allocate async logging buffer");
+    }
+  }
+  void write_bytes(size_t at, const char* bytes, size_t size) {
+    const size_t part1_size = MIN2(size, this->size - at);
+    const size_t part2_size = this->size - size;
+
+    ::memcpy(&buffer[at], bytes, part1_size);
+    ::memcpy(buffer, &bytes[part1_size], part2_size);
+  }
+  void read_bytes(size_t at, char* out, size_t size) {
+    const size_t part1_size = MIN2(size, this->size - at);
+    const size_t part2_size = this->size - size;
+
+    ::memcpy(out, &buffer[at], part1_size);
+    ::memcpy(&out[part1_size], buffer, part2_size);
+  }
+
+  ~CircularMapping() {
+    os::release_memory(buffer, size);
+  }
+}
+#endif
+
 class CircularStringBuffer {
 public:
     // account for dropped messages
@@ -72,15 +157,14 @@ private:
       buf->_write_lock.unlock();
     }
   };
+  // Opaque circular mapping of our buffer.
+  CircularMapping circular_mapping;
 
   // Shared memory:
   // Reader reads tail, writes to head.
   // Writer reads head, writes to tail.
   volatile size_t tail; // Where new writes happen
   volatile size_t head; // Where new reads happen
-  char* buffer;
-  size_t bufsize;
-  FILE* underlying_buffer;
 
   size_t used_locked();
   size_t unused_locked();
@@ -111,13 +195,15 @@ private:
 public:
   NONCOPYABLE(CircularStringBuffer);
   CircularStringBuffer(StatisticsMap& stats, PlatformMonitor& stats_lock, size_t size);
-  ~CircularStringBuffer();
 
   void enqueue(const char* msg, size_t size, LogFileStreamOutput* output,
                const LogDecorations decorations);
   void enqueue(LogFileStreamOutput& output, LogMessageBuffer::Iterator msg_iterator);
 
-  void dequeue(Message* out_descriptor, char* out, size_t out_size);
+  enum DequeueResult {
+    NoMessage, TooSmall, OK
+  };
+  DequeueResult dequeue(Message* out_descriptor, char* out, size_t out_size);
 
   void flush();
   void signal_flush();

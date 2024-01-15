@@ -26,41 +26,6 @@
 #include "logging/circularStringBuffer.hpp"
 #include "runtime/os.inline.hpp"
 
-#ifdef LINUX
-FILE* make_buffer(size_t size) {
-  FILE* f = tmpfile();
-  if (f == nullptr) {
-    // TODO: Fail
-  }
-  const int fd = fileno(f);
-  if (fd == -1) {
-    // TODO: Fail
-  }
-  int ret = ftruncate(fd, size);
-  if (ret != 0) {
-    // TODO: Fail
-  }
-  return f;
-}
-char* make_mirrored_mapping(size_t size, FILE* file) {
-  const int fd = fileno(file);
-  char* buffer = (char*)mmap(nullptr, size * 2, PROT_READ | PROT_WRITE,
-                             MAP_NORESERVE | MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
-  if (buffer == MAP_FAILED) {
-    vm_exit_out_of_memory(size * 2, OOM_MMAP_ERROR, "Failed to allocate async logging buffer");
-  }
-  void* ret = mmap(buffer, size, PROT_READ | PROT_WRITE, MAP_SHARED | MAP_FIXED, fd, 0);
-  if (ret == MAP_FAILED) {
-    vm_exit_out_of_memory(size*2, OOM_MMAP_ERROR, "Failed to allocate async logging buffer");
-  }
-  ret = mmap(buffer + size, size, PROT_READ | PROT_WRITE, MAP_SHARED | MAP_FIXED, fd, 0);
-  if (ret == MAP_FAILED) {
-    vm_exit_out_of_memory(size * 2, OOM_MMAP_ERROR, "Failed to allocate async logging buffer");
-  }
-  return buffer;
-}
-#endif
-
 // LogDecorator::None applies to 'constant initialization' because of its constexpr constructor.
 const LogDecorations& CircularStringBuffer::None = LogDecorations(
     LogLevel::Warning, LogTagSetMapping<LogTag::__NO_TAG>::tagset(), LogDecorators::None);
@@ -68,31 +33,21 @@ const LogDecorations& CircularStringBuffer::None = LogDecorations(
 CircularStringBuffer::CircularStringBuffer(StatisticsMap& map, PlatformMonitor& stats_lock, size_t size)
   : _stats(map),
     _stats_lock(stats_lock),
+    circular_mapping(size),
     tail(0),
-    head(0),
-    buffer(nullptr),
-    bufsize(size) {
-  assert(is_aligned(size, os::vm_page_size()), "must");
+    head(0) {}
 
-  underlying_buffer = make_buffer(size);
-  buffer = make_mirrored_mapping(size, underlying_buffer);
-}
-
-CircularStringBuffer::~CircularStringBuffer() {
-  munmap(buffer, bufsize * 2);
-  fclose(underlying_buffer);
-}
 size_t CircularStringBuffer::used_locked() {
   size_t h = head;
   size_t t = tail;
   if (h <= t) {
     return t - h;
   } else {
-    return bufsize - (h - t);
+    return circular_mapping.size - (h - t);
   }
 }
 size_t CircularStringBuffer::unused_locked() {
-  return bufsize - used_locked();
+  return circular_mapping.size - used_locked();
 }
 
 size_t CircularStringBuffer::calc_mem(size_t sz) {
@@ -100,7 +55,7 @@ size_t CircularStringBuffer::calc_mem(size_t sz) {
 }
 
 // Size including NUL byte
-void CircularStringBuffer::enqueue_locked(const char* msg, size_t size, LogFileStreamOutput* output,
+void CircularStringBuffer::enqueue_locked(const char* str, size_t size, LogFileStreamOutput* output,
                                    const LogDecorations decorations) {
   const size_t required_memory = calc_mem(size);
   // We need space for an additional Descriptor in case of a flush token
@@ -114,12 +69,13 @@ void CircularStringBuffer::enqueue_locked(const char* msg, size_t size, LogFileS
   }
   // Load the tail.
   size_t t = tail;
-  // Write the Descriptor
-  new (&buffer[t]) Message{required_memory, output, decorations};
+  // Write the Message
+  Message msg{required_memory, output, decorations};
+  circular_mapping.write_bytes(t, (char*)&msg, sizeof(Message));
   // Write the string
-  memcpy(&buffer[t] + sizeof(Message), msg, size);
+  circular_mapping.write_bytes(t + sizeof(Message), str, size);
   // Finally move the tail, making the message available for consumers.
-  tail = (t + required_memory + sizeof(Message)) % bufsize;
+  tail = (t + required_memory + sizeof(Message)) % circular_mapping.size;
   // We're done, notify the writer.
   _write_lock.notify();
   return;
@@ -140,31 +96,29 @@ void CircularStringBuffer::enqueue(LogFileStreamOutput& output, LogMessageBuffer
   }
 }
 
-void CircularStringBuffer::dequeue(Message* out_descriptor, char* out, size_t out_size) {
+CircularStringBuffer::DequeueResult CircularStringBuffer::dequeue(Message* out_msg, char* out, size_t out_size) {
   ReadLocker rl(this);
 
   size_t h = head;
   size_t t = tail;
   // Check if there's something to read
   if (h == t) {
-    return;
+    return NoMessage;
   }
 
-  // Read the descriptor
-  Message* desc = (Message*)&buffer[h];
-  const size_t str_size = desc->size;
+  // Read the message
+  circular_mapping.read_bytes(h, (char*)out_msg, sizeof(Message));
+  const size_t str_size = out_msg->size;
   if (str_size > out_size) {
     // Not enough space
-    return;
+    return TooSmall;
   }
-  ::new (out_descriptor) Message(*desc);
   // OK, we can read
-  char* str = &buffer[h] + sizeof(Message);
-  memcpy(out, str, str_size);
+  circular_mapping.read_bytes(h + sizeof(Message), out, str_size);
   // Done, move the head
-  head = (h + desc->size + sizeof(Message)) % bufsize;
+  head = (h + out_msg->size + sizeof(Message)) % circular_mapping.size;
   // Release the lock
-  return;
+  return OK;
 }
 void CircularStringBuffer::flush() {
   enqueue(nullptr, 0, nullptr, CircularStringBuffer::None);
