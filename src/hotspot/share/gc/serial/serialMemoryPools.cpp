@@ -23,10 +23,10 @@
  */
 
 #include "precompiled.hpp"
-#include "gc/serial/generation.hpp"
-#include "gc/serial/genMemoryPools.hpp"
-#include "gc/shared/space.hpp"
 #include "gc/serial/defNewGeneration.hpp"
+#include "gc/serial/generation.hpp"
+#include "gc/serial/serialMemoryPools.hpp"
+#include "gc/shared/space.hpp"
 
 ContiguousSpacePool::ContiguousSpacePool(ContiguousSpace* space,
                                          const char* name,
