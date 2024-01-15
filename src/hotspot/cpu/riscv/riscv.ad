@@ -1932,6 +1932,9 @@ bool Matcher::match_rule_supported(int opcode) {
     case Op_FmaVF:
     case Op_FmaVD:
       return UseFMA;
+
+    case Op_ConvHF2F:
+      return UseZfh;
   }
 
   return true; // Per default match rules are supported.
@@ -8273,6 +8276,20 @@ instruct convD2F_reg(fRegF dst, fRegD src) %{
   %}
 
   ins_pipe(fp_d2f);
+%}
+
+// single <-> half precision
+
+instruct convHF2F_reg_reg(fRegF dst, iRegINoSp src, iRegINoSp tmp) %{
+  match(Set dst (ConvHF2F src));
+  effect(TEMP tmp);
+  format %{ "fmv.h.x $dst, $src\t# move source from $src to $dst\n\t"
+            "fcvt.s.h $dst, $dst\t# convert half to single precision"
+  %}
+  ins_encode %{
+    __ float16_to_float($dst$$FloatRegister, $src$$Register, $tmp$$Register);
+  %}
+  ins_pipe(pipe_slow);
 %}
 
 // float <-> int
