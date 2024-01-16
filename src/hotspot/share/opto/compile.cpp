@@ -622,6 +622,7 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
                   _stub_entry_point(nullptr),
                   _max_node_limit(MaxNodeLimit),
                   _post_loop_opts_phase(false),
+                  _merge_stores_phase(false),
                   _inlining_progress(false),
                   _inlining_incrementally(false),
                   _do_cleanup(false),
@@ -913,6 +914,7 @@ Compile::Compile( ciEnv* ci_env,
     _stub_entry_point(nullptr),
     _max_node_limit(MaxNodeLimit),
     _post_loop_opts_phase(false),
+    _merge_stores_phase(false),
     _inlining_progress(false),
     _inlining_incrementally(false),
     _has_reserved_stack_access(false),
@@ -2475,6 +2477,7 @@ void Compile::Optimize() {
   }
 
   if (true) {
+    assert(!C->merge_stores_phase(), "merge store phase not yet set");
     C->gather_nodes_for_merge_stores(igvn);
     C->set_merge_stores_phase(true);
     igvn.optimize();
