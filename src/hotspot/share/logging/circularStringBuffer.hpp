@@ -225,7 +225,6 @@ public:
 
 private:
   void enqueue_locked(const char* msg, size_t size, LogFileStreamOutput* output, const LogDecorations decorations);
-  void dequeue_locked(Message* out_descriptor, char* out, size_t out_size);
 
 public:
   NONCOPYABLE(CircularStringBuffer);

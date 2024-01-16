@@ -59,10 +59,9 @@ void CircularStringBuffer::enqueue_locked(const char* str, size_t size, LogFileS
                                    const LogDecorations decorations) {
   const size_t required_memory = calc_mem(size);
   const size_t unused = unused_locked();
-  // We need space for an additional Descriptor in case of a flush token
-  // We have a flush token if output == nullptr
+  // We need space for an additional Message in case of a flush token
   assert(!(output == nullptr) || unused >= sizeof(Message), "invariant");
-  if (unused < (required_memory + (output == nullptr ? 0 : sizeof(Message)))) {
+  if (unused < (required_memory + sizeof(Message)*(output == nullptr ? 1 : 2))) {
     _stats_lock.lock();
     bool p_created;
     uint32_t* counter = _stats.put_if_absent(output, 0, &p_created);
@@ -116,6 +115,7 @@ CircularStringBuffer::DequeueResult CircularStringBuffer::dequeue(Message* out_m
     // Not enough space
     return TooSmall;
   }
+
   // OK, we can read
   circular_mapping.read_bytes(h + sizeof(Message), out, str_size);
   // Done, move the head
@@ -124,7 +124,7 @@ CircularStringBuffer::DequeueResult CircularStringBuffer::dequeue(Message* out_m
   return OK;
 }
 void CircularStringBuffer::flush() {
-  enqueue(nullptr, 0, nullptr, CircularStringBuffer::None);
+  enqueue("", 0, nullptr, CircularStringBuffer::None);
   _read_lock.notify();
   _flush_sem.wait();
 }
