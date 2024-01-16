@@ -35,7 +35,7 @@ import java.awt.image.WritableRaster;
 /*
  * @test
  * @bug 8316497
- * @summary Verifies Color filter on Non ICC profile
+ * @summary Verifies Color filter on non-ICC profile
  */
 public final class NonICCFilterTest {
     private static final int WIDTH = 100;
