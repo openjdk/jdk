@@ -49,7 +49,7 @@ public class Thread extends VMObject {
   }
 
   private static synchronized void initialize(TypeDataBase db) {
-    Type typeThread = db.lookupType("Thread");
+    Type typeThread = db.lookupType("HotspotBaseThread");
     Type typeJavaThread = db.lookupType("JavaThread");
 
     suspendFlagsField = typeJavaThread.getCIntegerField("_suspend_flags");
