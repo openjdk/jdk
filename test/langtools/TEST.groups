@@ -63,7 +63,7 @@ langtools_jdeps = \
     tools/all \
     tools/jdeps
 
-# Catch-all definitions
+# All tests
 
 all = \
     :langtools_all

@@ -20,7 +20,7 @@
 #  questions.
 #
 
-# Catch-all definitions
+# All tests
 
 all = \
     :jaxp_all

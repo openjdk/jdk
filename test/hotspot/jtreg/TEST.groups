@@ -21,7 +21,7 @@
 # questions.
 #
 
-# Catch-all definitions
+# All tests
 
 all = \
   :hotspot_all
