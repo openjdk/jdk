@@ -48,91 +48,97 @@ import static java.nio.ByteOrder.*;
 @Fork(3)
 public class ByteConversion {
 
-    static final int SIZE = 256;
+    private static final int READS = 128;
+
+    // Read at large stride to dodge auto-vectorization
+    private static final int STRIDE = 128;
 
     @Param({"false", "true"})
     private boolean direct;
 
     private ByteBuffer buffer;
 
-    private int off;
-
     @Setup
     public void setup() {
+        final int size = READS * STRIDE;
         ByteOrder targetBo = ByteOrder.nativeOrder() == BIG_ENDIAN ? LITTLE_ENDIAN : BIG_ENDIAN;
         if (direct) {
-            buffer = ByteBuffer.allocateDirect(SIZE).order(targetBo);
+            buffer = ByteBuffer.allocateDirect(size).order(targetBo);
         } else {
-            buffer = ByteBuffer.allocate(SIZE).order(targetBo);
+            buffer = ByteBuffer.allocate(size).order(targetBo);
         }
     }
 
     @Benchmark
-    public long single_long() {
-        return buffer.getLong(off);
+    public long cont_longs() {
+        long s = 0;
+        for (int c = 0; c < READS; c++) {
+            s += buffer.getLong(c * 8);
+        }
+        return s;
     }
 
     @Benchmark
-    public int single_int() {
-        return buffer.getInt(off);
+    public long stride_longs() {
+        long s = 0;
+        for (int c = 0; c < READS; c++) {
+            s += buffer.getLong(c * STRIDE);
+        }
+        return s;
     }
 
     @Benchmark
-    public int single_short() {
-        return buffer.getShort(off);
+    public int cond_ints() {
+        int s = 0;
+        for (int c = 0; c < READS; c++) {
+            s += buffer.getInt(c * 4);
+        }
+        return s;
     }
 
     @Benchmark
-    public long single_char() {
-        return buffer.getChar(off);
+    public int stride_ints() {
+        int s = 0;
+        for (int c = 0; c < READS; c++) {
+            s += buffer.getInt(c * STRIDE);
+        }
+        return s;
     }
 
     @Benchmark
-    public long multi_long() {
-        return buffer.getLong(off) +
-               buffer.getLong(off + 16) +
-               buffer.getLong(off + 32) +
-               buffer.getLong(off + 48) +
-               buffer.getLong(off + 64) +
-               buffer.getLong(off + 80) +
-               buffer.getLong(off + 96) +
-               buffer.getLong(off + 112);
+    public int cont_shorts() {
+        int s = 0;
+        for (int c = 0; c < READS; c++) {
+            s += buffer.getShort(c * 2);
+        }
+        return s;
     }
 
     @Benchmark
-    public int multi_int() {
-        return buffer.getInt(off) +
-               buffer.getInt(off + 16) +
-               buffer.getInt(off + 32) +
-               buffer.getInt(off + 48) +
-               buffer.getInt(off + 64) +
-               buffer.getInt(off + 80) +
-               buffer.getInt(off + 96) +
-               buffer.getInt(off + 112);
+    public int stride_shorts() {
+        int s = 0;
+        for (int c = 0; c < READS; c++) {
+            s += buffer.getShort(c * STRIDE);
+        }
+        return s;
     }
 
     @Benchmark
-    public int multi_short() {
-        return buffer.getShort(off) +
-               buffer.getShort(off + 16) +
-               buffer.getShort(off + 32) +
-               buffer.getShort(off + 48) +
-               buffer.getShort(off + 64) +
-               buffer.getShort(off + 80) +
-               buffer.getShort(off + 96) +
-               buffer.getShort(off + 112);
+    public long cont_chars() {
+        int s = 0;
+        for (int c = 0; c < READS; c++) {
+            s += buffer.getChar(c * 2);
+        }
+        return s;
     }
 
     @Benchmark
-    public int multi_char() {
-        return buffer.getChar(off) +
-               buffer.getChar(off + 16) +
-               buffer.getChar(off + 32) +
-               buffer.getChar(off + 48) +
-               buffer.getChar(off + 64) +
-               buffer.getChar(off + 80) +
-               buffer.getChar(off + 96) +
-               buffer.getChar(off + 112);
+    public long stride_chars() {
+        int s = 0;
+        for (int c = 0; c < READS; c++) {
+            s += buffer.getChar(c * STRIDE);
+        }
+        return s;
     }
 
 }
