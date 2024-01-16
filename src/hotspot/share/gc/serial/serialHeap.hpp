@@ -99,9 +99,6 @@ private:
   // condition that caused that incremental collection to fail.
   bool _incremental_collection_failed;
 
-  // In support of ExplicitGCInvokesConcurrent functionality
-  unsigned int _full_collections_completed;
-
   // Collects the given generation.
   void collect_generation(Generation* gen, bool full, size_t size, bool is_tlab,
                           bool run_verification, bool clear_soft_refs);
@@ -232,16 +229,6 @@ public:
   HeapWord* allocate_new_tlab(size_t min_size,
                               size_t requested_size,
                               size_t* actual_size) override;
-
-  // Total number of full collections completed.
-  unsigned int total_full_collections_completed() {
-    assert(_full_collections_completed <= _total_full_collections,
-           "Can't complete more collections than were started");
-    return _full_collections_completed;
-  }
-
-  // Update above counter, as appropriate, at the end of a stop-world GC cycle
-  unsigned int update_full_collections_completed();
 
   // Update the gc statistics for each generation.
   void update_gc_stats(Generation* current_generation, bool full) {

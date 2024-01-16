@@ -815,6 +815,8 @@ enum operand_size { int8, int16, int32, uint32, int64 };
 
   INSN(fsqrt_s,  0b1010011, 0b00000, 0b0101100);
   INSN(fsqrt_d,  0b1010011, 0b00000, 0b0101101);
+  INSN(fcvt_s_h, 0b1010011, 0b00010, 0b0100000);
+  INSN(fcvt_h_s, 0b1010011, 0b00000, 0b0100010);
   INSN(fcvt_s_d, 0b1010011, 0b00001, 0b0100000);
   INSN(fcvt_d_s, 0b1010011, 0b00000, 0b0100001);
 #undef INSN
@@ -1071,6 +1073,7 @@ enum operand_size { int8, int16, int32, uint32, int64 };
     emit(insn);                                      \
   }
 
+  INSN(fmv_h_x,  0b1010011, 0b000, 0b00000, 0b1111010);
   INSN(fmv_w_x,  0b1010011, 0b000, 0b00000, 0b1111000);
   INSN(fmv_d_x,  0b1010011, 0b000, 0b00000, 0b1111001);
 
@@ -1108,8 +1111,10 @@ enum fclass_mask {
     emit(insn);                                           \
   }
 
+  INSN(fclass_h, 0b1010011, 0b001, 0b00000, 0b1110010);
   INSN(fclass_s, 0b1010011, 0b001, 0b00000, 0b1110000);
   INSN(fclass_d, 0b1010011, 0b001, 0b00000, 0b1110001);
+  INSN(fmv_x_h,  0b1010011, 0b000, 0b00000, 0b1110010);
   INSN(fmv_x_w,  0b1010011, 0b000, 0b00000, 0b1110000);
   INSN(fmv_x_d,  0b1010011, 0b000, 0b00000, 0b1110001);
 

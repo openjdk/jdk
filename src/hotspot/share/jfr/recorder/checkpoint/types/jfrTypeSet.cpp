@@ -135,32 +135,6 @@ static traceid artifact_tag(const T* ptr, bool leakp) {
   return artifact_id(ptr);
 }
 
-static inline bool should_do_cld_klass(const Klass* klass, bool leakp) {
-  return klass != nullptr && _artifacts->should_do_cld_klass(klass, leakp);
-}
-
-static inline KlassPtr get_cld_klass(CldPtr cld, bool leakp) {
-  if (cld == nullptr) {
-    return nullptr;
-  }
-  assert(leakp ? IS_LEAKP(cld) : used(cld), "invariant");
-  KlassPtr cld_klass = cld->class_loader_klass();
-  if (cld_klass == nullptr) {
-    return nullptr;
-  }
-  if (should_do_cld_klass(cld_klass, leakp)) {
-    if (current_epoch()) {
-      // This will enqueue the klass, which is important for
-      // reachability when doing clear and reset at rotation.
-      JfrTraceId::load(cld_klass);
-    } else {
-      artifact_tag(cld_klass, leakp);
-    }
-    return cld_klass;
-  }
-  return nullptr;
-}
-
 static inline CldPtr get_cld(ModPtr mod) {
   return mod != nullptr ? mod->loader_data() : nullptr;
 }
@@ -171,6 +145,38 @@ static ClassLoaderData* get_cld(const Klass* klass) {
     klass = ObjArrayKlass::cast(klass)->bottom_klass();
   }
   return klass->is_non_strong_hidden() ? nullptr : klass->class_loader_data();
+}
+
+static inline bool should_do_cld_klass(const Klass* cld_klass, bool leakp) {
+  return cld_klass != nullptr && _artifacts->should_do_cld_klass(cld_klass, leakp);
+}
+
+static inline bool should_enqueue(const Klass* cld_klass) {
+  assert(cld_klass != nullptr, "invariant");
+  if (previous_epoch()) {
+    return false;
+  }
+  CldPtr cld = get_cld(cld_klass);
+  return cld != nullptr && !cld->is_unloading();
+}
+
+static inline KlassPtr get_cld_klass(CldPtr cld, bool leakp) {
+  if (cld == nullptr) {
+    return nullptr;
+  }
+  assert(leakp ? IS_LEAKP(cld) : used(cld), "invariant");
+  KlassPtr cld_klass = cld->class_loader_klass();
+  if (!should_do_cld_klass(cld_klass, leakp)) {
+    return nullptr;
+  }
+  if (should_enqueue(cld_klass)) {
+    // This will enqueue the klass, which is important for
+    // reachability when doing clear and reset at rotation.
+    JfrTraceId::load(cld_klass);
+   } else {
+     artifact_tag(cld_klass, leakp);
+   }
+   return cld_klass;
 }
 
 static inline ModPtr get_module(PkgPtr pkg) {
