@@ -60,18 +60,17 @@ public class TestClassTree extends JavadocTester {
         checkExit(Exit.OK);
         // And generates html for the ChildClass
         checkOutput("badpkg/package-tree.html", true,
-        """
-        <li class="circle">badpkg.<a href="ChildClass.html" class="type-name-link" \
-        title="class in badpkg">ChildClass</a> (implements java.lang.Iterable&lt;T&gt;)</li>
-        """);
-
+                """
+                    <li class="circle">badpkg.<a href="ChildClass.html" class="type-name-link" title="\
+                    class in badpkg">ChildClass</a> (implements java.lang.Iterable&lt;T&gt;)</li>
+                    """);
         checkOutput("badpkg/ChildClass.html", true,
-        """
-        <div class="type-signature"><span class="modifiers">public class </span>\
-        <span class="element-name type-name-label">ChildClass</span>
-        <span class="extends-implements">extends ParentClass
-        implements java.lang.Iterable</span></div>
-        """);
+                """
+                    <div class="type-signature"><span class="modifiers">public class </span>\
+                    <span class="element-name type-name-label">ChildClass</span>
+                    <span class="extends-implements">extends ParentClass
+                    implements java.lang.Iterable</span></div>
+                    """);
         // And undefined interface is not present in html
         checkOutput("badpkg/ChildClass.html", false, "AnInterface");
     }
