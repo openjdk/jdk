@@ -467,7 +467,7 @@ Node* ConstraintCastNode::make_cast_for_type(Node* c, Node* in, const Type* type
   } else if (type->isa_ptr()) {
     return new CastPPNode(c, in, type, dependency, types);
   }
-  ShouldNotReachHere();
+  fatal("unreachable. Invalid cast type.");
   return nullptr;
 }
 
