@@ -44,6 +44,14 @@ public final class CompressedResourceHeader {
 
     private static final int SIZE = 29;
     public static final int MAGIC = 0xCAFEFAFA;
+
+    // Standard header offsets
+    private static final int MAGIC_OFFSET = 0; // 4 bytes
+    private static final int UNCOMPRESSED_OFFSET = 4; // 8 bytes
+    private static final int COMPRESSED_OFFSET = 12; // 8 bytes
+    private static final int DECOMPRESSOR_NAME_OFFSET = 20; // 4 bytes, followed by 4 byte gap
+    private static final int IS_TERMINAL_OFFSET = 28; // 1 byte
+
     private final long uncompressedSize;
     private final long compressedSize;
     private final int decompressorNameOffset;
@@ -101,15 +109,15 @@ public final class CompressedResourceHeader {
         }
         ByteBuffer buffer = ByteBuffer.wrap(resource, 0, SIZE);
         buffer.order(order);
-        int magic = buffer.getInt(0);
-        if(magic != MAGIC) {
+        int magic = buffer.getInt(MAGIC_OFFSET);
+        if (magic != MAGIC) {
             return null;
         }
-        long size = buffer.getLong(4);
-        long uncompressedSize = buffer.getLong(12);
-        int decompressorNameOffset = buffer.getInt(20);
+        long size = buffer.getLong(COMPRESSED_OFFSET);
+        long uncompressedSize = buffer.getLong(UNCOMPRESSED_OFFSET);
+        int decompressorNameOffset = buffer.getInt(DECOMPRESSOR_NAME_OFFSET);
         // skip unused 'contentOffset' int
-        byte isTerminal = buffer.get(28);
+        byte isTerminal = buffer.get(IS_TERMINAL_OFFSET);
         return new CompressedResourceHeader(size, uncompressedSize,
                 decompressorNameOffset, isTerminal == 1);
     }
