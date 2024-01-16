@@ -68,7 +68,10 @@ public class ECDHKeyAgreementParamValidation {
         // Cannot doPhase due to no private key.
         Asserts.assertThrows(
                 IllegalStateException.class,
-                ()->ka.doPhase(kp.getPublic(), true));
+                () -> ka.doPhase(kp.getPublic(), true));
+
+        // Cannot generate shared key due to no key
+        Asserts.assertThrows(IllegalStateException.class, ka::generateSecret);
     }
 
     private static void testDoPhaseWithInvalidKey() throws Exception {
@@ -89,7 +92,7 @@ public class ECDHKeyAgreementParamValidation {
                 InvalidKeyException.class,
                 () -> ka.doPhase(kpP384.getPublic(), true));
 
-        // Should not generate share key with SECP256R1 private key and SECP384R1 public key
+        // Should not generate shared key with SECP256R1 private key and SECP384R1 public key
         Asserts.assertThrows(IllegalStateException.class, ka::generateSecret);
     }
 
