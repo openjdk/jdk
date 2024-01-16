@@ -49,6 +49,7 @@ public class TestInvalidJVMCIOption {
             "Error: A fatal exception has occurred. Program will exit.%n");
 
         Asserts.assertEQ(expectStdout, output.getStdout());
+        output.stderrShouldBeEmpty();
 
         output.shouldHaveExitValue(1);
     }
