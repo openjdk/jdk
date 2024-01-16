@@ -654,7 +654,7 @@ public class ZipInputStream extends InflaterInputStream implements ZipConstants 
      * @param csize the value of the 'compressed size' field in the LOC
      * @param size  the value of the 'uncompressed size' field in the LOC
      */
-    private boolean expect64BitDataDescriptor(byte[] extra, int flag, long csize, long size)  {
+    private boolean expect64BitDataDescriptor(byte[] extra, int flag, long csize, long size) {
         // The LOC's 'general purpose bit flag' 3 must indicate use of a Data Descriptor
         if ((flag & 8) == 0) {
             return false;
