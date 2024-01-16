@@ -85,7 +85,7 @@ void CircularStringBuffer::enqueue_locked(const char* str, size_t size, LogFileS
 
 void CircularStringBuffer::enqueue(const char* msg, size_t size, LogFileStreamOutput* output,
                                    const LogDecorations decorations) {
-  ReadLocker rl(this);
+  WriteLocker rl(this);
   enqueue_locked(msg, size, output, decorations);
 }
 
