@@ -122,12 +122,6 @@ class Generation: public CHeapObj<mtGC> {
   // The largest number of contiguous free bytes in this or any higher generation.
   virtual size_t max_contiguous_available() const;
 
-  // Returns true if promotions of the specified amount are
-  // likely to succeed without a promotion failure.
-  // Promotion of the full amount is not guaranteed but
-  // might be attempted in the worst case.
-  virtual bool promotion_attempt_is_safe(size_t max_promotion_in_bytes) const;
-
   // Return an estimate of the maximum allocation that could be performed
   // in the generation without triggering any collection or expansion
   // activity.  It is "unsafe" because no locks are taken; the result
