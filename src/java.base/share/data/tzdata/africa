@@ -308,13 +308,6 @@ Rule	Egypt	2007	only	-	Sep	Thu>=1	24:00	0	-
 # reproduced by other (more accessible) sites[, e.g.,]...
 # http://elgornal.net/news/news.aspx?id=4699258
 
-# From Paul Eggert (2014-06-04):
-# Sarah El Deeb and Lee Keath of AP report that the Egyptian government says
-# the change is because of blackouts in Cairo, even though Ahram Online (cited
-# above) says DST had no affect on electricity consumption.  There is
-# no information about when DST will end this fall.  See:
-# http://abcnews.go.com/International/wireStory/el-sissi-pushes-egyptians-line-23614833
-
 # From Steffen Thorsen (2015-04-08):
 # Egypt will start DST on midnight after Thursday, April 30, 2015.
 # This is based on a law (no 35) from May 15, 2014 saying it starts the last

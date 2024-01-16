@@ -191,7 +191,15 @@ final class VirtualThread extends BaseVirtualThread {
         protected void onPinned(Continuation.Pinned reason) {
             if (TRACE_PINNING_MODE > 0) {
                 boolean printAll = (TRACE_PINNING_MODE == 1);
-                PinnedThreadPrinter.printStackTrace(System.out, printAll);
+                VirtualThread vthread = (VirtualThread) Thread.currentThread();
+                int oldState = vthread.state();
+                try {
+                    // avoid printing when in transition states
+                    vthread.setState(RUNNING);
+                    PinnedThreadPrinter.printStackTrace(System.out, reason, printAll);
+                } finally {
+                    vthread.setState(oldState);
+                }
             }
         }
         private static Runnable wrap(VirtualThread vthread, Runnable task) {
@@ -975,12 +983,12 @@ final class VirtualThread extends BaseVirtualThread {
      * Returns null if the thread is mounted or in transition.
      */
     private StackTraceElement[] tryGetStackTrace() {
-        int initialState = state();
+        int initialState = state() & ~SUSPENDED;
         switch (initialState) {
             case NEW, STARTED, TERMINATED -> {
                 return new StackTraceElement[0];  // unmounted, empty stack
             }
-            case RUNNING, PINNED -> {
+            case RUNNING, PINNED, TIMED_PINNED -> {
                 return null;   // mounted
             }
             case PARKED, TIMED_PARKED -> {
@@ -992,7 +1000,7 @@ final class VirtualThread extends BaseVirtualThread {
             case PARKING, TIMED_PARKING, YIELDING -> {
                 return null;  // in transition
             }
-            default -> throw new InternalError();
+            default -> throw new InternalError("" + initialState);
         }
 
         // thread is unmounted, prevent it from continuing

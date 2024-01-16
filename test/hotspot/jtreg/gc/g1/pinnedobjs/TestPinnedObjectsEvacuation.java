@@ -64,19 +64,18 @@ public class TestPinnedObjectsEvacuation {
     }
 
     private static void testPinnedEvacuation(int younGCsBeforeUnpin, int expectedSkipEvents, int expectedDropEvents, int expectedReclaimEvents) throws Exception {
-        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:+UseG1GC",
-                                                                             "-XX:+UnlockDiagnosticVMOptions",
-                                                                             "-XX:+WhiteBoxAPI",
-                                                                             "-Xbootclasspath/a:.",
-                                                                             "-Xmx32M",
-                                                                             "-Xmn16M",
-                                                                             "-XX:G1NumCollectionsKeepPinned=2",
-                                                                             "-XX:+VerifyAfterGC",
-                                                                             "-Xlog:gc,gc+ergo+cset=trace",
-                                                                             TestObjectPin.class.getName(),
-                                                                             String.valueOf(younGCsBeforeUnpin));
+        OutputAnalyzer output = ProcessTools.executeLimitedTestJava("-XX:+UseG1GC",
+                                                                    "-XX:+UnlockDiagnosticVMOptions",
+                                                                    "-XX:+WhiteBoxAPI",
+                                                                    "-Xbootclasspath/a:.",
+                                                                    "-Xmx32M",
+                                                                    "-Xmn16M",
+                                                                    "-XX:G1NumCollectionsKeepPinned=2",
+                                                                    "-XX:+VerifyAfterGC",
+                                                                    "-Xlog:gc,gc+ergo+cset=trace",
+                                                                    TestObjectPin.class.getName(),
+                                                                    String.valueOf(younGCsBeforeUnpin));
 
-        OutputAnalyzer output = new OutputAnalyzer(pb.start());
         System.out.println(output.getStdout());
         output.shouldHaveExitValue(0);
 
@@ -128,4 +127,3 @@ class TestObjectPin {
         wb.youngGC();
     }
 }
-

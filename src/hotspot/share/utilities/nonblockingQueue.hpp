@@ -62,7 +62,7 @@ template<typename T, T* volatile* (*next_ptr)(T&)>
 class NonblockingQueue {
   T* volatile _head;
   // Padding of one cache line to avoid false sharing.
-  DEFINE_PAD_MINUS_SIZE(1, DEFAULT_CACHE_LINE_SIZE, sizeof(T*));
+  DEFINE_PAD_MINUS_SIZE(1, DEFAULT_PADDING_SIZE, sizeof(T*));
   T* volatile _tail;
 
   NONCOPYABLE(NonblockingQueue);
