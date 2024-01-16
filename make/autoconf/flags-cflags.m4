@@ -114,12 +114,14 @@ AC_DEFUN([FLAGS_SETUP_DEBUG_SYMBOLS],
       # the debug symbol paths resolve to paths relative to the workspace root.
       workspace_root_trailing_slash="${WORKSPACE_ROOT%/}/"
       DEBUG_PREFIX_CFLAGS="-fdebug-prefix-map=${workspace_root_trailing_slash}="
-      # Add debug prefix map gcc system include paths, as they cause
-      # non-deterministic debug paths depending on gcc path location.
-      DEBUG_PREFIX_MAP_GCC_INCLUDE_PATHS
       FLAGS_COMPILER_CHECK_ARGUMENTS(ARGUMENT: [${DEBUG_PREFIX_CFLAGS}],
         IF_FALSE: [
             DEBUG_PREFIX_CFLAGS=
+        ],
+        IF_TRUE: [
+            # Add debug prefix map gcc system include paths, as they cause
+            # non-deterministic debug paths depending on gcc path location.
+            DEBUG_PREFIX_MAP_GCC_INCLUDE_PATHS
         ]
       )
     fi
