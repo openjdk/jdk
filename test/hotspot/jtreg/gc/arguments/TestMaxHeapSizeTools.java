@@ -115,9 +115,8 @@ class TestMaxHeapSizeTools {
   }
 
   private static void getNewOldSize(String gcflag, long[] values) throws Exception {
-    ProcessBuilder pb = GCArguments.createTestJavaProcessBuilder(gcflag,
+    OutputAnalyzer output = GCArguments.executeTestJava(gcflag,
       "-XX:+PrintFlagsFinal", "-version");
-    OutputAnalyzer output = new OutputAnalyzer(pb.start());
     output.shouldHaveExitValue(0);
 
     String stdout = output.getStdout();
@@ -208,8 +207,7 @@ class TestMaxHeapSizeTools {
     finalargs.add(classname);
     finalargs.addAll(Arrays.asList(arguments));
 
-    ProcessBuilder pb = GCArguments.createTestJavaProcessBuilder(finalargs.toArray(String[]::new));
-    OutputAnalyzer output = new OutputAnalyzer(pb.start());
+    OutputAnalyzer output = GCArguments.executeTestJava(finalargs.toArray(String[]::new));
     output.shouldHaveExitValue(0);
 
     return output;
@@ -308,8 +306,7 @@ class TestMaxHeapSizeTools {
   }
 
   private static void expect(String[] flags, boolean hasWarning, boolean hasError, int errorcode) throws Exception {
-    ProcessBuilder pb = GCArguments.createTestJavaProcessBuilder(flags);
-    OutputAnalyzer output = new OutputAnalyzer(pb.start());
+    OutputAnalyzer output = GCArguments.executeTestJava(flags);
     shouldContainOrNot(output, hasWarning, "Warning");
     shouldContainOrNot(output, hasError, "Error");
     output.shouldHaveExitValue(errorcode);

@@ -174,7 +174,7 @@ protected:
 
   void* _gc_data;
 
-  virtual void purge(bool free_code_cache_data = true) = 0;
+  virtual void purge(bool free_code_cache_data, bool unregister_nmethod) = 0;
 
 private:
   DeoptimizationStatus deoptimization_status() const {
