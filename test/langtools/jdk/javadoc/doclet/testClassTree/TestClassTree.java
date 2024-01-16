@@ -53,6 +53,9 @@ public class TestClassTree extends JavadocTester {
 
     @Test
     public void testBadPkg(Path base) throws IOException {
+        // Given badpkg package containing class ChildClass with an undefined
+        //       base class, implementing undefined interface and a defined
+        //       interface
         Path src = base.resolve("src");
         tb.writeJavaFiles(src,
                 """
@@ -64,15 +67,13 @@ public class TestClassTree extends JavadocTester {
                     """
         );
 
-        // Given badpkg package containing class ChildClass with an undefined
-        //       base class, implementing undefined interface and a defined
-        //       interface
         // When  the javadoc is generated with --ignore-source-errors option
         javadoc("--ignore-source-errors",
                 "-d", base.resolve("badout").toString(),
                 "--no-platform-links",
                 "-sourcepath", src.toString(),
                 "badpkg");
+
         // Then javadoc exits successfully
         checkExit(Exit.OK);
         // And generates html for the ChildClass
