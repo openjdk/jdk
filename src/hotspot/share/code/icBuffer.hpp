@@ -62,11 +62,11 @@ class ICStub: public Stub {
   // General info
   int     size() const                           { return _size; }
 
-  // For extra correctness/safety, we want to make sure that each ICStub is in
-  // a separate instruction cache line. This would allow for piggybacking on instruction
-  // cache coherency on some architectures to order the updates to ICStub and setting
-  // the destination to the ICStub. Note that cache lines size might be larger than
-  // CodeEntryAlignment that is a normal alignment for CodeBlobs.
+  // To be cautious, we want to make sure that each ICStub is in a separate instruction
+  // cache line. This would allow for piggybacking on instruction cache coherency on
+  // some architectures to order the updates to ICStub and setting the destination to
+  // the ICStub. Note that cache line size might be larger than CodeEntryAlignment
+  // that is normal alignment for CodeBlobs.
   static int alignment()                         { return DEFAULT_CACHE_LINE_SIZE; }
 
   // Aligning the code section is normally done for performance reasons, which is not
