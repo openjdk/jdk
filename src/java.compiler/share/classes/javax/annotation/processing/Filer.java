@@ -181,7 +181,7 @@ public interface Filer {
      * classes, the name argument is used to provide the leading component of the
      * name used for the output file. For example {@code filer.createSourceFile("Foo")}
      * to create an implicitly declared class hosted in {@code Foo.java}. All
-     * implicit classes must be in an unnamed package.
+     * implicitly declared classes must be in an unnamed package.
      *
      * @apiNote To use a particular {@linkplain
      * java.nio.charset.Charset charset} to encode the contents of the
@@ -266,7 +266,7 @@ public interface Filer {
      * classes, the name argument is used to provide the leading component of the
      * name used for the output file. For example {@code filer.createSourceFile("Foo")}
      * to create an implicitly declared class hosted in {@code Foo.java}. All
-     * implicit classes must be in an unnamed package.
+     * implicitly declared classes must be in an unnamed package.
      *
      * @apiNote To avoid subsequent errors, the contents of the class
      * file should be compatible with the {@linkplain

@@ -38,6 +38,7 @@
 #include "memory/iterator.hpp"
 #include "oops/access.inline.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/cpuTimeCounters.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "utilities/debug.hpp"
@@ -64,6 +65,7 @@ StringDedup::Processor::Processor() : _thread(nullptr) {}
 
 void StringDedup::Processor::initialize() {
   _processor = new Processor();
+  CPUTimeCounters::create_counter(CPUTimeGroups::CPUTimeType::conc_dedup);
 }
 
 void StringDedup::Processor::wait_for_requests() const {
@@ -187,6 +189,10 @@ void StringDedup::Processor::run(JavaThread* thread) {
     cleanup_table(false /* grow_only */, StringDeduplicationResizeALot /* force */);
     _cur_stat.report_active_end();
     log_statistics();
+    if (UsePerfData && os::is_thread_cpu_time_supported()) {
+      ThreadTotalCPUTimeClosure tttc(CPUTimeGroups::CPUTimeType::conc_dedup);
+      tttc.do_thread(thread);
+    }
   }
 }
 

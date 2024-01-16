@@ -52,7 +52,7 @@ import static javax.lang.model.util.ElementFilter.*;
 import javax.tools.JavaFileObject;
 
 /**
- * Test annotation processing representation of implicitly classes
+ * Test annotation processing representation of implicitly declared classes
  * constructed from either a source file or a class file.
  */
 @SuppressWarnings("preview")

@@ -33,9 +33,9 @@ import java.io.IOException;
  */
 public class FileKey {
 
-    private long dwVolumeSerialNumber;
-    private long nFileIndexHigh;
-    private long nFileIndexLow;
+    private int dwVolumeSerialNumber;
+    private int nFileIndexHigh;
+    private int nFileIndexLow;
 
     private FileKey() { }
 
@@ -47,9 +47,10 @@ public class FileKey {
 
     @Override
     public int hashCode() {
-        return (int)(dwVolumeSerialNumber ^ (dwVolumeSerialNumber >>> 32)) +
-               (int)(nFileIndexHigh ^ (nFileIndexHigh >>> 32)) +
-               (int)(nFileIndexLow ^ (nFileIndexLow >>> 32));
+        int h = dwVolumeSerialNumber;
+        h = h << 31 + nFileIndexHigh;
+        h = h << 31 + nFileIndexLow;
+        return h;
     }
 
     @Override

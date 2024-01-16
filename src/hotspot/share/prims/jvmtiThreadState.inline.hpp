@@ -82,10 +82,11 @@ inline JvmtiThreadState* JvmtiThreadState::state_for_while_locked(JavaThread *th
   JvmtiThreadState *state = thread == nullptr ? nullptr : thread->jvmti_thread_state();
 
   if (state == nullptr && thread != nullptr &&
-      (thread->is_exiting() || thread->is_attaching_via_jni())) {
-    // Don't add a JvmtiThreadState to a thread that is exiting or is attaching.
-    // When a thread is attaching, it may not have a Java level thread object
-    // created yet.
+      (thread->is_exiting() ||
+       (thread->threadObj() == nullptr && thread->is_attaching_via_jni())
+      )) {
+    // Don't add a JvmtiThreadState to a thread that is exiting, or is attaching
+    // and does not yet have a Java level thread object allocated.
     return nullptr;
   }
 

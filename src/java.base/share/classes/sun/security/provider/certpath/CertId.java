@@ -108,7 +108,7 @@ public class CertId implements DerEncoder {
                 encoder.encodeBuffer(issuerNameHash));
             System.out.println("issuerKeyHash is " +
                 encoder.encodeBuffer(issuerKeyHash));
-            System.out.println("SerialNumber is " + serialNumber.getNumber());
+            System.out.println("SerialNumber is " + Debug.toString(serialNumber.getNumber()));
         }
     }
 

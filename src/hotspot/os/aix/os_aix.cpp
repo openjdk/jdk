@@ -1135,8 +1135,13 @@ static void* dll_load_library(const char *filename, char *ebuf, int ebuflen) {
   }
 
   void* result;
+  const char* error_report = nullptr;
   JFR_ONLY(NativeLibraryLoadEvent load_event(filename, &result);)
+<<<<<<< HEAD
   result = Aix_dlopen(filename, dflags, ebuf, ebuflen);
+=======
+  result = Aix_dlopen(filename, dflags, &error_report);
+>>>>>>> 36f4b34f1953af736706ec67192204727808bc6c
   if (result != nullptr) {
     Events::log_dll_message(nullptr, "Loaded shared library %s", filename);
     // Reload dll cache. Don't do this in signal handling.
@@ -1145,7 +1150,6 @@ static void* dll_load_library(const char *filename, char *ebuf, int ebuflen) {
     return result;
   } else {
     // error analysis when dlopen fails
-    const char* error_report = ::dlerror();
     if (error_report == nullptr) {
       error_report = "dlerror returned no error description";
     }
@@ -2131,11 +2135,6 @@ size_t os::large_page_size() {
 }
 
 bool os::can_commit_large_page_memory() {
-  // Does not matter, we do not support huge pages.
-  return false;
-}
-
-bool os::can_execute_large_page_memory() {
   // Does not matter, we do not support huge pages.
   return false;
 }

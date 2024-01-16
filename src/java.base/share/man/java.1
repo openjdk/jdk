@@ -36,7 +36,7 @@
 . ftr VB CB
 . ftr VBI CBI
 .\}
-.TH "JAVA" "1" "2024" "JDK 22-ea" "JDK Commands"
+.TH "JAVA" "1" "2024" "JDK 23-ea" "JDK Commands"
 .hy
 .SH NAME
 .PP
@@ -187,7 +187,7 @@ with new values added and old values removed.
 You\[aq]ll get an error message if you use a value of \f[I]N\f[R] that
 is no longer supported.
 The supported values of \f[I]N\f[R] are the current Java SE release
-(\f[V]22\f[R]) and a limited number of previous releases, detailed in
+(\f[V]23\f[R]) and a limited number of previous releases, detailed in
 the command-line help for \f[V]javac\f[R], under the \f[V]--source\f[R]
 and \f[V]--release\f[R] options.
 .RE
@@ -1578,6 +1578,15 @@ Specifies the path and name of the class data sharing (CDS) archive file
 .PP
 See \f[B]Application Class Data Sharing\f[R].
 .RE
+.TP
+\f[V]-XX:+VerifySharedSpaces\f[R]
+If this option is specified, the JVM will load a CDS archive file only
+if it passes an integrity check based on CRC32 checksums.
+The purpose of this flag is to check for unintentional damage to CDS
+archive files in transmission or storage.
+To guarantee the security and proper operation of CDS, the user must
+ensure that the CDS archive files used by Java applications cannot be
+modified without proper authorization.
 .TP
 \f[V]-XX:SharedArchiveConfigFile=\f[R]\f[I]shared_config_file\f[R]
 Specifies additional shared data added to the archive file.
@@ -3790,6 +3799,14 @@ Controlled \f[I]relaxed strong encapsulation\f[R], as defined in
 This option was deprecated in JDK 16 by \f[B]JEP 396\f[R]
 [https://openjdk.org/jeps/396] and made obsolete in JDK 17 by \f[B]JEP
 403\f[R] [https://openjdk.org/jeps/403].
+.SH REMOVED JAVA OPTIONS
+.PP
+These \f[V]java\f[R] options have been removed in JDK 23 and using them
+results in an error of:
+.RS
+.PP
+\f[V]Unrecognized VM option\f[R] \f[I]option-name\f[R]
+.RE
 .TP
 \f[V]-XX:+UseHugeTLBFS\f[R]
 \f[B]Linux only:\f[R] This option is the equivalent of specifying
@@ -3803,12 +3820,12 @@ you want this behavior.
 \f[V]-XX:+UseSHM\f[R]
 \f[B]Linux only:\f[R] Enables the JVM to use shared memory to set up
 large pages.
-.SH REMOVED JAVA OPTIONS
-.PP
-No documented java options have been removed in JDK 22.
 .PP
 For the lists and descriptions of options removed in previous releases
 see the \f[I]Removed Java Options\f[R] section in:
+.IP \[bu] 2
+\f[B]The \f[VB]java\f[B] Command, Release 22\f[R]
+[https://docs.oracle.com/en/java/javase/22/docs/specs/man/java.html]
 .IP \[bu] 2
 \f[B]The \f[VB]java\f[B] Command, Release 21\f[R]
 [https://docs.oracle.com/en/java/javase/21/docs/specs/man/java.html]

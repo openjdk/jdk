@@ -52,6 +52,7 @@ static const int UNKNOWN_STACK_DEPTH = -99;
 //
 
 JvmtiThreadState *JvmtiThreadState::_head = nullptr;
+bool JvmtiThreadState::_seen_interp_only_mode = false;
 
 JvmtiThreadState::JvmtiThreadState(JavaThread* thread, oop thread_oop)
   : _thread_event_enable() {
@@ -553,11 +554,18 @@ JvmtiVTMSTransitionDisabler::VTMS_vthread_start(jobject vthread) {
   assert(!thread->is_in_VTMS_transition(), "sanity check");
   assert(!thread->is_in_tmp_VTMS_transition(), "sanity check");
 
-  JvmtiEventController::thread_started(thread);
-  if (JvmtiExport::can_support_virtual_threads()) {
-    if (JvmtiExport::should_post_vthread_start()) {
-      JvmtiExport::post_vthread_start(vthread);
-    }
+  // If interp_only_mode has been enabled then we must eagerly create JvmtiThreadState
+  // objects for globally enabled virtual thread filtered events. Otherwise,
+  // it is an important optimization to create JvmtiThreadState objects lazily.
+  // This optimization is disabled when watchpoint capabilities are present. It is to
+  // work around a bug with virtual thread frames which can be not deoptimized in time.
+  if (JvmtiThreadState::seen_interp_only_mode() ||
+      JvmtiExport::should_post_field_access() ||
+      JvmtiExport::should_post_field_modification()){
+    JvmtiEventController::thread_started(thread);
+  }
+  if (JvmtiExport::should_post_vthread_start()) {
+    JvmtiExport::post_vthread_start(vthread);
   }
   // post VirtualThreadMount event after VirtualThreadStart
   if (JvmtiExport::should_post_vthread_mount()) {
@@ -576,10 +584,8 @@ JvmtiVTMSTransitionDisabler::VTMS_vthread_end(jobject vthread) {
   if (JvmtiExport::should_post_vthread_unmount()) {
     JvmtiExport::post_vthread_unmount(vthread);
   }
-  if (JvmtiExport::can_support_virtual_threads()) {
-    if (JvmtiExport::should_post_vthread_end()) {
-      JvmtiExport::post_vthread_end(vthread);
-    }
+  if (JvmtiExport::should_post_vthread_end()) {
+    JvmtiExport::post_vthread_end(vthread);
   }
   VTMS_unmount_begin(vthread, /* last_unmount */ true);
   if (thread->jvmti_thread_state() != nullptr) {
@@ -629,9 +635,10 @@ JvmtiVTMSTransitionDisabler::VTMS_mount_end(jobject vthread) {
 
   thread->rebind_to_jvmti_thread_state_of(vt);
 
-  {
+  JvmtiThreadState* state = thread->jvmti_thread_state();
+  if (state != nullptr && state->is_pending_interp_only_mode()) {
     MutexLocker mu(JvmtiThreadState_lock);
-    JvmtiThreadState* state = thread->jvmti_thread_state();
+    state = thread->jvmti_thread_state();
     if (state != nullptr && state->is_pending_interp_only_mode()) {
       JvmtiEventController::enter_interp_only_mode();
     }
@@ -770,6 +777,7 @@ void JvmtiThreadState::add_env(JvmtiEnvBase *env) {
 
 void JvmtiThreadState::enter_interp_only_mode() {
   assert(_thread != nullptr, "sanity check");
+  _seen_interp_only_mode = true;
   _thread->increment_interp_only_mode();
   invalidate_cur_stack_depth();
 }
