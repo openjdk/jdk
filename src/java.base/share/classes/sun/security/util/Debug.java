@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,9 @@ package sun.security.util;
 
 import java.io.PrintStream;
 import java.math.BigInteger;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.HexFormat;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
@@ -41,8 +44,19 @@ import sun.security.action.GetPropertyAction;
 public class Debug {
 
     private String prefix;
+    private boolean printDateTime;
+    private boolean printThreadDetails;
 
     private static String args;
+    private static boolean threadInfoAll;
+    private static boolean timeStampInfoAll;
+
+    private static final String PATTERN = "yyyy-MM-dd kk:mm:ss.SSS z";
+    private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter
+                .ofPattern(PATTERN, Locale.ENGLISH)
+                .withZone(ZoneId.systemDefault());
+    private static final HexFormat HEX_FORMATTER =
+            HexFormat.of().withUpperCase();
 
     static {
         args = GetPropertyAction.privilegedGetProperty("java.security.debug");
@@ -61,6 +75,12 @@ public class Debug {
             args = marshal(args);
             if (args.equals("help")) {
                 Help();
+            } else if (args.contains("all")) {
+                int beginIndex = args.lastIndexOf("all") + "all".length();
+                int commaIndex = args.indexOf(',', beginIndex);
+                if (commaIndex == -1) commaIndex = args.length();
+                threadInfoAll = args.substring(beginIndex, commaIndex).contains("+thread");;
+                timeStampInfoAll = args.substring(beginIndex, commaIndex).contains("+timestamp");;
             }
         }
     }
@@ -101,6 +121,11 @@ public class Debug {
         System.err.println("domain        dump all domains in context");
         System.err.println("failure       before throwing exception, dump stack");
         System.err.println("              and domain that didn't have permission");
+        System.err.println();
+        System.err.println("+timestamp can be appended to any of above options to print");
+        System.err.println("              a timestamp for that debug option");
+        System.err.println("+thread can be appended to any of above options to print");
+        System.err.println("              thread information for that debug option");
         System.err.println();
         System.err.println("The following can be used with stack and domain:");
         System.err.println();
@@ -153,10 +178,48 @@ public class Debug {
         if (isOn(option)) {
             Debug d = new Debug();
             d.prefix = prefix;
+            d.printThreadDetails = getConfigInfo(option, "+thread");
+            d.printDateTime = getConfigInfo(option, "+timestamp");
+            if (d.printDateTime) {
+                // trigger loading of Locale service impl now to avoid
+                // possible bootstrap recursive class load issue
+                DATE_TIME_FORMATTER.format(Instant.now());
+            }
             return d;
         } else {
             return null;
         }
+    }
+
+    private static String formatCaller() {
+        return StackWalker.getInstance().walk(s ->
+                s.dropWhile(f ->
+                    f.getClassName().startsWith("sun.security.util.Debug"))
+                        .map(f -> f.getFileName() + ":" + f.getLineNumber())
+                        .findFirst().orElse("unknown caller"));
+    }
+
+    private static boolean getConfigInfo(String option, String extraInfoOption) {
+        // args is converted to lower case for the most part via marshal method
+        int beginIndex;
+        String subOpt;
+        // treat "all" as special case,
+        if (timeStampInfoAll && extraInfoOption.equals("+timestamp")) {
+            return true;
+        }
+        if (threadInfoAll && extraInfoOption.equals("+thread")) {
+            return true;
+        }
+        try {
+            beginIndex = args.lastIndexOf(option) + option.length();
+            int commaIndex = args.indexOf(',', beginIndex);
+            if (commaIndex == -1) commaIndex = args.length();
+            subOpt = args.substring(beginIndex, commaIndex);
+        } catch (IndexOutOfBoundsException e) {
+            // no sub option
+            return false;
+        }
+        return subOpt.contains(extraInfoOption);
     }
 
     /**
@@ -189,7 +252,7 @@ public class Debug {
 
     public void println(String message)
     {
-        System.err.println(prefix + ": "+message);
+        System.err.println(prefix + extraInfo() + ": " + message);
     }
 
     /**
@@ -198,7 +261,7 @@ public class Debug {
      */
     public void println(Object obj, String message)
     {
-        System.err.println(prefix + " [" + obj.getClass().getSimpleName() +
+        System.err.println(prefix + extraInfo() + " [" + obj.getClass().getSimpleName() +
                 "@" + System.identityHashCode(obj) + "]: "+message);
     }
 
@@ -208,16 +271,53 @@ public class Debug {
 
     public void println()
     {
-        System.err.println(prefix + ":");
+        System.err.println(prefix + extraInfo() + ":");
     }
 
     /**
      * print a message to stderr that is prefixed with the prefix.
      */
 
-    public static void println(String prefix, String message)
+    public void println(String prefix, String message)
     {
-        System.err.println(prefix + ": "+message);
+        System.err.println(prefix + extraInfo() + ": " + message);
+    }
+
+    /**
+     * If thread debug option enabled, include information containing
+     * hex value of threadId and the current thread name
+     * If timestamp debug option enabled, include timestamp string
+     * @return extra info if debug option enabled.
+     */
+    private String extraInfo() {
+        String retString = "";
+        if (printThreadDetails) {
+            retString = toHexString(Thread.currentThread().threadId()) + "|" +
+                    Thread.currentThread().getName() + "|" + formatCaller();
+        }
+        if (printDateTime) {
+            retString += (retString.isEmpty() ? "" : "|")
+                    + DATE_TIME_FORMATTER.format(Instant.now());
+        }
+        return retString.isEmpty() ? "" : "[" + retString + "]";
+
+    }
+
+    // copied from sun/security/ssl/Utilities.java for now
+    private static String toHexString(long lv) {
+        StringBuilder builder = new StringBuilder(128);
+
+        boolean isFirst = true;
+        do {
+            if (isFirst) {
+                isFirst = false;
+            } else {
+                builder.append(' ');
+            }
+            HEX_FORMATTER.toHexDigits(builder, (byte)lv);
+            lv >>>= 8;
+        } while (lv != 0);
+        return builder.reverse().toString();
     }
 
     /**
