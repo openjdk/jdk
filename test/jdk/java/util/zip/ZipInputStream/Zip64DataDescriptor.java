@@ -110,7 +110,7 @@ public class Zip64DataDescriptor {
         // Create the ZIP file used for testing that invalid Zip64 extra fields are ignored
         // This ZIP has the regular 4-bit data descriptor
 
-        byte[] extra = new byte[Long.BYTES  + Long.BYTES + Short.BYTES * 2]; // Size of a regular Zip64 extra field
+        byte[] extra = new byte[Long.BYTES + Long.BYTES + Short.BYTES * 2]; // Size of a regular Zip64 extra field
         ByteBuffer buffer = ByteBuffer.wrap(extra).order(ByteOrder.LITTLE_ENDIAN);
         buffer.putShort(0, (short) 123); // Not processed by ZipEntry.setExtra
         buffer.putShort(Short.BYTES, (short) (extra.length - 4));
