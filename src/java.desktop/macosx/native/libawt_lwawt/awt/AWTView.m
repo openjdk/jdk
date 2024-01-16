@@ -259,7 +259,7 @@ static BOOL shouldUsePressAndHold() {
 
 - (void) keyDown: (NSEvent *)event {
     fProcessingKeystroke = YES;
-    fKeyEventsNeeded = YES;
+    fKeyEventsNeeded = ![(NSString *)kbdLayout containsString:@"keyman"];
 
     // Allow TSM to look at the event and potentially send back NSTextInputClient messages.
     [self interpretKeyEvents:[NSArray arrayWithObject:event]];
@@ -965,7 +965,7 @@ static jclass jc_CInputMethod = NULL;
 
     if ((utf16Length > 2) ||
         ((utf8Length > 1) && [self isCodePointInUnicodeBlockNeedingIMEvent:codePoint]) ||
-        ((codePoint == 0x5c) && ([(NSString *)kbdLayout containsString:@"Kotoeri"]))) {
+        [(NSString *)kbdLayout containsString:@"keyman"]) {
 #ifdef IM_DEBUG
         NSLog(@"string complex ");
 #endif
