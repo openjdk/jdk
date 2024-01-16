@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,8 @@
  * @bug 8318761
  * @summary Test MessageFormatPattern ability to recognize the appropriate
  *          FormatType and FormatStyle for DateTimeFormatter(ClassicFormat).
- *          This includes the types java_time_time, java_time_date, and the DateTimeFormatter
- *          predefined formatters.
+ *          This includes the types java_temporal_time, java_temporal_date, java_temporal_datetime,
+ *          and the DateTimeFormatter predefined formatters.
  * @run junit TemporalSubFormats
  */
 
@@ -106,20 +106,20 @@ public class TemporalSubFormats {
         var time = ZonedDateTime.now();
         var date = LocalDate.now();
 
-        // Test java_time_date
-        var dFmt = new MessageFormat("{0,java_time_date"+style+"}");
+        // Test java_temporal_date
+        var dFmt = new MessageFormat("{0,java_temporal_date"+style+"}");
         assertEquals(DateTimeFormatter.ofLocalizedDate(fStyle).withLocale(
                 dFmt.getLocale()).toFormat().format(date),
                 dFmt.getFormatsByArgumentIndex()[0].format(date));
 
-        // Test java_time_time
-        var tFmt = new MessageFormat("{0,java_time_time"+style+"}");
+        // Test java_temporal_time
+        var tFmt = new MessageFormat("{0,java_temporal_time"+style+"}");
         assertEquals(DateTimeFormatter.ofLocalizedTime(fStyle).withLocale(
                 tFmt.getLocale()).toFormat().format(time),
                 tFmt.getFormatsByArgumentIndex()[0].format(time));
 
-        // Test java_time_datetime
-        var dtFmt = new MessageFormat("{0,java_time_datetime"+style+"}");
+        // Test java_temporal_datetime
+        var dtFmt = new MessageFormat("{0,java_temporal_datetime"+style+"}");
         assertEquals(DateTimeFormatter.ofLocalizedDateTime(fStyle).withLocale(
                         dtFmt.getLocale()).toFormat().format(time),
                 dtFmt.getFormatsByArgumentIndex()[0].format(time));
@@ -139,23 +139,23 @@ public class TemporalSubFormats {
     // Test that a proper Format from a SubformatPattern can be reproduced
     @Test
     public void subformatPatternTest() {
-        // SubformatPattern invokes the same method for both java_time_date,
-        // java_time_time, and java_time_datetime
+        // SubformatPattern invokes the same method for both java_temporal_date,
+        // java_temporal_time, and java_temporal_datetime
         var pattern = "d MMM uuuu";
         var date = LocalDate.now();
 
-        // Test java_time_date
-        var dFmt = new MessageFormat("{0,java_time_date,"+pattern+"}");
+        // Test java_temporal_date
+        var dFmt = new MessageFormat("{0,java_temporal_date,"+pattern+"}");
         assertEquals(DateTimeFormatter.ofPattern(pattern,dFmt.getLocale()).toFormat().format(date),
                 dFmt.getFormatsByArgumentIndex()[0].format(date));
 
-        // Test java_time_time
-        var tFmt = new MessageFormat("{0,java_time_time,"+pattern+"}");
+        // Test java_temporal_time
+        var tFmt = new MessageFormat("{0,java_temporal_time,"+pattern+"}");
         assertEquals(DateTimeFormatter.ofPattern(pattern,tFmt.getLocale()).toFormat().format(date),
                 tFmt.getFormatsByArgumentIndex()[0].format(date));
 
-        // Test java_time_datetime
-        var dtFmt = new MessageFormat("{0,java_time_datetime,"+pattern+"}");
+        // Test java_temporal_datetime
+        var dtFmt = new MessageFormat("{0,java_temporal_datetime,"+pattern+"}");
         assertEquals(DateTimeFormatter.ofPattern(pattern,dtFmt.getLocale()).toFormat().format(date),
                 dtFmt.getFormatsByArgumentIndex()[0].format(date));
     }
@@ -166,10 +166,10 @@ public class TemporalSubFormats {
     public void badApplyPatternTest() {
         // Not a supported FormatStyle
         assertThrows(IllegalArgumentException.class, () ->
-                new MessageFormat("{0,java_time_date,longer"));
+                new MessageFormat("{0,java_temporal_date,longer"));
         // Not a legal SubformatPattern
         assertThrows(IllegalArgumentException.class, () ->
-                new MessageFormat("{0,java_time_date,d MMM uuuu xx"));
+                new MessageFormat("{0,java_temporal_date,d MMM uuuu xx"));
         // Pre-defined ISO style does not exist
         assertThrows(IllegalArgumentException.class, () ->
                 new MessageFormat("{0,basic_iso_date_foo"));
@@ -187,11 +187,11 @@ public class TemporalSubFormats {
         assertEquals("{0}", mFmt.toPattern());
 
         // Check pre-defined styles
-        var dFmt = new MessageFormat("{0,java_time_date,long}");
+        var dFmt = new MessageFormat("{0,java_temporal_date,long}");
         assertEquals("{0}", dFmt.toPattern());
-        var tFmt = new MessageFormat("{0,java_time_time,long}");
+        var tFmt = new MessageFormat("{0,java_temporal_time,long}");
         assertEquals("{0}", tFmt.toPattern());
-        var dtFmt = new MessageFormat("{0,java_time_datetime,long}");
+        var dtFmt = new MessageFormat("{0,java_temporal_datetime,long}");
         assertEquals("{0}", dtFmt.toPattern());
     }
 }
