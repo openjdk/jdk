@@ -586,11 +586,14 @@ ReservedSpace Metaspace::reserve_address_space_for_compressed_classes(size_t siz
       (char*) CompressedKlassPointers::reserve_address_space_for_compressed_classes(size, RandomizeClassSpaceLocation,
                                                                                     optimize_for_zero_base));
 
+#if !defined(AARCH64)
+  // On aarch64, this likely wouldn't satisfy the encoding constraints.
   if (result == nullptr) {
     // Fallback: reserve anywhere
     log_debug(metaspace, map)("Trying anywhere...");
     result = os::reserve_memory_aligned(size, Metaspace::reserve_alignment(), false);
   }
+#endif // !AARCH64
 
   // Wrap resulting range in ReservedSpace
   ReservedSpace rs;
@@ -732,10 +735,12 @@ void Metaspace::global_initialize() {
     // Tests using this switch should cope with that.
     if (CompressedClassSpaceBaseAddress != 0) {
       const address base = (address)CompressedClassSpaceBaseAddress;
-      if (!is_aligned(base, Metaspace::reserve_alignment())) {
+      if (!is_aligned(base, Metaspace::reserve_alignment()) ||
+          !(CompressedKlassPointers::pd_is_valid_encoding(
+                nullptr /* Not specified */, size, base, -1 /* Not specified */))) {
         vm_exit_during_initialization(
             err_msg("CompressedClassSpaceBaseAddress=" PTR_FORMAT " invalid "
-                    "(must be aligned to " SIZE_FORMAT_X ").",
+                    "(must be aligned to " SIZE_FORMAT_X " and satisify platform constraints).",
                     CompressedClassSpaceBaseAddress, Metaspace::reserve_alignment()));
       }
       rs = ReservedSpace(size, Metaspace::reserve_alignment(),

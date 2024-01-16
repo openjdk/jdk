@@ -4644,6 +4644,15 @@ void  MacroAssembler::decode_heap_oop_not_null(Register dst, Register src) {
   }
 }
 
+int MacroAssembler::eor_compatible_klass_encoding(uint64_t base) {
+  return Assembler::operand_valid_for_logical_immediate(/*is32*/false, base) ?
+         count_trailing_zeros(base) : 0; // Return the bits of the "encodable area" given a base
+}
+
+bool MacroAssembler::movk_compatible_klass_encoding(uint64_t shifted_base) {
+  return (shifted_base & 0xffff0000ffffffff) == 0;
+}
+
 MacroAssembler::KlassDecodeMode MacroAssembler::_klass_decode_mode(KlassDecodeNone);
 
 MacroAssembler::KlassDecodeMode MacroAssembler::klass_decode_mode() {
@@ -4661,18 +4670,15 @@ MacroAssembler::KlassDecodeMode MacroAssembler::klass_decode_mode() {
     return (_klass_decode_mode = KlassDecodeZero);
   }
 
-  if (operand_valid_for_logical_immediate(
-        /*is32*/false, (uint64_t)CompressedKlassPointers::base())) {
-    const uint64_t range_mask =
-      (1ULL << log2i(CompressedKlassPointers::range())) - 1;
-    if (((uint64_t)CompressedKlassPointers::base() & range_mask) == 0) {
+  if (int bits = eor_compatible_klass_encoding((uint64_t)CompressedKlassPointers::base())) {
+    if (CompressedKlassPointers::range() <= (1ULL << bits)) {
       return (_klass_decode_mode = KlassDecodeXor);
     }
   }
 
   const uint64_t shifted_base =
     (uint64_t)CompressedKlassPointers::base() >> CompressedKlassPointers::shift();
-  guarantee((shifted_base & 0xffff0000ffffffff) == 0,
+  guarantee(movk_compatible_klass_encoding(shifted_base),
             "compressed class base bad alignment");
 
   return (_klass_decode_mode = KlassDecodeMovk);

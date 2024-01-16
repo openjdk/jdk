@@ -24,7 +24,7 @@
  */
 
 #include "precompiled.hpp"
-#include "asm/assembler.hpp"
+#include "asm/macroAssembler.hpp"
 #include "logging/log.hpp"
 #include "oops/compressedKlass.hpp"
 #include "memory/metaspace.hpp"
@@ -67,7 +67,7 @@ static char* reserve_at_eor_compatible_address(size_t size, bool aslr) {
     const int alt_index = (ntry & 1) ? 0 : num_immediates / 2;
     const int index = (start_index + ntry + alt_index) % num_immediates;
     const uint64_t immediate = ((uint64_t)immediates[index]) << 32;
-    assert(immediate > 0 && Assembler::operand_valid_for_logical_immediate(/*is32*/false, immediate),
+    assert(immediate > 0 && MacroAssembler::eor_compatible_klass_encoding(immediate) >= 32,
            "Invalid immediate %d " UINT64_FORMAT, index, immediate);
     result = os::attempt_reserve_memory_at((char*)immediate, size, false);
     if (result == nullptr) {
@@ -130,4 +130,14 @@ void CompressedKlassPointers::initialize(address addr, size_t len) {
   _base = (end <= (address)unscaled_max) ? nullptr : addr;
 
   _range = end - _base;
+
+  DEBUG_ONLY(assert_is_valid_encoding(addr, len, _base, _shift);)
+}
+
+bool CompressedKlassPointers::pd_is_valid_encoding(address addr, size_t len, address base, int shift) {
+  size_t range = (addr == nullptr) /* Not specified */ ? len : (addr + len - base);
+  return (base == nullptr /* Zero-based encoding */ ||
+          (1ULL << MacroAssembler::eor_compatible_klass_encoding((uint64_t)base) >= range) ||
+          MacroAssembler::movk_compatible_klass_encoding((uint64_t)base)) &&
+         (shift == -1 /* Not specified */ || shift == 0);
 }

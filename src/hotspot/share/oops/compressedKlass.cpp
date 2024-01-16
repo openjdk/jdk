@@ -42,6 +42,7 @@ size_t CompressedKlassPointers::_range = 0;
 void CompressedKlassPointers::assert_is_valid_encoding(address addr, size_t len, address base, int shift) {
   assert(base + nth_bit(32 + shift) >= addr + len, "Encoding (base=" PTR_FORMAT ", shift=%d) does not "
          "fully cover the class range " PTR_FORMAT "-" PTR_FORMAT, p2i(base), shift, p2i(addr), p2i(addr + len));
+  assert(pd_is_valid_encoding(addr, len, base, shift), "Must satisfy");
 }
 #endif
 
@@ -114,6 +115,10 @@ void CompressedKlassPointers::initialize(address addr, size_t len) {
   _range = end - _base;
 
   DEBUG_ONLY(assert_is_valid_encoding(addr, len, _base, _shift);)
+}
+
+bool CompressedKlassPointers::pd_is_valid_encoding(address addr, size_t len, address base, int shift) {
+  return true;
 }
 #endif // !AARCH64 || ZERO
 

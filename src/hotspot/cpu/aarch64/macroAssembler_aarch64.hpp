@@ -914,6 +914,9 @@ public:
   void encode_klass_not_null(Register dst, Register src);
   void decode_klass_not_null(Register dst, Register src);
 
+  static int eor_compatible_klass_encoding(uint64_t base);
+  static bool movk_compatible_klass_encoding(uint64_t shifted_base);
+
   void set_narrow_klass(Register dst, Klass* k);
 
   // if heap base register is used - reinit it with the correct value
