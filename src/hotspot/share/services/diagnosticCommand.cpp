@@ -861,11 +861,10 @@ PerfMapDCmd::PerfMapDCmd(outputStream* output, bool heap) :
 }
 
 void PerfMapDCmd::execute(DCmdSource source, TRAPS) {
-  const char* filename = _filename.value();
-  if (strncmp(filename, DEFAULT_PERFMAP_FILENAME, strlen(DEFAULT_PERFMAP_FILENAME)) == 0) {
-      filename = nullptr; // use the default filename based on the pid
-  }
-  CodeCache::write_perf_map(filename);
+  // The check for _filename.is_set() is because we don't want to use
+  // DEFAULT_PERFMAP_FILENAME, since it is meant as a description
+  // of the default, not the actual default.
+  CodeCache::write_perf_map(_filename.is_set() ? _filename.value() : nullptr);
 }
 #endif // LINUX
 
@@ -1012,11 +1011,11 @@ DumpSharedArchiveDCmd::DumpSharedArchiveDCmd(outputStream* output, bool heap) :
 void DumpSharedArchiveDCmd::execute(DCmdSource source, TRAPS) {
   jboolean is_static;
   const char* scmd = _suboption.value();
-  const char* file = _filename.value();
 
-  if (strncmp(file, DEFAULT_PERFMAP_FILENAME, strlen(DEFAULT_PERFMAP_FILENAME)) == 0) {
-    file = nullptr; // use the default filename based on the suboption and pid
-  }
+  // The check for _filename.is_set() is because we don't want to use
+  // DEFAULT_CDS_ARCHIVE_FILENAME, since it is meant as a description
+  // of the default, not the actual default.
+  const char* file = _filename.is_set() ? _filename.value() : nullptr;
 
   if (strcmp(scmd, "static_dump") == 0) {
     is_static = JNI_TRUE;
