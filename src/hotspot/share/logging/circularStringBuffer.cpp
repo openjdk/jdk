@@ -58,8 +58,11 @@ size_t CircularStringBuffer::calc_mem(size_t sz) {
 void CircularStringBuffer::enqueue_locked(const char* str, size_t size, LogFileStreamOutput* output,
                                    const LogDecorations decorations) {
   const size_t required_memory = calc_mem(size);
+  const size_t unused = unused_locked();
   // We need space for an additional Descriptor in case of a flush token
-  if (unused_locked() < (required_memory + sizeof(Message))) {
+  // We have a flush token if output == nullptr
+  assert(!(output == nullptr) || unused >= sizeof(Message), "invariant");
+  if (unused < (required_memory + output == nullptr ? 0 : sizeof(Message))) {
     _stats_lock.lock();
     bool p_created;
     uint32_t* counter = _stats.put_if_absent(output, 0, &p_created);

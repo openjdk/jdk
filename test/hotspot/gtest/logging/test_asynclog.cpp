@@ -24,16 +24,19 @@
  */
 #include "precompiled.hpp"
 #include "jvm.h"
+#include "logTestFixture.hpp"
+#include "logTestUtils.inline.hpp"
 #include "logging/log.hpp"
 #include "logging/logAsyncWriter.hpp"
 #include "logging/logFileOutput.hpp"
 #include "logging/logMessage.hpp"
-#include "logTestFixture.hpp"
-#include "logTestUtils.inline.hpp"
 #include "unittest.hpp"
 
 class AsyncLogTest : public LogTestFixture {
 public:
+  // msg is 128 bytes.
+  const char* large_message = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                    "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
   AsyncLogTest() {
     if (!LogConfiguration::is_async_mode()) {
       fprintf(stderr, "Warning: asynclog is OFF.\n");
@@ -42,7 +45,7 @@ public:
   void test_asynclog_raw() {
     Log(logging) logger;
 #define LOG_LEVEL(level, name) logger.name("1" #level);
-LOG_LEVEL_LIST
+    LOG_LEVEL_LIST
 #undef LOG_LEVEL
 
     LogTarget(Trace, logging) t;
@@ -57,15 +60,12 @@ LOG_LEVEL_LIST
 
   void test_asynclog_drop_messages() {
     // Write more messages than available in buffer.
-    // msg is 128 bytes.
-    const char* msg = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
-                      "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
     test_asynclog_ls(); // roughly 200 bytes.
-    const int msg_number = AsyncLogBufferSize / strlen(msg);
+    const int msg_number = AsyncLogBufferSize / strlen(large_message);
     LogMessage(logging) lm;
     // + 5 to go past the buffer size, forcing it to drop the message.
     for (int i = 0; i < (msg_number + 5); i++) {
-      lm.debug("%s", msg);
+      lm.debug("%s", large_message);
     }
     lm.flush();
   }
@@ -93,8 +93,8 @@ LOG_LEVEL_LIST
     }
 
     return false;
-}
-template <typename F>
+  }
+  template<typename F>
   void test_stdout_or_stderr(const char* mode, F get_captured_string) {
 
     if (!set_log_config(mode, "logging=debug")) {
@@ -119,8 +119,30 @@ template <typename F>
     EXPECT_TRUE(file_contains_substring(TestLogFileName, "logStream newline"));
 
     if (async) {
-      EXPECT_TRUE(file_contains_substring(TestLogFileName, "messages dropped due to async logging"));
+      EXPECT_TRUE(
+          file_contains_substring(TestLogFileName, "messages dropped due to async logging"));
     }
+  }
+  void test_room_for_flush() {
+    PlatformMonitor lock; // For statistics
+    CircularStringBuffer::StatisticsMap map;
+    CircularStringBuffer cb(map, lock, os::vm_page_size());
+    const int count = (os::vm_page_size() / strlen(large_message)) - 1;
+    LogFileOutput out("test");
+    for (int i = 0; i < count; i++) {
+      cb.enqueue_locked(large_message, strlen(large_message), &out, CircularStringBuffer::None);
+    }
+    unsigned int missing = *map.get(&out);
+    EXPECT_TRUE(missing == 0);
+    size_t old_tail = cb.tail;
+    cb.enqueue_locked(nullptr, 0, nullptr, CircularStringBuffer::None);
+    EXPECT_TRUE(cb.tail != old_tail);
+    missing = *map.get(&out);
+    EXPECT_TRUE(missing == 0);
+    cb.enqueue_locked(large_message, strlen(large_message), &out, CircularStringBuffer::None);
+    cb.enqueue_locked(large_message, strlen(large_message), &out, CircularStringBuffer::None);
+    missing = *map.get(&out);
+    EXPECT_TRUE(missing > 0);
   }
 };
 
@@ -157,7 +179,6 @@ TEST_VM_F(AsyncLogTest, logMessage) {
   EXPECT_TRUE(file_contains_substring(TestLogFileName, "a noisy message from other logger"));
 }
 
-
 TEST_VM_F(AsyncLogTest, asynclog) {
   set_log_config(TestLogFileName, "logging=debug");
 
@@ -176,7 +197,8 @@ TEST_VM_F(AsyncLogTest, asynclog) {
   EXPECT_FALSE(file_contains_substring(TestLogFileName, "1Trace")); // trace message is masked out
 
   EXPECT_TRUE(file_contains_substring(TestLogFileName, "AsyncLogTarget.print = 1"));
-  EXPECT_FALSE(file_contains_substring(TestLogFileName, "log_trace-test")); // trace message is masked out
+  EXPECT_FALSE(
+      file_contains_substring(TestLogFileName, "log_trace-test")); // trace message is masked out
   EXPECT_TRUE(file_contains_substring(TestLogFileName, "log_debug-test"));
 }
 
@@ -197,4 +219,8 @@ TEST_VM_F(AsyncLogTest, droppingMessage) {
   set_log_config(TestLogFileName, "logging=debug");
   test_asynclog_drop_messages();
   EXPECT_TRUE(file_contains_substring(TestLogFileName, "messages dropped due to async logging"));
+}
+
+TEST_F(AsyncLogTest, CircularStringBufferAlwaysRoomForFlush) {
+  test_room_for_flush();
 }
