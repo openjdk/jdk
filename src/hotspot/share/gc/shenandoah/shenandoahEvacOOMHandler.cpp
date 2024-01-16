@@ -147,6 +147,9 @@ void ShenandoahEvacOOMHandler::wait_for_no_evac_threads() {
   // the thread-local oom_during_evac flag to indicate that any attempt
   // to evacuate should simply return the forwarding pointer instead (which is safe now).
   ShenandoahThreadLocalData::set_oom_during_evac(Thread::current(), true);
+#ifdef ASSERT
+  Atomic::store(&_evacuation_state, _oom_not_evacuating);
+#endif
 }
 
 // Increment the count of evacuating threads if this thread is authorized to allocate and no other allocating thread
@@ -235,4 +238,7 @@ void ShenandoahEvacOOMHandler::clear() {
   for (int i = 0; i < _num_counters; i++) {
     _threads_in_evac[i].clear();
   }
+#ifdef ASSERT
+  Atomic::store(&_evacuation_state, _evacuating);
+#endif
 }

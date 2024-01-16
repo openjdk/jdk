@@ -58,18 +58,27 @@ jint ShenandoahEvacOOMCounter::unmasked_count() {
 
 void ShenandoahEvacOOMHandler::enter_evacuation(Thread* thr) {
   uint8_t level = ShenandoahThreadLocalData::push_evac_oom_scope(thr);
- if (level == 0) {
-   // Entering top level scope, register this thread.
-   register_thread(thr);
- } else if (!ShenandoahThreadLocalData::is_oom_during_evac(thr)) {
-   ShenandoahEvacOOMCounter* counter = counter_for_thread(thr);
-   jint threads_in_evac = counter->load_acquire();
-   // If OOM is in progress, handle it.
-   if ((threads_in_evac & ShenandoahEvacOOMCounter::OOM_MARKER_MASK) != 0) {
-     counter->decrement();
-     wait_for_no_evac_threads();
-   }
- }
+  if (level == 0) {
+    // Entering top level scope, register this thread.
+    register_thread(thr);
+  } else if (!ShenandoahThreadLocalData::is_oom_during_evac(thr)) {
+    ShenandoahEvacOOMCounter* counter = counter_for_thread(thr);
+    jint threads_in_evac = counter->load_acquire();
+    // If OOM is in progress, handle it.
+    if ((threads_in_evac & ShenandoahEvacOOMCounter::OOM_MARKER_MASK) != 0) {
+      counter->decrement();
+      wait_for_no_evac_threads();
+    }
+  }
+#ifdef ASSERT
+  ShenandoahEvacuationState state = Atomic::load(&_evacuation_state);
+  if (ShenandoahThreadLocalData::is_oom_during_evac(thr)) {
+    // This thread is not authorized to allocate
+    assert(state == _oom_not_evacuating, "Thread no longer evacuating implies no threads are evacuating");
+  } else {
+    assert(state == _evacuating, "Thread evacuating implies all threads are evacuating");
+  }
+#endif
 }
 
 // Announce intent to leave a control scope that performs allocation for evacuation.

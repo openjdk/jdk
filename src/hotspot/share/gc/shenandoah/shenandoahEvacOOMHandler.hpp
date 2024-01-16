@@ -181,6 +181,14 @@ public:
  *     evacuating.
  */
 class ShenandoahEvacOOMHandler {
+#ifdef ASSERT
+public:
+  enum ShenandoahEvacuationState {
+    _evacuating,
+    _oom_not_evacuating
+  };
+  volatile ShenandoahEvacuationState _evacuation_state;
+#endif
 private:
   const int _num_counters;
 
