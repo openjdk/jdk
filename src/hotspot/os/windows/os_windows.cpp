@@ -4235,11 +4235,11 @@ static void exit_process_or_thread(Ept what, int exit_code) {
   } else if (what == EPT_PROCESS) {
     ALLOW_C_FUNCTION(::exit, ::exit(exit_code);)
   } else { // EPT_PROCESS_DIE
-    std::_Exit(exit_code);
+    ::_Exit(exit_code);
   }
 
   // Should not reach here
-  std::abort();
+  ::abort();
 }
 
 #undef EXIT_TIMEOUT
