@@ -29,7 +29,8 @@
 
 class ShenandoahInitLogger : public GCInitLogger {
 protected:
-  virtual void print_heap();
+  void print_heap() override;
+  void print_gc_specific() override;
 
 public:
   static void print();

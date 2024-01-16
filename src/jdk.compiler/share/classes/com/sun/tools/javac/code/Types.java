@@ -1701,7 +1701,7 @@ public class Types {
                     // permitted subtypes have to be disjoint with the other symbol
                     ClassSymbol sealedOne = ts.isSealed() ? ts : ss;
                     ClassSymbol other = sealedOne == ts ? ss : ts;
-                    return sealedOne.permitted.stream().allMatch(sym -> areDisjoint((ClassSymbol)sym, other));
+                    return sealedOne.getPermittedSubclasses().stream().allMatch(type -> areDisjoint((ClassSymbol)type.tsym, other));
                 }
                 return false;
             }
