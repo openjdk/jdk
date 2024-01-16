@@ -105,12 +105,8 @@ public abstract class AnnotationVisitor {
                 && api != Opcodes.ASM7
                 && api != Opcodes.ASM6
                 && api != Opcodes.ASM5
-                && api != Opcodes.ASM4
-                && api != Opcodes.ASM10_EXPERIMENTAL) {
+                && api != Opcodes.ASM4) {
             throw new IllegalArgumentException("Unsupported api " + api);
-        }
-        if (api == Opcodes.ASM10_EXPERIMENTAL) {
-            Constants.checkAsmExperimental(this);
         }
         this.api = api;
         this.av = annotationVisitor;
