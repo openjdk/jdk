@@ -1700,6 +1700,8 @@ public class Thread implements Runnable {
      *          if the current thread cannot modify this thread
      */
     public void interrupt() {
+        // Write interrupted before reading nioBlocker for correct synchronization.
+        interrupted = true;
         if (this != Thread.currentThread()) {
             checkAccess();
 
@@ -1708,7 +1710,6 @@ public class Thread implements Runnable {
             synchronized (interruptLock) {
                 blocker = nioBlocker;
                 if (blocker != null) {
-                    interrupted = true;
                     interrupt0();  // inform VM of interrupt
                     blocker.interrupt(this);
                 }
@@ -1718,7 +1719,6 @@ public class Thread implements Runnable {
                 return;
             }
         }
-        interrupted = true;
         interrupt0();  // inform VM of interrupt
     }
 
