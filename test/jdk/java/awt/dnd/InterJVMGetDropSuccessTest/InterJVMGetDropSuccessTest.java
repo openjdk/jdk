@@ -159,6 +159,7 @@ final class Util implements AWTEventListener {
     public static final int CODE_SECOND_SUCCESS = 0x2;
     public static final int CODE_FAILURE = 0x1;
     public static final int FRAME_ACTIVATION_TIMEOUT = 1000;
+    
     static final Object SYNC_LOCK = new Object();
     static final Util theInstance = new Util();
 
