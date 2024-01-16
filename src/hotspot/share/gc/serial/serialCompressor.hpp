@@ -99,6 +99,8 @@ class SerialCompressor : public StackObj {
   friend class SCMarkAndPushClosure;
 private:
 
+  static uint _total_invocations;
+
   // Memory area of the underlying marking bitmap.
   MemRegion  _mark_bitmap_region;
   // The marking bitmap.
@@ -143,6 +145,10 @@ private:
 public:
   SerialCompressor(STWGCTimer* gc_timer);
   ~SerialCompressor();
+
+  static uint total_invocations() {
+    return _total_invocations;
+  }
 
   // Entry point.
   void invoke_at_safepoint(bool clear_all_softrefs);
