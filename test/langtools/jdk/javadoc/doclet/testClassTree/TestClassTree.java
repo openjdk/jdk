@@ -30,15 +30,21 @@
  *           types.
  *           Make sure class tree handles undefined types in the class
  *           hierarchy.
- * @library  ../../lib
+ * @library  /tools/lib ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
- * @build    javadoc.tester.*
+ * @build    toolbox.ToolBox javadoc.tester.*
  * @run main TestClassTree
  */
 
+import java.io.IOException;
+import java.nio.file.Path;
+
 import javadoc.tester.JavadocTester;
+import toolbox.ToolBox;
 
 public class TestClassTree extends JavadocTester {
+
+    private final ToolBox tb = new ToolBox();
 
     public static void main(String... args) throws Exception {
         var tester = new TestClassTree();
@@ -46,15 +52,26 @@ public class TestClassTree extends JavadocTester {
     }
 
     @Test
-    public void testBadPkg() {
+    public void testBadPkg(Path base) throws IOException {
+        Path src = base.resolve("src");
+        tb.writeJavaFiles(src,
+                """
+                    package badpkg;
+                    public class ChildClass extends ParentClass
+                        implements AnInterface, Iterable {
+
+                    }
+                    """
+        );
+
         // Given badpkg package containing class ChildClass with an undefined
         //       base class, implementing undefined interface and a defined
         //       interface
         // When  the javadoc is generated with --ignore-source-errors option
         javadoc("--ignore-source-errors",
-                "-d", "badout",
+                "-d", base.resolve("badout").toString(),
                 "--no-platform-links",
-                "-sourcepath", testSrc,
+                "-sourcepath", src.toString(),
                 "badpkg");
         // Then javadoc exits successfully
         checkExit(Exit.OK);
