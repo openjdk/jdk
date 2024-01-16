@@ -132,23 +132,17 @@ public final class NonICCFilterTest {
         BufferedImage srcGold = createTestImage(createCS(ColorSpaceSelector.GRAY));
         BufferedImage destGold = createTestImage(createCS(ColorSpaceSelector.RGB));
 
-        ColorSpace mid = createCS(ColorSpaceSelector.PYCC);
-        ColorConvertOp test = new ColorConvertOp(mid, null);
-        test.filter(srcTest, destTest);
-
-        ColorConvertOp gold = new ColorConvertOp(mid, null);
+        ColorConvertOp gold = new ColorConvertOp(createCS(ColorSpaceSelector.PYCC), null);
+        gold.filter(srcTest, destTest);
         gold.filter(srcGold, destGold);
 
         if (!areImagesEqual(destTest, destGold)) {
             throw new RuntimeException("ICC test failed");
         }
 
-        mid = createCS(ColorSpaceSelector.WRAPPED_PYCC);
-        test = new ColorConvertOp(mid, null);
+        ColorConvertOp test = new ColorConvertOp(createCS(ColorSpaceSelector.WRAPPED_PYCC), null);
         test.filter(srcTest, destTest);
-
-        gold = new ColorConvertOp(mid, null);
-        gold.filter(srcGold, destGold);
+        test.filter(srcGold, destGold);
 
         if (!areImagesEqual(destTest, destGold)) {
             throw new RuntimeException("Wrapper test failed");
