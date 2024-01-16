@@ -38,10 +38,6 @@ class TenuredSpace;
 
 class CardTableRS : public CardTable {
   friend class VMStructs;
-  // Below are private classes used in impl.
-  friend class VerifyCTSpaceClosure;
-
-  void verify_space(Space* s, HeapWord* gen_start);
 
   static bool is_dirty(const CardValue* const v) {
     return !is_clean(v);
@@ -72,6 +68,11 @@ public:
   void inline_write_ref_field_gc(void* field) {
     CardValue* byte = byte_for(field);
     *byte = dirty_card_val();
+  }
+
+  bool is_dirty_for_addr(const void* p) const {
+    CardValue* card = byte_for(p);
+    return is_dirty(card);
   }
 
   void verify();
