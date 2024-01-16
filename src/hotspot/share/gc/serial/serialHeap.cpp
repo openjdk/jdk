@@ -97,7 +97,6 @@ SerialHeap::SerialHeap() :
     _soft_ref_policy(),
     _gc_policy_counters(new GCPolicyCounters("Copy:MSC", 2, 2)),
     _incremental_collection_failed(false),
-    _full_collections_completed(0),
     _young_manager(nullptr),
     _old_manager(nullptr),
     _eden_pool(nullptr),
@@ -302,15 +301,6 @@ void SerialHeap::save_used_regions() {
 
 size_t SerialHeap::max_capacity() const {
   return _young_gen->max_capacity() + _old_gen->max_capacity();
-}
-
-// Update the _full_collections_completed counter
-// at the end of a stop-world full GC.
-unsigned int SerialHeap::update_full_collections_completed() {
-  assert(_full_collections_completed <= _total_full_collections,
-         "Can't complete more collections than were started");
-  _full_collections_completed = _total_full_collections;
-  return _full_collections_completed;
 }
 
 // Return true if any of the following is true:
@@ -645,7 +635,6 @@ void SerialHeap::do_collection(bool full,
 
     // Resize the metaspace capacity after full collections
     MetaspaceGC::compute_new_size();
-    update_full_collections_completed();
 
     print_heap_change(pre_gc_values);
 
