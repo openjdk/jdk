@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -211,9 +211,8 @@ public class IdleTimeoutTest {
                     System.out.println("Operation[" + (i+1)
                                        +"]: starting at " +
                                        elapsed + "ms");
-                    final String name = "d:type=mlet,instance=" + i;
-                    mbs.createMBean("javax.management.loading.MLet",
-                                    new ObjectName(name));
+                    final String name = "d:instance=" + i;
+                    mbs.registerMBean(new Test(), new ObjectName(name));
                     if (i == (opCount-1))
                         startIdle = System.currentTimeMillis();
                     Thread.sleep(2);
@@ -309,5 +308,18 @@ public class IdleTimeoutTest {
         System.out.println("*** Test passed for " + proto);
         System.out.println("*** ------------------------------------------");
         return true;
+    }
+
+    public static interface TestMBean {
+        public int getA();
+        public void setA(int a);
+    }
+
+    public static class Test implements TestMBean {
+        public Test() {}
+        public Test(int x) {}
+
+        public int getA() {return 0;}
+        public void setA(int a) {}
     }
 }
