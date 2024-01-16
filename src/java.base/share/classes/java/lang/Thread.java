@@ -1700,26 +1700,25 @@ public class Thread implements Runnable {
      *          if the current thread cannot modify this thread
      */
     public void interrupt() {
-        // Write interrupted before reading nioBlocker for correct synchronization.
-        interrupted = true;
         if (this != Thread.currentThread()) {
             checkAccess();
-
+        }
+        // Write interrupted before reading nioBlocker for correct synchronization.
+        interrupted = true;
+        interrupt0();  // inform VM of interrupt
+        if (this != Thread.currentThread()) {
             // thread may be blocked in an I/O operation
             Interruptible blocker;
             synchronized (interruptLock) {
                 blocker = nioBlocker;
                 if (blocker != null) {
-                    interrupt0();  // inform VM of interrupt
                     blocker.interrupt(this);
                 }
             }
             if (blocker != null) {
                 blocker.postInterrupt();
-                return;
             }
         }
-        interrupt0();  // inform VM of interrupt
     }
 
     /**
