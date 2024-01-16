@@ -34,12 +34,16 @@
 #endif
 
 // Return the number of heap words covered by each block.
-static inline int words_per_block() {
-  return BitsPerWord << LogMinObjAlignment;
+static inline uint log_words_per_block() {
+  return LogBitsPerWord /*+ LogMinObjAlignment*/;
 }
 
-static inline int bytes_per_block() {
-  return BitsPerWord << (LogMinObjAlignment + LogBytesPerWord);
+static inline uint words_per_block() {
+  return BitsPerWord /*<< LogMinObjAlignment*/;
+}
+
+static inline uint bytes_per_block() {
+  return BitsPerWord << (/*LogMinObjAlignment +*/ LogBytesPerWord);
 }
 
 static HeapWord** allocate_table() {
@@ -95,7 +99,7 @@ class SCCompacter {
   // corresponding block in the table.
   inline size_t addr_to_block_idx(HeapWord* addr) const {
     assert(addr >= _covered.start() && addr <= _covered.end(), "address must be in heap");
-    return pointer_delta(addr, _covered.start()) / words_per_block();
+    return pointer_delta(addr, _covered.start()) >> log_words_per_block();
   }
 
   inline HeapWord* forwardee(HeapWord* addr) const {
@@ -110,18 +114,6 @@ class SCCompacter {
     size_t from_block = addr_to_block_idx(from);
     size_t to_block = addr_to_block_idx(align_up(to, bytes_per_block()));
     Copy::fill_to_words(reinterpret_cast<HeapWord*>(&_bot[from_block]), to_block - from_block);
-  }
-
-  void record(HeapWord* first_in_block, HeapWord* to) {
-    HeapWord* block_start = align_down(first_in_block, bytes_per_block());
-    // Count number of live words preceding the first object in the block. This must
-    // be subtracted, because the BOT stores the forwarding address of the first live
-    // *word*, not the first live *object* in the block.
-    size_t num_live = _mark_bitmap.count_marked_words(block_start, first_in_block);
-    // Note that we only record the address for blocks where objects start. That
-    // is ok, because we only ask for forwarding address of first word of objects.
-    _bot[addr_to_block_idx(first_in_block)] = to - num_live;
-    assert(forwardee(first_in_block) == to, "must match");
   }
 
   HeapWord* get_compaction_top(uint index) const {
@@ -152,40 +144,53 @@ class SCCompacter {
     HeapWord* current = _mark_bitmap.get_next_marked_addr(bottom, top);
     // Scan all live objects in the space.
     while (current < top) {
-      assert(_bot[addr_to_block_idx(current)] == nullptr, "must be new block");
-      HeapWord* block_end = MIN2(top, align_up(current + 1, bytes_per_block()));
-      size_t live_in_block = 0;
-      HeapWord* first_in_block = current;
-      // Scan all live objects in the block to calculate the number of live words of all
-      // objects in the block. Note that this can be larger than the block when a
-      // trailing object spans into subsequent block(s). This is intentional:
-      // All objects which start in a block will share the same block-base-address,
-      // and thus must be compacted into the same destinatioin space.
-      while (current < block_end) {
-	oop obj = cast_to_oop(current);
-	assert(oopDesc::is_oop(obj), "must be oop start");
-	size_t obj_size = obj->size();
-	live_in_block += obj_size;
+      HeapWord* next = _mark_bitmap.get_next_unmarked_addr(current, top);
+      size_t live_in_block = pointer_delta(next, current);
 
-	// Advance to next live object.
-	current = _mark_bitmap.get_next_marked_addr(current + obj_size, top);
-      }
-
-      // Check if block fits into current compaction space, and switch to next,
-      // if necessary. The compaction space must have enough space left to
-      // accomodate all objects that start in the block.
       while (live_in_block > pointer_delta(_spaces[_index]._space->end(),
-	                                   _spaces[_index]._compaction_top)) {
+	                                   compact_top)) {
         // out-of-memory in this space
+        _spaces[_index]._compaction_top = compact_top;
 	_index++;
 	assert(_index < max_num_spaces - 1, "the last space should not be used");
+        compact_top = _spaces[_index]._compaction_top;
       }
 
-      // Record address of the first live word in this block.
-      record(first_in_block, _spaces[_index]._compaction_top);
-
-      _spaces[_index]._compaction_top += live_in_block;
+      // Record addresses of the first live word of all blocks covered by the live span.
+      size_t head = MIN2(pointer_delta(align_up(current, bytes_per_block()), current), live_in_block);
+      if (head > 0) {
+        HeapWord* block_start = align_down(current, bytes_per_block());
+        // Count number of live words preceding the first object in the block. This must
+        // be subtracted, because the BOT stores the forwarding address of the first live
+        // *word*, not the first live *object* in the block.
+        size_t num_live = _mark_bitmap.count_marked_words(block_start, current);
+        // Note that we only record the address for blocks where objects start. That
+        // is ok, because we only ask for forwarding address of first word of objects.
+        _bot[addr_to_block_idx(current)] = compact_top - num_live;
+        assert(forwardee(current) == compact_top, "must match");
+        compact_top += head;
+        current += head;
+      }
+      // Middle block.
+      while (pointer_delta(next, current) > words_per_block()) {
+        _bot[addr_to_block_idx(current)] = compact_top;
+        assert(forwardee(current) == compact_top, "must match");
+        current += words_per_block();
+        compact_top += words_per_block();
+      }
+      // Tail.
+      size_t tail = pointer_delta(next, current);
+      if (tail > 0) {
+        _bot[addr_to_block_idx(current)] = compact_top;
+        assert(forwardee(current) == compact_top, "must match");
+        compact_top += tail;
+        current += tail;
+      }
+      // Advance to next live span
+      assert(current == next, "must arrive at next unmarked");
+      current = _mark_bitmap.get_next_marked_addr(current, top);
     }
+    _spaces[_index]._compaction_top = compact_top;
   }
 
 public:
@@ -233,7 +238,6 @@ public:
 class SCUpdateRefsClosure : public BasicOopIterateClosure {
 private:
   const SCCompacter& _compacter;
-
   template<class T>
   void do_oop_work(T* p) {
     T heap_oop = RawAccess<>::oop_load(p);
@@ -272,10 +276,11 @@ void SCCompacter::compact_space(uint idx) const {
   while (current < top) {
     oop obj = cast_to_oop(current);
     assert(oopDesc::is_oop(obj), "must be oop");
-    size_t size_in_words = obj->size();
+    Klass* klass = obj->klass();
+    size_t size_in_words = obj->size_given_klass(klass);
 
     // Update references of object.
-    obj->oop_iterate(&cl);
+    obj->oop_iterate_backwards(&cl, klass);
 
     // Copy object itself.
     HeapWord* fwd = forwardee(current);

@@ -83,6 +83,8 @@ public:
   // such bit, returns "limit" if that is non-null, or else "endWord()".
   inline HeapWord* get_next_marked_addr(const HeapWord* addr,
                                         HeapWord* limit) const;
+  inline HeapWord* get_next_unmarked_addr(const HeapWord* addr,
+                                          HeapWord* limit) const;
 
   void print_on_error(outputStream* st, const char* prefix) const;
 
