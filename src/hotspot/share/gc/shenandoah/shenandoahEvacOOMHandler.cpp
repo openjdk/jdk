@@ -98,6 +98,9 @@ ShenandoahEvacOOMHandler::ShenandoahEvacOOMHandler() :
   for (int i = 0; i < _num_counters; i++) {
     new (&_threads_in_evac[i]) ShenandoahEvacOOMCounter();
   }
+#ifdef ASSERT
+  Atomic::store(&_evacuation_state, _evacuating);
+#endif
 }
 
 int ShenandoahEvacOOMHandler::calc_num_counters() {
