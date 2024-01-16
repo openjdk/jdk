@@ -168,8 +168,6 @@ class DefNewGeneration: public Generation {
   ContiguousSpace* from() const           { return _from_space; }
   ContiguousSpace* to()   const           { return _to_space;   }
 
-  virtual ContiguousSpace* first_compaction_space() const;
-
   // Space enquiries
   size_t capacity() const;
   size_t used() const;
@@ -256,8 +254,8 @@ class DefNewGeneration: public Generation {
   // completed. Even if this method returns true, a collection
   // may not be guaranteed to succeed, and the system should be
   // able to safely unwind and recover from that failure, albeit
-  // at some additional cost. Override superclass's implementation.
-  virtual bool collection_attempt_is_safe();
+  // at some additional cost.
+  bool collection_attempt_is_safe();
 
   virtual void collect(bool   full,
                        bool   clear_all_soft_refs,

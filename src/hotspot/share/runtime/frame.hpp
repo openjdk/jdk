@@ -90,6 +90,8 @@ class frame {
   void assert_offset() const   { assert(_frame_index >= 0,  "Using offset with a non-chunk frame"); assert_on_heap(); }
   void assert_absolute() const { assert(_frame_index == -1, "Using absolute addresses with a chunk frame"); }
 
+  const ImmutableOopMap* get_oop_map() const;
+
  public:
   // Constructors
   frame();

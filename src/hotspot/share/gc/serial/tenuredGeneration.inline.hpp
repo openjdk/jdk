@@ -49,10 +49,6 @@ inline bool TenuredGeneration::is_in(const void* p) const {
   return space()->is_in(p);
 }
 
-inline ContiguousSpace* TenuredGeneration::first_compaction_space() const {
-  return space();
-}
-
 HeapWord* TenuredGeneration::allocate(size_t word_size,
                                                  bool is_tlab) {
   assert(!is_tlab, "TenuredGeneration does not support TLAB allocation");

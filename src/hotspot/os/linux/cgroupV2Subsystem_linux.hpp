@@ -78,6 +78,8 @@ class CgroupV2Subsystem: public CgroupSubsystem {
     jlong memory_soft_limit_in_bytes();
     jlong memory_usage_in_bytes();
     jlong memory_max_usage_in_bytes();
+    jlong rss_usage_in_bytes();
+    jlong cache_usage_in_bytes();
 
     char * cpu_cpuset_cpus();
     char * cpu_cpuset_memory_nodes();

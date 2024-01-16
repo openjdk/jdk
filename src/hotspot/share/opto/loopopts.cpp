@@ -287,7 +287,11 @@ bool PhaseIdealLoop::cannot_split_division(const Node* n, const Node* region) co
       return false;
   }
 
-  assert(n->in(0) == nullptr, "divisions with zero check should already have bailed out earlier in split-if");
+  if (n->in(0) != nullptr) {
+    // Cannot split through phi if Div or Mod node has a control dependency to a zero check.
+    return true;
+  }
+
   Node* divisor = n->in(2);
   return is_divisor_counted_loop_phi(divisor, region) &&
          loop_phi_backedge_type_contains_zero(divisor, zero);
@@ -305,7 +309,7 @@ bool PhaseIdealLoop::loop_phi_backedge_type_contains_zero(const Node* phi_diviso
 // Replace the dominated test with an obvious true or false.  Place it on the
 // IGVN worklist for later cleanup.  Move control-dependent data Nodes on the
 // live path up to the dominating control.
-void PhaseIdealLoop::dominated_by(IfProjNode* prevdom, IfNode* iff, bool flip, bool exclude_loop_predicate) {
+void PhaseIdealLoop::dominated_by(IfProjNode* prevdom, IfNode* iff, bool flip, bool pin_array_access_nodes) {
   if (VerifyLoopOptimizations && PrintOpto) { tty->print_cr("dominating test"); }
 
   // prevdom is the dominating projection of the dominating test.
@@ -330,7 +334,7 @@ void PhaseIdealLoop::dominated_by(IfProjNode* prevdom, IfNode* iff, bool flip, b
   // Hack the dominated test
   _igvn.replace_input_of(iff, 1, con);
 
-  // If I dont have a reachable TRUE and FALSE path following the IfNode then
+  // If I don't have a reachable TRUE and FALSE path following the IfNode then
   // I can assume this path reaches an infinite loop.  In this case it's not
   // important to optimize the data Nodes - either the whole compilation will
   // be tossed or this path (and all data Nodes) will go dead.
@@ -341,23 +345,8 @@ void PhaseIdealLoop::dominated_by(IfProjNode* prevdom, IfNode* iff, bool flip, b
   // dominating projection.
   Node* dp = iff->proj_out_or_null(pop == Op_IfTrue);
 
-  // Loop predicates may have depending checks which should not
-  // be skipped. For example, range check predicate has two checks
-  // for lower and upper bounds.
   if (dp == nullptr)
     return;
-
-  ProjNode* dp_proj  = dp->as_Proj();
-  ProjNode* unc_proj = iff->proj_out(1 - dp_proj->_con)->as_Proj();
-  if (exclude_loop_predicate &&
-      (unc_proj->is_uncommon_trap_proj(Deoptimization::Reason_predicate) != nullptr ||
-       unc_proj->is_uncommon_trap_proj(Deoptimization::Reason_profile_predicate) != nullptr ||
-       unc_proj->is_uncommon_trap_proj(Deoptimization::Reason_range_check) != nullptr)) {
-    // If this is a range check (IfNode::is_range_check), do not
-    // reorder because Compile::allow_range_check_smearing might have
-    // changed the check.
-    return; // Let IGVN transformation change control dependence.
-  }
 
   IdealLoopTree* old_loop = get_loop(dp);
 
@@ -367,6 +356,20 @@ void PhaseIdealLoop::dominated_by(IfProjNode* prevdom, IfNode* iff, bool flip, b
     if (cd->depends_only_on_test() && _igvn.no_dependent_zero_check(cd)) {
       assert(cd->in(0) == dp, "");
       _igvn.replace_input_of(cd, 0, prevdom);
+      if (pin_array_access_nodes) {
+        // Because of Loop Predication, Loads and range check Cast nodes that are control dependent on this range
+        // check (that is about to be removed) now depend on multiple dominating Hoisted Check Predicates. After the
+        // removal of this range check, these control dependent nodes end up at the lowest/nearest dominating predicate
+        // in the graph. To ensure that these Loads/Casts do not float above any of the dominating checks (even when the
+        // lowest dominating check is later replaced by yet another dominating check), we need to pin them at the lowest
+        // dominating check.
+        Node* clone = cd->pin_array_access_node();
+        if (clone != nullptr) {
+          clone = _igvn.register_new_node_with_optimizer(clone, cd);
+          _igvn.replace_node(cd, clone);
+          cd = clone;
+        }
+      }
       set_early_ctrl(cd, false);
       IdealLoopTree* new_loop = get_loop(get_ctrl(cd));
       if (old_loop != new_loop) {
@@ -1486,7 +1489,7 @@ void PhaseIdealLoop::split_if_with_blocks_post(Node *n) {
           // Replace the dominated test with an obvious true or false.
           // Place it on the IGVN worklist for later cleanup.
           C->set_major_progress();
-          dominated_by(prevdom->as_IfProj(), n->as_If(), false, true);
+          dominated_by(prevdom->as_IfProj(), n->as_If());
           DEBUG_ONLY( if (VerifyLoopOptimizations) { verify(); } );
           return;
         }
@@ -1579,10 +1582,10 @@ bool PhaseIdealLoop::try_merge_identical_ifs(Node* n) {
     // unrelated control dependency.
     for (uint i = 1; i < new_false_region->req(); i++) {
       if (is_dominator(dom_proj_true, new_false_region->in(i))) {
-        dominated_by(dom_proj_true->as_IfProj(), new_false_region->in(i)->in(0)->as_If(), false, false);
+        dominated_by(dom_proj_true->as_IfProj(), new_false_region->in(i)->in(0)->as_If());
       } else {
         assert(is_dominator(dom_proj_false, new_false_region->in(i)), "bad if");
-        dominated_by(dom_proj_false->as_IfProj(), new_false_region->in(i)->in(0)->as_If(), false, false);
+        dominated_by(dom_proj_false->as_IfProj(), new_false_region->in(i)->in(0)->as_If());
       }
     }
     return true;

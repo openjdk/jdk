@@ -1016,7 +1016,7 @@ public sealed interface MemoryLayout
      * @throws IllegalArgumentException if {@code elementLayout.byteSize() % elementLayout.byteAlignment() != 0}
      */
     static SequenceLayout sequenceLayout(long elementCount, MemoryLayout elementLayout) {
-        MemoryLayoutUtil.requireNonNegative(elementCount);
+        Utils.checkNonNegativeArgument(elementCount, "elementCount");
         Objects.requireNonNull(elementLayout);
         Utils.checkElementAlignment(elementLayout,
                 "Element layout size is not multiple of alignment");
