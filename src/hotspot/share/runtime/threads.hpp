@@ -57,6 +57,7 @@ class Threads: AllStatic {
 
   static void initialize_java_lang_classes(JavaThread* main_thread, TRAPS);
   static void initialize_jsr292_core_classes(TRAPS);
+  static void initialize_continuation_class(TRAPS);
 
  public:
   // Thread management

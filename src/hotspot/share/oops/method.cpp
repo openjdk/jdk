@@ -1249,10 +1249,13 @@ void Method::link_method(const methodHandle& h_method, TRAPS) {
   // ONLY USE the h_method now as make_adapter may have blocked
 
   if (h_method->is_continuation_native_intrinsic()) {
-    // the entry points to this method will be set in set_code, called when first resolving this method
     _from_interpreted_entry = nullptr;
     _from_compiled_entry = nullptr;
     _i2i_entry = nullptr;
+    if (Continuations::enabled()) {
+      AdapterHandlerLibrary::create_native_wrapper(h_method);
+      assert(_from_interpreted_entry == get_i2c_entry(), "invariant");
+    }
   }
 }
 
