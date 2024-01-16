@@ -51,7 +51,6 @@ class Generation;
 class ContiguousSpace;
 class CardTableRS;
 class DirtyCardToOopClosure;
-class FilteringClosure;
 
 // A Space describes a heap area. Class Space is an abstract
 // base class.
@@ -84,12 +83,6 @@ class Space: public CHeapObj<mtGC> {
   HeapWord* saved_mark_word() const  { return _saved_mark_word; }
 
   void set_saved_mark_word(HeapWord* p) { _saved_mark_word = p; }
-
-  // Returns true if this object has been allocated since a
-  // generation's "save_marks" call.
-  bool obj_allocated_since_save_marks(const oop obj) const {
-    return cast_from_oop<HeapWord*>(obj) >= saved_mark_word();
-  }
 
   // Returns a subregion of the space containing only the allocated objects in
   // the space.
@@ -133,9 +126,6 @@ class Space: public CHeapObj<mtGC> {
   // Returns true iff the given reserved memory of the space contains the
   // given address.
   bool is_in_reserved(const void* p) const { return _bottom <= p && p < _end; }
-
-  // Returns true iff the given block is not allocated.
-  virtual bool is_free_block(const HeapWord* p) const = 0;
 
   // Test whether p is double-aligned
   static bool is_aligned(void* p) {
@@ -274,8 +264,6 @@ protected:
   size_t used() const override   { return byte_size(bottom(), top()); }
   size_t free() const override   { return byte_size(top(),    end()); }
 
-  bool is_free_block(const HeapWord* p) const override;
-
   // In a contiguous space we have a more obvious bound on what parts
   // contain objects.
   MemRegion used_region() const override { return MemRegion(bottom(), top()); }
@@ -310,7 +298,6 @@ protected:
 
   // Addresses for inlined allocation
   HeapWord** top_addr() { return &_top; }
-  HeapWord** end_addr() { return &_end; }
 
   void print_on(outputStream* st) const override;
 

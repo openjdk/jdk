@@ -26,30 +26,44 @@
  * @bug 8322818
  * @summary Stress test Thread.getStackTrace on a virtual thread that is pinned
  * @requires vm.debug != true
- * @run main GetStackTraceALotWhenPinned 25000
+ * @modules java.base/java.lang:+open
+ * @library /test/lib
+ * @run main/othervm GetStackTraceALotWhenPinned 500000
  */
 
 /*
  * @test
  * @requires vm.debug == true
- * @run main/timeout=300 GetStackTraceALotWhenPinned 10000
+ * @modules java.base/java.lang:+open
+ * @library /test/lib
+ * @run main/othervm/timeout=300 GetStackTraceALotWhenPinned 200000
  */
 
 import java.time.Instant;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.LockSupport;
+import jdk.test.lib.thread.VThreadRunner;
 
 public class GetStackTraceALotWhenPinned {
 
     public static void main(String[] args) throws Exception {
-        var counter = new AtomicInteger(Integer.parseInt(args[0]));
+        // need at least two carrier threads when main thread is a virtual thread
+        if (Thread.currentThread().isVirtual()) {
+            VThreadRunner.ensureParallelism(2);
+        }
+
+        int iterations = Integer.parseInt(args[0]);
+        var barrier = new Barrier(2);
 
         // Start a virtual thread that loops doing Thread.yield and parking while pinned.
         // This loop creates the conditions for the main thread to sample the stack trace
         // as it transitions from being unmounted to parking while pinned.
         var thread = Thread.startVirtualThread(() -> {
             boolean timed = false;
-            while (counter.decrementAndGet() > 0) {
+            for (int i = 0; i < iterations; i++) {
+                // wait for main thread to arrive
+                barrier.await();
+
                 Thread.yield();
                 synchronized (GetStackTraceALotWhenPinned.class) {
                     if (timed) {
@@ -63,14 +77,47 @@ public class GetStackTraceALotWhenPinned {
         });
 
         long lastTimestamp = System.currentTimeMillis();
-        while (thread.isAlive()) {
+        for (int i = 0; i < iterations; i++) {
+            // wait for virtual thread to arrive
+            barrier.await();
+
             thread.getStackTrace();
             LockSupport.unpark(thread);
+
             long currentTime = System.currentTimeMillis();
             if ((currentTime - lastTimestamp) > 500) {
-                System.out.format("%s %d remaining ...%n", Instant.now(), counter.get());
+                System.out.format("%s %d remaining ...%n", Instant.now(), (iterations - i));
                 lastTimestamp = currentTime;
             }
         }
+    }
+
+    /**
+     * Alow threads wait for each other to reach a common barrier point. This class does
+     * not park threads that are waiting for the barrier to trip, instead it spins. This
+     * makes it suitable for tests that use LockSupport.park or Thread.yield.
+     */
+    private static class Barrier {
+        private final int parties;
+        private final AtomicInteger count;
+        private volatile int generation;
+
+        Barrier(int parties) {
+            this.parties = parties;
+            this.count = new AtomicInteger(parties);
+        }
+
+        void await() {
+            int g = generation;
+            if (count.decrementAndGet() == 0) {
+                count.set(parties);
+                generation = g + 1;
+            } else {
+                while (generation == g) {
+                    Thread.onSpinWait();
+                }
+            }
+        }
+
     }
 }

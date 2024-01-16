@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -4904,9 +4904,9 @@ void MacroAssembler::object_move(OopMap* map,
 
 // A float arg may have to do float reg int reg conversion
 void MacroAssembler::float_move(VMRegPair src, VMRegPair dst, Register tmp) {
-  assert(src.first()->is_stack() && dst.first()->is_stack() ||
-         src.first()->is_reg() && dst.first()->is_reg() ||
-         src.first()->is_stack() && dst.first()->is_reg(), "Unexpected error");
+  assert((src.first()->is_stack() && dst.first()->is_stack()) ||
+         (src.first()->is_reg() && dst.first()->is_reg()) ||
+         (src.first()->is_stack() && dst.first()->is_reg()), "Unexpected error");
   if (src.first()->is_stack()) {
     if (dst.first()->is_stack()) {
       lwu(tmp, Address(fp, reg2offset_in(src.first())));
@@ -4948,9 +4948,9 @@ void MacroAssembler::long_move(VMRegPair src, VMRegPair dst, Register tmp) {
 
 // A double move
 void MacroAssembler::double_move(VMRegPair src, VMRegPair dst, Register tmp) {
-  assert(src.first()->is_stack() && dst.first()->is_stack() ||
-         src.first()->is_reg() && dst.first()->is_reg() ||
-         src.first()->is_stack() && dst.first()->is_reg(), "Unexpected error");
+  assert((src.first()->is_stack() && dst.first()->is_stack()) ||
+         (src.first()->is_reg() && dst.first()->is_reg()) ||
+         (src.first()->is_stack() && dst.first()->is_reg()), "Unexpected error");
   if (src.first()->is_stack()) {
     if (dst.first()->is_stack()) {
       ld(tmp, Address(fp, reg2offset_in(src.first())));
