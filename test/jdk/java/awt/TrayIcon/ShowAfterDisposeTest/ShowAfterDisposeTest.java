@@ -24,12 +24,13 @@
 /*
  * @test
  * @bug 6384984 8004032
- * @library ../regtesthelpers /test/lib
+ * @library ../../regtesthelpers /test/lib
  * @build PassFailJFrame jtreg.SkippedException
  * @summary TrayIcon try to dispay a tooltip when is not visible
  * @run main/manual ShowAfterDisposeTest
 */
 
+import java.awt.AWTException;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Graphics;
@@ -42,11 +43,8 @@ import javax.swing.JFrame;
 import javax.swing.SwingUtilities;
 
 public class ShowAfterDisposeTest {
-    JFrame frame;
-
     public static void main(String[] args) throws Exception {
-        boolean traySupported = SystemTray.isSupported();
-        if (!traySupported) {
+        if (!SystemTray.isSupported()) {
             throw new jtreg.SkippedException("The test cannot be run because SystemTray is not supported.");
         }
 
@@ -66,26 +64,20 @@ public class ShowAfterDisposeTest {
             "3) If the bug is reproducible then the test will fail without assistance.\n" +
             "4) Just press the 'pass' button.";
 
-        PassFailJFrame passFailJFrame = new PassFailJFrame.Builder()
+        PassFailJFrame.builder()
                 .title("Test Instructions Frame")
                 .instructions(instructions)
                 .testTimeOut(10)
                 .rows(10)
                 .columns(45)
-                .build();
-        showFrameAndIcon();
-        passFailJFrame.awaitAndCheck();
+                .testUI(ShowAfterDisposeTest::showFrameAndIcon)
+                .build()
+                .awaitAndCheck();
     }
 
-    public void showFrameAndIcon() throws Exception {
-        SwingUtilities.invokeAndWait(() -> {
-            frame = new JFrame("ShowAfterDisposeTest");
-            frame.setLayout(new BorderLayout());
-
-            frame.setSize(200, 200);
-            frame.setVisible(true);
-            frame.validate();
-        });
+    private static JFrame showFrameAndIcon() {
+        JFrame frame = new JFrame("ShowAfterDisposeTest");
+        frame.setLayout(new BorderLayout());
 
         BufferedImage img = new BufferedImage(32, 32, BufferedImage.TYPE_INT_ARGB);
         Graphics g = img.createGraphics();
@@ -103,7 +95,13 @@ public class ShowAfterDisposeTest {
                 tray.remove(icon);
             }});
 
-        tray.add(icon);
+        try {
+            tray.add(icon);
+        } catch (AWTException e) {
+            throw new RuntimeException("Could not add icon to tray");
+        }
         icon.setToolTip("tooltip");
+
+        return frame;
     }
 }
