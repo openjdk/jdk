@@ -54,6 +54,7 @@ class DefNewGeneration: public Generation {
   friend class VMStructs;
 
   TenuredGeneration* _old_gen;
+
   uint        _tenuring_threshold;   // Tenuring threshold for next collection.
   AgeTable    _age_table;
   // Size of object to pretenure in words; command line provides bytes
