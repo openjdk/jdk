@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,16 +29,37 @@
   @run main InterJVMGetDropSuccessTest
 */
 
-import java.awt.*;
-import java.awt.datatransfer.*;
-import java.awt.dnd.*;
-import java.awt.event.*;
-import java.io.*;
+import java.awt.Frame;
+import java.awt.Component;
+import java.awt.Point;
+import java.awt.Dimension;
+import java.awt.EventQueue;
+import java.awt.Toolkit;
+import java.awt.AWTEvent;
+import java.awt.Robot;
+import java.awt.event.AWTEventListener;
+import java.awt.event.InputEvent;
+import java.awt.event.MouseEvent;
+import java.awt.datatransfer.StringSelection;
+import java.awt.datatransfer.Transferable;
+import java.awt.dnd.DropTarget;
+import java.awt.dnd.DragGestureListener;
+import java.awt.dnd.DragSourceAdapter;
+import java.awt.dnd.DragSourceDropEvent;
+import java.awt.dnd.DnDConstants;
+import java.awt.dnd.DropTargetDropEvent;
+import java.awt.dnd.DropTargetAdapter;
+import java.awt.dnd.DragGestureRecognizer;
+import java.awt.dnd.DragSource;
+import java.awt.dnd.DropTargetListener;
+import java.awt.dnd.DragGestureEvent;
+import java.io.File;
+import java.io.InputStream;
 
 public class InterJVMGetDropSuccessTest {
 
     private int returnCode = Util.CODE_NOT_RETURNED;
-    private boolean successCodes[] = { true, false };
+    private final boolean successCodes[] = new boolean[]{ true, false };
     private int dropCount = 0;
 
     final Frame frame = new Frame("Target Frame");
@@ -136,7 +157,7 @@ final class Util implements AWTEventListener {
     public static final int CODE_SECOND_SUCCESS = 0x2;
     public static final int CODE_FAILURE = 0x1;
 
-    public static final int FRAME_ACTIVATION_TIMEOUT = 3000;
+    public static final int FRAME_ACTIVATION_TIMEOUT = 1000;
 
     static final Object SYNC_LOCK = new Object();
     static final int MOUSE_RELEASE_TIMEOUT = 1000;
@@ -158,44 +179,12 @@ final class Util implements AWTEventListener {
         return n < 0 ? -1 : n == 0 ? 0 : 1;
     }
 
-    private Component clickedComponent = null;
-
-    private void reset() {
-        clickedComponent = null;
-    }
-
     public void eventDispatched(AWTEvent e) {
         if (e.getID() == MouseEvent.MOUSE_RELEASED) {
-            clickedComponent = (Component)e.getSource();
             synchronized (SYNC_LOCK) {
                 SYNC_LOCK.notifyAll();
             }
         }
-    }
-
-    public static boolean pointInComponent(Robot robot, Point p, Component comp)
-      throws InterruptedException {
-        return theInstance.pointInComponentImpl(robot, p, comp);
-    }
-
-    private boolean pointInComponentImpl(Robot robot, Point p, Component comp)
-      throws InterruptedException {
-        robot.waitForIdle();
-        reset();
-        robot.mouseMove(p.x, p.y);
-        robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
-        synchronized (SYNC_LOCK) {
-            robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
-            SYNC_LOCK.wait(MOUSE_RELEASE_TIMEOUT);
-        }
-
-        Component c = clickedComponent;
-
-        while (c != null && c != comp) {
-            c = c.getParent();
-        }
-
-        return c == comp;
     }
 }
 
@@ -268,13 +257,13 @@ class Child {
             Point targetPoint = new Point(x + w / 2, y + h / 2);
 
             Robot robot = new Robot();
-            robot.setAutoWaitForIdle(true);
             robot.mouseMove(sourcePoint.x, sourcePoint.y);
+            robot.waitForIdle();
             robot.delay(50);
             robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
             for (Point p = new Point(sourcePoint); !p.equals(targetPoint);
                 p.translate(Util.sign(targetPoint.x - p.x),
-                             Util.sign(targetPoint.y - p.y))) {
+                            Util.sign(targetPoint.y - p.y))) {
                 robot.mouseMove(p.x, p.y);
                 robot.delay(50);
             }
@@ -294,11 +283,12 @@ class Child {
 
 
             robot.mouseMove(sourcePoint.x, sourcePoint.y);
+            robot.waitForIdle();
             robot.delay(50);
             robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
             for (Point p = new Point(sourcePoint); !p.equals(targetPoint);
                 p.translate(Util.sign(targetPoint.x - p.x),
-                             Util.sign(targetPoint.y - p.y))) {
+                            Util.sign(targetPoint.y - p.y))) {
                 robot.mouseMove(p.x, p.y);
                 robot.delay(50);
             }
