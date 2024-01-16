@@ -23,21 +23,32 @@
  */
 
 #include "logging/logFileStreamOutput.hpp"
-#include "utilities/globalDefinitions.hpp"
-#include "runtime/os.inline.hpp"
+
+#include "nmt/memTracker.hpp"
 #include "runtime/mutex.hpp"
+#include "runtime/os.inline.hpp"
 #include "runtime/semaphore.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/resourceHash.hpp"
+#include <algorithm>
 #include <stddef.h>
 #include <string.h>
-#include <algorithm>
 #include <sys/mman.h>
 #include <unistd.h>
 
 #ifndef SHARE_LOGGING_CIRCULARSTRINGBUFFER_HPP
 #define SHARE_LOGGING_CIRCULARSTRINGBUFFER_HPP
 
+// The CircularMapping is a struct that provides
+// an interface for writing and reading bytes in a circular buffer
+// correctly. This indirection is necessary because there are two
+// underlying implementations: Linux, and all others.
 #ifdef LINUX
+// Implements a circular buffer by using the virtual memory mapping facilities of the OS.
+// Specifically, it reserves virtual memory with twice the size of the requested buffer.
+// The latter half of this buffer is then mapped back to the start of the first buffer.
+// This allows for write_bytes and read_bytes to consist of a single memcpy, as the
+// wrap-around is dealt with by the virtual memory system.
 struct CircularMapping {
   FILE* file;
   char* buffer;
@@ -75,6 +86,10 @@ struct CircularMapping {
     if (mmap_ret == MAP_FAILED) {
       vm_exit_out_of_memory(size, OOM_MMAP_ERROR, "Failed to allocate async logging buffer");
     }
+
+    // Success, notify MT.
+    MemTracker::record_virtual_memory_reserve(buffer, size, CURRENT_PC, mtLogging);
+    MemTracker::record_virtual_memory_commit(buffer, size, CURRENT_PC);
   }
   ~CircularMapping() {
     munmap(buffer, size * 2);
@@ -87,10 +102,6 @@ struct CircularMapping {
 
   void read_bytes(size_t at, char* out, size_t size) {
     memcpy(out, &buffer[at], size);
-  }
-
-  char* start() {
-    return buffer;
   }
 };
 #else
@@ -182,13 +193,25 @@ private:
   size_t calc_mem(size_t sz);
 
 public:
+  // Messsage is the header of a log line and contains its associated decorations and output.
+  // It is directly followed by the c-str of the log line. The log line is padded at the end
+  // to ensure correct alignment for the Message. A Message is considered to be a flush token
+  // when its output is null.
+  //
+  // Example layout:
+  // ---------------------------------------------
+  // |_output|_decorations|"a log line", |pad| <- Message aligned.
+  // |_output|_decorations|"yet another",|pad|
+  // ...
+  // |nullptr|_decorations|"",|pad| <- flush token
+  // |<- _pos
+  // ---------------------------------------------
   struct Message {
     size_t size; // Size of string following the Message envelope
     LogFileStreamOutput* const output;
     const LogDecorations decorations;
     Message(size_t size, LogFileStreamOutput* output, const LogDecorations decorations)
     : size(size), output(output), decorations(decorations) {
-
     }
 
     Message()
@@ -213,10 +236,13 @@ public:
   void enqueue(LogFileStreamOutput& output, LogMessageBuffer::Iterator msg_iterator);
 
   enum DequeueResult {
-    NoMessage, TooSmall, OK
+    NoMessage, // There was no message in the buffer
+    TooSmall,  // The provided out buffer is too small
+    OK         // A message was found and copied over to the out buffer and out_message.
   };
-  DequeueResult dequeue(Message* out_descriptor, char* out, size_t out_size);
+  DequeueResult dequeue(Message* out_message, char* out, size_t out_size);
 
+  // Await flushing, blocks until signal_flush() is called by the flusher.
   void flush();
   void signal_flush();
 
