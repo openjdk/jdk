@@ -467,7 +467,8 @@ Node* ConstraintCastNode::make_cast_for_type(Node* c, Node* in, const Type* type
   } else if (type->isa_ptr()) {
     return new CastPPNode(c, in, type, dependency, types);
   }
-  fatal("unreachable. Invalid cast type.");
+  ShouldNotReachHere();
+  return nullptr;
 }
 
 Node* ConstraintCastNode::optimize_integer_cast(PhaseGVN* phase, BasicType bt) {
