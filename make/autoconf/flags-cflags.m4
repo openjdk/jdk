@@ -114,17 +114,14 @@ AC_DEFUN([FLAGS_SETUP_DEBUG_SYMBOLS],
       # the debug symbol paths resolve to paths relative to the workspace root.
       workspace_root_trailing_slash="${WORKSPACE_ROOT%/}/"
       DEBUG_PREFIX_CFLAGS="-fdebug-prefix-map=${workspace_root_trailing_slash}="
+      # Add debug prefix map gcc system include paths, as they cause
+      # non-deterministic debug paths depending on gcc path location.
+      DEBUG_PREFIX_MAP_GCC_INCLUDE_PATHS
       FLAGS_COMPILER_CHECK_ARGUMENTS(ARGUMENT: [${DEBUG_PREFIX_CFLAGS}],
         IF_FALSE: [
             DEBUG_PREFIX_CFLAGS=
         ]
       )
-    fi
-
-    if test "x$DEBUG_PREFIX_CFLAGS" != x; then
-      # Debug prefix map gcc system include paths, as they cause
-      # non-deterministic debug paths depending on gcc path location.
-      DEBUG_PREFIX_MAP_GCC_INCLUDE_PATHS
     fi
 
     CFLAGS_DEBUG_SYMBOLS="-g -gdwarf-4"
@@ -178,12 +175,10 @@ AC_DEFUN([DEBUG_PREFIX_MAP_GCC_INCLUDE_PATHS],
     # Determine gcc system include paths.
     # Assume default roots to start with:
     GCC_ROOT_INCLUDE="/usr/include"
-    GCC_SYSROOT_PARAM=""
 
     # Determine is sysroot or devkit specified?
     if test "x$SYSROOT" != "x"; then
       GCC_ROOT_INCLUDE="${SYSROOT%/}/usr/include"
-      GCC_SYSROOT_PARAM="--sysroot=${SYSROOT%/}"
     fi
 
     # Add root include mapping => /usr/include
@@ -191,7 +186,7 @@ AC_DEFUN([DEBUG_PREFIX_MAP_GCC_INCLUDE_PATHS],
 
     # Add gcc system include mapping => /usr/local/gcc_include
     #   Find location of stddef.h using build C compiler
-    GCC_SYSTEM_INCLUDE=`$ECHO "#include <stddef.h>" | $CC $GCC_SYSROOT_PARAM -v -E - 2>&1 | $GREP stddef | $TAIL -1 | $TR -s " " | $CUT -d'"' -f2`
+    GCC_SYSTEM_INCLUDE=`$ECHO "#include <stddef.h>" | $CC $SYSROOT_CFLAGS -v -E - 2>&1 | $GREP stddef | $TAIL -1 | $TR -s " " | $CUT -d'"' -f2`
     if test "x$GCC_SYSTEM_INCLUDE" != "x"; then
       GCC_SYSTEM_INCLUDE=`$DIRNAME $GCC_SYSTEM_INCLUDE`
       GCC_INCLUDE_DEBUG_MAP_FLAGS="$GCC_INCLUDE_DEBUG_MAP_FLAGS -fdebug-prefix-map=${GCC_SYSTEM_INCLUDE}/=/usr/local/gcc_include/"
@@ -199,7 +194,7 @@ AC_DEFUN([DEBUG_PREFIX_MAP_GCC_INCLUDE_PATHS],
 
     # Add g++ system include mapping => /usr/local/gxx_include
     #   Find location of cstddef using build C++ compiler
-    GXX_SYSTEM_INCLUDE=`$ECHO "#include <cstddef>" | $CXX $GCC_SYSROOT_PARAM -v -E -x c++ - 2>&1 | $GREP cstddef | $TAIL -1 | $TR -s " " | $CUT -d'"' -f2`
+    GXX_SYSTEM_INCLUDE=`$ECHO "#include <cstddef>" | $CXX $SYSROOT_CFLAGS -v -E -x c++ - 2>&1 | $GREP cstddef | $TAIL -1 | $TR -s " " | $CUT -d'"' -f2`
     if test "x$GXX_SYSTEM_INCLUDE" != "x"; then
       GXX_SYSTEM_INCLUDE=`$DIRNAME $GXX_SYSTEM_INCLUDE`
       GCC_INCLUDE_DEBUG_MAP_FLAGS="$GCC_INCLUDE_DEBUG_MAP_FLAGS -fdebug-prefix-map=${GXX_SYSTEM_INCLUDE}/=/usr/local/gxx_include/"
