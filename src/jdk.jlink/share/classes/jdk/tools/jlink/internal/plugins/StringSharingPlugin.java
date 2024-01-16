@@ -313,7 +313,7 @@ public class StringSharingPlugin extends AbstractPlugin implements ResourcePrevi
                     throw new PluginException(ex);
                 }
                 res = ResourcePoolManager.newCompressedResource(resource,
-                        ByteBuffer.wrap(compressed), getName(), null,
+                        ByteBuffer.wrap(compressed), getName(),
                         ((ResourcePoolImpl)in).getStringTable(), in.byteOrder());
             }
             return res;

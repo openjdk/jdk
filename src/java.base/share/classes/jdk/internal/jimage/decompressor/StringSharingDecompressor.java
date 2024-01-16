@@ -33,7 +33,6 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Properties;
 
 /**
  *
@@ -228,9 +227,7 @@ public class StringSharingDecompressor implements ResourceDecompressor {
         return StringSharingDecompressorFactory.NAME;
     }
 
-    public StringSharingDecompressor(Properties properties) {
-
-    }
+    public StringSharingDecompressor() {}
 
     @Override
     public byte[] decompress(StringsProvider reader, byte[] content,

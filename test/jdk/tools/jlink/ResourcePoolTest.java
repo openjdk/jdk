@@ -139,7 +139,7 @@ public class ResourcePoolTest {
             try {
                 resources.add(ResourcePoolManager.
                         newCompressedResource(ResourcePoolEntry.create(path, new byte[0]),
-                                ByteBuffer.allocate(99), "bitcruncher", null,
+                                ByteBuffer.allocate(99), "bitcruncher",
                                 ((ResourcePoolManager)resources).getStringTable(), ByteOrder.nativeOrder()));
             } catch (Exception ex) {
                 throw new RuntimeException(ex);
@@ -207,7 +207,7 @@ public class ResourcePoolTest {
         ResourcePoolEntry res3 = ResourcePoolEntry.create("/module2/toto1", new byte[7]);
         resources2.add(res3);
         resources2.add(ResourcePoolManager.newCompressedResource(res1,
-                ByteBuffer.allocate(7), "zip", null, resources1.getStringTable(),
+                ByteBuffer.allocate(7), "zip", resources1.getStringTable(),
                 ByteOrder.nativeOrder()));
         checkResources(resources2, res1, res2);
     }

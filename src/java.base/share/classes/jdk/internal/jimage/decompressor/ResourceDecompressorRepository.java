@@ -54,17 +54,15 @@ public final class ResourceDecompressorRepository {
 
     /**
      * Build a new decompressor for the passed name.
-     * @param properties Contains plugin configuration.
      * @param name The plugin name to build.
      * @return A decompressor or null if not found
      * @throws IOException
      */
-    public static ResourceDecompressor newResourceDecompressor(Properties properties,
-            String name) throws IOException {
+    public static ResourceDecompressor newResourceDecompressor(String name) throws IOException {
 
         ResourceDecompressorFactory fact = factories.get(name);
         if (fact != null) {
-            return fact.newDecompressor(properties);
+            return fact.newDecompressor();
         }
         return null;
     }

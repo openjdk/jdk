@@ -25,7 +25,6 @@
 package jdk.internal.jimage.decompressor;
 
 import java.io.IOException;
-import java.util.Properties;
 
 /**
  *
@@ -54,12 +53,10 @@ public abstract class ResourceDecompressorFactory {
 
     /**
      * To build a new decompressor.
-     * @param properties Contains configuration.
      * @return A new decompressor.
      * @throws IOException
      */
-    public abstract ResourceDecompressor newDecompressor(Properties properties)
-            throws IOException;
+    public abstract ResourceDecompressor newDecompressor() throws IOException;
 
 }
 

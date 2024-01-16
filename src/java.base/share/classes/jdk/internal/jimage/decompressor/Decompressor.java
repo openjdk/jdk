@@ -75,17 +75,8 @@ public final class Decompressor {
                     if (pluginName == null) {
                         throw new IOException("Plugin name not found");
                     }
-                    String storedContent = header.getStoredContent(provider);
-                    Properties props = new Properties();
-                    if (storedContent != null) {
-                        try (ByteArrayInputStream stream
-                                = new ByteArrayInputStream(storedContent.
-                                        getBytes(StandardCharsets.UTF_8));) {
-                            props.loadFromXML(stream);
-                        }
-                    }
                     decompressor = ResourceDecompressorRepository.
-                            newResourceDecompressor(props, pluginName);
+                            newResourceDecompressor(pluginName);
                     if (decompressor == null) {
                         throw new IOException("Plugin not found: " + pluginName);
                     }

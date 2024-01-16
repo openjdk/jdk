@@ -25,7 +25,6 @@
 package jdk.internal.jimage.decompressor;
 
 import java.io.IOException;
-import java.util.Properties;
 
 /**
  *
@@ -45,8 +44,8 @@ public class StringSharingDecompressorFactory extends ResourceDecompressorFactor
     }
 
     @Override
-    public ResourceDecompressor newDecompressor(Properties properties)
+    public ResourceDecompressor newDecompressor()
             throws IOException {
-        return new StringSharingDecompressor(properties);
+        return new StringSharingDecompressor();
     }
 }
