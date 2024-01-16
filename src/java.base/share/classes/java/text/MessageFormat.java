@@ -84,9 +84,9 @@ import java.util.Objects;
  *
  * <i>FormatType: one of </i>
  *         number
- *         java_time_date
- *         java_time_time
- *         java_time_datetime
+ *         java_temporal_date
+ *         java_temporal_time
+ *         java_temporal_datetime
  *         <i>DateTimeFormatter predefined formats</i>
  *         date
  *         time
@@ -197,7 +197,7 @@ import java.util.Objects;
  *       <th scope="row" style="font-weight:normal"><i>SubformatPattern</i>
  *       <td>{@code new} {@link DecimalFormat#DecimalFormat(String,DecimalFormatSymbols) DecimalFormat}{@code (subformatPattern,} {@link DecimalFormatSymbols#getInstance(Locale) DecimalFormatSymbols.getInstance}{@code (getLocale()))}
  *    <tr>
- *       <th scope="row" style="font-weight:normal" rowspan=6>{@code java_time_date}
+ *       <th scope="row" style="font-weight:normal" rowspan=6>{@code java_temporal_date}
  *       <th scope="row" style="font-weight:normal"><i>(none)</i>
  *       <td>{@link DateTimeFormatter#ofLocalizedDate(java.time.format.FormatStyle) DateTimeFormatter.ofLocalizedDate(}{@link java.time.format.FormatStyle#MEDIUM}{@code ).withLocale(getLocale()).toFormat()}
  *    <tr>
@@ -216,7 +216,7 @@ import java.util.Objects;
  *       <th scope="row" style="font-weight:normal"><i>SubformatPattern</i>
  *       <td>{@link DateTimeFormatter#ofPattern(String, Locale)   DateTimeFormatter.ofPattern}{@code (subformatPattern, getLocale()).toFormat()}
  *    <tr>
- *       <th scope="row" style="font-weight:normal" rowspan=6>{@code java_time_time}
+ *       <th scope="row" style="font-weight:normal" rowspan=6>{@code java_temporal_time}
  *       <th scope="row" style="font-weight:normal"><i>(none)</i>
  *       <td>{@link DateTimeFormatter#ofLocalizedTime(java.time.format.FormatStyle) DateTimeFormatter.ofLocalizedTime(}{@link java.time.format.FormatStyle#MEDIUM}{@code ).withLocale(getLocale()).toFormat()}
  *    <tr>
@@ -235,7 +235,7 @@ import java.util.Objects;
  *       <th scope="row" style="font-weight:normal"><i>SubformatPattern</i>
  *       <td>{@link DateTimeFormatter#ofPattern(String, Locale)   DateTimeFormatter.ofPattern}{@code (subformatPattern, getLocale()).toFormat()}
  *    <tr>
- *       <th scope="row" style="font-weight:normal" rowspan=6>{@code java_time_datetime}
+ *       <th scope="row" style="font-weight:normal" rowspan=6>{@code java_temporal_datetime}
  *       <th scope="row" style="font-weight:normal"><i>(none)</i>
  *       <td>{@link DateTimeFormatter#ofLocalizedDateTime(java.time.format.FormatStyle) DateTimeFormatter.ofLocalizedDateTime(}{@link java.time.format.FormatStyle#MEDIUM}{@code ).withLocale(getLocale()).toFormat()}
  *    <tr>
@@ -253,6 +253,10 @@ import java.util.Objects;
  *    <tr>
  *       <th scope="row" style="font-weight:normal"><i>SubformatPattern</i>
  *       <td>{@link DateTimeFormatter#ofPattern(String, Locale)   DateTimeFormatter.ofPattern}{@code (subformatPattern, getLocale()).toFormat()}
+ *    <tr>
+ *       <th scope="row" style="font-weight:normal" rowspan=1>{@code java_temporal predefined formatters}
+ *       <th scope="row" style="font-weight:normal"><i>(none)</i>
+ *       <td>See {@link ##dtf_formatters DateTimeFormatter Predefined Formatters (ISO and RFC1123)} for usage.
  *    <tr>
  *       <th scope="row" style="font-weight:normal" rowspan=6>{@code date}
  *       <th scope="row" style="font-weight:normal"><i>(none)</i>
@@ -308,17 +312,13 @@ import java.util.Objects;
  * </tbody>
  * </table>
  *
- * @apiNote For the <i>java_time_date</i>, <i>java_time_time</i>, and <i>java_time_datetime</i>
- * {@code FormatTypes} with a <i>SubformatPattern</i> {@code FormatStyle}, any of the
- * {@code FormatType}s will work with a time, date, or datetime <i>SubformatPattern</i>.
- *
- * <h3>DateTimeFormatter Predefined Formatters (ISO and RFC1123)</h3>
- * Additionally, the {@link DateTimeFormatter} predefined formats are also supported
+ * <h3 id="dtf_formatters">DateTimeFormatter Predefined Formatters (ISO and RFC1123)</h3>
+ * The {@link DateTimeFormatter} predefined formats are also supported
  * in MessageFormat patterns. To utilize one of these formatter constants, the
  * constant field name can be used as a {@code FormatType}. There are no associated {@code FormatStyles}
  * for these {@code FormatTypes}. For example, the {@code FormatType} <i>iso_date_time</i>
  * returns {@link DateTimeFormatter#ISO_DATE_TIME}{@code .toFormat()}. Similar
- * to <i>java_time_time</i> and <i>java_time_date</i>, these {@code FormatTypes} should not be used
+ * to <i>java_temporal_time</i> and <i>java_temporal_date</i>, these {@code FormatTypes} should not be used
  * with {@link Date} and are intended to be used with the {@link java.time} package.
  *
  * <h3>Usage Information</h3>
@@ -394,21 +394,21 @@ import java.util.Objects;
  *
  * <p>1) a <i>date</i> {@code FormatType} with a <i>full</i> {@code FormatStyle},
  * {@snippet lang=java :
- * Object[] arg = {new Date()};
+ * Object[] arg = {new Date(2023, 11, 16)};
  * var fmt = new MessageFormat("The date was {0,date,full}");
  * fmt.format(arg); // returns "The date was Thursday, November 16, 2023"
  * }
  *
- * <p>2) a <i>java_time_date</i> {@code FormatType} with a <i>full</i> {@code FormatStyle},
+ * <p>2) a <i>java_temporal_date</i> {@code FormatType} with a <i>full</i> {@code FormatStyle},
  * {@snippet lang=java :
- * Object[] arg = {LocalDate.now()};
- * var fmt = new MessageFormat("The date was {0,java_time_date,full}");
+ * Object[] arg = {LocalDate.of(2023, 11, 16)};
+ * var fmt = new MessageFormat("The date was {0,java_temporal_date,full}");
  * fmt.format(arg); // returns "The date was Thursday, November 16, 2023"
  * }
  *
  * <p>3) an <i>iso_local_date</i> {@code FormatType},
  * {@snippet lang=java :
- * Object[] arg = {LocalDate.now()};
+ * Object[] arg = {LocalDate.of(2023, 11, 16)};
  * var fmt = new MessageFormat("The date was {0,iso_local_date}");
  * fmt.format(arg); // returns "The date was 2023-11-16"
  * }
@@ -641,8 +641,7 @@ public class MessageFormat extends Format {
      *
      * The string is constructed from internal information and therefore
      * does not necessarily equal the previously applied pattern.
-     * @implSpec This method does not always guarantee a conversion of a subformat to
-     * a pattern. If a subformat cannot be converted to a String pattern, the {@code
+     * @implSpec If a subformat cannot be converted to a String pattern, the {@code
      * FormatType} and {@code FormatStyle} will be omitted from the {@code
      * FormatElement}. To check a subformat, it is recommended to use either
      * {@link #getFormats()} or {@link #getFormatsByArgumentIndex()}.
@@ -1674,7 +1673,7 @@ public class MessageFormat extends Format {
                         DateFormat.getTimeInstance(DateFormat.FULL, locale);
                 default -> formatFromSubformatPattern(fType, style);
             };
-            case JAVA_TIME_DATE -> switch (fStyle) {
+            case JAVA_TEMPORAL_DATE -> switch (fStyle) {
                 case DEFAULT, MEDIUM ->
                         DateTimeFormatter.ofLocalizedDate(java.time.format.FormatStyle.MEDIUM).withLocale(locale).toFormat();
                 case SHORT ->
@@ -1685,7 +1684,7 @@ public class MessageFormat extends Format {
                         DateTimeFormatter.ofLocalizedDate(java.time.format.FormatStyle.FULL).withLocale(locale).toFormat();
                 default -> formatFromSubformatPattern(fType, style);
             };
-            case JAVA_TIME_TIME -> switch (fStyle) {
+            case JAVA_TEMPORAL_TIME -> switch (fStyle) {
                 case DEFAULT, MEDIUM ->
                         DateTimeFormatter.ofLocalizedTime(java.time.format.FormatStyle.MEDIUM).withLocale(locale).toFormat();
                 case SHORT ->
@@ -1696,7 +1695,7 @@ public class MessageFormat extends Format {
                         DateTimeFormatter.ofLocalizedTime(java.time.format.FormatStyle.FULL).withLocale(locale).toFormat();
                 default -> formatFromSubformatPattern(fType, style);
             };
-            case JAVA_TIME_DATETIME -> switch (fStyle) {
+            case JAVA_TEMPORAL_DATETIME -> switch (fStyle) {
                 case DEFAULT, MEDIUM ->
                         DateTimeFormatter.ofLocalizedDateTime(java.time.format.FormatStyle.MEDIUM).withLocale(locale).toFormat();
                 case SHORT ->
@@ -1760,7 +1759,7 @@ public class MessageFormat extends Format {
             return switch(fType) {
                 case NUMBER -> new DecimalFormat(pattern, DecimalFormatSymbols.getInstance(locale));
                 case DATE, TIME -> new SimpleDateFormat(pattern, locale);
-                case JAVA_TIME_DATE, JAVA_TIME_TIME, JAVA_TIME_DATETIME ->
+                case JAVA_TEMPORAL_DATE, JAVA_TEMPORAL_TIME, JAVA_TEMPORAL_DATETIME ->
                         DateTimeFormatter.ofPattern(pattern).toFormat();
                 case CHOICE -> new ChoiceFormat(pattern);
                 default ->  throw new IllegalArgumentException(String.format(
@@ -1813,9 +1812,9 @@ public class MessageFormat extends Format {
         NUMBER("number"),
         DATE("date"),
         TIME("time"),
-        JAVA_TIME_DATE("java_time_date"),
-        JAVA_TIME_TIME("java_time_time"),
-        JAVA_TIME_DATETIME("java_time_datetime"),
+        JAVA_TEMPORAL_DATE("java_temporal_date"),
+        JAVA_TEMPORAL_TIME("java_temporal_time"),
+        JAVA_TEMPORAL_DATETIME("java_temporal_datetime"),
         CHOICE("choice"),
         LIST("list"),
 
