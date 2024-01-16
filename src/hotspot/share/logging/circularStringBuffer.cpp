@@ -62,7 +62,7 @@ void CircularStringBuffer::enqueue_locked(const char* str, size_t size, LogFileS
   // We need space for an additional Descriptor in case of a flush token
   // We have a flush token if output == nullptr
   assert(!(output == nullptr) || unused >= sizeof(Message), "invariant");
-  if (unused < (required_memory + output == nullptr ? 0 : sizeof(Message))) {
+  if (unused < (required_memory + (output == nullptr ? 0 : sizeof(Message)))) {
     _stats_lock.lock();
     bool p_created;
     uint32_t* counter = _stats.put_if_absent(output, 0, &p_created);

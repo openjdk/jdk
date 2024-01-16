@@ -127,22 +127,24 @@ public:
     PlatformMonitor lock; // For statistics
     CircularStringBuffer::StatisticsMap map;
     CircularStringBuffer cb(map, lock, os::vm_page_size());
-    const int count = (os::vm_page_size() / strlen(large_message)) - 1;
-    LogFileOutput out("test");
+    const int count = (cb.circular_mapping.size / (strlen(large_message)+1 + sizeof(CircularStringBuffer::Message))) - 1;
+    stringStream ss;
+    ss.print("file=%s", TestLogFileName);
+    LogFileOutput out(ss.freeze());
     for (int i = 0; i < count; i++) {
       cb.enqueue_locked(large_message, strlen(large_message), &out, CircularStringBuffer::None);
     }
-    unsigned int missing = *map.get(&out);
-    EXPECT_TRUE(missing == 0);
+    unsigned int* missing = map.get(&out);
+    EXPECT_TRUE(missing == nullptr);
+    cb.enqueue_locked(large_message, strlen(large_message), &out, CircularStringBuffer::None);
+    cb.enqueue_locked(large_message, strlen(large_message), &out, CircularStringBuffer::None);
+    missing = map.get(&out);
+    EXPECT_TRUE(missing !=nullptr && *missing > 0);
     size_t old_tail = cb.tail;
     cb.enqueue_locked(nullptr, 0, nullptr, CircularStringBuffer::None);
     EXPECT_TRUE(cb.tail != old_tail);
-    missing = *map.get(&out);
-    EXPECT_TRUE(missing == 0);
-    cb.enqueue_locked(large_message, strlen(large_message), &out, CircularStringBuffer::None);
-    cb.enqueue_locked(large_message, strlen(large_message), &out, CircularStringBuffer::None);
-    missing = *map.get(&out);
-    EXPECT_TRUE(missing > 0);
+    unsigned int* new_missing = map.get(&out);
+    EXPECT_TRUE(new_missing != nullptr && *missing == *new_missing);
   }
 };
 

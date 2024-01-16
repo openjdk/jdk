@@ -133,11 +133,12 @@ struct CircularMapping {
 
 class CircularStringBuffer {
   friend class AsyncLogTest;
+
 public:
     // account for dropped messages
   using StatisticsMap = ResourceHashtable<LogFileStreamOutput*, uint32_t, 17, /*table_size*/
                                         AnyObj::C_HEAP, mtLogging>;
-protected:
+private:
   static const LogDecorations& None;
 
   // Need to perform accounting of statistics under a separate lock.
@@ -198,10 +199,11 @@ public:
       return output == nullptr;
     }
   };
-protected:
 
+private:
   void enqueue_locked(const char* msg, size_t size, LogFileStreamOutput* output, const LogDecorations decorations);
   void dequeue_locked(Message* out_descriptor, char* out, size_t out_size);
+
 public:
   NONCOPYABLE(CircularStringBuffer);
   CircularStringBuffer(StatisticsMap& stats, PlatformMonitor& stats_lock, size_t size);
