@@ -349,7 +349,7 @@ public class BasicAnnoTests extends JavacTestingAbstractProcessor {
             Annotation[] containedAnnotations = ac.getAnnotationsByType(containedAnnotationClass);
             // Check number of contained annotations for consistency
             // Given annotation type A and container annotation type As, the result of
-            // annotatedConstruct.getAnnotaton(As.class).value().length == 
+            // annotatedConstruct.getAnnotaton(As.class).value().length ==
             // annotatedConstruct.getAnnotationsByType(A.class).length
             // More thorough checking could be done as well, checking
             // the types or value of the constituent annotations/AnnotationMirrors.
