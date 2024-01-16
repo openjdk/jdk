@@ -1102,7 +1102,7 @@ void MacroAssembler::align(int modulus) {
 }
 
 void MacroAssembler::align(int modulus, int target) {
-  assert(!((modulus&1) || (target&1)), "needs to be even");
+  assert(((modulus % 2 == 0) && (target % 2 == 0)), "needs to be even");
   int delta = target - offset();
   while ((offset() + delta) % modulus != 0) z_nop();
 }
