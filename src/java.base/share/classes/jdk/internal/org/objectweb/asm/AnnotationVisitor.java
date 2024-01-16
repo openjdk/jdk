@@ -105,11 +105,26 @@ public abstract class AnnotationVisitor {
                 && api != Opcodes.ASM7
                 && api != Opcodes.ASM6
                 && api != Opcodes.ASM5
-                && api != Opcodes.ASM4) {
+                && api != Opcodes.ASM4
+                && api != Opcodes.ASM10_EXPERIMENTAL) {
             throw new IllegalArgumentException("Unsupported api " + api);
+        }
+        if (api == Opcodes.ASM10_EXPERIMENTAL) {
+            Constants.checkAsmExperimental(this);
         }
         this.api = api;
         this.av = annotationVisitor;
+    }
+
+    /**
+      * The annotation visitor to which this visitor must delegate method calls. May be {@literal
+      * null}.
+      *
+      * @return the annotation visitor to which this visitor must delegate method calls, or {@literal
+      *     null}.
+      */
+    public AnnotationVisitor getDelegate() {
+        return av;
     }
 
     /**

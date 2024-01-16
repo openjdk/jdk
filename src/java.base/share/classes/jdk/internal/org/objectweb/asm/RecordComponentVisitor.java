@@ -77,7 +77,7 @@ public abstract class RecordComponentVisitor {
     /**
       * The record visitor to which this visitor must delegate method calls. May be {@literal null}.
       */
-    /*package-private*/ RecordComponentVisitor delegate;
+    protected RecordComponentVisitor delegate;
 
     /**
       * Constructs a new {@link RecordComponentVisitor}.
@@ -103,8 +103,12 @@ public abstract class RecordComponentVisitor {
                 && api != Opcodes.ASM7
                 && api != Opcodes.ASM6
                 && api != Opcodes.ASM5
-                && api != Opcodes.ASM4) {
+                && api != Opcodes.ASM4
+                && api != Opcodes.ASM10_EXPERIMENTAL) {
             throw new IllegalArgumentException("Unsupported api " + api);
+        }
+        if (api == Opcodes.ASM10_EXPERIMENTAL) {
+            Constants.checkAsmExperimental(this);
         }
         this.api = api;
         this.delegate = recordComponentVisitor;
@@ -113,7 +117,8 @@ public abstract class RecordComponentVisitor {
     /**
       * The record visitor to which this visitor must delegate method calls. May be {@literal null}.
       *
-      * @return the record visitor to which this visitor must delegate method calls or {@literal null}.
+      * @return the record visitor to which this visitor must delegate method calls, or {@literal
+      *     null}.
       */
     public RecordComponentVisitor getDelegate() {
         return delegate;
@@ -178,4 +183,3 @@ public abstract class RecordComponentVisitor {
         }
     }
 }
-

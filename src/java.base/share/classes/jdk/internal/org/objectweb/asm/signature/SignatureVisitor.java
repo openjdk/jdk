@@ -109,7 +109,8 @@ public abstract class SignatureVisitor {
                 && api != Opcodes.ASM7
                 && api != Opcodes.ASM6
                 && api != Opcodes.ASM5
-                && api != Opcodes.ASM4) {
+                && api != Opcodes.ASM4
+                && api != Opcodes.ASM10_EXPERIMENTAL) {
             throw new IllegalArgumentException("Unsupported api " + api);
         }
         this.api = api;
@@ -211,7 +212,8 @@ public abstract class SignatureVisitor {
     /**
       * Starts the visit of a signature corresponding to a class or interface type.
       *
-      * @param name the internal name of the class or interface.
+      * @param name the internal name of the class or interface (see {@link
+      *     jdk.internal.org.objectweb.asm.Type#getInternalName()}).
       */
     public void visitClassType(final String name) {}
 
@@ -238,4 +240,3 @@ public abstract class SignatureVisitor {
     /** Ends the visit of a signature corresponding to a class or interface type. */
     public void visitEnd() {}
 }
-
