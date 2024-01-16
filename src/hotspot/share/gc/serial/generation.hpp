@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,16 +54,6 @@ class ContiguousSpace;
 
 class OopClosure;
 class GCStats;
-
-// A "ScratchBlock" represents a block of memory in one generation usable by
-// another.  It represents "num_words" free words, starting at and including
-// the address of "this".
-struct ScratchBlock {
-  ScratchBlock* next;
-  size_t num_words;
-  HeapWord scratch_space[1];  // Actually, of size "num_words-2" (assuming
-                              // first two fields are word-sized.)
-};
 
 class Generation: public CHeapObj<mtGC> {
   friend class VMStructs;
@@ -175,10 +165,6 @@ class Generation: public CHeapObj<mtGC> {
   // Iteration - do not use for time critical operations
   virtual void space_iterate(SpaceClosure* blk, bool usedOnly = false) = 0;
 
-  // Returns the first space, if any, in the generation that can participate
-  // in compaction, or else "null".
-  virtual ContiguousSpace* first_compaction_space() const = 0;
-
   // Returns "true" iff this generation should be used to allocate an
   // object of the given size.  Young generations might
   // wish to exclude very large objects, for example, since, if allocated
@@ -228,7 +214,7 @@ class Generation: public CHeapObj<mtGC> {
   // this generation. See comment below.
   // This is a generic implementation which can be overridden.
   //
-  // Note: in the current (1.4) implementation, when genCollectedHeap's
+  // Note: in the current (1.4) implementation, when serialHeap's
   // incremental_collection_will_fail flag is set, all allocations are
   // slow path (the only fast-path place to allocate is DefNew, which
   // will be full if the flag is set).
