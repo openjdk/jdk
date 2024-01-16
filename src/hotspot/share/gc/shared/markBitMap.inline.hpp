@@ -91,7 +91,7 @@ inline void MarkBitMap::clear(oop obj) {
 }
 
 inline size_t MarkBitMap::count_marked_words(HeapWord* start, HeapWord* end) const {
-  return _bm.count_one_bits_within_word(addr_to_offset(start), addr_to_offset(end)) << _shifter;
+  return _bm.count_one_bits_within_word(addr_to_offset(start), addr_to_offset(end)) /*<< _shifter */;
 }
 
 #endif // SHARE_GC_SHARED_MARKBITMAP_INLINE_HPP

@@ -91,18 +91,17 @@ class SCCompacter {
   // compact. IOW, old and eden/from must be enough for all live objs
   static constexpr uint max_num_spaces = 4;
 
-  const uint _log_obj_align;
   // Return the number of heap words covered by each block.
-  inline uint log_words_per_block() const {
-    return LogBitsPerWord << _log_obj_align;
+  static inline constexpr uint log_words_per_block() {
+    return LogBitsPerWord;
   }
 
-  inline uint words_per_block() const {
-    return BitsPerWord << _log_obj_align;
+  static inline constexpr uint words_per_block() {
+    return BitsPerWord;
   }
 
-  inline uint bytes_per_block() const {
-    return BitsPerWord << (_log_obj_align + LogBytesPerWord);
+  static inline constexpr uint bytes_per_block() {
+    return BitsPerWord << LogBytesPerWord;
   }
 
 
@@ -122,7 +121,7 @@ class SCCompacter {
   };
 
   // The block offset table.
-  HeapWord** _bot;
+  HeapWord** const _bot;
 
   // The marking bitmap.
   const MarkBitMap& _mark_bitmap;
@@ -257,7 +256,7 @@ class SCCompacter {
     _spaces[_index]._compaction_top = compact_top;
   }
 
-  HeapWord** allocate_table() {
+  static HeapWord** allocate_table() {
     MemRegion covered = SerialHeap::heap()->reserved_region();
     HeapWord* start = covered.start();
     HeapWord* end = covered.end();
@@ -267,7 +266,6 @@ class SCCompacter {
 
 public:
   explicit SCCompacter(SerialHeap* heap, MarkBitMap& mark_bitmap) :
-    _log_obj_align(LogMinObjAlignment),
     _bot(allocate_table()),
     _mark_bitmap(mark_bitmap),
     _covered(heap->reserved_region())

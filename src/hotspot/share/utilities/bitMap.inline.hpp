@@ -593,7 +593,7 @@ inline BitMap::idx_t BitMap::count_one_bits_within_word(idx_t beg, idx_t end) co
     bm_word_t mask = ~inverted_bit_mask_for_range(beg, end);
     bm_word_t w = *word_addr(beg);
     w &= mask;
-    return population_count(w);
+    return __builtin_popcountll(w); //population_count(w);
   }
   return 0;
 }
