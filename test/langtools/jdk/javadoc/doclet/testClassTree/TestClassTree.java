@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,11 +23,13 @@
 
 /*
  * @test
- * @bug      4632553 4973607 8026567
+ * @bug      4632553 4973607 8026567 8242564
  * @summary  No need to include type name (class, interface, etc.) before
  *           every single type in class tree.
  *           Make sure class tree includes heirarchy for enums and annotation
  *           types.
+ *           Make sure class tree handles undefined types in the class
+ *           hierarchy.
  * @library  ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
  * @build    javadoc.tester.*
@@ -41,6 +43,37 @@ public class TestClassTree extends JavadocTester {
     public static void main(String... args) throws Exception {
         var tester = new TestClassTree();
         tester.runTests();
+    }
+
+    @Test
+    public void testBadPkg() {
+        // Given badpkg package containing class ChildClass with an undefined
+        //       base class, implementing undefined interface and a defined
+        //       interface
+        // When  the javadoc is generated with --ignore-source-errors option
+        javadoc("--ignore-source-errors",
+                "-d", "badout",
+                "--no-platform-links",
+                "-sourcepath", testSrc,
+                "badpkg");
+        // Then javadoc exits successfully
+        checkExit(Exit.OK);
+        // And generates html for the ChildClass
+        checkOutput("badpkg/package-tree.html", true,
+        """
+        <li class="circle">badpkg.<a href="ChildClass.html" class="type-name-link" \
+        title="class in badpkg">ChildClass</a> (implements java.lang.Iterable&lt;T&gt;)</li>
+        """);
+
+        checkOutput("badpkg/ChildClass.html", true,
+        """
+        <div class="type-signature"><span class="modifiers">public class </span>\
+        <span class="element-name type-name-label">ChildClass</span>
+        <span class="extends-implements">extends ParentClass
+        implements java.lang.Iterable</span></div>
+        """);
+        // And undefined interface is not present in html
+        checkOutput("badpkg/ChildClass.html", false, "AnInterface");
     }
 
     @Test
