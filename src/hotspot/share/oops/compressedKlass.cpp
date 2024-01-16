@@ -236,12 +236,16 @@ void CompressedKlassPointers::initialize(address addr, size_t len) {
     _base = addr;
     _range = len;
 
-    constexpr int log_cacheline = 6;
-    int s = max_shift();
-    while (s > log_cacheline && ((size_t)nth_bit(narrow_klass_pointer_bits() + s - 1) > len)) {
-      s--;
+    if (TinyClassPointerShift != 0) {
+      _shift = TinyClassPointerShift;
+    } else {
+      constexpr int log_cacheline = 6;
+      int s = max_shift();
+      while (s > log_cacheline && ((size_t)nth_bit(narrow_klass_pointer_bits() + s - 1) > len)) {
+        s--;
+      }
+      _shift = s;
     }
-    _shift = s;
 
   } else {
 

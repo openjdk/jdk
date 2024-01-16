@@ -134,6 +134,8 @@ const size_t minimumSymbolTableSize = 1024;
           "If UseCompressedClassPointers is set: use smaller-than-32bit "   \
           "compressed class pointers")                                      \
                                                                             \
+  product(int, TinyClassPointerShift, 0, EXPERIMENTAL, "")                  \
+                                                                            \
   product(int, ObjectAlignmentInBytes, 8,                                   \
           "Default object alignment in bytes, 8 is minimum")                \
           range(8, 256)                                                     \
