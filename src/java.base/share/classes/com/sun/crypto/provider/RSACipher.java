@@ -98,6 +98,7 @@ public final class RSACipher extends CipherSpi {
 
     // cipher parameter for OAEP padding and TLS RSA premaster secret
     private AlgorithmParameterSpec spec = null;
+    private boolean forTlsPremasterSecret = false;
 
     // buffer for the data
     private byte[] buffer;
@@ -292,6 +293,7 @@ public final class RSACipher extends CipherSpi {
                 }
 
                 spec = params;
+                forTlsPremasterSecret = true;
                 this.random = random;   // for TLS RSA premaster secret
             }
             int blockType = (mode <= MODE_DECRYPT) ? RSAPadding.PAD_BLOCKTYPE_2
@@ -383,7 +385,7 @@ public final class RSACipher extends CipherSpi {
                 byte[] decryptBuffer = RSACore.convert(buffer, 0, bufOfs);
                 paddingCopy = RSACore.rsa(decryptBuffer, privateKey, false);
                 result = padding.unpad(paddingCopy);
-                if (result == null) {
+                if (result == null && !forTlsPremasterSecret) {
                     throw new BadPaddingException
                             ("Padding error in decryption");
                 }
@@ -472,26 +474,22 @@ public final class RSACipher extends CipherSpi {
 
         boolean isTlsRsaPremasterSecret =
                 algorithm.equals("TlsRsaPremasterSecret");
-        Exception failover = null;
         byte[] encoded = null;
 
         update(wrappedKey, 0, wrappedKey.length);
         try {
             encoded = doFinal();
-        } catch (BadPaddingException e) {
-            if (isTlsRsaPremasterSecret) {
-                failover = e;
-            } else {
-                throw new InvalidKeyException("Unwrapping failed", e);
-            }
-        } catch (IllegalBlockSizeException e) {
-            // should not occur, handled with length check above
+        } catch (BadPaddingException | IllegalBlockSizeException e) {
+            // BadPaddingException cannot happen for TLS RSA unwrap.
+            // In that case, padding error is indicated by returning null.
+            // IllegalBlockSizeException cannot happen in any case,
+            // because of the length check above.
             throw new InvalidKeyException("Unwrapping failed", e);
         }
 
         try {
             if (isTlsRsaPremasterSecret) {
-                if (!(spec instanceof TlsRsaPremasterSecretParameterSpec)) {
+                if (!forTlsPremasterSecret) {
                     throw new IllegalStateException(
                             "No TlsRsaPremasterSecretParameterSpec specified");
                 }
@@ -500,7 +498,7 @@ public final class RSACipher extends CipherSpi {
                 encoded = KeyUtil.checkTlsPreMasterSecretKey(
                         ((TlsRsaPremasterSecretParameterSpec) spec).getClientVersion(),
                         ((TlsRsaPremasterSecretParameterSpec) spec).getServerVersion(),
-                        random, encoded, (failover != null));
+                        random, encoded, encoded == null);
             }
 
             return ConstructKeys.constructKey(encoded, algorithm, type);

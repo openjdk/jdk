@@ -334,7 +334,6 @@ public abstract class DOMSignatureMethod extends AbstractDOMSignatureMethod {
         }
         signature.initSign((PrivateKey)key);
         LOG.debug("Signature provider: {}", signature.getProvider());
-        LOG.debug("Signing with key: {}", key);
         LOG.debug("JCA Algorithm: {}", getJCAAlgorithm());
 
         try (SignerOutputStream outputStream = new SignerOutputStream(signature)) {

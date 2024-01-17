@@ -318,7 +318,6 @@ public abstract class DOMRSAPSSSignatureMethod extends AbstractDOMSignatureMetho
             throw new XMLSignatureException(e);
         }
         LOG.debug("Signature provider: {}", signature.getProvider());
-        LOG.debug("Signing with key: {}", key);
         LOG.debug("JCA Algorithm: {}", getJCAAlgorithm());
 
         try (SignerOutputStream outputStream = new SignerOutputStream(signature)) {
