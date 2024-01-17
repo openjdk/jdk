@@ -226,7 +226,7 @@ class DefNewGeneration: public Generation {
 
   HeapWord* par_allocate(size_t word_size, bool is_tlab);
 
-  virtual void gc_epilogue(bool full);
+  void gc_epilogue(bool full);
 
   // Save the tops for eden, from, and to
   virtual void record_spaces_top();
