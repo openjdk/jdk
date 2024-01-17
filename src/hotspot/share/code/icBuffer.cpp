@@ -88,7 +88,7 @@ void ICStub::finalize() {
     CompiledIC *ic = CompiledIC_at(CodeCache::find_compiled(ic_site()), ic_site());
     assert(CodeCache::find_compiled(ic->instruction_address()) != nullptr, "inline cache in non-compiled?");
 
-    assert(this == ICStub_from_destination_address(ic->stub_address()), "wrong owner of ic buffer");
+    assert(this == ICStub::from_destination_address(ic->stub_address()), "wrong owner of ic buffer");
     ic->set_ic_destination_and_value(destination(), cached_value());
   }
 }
@@ -143,11 +143,6 @@ void InlineCacheBuffer::initialize() {
   if (_buffer != nullptr) return; // already initialized
   _buffer = new StubQueue(new ICStubInterface, checked_cast<int>(InlineCacheBufferSize), InlineCacheBuffer_lock, "InlineCacheBuffer");
   assert (_buffer != nullptr, "cannot allocate InlineCacheBuffer");
-}
-
-
-ICStub* InlineCacheBuffer::new_ic_stub() {
-  return (ICStub*)buffer()->request_committed(ic_stub_code_size());
 }
 
 
@@ -210,7 +205,7 @@ bool InlineCacheBuffer::create_transition_stub(CompiledIC *ic, void* cached_valu
   }
 
   // allocate and initialize new "out-of-line" inline-cache
-  ICStub* ic_stub = new_ic_stub();
+  ICStub* ic_stub = (ICStub*) buffer()->request_committed(ic_stub_code_size());
   if (ic_stub == nullptr) {
 #ifdef ASSERT
     ICRefillVerifier* verifier = current_ic_refill_verifier();
@@ -219,9 +214,18 @@ bool InlineCacheBuffer::create_transition_stub(CompiledIC *ic, void* cached_valu
     return false;
   }
 
+#ifdef ASSERT
+  {
+    ICStub* rev_stub = ICStub::from_destination_address(ic_stub->code_begin());
+    assert(ic_stub == rev_stub,
+           "ICStub mapping is reversible: stub=" PTR_FORMAT ", code=" PTR_FORMAT ", rev_stub=" PTR_FORMAT,
+           p2i(ic_stub), p2i(ic_stub->code_begin()), p2i(rev_stub));
+  }
+#endif
+
   // If an transition stub is already associate with the inline cache, then we remove the association.
   if (ic->is_in_transition_state()) {
-    ICStub* old_stub = ICStub_from_destination_address(ic->stub_address());
+    ICStub* old_stub = ICStub::from_destination_address(ic->stub_address());
     old_stub->clear();
   }
 
@@ -234,13 +238,13 @@ bool InlineCacheBuffer::create_transition_stub(CompiledIC *ic, void* cached_valu
 
 
 address InlineCacheBuffer::ic_destination_for(CompiledIC *ic) {
-  ICStub* stub = ICStub_from_destination_address(ic->stub_address());
+  ICStub* stub = ICStub::from_destination_address(ic->stub_address());
   return stub->destination();
 }
 
 
 void* InlineCacheBuffer::cached_value_for(CompiledIC *ic) {
-  ICStub* stub = ICStub_from_destination_address(ic->stub_address());
+  ICStub* stub = ICStub::from_destination_address(ic->stub_address());
   return stub->cached_value();
 }
 
