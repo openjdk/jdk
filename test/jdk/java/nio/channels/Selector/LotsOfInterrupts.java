@@ -22,14 +22,21 @@
  */
 
 /*
- * @test
+ * @test id=platform
+ * @bug 8323782
  * @summary Stress test Thread.interrupt on a target Thread doing a selection operation
  * @run main LotsOfInterrupts 200000
+ */
+
+/*
+ * @test id=virtual
+ * @run main/othervm -DthreadFactory=virtual LotsOfInterrupts 200000
  */
 
 import java.nio.channels.Selector;
 import java.time.Instant;
 import java.util.concurrent.Phaser;
+import java.util.concurrent.ThreadFactory;
 
 public class LotsOfInterrupts {
 
@@ -41,9 +48,17 @@ public class LotsOfInterrupts {
             iterations = 500_000;
         }
 
+        ThreadFactory factory;
+        String value = System.getProperty("threadFactory");
+        if ("virtual".equals(value)) {
+            factory = Thread.ofVirtual().factory();
+        } else {
+            factory = Thread.ofPlatform().factory();
+        }
+
         var phaser = new Phaser(2);
 
-        Thread thread = Thread.ofPlatform().start(() -> {
+        Thread thread = factory.newThread(() -> {
             try (Selector sel = Selector.open()) {
                 for (int i = 0; i < iterations; i++) {
                     phaser.arriveAndAwaitAdvance();
@@ -57,6 +72,7 @@ public class LotsOfInterrupts {
                 ex.printStackTrace();
             }
         });
+        thread.start();
 
         long lastTimestamp = System.currentTimeMillis();
         for (int i = 0; i < iterations; i++) {
