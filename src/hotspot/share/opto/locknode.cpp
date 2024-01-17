@@ -44,7 +44,7 @@ BoxLockNode::BoxLockNode( int slot ) : Node( Compile::current()->root() ),
   init_class_id(Class_BoxLock);
   init_flags(Flag_rematerialize);
   OptoReg::Name reg = OptoReg::stack2reg(_slot);
-  if (!can_represent_sync(reg)) {
+  if (!RegMask::can_represent(reg, Compile::current()->sync_stack_slots())) {
     Compile::current()->record_method_not_compilable("must be able to represent all monitor slots in reg mask");
     return;
   }
