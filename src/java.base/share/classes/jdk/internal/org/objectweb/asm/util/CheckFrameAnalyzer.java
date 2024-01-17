@@ -294,6 +294,7 @@ class CheckFrameAnalyzer<V extends Value> extends Analyzer<V> {
       * @return the expanded version of 'frameNode'.
       * @throws AnalyzerException if 'frameNode' is invalid.
       */
+    @SuppressWarnings("fallthrough")
     private Frame<V> expandFrame(
             final String owner, final Frame<V> previousFrame, final FrameNode frameNode)
             throws AnalyzerException {
