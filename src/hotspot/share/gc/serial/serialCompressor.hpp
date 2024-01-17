@@ -11,14 +11,7 @@
 #include "memory/iterator.hpp"
 #include "utilities/stack.hpp"
 
-class ContiguousSpace;
-class Generation;
-class SCCompactClosure;
-class SCFollowRootClosure;
-class SCFollowStackClosure;
-class SCKeepAliveClosure;
-class SCMarkAndPushClosure;
-class Space;
+class ReferenceProcessor;
 class STWGCTimer;
 
 /**
@@ -35,19 +28,15 @@ class STWGCTimer;
  * - A marking bitmap. Each bit represents one word of the heap (or larger blocks
  *   according to MinObjAlignment).
  * - A block-offset-table. Each word of the table stores the destination address
- *   of each block of the heap. A block spans as many words (or larger blocks,
- *   according to MinObjAlignment) as can be represented in a single word in
- *   the marking bitmap. For example, on a 64-bit system and the default
- *   1-word-alignment, each block would span 64 words of the heap. Note that the
+ *   of each block of the heap. A block spans 64 words of the heap. Note that the
  *   sizes have been chosen such that we achieve a reasonable compromise between
  *   the size of the table (1/64th of the heap size) and performance (for each
  *   forwarding, we only need to scan at most 64 bits - which can be done very
- *   efficiently, see population_count.hpp. It could be done even more efficiently
- *   once we allow ~SSE4.2 ISA and use the popcount instruction on x86.
+ *   efficiently, see population_count.hpp.
  *
  * The algorithm then works as follows:
  *
- * 1. Marking: This is pretty much textbook marking algorithm, with the difference
+ * 1. Marking: This is pretty much a textbook marking algorithm, with the difference
  *    that we are setting one bit for each live object in the heap, not only one
  *    bit per object. We are going to use this information to calculate the
  *    forwarding pointers of each object.
@@ -75,24 +64,8 @@ class STWGCTimer;
  * the tails that overlap into an adjacent block, fit into the destination space.
  */
 
-class CSpaceClosure : public StackObj {
-public:
-  virtual void do_space(ContiguousSpace* space) = 0;
-};
-
-// A structure to represent a point at which objects are being copied
-// during compaction.
-class CompactPoint : public StackObj {
-public:
-  Generation* gen;
-  ContiguousSpace* space;
-
-  CompactPoint(Generation* g = nullptr) :
-    gen(g), space(nullptr) {}
-};
-
 class SerialCompressor : public StackObj {
-  friend class SCCompactClosure;
+  friend class SCDeadSpacer;
   friend class SCFollowRootClosure;
   friend class SCFollowStackClosure;
   friend class SCKeepAliveClosure;
@@ -117,18 +90,11 @@ private:
   SerialOldTracer _gc_tracer;
   ReferenceProcessor* _ref_processor;
 
-  // Space iteration support.
-  void iterate_spaces_of_generation(CSpaceClosure& cl, Generation* gen) const;
-  void iterate_spaces(CSpaceClosure& cl) const;
-
-  // Phase 1: Marking.
+  // Phase 1: Marking. (Phases 2 and 3 are implemented in the SCCompacter class,
+  // see serialCompressor.cpp)
   void phase1_mark(bool clear_all_softrefs);
-  // Phase 2: Building the block-offset-table.
-  void phase2_build_bot();
-  // Phase 3: Compacting and updating references.
-  void phase3_compact_and_update();
 
-  // Various markingsupport methods.
+  // Various marking support methods.
   bool mark_object(oop obj);
   void follow_array(objArrayOop array);
   void follow_array_chunk(objArrayOop array, int index);
@@ -137,18 +103,11 @@ private:
   ReferenceProcessor* ref_processor() const { return _ref_processor; }
   void follow_stack();
   template<class T>
-  void mark_and_push(T* p);
-
-  // Update GC roots.
-  void compact_space(ContiguousSpace* space) const;
+  void mark_and_push(T* ptr);
 
 public:
-  SerialCompressor(STWGCTimer* gc_timer);
+  explicit SerialCompressor(STWGCTimer* gc_timer);
   ~SerialCompressor();
-
-  static uint total_invocations() {
-    return _total_invocations;
-  }
 
   // Entry point.
   void invoke_at_safepoint(bool clear_all_softrefs);

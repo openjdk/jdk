@@ -203,7 +203,7 @@ protected:
 
  public:
   ContiguousSpace();
-  ~ContiguousSpace();
+  virtual ~ContiguousSpace();
 
   // Initialization.
   // "initialize" should be called once on a space, before it is used for
