@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -554,11 +554,11 @@ inline void HeapRegion::record_surv_words_in_group(size_t words_survived) {
 }
 
 inline void HeapRegion::increment_pinned_object_count() {
-  Atomic::add(&_pinned_object_count, 1u, memory_order_relaxed);
+  Atomic::add(&_pinned_object_count, (size_t)1, memory_order_relaxed);
 }
 
 inline void HeapRegion::decrement_pinned_object_count() {
-  Atomic::sub(&_pinned_object_count, 1u, memory_order_relaxed);
+  Atomic::sub(&_pinned_object_count, (size_t)1, memory_order_relaxed);
 }
 
 #endif // SHARE_GC_G1_HEAPREGION_INLINE_HPP

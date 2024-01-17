@@ -70,8 +70,6 @@ class TenuredGeneration: public Generation {
   GenerationCounters* _gen_counters;
   CSpaceCounters*     _space_counters;
 
-  // Accessing spaces
-  TenuredSpace* space() const { return _the_space; }
 
   // Attempt to expand the generation by "bytes".  Expand by at a
   // minimum "expand_bytes".  Return true if some amount (not
@@ -84,6 +82,8 @@ class TenuredGeneration: public Generation {
   void compute_new_size_inner();
  public:
   virtual void compute_new_size();
+
+  TenuredSpace* space() const { return _the_space; }
 
   // Grow generation with specified size (returns false if unable to grow)
   bool grow_by(size_t bytes);
@@ -100,8 +100,6 @@ class TenuredGeneration: public Generation {
   void younger_refs_iterate(OopIterateClosure* blk);
 
   bool is_in(const void* p) const;
-
-  ContiguousSpace* first_compaction_space() const;
 
   TenuredGeneration(ReservedSpace rs,
                     size_t initial_byte_size,
@@ -158,7 +156,11 @@ class TenuredGeneration: public Generation {
 
   virtual void update_gc_stats(Generation* current_generation, bool full);
 
-  virtual bool promotion_attempt_is_safe(size_t max_promoted_in_bytes) const;
+  // Returns true if promotions of the specified amount are
+  // likely to succeed without a promotion failure.
+  // Promotion of the full amount is not guaranteed but
+  // might be attempted in the worst case.
+  bool promotion_attempt_is_safe(size_t max_promoted_in_bytes) const;
 
   virtual void verify();
   virtual void print_on(outputStream* st) const;
