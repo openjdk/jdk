@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
 * @requires vm.compiler2.enabled
 * @requires ((os.arch=="x86" | os.arch=="i386" | os.arch=="amd64" | os.arch=="x86_64") & vm.cpu.features ~= ".*avx512bw.*") |
 *           os.simpleArch == "aarch64" |
-*           (os.arch == "riscv" & vm.cpu.features ~= ".*zvbb,.*")
+*           (os.arch == "riscv64" & vm.cpu.features ~= ".*zvbb,.*")
 * @library /test/lib /
 * @run driver compiler.vectorization.TestPopCountVectorLong
 */
