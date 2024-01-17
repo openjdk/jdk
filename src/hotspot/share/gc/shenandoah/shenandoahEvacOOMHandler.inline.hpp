@@ -39,23 +39,6 @@ jint ShenandoahEvacOOMCounter::unmasked_count() {
   return Atomic::load_acquire(&_bits) & ~OOM_MARKER_MASK;
 }
 
-// Announce the intent by thread thr to perform allocations for evacuation.  
-//
-// Upon return:
-//
-//  1. The count of nested allocate-for-evacuation scopes for this thread has been incremented.
-//  2. Thread thr is authorized to allocate for evacuation and the count of allocating threads represents this thread, or
-//  3. Thread thr is not authorized to allocate for evacuation and the count of allocating thread does not include this thread.
-//
-// Thread-local flag is_oom_during_evac(thr) is false iff thread thr is authorized to allocate for evacuation.
-//
-// Notes: If this thread subsequently encounters a "need" to allocate memory for evacuation but it is not authorized to 
-//        allocate for evacuation, this thread will simply treat the relevant cset object as "frozen within from-space".
-//        If this thread is forbidden to allocate, then all threads are forbidden to allocate.  As soon as a first thread
-//        begins to execute within an "evacuation region" without authorization to allocate, the evac-OOM protocol requires
-//        that no additional objects be evacuated.  Normally, this phase of executing without authorization to evacuate is
-//        immediately followed by a Full GC which compacts all of heap memory in STW mode.
-
 void ShenandoahEvacOOMHandler::enter_evacuation(Thread* thr) {
   uint8_t level = ShenandoahThreadLocalData::push_evac_oom_scope(thr);
  if (level == 0) {
@@ -71,18 +54,6 @@ void ShenandoahEvacOOMHandler::enter_evacuation(Thread* thr) {
    }
  }
 }
-
-// Announce intent to leave a control scope that performs allocation for evacuation.
-//
-// Upon return:
-//
-// 1. The thread-local count of nested allocation-for-evacuation scopes for this thread has been decremented.
-// 2. If we have left the outer-most allocation-for-evacuation scope for this thread:
-//    a. The count of threads that are allocating for evacuation does not represent this thread
-//    b. This thread is authorized to allocate for evacuation.
-//
-// Notes: A thread that has already entered evacuation and not left may make a nested re-entry into evacuation.  Each nested
-// invocation of enter_evacuation should be matched by invocation of leave_evacuation.
 
 void ShenandoahEvacOOMHandler::leave_evacuation(Thread* thr) {
   uint8_t level = ShenandoahThreadLocalData::pop_evac_oom_scope(thr);
