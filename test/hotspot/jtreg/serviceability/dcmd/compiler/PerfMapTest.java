@@ -95,7 +95,6 @@ public class PerfMapTest {
         run(new JMXExecutor(), "Compiler.perfmap " + path.toString(), path);
     }
 
-
     @Test
     public void specifiedDefaultMapFile() {
         // This is a special case of specifiedMapFile() where the filename specified
