@@ -29,6 +29,7 @@ import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
 import java.io.File;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Vector;
 import java.util.concurrent.Callable;
@@ -362,8 +363,8 @@ public class BasicDirectoryModel extends AbstractListModel<Object> implements Pr
                         }
 
                         if (start >= 0 && end > start) {
-                            List<File> listStart_OldSize = new Vector<>(fileCache.subList(start, oldSize));
-                            if (newFileCache.subList(end, newSize).equals(listStart_OldSize)) {
+                            if (compareIterators(newFileCache.subList(end, newSize).iterator(),
+                                    fileCache.subList(start, oldSize).iterator())) {
                                 if (loadThread.isInterrupted()) {
                                     return null;
                                 }
@@ -383,8 +384,8 @@ public class BasicDirectoryModel extends AbstractListModel<Object> implements Pr
                         }
 
                         if (start >= 0 && end > start) {
-                            List<File> listEnd_OldSize = new Vector<>(fileCache.subList(end, oldSize));
-                            if (listEnd_OldSize.equals(newFileCache.subList(start, newSize))) {
+                            if (compareIterators(newFileCache.subList(start, newSize).iterator(),
+                                    fileCache.subList(end, oldSize).iterator())) {
                                 if (loadThread.isInterrupted()) {
                                     return null;
                                 }
@@ -411,6 +412,18 @@ public class BasicDirectoryModel extends AbstractListModel<Object> implements Pr
             if (runnable != null) {
                 runnable.cancel();
             }
+        }
+
+        private synchronized <T> boolean compareIterators(Iterator<T> iterator1, Iterator<T> iterator2) {
+            while(iterator1.hasNext() && iterator2.hasNext()) {
+                T element1 = iterator1.next();
+                T element2 = iterator2.next();
+
+                if(!element1.equals(element2)) {
+                    return false;
+                }
+            }
+            return !iterator1.hasNext() && !iterator2.hasNext();
         }
    }
 
