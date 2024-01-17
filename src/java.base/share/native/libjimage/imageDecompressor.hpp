@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -46,8 +46,6 @@
  * - _size: The size of the compressed resource.
  * - _uncompressed_size: The uncompressed size of the compressed resource.
  * - _decompressor_name_offset: The ImageDecompressor instance name StringsTable offset.
- * - _decompressor_config_offset: StringsTable offset of configuration that could be needed by
- *   the decompressor in order to decompress.
  * - _is_terminal: 1: the compressed content is terminal. Uncompressing it would
  *   create the actual resource. 0: the compressed content is not terminal. Uncompressing it
  *   will result in a compressed content to be decompressed (This occurs when a stack of compressors
@@ -60,7 +58,6 @@ struct ResourceHeader {
     u8 _size;    // Resource size
     u8 _uncompressed_size;  // Expected uncompressed size
     u4 _decompressor_name_offset;    // Strings table decompressor offset
-    u4 _decompressor_config_offset; // Strings table config offset
     u1 _is_terminal; // Last decompressor 1, otherwise 0.
 };
 

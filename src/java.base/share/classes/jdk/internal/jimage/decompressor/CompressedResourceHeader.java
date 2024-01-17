@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@ package jdk.internal.jimage.decompressor;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Objects;
-import jdk.internal.jimage.decompressor.ResourceDecompressor.StringsProvider;
 
 /**
  *
@@ -46,21 +45,32 @@ public final class CompressedResourceHeader {
     private static final int SIZE = 29;
     private static final int MAGIC = 0xCAFEFAFA;
 
-    private static final int TINY_SIZE = 12;
+    private static final int TINY_SIZE = 10;
     private static final int TINY_MAGIC = 0xCAFEDADA;
+
+    // Standard header offsets
+    private static final int MAGIC_OFFSET = 0; // 4 bytes
+    private static final int COMPRESSED_OFFSET = 4; // 8 bytes
+    private static final int UNCOMPRESSED_OFFSET = 12; // 8 bytes
+    private static final int DECOMPRESSOR_NAME_OFFSET = 20; // 4 bytes, followed by 4 byte gap
+    private static final int IS_TERMINAL_OFFSET = 28; // 1 byte
+
+    // Tiny header offsets
+    private static final int TINY_COMPRESSED_AND_TERMINAL_OFFSET = 0; // 2 bytes
+    private static final int TINY_UNCOMPRESSED_OFFSET = 0; // 2 bytes
+    private static final int TINY_DECOMPRESSOR_NAME_OFFSET = 0; // 2 bytes
+
     private final long uncompressedSize;
     private final long compressedSize;
     private final int decompressorNameOffset;
-    private final int contentOffset;
     private final boolean isTerminal;
 
     public CompressedResourceHeader(long compressedSize,
-            long uncompressedSize, int decompressorNameOffset, int contentOffset,
+            long uncompressedSize, int decompressorNameOffset,
             boolean isTerminal) {
         this.compressedSize = compressedSize;
         this.uncompressedSize = uncompressedSize;
         this.decompressorNameOffset = decompressorNameOffset;
-        this.contentOffset = contentOffset;
         this.isTerminal = isTerminal;
     }
 
@@ -70,18 +80,6 @@ public final class CompressedResourceHeader {
 
     public int getDecompressorNameOffset() {
         return decompressorNameOffset;
-    }
-
-    public int getContentOffset() {
-        return contentOffset;
-    }
-
-    public String getStoredContent(StringsProvider provider) {
-        Objects.requireNonNull(provider);
-        if (contentOffset == -1) {
-            return null;
-        }
-        return provider.getString(contentOffset);
     }
 
     public long getUncompressedSize() {
@@ -96,15 +94,13 @@ public final class CompressedResourceHeader {
         Objects.requireNonNull(order);
         if (compressedSize <= Short.MAX_VALUE &&
                 uncompressedSize <= Short.MAX_VALUE &&
-                decompressorNameOffset <= Short.MAX_VALUE &&
-                contentOffset <= Short.MAX_VALUE) {
+                decompressorNameOffset <= Short.MAX_VALUE) {
             ByteBuffer buffer = ByteBuffer.allocate(TINY_SIZE);
             buffer.order(order);
             buffer.putInt(TINY_MAGIC);
             buffer.putShort((short)(compressedSize | (isTerminal ? 0x8000 : 0)));
             buffer.putShort((short)uncompressedSize);
             buffer.putShort((short)decompressorNameOffset);
-            buffer.putShort((short)contentOffset);
             return buffer.array();
         } else {
             ByteBuffer buffer = ByteBuffer.allocate(SIZE);
@@ -113,7 +109,8 @@ public final class CompressedResourceHeader {
             buffer.putLong(compressedSize);
             buffer.putLong(uncompressedSize);
             buffer.putInt(decompressorNameOffset);
-            buffer.putInt(contentOffset);
+            // Compatibility
+            buffer.putInt(-1);
             buffer.put(isTerminal ? (byte) 1 : (byte) 0);
             return buffer.array();
         }
@@ -128,24 +125,23 @@ public final class CompressedResourceHeader {
         }
         ByteBuffer buffer = ByteBuffer.wrap(resource, 0, Math.min(resource.length, SIZE));
         buffer.order(order);
-        int magic = buffer.getInt();
+        int magic = buffer.getInt(MAGIC_OFFSET);
         if (magic == TINY_MAGIC) {
-            short packedSizeTerminal = buffer.getShort();
+            short packedSizeTerminal = buffer.getShort(TINY_COMPRESSED_AND_TERMINAL_OFFSET);
             long size = packedSizeTerminal & 0x7FFFL;
             boolean isTerminal = (packedSizeTerminal & 0x8000) == 0x8000;
-            long uncompressedSize = buffer.getShort();
-            int decompressorNameOffset = buffer.getShort();
-            int contentIndex = buffer.getShort();
+            long uncompressedSize = buffer.getShort(TINY_UNCOMPRESSED_OFFSET);
+            int decompressorNameOffset = buffer.getShort(TINY_DECOMPRESSOR_NAME_OFFSET);
             return new CompressedResourceHeader(size, uncompressedSize,
-                    decompressorNameOffset, contentIndex, isTerminal);
+                    decompressorNameOffset, isTerminal);
         } else if (magic == MAGIC) {
-            long size = buffer.getLong();
-            long uncompressedSize = buffer.getLong();
-            int decompressorNameOffset = buffer.getInt();
-            int contentIndex = buffer.getInt();
-            byte isTerminal = buffer.get();
+            long size = buffer.getLong(COMPRESSED_OFFSET);
+            long uncompressedSize = buffer.getLong(UNCOMPRESSED_OFFSET);
+            int decompressorNameOffset = buffer.getInt(DECOMPRESSOR_NAME_OFFSET);
+            // skip unused 'contentOffset' int
+            byte isTerminal = buffer.get(IS_TERMINAL_OFFSET);
             return new CompressedResourceHeader(size, uncompressedSize,
-                    decompressorNameOffset, contentIndex, isTerminal == 1);
+                    decompressorNameOffset, isTerminal == 1);
         }
         return null;
     }
@@ -153,8 +149,7 @@ public final class CompressedResourceHeader {
     public int getHeaderSize() {
         if (compressedSize <= Short.MAX_VALUE &&
                 uncompressedSize <= Short.MAX_VALUE &&
-                decompressorNameOffset <= Short.MAX_VALUE &&
-                contentOffset <= Short.MAX_VALUE) {
+                decompressorNameOffset <= Short.MAX_VALUE) {
             return TINY_SIZE;
         } else {
             return SIZE;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -158,14 +158,12 @@ void ImageDecompressor::decompress_resource(u1* compressed, u1* uncompressed,
             _header._size = size_and_is_terminal & 0x7FFF;
             _header._uncompressed_size = getU2(compressed_resource + 6, endian);
             _header._decompressor_name_offset = getU2(compressed_resource + 8, endian);
-            _header._decompressor_config_offset = getU2(compressed_resource + 10, endian);
             _header._is_terminal = (size_and_is_terminal & 0x8000) ? 1 : 0;
-            compressed_resource += 12;
+            compressed_resource += 10;
         } else if (magic == ResourceHeader::resource_header_magic) {
             _header._size = getU8(compressed_resource + 4, endian);
             _header._uncompressed_size = getU8(compressed_resource + 12, endian);
             _header._decompressor_name_offset = getU4(compressed_resource + 20, endian);
-            _header._decompressor_config_offset = getU4(compressed_resource + 24, endian);
             compressed_resource += 28;
             _header._is_terminal = *compressed_resource;
             compressed_resource += 1;
