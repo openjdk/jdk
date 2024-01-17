@@ -4006,6 +4006,13 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
       if (n == nullptr) {
         continue;
       }
+    } else if (n->is_CallLeaf()) {
+      // Runtime calls with narrow memory input (no MergeMem node)
+      // get the memory projection
+      n = n->as_Call()->proj_out_or_null(TypeFunc::Memory);
+      if (n == nullptr) {
+        continue;
+      }
     } else if (n->Opcode() == Op_StrCompressedCopy ||
                n->Opcode() == Op_EncodeISOArray) {
       // get the memory projection
@@ -4048,7 +4055,7 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
           continue;
         }
         memnode_worklist.append_if_missing(use);
-      } else if (use->is_MemBar()) {
+      } else if (use->is_MemBar() || use->is_CallLeaf()) {
         if (use->in(TypeFunc::Memory) == n) { // Ignore precedent edge
           memnode_worklist.append_if_missing(use);
         }
