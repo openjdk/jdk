@@ -211,11 +211,11 @@ class SCCompacter {
       size_t live_in_block = pointer_delta(next, current);
 
       while (live_in_block > pointer_delta(_spaces[_index]._space->end(),
-	                                   compact_top)) {
+                                           compact_top)) {
         // out-of-memory in this space
         _spaces[_index]._compaction_top = compact_top;
-	_index++;
-	assert(_index < max_num_spaces - 1, "the last space should not be used");
+        _index++;
+        assert(_index < max_num_spaces - 1, "the last space should not be used");
         compact_top = _spaces[_index]._compaction_top;
         //tty->print_cr("compact-top(%u): " PTR_FORMAT, _index, p2i(compact_top));
       }
