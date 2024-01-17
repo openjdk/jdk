@@ -1948,7 +1948,7 @@ static void float16_to_float_v_slow_path(C2_MacroAssembler& masm, C2GeneralStub<
 // j.l.Float.float16ToFloat
 void C2_MacroAssembler::float16_to_float_v(VectorRegister dst, VectorRegister src, BasicType bt, uint length) {
   auto stub = C2CodeStub::make<VectorRegister, VectorRegister, BasicType, uint>
-              (dst, src, bt, length, 20, float16_to_float_v_slow_path);
+              (dst, src, bt, length, 24, float16_to_float_v_slow_path);
 
   // in riscv, NaN needs a special process as vfwcvt_f_f_v does not work in that case.
   // in riscv, Inf does not need a special process as vfwcvt_f_f_v can handle it correctly.
