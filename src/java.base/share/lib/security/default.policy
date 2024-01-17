@@ -92,6 +92,8 @@ grant codeBase "jrt:/java.xml.crypto" {
     permission java.security.SecurityPermission
                    "com.sun.org.apache.xml.internal.security.register";
     permission java.security.SecurityPermission
+                   "getProperty.jdk.xml.dsig.hereFunctionSupported";
+    permission java.security.SecurityPermission
                    "getProperty.jdk.xml.dsig.secureValidationPolicy";
     permission java.lang.RuntimePermission
                    "accessClassInPackage.com.sun.org.apache.xml.internal.*";

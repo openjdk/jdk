@@ -128,6 +128,10 @@
                           JAVACLASS="com.sun.org.apache.xml.internal.security.algorithms.implementations.SignatureECDSA$SignatureECDSASHA512" />
       <SignatureAlgorithm URI="http://www.w3.org/2007/05/xmldsig-more#ecdsa-ripemd160"
                           JAVACLASS="com.sun.org.apache.xml.internal.security.algorithms.implementations.SignatureECDSA$SignatureECDSARIPEMD160" />
+      <SignatureAlgorithm URI="http://www.w3.org/2021/04/xmldsig-more#eddsa-ed25519"
+                          JAVACLASS="com.sun.org.apache.xml.internal.security.algorithms.implementations.SignatureEDDSA$SignatureEd2559" />
+      <SignatureAlgorithm URI="http://www.w3.org/2021/04/xmldsig-more#eddsa-ed448"
+                          JAVACLASS="com.sun.org.apache.xml.internal.security.algorithms.implementations.SignatureEDDSA$SignatureEd448" />
                           
       <SignatureAlgorithm URI="http://www.w3.org/2001/04/xmldsig-more#hmac-md5"
                           JAVACLASS="com.sun.org.apache.xml.internal.security.algorithms.implementations.IntegrityHmac$IntegrityHmacMD5" />

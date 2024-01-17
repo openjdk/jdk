@@ -31,6 +31,8 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import javax.xml.crypto.NodeSetData;
+
+import com.sun.org.apache.xml.internal.security.transforms.TransformationException;
 import org.w3c.dom.Node;
 import com.sun.org.apache.xml.internal.security.signature.NodeFilter;
 import com.sun.org.apache.xml.internal.security.signature.XMLSignatureInput;
@@ -46,11 +48,11 @@ public class ApacheNodeSetData implements ApacheData, NodeSetData<Node> {
 
     public Iterator<Node> iterator() {
         // If nodefilters are set, must execute them first to create node-set
-        if (xi.getNodeFilters() != null && !xi.getNodeFilters().isEmpty()) {
-            return Collections.unmodifiableSet
-                (getNodeSet(xi.getNodeFilters())).iterator();
-        }
         try {
+            if (xi.getNodeFilters() != null && !xi.getNodeFilters().isEmpty()) {
+                return Collections.unmodifiableSet
+                        (getNodeSet(xi.getNodeFilters())).iterator();
+            }
             return Collections.unmodifiableSet(xi.getNodeSet()).iterator();
         } catch (Exception e) {
             // should not occur
@@ -63,7 +65,8 @@ public class ApacheNodeSetData implements ApacheData, NodeSetData<Node> {
         return xi;
     }
 
-    private Set<Node> getNodeSet(List<NodeFilter> nodeFilters) {
+    private Set<Node> getNodeSet(List<NodeFilter> nodeFilters)
+            throws TransformationException {
         if (xi.isNeedsToBeExpanded()) {
             XMLUtils.circumventBug2650
                 (XMLUtils.getOwnerDocument(xi.getSubNode()));
