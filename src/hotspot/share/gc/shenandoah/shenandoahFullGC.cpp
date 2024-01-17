@@ -908,6 +908,9 @@ public:
     // Make empty regions that have been allocated into regular
     if (r->is_empty() && live > 0) {
       r->make_regular_bypass();
+      if (ZapUnusedHeapArea) {
+        SpaceMangler::mangle_region(MemRegion(r->top(), r->end()));
+      }
     }
 
     // Reclaim regular regions that became empty
