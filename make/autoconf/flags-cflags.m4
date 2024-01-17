@@ -171,6 +171,8 @@ AC_DEFUN([FLAGS_SETUP_WARNINGS],
       if test "x$TOOLCHAIN_VERSION" = x2017; then
         # VS2017 incorrectly triggers this warning for constexpr
         DISABLED_WARNINGS+=" 4307"
+        # VS2017 incorrectly triggers this warning for static cast (test_atomic.cpp)
+        DISABLED_WARNINGS+=" 4309"
       fi
       ;;
 
