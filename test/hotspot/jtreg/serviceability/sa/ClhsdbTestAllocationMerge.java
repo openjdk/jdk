@@ -21,9 +21,7 @@
  * questions.
  */
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import jdk.test.lib.apps.LingeredApp;
 import jtreg.SkippedException;
 
@@ -53,9 +51,7 @@ public class ClhsdbTestAllocationMerge {
 
             // sun.jvm.hotspot.utilities.AssertionFailure is caught by the harness so it's not
             // necessary to include extra filters here.
-            Map<String, List<String>> expStrMap = new HashMap<>();
-            Map<String, List<String>> unExpStrMap = new HashMap<>();
-            test.run(theApp.getPid(), cmds, expStrMap, unExpStrMap);
+            test.run(theApp.getPid(), cmds, null, null);
         } catch (SkippedException se) {
             throw se;
         } catch (Exception ex) {
