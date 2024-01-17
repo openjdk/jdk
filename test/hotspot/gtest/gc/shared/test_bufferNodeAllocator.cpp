@@ -239,7 +239,7 @@ static void run_test(BufferNode::Allocator* allocator, CompletedList* cbl) {
 }
 
 TEST_VM(BufferNodeAllocatorTest, stress_free_list_allocator) {
-  const size_t buffer_capacity = DEFAULT_CACHE_LINE_SIZE / sizeof(void*);
+  const size_t buffer_capacity = DEFAULT_PADDING_SIZE / sizeof(void*);
   BufferNode::Allocator allocator("Test Allocator", buffer_capacity);
   CompletedList completed;
   run_test(&allocator, &completed);

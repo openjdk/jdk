@@ -22,15 +22,14 @@
  *
  */
 
-#include "opto/addnode.hpp"
-#include "opto/node.hpp"
 #include "precompiled.hpp"
 #include "memory/allocation.inline.hpp"
+#include "opto/addnode.hpp"
 #include "opto/callnode.hpp"
 #include "opto/loopnode.hpp"
 #include "opto/movenode.hpp"
+#include "opto/node.hpp"
 #include "opto/opaquenode.hpp"
-
 
 //------------------------------split_thru_region------------------------------
 // Split Node 'n' through merge point.
