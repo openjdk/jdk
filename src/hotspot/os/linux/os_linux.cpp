@@ -1815,6 +1815,10 @@ void * os::Linux::dlopen_helper(const char *filename, char *ebuf, int ebuflen) {
     log_info(os)("IEEE subnormal handling check failed before loading %s", filename);
     if (CheckJNICalls) {
       tty->print_cr("WARNING: IEEE subnormal handling check failed before loading %s", filename);
+      Thread* current = Thread::current();
+      if (current->is_Java_thread()) {
+        JavaThread::cast(current)->print_jni_stack();
+      }
     }
   }
 
@@ -1872,6 +1876,10 @@ void * os::Linux::dlopen_helper(const char *filename, char *ebuf, int ebuflen) {
         log_info(os)("IEEE subnormal handling could not be corrected after loading %s", filename);
         if (CheckJNICalls) {
           tty->print_cr("WARNING: IEEE subnormal handling could not be corrected after loading %s", filename);
+          Thread* current = Thread::current();
+          if (current->is_Java_thread()) {
+            JavaThread::cast(current)->print_jni_stack();
+          }
         }
         assert(false, "fesetenv didn't work");
       }
