@@ -35,6 +35,7 @@ import java.text.NumberFormat;
 public class MessageFormatsByArgumentIndex {
 
     private static String choicePattern = "0.0#are no files|1.0#is one file|1.0<are {0,number,integer} files";
+    private static String quotedChoicePattern = choicePattern.replaceAll("([{}])", "'$1'");
 
     public static void main(String[] args) {
         Format[] subformats;
@@ -56,7 +57,7 @@ public class MessageFormatsByArgumentIndex {
 
         format.setFormatByArgumentIndex(0, NumberFormat.getInstance());
 
-        checkPattern(format.toPattern(), "{3,choice," + choicePattern + "}, {2}, {0,number}");
+        checkPattern(format.toPattern(), "{3,choice," + quotedChoicePattern + "}, {2}, {0,number}");
 
         subformats = format.getFormatsByArgumentIndex();
         checkSubformatLength(subformats, 4);
@@ -73,7 +74,8 @@ public class MessageFormatsByArgumentIndex {
 
         format.setFormatsByArgumentIndex(subformats);
 
-        checkPattern(format.toPattern(), "{3,choice," + choicePattern + "}, {2,number}, {0,choice," + choicePattern + "}");
+        checkPattern(format.toPattern(),
+          "{3,choice," + quotedChoicePattern + "}, {2,number}, {0,choice," + quotedChoicePattern + "}");
 
         subformats = format.getFormatsByArgumentIndex();
         checkSubformatLength(subformats, 4);

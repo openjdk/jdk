@@ -618,7 +618,11 @@ public class MessageFormat extends Format {
             }
             if (subformatPattern != null) {
                 result.append(',');
-                copyAndQuoteExtraClosingBraces(subformatPattern, result);
+
+                // The subformat pattern comes already quoted, but only for those characters that are
+                // special to the subformat. Therefore, we may need to quote additional characters.
+                // The ones we care about at the MessageFormat level are '{' and '}'.
+                copyAndQuoteBraces(subformatPattern, result);
             }
             result.append('}');
         }
@@ -1648,42 +1652,49 @@ public class MessageFormat extends Format {
         }
     }
 
-    // Quote runs of extra unquoted closing braces, where "extra" means not matching some unquoted opening brace.
-    // Why? Because when a subformat pattern with unquoted extra closing braces is concatenated into a larger
-    // containing pattern, the extra closing braces suddenly become significant because they can now match an
-    // opening brace in the containing pattern. See JDK-8323699 for an example.
-    private static void copyAndQuoteExtraClosingBraces(String source, StringBuilder target) {
-        int braceDepth = 0;
+    // Copy the text, but add quotes around any quotables that aren't already quoted
+    private static void copyAndQuoteBraces(String source, StringBuilder target) {
+
+        // Analyze existing string for already quoted and newly quotable characters
+        record Qchar(char ch, boolean quoted) { };
+        ArrayList<Qchar> qchars = new ArrayList<>();
         boolean quoted = false;
+        boolean anyChangeNeeded = false;
         for (int i = 0; i < source.length(); i++) {
             char ch = source.charAt(i);
-            switch (ch) {
-            case '\'':
-                quoted = !quoted;
-                break;
-            case '{':
-                if (!quoted)
-                    braceDepth++;
-                break;
-            case '}':
-                if (quoted)
-                    break;
-                if (braceDepth > 0) {
-                    braceDepth--;
-                    break;
-                }
-                target.append("'}");
-                while (i + 1 < source.length() && source.charAt(i + 1) == '}') {
-                    target.append('}');
+            if (ch == '\'') {
+                if (i + 1 < source.length() && source.charAt(i + 1) == '\'') {
+                    qchars.add(new Qchar('\'', quoted));
                     i++;
-                }
+                } else
+                    quoted = !quoted;
+            } else {
+                boolean quotable = ch == '{' || ch == '}';
+                anyChangeNeeded |= quotable && !quoted;
+                qchars.add(new Qchar(ch, quoted || quotable));
+            }
+        }
+
+        // Was any change needed?
+        if (!anyChangeNeeded) {
+            target.append(source);
+            return;
+        }
+
+        // Build new string, automaticaly consolidating adjacent runs of quoted chars
+        quoted = false;
+        for (Qchar qchar : qchars) {
+            char ch = qchar.ch;
+            if (ch == '\'')
+                target.append(ch);          // doubling works whether quoted or not
+            else if (qchar.quoted() != quoted) {
                 target.append('\'');
-                continue;
-            default:
-                break;
+                quoted = qchar.quoted();
             }
             target.append(ch);
         }
+        if (quoted)
+            target.append('\'');
     }
 
     /**
