@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -167,19 +167,6 @@ public class CLDRTimeZoneNameProviderImpl extends TimeZoneNameProviderImpl {
             return;
         }
 
-        // Check if COMPAT can substitute the name
-        if (!exists(names, index) &&
-                LocaleProviderAdapter.getAdapterPreference().contains(Type.JRE)) {
-            String[] compatNames = (String[])LocaleProviderAdapter.forJRE()
-                    .getLocaleResources(mapChineseLocale(locale))
-                    .getTimeZoneNames(id);
-            if (compatNames != null) {
-                // Assumes COMPAT has no empty slots
-                names[index] = compatNames[index];
-                return;
-            }
-        }
-
         // Region Fallback
         if (regionFormatFallback(names, index, locale)) {
             return;
@@ -293,34 +280,5 @@ public class CLDRTimeZoneNameProviderImpl extends TimeZoneNameProviderImpl {
             return MessageFormat.format(gmtFormat,
                     String.format(l, hourFormat, offset / 60, offset % 60));
         }
-    }
-
-    // Mapping CLDR's Simplified/Traditional Chinese resources
-    // to COMPAT's zh-CN/TW
-    private Locale mapChineseLocale(Locale locale) {
-        if (locale.getLanguage() == "zh") {
-            switch (locale.getScript()) {
-                case "Hans":
-                    return Locale.CHINA;
-                case "Hant":
-                    return Locale.TAIWAN;
-                case "":
-                    // no script, guess from country code.
-                    switch (locale.getCountry()) {
-                        case "":
-                        case "CN":
-                        case "SG":
-                            return Locale.CHINA;
-                        case "HK":
-                        case "MO":
-                        case "TW":
-                            return Locale.TAIWAN;
-                    }
-                    break;
-            }
-        }
-
-        // no need to map
-        return locale;
     }
 }
