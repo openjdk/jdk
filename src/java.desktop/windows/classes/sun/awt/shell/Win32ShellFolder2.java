@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1125,7 +1125,10 @@ final class Win32ShellFolder2 extends ShellFolder {
 
                         if (hiResIconAvailable(getParentIShellFolder(), getRelativePIDL()) || newIcon == null) {
                             int size = getLargeIcon ? LARGE_ICON_SIZE : SMALL_ICON_SIZE;
-                            newIcon = getIcon(size, size);
+                            newIcon2 = getIcon(size, size);
+                            if (newIcon2 != null) {
+                                newIcon = newIcon2;
+                            }
                         }
 
                         if (newIcon == null) {
@@ -1198,7 +1201,11 @@ final class Win32ShellFolder2 extends ShellFolder {
                     }
                 }
             }
-            return new MultiResolutionIconImage(size, multiResolutionIcon);
+            if (multiResolutionIcon.containsValue(null)) {
+                return null;
+            } else {
+                return new MultiResolutionIconImage(size, multiResolutionIcon);
+            }
         });
     }
 
@@ -1411,14 +1418,17 @@ final class Win32ShellFolder2 extends ShellFolder {
         final Map<Integer, Image> resolutionVariants = new HashMap<>();
 
         public MultiResolutionIconImage(int baseSize, Map<Integer, Image> resolutionVariants) {
-            assert !resolutionVariants.containsValue(null)
-                   : "There are null icons in the MRI variants map";
+            if (resolutionVariants.containsValue(null)) {
+                throw new NullPointerException("There are null icons in the MRI variants map");
+            }
             this.baseSize = baseSize;
             this.resolutionVariants.putAll(resolutionVariants);
         }
 
         public MultiResolutionIconImage(int baseSize, Image image) {
-            assert image != null : "Null icon passed as the base image for MRI";
+            if (image == null) {
+                throw new NullPointerException("Null icon passed as the base image for MRI");
+            }
             this.baseSize = baseSize;
             this.resolutionVariants.put(baseSize, image);
         }
