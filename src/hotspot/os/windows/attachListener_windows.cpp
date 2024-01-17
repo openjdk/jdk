@@ -248,10 +248,13 @@ Win32AttachOperation* Win32AttachListener::dequeue() {
     DWORD res = ::WaitForSingleObject(enqueued_ops_semaphore(), INFINITE);
     // returning from WaitForSingleObject will have decreased
     // the current count of the semaphore by 1.
-    guarantee(res == WAIT_OBJECT_0, "wait failed");
+    guarantee(res != WAIT_FAILED,   "WaitForSingleObject failed with error code: %lu", GetLastError());
+    guarantee(res == WAIT_OBJECT_0, "WaitForSingleObject failed with return value: %lu", res);
 
     res = ::WaitForSingleObject(mutex(), INFINITE);
-    guarantee(res == WAIT_OBJECT_0, "wait failed");
+    guarantee(res != WAIT_FAILED,   "WaitForSingleObject failed with error code: %lu", GetLastError());
+    guarantee(res == WAIT_OBJECT_0, "WaitForSingleObject failed with return value: %lu", res);
+
 
     Win32AttachOperation* op = head();
     if (op != nullptr) {
@@ -338,6 +341,9 @@ void Win32AttachOperation::complete(jint result, bufferedStream* result_stream) 
   }
 
   DWORD res = ::WaitForSingleObject(Win32AttachListener::mutex(), INFINITE);
+  assert(res != WAIT_FAILED,   "WaitForSingleObject failed with error code: %lu", GetLastError());
+  assert(res == WAIT_OBJECT_0, "WaitForSingleObject failed with return value: %lu", res);
+
   if (res == WAIT_OBJECT_0) {
 
     // put the operation back on the available list
