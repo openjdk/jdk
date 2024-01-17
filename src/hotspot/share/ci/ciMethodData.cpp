@@ -90,9 +90,13 @@ public:
     // We are currently holding the extra_data_lock and ensuring
     // no safepoint breaks the lock.
     _mdo->check_extra_data_locked();
-    // We now want to cache some method data. This could cause
-    // a safepoint. We temporarily release the lock and allow
-    // safepoints, and revert that at the end of the scope:
+
+    // We now want to cache some method data. This could cause a safepoint.
+    // We temporarily release the lock and allow safepoints, and revert that
+    // at the end of the scope. This is safe, since we currently do not hold
+    // any extra_method_data: finish is called only after clean_extra_data,
+    // and the outer scope that first aquired the lock should not hold any
+    // extra_method_data while cleaning is performed, as the offsets can change.
     MutexUnlocker mu(_mdo->extra_data_lock(), Mutex::_no_safepoint_check_flag);
     PauseNoSafepointVerifier pause_no_safepoints(no_safepoint);
 
