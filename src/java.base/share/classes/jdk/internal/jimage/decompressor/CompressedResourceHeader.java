@@ -56,9 +56,9 @@ public final class CompressedResourceHeader {
     private static final int IS_TERMINAL_OFFSET = 28; // 1 byte
 
     // Tiny header offsets
-    private static final int TINY_COMPRESSED_AND_TERMINAL_OFFSET = 0; // 2 bytes
-    private static final int TINY_UNCOMPRESSED_OFFSET = 0; // 2 bytes
-    private static final int TINY_DECOMPRESSOR_NAME_OFFSET = 0; // 2 bytes
+    private static final int TINY_COMPRESSED_AND_TERMINAL_OFFSET = 4; // 2 bytes
+    private static final int TINY_UNCOMPRESSED_OFFSET = 6; // 2 bytes
+    private static final int TINY_DECOMPRESSOR_NAME_OFFSET = 8; // 2 bytes
 
     private final long uncompressedSize;
     private final long compressedSize;
