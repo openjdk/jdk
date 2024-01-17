@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_GC_SHARED_GENERATION_HPP
-#define SHARE_GC_SHARED_GENERATION_HPP
+#ifndef SHARE_GC_SERIAL_GENERATION_HPP
+#define SHARE_GC_SERIAL_GENERATION_HPP
 
 #include "gc/shared/collectorCounters.hpp"
 #include "gc/shared/referenceProcessor.hpp"
@@ -54,16 +54,6 @@ class ContiguousSpace;
 
 class OopClosure;
 class GCStats;
-
-// A "ScratchBlock" represents a block of memory in one generation usable by
-// another.  It represents "num_words" free words, starting at and including
-// the address of "this".
-struct ScratchBlock {
-  ScratchBlock* next;
-  size_t num_words;
-  HeapWord scratch_space[1];  // Actually, of size "num_words-2" (assuming
-                              // first two fields are word-sized.)
-};
 
 class Generation: public CHeapObj<mtGC> {
   friend class VMStructs;
@@ -132,12 +122,6 @@ class Generation: public CHeapObj<mtGC> {
   // The largest number of contiguous free bytes in this or any higher generation.
   virtual size_t max_contiguous_available() const;
 
-  // Returns true if promotions of the specified amount are
-  // likely to succeed without a promotion failure.
-  // Promotion of the full amount is not guaranteed but
-  // might be attempted in the worst case.
-  virtual bool promotion_attempt_is_safe(size_t max_promotion_in_bytes) const;
-
   // Return an estimate of the maximum allocation that could be performed
   // in the generation without triggering any collection or expansion
   // activity.  It is "unsafe" because no locks are taken; the result
@@ -175,10 +159,6 @@ class Generation: public CHeapObj<mtGC> {
   // Iteration - do not use for time critical operations
   virtual void space_iterate(SpaceClosure* blk, bool usedOnly = false) = 0;
 
-  // Returns the first space, if any, in the generation that can participate
-  // in compaction, or else "null".
-  virtual ContiguousSpace* first_compaction_space() const = 0;
-
   // Returns "true" iff this generation should be used to allocate an
   // object of the given size.  Young generations might
   // wish to exclude very large objects, for example, since, if allocated
@@ -202,18 +182,6 @@ class Generation: public CHeapObj<mtGC> {
 
   // Thread-local allocation buffers
   virtual bool supports_tlab_allocation() const { return false; }
-  virtual size_t tlab_capacity() const {
-    guarantee(false, "Generation doesn't support thread local allocation buffers");
-    return 0;
-  }
-  virtual size_t tlab_used() const {
-    guarantee(false, "Generation doesn't support thread local allocation buffers");
-    return 0;
-  }
-  virtual size_t unsafe_max_tlab_alloc() const {
-    guarantee(false, "Generation doesn't support thread local allocation buffers");
-    return 0;
-  }
 
   // "obj" is the address of an object in a younger generation.  Allocate space
   // for "obj" in the current (or some higher) generation, and copy "obj" into
@@ -228,7 +196,7 @@ class Generation: public CHeapObj<mtGC> {
   // this generation. See comment below.
   // This is a generic implementation which can be overridden.
   //
-  // Note: in the current (1.4) implementation, when genCollectedHeap's
+  // Note: in the current (1.4) implementation, when serialHeap's
   // incremental_collection_will_fail flag is set, all allocations are
   // slow path (the only fast-path place to allocate is DefNew, which
   // will be full if the flag is set).
@@ -238,16 +206,6 @@ class Generation: public CHeapObj<mtGC> {
                               size_t word_size,
                               bool   is_tlab) {
     return (full || should_allocate(word_size, is_tlab));
-  }
-
-  // Returns true if the collection is likely to be safely
-  // completed. Even if this method returns true, a collection
-  // may not be guaranteed to succeed, and the system should be
-  // able to safely unwind and recover from that failure, albeit
-  // at some additional cost.
-  virtual bool collection_attempt_is_safe() {
-    guarantee(false, "Are you sure you want to call this method?");
-    return true;
   }
 
   // Perform a garbage collection.
