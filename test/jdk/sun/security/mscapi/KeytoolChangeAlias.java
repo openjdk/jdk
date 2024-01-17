@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,7 @@ import java.security.SecureRandom;
 public class KeytoolChangeAlias {
     public static void main(String[] args) throws Exception {
         SecureRandom random = new SecureRandom();
-        String alias = Integer.toString(random.nextInt(1000, 9999));
+        String alias = Integer.toString(random.nextInt(1000, 8192));
         String newAlias = alias + "1";
         KeyStore ks = KeyStore.getInstance("Windows-MY");
         ks.load(null, null);
