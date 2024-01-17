@@ -55,27 +55,31 @@ public class CodeCacheTest {
      *
      * Expected output without code cache segmentation:
      *
-     * CodeCache: size=245760Kb used=4680Kb max_used=4680Kb free=241079Kb
-     * bounds [0x00007f5bd9000000, 0x00007f5bd94a0000, 0x00007f5be8000000]
-     * total_blobs=575 nmethods=69 adapters=423
-     * compilation: enabled
+     * CodeCache: size=245760Kb used=1366Kb max_used=1943Kb free=244393Kb
+     *  bounds [0x00007fe8bc9f2000, 0x00007fe8bcc62000, 0x00007fe8cb9f2000]
+     *  total_blobs=474, nmethods=87, adapters=293
+     *  stopped_count=0, restarted_count=0, full_count=0
+     *  compilation=enabled
      *
      * Expected output with code cache segmentation (number of segments may change):
      *
-     * CodeHeap 'non-nmethods': size=5696Kb used=2236Kb max_used=2238Kb free=3459Kb
-     *  bounds [0x00007fa0f0ffe000, 0x00007fa0f126e000, 0x00007fa0f158e000]
-     * CodeHeap 'profiled nmethods': size=120036Kb used=8Kb max_used=8Kb free=120027Kb
-     *  bounds [0x00007fa0f158e000, 0x00007fa0f17fe000, 0x00007fa0f8ac7000]
-     * CodeHeap 'non-profiled nmethods': size=120036Kb used=2Kb max_used=2Kb free=120034Kb
-     *  bounds [0x00007fa0f8ac7000, 0x00007fa0f8d37000, 0x00007fa100000000]
-     * total_blobs=486 nmethods=8 adapters=399
-     * compilation: enabled
+     * CodeHeap 'non-profiled nmethods': size=118592Kb used=29Kb max_used=29Kb free=118562Kb
+     *  bounds [0x00007f89c8622000, 0x00007f89c8892000, 0x00007f89cf9f2000]
+     * CodeHeap 'profiled nmethods': size=118588Kb used=80Kb max_used=80Kb free=118507Kb
+     *  bounds [0x00007f89c09f2000, 0x00007f89c0c62000, 0x00007f89c7dc1000]
+     * CodeHeap 'non-nmethods': size=8580Kb used=1258Kb max_used=1834Kb free=7321Kb
+     *  bounds [0x00007f89c7dc1000, 0x00007f89c8031000, 0x00007f89c8622000]
+     * CodeCache: size=245760Kb, used=1367Kb, max_used=1943Kb, free=244390Kb
+     *  total_blobs=474, nmethods=87, adapters=293
+     *  stopped_count=0, restarted_count=0, full_count=0
+     *  compilation=enabled
      */
 
     static Pattern line1 = Pattern.compile("(CodeCache|CodeHeap.*): size=(\\p{Digit}*)Kb used=(\\p{Digit}*)Kb max_used=(\\p{Digit}*)Kb free=(\\p{Digit}*)Kb");
     static Pattern line2 = Pattern.compile(" bounds \\[0x(\\p{XDigit}*), 0x(\\p{XDigit}*), 0x(\\p{XDigit}*)\\]");
-    static Pattern line3 = Pattern.compile(" total_blobs=(\\p{Digit}*) nmethods=(\\p{Digit}*) adapters=(\\p{Digit}*)");
-    static Pattern line4 = Pattern.compile(" compilation: (.*)");
+    static Pattern line3 = Pattern.compile(" total_blobs=(\\p{Digit}*), nmethods=(\\p{Digit}*), adapters=(\\p{Digit}*)");
+    static Pattern line4 = Pattern.compile(" stopped_count=(\\p{Digit}*), restarted_count=(\\p{Digit}*), full_count=(\\p{Digit}*)");
+    static Pattern line5 = Pattern.compile(" compilation=(.*)");
 
     private static boolean getFlagBool(String flag, String where) {
       Matcher m = Pattern.compile(flag + "\\s+:?= (true|false)").matcher(where);
@@ -157,6 +161,10 @@ public class CodeCacheTest {
             Assert.fail("Fewer segments matched (" + matchedCount + ") than expected (" + segmentsCount + ")");
         }
 
+        if (segmentsCount != 1) {
+            // Skip this line CodeCache: size=245760Kb, used=5698Kb, max_used=5735Kb, free=240059Kb
+            line = lines.next();
+        }
         // Validate third line
         m = line3.matcher(line);
         if (m.matches()) {
@@ -182,6 +190,15 @@ public class CodeCacheTest {
         // Validate fourth line
         line = lines.next();
         m = line4.matcher(line);
+        if (m.matches()) {
+            System.out.println("stopped_count=" + m.group(1));
+        } else {
+            Assert.fail("Regexp 3 failed to match line: " + line);
+        }
+
+        // Validate fifth line
+        line = lines.next();
+        m = line5.matcher(line);
         if (!m.matches()) {
             Assert.fail("Regexp 4 failed to match line: " + line);
         }
