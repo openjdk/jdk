@@ -187,6 +187,7 @@ class SCCompacter {
     SCDeadSpacer dead_spacer(space);
 
     HeapWord* compact_top = get_compaction_top(_index);
+    //tty->print_cr("compact-top(%u): " PTR_FORMAT, _index, p2i(compact_top));
     HeapWord* current = bottom;
     // Scan all live objects in the space.
     while (current < top) {
@@ -216,9 +217,13 @@ class SCCompacter {
 	_index++;
 	assert(_index < max_num_spaces - 1, "the last space should not be used");
         compact_top = _spaces[_index]._compaction_top;
+        //tty->print_cr("compact-top(%u): " PTR_FORMAT, _index, p2i(compact_top));
       }
 
       // Record addresses of the first live word of all blocks covered by the live span.
+      //tty->print_cr("forwarding chunk starting at: " PTR_FORMAT ", first-live: " PTR_FORMAT ", end: " PTR_FORMAT " to: " PTR_FORMAT, p2i(current), p2i(next_marked), p2i(next), p2i(compact_top));
+      current = next_marked;
+      live_in_block = pointer_delta(next, current);
       size_t head = MIN2(pointer_delta(align_up(current, bytes_per_block()), current), live_in_block);
       if (head > 0) {
         HeapWord* block_start = align_down(current, bytes_per_block());
@@ -345,40 +350,51 @@ void SCCompacter::compact_space(uint idx) const {
   // Visit all live objects in the space.
   while (current < top) {
     assert(_mark_bitmap.is_marked(current), "must be marked");
-    oop obj = cast_to_oop(current);
-    assert(oopDesc::is_oop(obj), "must be oop");
-    Klass* klass = obj->klass();
-    size_t size_in_words = obj->size_given_klass(klass);
+    HeapWord* next_dead = _mark_bitmap.get_next_unmarked_addr(current, top);
+    HeapWord* obj_start = current;
+    HeapWord* fwd = forwardee(obj_start);
+    HeapWord* chunk_fwd = fwd;
+    //tty->print_cr("compacting live chunk from: " PTR_FORMAT ", to: " PTR_FORMAT, p2i(obj_start), p2i(next_dead));
+    while (obj_start < next_dead) {
+      //tty->print_cr("obj: " PTR_FORMAT ", fwd: " PTR_FORMAT ", next: " PTR_FORMAT, p2i(obj_start), p2i(fwd), p2i(fwd + cast_to_oop(obj_start)->size()));
+      assert(forwardee(obj_start) == fwd, "object and forwardee must move by same amount within chunk: forwardee: " PTR_FORMAT, p2i(forwardee(obj_start)));
+      oop obj = cast_to_oop(obj_start);
+      assert(oopDesc::is_oop(obj), "must be oop");
+      Klass* klass = obj->klass();
+      size_t size_in_words = obj->size_given_klass(klass);
 
-    // Update references of object.
-    obj->oop_iterate_backwards(&cl, klass);
+      // Update references of object.
+      obj->oop_iterate_backwards(&cl, klass);
 
-    // Copy object itself.
-    HeapWord* fwd = forwardee(current);
-    if (current != fwd) {
-      Copy::aligned_conjoint_words(current, fwd, size_in_words);
+      // We need to update the offset table so that the beginnings of objects can be
+      // found during scavenge.  Note that we are updating the offset table based on
+      // where the object will be once the compaction phase finishes.
+      if (tenured_space->is_in_reserved(fwd)) {
+        tenured_space->update_for_block(fwd, fwd + size_in_words);
+      }
+
+      // Advance to next object in chunk.
+      obj_start += size_in_words;
+      fwd += size_in_words;
     }
+    assert(obj_start == next_dead, "sanity");
 
-    // We need to update the offset table so that the beginnings of objects can be
-    // found during scavenge.  Note that we are updating the offset table based on
-    // where the object will be once the compaction phase finishes.
-    if (tenured_space->is_in_reserved(fwd)) {
-      tenured_space->update_for_block(fwd, fwd + size_in_words);
+    // Copy the whole chunk.
+    if (chunk_fwd != current) {
+      Copy::aligned_conjoint_words(current, chunk_fwd, pointer_delta(next_dead, current));
     }
 
     // Advance to next live object.
-    current = current + size_in_words;
-    if (!_mark_bitmap.is_marked(current)) {
-      if (current < get_first_dead(idx) || current >= top) {
-        // Dead-spacer object, not a record of next live object.
-        current = _mark_bitmap.get_next_marked_addr(current, top);
-      } else {
-        // We stored the address of the next live object in the first unmarked word
-        // after the current live chunk.
-        HeapWord* next = *(HeapWord**)current;
-        assert(next == _mark_bitmap.get_next_marked_addr(current, top), "must match");
-        current = next;
-      }
+    assert(!_mark_bitmap.is_marked(next_dead), "must not be live");
+    if (next_dead < get_first_dead(idx) || next_dead >= top) {
+      // Dead-spacer object, not a record of next live object.
+      current = _mark_bitmap.get_next_marked_addr(next_dead, top);
+    } else {
+      // We stored the address of the next live object in the first unmarked word
+      // after the current live chunk.
+      HeapWord* next = *(HeapWord**)next_dead;
+      assert(next == _mark_bitmap.get_next_marked_addr(next_dead, top), "must match");
+      current = next;
     }
   }
 
