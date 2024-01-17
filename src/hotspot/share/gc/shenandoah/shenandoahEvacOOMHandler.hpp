@@ -67,9 +67,28 @@ public:
  * of this protocol.  The general idea is as follows:
  *
  *  1. If we fail to evacuate the entirety of live memory from all cset regions,
- *     we will transition to STW full gc at the end of the evacuation cycle.  Full GC
- *     marks and compacts the entire heap.  If we fail to evacuate a single cset object,
- *     we will pay the price of a full GC.
+ *     we will transition first to degenerated GC and if that fails, to full GC at
+ *     the end of this canceeled concurrent evacuation phase.  To heal heap invariants
+ *     that may be violated temporarily during the Evac-OOM protocol, degenerated GC
+ *     overwrites the update_watermark field of every heap region with its current top
+ *     (because a pointer to the cset may have been leaked through a failed LRB and
+ *     written into the heap above the original value of update_watermark.  Furthermore,
+ *     the degenerated GC restarts the evacuation effort, revisiting every region in
+ *     the cset (because we have no assurance that cset regions already evacuated during
+ *     the concurrent evacuation were fully evacuated; at least one object failed to
+ *     properly evacuate).  Degen GC evacuation may succeed after concurrent evacuation
+ *     failed in the case that degeneration is triggered by failure of a mutator thread's
+ *     LRB if there is more memory available within the GCLABs of GC worker threads than
+ *     was available in the failing mutator's GCLAB.  Note, however, that the failed
+ *     mutator thread was unable to refresh its GCLAB, so it is now unlikely that any
+ *     GC Worker threads will be able to further expand their GCLABs.  This combination
+ *     of circumstances contributes to the likelihood that degenerated GC will find it
+ *     necessary to upgrade to Full GC.  Full GC marks and compacts the entire heap,
+ *     redundantly repeating the marking and evacuation work that had just been completed
+ *     by the cancelled concurrent and degenerated GC efforts.  Full GC marking includes
+ *     resolution of lingering forwarding pointers that may be scattered throughout
+ *     the previously selected cset when evacuation is abandoned before it has been
+ *     completed.
  *
  *  2. If any thread A fails to evacuate object X, it will wait to see if some
  *     other mutator or GC worker thread can successfully evacuate object X.  At the moment
@@ -172,13 +191,16 @@ public:
  *        overwrite each run of garbage with array-of-integer object of appropriate size.  Generational
  *        Shenandoah calls this coalesce-and-fill.
  *
- *  3. Do not automatically upgrade to Full GC.  Continue with concurrent GC as long as possible.
- *     There is already a mechanism in place to escalate to Full GC if the mutator experiences out-of-memory
- *     and/or if concurrent GC is not "productive".  Transitions to Full GC are very costly because (i) this
- *     results in a very long STW pause during which mutator threads are unresponsive, and (ii) Full GC
- *     redundantly repeats work that was already successfully performed concurrently.  When OOM-during-evac
- *     transitions to Full GC, we throw away and repeat all of the previously completed work of marking and
- *     evacuating.
+ *  3. Do not automatically degenerate or upgrade to Full GC.  Continue with concurrent GC as long as possible.
+ *     The desired result is that the next concurrent GC will start a bit sooner (given that we failed to
+ *     reclaim all of the garbage in this cycle's cset so we will have less allocation runway to idle before
+ *     the next concurrent GC is triggered).  In the ideal, the next concurrent GC will finish cleaning up
+ *     the cset regions that were abandoned in this cycle.  There is already a mechanism in place to escalate
+ *     to Full GC if the mutator experiences out-of-memory and/or if concurrent GC is not "productive".
+ *     Transitions to Full GC are very costly because (i) this results in a very long STW pause during which
+ *     mutator threads are unresponsive, and (ii) Full GC redundantly repeats work that was already successfully
+ *     performed concurrently and/or by degenerated GC.  When OOM-during-evac transitions to Full GC, we throw
+ *     away and repeat all of the previously completed work of marking and evacuating.
  */
 class ShenandoahEvacOOMHandler {
 #ifdef ASSERT

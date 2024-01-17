@@ -139,6 +139,9 @@ void ShenandoahEvacOOMHandler::wait_for_no_evac_threads_on_counter(ShenandoahEva
 }
 
 // Wait until every counter's OOM bit is set and the number of evacuating threads associated with every counter is zero.
+// This assures that this thread waits for some other thread's handle_out_of_memory_during_evacuation() call to finish
+// setting the OOM bit in all counters before this thread proceeds.
+//
 // Then disable further allocations by the current thread by setting its thread-local oom_during_evac flag to true.
 void ShenandoahEvacOOMHandler::wait_for_no_evac_threads() {
   // Once the OOM_MARKER_MASK bit is set the counter can only decrease
