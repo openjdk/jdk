@@ -189,7 +189,7 @@ AC_DEFUN([DEBUG_PREFIX_MAP_GCC_INCLUDE_PATHS],
     # Add gcc system include mapping => /usr/local/gcc_include
     #   Find location of stddef.h using build C compiler
     GCC_SYSTEM_INCLUDE=`$ECHO "#include <stddef.h>" | \
-                        $CC $CFLAGS_JDKLIB -v -E - 2>&1 | \
+                        $CC $CFLAGS -v -E - 2>&1 | \
                         $GREP stddef | $TAIL -1 | $TR -s " " | $CUT -d'"' -f2`
     if test "x$GCC_SYSTEM_INCLUDE" != "x"; then
       GCC_SYSTEM_INCLUDE=`$DIRNAME $GCC_SYSTEM_INCLUDE`
@@ -200,7 +200,7 @@ AC_DEFUN([DEBUG_PREFIX_MAP_GCC_INCLUDE_PATHS],
     # Add g++ system include mapping => /usr/local/gxx_include
     #   Find location of cstddef using build C++ compiler
     GXX_SYSTEM_INCLUDE=`$ECHO "#include <cstddef>" | \
-                        $CXX $CXXFLAGS_JDKLIB -v -E -x c++ - 2>&1 | \
+                        $CXX $CXXFLAGS -v -E -x c++ - 2>&1 | \
                         $GREP cstddef | $TAIL -1 | $TR -s " " | $CUT -d'"' -f2`
     if test "x$GXX_SYSTEM_INCLUDE" != "x"; then
       GXX_SYSTEM_INCLUDE=`$DIRNAME $GXX_SYSTEM_INCLUDE`
