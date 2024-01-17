@@ -831,18 +831,12 @@ void LIRGenerator::do_LibmIntrinsic(Intrinsic* x) {
       }
       break;
     case vmIntrinsics::_dlog:
-      if (StubRoutines::dlog() != nullptr) {
-        __ call_runtime_leaf(StubRoutines::dlog(), getThreadTemp(), result_reg, cc->args());
-      } else {
-        __ call_runtime_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::dlog), getThreadTemp(), result_reg, cc->args());
-      }
+      assert(StubRoutines::dlog() == nullptr, "no Math.log intrinsic on AArch64");
+      __ call_runtime_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::dlog), getThreadTemp(), result_reg, cc->args());
       break;
     case vmIntrinsics::_dlog10:
-      if (StubRoutines::dlog10() != nullptr) {
-        __ call_runtime_leaf(StubRoutines::dlog10(), getThreadTemp(), result_reg, cc->args());
-      } else {
-        __ call_runtime_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::dlog10), getThreadTemp(), result_reg, cc->args());
-      }
+      assert(StubRoutines::dlog10() == nullptr, "no Math.log10 intrinsic on AArch64");
+      __ call_runtime_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::dlog10), getThreadTemp(), result_reg, cc->args());
       break;
     case vmIntrinsics::_dpow:
       if (StubRoutines::dpow() != nullptr) {
