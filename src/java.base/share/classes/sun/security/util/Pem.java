@@ -30,7 +30,9 @@ import sun.security.x509.AlgorithmId;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.security.Security;
+import java.util.Arrays;
 import java.util.Base64;
+import java.util.HexFormat;
 import java.util.Objects;
 
 /**
@@ -70,6 +72,8 @@ public class Pem {
 
     public static final String LINESEPARATOR = "\r\n";
 
+    private static final Pem NULLPEM = new Pem(null, null, null);
+
     public enum KeyType {
         UNKNOWN, PRIVATE, PUBLIC, ENCRYPTED_PRIVATE, CERTIFICATE, CRL
     }
@@ -80,9 +84,10 @@ public class Pem {
         DEFAULT_ALGO = Security.getProperty("jdk.epkcs8.defaultAlgorithm");
     }
 
-    private String header, footer, data;
+    private String header, footer;
+    private byte[] data;
 
-    private Pem(String header, String data, String footer) {
+    private Pem(String header, byte[] data, String footer) {
         this.header = header;
         this.data = data;
         this.footer = footer;
@@ -120,37 +125,39 @@ public class Pem {
     }
 
     public static Pem readPEM(InputStream is) throws IOException {
-        return readPEM(new InputStreamReader(is), false);
+        return readPEM(is, false);
     }
 
-    public static Pem readPEM(InputStream is, boolean shortHeader) throws IOException {
-        return readPEM(new InputStreamReader(is), shortHeader);
+    public static Pem readPEM(Reader reader, boolean shortHeader) throws IOException {
+        return readPEM(new ReaderInputStream(reader), shortHeader);
     }
 
     public static Pem readPEM(Reader reader) throws IOException {
-        return readPEM(reader, false);
+        return readPEM(new ReaderInputStream(reader), false);
     }
 
     /**
      * Read the PEM text and return it in it's three components:  header,
      * base64, and footer
-     * @param reader The pem data
+     * @param is The pem data
      * @param shortHeader if true, the hyphen length is 4 because the first
      *                    hyphen is assumed to have been read.
      * @return A new Pem object containing the three components
      * @throws IOException on read errors
      */
-    public static Pem readPEM(Reader reader, boolean shortHeader) throws IOException {
-        Objects.requireNonNull(reader);
+    public static Pem readPEM(InputStream is, boolean shortHeader) throws IOException {
+        Objects.requireNonNull(is);
 
-        BufferedReader br = new BufferedReader(reader);
         int hyphen = (shortHeader ? 1 : 0);
+        int endchar = 0;
 
         // Find starting hyphens
         do {
-            switch (br.read()) {
+            switch (is.read()) {
                 case '-' -> hyphen++;
-                case -1 ->  throw new IOException("No PEM data found in input");
+                case -1 -> {
+                    return null;//return NULLPEM;//throw new IOException("No PEM data found in input");
+                }
                 default -> hyphen = 0;
             }
         } while (hyphen != 5);
@@ -162,17 +169,17 @@ public class Pem {
 
         // Get header definition until first hyphen
         do {
-            switch(c = br.read()) {
+            switch (c = is.read()) {
                 case '-' -> hyphen++;
                 case -1 -> throw new IOException("Input ended prematurely");
                 case '\n', '\r' -> throw new IOException("Incomplete header");
-                default -> sb.append((char)c);
+                default -> sb.append((char) c);
             }
         } while (hyphen == 0);
 
-        // Verify ending 5 hyphens of the header.
+        // Verify header ending with 5 hyphens.
         do {
-            switch (br.read()) {
+            switch (is.read()) {
                 case '-' -> hyphen++;
                 default -> throw new IOException("Incomplete header");
             }
@@ -188,23 +195,37 @@ public class Pem {
         hyphen = 0;
         sb = new StringBuilder(1024);
 
-        // Read data until we find the hyphens for END.
-        // Leading \r and/or \n are problematic for the Base64 decoder, but it
-        // is ok to remove them all.
+        // Determine the line break using the char after the last hyphen
+        switch (c = is.read()) {
+            case 32 -> {}
+            case '\r' -> {
+                c = is.read();
+                if (c == '\n') {
+                    endchar = '\n';
+                } else {
+                    endchar = '\r';
+                    sb.append((char)c);
+                }
+            }
+            case '\n' -> endchar = '\n';
+            default -> sb.append((char)c);
+        }
+
+        // Read data until we find the first footer hyphen.
         do {
-            switch (c = br.read()) {
+            switch (c = is.read()) {
                 case -1 -> throw new IOException("Incomplete header");
                 case '-' -> hyphen++;
-                case '\n', '\r' -> {;} // Needed to remove leading \r & \n
+                case 9, '\n', '\r', 32 -> {} // skip for data reading
                 default -> sb.append((char)c);
             }
         } while (hyphen == 0);
 
         String data = sb.toString();
 
-        // Verify beginning 5 hyphens of the footer.
+        // Verify footer starts with 5 hyphens.
         do {
-            switch (br.read()) {
+            switch (is.read()) {
                 case '-' -> hyphen++;
                 case -1 -> throw new IOException("Input ended prematurely");
                 default -> throw new IOException("Incomplete footer");
@@ -215,23 +236,32 @@ public class Pem {
         sb = new StringBuilder(64);
         sb.append("-----");
 
-        // Complete header by looking for the end of the hyphens
+        // Look for Complete header by looking for the end of the hyphens
         do {
-            switch(c = br.read()) {
+            switch(c = is.read()) {
                 case '-' -> hyphen++;
                 case -1 -> throw new IOException("Input ended prematurely");
                 default -> sb.append((char)c);
             }
         } while (hyphen == 0);
 
-        // Verify ending 5 hyphens of the header.
+        // Verify ending with 5 hyphens.
         do {
-            switch (br.read()) {
+            switch (is.read()) {
                 case '-' -> hyphen++;
                 case -1 -> throw new IOException("Input ended prematurely");
-                default -> throw new IOException("Incomplete header");
+                default -> throw new IOException("Incomplete footer");
             }
         } while (hyphen < 5);
+
+        if (endchar != 0) {
+            while ((c = is.read()) != endchar && c != -1 && c != '\r' &&
+                c != 32) {
+                throw new IOException("Invalid PEM format:  " +
+                    "No end of line char found in footer:  0x" +
+                    HexFormat.of().toHexDigits((byte)c));
+            }
+        }
 
         sb.append("-----");
         String footer = sb.toString();
@@ -247,10 +277,10 @@ public class Pem {
                 header + " " + footer);
         }
 
-        return new Pem(header, data, footer);
+        return new Pem(header, data.getBytes(), footer);
     }
 
-    public String getData() {
+    public byte[] getData() {
         return data;
     }
 
@@ -260,5 +290,22 @@ public class Pem {
 
     public String getFooter() {
         return footer;
+    }
+
+    public void clean() {
+        Arrays.fill(data, (byte)0);
+    }
+
+    static class ReaderInputStream extends InputStream {
+
+        Reader r;
+        ReaderInputStream(Reader r) {
+            this.r = r;
+        }
+
+        @Override
+        public int read() throws IOException {
+            return r.read();
+        }
     }
 }

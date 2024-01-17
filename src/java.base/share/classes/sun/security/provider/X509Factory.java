@@ -557,7 +557,15 @@ public class X509Factory extends CertificateFactorySpi {
             readBERInternal(is, bout, c);
             return bout.toByteArray();
         } else {
-            return Base64.getDecoder().decode(Pem.readPEM(is, true).getData());
+            Pem pem = Pem.readPEM(is, (c == '-' ? true : false));
+            if (pem == null) {
+                return null;
+            }
+            try {
+                return Base64.getDecoder().decode(pem.getData());
+            } catch (IllegalArgumentException e) {
+                throw new IOException(e);
+            }
         }
     }
 

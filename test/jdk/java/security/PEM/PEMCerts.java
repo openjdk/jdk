@@ -380,8 +380,12 @@ class PEMCerts {
         return Pattern.compile("/n").matcher(pem).replaceAll("/r/n");
     }
 
+    static String makeCR(String pem) {
+        return Pattern.compile("/n").matcher(pem).replaceAll("/r");
+    }
+
     static String makeNoCRLF(String pem) {
-         return Pattern.compile("/n").matcher(pem).replaceAll("");
+        return Pattern.compile("/n").matcher(pem).replaceAll("");
     }
 
     static List<Entry> passList = new ArrayList<>();
@@ -396,7 +400,7 @@ class PEMCerts {
     static {
         pubList.add(new Entry("pubrsapem", pubrsapem, RSAPublicKey.class, null));
         pubList.add(new Entry("pubrsapembc", pubrsapembc, RSAPublicKey.class, null));
-        pubList.add(new Entry("pubecpem-n", makeCRLF(pubecpem), ECPublicKey.class, null));
+        pubList.add(new Entry("pubecpem-r", makeCR(pubecpem), ECPublicKey.class, null));
         pubList.add(new Entry("pubecpem-no", makeNoCRLF(pubecpem), ECPublicKey.class, null));
         pubList.add(new Entry("pubecpem-rn", makeCRLF(pubecpem), ECPublicKey.class, null));
         privList.add(new Entry("privpem", privpem, RSAPrivateKey.class, null));

@@ -26,6 +26,7 @@
 package java.security;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.Reader;
 
 /**
@@ -54,7 +55,7 @@ public interface Decoder<T> {
      * @return the t
      * @throws IOException the io exception
      */
-    <S extends T> S decode(Reader reader, Class <S> tClass) throws IOException;
+    <S extends T> S decode(InputStream reader, Class <S> tClass) throws IOException;
 
     /**
      * Decode t.
@@ -72,6 +73,6 @@ public interface Decoder<T> {
      * @return the t
      * @throws IOException the io exception
      */
-    T decode(Reader reader) throws IOException;
+    T decode(InputStream reader) throws IOException;
 }
 
