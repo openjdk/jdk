@@ -117,6 +117,16 @@ public class Maps {
         return new ConcurrentHashMap<>(staticMap);
     }
 
+    @Benchmark
+    public ConcurrentHashMap<Integer, Integer> testConcurrentHashMapPutAll() {
+        ConcurrentHashMap<Integer, Integer> map = new ConcurrentHashMap<>();
+        for (int i = 0; i < nkeys; ++i) {
+            map.put(rng.next(), rng.next());
+        }
+        map.putAll(staticMap);
+        return map;
+    }
+
     private static class SimpleRandom {
         private final static long multiplier = 0x5DEECE66DL;
         private final static long addend = 0xBL;

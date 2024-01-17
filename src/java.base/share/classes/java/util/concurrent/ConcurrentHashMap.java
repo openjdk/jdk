@@ -1085,7 +1085,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
      */
     public void putAll(Map<? extends K, ? extends V> m) {
         if (table != null) {
-            tryPresize(m.size());
+            tryPresize(size() + m.size());
         }
         for (Map.Entry<? extends K, ? extends V> e : m.entrySet())
             putVal(e.getKey(), e.getValue(), false);
