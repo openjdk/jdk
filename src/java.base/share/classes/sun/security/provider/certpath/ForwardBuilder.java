@@ -41,6 +41,7 @@ import java.security.cert.X509CertSelector;
 import java.util.*;
 import javax.security.auth.x500.X500Principal;
 
+import jdk.internal.misc.ThreadTracker;
 import sun.security.provider.certpath.PKIX.BuilderParams;
 import sun.security.util.Debug;
 import sun.security.x509.AccessDescription;
@@ -70,6 +71,10 @@ final class ForwardBuilder extends Builder {
     private X509CertSelector caTargetSelector;
     TrustAnchor trustAnchor;
     private final boolean searchAllCertStores;
+
+    private static class ThreadTrackerHolder {
+        static final ThreadTracker AIA_TRACKER = new ThreadTracker();
+    }
 
     /**
      * Initialize the builder with the input parameters.
@@ -336,7 +341,7 @@ final class ForwardBuilder extends Builder {
     }
 
     /**
-     * Download Certificates from the given AIA and add them to the
+     * Download certificates from the given AIA and add them to the
      * specified Collection.
      */
     // cs.getCertificates(caSelector) returns a collection of X509Certificate's
@@ -348,32 +353,47 @@ final class ForwardBuilder extends Builder {
         if (!Builder.USE_AIA) {
             return false;
         }
+
         List<AccessDescription> adList = aiaExt.getAccessDescriptions();
         if (adList == null || adList.isEmpty()) {
             return false;
         }
 
-        boolean add = false;
-        for (AccessDescription ad : adList) {
-            CertStore cs = URICertStore.getInstance(ad);
-            if (cs != null) {
-                try {
-                    if (certs.addAll((Collection<X509Certificate>)
-                        cs.getCertificates(caSelector))) {
-                        add = true;
-                        if (!searchAllCertStores) {
-                            return true;
+        Object key = ThreadTrackerHolder.AIA_TRACKER.tryBegin();
+        if (key == null) {
+            // Avoid recursive fetching of certificates
+            if (debug != null) {
+                debug.println("Recursive fetching of certs via the AIA " +
+                    "extension detected");
+            }
+            return false;
+        }
+
+        try {
+            boolean add = false;
+            for (AccessDescription ad : adList) {
+                CertStore cs = URICertStore.getInstance(ad);
+                if (cs != null) {
+                    try {
+                        if (certs.addAll((Collection<X509Certificate>)
+                            cs.getCertificates(caSelector))) {
+                            add = true;
+                            if (!searchAllCertStores) {
+                                return true;
+                            }
                         }
-                    }
-                } catch (CertStoreException cse) {
-                    if (debug != null) {
-                        debug.println("exception getting certs from CertStore:");
-                        cse.printStackTrace();
+                    } catch (CertStoreException cse) {
+                        if (debug != null) {
+                            debug.println("exception getting certs from CertStore:");
+                            cse.printStackTrace();
+                        }
                     }
                 }
             }
+            return add;
+        } finally {
+            ThreadTrackerHolder.AIA_TRACKER.end(key);
         }
-        return add;
     }
 
     /**
