@@ -1,4 +1,5 @@
-/* Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+/*
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +24,7 @@
 /*
  * @test
  * @bug 8322743
- * @summary EA incorrectly marks locks for elimiation for escaped object which comes from Interpreter in OSR compilation.
+ * @summary EA incorrectly marks locks for elimination for escaped object which comes from Interpreter in OSR compilation.
  * @run main/othervm -XX:-TieredCompilation -Xcomp -XX:CompileCommand=compileonly,TestLocksInOSR*::* -XX:CompileCommand=quiet TestLocksInOSR
  */
 
