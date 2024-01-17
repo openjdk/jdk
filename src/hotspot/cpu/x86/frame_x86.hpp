@@ -149,8 +149,6 @@
   static void verify_deopt_original_pc(CompiledMethod* nm, intptr_t* unextended_sp);
 #endif
 
-  const ImmutableOopMap* get_oop_map() const;
-
  public:
   // Constructors
 
