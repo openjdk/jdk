@@ -654,11 +654,11 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETECT_TOOLCHAIN_CORE],
   #
   TOOLCHAIN_FIND_COMPILER([CC], [C], $TOOLCHAIN_CC_BINARY)
   # Now that we have resolved CC ourself, let autoconf have its go at it
-  AC_PROG_CC([$CC])
+  UTIL_PROG_CC(CC: [$CC])
 
   TOOLCHAIN_FIND_COMPILER([CXX], [C++], $TOOLCHAIN_CXX_BINARY)
   # Now that we have resolved CXX ourself, let autoconf have its go at it
-  AC_PROG_CXX([$CXX])
+  UTIL_PROG_CXX(CXX: [$CXX])
 
   # This is the compiler version number on the form X.Y[.Z]
   AC_SUBST(CC_VERSION_NUMBER)
