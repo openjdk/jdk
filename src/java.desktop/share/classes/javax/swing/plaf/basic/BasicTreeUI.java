@@ -1334,6 +1334,9 @@ public class BasicTreeUI extends TreeUI
      */
     protected void uninstallComponents() {
         if(rendererPane != null) {
+            if (!tree.isVisible()) {
+                rendererPane.removeAll();
+            }
             tree.remove(rendererPane);
         }
     }
