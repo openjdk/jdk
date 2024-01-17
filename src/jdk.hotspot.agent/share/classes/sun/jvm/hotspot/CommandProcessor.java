@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1637,41 +1637,6 @@ public class CommandProcessor {
 
 
                         };
-                    VM.getVM().getCodeCache().iterate(v);
-                }
-            }
-        },
-        new Command("testdebuginfodecode", "testdebuginfodecode", false) {
-            /**
-             * Exercise the decoding of the debug info in nmethods.
-             */
-            public void doit(Tokens t) {
-                if (t.countTokens() != 0) {
-                    usage();
-                } else {
-                    CodeCacheVisitor v = new CodeCacheVisitor() {
-                        Throwable throwable;
-                        public void prologue(Address start, Address end) {
-                        }
-                        public void visit(CodeBlob blob) {
-                            if (throwable != null) {
-                                // Only report the first failure.
-                                return;
-                            }
-                            if (blob instanceof NMethod) {
-                                NMethod nm = (NMethod) blob;
-                                try {
-                                    nm.decodeAllScopeDescs();
-                                } catch (Throwable t) {
-                                    out.println("Exception while decoding debug info for " + blob);
-                                    throwable = t;
-                                    throw t;
-                                }
-                            }
-                        }
-                        public void epilogue() {
-                        }
-                    };
                     VM.getVM().getCodeCache().iterate(v);
                 }
             }
