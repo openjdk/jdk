@@ -47,8 +47,8 @@ public final class CompressedResourceHeader {
 
     // Standard header offsets
     private static final int MAGIC_OFFSET = 0; // 4 bytes
-    private static final int UNCOMPRESSED_OFFSET = 4; // 8 bytes
-    private static final int COMPRESSED_OFFSET = 12; // 8 bytes
+    private static final int COMPRESSED_OFFSET = 4; // 8 bytes
+    private static final int UNCOMPRESSED_OFFSET = 12; // 8 bytes
     private static final int DECOMPRESSOR_NAME_OFFSET = 20; // 4 bytes, followed by 4 byte gap
     private static final int IS_TERMINAL_OFFSET = 28; // 1 byte
 
