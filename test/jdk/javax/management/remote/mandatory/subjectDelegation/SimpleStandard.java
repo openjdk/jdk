@@ -40,8 +40,6 @@
  *      - the "getNbResets()" method.
  */
 
-import java.security.AccessControlContext;
-import java.security.AccessController;
 import java.security.Principal;
 import java.util.Set;
 import javax.management.AttributeChangeNotification;
@@ -150,8 +148,7 @@ public class SimpleStandard
      * type JMXPrincipal and refers to the principalName identity.
      */
     private void checkSubject(String op) {
-        AccessControlContext acc = AccessController.getContext();
-        Subject subject = Subject.getSubject(acc);
+        Subject subject = Subject.current();
         Set principals = subject.getPrincipals();
         Principal principal = (Principal) principals.iterator().next();
         if (!(principal instanceof JMXPrincipal))

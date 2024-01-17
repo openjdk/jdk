@@ -2687,6 +2687,11 @@ public final class System {
             public boolean bytesCompatible(String string, Charset charset) {
                 return string.bytesCompatible(charset);
             }
+
+            @Override
+            public boolean allowSecurityManager() {
+                return System.allowSecurityManager();
+            }
         });
     }
 }

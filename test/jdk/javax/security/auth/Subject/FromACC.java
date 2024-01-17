@@ -32,7 +32,6 @@ import java.security.PrivilegedAction;
  * @bug 8267108
  * @summary confirm current installed subject specification
  * @run main/othervm -Djava.security.manager=allow FromACC
- * @run main/othervm -Djava.security.manager=disallow FromACC
  */
 public class FromACC {
     public static void main(String[] args) throws Exception {
