@@ -156,7 +156,11 @@ class TenuredGeneration: public Generation {
 
   virtual void update_gc_stats(Generation* current_generation, bool full);
 
-  virtual bool promotion_attempt_is_safe(size_t max_promoted_in_bytes) const;
+  // Returns true if promotions of the specified amount are
+  // likely to succeed without a promotion failure.
+  // Promotion of the full amount is not guaranteed but
+  // might be attempted in the worst case.
+  bool promotion_attempt_is_safe(size_t max_promoted_in_bytes) const;
 
   virtual void verify();
   virtual void print_on(outputStream* st) const;

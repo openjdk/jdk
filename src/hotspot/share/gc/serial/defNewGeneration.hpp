@@ -27,6 +27,7 @@
 
 #include "gc/serial/cSpaceCounters.hpp"
 #include "gc/serial/generation.hpp"
+#include "gc/serial/tenuredGeneration.hpp"
 #include "gc/shared/ageTable.hpp"
 #include "gc/shared/copyFailedInfo.hpp"
 #include "gc/shared/gc_globals.hpp"
@@ -52,7 +53,8 @@ class STWGCTimer;
 class DefNewGeneration: public Generation {
   friend class VMStructs;
 
-  Generation* _old_gen;
+  TenuredGeneration* _old_gen;
+
   uint        _tenuring_threshold;   // Tenuring threshold for next collection.
   AgeTable    _age_table;
   // Size of object to pretenure in words; command line provides bytes
