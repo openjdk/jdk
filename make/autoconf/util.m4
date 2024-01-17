@@ -330,6 +330,56 @@ AC_DEFUN([UTIL_ALIASED_ARG_ENABLE],
 ])
 
 ###############################################################################
+# Determine a C compiler to use. Set output variable CC to the name of the
+# compiler found.
+#
+# Arguments:
+#   CC: Space separated list of C compilers to search for
+#
+UTIL_DEFUN_NAMED([UTIL_PROG_CC], [*CC], [$@],
+[
+  AC_LANG_PUSH(C)
+  AC_ARG_VAR([CC], [C compiler command])
+  AC_ARG_VAR([CFLAGS], [C compiler flags])
+
+  _AC_ARG_VAR_LDFLAGS()
+  _AC_ARG_VAR_LIBS()
+  _AC_ARG_VAR_CPPFLAGS()
+
+  AC_CHECK_TOOLS(CC, [ARG_CC])
+
+  test -z "$CC" && AC_MSG_FAILURE([no acceptable C compiler found in \$PATH])
+
+  m4_expand_once([_AC_COMPILER_EXEEXT])
+
+  AC_LANG_POP(C)
+])
+
+###############################################################################
+# Determine a C++ compiler to use. Set output variable CXX to the name of the
+# compiler found.
+#
+# Arguments:
+#   CXX: Space separated list of C++ compilers to search for
+#
+UTIL_DEFUN_NAMED([UTIL_PROG_CXX], [*CXX], [$@],
+[
+  AC_LANG_PUSH(C++)
+  AC_ARG_VAR([CXX], [C++ compiler command])
+  AC_ARG_VAR([CXXFLAGS], [C++ compiler flags])
+
+  _AC_ARG_VAR_LDFLAGS()
+  _AC_ARG_VAR_LIBS()
+  _AC_ARG_VAR_CPPFLAGS()
+
+  AC_CHECK_TOOLS(CXX, [ARG_CXX])
+
+  m4_expand_once([_AC_COMPILER_EXEEXT])
+
+  AC_LANG_POP(C++)
+])
+
+###############################################################################
 # Creates a command-line option using the --enable-* pattern. Will return a
 # value of 'true' or 'false' in the RESULT variable, depending on whether the
 # option was enabled or not by the user. The option can not be turned on if it
