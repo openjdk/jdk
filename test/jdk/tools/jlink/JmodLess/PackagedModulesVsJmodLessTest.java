@@ -66,7 +66,7 @@ public class PackagedModulesVsJmodLessTest extends AbstractJmodLessTest {
                                                             .name("java-se-jmodless")
                                                             .addModule("java.se")
                                                             .validatingModule("java.se")
-                                                            .addExtraOption("--unlock-run-image")
+                                                            .addExtraOption(IGNORE_MODIFIED_RUNTIME_OPT)
                                                             .build());
 
         // create a java.se using packaged modules (jmod-full)

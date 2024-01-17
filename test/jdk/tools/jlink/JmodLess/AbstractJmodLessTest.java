@@ -40,6 +40,7 @@ import tests.JImageValidator;
 
 public abstract class AbstractJmodLessTest {
 
+    protected static final String IGNORE_MODIFIED_RUNTIME_OPT = "--ignore-modified-runtime";
     protected static final boolean DEBUG = true;
 
     public void run() throws Exception {

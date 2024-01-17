@@ -25,6 +25,9 @@
 
 package jdk.tools.jlink.internal;
 
+import static jdk.tools.jlink.internal.JlinkTask.RESPATH_PATTERN;
+import static jdk.tools.jlink.internal.JlinkTask.RUNIMAGE_LINK_STAMP;
+
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -47,12 +50,9 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import jdk.internal.util.OperatingSystem;
+import jdk.tools.jlink.internal.Archive.Entry.EntryType;
 import jdk.tools.jlink.plugin.ResourcePoolEntry;
 import jdk.tools.jlink.plugin.ResourcePoolEntry.Type;
-import jdk.tools.jlink.internal.Archive.Entry.EntryType;
-
-import static jdk.tools.jlink.internal.JlinkTask.RESPATH_PATTERN;
-import static jdk.tools.jlink.internal.JlinkTask.RUNIMAGE_LINK_STAMP;
 
 /**
  * An archive implementation based on the run-time image (lib/modules, or jimage)
@@ -142,8 +142,10 @@ public class JRTArchive implements Archive {
                                           EntryType.CLASS_OR_RESOURCE, null /* hashOrTarget */, false /* symlink */);
             }).collect(Collectors.toList()));
 
-            // FIXME: if --unlock-run-image is used, the image can be free to use multi-hop.
-            // Should single-hop persist?
+            // FIXME: Note that if --ignore-modified-runtime is used, the image can be
+            // free to use multi-hop. However, avoiding to add a stamp file adds
+            // the possibility to verify that that packaged-modules based links
+            // and runtime image based links are equivalent (for Java SE).
             if (module.equals("jdk.jlink") && errorOnModifiedFile) {
                 // this entry represents that the image being created is based on the
                 // run-time image (not the packaged modules).

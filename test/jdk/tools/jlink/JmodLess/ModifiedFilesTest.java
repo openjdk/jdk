@@ -43,7 +43,7 @@ public abstract class ModifiedFilesTest extends AbstractJmodLessTest {
                 .addModule("java.base")
                 .addModule("jdk.jlink")
                 .validatingModule("java.base")
-                .addExtraOption("--unlock-run-image")
+                .addExtraOption(IGNORE_MODIFIED_RUNTIME_OPT)
                 .helper(helper)
                 .build());
 

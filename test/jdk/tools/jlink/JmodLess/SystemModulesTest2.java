@@ -73,7 +73,7 @@ public class SystemModulesTest2 extends AbstractJmodLessTest {
                                                             .addModule("jdk.httpserver")
                                                             .addModule("jdk.jlink")
                                                             .validatingModule("java.base")
-                                                            .addExtraOption("--unlock-run-image")
+                                                            .addExtraOption(IGNORE_MODIFIED_RUNTIME_OPT)
                                                             .build());
         // Verify that SystemModules$all.class is there
         JImageValidator.validate(javaJmodless.resolve("lib").resolve("modules"),

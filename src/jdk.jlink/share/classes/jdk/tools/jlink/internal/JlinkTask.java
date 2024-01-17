@@ -73,7 +73,6 @@ import jdk.tools.jlink.internal.Jlink.PluginsConfiguration;
 import jdk.tools.jlink.internal.TaskHelper.BadArgs;
 import jdk.tools.jlink.internal.TaskHelper.Option;
 import jdk.tools.jlink.internal.TaskHelper.OptionsHelper;
-import jdk.tools.jlink.internal.plugins.JlinkResourcesListPlugin;
 import jdk.tools.jlink.internal.plugins.LegalNoticeFilePlugin;
 import jdk.tools.jlink.plugin.Plugin;
 import jdk.tools.jlink.plugin.PluginException;
@@ -201,7 +200,7 @@ public class JlinkTask {
         }, "--ignore-signing-information"),
         new Option<JlinkTask>(false, (task, opt, arg) -> {
             task.options.runImageSingleHop = false;
-        }, true, "--unlock-run-image"),
+        }, true, "--ignore-modified-runtime"),
     };
 
 

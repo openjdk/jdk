@@ -70,7 +70,7 @@ public class GenerateJLIClassesTest extends AbstractJmodLessTest {
                                                             .name("jlink.jli-jmodless")
                                                             .addModule("jdk.jlink")
                                                             .validatingModule("java.base")
-                                                            .addExtraOption("--unlock-run-image")
+                                                            .addExtraOption(IGNORE_MODIFIED_RUNTIME_OPT)
                                                             .build());
         // Finally attempt another jmodless link reducing modules to java.base only,
         // and asking for specific jli classes.

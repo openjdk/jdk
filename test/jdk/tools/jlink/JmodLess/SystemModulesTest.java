@@ -67,7 +67,7 @@ public class SystemModulesTest extends AbstractJmodLessTest {
                                                             .addModule("jdk.jdwp.agent")
                                                             .addModule("jdk.jlink")
                                                             .validatingModule("java.base")
-                                                            .addExtraOption("--unlock-run-image")
+                                                            .addExtraOption(IGNORE_MODIFIED_RUNTIME_OPT)
                                                             .build());
         // Verify that SystemModules$0.class etc. are there
         JImageValidator.validate(javaseJmodless.resolve("lib").resolve("modules"),
