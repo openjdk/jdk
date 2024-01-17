@@ -32,7 +32,8 @@
 
 JfrArtifactSet::JfrArtifactSet(bool class_unload) : _symbol_table(nullptr),
                                                     _klass_list(nullptr),
-                                                    _total_count(0) {
+                                                    _total_count(0),
+                                                    _class_unload(class_unload) {
   initialize(class_unload);
   assert(_klass_list != nullptr, "invariant");
 }
@@ -41,6 +42,7 @@ static const size_t initial_klass_list_size = 256;
 const int initial_klass_loader_set_size = 64;
 
 void JfrArtifactSet::initialize(bool class_unload) {
+  _class_unload = class_unload;
   if (_symbol_table == nullptr) {
     _symbol_table = JfrSymbolTable::create();
     assert(_symbol_table != nullptr, "invariant");
@@ -51,6 +53,11 @@ void JfrArtifactSet::initialize(bool class_unload) {
   // resource allocation
   _klass_list = new GrowableArray<const Klass*>(initial_klass_list_size);
   _klass_loader_set = new GrowableArray<const Klass*>(initial_klass_loader_set_size);
+  _klass_loader_leakp_set = new GrowableArray<const Klass*>(initial_klass_loader_set_size);
+
+  if (class_unload) {
+    _unloading_set = new GrowableArray<const Klass*>(initial_klass_list_size);
+  }
 }
 
 void JfrArtifactSet::clear() {
@@ -97,10 +104,27 @@ int JfrArtifactSet::entries() const {
   return _klass_list->length();
 }
 
-bool JfrArtifactSet::should_do_loader_klass(const Klass* k) {
+static inline bool not_in_set(GrowableArray<const Klass*>* set, const Klass* k) {
+  assert(set != nullptr, "invariant");
+  assert(k != nullptr, "invariant");
+  return !JfrMutablePredicate<const Klass*, compare_klasses>::test(set, k);
+}
+
+bool JfrArtifactSet::should_do_cld_klass(const Klass* k, bool leakp) {
   assert(k != nullptr, "invariant");
   assert(_klass_loader_set != nullptr, "invariant");
-  return !JfrMutablePredicate<const Klass*, compare_klasses>::test(_klass_loader_set, k);
+  assert(_klass_loader_leakp_set != nullptr, "invariant");
+  return not_in_set(leakp ? _klass_loader_leakp_set : _klass_loader_set, k);
+}
+
+bool JfrArtifactSet::should_do_unloading_artifact(const void* ptr) {
+  assert(ptr != nullptr, "invariant");
+  assert(_class_unload, "invariant");
+  assert(_unloading_set != nullptr, "invariant");
+  // The incoming pointers are of all kinds of different types.
+  // However, we are only interested in set membership.
+  // Treat them uniformly as const Klass* for simplicity and code reuse.
+  return not_in_set(_unloading_set, static_cast<const Klass*>(ptr));
 }
 
 void JfrArtifactSet::register_klass(const Klass* k) {
