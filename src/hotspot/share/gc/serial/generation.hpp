@@ -224,14 +224,6 @@ class Generation: public CHeapObj<mtGC> {
   // still unsuccessful, return "null".
   virtual HeapWord* expand_and_allocate(size_t word_size, bool is_tlab) = 0;
 
-  // Some generations may require some cleanup or preparation actions before
-  // allowing a collection.  The default is to do nothing.
-  virtual void gc_prologue(bool full) {}
-
-  // Some generations may require some cleanup actions after a collection.
-  // The default is to do nothing.
-  virtual void gc_epilogue(bool full) {}
-
   // Save the high water marks for the used space in a generation.
   virtual void record_spaces_top() {}
 
