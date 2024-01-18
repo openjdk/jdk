@@ -34,7 +34,7 @@ package compiler.c2.cr7200264;
 import compiler.lib.ir_framework.*;
 
 /*
- * Based on test/compiler/6340864/TestIntVect.java without performance tests.
+ * Based on test/hotspot/jtreg/compiler/c2/cr6340864/TestIntVect.java without performance tests.
  */
 public class TestIntVect {
 
@@ -60,7 +60,6 @@ public class TestIntVect {
          },
          mode = RunMode.STANDALONE)
     public void run() {
-
         System.out.println("Testing Integer vectors");
 
         // Initialize
@@ -409,6 +408,7 @@ public class TestIntVect {
 
     }
 
+    // Not vectorized: simple addition not profitalbe, see JDK-8307516.
     int test_sum(int[] a1) {
         int sum = 0;
         for (int i = 0; i < a1.length; i+=1) {
@@ -507,24 +507,28 @@ public class TestIntVect {
         }
     }
 
+    // Not vectorized: no vector div. Might vectorize after JDK-8282365 (transform div to mul/add/shift).
     void test_divc(int[] a0, int[] a1) {
         for (int i = 0; i < a0.length; i+=1) {
             a0[i] = (int)(a1[i]/VALUE);
         }
     }
 
+    // Not vectorized: no vector div. Might vectorize after JDK-8282365 (transform div to mul/add/shift).
     void test_divc_n(int[] a0, int[] a1) {
         for (int i = 0; i < a0.length; i+=1) {
             a0[i] = (int)(a1[i]/(-VALUE));
         }
     }
 
+    // Not vectorized: no vector div.
     void test_divv(int[] a0, int[] a1, int b) {
         for (int i = 0; i < a0.length; i+=1) {
             a0[i] = (int)(a1[i]/b);
         }
     }
 
+    // Not vectorized: no vector div.
     void test_diva(int[] a0, int[] a1, int[] a2) {
         for (int i = 0; i < a0.length; i+=1) {
             a0[i] = (int)(a1[i]/a2[i]);
