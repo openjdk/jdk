@@ -1576,7 +1576,15 @@ public:
 
 #define INSN(NAME, size, op)                                    \
   void NAME(const Address &adr, prfop pfop = PLDL1KEEP) {       \
-    ld_st2(as_Register(pfop), adr, size, op);                   \
+    if (adr.getMode() == Address::literal) {                    \
+      starti;                                                   \
+      f(0b11, 31, 30), f(0b011, 29, 27), f(0b000, 26, 24);      \
+      f(pfop, 4, 0);                                            \
+      int64_t offset = (adr.target() - pc()) >> 2;              \
+      sf(offset, 23, 5);                                        \
+    } else {                                                    \
+      ld_st2(as_Register(pfop), adr, size, op);                 \
+    }                                                           \
   }
 
   INSN(prfm, 0b11, 0b10); // FIXME: PRFM should not be used with
