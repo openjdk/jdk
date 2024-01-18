@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2022, 2024 Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,8 +38,10 @@ import jdk.test.lib.Asserts;
 public class BlackholeSyncEATest {
 
     public static void main(String[] args) {
+        // Turn off PEA or it will elide the lock of synchronized (o){} before escaping.
         TestFramework.runWithFlags(
             "-XX:+UnlockExperimentalVMOptions",
+            "-XX:-DoPartialEscapeAnalysis",
             "-XX:CompileCommand=blackhole,compiler.c2.irTests.blackhole.BlackholeSyncEATest::blackhole",
             "-XX:CompileCommand=dontinline,compiler.c2.irTests.blackhole.BlackholeSyncEATest::dontinline"
         );
