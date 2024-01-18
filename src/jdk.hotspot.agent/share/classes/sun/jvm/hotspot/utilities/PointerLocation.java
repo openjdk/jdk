@@ -269,10 +269,16 @@ public class PointerLocation {
         tty.println();
     } else if (isInHeap()) {
       if (isInTLAB()) {
-        tty.print("In thread-local allocation buffer for thread (");
-        getTLABThread().printThreadInfoOn(tty);
-        tty.print(") ");
-        getTLAB().printOn(tty); // includes "\n"
+        tty.print("In TLAB for thread ");
+        JavaThread thread = getTLABThread();
+        if (verbose) {
+          tty.print("(");
+          thread.printThreadInfoOn(tty);
+          tty.print(") ");
+          getTLAB().printOn(tty); // includes "\n"
+        } else {
+          tty.format("\"%s\" %s\n", thread.getThreadName(), thread);
+        }
       } else {
         if (isInNewGen()) {
           tty.print("In new generation ");
