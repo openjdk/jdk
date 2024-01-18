@@ -28,6 +28,8 @@ package sun.util.cldr;
 import static sun.util.locale.provider.LocaleProviderAdapter.Type;
 
 import java.text.MessageFormat;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.Locale;
 import java.util.Objects;
@@ -257,8 +259,18 @@ public class CLDRTimeZoneNameProviderImpl extends TimeZoneNameProviderImpl {
     }
 
     private String toGMTFormat(String id, boolean daylight, Locale l) {
-        TimeZone tz = ZoneInfoFile.getZoneInfo(id);
-        int offset = (tz.getRawOffset() + (daylight ? tz.getDSTSavings() : 0)) / 60000;
+        var zr = ZoneInfoFile.getZoneInfo(id).toZoneId().getRules();
+        var now = Instant.now();
+        var saving = zr.getTransitions().reversed().stream()
+                .dropWhile(zot -> zot.getInstant().isAfter(now))
+                .filter(zot -> zr.isDaylightSavings(zot.getInstant()))
+                .findFirst()
+                .map(zot -> zr.getDaylightSavings(zot.getInstant()))
+                .map(Duration::getSeconds)
+                .map(Long::intValue)
+                .orElse(0);
+        int offset = (zr.getStandardOffset(now).getTotalSeconds() +
+                (daylight ? saving : 0)) / 60;
         LocaleResources lr = LocaleProviderAdapter.forType(Type.CLDR).getLocaleResources(l);
         ResourceBundle fd = lr.getJavaTimeFormatData();
 
