@@ -1179,7 +1179,6 @@ public class BasicScrollBarUI
                 }
             }
             scrollbar.setValue(newValue);
-
         }
     }
 

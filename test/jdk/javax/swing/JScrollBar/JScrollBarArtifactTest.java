@@ -44,7 +44,7 @@ public class JScrollBarArtifactTest {
             A horizontal JScrollBar is shown.
             Drag the scrollbar without releasing mouse.
             Additionally, keep right arrow button pressed to move the scrollbar.
-            If lines are left behind in both cases, please click Fail 
+            If lines are left behind in both cases, please click Fail
             otherwise click Pass.  """;
 
     public static void main(String[] args) throws Exception {
