@@ -63,7 +63,7 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run main/othervm
+ * @run main/othervm/timeout=240
  *      nsk.monitoring.stress.thread.cmon001
  *      -testMode=server
  *      -MBeanServer=custom

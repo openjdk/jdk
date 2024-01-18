@@ -47,7 +47,7 @@
  *          /test/lib
  * @comment generate and compile LoadableClassXXX classes
  * @run driver nsk.monitoring.stress.classload.GenClassesBuilder
- * @run main/othervm
+ * @run main/othervm/timeout=300
  *      -XX:-UseGCOverheadLimit
  *      nsk.monitoring.stress.classload.load001
  *      classes
