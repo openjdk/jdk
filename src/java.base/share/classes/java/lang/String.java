@@ -4271,13 +4271,12 @@ public final class String
                     ch = '\t';
                     break;
                 case 'u':
-                    if (from + 4 <= length) {
-                        String hex = substring(from, from + 4);
+                    if (from <= length - 4) {
                         from += 4;
                         try {
-                            ch = (char) Integer.parseInt(hex, 16);
+                            ch = (char) Integer.parseInt(this, from - 4, from, 16);
                         } catch (NumberFormatException ex) {
-                            throw new IllegalArgumentException("Invalid unicode sequence: " + hex);
+                            throw new IllegalArgumentException("Invalid unicode sequence: " + substring(from - 4, from));
                         }
                     } else {
                         throw new IllegalArgumentException("Invalid unicode sequence: " + substring(from));
