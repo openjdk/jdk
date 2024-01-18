@@ -969,12 +969,16 @@ else
 
   jdk.jdeps-gendata: java
 
-  # The ct.sym generation is done in both jdk.compiler and jdk.javadoc gendata.
-  # It needs all generated java code present.
+  # jdk.compiler gendata generates ct.sym, which requires all generated
+  # java source and compiled classes present.
   jdk.compiler-gendata: $(JAVA_TARGETS)
-  jdk.javadoc-gendata: $(JAVA_TARGETS)
-  # ct.sym generation also needs the BUILD_JDK. If the BUILD_JDK was supplied
-  # externally, no extra prerequisites are needed.
+
+  # jdk.javadoc gendata generates element-list, which requires all java sources
+  # but not compiled classes.
+  jdk.javadoc-gendata: $(GENSRC_TARGETS)
+
+  # ct.sym and element-list generation also needs the BUILD_JDK. If the
+  # BUILD_JDK was supplied externally, no extra prerequisites are needed.
   ifeq ($(CREATE_BUILDJDK), true)
     ifneq ($(CREATING_BUILDJDK), true)
       # When cross compiling and an external BUILD_JDK wasn't supplied, it's
