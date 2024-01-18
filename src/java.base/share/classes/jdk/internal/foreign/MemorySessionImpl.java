@@ -53,20 +53,21 @@ import jdk.internal.vm.annotation.Stable;
  * access is possible when a session is being closed (see {@link jdk.internal.misc.ScopedMemoryAccess}).
  */
 public final class MemorySessionImpl implements Scope {
-    private static final int NONCLOSEABLE = 1;
-    static final int OPEN = 0;
-    static final int CLOSED = -1;
-
-    static final VarHandle STATE;
-    private static final VarHandle ACQUIRE_COUNT;
-    private static final VarHandle ASYNC_RELEASE_COUNT;
-    static final int MAX_FORKS = Integer.MAX_VALUE;
-
-    private static final ScopedMemoryAccess SCOPED_MEMORY_ACCESS = ScopedMemoryAccess.getScopedMemoryAccess();
-    static final ScopedMemoryAccess.ScopedAccessError ALREADY_CLOSED = new ScopedMemoryAccess.ScopedAccessError(MemorySessionImpl::alreadyClosed);
-    static final ScopedMemoryAccess.ScopedAccessError WRONG_THREAD = new ScopedMemoryAccess.ScopedAccessError(MemorySessionImpl::wrongThread);
     // This is the session of all zero-length memory segments
     public static final MemorySessionImpl GLOBAL_SESSION = new MemorySessionImpl(null, null, null, NONCLOSEABLE);
+
+    private static final int NONCLOSEABLE = 1;
+    private static final int OPEN = 0;
+    private static final int CLOSED = -1;
+
+    private static final VarHandle STATE;
+    private static final VarHandle ACQUIRE_COUNT;
+    private static final VarHandle ASYNC_RELEASE_COUNT;
+    private static final int MAX_FORKS = Integer.MAX_VALUE;
+
+    private static final ScopedMemoryAccess SCOPED_MEMORY_ACCESS = ScopedMemoryAccess.getScopedMemoryAccess();
+    private static final ScopedMemoryAccess.ScopedAccessError ALREADY_CLOSED = new ScopedMemoryAccess.ScopedAccessError(MemorySessionImpl::alreadyClosed);
+    private static final ScopedMemoryAccess.ScopedAccessError WRONG_THREAD = new ScopedMemoryAccess.ScopedAccessError(MemorySessionImpl::wrongThread);
 
     private final Thread owner;
     private final Object ref;
@@ -266,6 +267,7 @@ public final class MemorySessionImpl implements Scope {
      * Returns true, if this session is still open. This method may be called in any thread.
      * @return {@code true} if this session is not closed yet.
      */
+    @Override
     public boolean isAlive() {
         return state >= OPEN;
     }
@@ -316,6 +318,7 @@ public final class MemorySessionImpl implements Scope {
     }
 
     public boolean isCloseable() {
+        VarHandle.acquireFence();
         return state <= 0;
     }
 
@@ -361,13 +364,31 @@ public final class MemorySessionImpl implements Scope {
         SCOPED_MEMORY_ACCESS.closeScope(this, ALREADY_CLOSED);
     }
 
+    @Override
+    public int hashCode() {
+        if (ref != null) {
+            return System.identityHashCode(ref);
+        }
+        return System.identityHashCode(this);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+
+        return o instanceof MemorySessionImpl m &&
+                ref != null && ref == m.ref;
+    }
+
     /**
      * A list of all cleanup actions associated with a memory session. Cleanup actions are modelled as instances
      * of the {@link ResourceCleanup} class, and, together, form a linked list. Depending on whether a session
      * is shared or confined, different implementations of this class will be used, see {@link ConfinedResourceList}
      * and {@link SharedResourceList}.
      */
-    public abstract static class ResourceList implements Runnable {
+    private abstract static class ResourceList implements Runnable {
         ResourceCleanup fst;
 
         abstract void add(ResourceCleanup cleanup);
@@ -399,7 +420,7 @@ public final class MemorySessionImpl implements Scope {
             }
         }
 
-        public abstract static class ResourceCleanup {
+        private abstract static class ResourceCleanup {
             ResourceCleanup next;
 
             public abstract void cleanup();
@@ -425,7 +446,7 @@ public final class MemorySessionImpl implements Scope {
     /**
      * A confined resource list; no races are possible here.
      */
-    static final class ConfinedResourceList extends ResourceList {
+    private static final class ConfinedResourceList extends ResourceList {
         @Override
         void add(ResourceCleanup cleanup) {
             if (fst != ResourceCleanup.CLOSED_LIST) {
@@ -451,7 +472,7 @@ public final class MemorySessionImpl implements Scope {
     /**
      * A shared resource list; this implementation has to handle add vs. add races, as well as add vs. cleanup races.
      */
-    static class SharedResourceList extends ResourceList {
+    private static class SharedResourceList extends ResourceList {
 
         static final VarHandle FST;
 
@@ -503,23 +524,23 @@ public final class MemorySessionImpl implements Scope {
 
     // helper functions to centralize error handling
 
-    static IllegalStateException tooManyAcquires() {
+    private static IllegalStateException tooManyAcquires() {
         return new IllegalStateException("Session acquire limit exceeded");
     }
 
-    static IllegalStateException alreadyAcquired(int acquires) {
+    private static IllegalStateException alreadyAcquired(int acquires) {
         return new IllegalStateException(String.format("Session is acquired by %d clients", acquires));
     }
 
-    static IllegalStateException alreadyClosed() {
+    private static IllegalStateException alreadyClosed() {
         return new IllegalStateException("Already closed");
     }
 
-    static WrongThreadException wrongThread() {
+    private static WrongThreadException wrongThread() {
         return new WrongThreadException("Attempted access outside owning thread");
     }
 
-    static UnsupportedOperationException nonCloseable() {
+    private static UnsupportedOperationException nonCloseable() {
         return new UnsupportedOperationException("Attempted to close a non-closeable session");
     }
 
