@@ -22,16 +22,22 @@
  */
 
 
+
 import java.awt.Color;
+import java.awt.Dimension;
 import java.awt.EventQueue;
 import java.awt.Frame;
 import java.awt.Graphics;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.Robot;
+import java.awt.Toolkit;
 import java.awt.geom.Area;
 import java.awt.geom.Ellipse2D;
 import java.awt.geom.Rectangle2D;
+import java.io.File;
+import java.io.IOException;
+import javax.imageio.ImageIO;
 
 /*
  * @test
@@ -52,8 +58,6 @@ public class ShapeNotSetSometimes {
     private final Rectangle bounds = new Rectangle(220, 400, 300, 300);
 
     private static Robot robot;
-    private static int numOfFailedAttempts = 0;
-    private static boolean skipColorCheck = false;
     private static final Color BACKGROUND_COLOR = Color.GREEN;
     private static final Color SHAPE_COLOR = Color.WHITE;
 
@@ -125,9 +129,8 @@ public class ShapeNotSetSometimes {
     public static void main(String[] args) throws Exception {
         robot = new Robot();
 
-        for(int i = 1; i <= 50; i++) {
+        for (int i = 1; i <= 50; i++) {
             System.out.println("Attempt " + i);
-            skipColorCheck = false;
             new ShapeNotSetSometimes().doTest();
         }
     }
@@ -144,16 +147,10 @@ public class ShapeNotSetSometimes {
             colorCheck(innerPoint.x, innerPoint.y, SHAPE_COLOR, true);
 
             for (Point point : pointsOutsideToCheck) {
-                if (skipColorCheck) {
-                    break;
-                }
                 colorCheck(point.x, point.y, BACKGROUND_COLOR, true);
             }
 
             for (Point point : shadedPointsToCheck) {
-                if (skipColorCheck) {
-                    break;
-                }
                 colorCheck(point.x, point.y, SHAPE_COLOR, false);
             }
         } finally {
@@ -180,8 +177,7 @@ public class ShapeNotSetSometimes {
         );
 
         if (mustBeExpectedColor != expectedColor.equals(actualColor)) {
-            numOfFailedAttempts++;
-            System.err.println("FAILED ATTEMPT #" + numOfFailedAttempts);
+            captureScreen();
             System.out.printf("window.getX() = %3d, window.getY() = %3d\n", window.getX(), window.getY());
             System.err.printf(
                     "Checking for transparency failed: point: %3d, %3d\n\tactual    %s\n\texpected %s%s\n",
@@ -190,12 +186,21 @@ public class ShapeNotSetSometimes {
                     actualColor,
                     mustBeExpectedColor ? "" : "not ",
                     expectedColor);
+            throw new RuntimeException("Test failed. The shape has not been applied.");
+        }
+    }
 
-            if (numOfFailedAttempts < 3) {
-                skipColorCheck = true;
-            } else {
-                throw new RuntimeException("Test failed 3 times. The shape has not been applied.");
-            }
+    private static void captureScreen() {
+        Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+        Rectangle screenBounds = new Rectangle(0, 0, screenSize.width, screenSize.height);
+        try {
+            ImageIO.write(
+                    robot.createScreenCapture(screenBounds),
+                    "png",
+                    new File("Screenshot.png")
+            );
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 }
