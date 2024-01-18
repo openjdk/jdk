@@ -82,7 +82,7 @@ public:
     return _safepoint_tracker.safepoint_state_changed();
   }
 
-  bool finish(NoSafepointVerifier* no_safepoint) {
+  bool finish() {
     if (_uncached_methods.length() == 0) {
       // Preparation finished iff all Methods* were already cached.
       return true;
@@ -98,7 +98,6 @@ public:
     // and the outer scope that first aquired the lock should not hold any
     // extra_method_data while cleaning is performed, as the offsets can change.
     MutexUnlocker mu(_mdo->extra_data_lock(), Mutex::_no_safepoint_check_flag);
-    PauseNoSafepointVerifier pause_no_safepoints(no_safepoint);
 
     for (int i = 0; i < _uncached_methods.length(); ++i) {
       if (has_safepointed()) {
@@ -115,14 +114,14 @@ public:
   }
 };
 
-void ciMethodData::prepare_metadata(NoSafepointVerifier* no_safepoint) {
+void ciMethodData::prepare_metadata() {
   MethodData* mdo = get_MethodData();
 
   for (;;) {
     ResourceMark rm;
     PrepareExtraDataClosure cl(mdo);
     mdo->clean_extra_data(&cl);
-    if (cl.finish(no_safepoint)) {
+    if (cl.finish()) {
       // When encountering uncached metadata, the Compile_lock might be
       // acquired when creating ciMetadata handles, causing safepoints
       // which requires a new round of preparation to clean out potentially
@@ -137,10 +136,9 @@ void ciMethodData::load_remaining_extra_data() {
 
   // Lock to read ProfileData, and ensure lock is not unintentionally broken by a safepoint
   MutexLocker ml(mdo->extra_data_lock(), Mutex::_no_safepoint_check_flag);
-  NoSafepointVerifier no_safepoint;
 
   // Deferred metadata cleaning due to concurrent class unloading.
-  prepare_metadata(&no_safepoint);
+  prepare_metadata();
   // After metadata preparation, there is no stale metadata,
   // and no safepoints can introduce more stale metadata.
 
