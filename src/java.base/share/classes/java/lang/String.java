@@ -4223,13 +4223,13 @@ public final class String
      *     <td>continuation</td>
      *     <td>discard</td>
      *   </tr>
+     *   <tr>
+     *     <th scope="row">{@code \u005CuXXXX}</th>
+     *     <td>unicode escape</td>
+     *     <td>unicode equivalent</td>
+     *   </tr>
      *   </tbody>
      * </table>
-     *
-     * @implNote
-     * This method does <em>not</em> translate Unicode escapes such as "{@code \u005cu2022}".
-     * Unicode escapes are translated by the Java compiler when reading input characters and
-     * are not part of the string literal specification.
      *
      * @throws IllegalArgumentException when an escape sequence is malformed.
      *
@@ -4269,6 +4269,19 @@ public final class String
                     break;
                 case 't':
                     ch = '\t';
+                    break;
+                case 'u':
+                    if (from + 4 <= length) {
+                        String hex = substring(from, from + 4);
+                        from += 4;
+                        try {
+                            ch = (char) Integer.parseInt(hex, 16);
+                        } catch (NumberFormatException ex) {
+                            throw new IllegalArgumentException("Invalid unicode sequence: " + hex);
+                        }
+                    } else {
+                        throw new IllegalArgumentException("Invalid unicode sequence: " + substring(from));
+                    }
                     break;
                 case '\'':
                 case '\"':
