@@ -23,42 +23,31 @@
  * questions.
  */
 
-/**
- * @test
- * @bug 8316533
- * @summary Oop of abstract class A with no subclass is subtype checked after null-check
- * @run driver compiler.types.TestSubTypeOfAbstractClass
- */
+package jdk.jfr.events;
 
-/**
- * @test
- * @bug 8316533
- * @summary Oop of abstract class A is subtype checked after null-check
- * @requires vm.compiler2.enabled
- * @run main/othervm -XX:CompileCommand=compileonly,*A::test
- *                   -Xcomp -XX:+IgnoreUnrecognizedVMOptions -XX:+StressReflectiveCode
- *                   compiler.types.TestSubTypeOfAbstractClass
- */
+import jdk.jfr.Category;
+import jdk.jfr.Description;
+import jdk.jfr.Label;
+import jdk.jfr.Name;
+import jdk.jfr.internal.MirrorEvent;
+import jdk.jfr.internal.RemoveFields;
+import jdk.jfr.internal.Type;
 
-package compiler.types;
+@Name(Type.EVENT_NAME_PREFIX + "SerializationMisdeclaration")
+@Label("Serialization Misdeclaration")
+@Category({"Java Development Kit", "Serialization"})
+@Description("Methods and fields misdeclarations." +
+        " The checks are usually performed just once per serializable class," +
+        " the first time it is used by serialization." +
+        " Under high memory pressure, a class might be re-checked again.")
+@MirrorEvent(className = "jdk.internal.event.SerializationMisdeclarationEvent")
+@RemoveFields({"duration", "stackTrace", "eventThread"})
+public final class SerializationMisdeclarationEvent extends AbstractJDKEvent {
 
-public class TestSubTypeOfAbstractClass {
+    @Label("Misdeclared Class")
+    public Class<?> misdeclaredClass;
 
-    abstract class A {
-        public static A get_null() {
-            return null;
-        }
+    @Label("Message")
+    public String message;
 
-        public static boolean test() {
-            // NullCheck -> CastPP with type A:NotNull
-            // But A is abstract with no subclass, hence this type is impossible
-            return get_null() instanceof A;
-        }
-    }
-
-    public static void main(String[] args) {
-        for (int i = 0; i < 10_000; i++ ) {
-            A.test();
-        }
-    }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,12 +23,10 @@
  */
 
 #include "precompiled.hpp"
-#include "gc/serial/generation.hpp"
-#include "gc/shared/genMemoryPools.hpp"
-#include "gc/shared/space.hpp"
-#if INCLUDE_SERIALGC
 #include "gc/serial/defNewGeneration.hpp"
-#endif
+#include "gc/serial/generation.hpp"
+#include "gc/serial/serialMemoryPools.hpp"
+#include "gc/shared/space.hpp"
 
 ContiguousSpacePool::ContiguousSpacePool(ContiguousSpace* space,
                                          const char* name,
@@ -49,8 +47,6 @@ MemoryUsage ContiguousSpacePool::get_memory_usage() {
 
   return MemoryUsage(initial_size(), used, committed, maxSize);
 }
-
-#if INCLUDE_SERIALGC
 
 SurvivorContiguousSpacePool::SurvivorContiguousSpacePool(DefNewGeneration* young_gen,
                                                          const char* name,
@@ -75,8 +71,6 @@ MemoryUsage SurvivorContiguousSpacePool::get_memory_usage() {
 
   return MemoryUsage(initial_size(), used, committed, maxSize);
 }
-
-#endif // INCLUDE_SERIALGC
 
 GenerationPool::GenerationPool(Generation* gen,
                                const char* name,
