@@ -1823,25 +1823,256 @@ void Method::print_codes_on(int from, int to, outputStream* st, int flags) const
   BytecodeTracer::print_method_codes(mh, from, to, st, flags);
 }
 
-CompressedLineNumberReadStream::CompressedLineNumberReadStream(u_char* buffer) : CompressedReadStream(buffer) {
-  _bci = 0;
-  _line = 0;
+// The compression scheme for BCI/LNO pairs in a LineNumberTable
+// assumes that successive BCI values are correlated, as well as
+// successive LNO values.  We use a basic delta encoding, of the two
+// value streams independently.  The deltas use 32-bit unsigned
+// arithmetic, so wraparound is allowed to cover extreme cases.
+//
+// The following statistics are probably typical for BCI and LNO.
+// (The were observed on 10,000 javac output files in a JDK build.)
+//
+//              BCI         LNO
+//   mode        5 (12%)     1 (66%)
+//   mean       10 (6%)      1.9 (82% for 1..2)
+//   >90%      1..18       -2..3
+//   >99%      1..38      -20..21
+//   min         1         (-5k)
+//   max      (30k)         (6k)
+//   zero?     never       never
+//   negative? never         5.3%
+//
+// To exploit these statistics, we further compress the majority of
+// delta pairs into single "int" tokens, as follows. Let the BCI and
+// LNO deltas be D1 and D2.  Subtract 1 from both (as unsigned ints)
+// align the D1 range to zero and center the D2 range on zero.
+// Encode D2-1 as a plain signed int, and D1-1 as a multi-signed
+// in with 6 bits of joint sign.  (That is, only 1/64 small encodings
+// denote negative offsets for BCI.  But the multi-sign encoding
+// is still 1-1, so even wildly improbably deltas can be represented.)
+//
+// The resulting adjusted values for D1 and D2 are well-behaved
+// relative to the UNSIGNED5 encoding.  Since D1 falls in the range
+// 1..31 98% of the time, pack D1 and D2 (as adjusted and signed) into
+// a single 32-bit value, using UNSIGNED5::write_uint_pair.  This
+// function jams (adjusted) D1 and D2 together as D12=(D2<<5)+D1,
+// and then arranges to emit one or two extra words in rare cases.
+//
+// This value D12 has a mode near 5 and mean near 23.  (This assumes
+// no high correlation between D1 and D2.)  It is likely to compress
+// well using a 32-bit signed encoding that favors values in the range
+// from zero to the larger of (ES(-2-1)*32+1) or (ES(3-1)*32+18).
+// about 0..190.  This should occur at a rate of about 80% (0.9*0.9).
+// (The ES function is simply UNSIGNED5::encode_sign.)
+//
+// As a happy coincidence, values in that range encode in one byte
+// (using UNSIGNED5).  Specifically, D1 is often in 1..31 and |D2-1|
+// is often less than 3. If the BCI delta L1 is a little larger, then
+// the encoding will be require just one extra byte. (That requires
+// that |D1| is no larger than 95, a bound that fails at a rate of
+// about 1/500.).  If the LNO delta D2 is a little larger, then the
+// encoding will be two.  (That requires that |D2-1| is numerically
+// less than about 190, a bound which fails at a rate of about
+// 1/1000.)
+//
+// The parameter 1<<5 can be tuned as -XX:LTCompressionOption=5.
+// Setting -XX:LTCompressionOption=64 will avoid the "jamming"
+// trick and store just pairs of UNSIGNED5 delta values.
+//
+// The following cases apply:
+//
+//  - D1 is in 1..31, then D12 is well-formed, so emit <D12>.  [98%]
+//  - D1 is "too big" (but not D2), then emit some <F(D2),D1>.  [1.3%]
+//  - If D2 is "too big" then emit some <G,D1,D2>.  [0.7%]
+//
+// When deriving the first deltas, the initial BCI and LNO values are
+// compared with -1 and 0, respectively.  The odd choice of -1 makes
+// it likely that the first D1 value is not zero, even if (as is
+// typical) the first BCI value is zero.
+//
+// The whole sequence is terminated by an out-of-band null byte.
+// (See UNSIGNED5::END_BYTE and CompressedIntReadStream::has_next.)
+//
+// Given the above statistics, the single token encoding should be
+// applicable about 98% of the time, and use a single byte about 80%
+// of the time.  Arbitrary deviations in the 32-bit range of either
+// data stream can be accommodated, at the cost of an extra byte to
+// encode the escape value <D12=0>, followed by separately delta
+// encoded values: <0,D1,D2>, almost always occupying 3-5 bytes.
+// The combined average encoding size is about 1.23 bytes per pair.
+//
+// If the actual workload has different input statistics, then the
+// compression scheme will degrade gracefully, adding bytes as needed.
+// Since the classfile format uses 16-bit unsigned values, the worst
+// case with random input would be random 17-bit deltas in both
+// columns, leading to sequences of the form <D2*32,D1>, which occupy
+// at most 4+3=7 bytes each in UNSIGNED5 format.  This is worse
+// compared to the original uncompressed data (2+2=4 bytes).  (And
+// that is fairly typical of any well-tuned compression scheme when
+// applied to random input it was not tuned for.)  By comparison, a
+// slightly degraded workload with 4 times the variation (at random)
+// in BCI and LNO would occupy 2+1=3 bytes on average.
+//
+
+static const UNSIGNED5::Statistics::Kind LT = UNSIGNED5::Statistics::LT;
+// Maybe find better names for these parameters?  Should they be macros?
+static bool NEW_LNT_COMPRESSION() {  // FIXME: make this unconditional
+  // return true;  // throw away all the old stuff, please
+  return 0 != UNSIGNED5::Statistics::compression_mode_setting(LT);
+}
+static uint32_t D1_BITS() {
+  return UNSIGNED5::Statistics::int_pair_setting(LT);
+} // D1_BITS=5 is bits allocated to BCI delta for "sweet spot" in XY pairs
+static uint32_t D1_SIGN_BITS() {
+  return UNSIGNED5::Statistics::extra_setting(LT);
+} // D1_SIGN_BITS=6 controls two-byte encoding of non-positive D(BCI)
+
+const uint32_t D1_BIAS = 1;   // minimum likely D(BCI); D1<=0 is very rare
+const uint32_t D1_INIT_STATE = -1;  // first BCI is likely to be 0 => D1 is 1
+
+const uint32_t D2_BIAS = 1;   // most common D(LNO), center of D2 encoding
+const uint32_t D2_INIT_STATE = 0;   // nothing predictable here
+// The first LNO is some unpredictable line number early in a text file
+
+CompressedLineNumberReadStream::CompressedLineNumberReadStream(u_char* buffer)
+  : CompressedIntReadStream(buffer) {
+  _bci = D1_INIT_STATE;
+  _line = D2_INIT_STATE;
+  if (!NEW_LNT_COMPRESSION())  _bci = _line = 0;
 };
 
+CompressedLineNumberWriteStream::CompressedLineNumberWriteStream(u_char* initial_buffer,
+                                                                 int initial_size)
+  : CompressedIntWriteStream(initial_buffer, initial_size) {
+  _bci = D1_INIT_STATE;
+  _line = D2_INIT_STATE;
+  if (!NEW_LNT_COMPRESSION())  _bci = _line = 0;
+  if (VerifyLNTCompression) {
+    DEBUG_ONLY(_check_data.setup(nullptr, initial_size));
+  }
+}
+
 bool CompressedLineNumberReadStream::read_pair() {
-  jubyte next = read_byte();
+  if (NEW_LNT_COMPRESSION()) {  // New algo.
+    if (!has_next())  return false;
+    // Pairs are stored in this order:  X=SGN5(D1=D/BCI), Y=SGN((D2=D/LNO)-1)
+    uint32_t y, x = read_int_pair(D1_BITS(), &y);
+    uint32_t d1 = UNSIGNED5::decode_multi_sign(D1_SIGN_BITS(), x) + D1_BIAS;
+    uint32_t d2 = UNSIGNED5::decode_sign(y) + D2_BIAS;
+    // Note: Wraparound can happen here, and is processed correctly.
+    // Regardless of the delta-base state, any new 32-bit state is
+    // reachable by a suitably chosen delta, perhaps via wraparound.
+    _bci  += d1;
+    _line += d2;
+    return true;
+  }
+
+  // Old scheme, which mixes bytes with UNSIGNED5 tokens...
+  //
+  // If (bci delta, line delta) fits in (5-bit unsigned, 3-bit unsigned)
+  // we save it as one byte, otherwise we write a 0xFF escape character
+  // and use regular compression. 0x0 is used as end-of-stream terminator.
+  jubyte next = (jubyte) read_int();
   // Check for terminator
   if (next == 0) return false;
   if (next == 0xFF) {
     // Escape character, regular compression used
-    _bci  += read_signed_int();
-    _line += read_signed_int();
+    _bci  += UNSIGNED5::decode_sign(read_int());
+    _line += UNSIGNED5::decode_sign(read_int());
   } else {
     // Single byte compression used
     _bci  += next >> 3;
     _line += next & 0x7;
   }
   return true;
+}
+
+// The corresponding encoding logic follows.
+//
+// Note: This was originally written as inline functions used by
+// ClassFileParser::parse_linenumber_table.  The performance gain
+// seems negligible for inlining this code, and it is easier to
+// maintain if the encoding and decoding logic are kept in the same
+// place.  If there really is a bottleneck copying this stuff, we
+// should consider an alternative which simply keeps the whole
+// classfile around, compressed, and digs the data out of there.
+
+// Write (bci, line number) pair to stream
+void CompressedLineNumberWriteStream::write_pair(int bci, int line) {
+  #ifdef ASSERT
+  if (VerifyLNTCompression) {
+    _check_data.write_int(bci);
+    _check_data.write_int(line);
+  }
+  #endif //ASSERT
+
+  // Note: Wraparound can happen here, and is processed correctly.
+  // Regardless of the delta-base state, any new 32-bit state is
+  // reachable by a suitably chosen delta, perhaps via wraparound.
+  uint32_t d1 = bci  - _bci;
+  uint32_t d2 = line - _line;
+  // Note:  d1, d2 must be declared as UNSIGNED.
+  _bci  = bci;
+  _line = line;
+
+  if (NEW_LNT_COMPRESSION()) {  // New algo.
+    // Pairs are stored in this order:  X=SGN5(D1=D/BCI), Y=SGN((D2=D/LNO)-1)
+    uint32_t x = UNSIGNED5::encode_multi_sign(D1_SIGN_BITS(), d1 - D1_BIAS);
+    uint32_t y = UNSIGNED5::encode_sign(d2 - D2_BIAS);
+    write_int_pair(D1_BITS(), x, y);
+    return;
+  }
+
+  // Old scheme, which mixes bytes with UNSIGNED5 tokens...
+  //
+  // Skip (0,0) deltas - they do not add information and conflict with terminator.
+  uint32_t bci_delta  = d1;
+  uint32_t line_delta = d2;
+  if (bci_delta == 0 && line_delta == 0) return;
+  // Check if bci is 5-bit and line number 3-bit unsigned.
+  if (((bci_delta & ~0x1F) == 0) && ((line_delta & ~0x7) == 0)) {
+    // Compress into single byte.
+    jubyte value = (jubyte)((bci_delta << 3) | line_delta);
+    // Check that value doesn't match escape character.
+    if (value != 0xFF) {
+      write_int(value);
+      return;
+    }
+  }
+  // bci and line number does not compress into single byte.
+  // Write out escape character and use regular compression for bci and line number.
+  write_int((jubyte)0xFF);
+  write_int(UNSIGNED5::encode_sign(bci_delta));
+  write_int(UNSIGNED5::encode_sign(line_delta));
+}
+
+void CompressedLineNumberWriteStream::write_terminator() {
+  if (!NEW_LNT_COMPRESSION())  write_int(0);
+  write_end_byte();
+
+#ifdef ASSERT
+  if (VerifyLNTCompression && _check_data.data_size() != 0) {
+    _check_data.write_end_byte();
+    CompressedReadStream rs1(_check_data.data_address_at(0));
+    CompressedLineNumberReadStream rs2(data_address_at(0));
+    int pairs = 0;
+    while (rs1.has_next()) {
+      int bci = rs1.read_int();
+      int lno = rs1.read_int();
+      assert(rs2.read_pair(), "");
+      assert(bci == rs2.bci(), "");
+      assert(lno == rs2.line(), "");
+      pairs++;
+    }
+    assert(!rs2.read_pair(), "bci %d lno %d after %d pairs", rs2.bci(), rs2.line(), pairs);
+    if (WizardMode) {  // we should record some statistics somewhere...
+      int paired_size   = data_size();
+      int unpaired_size = _check_data.data_size();
+      int file_size     = pairs * 4;
+      tty->print_cr("pairs %d sizes %d < %d < %d", pairs, paired_size, unpaired_size, file_size);
+    }
+  }
+#endif //ASSERT
 }
 
 #if INCLUDE_JVMTI

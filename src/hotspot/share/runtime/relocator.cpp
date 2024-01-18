@@ -426,14 +426,14 @@ void Relocator::adjust_line_no_table(int bci, int delta) {
       table = method()->compressed_linenumber_table();
     }
     CompressedLineNumberReadStream  reader(table);
-    CompressedLineNumberWriteStream writer(64);  // plenty big for most line number tables
+    CompressedLineNumberWriteStream writer(nullptr, 64);  // plenty big for most line number tables
     while (reader.read_pair()) {
       int adjustment = (reader.bci() > bci) ? delta : 0;
       writer.write_pair(reader.bci() + adjustment, reader.line());
     }
     writer.write_terminator();
-    set_compressed_line_number_table(writer.buffer());
-    set_compressed_line_number_table_size(writer.position());
+    set_compressed_line_number_table(writer.data_address_at(0));
+    set_compressed_line_number_table_size(writer.data_size());
     if (TraceRelocator) {
       tty->print_cr("Adjusted line number table");
       print_linenumber_table(compressed_line_number_table());

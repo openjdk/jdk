@@ -35,17 +35,6 @@ static constexpr u4 flag_mask(int pos) {
 }
 
 
-// Helper class for access to the underlying Array<u1> used to
-// store the compressed stream of FieldInfo
-template<typename ARR, typename OFF>
-struct ArrayHelper {
-  uint8_t operator()(ARR a, OFF i) const { return a->at(i); };
-  void operator()(ARR a, OFF i, uint8_t b) const { a->at_put(i,b); };
-  // So, an expression ArrayWriterHelper() acts like these lambdas:
-  // auto get = [&](ARR a, OFF i){ return a[i]; };
-  // auto set = [&](ARR a, OFF i, uint8_t x){ a[i] = x; };
-};
-
 // This class represents the field information contained in the fields
 // array of an InstanceKlass.  Currently it's laid on top an array of
 // Java shorts but in the future it could simply be used as a real
@@ -69,13 +58,14 @@ class FieldInfo {
 
     // The ordering of this enum is totally internal.  More frequent
     // flags should come earlier than less frequent ones, because
-    // earlier ones compress better.
+    // earlier ones compress better.  Because the first two are the
+    // common ones, FICompressionMode=2 is the best tuning.
     enum FieldFlagBitPosition {
-      _ff_initialized,  // has ConstantValue initializer attribute
-      _ff_injected,     // internal field injected by the JVM
-      _ff_generic,      // has a generic signature
-      _ff_stable,       // trust as stable b/c declared as @Stable
-      _ff_contended,    // is contended, may have contention-group
+      _ff_initialized,  // has ConstantValue initializer attribute (common)
+      _ff_generic,      // has a generic signature (common)
+      _ff_stable,       // trust as stable b/c declared as @Stable (used in JDK)
+      _ff_injected,     // internal field injected by the JVM (fixed #)
+      _ff_contended,    // is contended, may have contention-group (rare)
     };
 
     // Some but not all of the flag bits signal the presence of an
@@ -209,11 +199,11 @@ class FieldInfoStream;
 
 // Gadget for sizing and/or writing a stream of field records.
 template<typename CON>
-class Mapper {
+class FieldInfoMapper {
   CON* _consumer;  // can be UNSIGNED5::Writer or UNSIGNED5::Sizer
   int _next_index;
 public:
-  Mapper(CON* consumer) : _consumer(consumer) { _next_index = 0; }
+  FieldInfoMapper(CON* consumer) : _consumer(consumer) { _next_index = 0; }
   int next_index() const { return _next_index; }
   void set_next_index(int next_index) { _next_index = next_index; }
   CON* consumer() const { return _consumer; }
@@ -236,7 +226,14 @@ class FieldInfoReader {
 
   private:
   uint32_t next_uint() { return _r.next_uint(); }
+  uint32_t next_uint_pair(uint32_t& second) {
+    uint32_t first;
+    _r.next_uint_pair(int_pair_bits(), first, second);
+    return first;
+  }
   void skip(int n) { int s = _r.try_skip(n); assert(s == n,""); }
+
+  static const UNSIGNED5::Statistics::Kind FI = UNSIGNED5::Statistics::FI;
 
 public:
   int has_next() { return _r.has_next(); }
@@ -252,6 +249,9 @@ public:
 
   // for random access, if you know where to go up front:
   FieldInfoReader& set_position_and_next_index(int position, int next_index);
+
+  // parameter to UNSIGNED5::read_uint_pair for (field_flags, access_flags)
+  static int int_pair_bits() { return UNSIGNED5::Statistics::int_pair_setting(FI); }
 };
 
 // The format of the stream, after decompression, is a series of

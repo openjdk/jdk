@@ -37,37 +37,53 @@
 
 // Constructors
 
+static const UNSIGNED5::Statistics::Kind DI = UNSIGNED5::Statistics::DI;
+
 DebugInfoWriteStream::DebugInfoWriteStream(DebugInformationRecorder* recorder, int initial_size)
-: CompressedWriteStream(initial_size) {
+  : CompressedIntWriteStream(nullptr, initial_size,
+                             UNSIGNED5::Statistics::zero_suppress_setting(DI))
+{
   _recorder = recorder;
+  _pending_tag = -1;
 }
 
+DebugInfoReadStream::DebugInfoReadStream(const CompiledMethod* code, int offset,
+                                         GrowableArray<ScopeValue*>* obj_pool)
+  : CompressedIntReadStream(code->scopes_data_begin(), 0,
+                            UNSIGNED5::Statistics::zero_suppress_setting(DI))
+{
+  _code = code;
+  _obj_pool = obj_pool;
+  DEBUG_ONLY(_have_second_part = false);
+  _second_part = 0;  // tidy
+  reset_at(offset);
+}
 // Serializing oops
 
-void DebugInfoWriteStream::write_handle(jobject h) {
-  write_int(recorder()->oop_recorder()->find_index(h));
+juint DebugInfoWriteStream::encode_handle(jobject h) {
+  return recorder()->oop_recorder()->find_index(h);
 }
 
 void DebugInfoWriteStream::write_metadata(Metadata* h) {
   write_int(recorder()->oop_recorder()->find_index(h));
 }
 
-oop DebugInfoReadStream::read_oop() {
+oop DebugInfoReadStream::decode_oop(juint oop_id) {
   nmethod* nm = const_cast<CompiledMethod*>(code())->as_nmethod_or_null();
   oop o;
   if (nm != nullptr) {
     // Despite these oops being found inside nmethods that are on-stack,
     // they are not kept alive by all GCs (e.g. G1 and Shenandoah).
-    o = nm->oop_at_phantom(read_int());
+    o = nm->oop_at_phantom(oop_id);
   } else {
-    o = code()->oop_at(read_int());
+    o = code()->oop_at(oop_id);
   }
   assert(oopDesc::is_oop_or_null(o), "oop only");
   return o;
 }
 
 ScopeValue* DebugInfoReadStream::read_object_value(bool is_auto_box) {
-  int id = read_int();
+  int id = read_post_tag();
 #ifdef ASSERT
   assert(_obj_pool != nullptr, "object pool does not exist");
   for (int i = _obj_pool->length() - 1; i >= 0; i--) {
@@ -82,7 +98,7 @@ ScopeValue* DebugInfoReadStream::read_object_value(bool is_auto_box) {
 }
 
 ScopeValue* DebugInfoReadStream::read_object_merge_value() {
-  int id = read_int();
+  int id = read_post_tag();
 #ifdef ASSERT
   assert(_obj_pool != nullptr, "object pool does not exist");
   for (int i = _obj_pool->length() - 1; i >= 0; i--) {
@@ -96,7 +112,7 @@ ScopeValue* DebugInfoReadStream::read_object_merge_value() {
 }
 
 ScopeValue* DebugInfoReadStream::get_cached_object() {
-  int id = read_int();
+  int id = read_post_tag();
   assert(_obj_pool != nullptr, "object pool does not exist");
   for (int i = _obj_pool->length() - 1; i >= 0; i--) {
     ObjectValue* ov = _obj_pool->at(i)->as_ObjectValue();
@@ -114,11 +130,61 @@ enum { LOCATION_CODE = 0, CONSTANT_INT_CODE = 1,  CONSTANT_OOP_CODE = 2,
                           CONSTANT_LONG_CODE = 3, CONSTANT_DOUBLE_CODE = 4,
                           OBJECT_CODE = 5,        OBJECT_ID_CODE = 6,
                           AUTO_BOX_OBJECT_CODE = 7, MARKER_CODE = 8,
-                          OBJECT_MERGE_CODE = 9 };
+                          OBJECT_MERGE_CODE = 9,
+                          DI_CODE_LIMIT = 10
+};
+// Note:  The LOCATION code is by far the most frequent.
+// For best compression it must be assigned the zero encoding (0).
+// The INT and OOP codes are next most common.  Assign them next.
+// The others occur at fractions of a percent.
+// If we ever create another common code, put it near the start of this order.
+
+static size_t di_code_counts[DI_CODE_LIMIT];
+// cross-call from UNSIGNED5::Statistics::print_on
+size_t* report_di_code_counts(int& length) {
+  length = DI_CODE_LIMIT;
+  return di_code_counts;
+  // Typical counts for -Xcomp hello-world:
+  //   591180 9788 12696 143 0 134 114 0 0 0
+  // The first five are LOCATION, INT, OOP, LONG, DOUBLE.
+  // Two bits is plenty for the tag component in write_uint_pair.
+  // The rare codes will require one extra byte in the pair encoding.
+}
+
+void DebugInfoWriteStream::write_tag_and_post(int tag, juint post) {
+  assert(tag >= 0 && tag < DI_CODE_LIMIT, "");
+  di_code_counts[tag]++;
+  if (UNSIGNED5::Statistics::compression_enabled(DI)) {
+    write_int_pair(UNSIGNED5::Statistics::int_pair_setting(DI), tag, post);
+  } else {
+    write_int(tag);
+    write_int(post);
+  }
+}
+
+int DebugInfoReadStream::read_tag() {
+  if (!UNSIGNED5::Statistics::compression_enabled(DI)) {
+    return read_int();
+  }
+  assert(!hsp(), "");
+  DEBUG_ONLY(_have_second_part = true);
+  juint& y = _second_part;
+  return read_int_pair(UNSIGNED5::Statistics::int_pair_setting(DI), &y);
+}
+
+juint DebugInfoReadStream::read_post_tag() {
+  if (!UNSIGNED5::Statistics::compression_enabled(DI)) {
+    return read_int();
+  }
+  assert(hsp(), "");
+  DEBUG_ONLY(_have_second_part = false);
+  return _second_part;
+}
 
 ScopeValue* ScopeValue::read_from(DebugInfoReadStream* stream) {
   ScopeValue* result = nullptr;
-  switch(stream->read_int()) {
+  int tag = stream->read_tag();
+  switch (tag) {
    case LOCATION_CODE:        result = new LocationValue(stream);                        break;
    case CONSTANT_INT_CODE:    result = new ConstantIntValue(stream);                     break;
    case CONSTANT_OOP_CODE:    result = new ConstantOopReadValue(stream);                 break;
@@ -128,8 +194,8 @@ ScopeValue* ScopeValue::read_from(DebugInfoReadStream* stream) {
    case AUTO_BOX_OBJECT_CODE: result = stream->read_object_value(true /*is_auto_box*/);  break;
    case OBJECT_MERGE_CODE:    result = stream->read_object_merge_value();                break;
    case OBJECT_ID_CODE:       result = stream->get_cached_object();                      break;
-   case MARKER_CODE:          result = new MarkerValue();                                break;
-   default: ShouldNotReachHere();
+   case MARKER_CODE:          result = new MarkerValue(stream);                          break;
+   default: assert(false, "bad tag %d", tag);
   }
   return result;
 }
@@ -137,26 +203,34 @@ ScopeValue* ScopeValue::read_from(DebugInfoReadStream* stream) {
 // LocationValue
 
 LocationValue::LocationValue(DebugInfoReadStream* stream) {
-  _location = Location(stream);
+  _location = Location(true, stream);
 }
 
 void LocationValue::write_on(DebugInfoWriteStream* stream) {
-  stream->write_int(LOCATION_CODE);
-  location().write_on(stream);
+  stream->write_tag(LOCATION_CODE);
+  location().write_on(true, stream);
 }
 
 void LocationValue::print_on(outputStream* st) const {
+  st->print("loc:");
   location().print_on(st);
 }
 
 // MarkerValue
 
+MarkerValue::MarkerValue(DebugInfoReadStream* stream) {
+  int discard = (!UNSIGNED5::Statistics::compression_enabled(DI)) ? 0 : stream->read_post_tag();
+  assert(discard == 0, "");
+}
+
 void MarkerValue::write_on(DebugInfoWriteStream* stream) {
-  stream->write_int(MARKER_CODE);
+  if (!UNSIGNED5::Statistics::compression_enabled(DI)) { stream->write_int(MARKER_CODE); return; }
+  stream->write_tag_and_post(MARKER_CODE, 0);
+  // discarded zero pairs up with the MARKER_CODE; no extra overhead
 }
 
 void MarkerValue::print_on(outputStream* st) const {
-    st->print("marker");
+  st->print("marker");
 }
 
 // ObjectValue
@@ -178,12 +252,11 @@ void ObjectValue::read_object(DebugInfoReadStream* stream) {
 
 void ObjectValue::write_on(DebugInfoWriteStream* stream) {
   if (is_visited()) {
-    stream->write_int(OBJECT_ID_CODE);
-    stream->write_int(_id);
+    stream->write_tag_and_post(OBJECT_ID_CODE, _id);
   } else {
     set_visited(true);
-    stream->write_int(is_auto_box() ? AUTO_BOX_OBJECT_CODE : OBJECT_CODE);
-    stream->write_int(_id);
+    int tag = is_auto_box() ? AUTO_BOX_OBJECT_CODE : OBJECT_CODE;
+    stream->write_tag_and_post(tag, _id);
     stream->write_bool(_is_root);
     _klass->write_on(stream);
     int length = _field_values.length();
@@ -279,12 +352,10 @@ void ObjectMergeValue::read_object(DebugInfoReadStream* stream) {
 
 void ObjectMergeValue::write_on(DebugInfoWriteStream* stream) {
   if (is_visited()) {
-    stream->write_int(OBJECT_ID_CODE);
-    stream->write_int(_id);
+    stream->write_tag_and_post(OBJECT_ID_CODE, _id);
   } else {
     set_visited(true);
-    stream->write_int(OBJECT_MERGE_CODE);
-    stream->write_int(_id);
+    stream->write_tag_and_post(OBJECT_MERGE_CODE, _id);
     _selector->write_on(stream);
     _merge_pointer->write_on(stream);
     int ncandidates = _possible_objects.length();
@@ -298,46 +369,55 @@ void ObjectMergeValue::write_on(DebugInfoWriteStream* stream) {
 // ConstantIntValue
 
 ConstantIntValue::ConstantIntValue(DebugInfoReadStream* stream) {
-  _value = stream->read_signed_int();
+  juint x = stream->read_post_tag();
+  _value = UNSIGNED5::decode_sign(x);
 }
 
 void ConstantIntValue::write_on(DebugInfoWriteStream* stream) {
-  stream->write_int(CONSTANT_INT_CODE);
-  stream->write_signed_int(value());
+  juint y = UNSIGNED5::encode_sign(value());
+  stream->write_tag_and_post(CONSTANT_INT_CODE, y);
 }
 
 void ConstantIntValue::print_on(outputStream* st) const {
-  st->print("%d", value());
+  st->print("I:%d", value());
 }
 
 // ConstantLongValue
 
 ConstantLongValue::ConstantLongValue(DebugInfoReadStream* stream) {
-  _value = stream->read_long();
+  juint x = stream->read_post_tag();
+  juint y = stream->read_int();
+  _value = CompressedStream::decode_long(x, y);
 }
 
 void ConstantLongValue::write_on(DebugInfoWriteStream* stream) {
-  stream->write_int(CONSTANT_LONG_CODE);
-  stream->write_long(value());
+  juint x, y;
+  CompressedStream::encode_long(value(), x, y);
+  stream->write_tag_and_post(CONSTANT_LONG_CODE, x);
+  stream->write_int(y);
 }
 
 void ConstantLongValue::print_on(outputStream* st) const {
-  st->print(JLONG_FORMAT, value());
+  st->print("J:" JLONG_FORMAT, value());
 }
 
 // ConstantDoubleValue
 
 ConstantDoubleValue::ConstantDoubleValue(DebugInfoReadStream* stream) {
-  _value = stream->read_double();
+  juint x = stream->read_post_tag();
+  juint y = stream->read_int();
+  _value = CompressedStream::decode_double(x, y);
 }
 
 void ConstantDoubleValue::write_on(DebugInfoWriteStream* stream) {
-  stream->write_int(CONSTANT_DOUBLE_CODE);
-  stream->write_double(value());
+  juint x, y;
+  CompressedStream::encode_long(value(), x, y);
+  stream->write_tag_and_post(CONSTANT_DOUBLE_CODE, x);
+  stream->write_int(y);
 }
 
 void ConstantDoubleValue::print_on(outputStream* st) const {
-  st->print("%f", value());
+  st->print("D:%f", value());
 }
 
 // ConstantOopWriteValue
@@ -353,22 +433,27 @@ void ConstantOopWriteValue::write_on(DebugInfoWriteStream* stream) {
            "Should be in heap");
  }
 #endif
-  stream->write_int(CONSTANT_OOP_CODE);
-  stream->write_handle(value());
+  stream->write_tag_and_post(CONSTANT_OOP_CODE, stream->encode_handle(value()));
 }
 
 void ConstantOopWriteValue::print_on(outputStream* st) const {
+  st->print("oop:");
+  if (value() != nullptr) {
   // using ThreadInVMfromUnknown here since in case of JVMCI compiler,
   // thread is already in VM state.
   ThreadInVMfromUnknown tiv;
   JNIHandles::resolve(value())->print_value_on(st);
+  } else {
+    st->print("nullptr");
+  }
 }
 
 
 // ConstantOopReadValue
 
 ConstantOopReadValue::ConstantOopReadValue(DebugInfoReadStream* stream) {
-  _value = Handle(Thread::current(), stream->read_oop());
+  juint x = stream->read_post_tag();
+  _value = Handle(Thread::current(), stream->decode_oop(x));
   assert(_value() == nullptr ||
          Universe::heap()->is_in(_value()), "Should be in heap");
 }
@@ -378,6 +463,7 @@ void ConstantOopReadValue::write_on(DebugInfoWriteStream* stream) {
 }
 
 void ConstantOopReadValue::print_on(outputStream* st) const {
+  st->print("oop:");
   if (value()() != nullptr) {
     value()()->print_value_on(st);
   } else {
@@ -395,18 +481,17 @@ MonitorValue::MonitorValue(ScopeValue* owner, Location basic_lock, bool eliminat
 }
 
 MonitorValue::MonitorValue(DebugInfoReadStream* stream) {
-  _basic_lock  = Location(stream);
+  _basic_lock  = Location(false, stream);
   _owner       = ScopeValue::read_from(stream);
   _eliminated  = (stream->read_bool() != 0);
 }
 
 void MonitorValue::write_on(DebugInfoWriteStream* stream) {
-  _basic_lock.write_on(stream);
+  _basic_lock.write_on(false, stream);
   _owner->write_on(stream);
   stream->write_bool(_eliminated);
 }
 
-#ifndef PRODUCT
 void MonitorValue::print_on(outputStream* st) const {
   st->print("monitor{");
   owner()->print_on(st);
@@ -417,4 +502,3 @@ void MonitorValue::print_on(outputStream* st) const {
     st->print(" (eliminated)");
   }
 }
-#endif

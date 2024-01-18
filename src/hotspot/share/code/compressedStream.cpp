@@ -27,10 +27,6 @@
 #include "utilities/ostream.hpp"
 #include "utilities/reverse_bits.hpp"
 
-jint CompressedReadStream::read_signed_int() {
-  return UNSIGNED5::decode_sign(read_int());
-}
-
 // Compressing floats is simple, because the only common pattern
 // is trailing zeroes.  (Compare leading sign bits on ints.)
 // Since floats are left-justified, as opposed to right-justified
@@ -39,24 +35,47 @@ jint CompressedReadStream::read_signed_int() {
 // leading zeroes, effect is better compression of those common
 // 32-bit float values, such as integers or integers divided by
 // powers of two, that have many trailing zeroes.
-jfloat CompressedReadStream::read_float() {
-  int rf = read_int();
-  int f  = reverse_bits(rf);
+
+jfloat CompressedStream::decode_float(juint rf) {
+  int f = reverse_bits(rf);
   return jfloat_cast(f);
 }
 
+juint CompressedStream::encode_float(jfloat value) {
+  juint f = jint_cast(value);
+  juint rf = reverse_bits(f);
+  assert(f == reverse_bits(rf), "can re-read same bits");
+  return rf;
+}
+
 // The treatment of doubles is similar.  We could bit-reverse each
-// entire 64-bit word, but it is almost as effective to bit-reverse
+// entire 64-bit word, but it is just as effective to bit-reverse
 // the individual halves.  Since we are going to encode them
 // separately as 32-bit halves anyway, it seems slightly simpler
 // to reverse after splitting, and when reading reverse each
 // half before joining them together.
-jdouble CompressedReadStream::read_double() {
-  jint rh = read_int();
-  jint rl = read_int();
-  jint h  = reverse_bits(rh);
-  jint l  = reverse_bits(rl);
+//
+// Although exponents have a small amount of sign replication, we do
+// not attempt to do sign conversion.  In fact, both (reversed) halves
+// are treated identically, because we do not want to ask which half
+// is which, in the 64-bit double representation.  In principle we
+// could attempt to compress the two halves differently, and even to
+// use uint_pair encodings, but the benefit would be small and there
+// would surely be bugs.  Our workloads do not use many doubles.
+
+jdouble CompressedStream::decode_double(juint rh, juint rl) {
+  jint h = reverse_bits(rh);
+  jint l = reverse_bits(rl);
   return jdouble_cast(jlong_from(h, l));
+}
+
+void CompressedStream::encode_double(jdouble value, juint& rh, juint& rl) {
+  juint h  = high(jlong_cast(value));
+  juint l  = low( jlong_cast(value));
+  rh = reverse_bits(h);
+  rl = reverse_bits(l);
+  assert(h == reverse_bits(rh), "can re-read same bits");
+  assert(l == reverse_bits(rl), "can re-read same bits");
 }
 
 // A 64-bit long is encoded into distinct 32-bit halves.  This saves
@@ -66,49 +85,85 @@ jdouble CompressedReadStream::read_double() {
 // extra complexity of another coding system, we could process 64-bit
 // values as single units.  But, the complexity does not seem
 // worthwhile.
-jlong CompressedReadStream::read_long() {
-  jint low  = read_signed_int();
-  jint high = read_signed_int();
+
+jlong CompressedStream::decode_long(juint ulo, juint uhi) {
+  jint low  = UNSIGNED5::decode_sign(ulo);
+  jint high = UNSIGNED5::decode_sign(uhi);
   return jlong_from(high, low);
 }
 
-CompressedWriteStream::CompressedWriteStream(int initial_size) : CompressedStream(nullptr, 0) {
-  _buffer   = NEW_RESOURCE_ARRAY(u_char, initial_size);
-  _size     = initial_size;
-  _position = 0;
+void CompressedStream::encode_long(jlong value, juint& ulo, juint& uhi) {
+  ulo = UNSIGNED5::encode_sign(low(value));
+  uhi = UNSIGNED5::encode_sign(high(value));
 }
 
-void CompressedWriteStream::grow() {
-  int nsize = _size * 2;
-  const int min_expansion = UNSIGNED5::MAX_LENGTH;
-  if (nsize < min_expansion*2) {
-    nsize = min_expansion*2;
+void CompressedIntReadStream::setup(u_char* buffer,
+                                    size_t limit,
+                                    bool suppress_zeroes) {
+  _r.setup(buffer, limit);
+  reset();
+  if (!suppress_zeroes)  _r.set_passthrough();
+}
+
+void CompressedIntWriteStream::setup(address initial_buffer,
+                                     size_t initial_size,
+                                     bool suppress_zeroes) {
+  const size_t MIN_SIZE = UNSIGNED5::MAX_LENGTH;  // avoid really small sizes
+  if (initial_size < MIN_SIZE) {
+    initial_size = MIN_SIZE; initial_buffer = nullptr;
   }
-  u_char* _new_buffer = NEW_RESOURCE_ARRAY(u_char, nsize);
-  memcpy(_new_buffer, _buffer, _position);
-  _buffer = _new_buffer;
-  _size   = nsize;
+  if (initial_buffer == nullptr) {
+    initial_buffer = NEW_RESOURCE_ARRAY(u_char, initial_size);
+  }
+  _w.grow_array(initial_buffer, initial_size);
+  reset();
+  if (!suppress_zeroes)  _w.set_passthrough();
 }
 
-void CompressedWriteStream::write_float(jfloat value) {
-  juint f = jint_cast(value);
-  juint rf = reverse_bits(f);
-  assert(f == reverse_bits(rf), "can re-read same bits");
-  write_int(rf);
+u_char* CompressedIntWriteStream::data_address_at(size_t position, size_t length) {
+  assert(_w.limit() != 0, "");
+  assert(in_bounds(position, _w.limit(), length == 0), "oob");
+  assert(in_bounds(position + length, _w.limit(), true), "oob");
+  return &_w.array()[position];
 }
 
-void CompressedWriteStream::write_double(jdouble value) {
-  juint h  = high(jlong_cast(value));
-  juint l  = low( jlong_cast(value));
-  juint rh = reverse_bits(h);
-  juint rl = reverse_bits(l);
-  assert(h == reverse_bits(rh), "can re-read same bits");
-  assert(l == reverse_bits(rl), "can re-read same bits");
-  write_int(rh);
-  write_int(rl);
+void CompressedIntWriteStream::grow() {
+  size_t nsize = _w.limit() * 2;
+  const size_t min_expansion = UNSIGNED5::MAX_LENGTH * 7;
+  if (nsize < min_expansion) {
+    nsize = min_expansion;
+  }
+  u_char* nbuf = NEW_RESOURCE_ARRAY(u_char, nsize);
+  _w.grow_array(nbuf, nsize);
 }
 
-void CompressedWriteStream::write_long(jlong value) {
-  write_signed_int(low(value));
-  write_signed_int(high(value));
+size_t CompressedIntWriteStream::checkpoint() {
+#ifdef DO_CZ
+  assert(_w.is_clean() || _w.is_passthrough(), "");
+  _w_checkpoint = _w.checkpoint();
+  return _w_checkpoint.position();
+#else
+  return _w_checkpoint = _w.position();
+#endif
+}
+
+size_t CompressedIntWriteStream::data_size_after_checkpoint(size_t checkpoint_pos) {
+#ifdef DO_CZ
+  assert(_w_checkpoint.position() == checkpoint_pos, "");
+  write_end_byte();  // close off any previous compression state
+  return _w.position() - checkpoint_pos;
+#else
+  assert(_w_checkpoint == checkpoint_pos, "");
+  return _w.position() - checkpoint_pos;
+#endif
+}
+
+void CompressedIntWriteStream::restore(size_t checkpoint_pos) {
+#ifdef DO_CZ
+  assert(_w_checkpoint.position() == checkpoint_pos, "");
+  _w.restore(_w_checkpoint);
+#else
+  assert(_w_checkpoint == checkpoint_pos, "");
+  _w.set_position(checkpoint_pos);
+#endif
 }

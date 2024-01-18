@@ -488,7 +488,7 @@ void ConstMethod::verify_on(outputStream* st) {
     while (stream.read_pair()) {
       guarantee(stream.bci() >= 0 && stream.bci() <= code_size(), "invalid bci in line number table");
     }
-    compressed_table_end += stream.position();
+    compressed_table_end += stream.data_size();
   }
   guarantee(compressed_table_end <= m_end, "invalid method layout");
   // Verify checked exceptions, exception table and local variable tables

@@ -302,11 +302,11 @@ class Dependencies: public ResourceObj {
   // State for making a new set of dependencies:
   OopRecorder* _oop_recorder;
 
+  // State for encoding everything other than the oop reference:
+  CompressedWriteStream _non_oop_data;
+
   // Logging support
   CompileLog* _log;
-
-  address  _content_bytes;  // everything but the oop references, encoded
-  size_t   _size_in_bytes;
 
  public:
   // Make a new empty dependencies set.
@@ -452,12 +452,11 @@ class Dependencies: public ResourceObj {
   void encode_content_bytes();
 
   address content_bytes() {
-    assert(_content_bytes != nullptr, "encode it first");
-    return _content_bytes;
+    assert(size_in_bytes() != 0, "encode it first");
+    return _non_oop_data.data_address_at(0);
   }
   size_t size_in_bytes() {
-    assert(_content_bytes != nullptr, "encode it first");
-    return _size_in_bytes;
+    return _non_oop_data.data_size();
   }
 
   OopRecorder* oop_recorder() { return _oop_recorder; }

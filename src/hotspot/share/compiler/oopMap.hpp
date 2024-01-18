@@ -185,8 +185,10 @@ class OopMap: public ResourceObj {
   int offset() const     { return _pc_offset; }
   void set_offset(int o) { _pc_offset = o; }
   int count() const { return _omv_count; }
-  int data_size() const  { return write_stream()->position(); }
-  address data() const { return write_stream()->buffer(); }
+  int data_size() const  { return write_stream()->data_size(); }
+  void copy_bytes_to(address data, size_t data_size) {
+    write_stream()->copy_bytes_to(data, data_size, UNSIGNED5::Statistics::OM);
+  }
   int num_oops() const { return _num_oops; }
   bool has_derived_oops() const { return _has_derived_oops; }
   int index() const { return _index; }
@@ -200,7 +202,6 @@ class OopMap: public ResourceObj {
   void set_derived_oop ( VMReg local, VMReg derived_from_local_register );
 
   int heap_size() const;
-  void copy_data_to(address addr) const;
   void copy_and_sort_data_to(address addr) const;
   OopMap* deep_copy();
 
@@ -378,9 +379,7 @@ class OopMapStream : public StackObj {
   bool is_done()                        { if(!_valid_omv) { find_next(); } return !_valid_omv; }
   void next()                           { find_next(); }
   OopMapValue current()                 { return _omv; }
-#ifdef ASSERT
-  int stream_position() const           { return _stream.position(); }
-#endif
+  CompressedReadStream& data()          { return _stream; }
 };
 
 class ImmutableOopMapBuilder {

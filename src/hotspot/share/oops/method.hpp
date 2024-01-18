@@ -874,36 +874,30 @@ public:
 
 // Utility class for compressing line number tables
 
-class CompressedLineNumberWriteStream: public CompressedWriteStream {
+class CompressedLineNumberWriteStream: public CompressedIntWriteStream {
  private:
-  int _bci;
-  int _line;
+  uint32_t _bci;
+  uint32_t _line;
+  DEBUG_ONLY(CompressedWriteStream _check_data;)
  public:
   // Constructor
-  CompressedLineNumberWriteStream(int initial_size) : CompressedWriteStream(initial_size), _bci(0), _line(0) {}
-  CompressedLineNumberWriteStream(u_char* buffer, int initial_size) : CompressedWriteStream(buffer, initial_size), _bci(0), _line(0) {}
+  CompressedLineNumberWriteStream(u_char* initial_buffer,
+                                  int initial_size);
 
   // Write (bci, line number) pair to stream
-  void write_pair_regular(int bci_delta, int line_delta);
-
-  // If (bci delta, line delta) fits in (5-bit unsigned, 3-bit unsigned)
-  // we save it as one byte, otherwise we write a 0xFF escape character
-  // and use regular compression. 0x0 is used as end-of-stream terminator.
-  void write_pair_inline(int bci, int line);
-
   void write_pair(int bci, int line);
 
   // Write end-of-stream marker
-  void write_terminator()                        { write_byte(0); }
+  void write_terminator();
 };
 
 
 // Utility class for decompressing line number tables
 
-class CompressedLineNumberReadStream: public CompressedReadStream {
+class CompressedLineNumberReadStream: public CompressedIntReadStream {
  private:
-  int _bci;
-  int _line;
+  uint32_t _bci;
+  uint32_t _line;
  public:
   // Constructor
   CompressedLineNumberReadStream(u_char* buffer);

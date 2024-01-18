@@ -1664,7 +1664,8 @@ void ClassFileParser::parse_linenumber_table(u4 code_attribute_length,
 
   if ((*write_stream) == nullptr) {
     if (length_in_bytes > fixed_buffer_size) {
-      (*write_stream) = new CompressedLineNumberWriteStream(length_in_bytes);
+      address buf = NEW_RESOURCE_ARRAY(u_char, length_in_bytes);
+      (*write_stream) = new CompressedLineNumberWriteStream(buf, length_in_bytes);
     } else {
       (*write_stream) = new CompressedLineNumberWriteStream(
         _linenumbertable_buffer, fixed_buffer_size);
@@ -2633,7 +2634,7 @@ Method* ClassFileParser::parse_method(const ClassFileStream* const cfs,
 
   if (linenumber_table != nullptr) {
     linenumber_table->write_terminator();
-    linenumber_table_length = linenumber_table->position();
+    linenumber_table_length = linenumber_table->data_size();
   }
 
   // Make sure there's at least one Code attribute in non-native/non-abstract method
@@ -2694,9 +2695,9 @@ Method* ClassFileParser::parse_method(const ClassFileStream* const cfs,
 
   // Copy line number table
   if (linenumber_table != nullptr) {
-    memcpy(m->compressed_linenumber_table(),
-           linenumber_table->buffer(),
-           linenumber_table_length);
+    linenumber_table->copy_bytes_to(m->compressed_linenumber_table(),
+                                    linenumber_table_length,
+                                    UNSIGNED5::Statistics::LT);
   }
 
   // Copy exception table

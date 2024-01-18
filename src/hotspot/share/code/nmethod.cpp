@@ -2037,9 +2037,10 @@ void nmethod::copy_scopes_pcs(PcDesc* pcs, int count) {
   assert(last_pc + 1 == scopes_pcs_end(), "must match exactly");
 }
 
-void nmethod::copy_scopes_data(u_char* buffer, int size) {
-  assert(scopes_data_size() >= size, "oob");
-  memcpy(scopes_data_begin(), buffer, size);
+void nmethod::copy_scopes_data(CompressedIntWriteStream* stream) {
+  assert((size_t)scopes_data_size() >= stream->data_size(), "oob");
+  stream->copy_bytes_to(scopes_data_begin(), stream->data_size(),
+                        UNSIGNED5::Statistics::DI);
 }
 
 #ifdef ASSERT

@@ -143,6 +143,17 @@ protected:
     return size(_length);
   }
 
+  // Helper class for access to an Array<u1>, comparable to
+  // UNSIGNED5::ArrayGetSet, but applied to Array types.
+  // Used to access compressed streams of FieldInfo.
+  struct GetSetHelper {
+    uint8_t operator()(Array<T>* a, int i) const { return a->at(i); };
+    void operator()(Array<T>* a, int i, uint8_t b) const { a->at_put(i,b); };
+    // So, an expression ArrayWriterHelper() acts like these lambdas:
+    // auto get = [&](ARR a, OFF i){ return a[i]; };
+    // auto set = [&](ARR a, OFF i, uint8_t x){ a[i] = x; };
+  };
+
   static int length_offset_in_bytes() { return (int) (offset_of(Array<T>, _length)); }
   // Note, this offset don't have to be wordSize aligned.
   static int base_offset_in_bytes() { return (int) (offset_of(Array<T>, _data)); };

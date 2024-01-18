@@ -88,6 +88,7 @@ class ScopeValue: public AnyObj {
   // Serialization of debugging information
   virtual void write_on(DebugInfoWriteStream* stream) = 0;
   static ScopeValue* read_from(DebugInfoReadStream* stream);
+  virtual void print_on(outputStream* st) const = 0;
 };
 
 
@@ -118,6 +119,8 @@ public:
   bool      is_marker() const                { return true; }
 
   // Serialization of debugging information
+  MarkerValue() { }
+  MarkerValue(DebugInfoReadStream* stream);
   void write_on(DebugInfoWriteStream* stream);
 
   // Printing
@@ -370,20 +373,36 @@ class MonitorValue: public ResourceObj {
 // DebugInfoReadStream specializes CompressedReadStream for reading
 // debugging information. Used by ScopeDesc.
 
-class DebugInfoReadStream : public CompressedReadStream {
+class DebugInfoReadStream : public CompressedIntReadStream {
  private:
   const CompiledMethod* _code;
   const CompiledMethod* code() const { return _code; }
   GrowableArray<ScopeValue*>* _obj_pool;
+
+  juint _second_part;
+#ifdef ASSERT
+  bool _have_second_part;
+  // the method is for asserts only:
+  bool hsp() const { return _have_second_part; }
+#endif //ASSERT
+  
  public:
-  DebugInfoReadStream(const CompiledMethod* code, int offset, GrowableArray<ScopeValue*>* obj_pool = nullptr) :
-    CompressedReadStream(code->scopes_data_begin(), offset) {
-    _code = code;
-    _obj_pool = obj_pool;
+  DebugInfoReadStream(const CompiledMethod* code,
+                      int offset,
+                      GrowableArray<ScopeValue*>* obj_pool = nullptr);
 
-  } ;
-
-  oop read_oop();
+  int read_tag(juint& post_tag) {
+    int tag = read_tag();
+    post_tag = read_post_tag();
+    return tag;
+  }
+  int read_tag();
+  juint read_post_tag();
+  int read_int() {
+    assert(!hsp(), "");
+    return CompressedIntReadStream::read_int();
+  }
+  oop decode_oop(juint oop_id);
   Method* read_method() {
     Method* o = (Method*)(code()->metadata_at(read_int()));
     // is_metadata() is a faster check than is_metaspace_object()
@@ -395,19 +414,45 @@ class DebugInfoReadStream : public CompressedReadStream {
   ScopeValue* get_cached_object();
   // BCI encoding is mostly unsigned, but -1 is a distinguished value
   int read_bci() { return read_int() + InvocationEntryBci; }
+  bool read_bool() { return (jboolean) read_int(); }
 };
 
 // DebugInfoWriteStream specializes CompressedWriteStream for
 // writing debugging information. Used by ScopeDescRecorder.
 
-class DebugInfoWriteStream : public CompressedWriteStream {
+class DebugInfoWriteStream : public CompressedIntWriteStream {
  private:
   DebugInformationRecorder* _recorder;
   DebugInformationRecorder* recorder() const { return _recorder; }
+  int _pending_tag;
+
+#ifdef ASSERT
+  bool havept() const { return _pending_tag >= 0; }
+#endif //ASSERT
+
  public:
-  DebugInfoWriteStream(DebugInformationRecorder* recorder, int initial_size);
-  void write_handle(jobject h);
+  DebugInfoWriteStream(DebugInformationRecorder* recorder,
+                       int initial_size);
+
+  void write_tag(int tag) {
+    assert(!havept(), "");
+    _pending_tag = tag;
+  }
+  void write_post_tag(juint post) {
+    assert(havept(), "");
+    int tag = _pending_tag;
+    _pending_tag = -1;
+    write_tag_and_post(tag, post);
+  }
+  void write_tag_and_post(int tag, juint post);
+  void write_int(juint value) {
+    assert(!havept(), "");
+    CompressedIntWriteStream::write_int(value);
+  }
+
+  juint encode_handle(jobject h);
   void write_bci(int bci) { write_int(bci - InvocationEntryBci); }
+  void write_bool(jboolean z) { write_int(z ? 1 : 0); }
 
   void write_metadata(Metadata* m);
 };

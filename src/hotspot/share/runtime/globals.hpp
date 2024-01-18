@@ -621,6 +621,26 @@ const int ObjectAlignmentInBytes = 8;
   develop(bool, PrintDebugInfo, false,                                      \
           "Print debug information for all nmethods when generated")        \
                                                                             \
+  product(bool, PrintCompressionStatistics, false, DIAGNOSTIC,              \
+          "Print summary information about data stored using UNSIGNED5")    \
+                                                                            \
+  product(int, DisableMetadataCompression, true, DIAGNOSTIC,                \
+          "Disable extra compression transformations on top "               \
+          "of metadata streams, using a bit mask indexed "                  \
+          "by values of UNSIGNED5::Statistics::Kind")                       \
+                                                                            \
+  develop(int, FICompressionOptions, 2,                                     \
+          "Parameter for compressing debug information")                    \
+                                                                            \
+  develop(int, LTCompressionOptions, 5 + 6*64,                              \
+          "Parameter for compressing LineNumberTable attributes")           \
+                                                                            \
+  develop(int, DICompressionOptions, 4 + 32,                                \
+          "Parameter for compressing debug information")                    \
+                                                                            \
+  develop(bool, VerifyLNTCompression, trueInDebug,                          \
+          "Verify that LineNumberTable data is encoded accurately")         \
+                                                                            \
   develop(bool, PrintRelocations, false,                                    \
           "Print relocation information for all nmethods when generated")   \
                                                                             \
