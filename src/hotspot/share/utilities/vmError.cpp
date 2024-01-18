@@ -402,7 +402,7 @@ static void print_oom_reasons(outputStream* st) {
   st->print_cr("# Possible reasons:");
   st->print_cr("#   The system is out of physical RAM or swap space");
   if (UseCompressedOops) {
-    st->print_cr("#   The process is running with CompressedOops enabled, and the Java Heap may be blocking the growth of the native heap");
+    st->print_cr("#   This process is running with CompressedOops enabled, and the Java Heap may be blocking the growth of the native heap");
   }
   if (LogBytesPerWord == 2) {
     st->print_cr("#   In 32 bit mode, the process size limit was hit");
@@ -638,9 +638,9 @@ void VMError::report(outputStream* st, bool _verbose) {
                                                       "(mprotect) failed to protect ");
            jio_snprintf(buf, sizeof(buf), SIZE_FORMAT, _size);
            st->print("%s", buf);
-           st->print(" bytes");
+           st->print(" bytes.");
            if (strlen(_detail_msg) > 0) {
-             st->print(" for ");
+             st->print(" Error detail: ");
              st->print("%s", _detail_msg);
            }
            st->cr();
