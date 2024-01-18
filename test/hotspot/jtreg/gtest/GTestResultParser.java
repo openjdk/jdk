@@ -57,7 +57,10 @@ public class GTestResultParser {
                             testCase = xmlReader.getAttributeValue("", "name");
                             break;
                         case "failure":
-                            failedTests.add(testSuite + "::" + testCase);
+                            String failedStr = testSuite + "::" + testCase;
+                            if (! failedTests.contains(failedStr)) {
+                                failedTests.add(failedStr);
+                            }
                             break;
                         default:
                             // ignore
