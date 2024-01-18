@@ -62,7 +62,7 @@ Available commands:
   printas type expression <font color="red">print given address as given HotSpot type. eg. print JavaThread &lt;address&gt;</font>
   printmdo -a | expression <font color="red">print method data oop</font>
   printstatics [ type ] <font color="red">print static fields of given HotSpot type (or all types if none specified)</font>
-  pstack [-v] <font color="red">show mixed mode stack trace for all Java, non-Java threads. -v is verbose mode. -l includes info on owned java.util.concurrent locks.</font>
+  pstack [-v] [-l] <font color="red">show mixed mode stack trace for all Java, non-Java threads. -v is verbose mode. -l includes info on owned java.util.concurrent locks.</font>
   quit <font color="red">quit CLHSDB tool</font>
   reattach <font color="red">detach and re-attach SA to current target</font>
   revptrs  <font color="red">find liveness of oops</font>
