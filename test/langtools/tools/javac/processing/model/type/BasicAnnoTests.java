@@ -89,9 +89,19 @@ public class BasicAnnoTests extends JavacTestingAbstractProcessor {
     DPrinter dprinter;
     PrintWriter out;
     boolean verbose = true;
-    static Map<String, Class<? extends Annotation>> nameToAnnotation;
+    // Use a compile-time mapping to avoid repeated runtime reflective lookups.
+    private static final Map<String, Class<? extends Annotation>> nameToAnnotation =
+        Map.ofEntries(new NameToAnnotationEntry("java.lang.Override", Override.class),
+                      new NameToAnnotationEntry("java.lang.annotation.Repeatable", Repeatable.class),
+                      new NameToAnnotationEntry("java.lang.annotation.Target", Target.class),
+                      new NameToAnnotationEntry("BasicAnnoTests.Test", BasicAnnoTests.Test.class),
+                      new NameToAnnotationEntry("BasicAnnoTests.Tests",BasicAnnoTests.Tests.class),
+                      new NameToAnnotationEntry("BasicAnnoTests.TA",   BasicAnnoTests.TA.class),
+                      new NameToAnnotationEntry("BasicAnnoTests.TB",   BasicAnnoTests.TB.class),
+                      new NameToAnnotationEntry("BasicAnnoTests.TC",   BasicAnnoTests.TC.class),
+                      new NameToAnnotationEntry("BasicAnnoTests.TCs",  BasicAnnoTests.TCs.class));
 
-    class NameToAnnotationEntry extends  AbstractMap.SimpleEntry<String, Class<? extends Annotation>> {
+    static class NameToAnnotationEntry extends  AbstractMap.SimpleEntry<String, Class<? extends Annotation>> {
         public NameToAnnotationEntry(String key, Class<? extends Annotation> entry) {
             super(key, entry);
         }
@@ -102,17 +112,6 @@ public class BasicAnnoTests extends JavacTestingAbstractProcessor {
         super.init(pEnv);
         dprinter = new DPrinter(((JavacProcessingEnvironment) pEnv).getContext());
         out = dprinter.out;
-        // Compile-time mapping to avoid repeated reflective lookups at runtime.
-        nameToAnnotation =
-            Map.ofEntries(new NameToAnnotationEntry("java.lang.Override", Override.class),
-                          new NameToAnnotationEntry("java.lang.annotation.Repeatable", Repeatable.class),
-                          new NameToAnnotationEntry("java.lang.annotation.Target", Target.class),
-                          new NameToAnnotationEntry("BasicAnnoTests.Test", BasicAnnoTests.Test.class),
-                          new NameToAnnotationEntry("BasicAnnoTests.Tests",BasicAnnoTests.Tests.class),
-                          new NameToAnnotationEntry("BasicAnnoTests.TA",   BasicAnnoTests.TA.class),
-                          new NameToAnnotationEntry("BasicAnnoTests.TB",   BasicAnnoTests.TB.class),
-                          new NameToAnnotationEntry("BasicAnnoTests.TC",   BasicAnnoTests.TC.class),
-                          new NameToAnnotationEntry("BasicAnnoTests.TCs",  BasicAnnoTests.TCs.class));
     }
 
     @Override
@@ -315,7 +314,7 @@ public class BasicAnnoTests extends JavacTestingAbstractProcessor {
 
     /**
      * Verify that an annotation mirror returned by
-     * getAnnotatinMirrors() has a matching annotation from
+     * getAnnotationMirrors() has a matching annotation from
      * getAnnotation and appropriate values are returned by
      * getAnnotationsByType.
      */
