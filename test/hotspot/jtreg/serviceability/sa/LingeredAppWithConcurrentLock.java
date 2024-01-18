@@ -66,7 +66,7 @@ public class LingeredAppWithConcurrentLock extends LingeredApp {
         System.out.println("classLock1 state: " + classLock1.getState());
         System.out.println("classLock2 state: " + classLock2.getState());
         System.out.println("classLock3 state: " + classLock3.getState());
-        
+
         LingeredApp.main(args);
     }
  }
