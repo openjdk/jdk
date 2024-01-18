@@ -891,6 +891,7 @@ bool ShenandoahControlThread::request_concurrent_gc(ShenandoahGenerationType gen
     }
 
     log_info(gc)("Preempting old generation mark to allow %s GC", shenandoah_generation_name(generation));
+    _requested_generation = generation;
     _preemption_requested.set();
     ShenandoahHeap::heap()->cancel_gc(GCCause::_shenandoah_concurrent_gc);
     notify_control_thread();
