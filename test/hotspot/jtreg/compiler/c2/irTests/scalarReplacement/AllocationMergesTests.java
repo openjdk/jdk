@@ -121,7 +121,7 @@ public class AllocationMergesTests {
         Asserts.assertEQ(testCallTwoSide_Interp(cond1, x, y),                       testCallTwoSide_C2(cond1, x, y));
         Asserts.assertEQ(testMergedAccessAfterCallNoWrite_Interp(cond1, x, y),      testMergedAccessAfterCallNoWrite_C2(cond1, x, y));
         Asserts.assertEQ(testCmpMergeWithNull_Second_Interp(cond1, x, y),           testCmpMergeWithNull_Second_C2(cond1, x, y));
-        Asserts.assertEQ(testObjectIdentity_Interp(cond1, 42, y),                 testObjectIdentity_C2(cond1, 42, y));
+        Asserts.assertEQ(testObjectIdentity_Interp(cond1, 42, y),                   testObjectIdentity_C2(cond1, 42, y));
         Asserts.assertEQ(testSubclassesTrapping_Interp(cond1, cond2, x, y, w, z),   testSubclassesTrapping_C2(cond1, cond2, x, y, w, z));
         Asserts.assertEQ(testCmpMergeWithNull_Interp(cond1, x, y),                  testCmpMergeWithNull_C2(cond1, x, y));
         Asserts.assertEQ(testSubclasses_Interp(cond1, cond2, x, y, w, z),           testSubclasses_C2(cond1, cond2, x, y, w, z));
