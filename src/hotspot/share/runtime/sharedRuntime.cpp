@@ -617,7 +617,7 @@ void SharedRuntime::throw_and_post_jvmti_exception(JavaThread* current, Handle h
         ResourceMark rm(current);
 
         // Lock to read ProfileData, and ensure lock is not broken by a safepoint
-        NoSafepointMutexLocker ml(trap_mdo->extra_data_lock(), Mutex::_no_safepoint_check_flag);
+        MutexLocker ml(trap_mdo->extra_data_lock(), Mutex::_no_safepoint_check_flag);
 
         ProfileData* pdata = trap_mdo->allocate_bci_to_data(bci, nullptr);
         if (pdata != nullptr && pdata->is_BitData()) {

@@ -255,20 +255,6 @@ class ConditionalMutexLocker: public MutexLockerImpl {
    }
 };
 
-// Mutex locker with NoSafePointVerifyer
-// At Safepoints locks can be broken. The verifier checks that there is no Safepoint in the scope
-// where the lock is held, and therefore the lock is not broken.
-class NoSafepointMutexLocker : public StackObj {
-  NoSafepointVerifier _nsv;
-  ConditionalMutexLocker _ml;
-
-public:
-  NoSafepointMutexLocker(Mutex* mutex, bool condition, Mutex::SafepointCheckFlag flag = Mutex::_safepoint_check_flag) :
-    _ml(mutex, condition, flag) {}
-  NoSafepointMutexLocker(Mutex* mutex, Mutex::SafepointCheckFlag flag = Mutex::_safepoint_check_flag) :
-    NoSafepointMutexLocker(mutex, true, flag) {}
-};
-
 // A MonitorLocker is like a MutexLocker above, except it allows
 // wait/notify as well which are delegated to the underlying Monitor.
 // It also disallows null.

@@ -1798,7 +1798,7 @@ address Deoptimization::deoptimize_for_missing_exception_handler(CompiledMethod*
   MethodData* imm_mdo = get_method_data(thread, methodHandle(thread, imm_scope->method()), true);
   if (imm_mdo != nullptr) {
     // Lock to read ProfileData, and ensure lock is not broken by a safepoint
-    NoSafepointMutexLocker ml(imm_mdo->extra_data_lock(), Mutex::_no_safepoint_check_flag);
+    MutexLocker ml(imm_mdo->extra_data_lock(), Mutex::_no_safepoint_check_flag);
 
     ProfileData* pdata = imm_mdo->allocate_bci_to_data(imm_scope->bci(), nullptr);
     if (pdata != nullptr && pdata->is_BitData()) {
@@ -2109,7 +2109,7 @@ JRT_ENTRY(void, Deoptimization::uncommon_trap_inner(JavaThread* current, jint tr
       // Lock to read ProfileData, and ensure lock is not broken by a safepoint
       // We must do this already now, since we cannot acquire this lock while
       // holding the tty lock (lock ordering by rank).
-      NoSafepointMutexLocker ml(trap_mdo->extra_data_lock(), Mutex::_no_safepoint_check_flag);
+      MutexLocker ml(trap_mdo->extra_data_lock(), Mutex::_no_safepoint_check_flag);
 
       ttyLocker ttyl;
 
@@ -2327,7 +2327,7 @@ JRT_ENTRY(void, Deoptimization::uncommon_trap_inner(JavaThread* current, jint tr
     bool inc_recompile_count = false;
 
     // Lock to read ProfileData, and ensure lock is not broken by a safepoint
-    NoSafepointMutexLocker ml((trap_mdo != nullptr) ? trap_mdo->extra_data_lock() : nullptr,
+    ConditionalMutexLocker ml((trap_mdo != nullptr) ? trap_mdo->extra_data_lock() : nullptr,
                               (trap_mdo != nullptr),
                               Mutex::_no_safepoint_check_flag);
     ProfileData* pdata = nullptr;
@@ -2578,7 +2578,7 @@ Deoptimization::update_method_data_from_interpreter(MethodData* trap_mdo, int tr
   bool update_total_counts = true JVMCI_ONLY( && !UseJVMCICompiler);
 
   // Lock to read ProfileData, and ensure lock is not broken by a safepoint
-  NoSafepointMutexLocker ml(trap_mdo->extra_data_lock(), Mutex::_no_safepoint_check_flag);
+  MutexLocker ml(trap_mdo->extra_data_lock(), Mutex::_no_safepoint_check_flag);
 
   query_update_method_data(trap_mdo, trap_bci,
                            (DeoptReason)reason,

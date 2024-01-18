@@ -577,7 +577,7 @@ void ciMethodData::set_argument_type(int bci, int i, ciKlass* k) {
   MethodData* mdo = get_MethodData();
   if (mdo != nullptr) {
     // Lock to read ProfileData, and ensure lock is not broken by a safepoint
-    NoSafepointMutexLocker ml(mdo->extra_data_lock(), Mutex::_no_safepoint_check_flag);
+    MutexLocker ml(mdo->extra_data_lock(), Mutex::_no_safepoint_check_flag);
 
     ProfileData* data = mdo->bci_to_data(bci);
     if (data != nullptr) {
@@ -604,7 +604,7 @@ void ciMethodData::set_return_type(int bci, ciKlass* k) {
   MethodData* mdo = get_MethodData();
   if (mdo != nullptr) {
     // Lock to read ProfileData, and ensure lock is not broken by a safepoint
-    NoSafepointMutexLocker ml(mdo->extra_data_lock(), Mutex::_no_safepoint_check_flag);
+    MutexLocker ml(mdo->extra_data_lock(), Mutex::_no_safepoint_check_flag);
 
     ProfileData* data = mdo->bci_to_data(bci);
     if (data != nullptr) {
