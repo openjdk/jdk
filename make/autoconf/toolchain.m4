@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -369,6 +369,10 @@ AC_DEFUN_ONCE([TOOLCHAIN_POST_DETECTION],
   # This is necessary since AC_PROG_CC defaults CFLAGS to "-g -O2"
   CFLAGS="$ORG_CFLAGS"
   CXXFLAGS="$ORG_CXXFLAGS"
+
+  # filter out some unwanted additions autoconf may add to CXX; we saw this on macOS with autoconf 2.72
+  UTIL_GET_NON_MATCHING_VALUES(cxx_filtered, $CXX, -std=c++11 -std=gnu++11)
+  CXX="$cxx_filtered"
 ])
 
 # Check if a compiler is of the toolchain type we expect, and save the version

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -199,7 +199,7 @@ AC_DEFUN([UTIL_GET_NON_MATCHING_VALUES],
   if test -z "$legal_values"; then
     $1="$2"
   else
-    result=`$GREP -Fvx "$legal_values" <<< "$values_to_check" | $GREP -v '^$'`
+    result=`$GREP -Fvx -- "$legal_values" <<< "$values_to_check" | $GREP -v '^$'`
     $1=${result//$'\n'/ }
   fi
 ])
@@ -226,7 +226,7 @@ AC_DEFUN([UTIL_GET_MATCHING_VALUES],
   if test -z "$illegal_values"; then
     $1=""
   else
-    result=`$GREP -Fx "$illegal_values" <<< "$values_to_check" | $GREP -v '^$'`
+    result=`$GREP -Fx -- "$illegal_values" <<< "$values_to_check" | $GREP -v '^$'`
     $1=${result//$'\n'/ }
   fi
 ])
