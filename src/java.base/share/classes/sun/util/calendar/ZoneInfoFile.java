@@ -814,6 +814,8 @@ public final class ZoneInfoFile {
     private static final long DST_MASK = 0xf0L;
     private static final int  DST_NSHIFT = 4;
     private static final int  TRANSITION_NSHIFT = 12;
+    // The `last` year that transitions are accounted for. If there are
+    // rules that go beyond this LASTYEAR, the value needs to be expanded.
     private static final int  LASTYEAR = 2100;
 
     // from: 0 for offset lookup, 1 for dstsvings lookup
