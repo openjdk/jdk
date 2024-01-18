@@ -409,7 +409,7 @@ void Dictionary::validate_protection_domain(InstanceKlass* klass,
 
 // During class loading we may have cached a protection domain that has
 // since been unreferenced, so this entry should be cleared.
-void Dictionary::clean_cached_protection_domains(GrowableArray<ProtectionDomainEntry*>* delete_list) {
+void Dictionary::clean_cached_protection_domains(GrowableArrayCHeap<ProtectionDomainEntry*, mtClass>* delete_list) {
   assert(Thread::current()->is_Java_thread(), "only called by JavaThread");
   assert_lock_strong(SystemDictionary_lock);
   assert(!loader_data()->has_class_mirror_holder(), "cld should have a ClassLoader holder not a Class holder");

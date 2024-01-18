@@ -51,12 +51,12 @@ size_t DumpTimeClassInfo::runtime_info_bytesize() const {
 void DumpTimeClassInfo::add_verification_constraint(InstanceKlass* k, Symbol* name,
          Symbol* from_name, bool from_field_is_protected, bool from_is_array, bool from_is_object) {
   if (_verifier_constraints == nullptr) {
-    _verifier_constraints = new (mtClass) GrowableArray<DTVerifierConstraint>(4, mtClass);
+    _verifier_constraints = new GrowableArrayCHeap<DTVerifierConstraint, mtClass>(4);
   }
   if (_verifier_constraint_flags == nullptr) {
-    _verifier_constraint_flags = new (mtClass) GrowableArray<char>(4, mtClass);
+    _verifier_constraint_flags = new GrowableArrayCHeap<char, mtClass>(4);
   }
-  GrowableArray<DTVerifierConstraint>* vc_array = _verifier_constraints;
+  GrowableArrayCHeap<DTVerifierConstraint, mtClass>* vc_array = _verifier_constraints;
   for (int i = 0; i < vc_array->length(); i++) {
     if (vc_array->at(i).equals(name, from_name)) {
       return;
@@ -65,7 +65,7 @@ void DumpTimeClassInfo::add_verification_constraint(InstanceKlass* k, Symbol* na
   DTVerifierConstraint cons(name, from_name);
   vc_array->append(cons);
 
-  GrowableArray<char>* vcflags_array = _verifier_constraint_flags;
+  GrowableArrayCHeap<char, mtClass>* vcflags_array = _verifier_constraint_flags;
   char c = 0;
   c |= from_field_is_protected ? SystemDictionaryShared::FROM_FIELD_IS_PROTECTED : 0;
   c |= from_is_array           ? SystemDictionaryShared::FROM_IS_ARRAY           : 0;
@@ -96,7 +96,7 @@ void DumpTimeClassInfo::record_linking_constraint(Symbol* name, Handle loader1, 
   assert(loader1 != loader2, "sanity");
   LogTarget(Info, class, loader, constraints) log;
   if (_loader_constraints == nullptr) {
-    _loader_constraints = new (mtClass) GrowableArray<DTLoaderConstraint>(4, mtClass);
+    _loader_constraints = new GrowableArrayCHeap<DTLoaderConstraint, mtClass>(4);
   }
   char lt1 = get_loader_type_by(loader1());
   char lt2 = get_loader_type_by(loader2());
@@ -128,7 +128,7 @@ void DumpTimeClassInfo::record_linking_constraint(Symbol* name, Handle loader1, 
 
 void DumpTimeClassInfo::add_enum_klass_static_field(int archived_heap_root_index) {
   if (_enum_klass_static_fields == nullptr) {
-    _enum_klass_static_fields = new (mtClass) GrowableArray<int>(20, mtClass);
+    _enum_klass_static_fields = new GrowableArrayCHeap<int, mtClass>(20);
   }
   _enum_klass_static_fields->append(archived_heap_root_index);
 }

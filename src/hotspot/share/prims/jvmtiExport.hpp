@@ -502,7 +502,7 @@ class JvmtiEventCollector : public StackObj {
 
 class JvmtiDynamicCodeEventCollector : public JvmtiEventCollector {
  private:
-  GrowableArray<JvmtiCodeBlobDesc*>* _code_blobs;           // collected code blob events
+  GrowableArrayCHeap<JvmtiCodeBlobDesc*, mtServiceability>* _code_blobs; // collected code blob events
 
   friend class JvmtiExport;
   void register_stub(const char* name, address start, address end);
@@ -519,7 +519,7 @@ class JvmtiDynamicCodeEventCollector : public JvmtiEventCollector {
 //
 class JvmtiObjectAllocEventCollector : public JvmtiEventCollector {
  protected:
-  GrowableArray<OopHandle>* _allocated;      // field to record collected allocated object oop.
+  GrowableArrayCHeap<OopHandle, mtServiceability>* _allocated; // field to record collected allocated object oop.
   bool _enable;                   // This flag is enabled in constructor if set up in the thread state
                                   // and disabled in destructor before posting event. To avoid
                                   // collection of objects allocated while running java code inside

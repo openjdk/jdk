@@ -217,7 +217,7 @@ bool EdgeStore::put_edges(StoredEdge** previous, const Edge** current, size_t li
   return nullptr == *current;
 }
 
-static GrowableArray<const StoredEdge*>* _leak_context_edges = nullptr;
+static GrowableArrayCHeap<const StoredEdge*, mtTracing>* _leak_context_edges = nullptr;
 
 EdgeStore::EdgeStore() : _edges(new EdgeHashTable(this)) {}
 
@@ -284,7 +284,7 @@ static const int initial_size = 64;
 static int save(const StoredEdge* edge) {
   assert(edge != nullptr, "invariant");
   if (_leak_context_edges == nullptr) {
-    _leak_context_edges = new (mtTracing) GrowableArray<const StoredEdge*>(initial_size, mtTracing);
+    _leak_context_edges = new GrowableArrayCHeap<const StoredEdge*, mtTracing>(initial_size);
     _leak_context_edges->append(nullptr); // next idx now at 1, for disambiguation in markword.
   }
   return _leak_context_edges->append(edge);

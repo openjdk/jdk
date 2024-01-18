@@ -120,8 +120,8 @@ PerfCounter*    ClassLoader::_perf_app_classfile_bytes_read = nullptr;
 PerfCounter*    ClassLoader::_perf_sys_classfile_bytes_read = nullptr;
 PerfCounter*    ClassLoader::_unsafe_defineClassCallCounter = nullptr;
 
-GrowableArray<ModuleClassPathList*>* ClassLoader::_patch_mod_entries = nullptr;
-GrowableArray<ModuleClassPathList*>* ClassLoader::_exploded_entries = nullptr;
+GrowableArrayCHeap<ModuleClassPathList*, mtModule>* ClassLoader::_patch_mod_entries = nullptr;
+GrowableArrayCHeap<ModuleClassPathList*, mtModule>* ClassLoader::_exploded_entries = nullptr;
 ClassPathEntry* ClassLoader::_jrt_entry = nullptr;
 
 ClassPathEntry* volatile ClassLoader::_first_append_entry_list = nullptr;
@@ -561,11 +561,11 @@ void ClassLoader::close_jrt_image() {
 // loaded is defined to a module that has been specified to --patch-module.
 void ClassLoader::setup_patch_mod_entries() {
   JavaThread* current = JavaThread::current();
-  GrowableArray<ModulePatchPath*>* patch_mod_args = Arguments::get_patch_mod_prefix();
+  GrowableArrayCHeap<ModulePatchPath*, mtArguments>* patch_mod_args = Arguments::get_patch_mod_prefix();
   int num_of_entries = patch_mod_args->length();
 
   // Set up the boot loader's _patch_mod_entries list
-  _patch_mod_entries = new (mtModule) GrowableArray<ModuleClassPathList*>(num_of_entries, mtModule);
+  _patch_mod_entries = new GrowableArrayCHeap<ModuleClassPathList*, mtModule>(num_of_entries);
 
   for (int i = 0; i < num_of_entries; i++) {
     const char* module_name = (patch_mod_args->at(i))->module_name();
@@ -854,7 +854,7 @@ bool ClassLoader::update_class_path_entry_list(JavaThread* current,
   }
 }
 
-static void print_module_entry_table(const GrowableArray<ModuleClassPathList*>* const module_list) {
+static void print_module_entry_table(const GrowableArrayCHeap<ModuleClassPathList*, mtModule>* const module_list) {
   ResourceMark rm;
   int num_of_entries = module_list->length();
   for (int i = 0; i < num_of_entries; i++) {
@@ -1010,7 +1010,7 @@ const char* ClassLoader::file_name_for_class_name(const char* class_name,
 }
 
 ClassPathEntry* find_first_module_cpe(ModuleEntry* mod_entry,
-                                      const GrowableArray<ModuleClassPathList*>* const module_list) {
+                                      const GrowableArrayCHeap<ModuleClassPathList*, mtModule>* const module_list) {
   int num_of_entries = module_list->length();
   const Symbol* class_module_name = mod_entry->name();
 
@@ -1030,7 +1030,7 @@ ClassPathEntry* find_first_module_cpe(ModuleEntry* mod_entry,
 
 // Search either the patch-module or exploded build entries for class.
 ClassFileStream* ClassLoader::search_module_entries(JavaThread* current,
-                                                    const GrowableArray<ModuleClassPathList*>* const module_list,
+                                                    const GrowableArrayCHeap<ModuleClassPathList*, mtModule>* const module_list,
                                                     const char* const class_name,
                                                     const char* const file_name) {
   ClassFileStream* stream = nullptr;
@@ -1496,8 +1496,7 @@ void ClassLoader::classLoader_init2(JavaThread* current) {
     // done before loading any classes, by the same thread that will
     // subsequently do the first class load. So, no lock is needed for this.
     assert(_exploded_entries == nullptr, "Should only get initialized once");
-    _exploded_entries = new (mtModule)
-      GrowableArray<ModuleClassPathList*>(EXPLODED_ENTRY_SIZE, mtModule);
+    _exploded_entries = new GrowableArrayCHeap<ModuleClassPathList*, mtModule>(EXPLODED_ENTRY_SIZE);
     add_to_exploded_build_list(current, vmSymbols::java_base());
   }
 }

@@ -120,7 +120,7 @@ class MutableNUMASpace : public MutableSpace {
     void accumulate_statistics(size_t page_size);
   };
 
-  GrowableArray<LGRPSpace*>* _lgrp_spaces;
+  GrowableArrayCHeap<LGRPSpace*, mtGC>* _lgrp_spaces;
   size_t _page_size;
   unsigned _adaptation_cycles, _samples_count;
 
@@ -157,7 +157,7 @@ class MutableNUMASpace : public MutableSpace {
   int lgrp_space_index(int lgrp_id) const;
 
 public:
-  GrowableArray<LGRPSpace*>* lgrp_spaces() const     { return _lgrp_spaces;       }
+  GrowableArrayCHeap<LGRPSpace*, mtGC>* lgrp_spaces() const { return _lgrp_spaces; }
   MutableNUMASpace(size_t alignment);
   virtual ~MutableNUMASpace();
   // Space initialization.

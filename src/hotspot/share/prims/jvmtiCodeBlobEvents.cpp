@@ -61,11 +61,11 @@
 
 class CodeBlobCollector : StackObj {
  private:
-  GrowableArray<JvmtiCodeBlobDesc*>* _code_blobs;   // collected blobs
-  int _pos;                                         // iterator position
+  GrowableArrayCHeap<JvmtiCodeBlobDesc*, mtServiceability>* _code_blobs; // collected blobs
+  int _pos; // iterator position
 
   // used during a collection
-  static GrowableArray<JvmtiCodeBlobDesc*>* _global_code_blobs;
+  static GrowableArrayCHeap<JvmtiCodeBlobDesc*, mtServiceability>* _global_code_blobs;
   static void do_blob(CodeBlob* cb);
   static void do_vtable_stub(VtableStub* vs);
  public:
@@ -107,7 +107,7 @@ class CodeBlobCollector : StackObj {
 };
 
 // used during collection
-GrowableArray<JvmtiCodeBlobDesc*>* CodeBlobCollector::_global_code_blobs;
+GrowableArrayCHeap<JvmtiCodeBlobDesc*, mtServiceability>* CodeBlobCollector::_global_code_blobs;
 
 
 // called for each CodeBlob in the CodeCache
@@ -173,7 +173,7 @@ void CodeBlobCollector::collect() {
   assert(_global_code_blobs == nullptr, "checking");
 
   // create the global list
-  _global_code_blobs = new (mtServiceability) GrowableArray<JvmtiCodeBlobDesc*>(50, mtServiceability);
+  _global_code_blobs = new GrowableArrayCHeap<JvmtiCodeBlobDesc*, mtServiceability>(50);
 
   // iterate over the stub code descriptors and put them in the list first.
   for (StubCodeDesc* desc = StubCodeDesc::first(); desc != nullptr; desc = StubCodeDesc::next(desc)) {

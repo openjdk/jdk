@@ -35,6 +35,7 @@ class JvmtiEventController;
 class JvmtiEnvThreadState;
 class JvmtiFramePop;
 class JvmtiEnvBase;
+class JvmtiThreadState;
 
 
 // Extension event support

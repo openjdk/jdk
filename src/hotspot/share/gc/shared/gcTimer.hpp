@@ -33,7 +33,7 @@ class ConcurrentPhase;
 class GCPhase;
 class PausePhase;
 
-template <class E> class GrowableArray;
+template <class E, MEMFLAGS F> class GrowableArrayCHeap;
 
 class PhaseVisitor {
  public:
@@ -99,7 +99,7 @@ class TimePartitions {
 
   static const int INITIAL_CAPACITY = 10;
 
-  GrowableArray<GCPhase>* _phases;
+  GrowableArrayCHeap<GCPhase, mtGC>* _phases;
   PhasesStack _active_phases;
 
   Tickspan _sum_of_pauses;

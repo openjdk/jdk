@@ -237,8 +237,8 @@ class java_lang_Class : AllStatic {
 
   static bool _offsets_computed;
 
-  static GrowableArray<Klass*>* _fixup_mirror_list;
-  static GrowableArray<Klass*>* _fixup_module_field_list;
+  static GrowableArrayCHeap<Klass*, mtClass>* _fixup_mirror_list;
+  static GrowableArrayCHeap<Klass*, mtModule>* _fixup_module_field_list;
 
   static void set_protection_domain(oop java_class, oop protection_domain);
   static void set_class_loader(oop java_class, oop class_loader);
@@ -314,17 +314,17 @@ class java_lang_Class : AllStatic {
   static int static_oop_field_count(oop java_class);
   static void set_static_oop_field_count(oop java_class, int size);
 
-  static GrowableArray<Klass*>* fixup_mirror_list() {
+  static GrowableArrayCHeap<Klass*, mtClass>* fixup_mirror_list() {
     return _fixup_mirror_list;
   }
-  static void set_fixup_mirror_list(GrowableArray<Klass*>* v) {
+  static void set_fixup_mirror_list(GrowableArrayCHeap<Klass*, mtClass>* v) {
     _fixup_mirror_list = v;
   }
 
-  static GrowableArray<Klass*>* fixup_module_field_list() {
+  static GrowableArrayCHeap<Klass*, mtModule>* fixup_module_field_list() {
     return _fixup_module_field_list;
   }
-  static void set_fixup_module_field_list(GrowableArray<Klass*>* v) {
+  static void set_fixup_module_field_list(GrowableArrayCHeap<Klass*, mtModule>* v) {
     _fixup_module_field_list = v;
   }
 

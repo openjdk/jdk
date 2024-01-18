@@ -498,7 +498,7 @@
   /* CodeCache (NOTE: incomplete) */                                                                                                 \
   /********************************/                                                                                                 \
                                                                                                                                      \
-     static_field(CodeCache,                   _heaps,                                        GrowableArray<CodeHeap*>*)             \
+     static_field(CodeCache,                   _heaps,                                        CodeCache::CodeHeapArray*)             \
      static_field(CodeCache,                   _low_bound,                                    address)                               \
      static_field(CodeCache,                   _high_bound,                                   address)                               \
                                                                                                                                      \
@@ -1237,6 +1237,7 @@
                                                                           \
   declare_toplevel_type(GrowableArrayBase)                                \
   declare_toplevel_type(GrowableArray<int>)                               \
+  declare_toplevel_type(CodeCache::CodeHeapArray)                         \
   declare_toplevel_type(Arena)                                            \
     declare_type(ResourceArea, Arena)                                     \
                                                                           \

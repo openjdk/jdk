@@ -100,12 +100,12 @@ static inline InstanceKlass* get_ik(jclass def) {
 // Parallel constant pool merging leads to indeterminate constant pools.
 void VM_RedefineClasses::lock_classes() {
   JvmtiThreadState *state = JvmtiThreadState::state_for(JavaThread::current());
-  GrowableArray<Klass*>* redef_classes = state->get_classes_being_redefined();
+  GrowableArrayCHeap<Klass*, mtClass>* redef_classes = state->get_classes_being_redefined();
 
   MonitorLocker ml(RedefineClasses_lock);
 
   if (redef_classes == nullptr) {
-    redef_classes = new (mtClass) GrowableArray<Klass*>(1, mtClass);
+    redef_classes = new GrowableArrayCHeap<Klass*, mtClass>(1);
     state->set_classes_being_redefined(redef_classes);
   }
 
@@ -141,7 +141,7 @@ void VM_RedefineClasses::lock_classes() {
 
 void VM_RedefineClasses::unlock_classes() {
   JvmtiThreadState *state = JvmtiThreadState::state_for(JavaThread::current());
-  GrowableArray<Klass*>* redef_classes = state->get_classes_being_redefined();
+  GrowableArrayCHeap<Klass*, mtClass>* redef_classes = state->get_classes_being_redefined();
   assert(redef_classes != nullptr, "_classes_being_redefined is not allocated");
 
   MonitorLocker ml(RedefineClasses_lock);

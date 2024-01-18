@@ -51,9 +51,9 @@ CompactHashtableWriter::CompactHashtableWriter(int num_entries,
   assert(_num_buckets > 0, "no buckets");
 
   _num_entries_written = 0;
-  _buckets = NEW_C_HEAP_ARRAY(GrowableArray<Entry>*, _num_buckets, mtSymbol);
+  _buckets = NEW_C_HEAP_ARRAY(EntryBucket*, _num_buckets, mtSymbol);
   for (int i=0; i<_num_buckets; i++) {
-    _buckets[i] = new (mtSymbol) GrowableArray<Entry>(0, mtSymbol);
+    _buckets[i] = new EntryBucket(0);
   }
 
   _stats = stats;
@@ -66,11 +66,11 @@ CompactHashtableWriter::CompactHashtableWriter(int num_entries,
 
 CompactHashtableWriter::~CompactHashtableWriter() {
   for (int index = 0; index < _num_buckets; index++) {
-    GrowableArray<Entry>* bucket = _buckets[index];
+    EntryBucket* bucket = _buckets[index];
     delete bucket;
   }
 
-  FREE_C_HEAP_ARRAY(GrowableArray<Entry>*, _buckets);
+  FREE_C_HEAP_ARRAY(EntryBucket*, _buckets);
 }
 
 size_t CompactHashtableWriter::estimate_size(int num_entries) {
@@ -96,7 +96,7 @@ void CompactHashtableWriter::add(unsigned int hash, u4 value) {
 void CompactHashtableWriter::allocate_table() {
   int entries_space = 0;
   for (int index = 0; index < _num_buckets; index++) {
-    GrowableArray<Entry>* bucket = _buckets[index];
+    EntryBucket* bucket = _buckets[index];
     int bucket_size = bucket->length();
     if (bucket_size == 1) {
       entries_space++;
@@ -125,7 +125,7 @@ void CompactHashtableWriter::allocate_table() {
 void CompactHashtableWriter::dump_table(NumberSeq* summary) {
   u4 offset = 0;
   for (int index = 0; index < _num_buckets; index++) {
-    GrowableArray<Entry>* bucket = _buckets[index];
+    EntryBucket* bucket = _buckets[index];
     int bucket_size = bucket->length();
     if (bucket_size == 1) {
       // bucket with one entry is compacted and only has the symbol offset

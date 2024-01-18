@@ -114,7 +114,7 @@ GCPhase::PhaseType TimePartitions::current_phase_type() const {
 }
 
 TimePartitions::TimePartitions() {
-  _phases = new (mtGC) GrowableArray<GCPhase>(INITIAL_CAPACITY, mtGC);
+  _phases = new GrowableArrayCHeap<GCPhase, mtGC>(INITIAL_CAPACITY);
   clear();
 }
 

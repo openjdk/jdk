@@ -112,14 +112,14 @@ public:
 
 class DumpTimeLambdaProxyClassInfo {
 public:
-  GrowableArray<InstanceKlass*>* _proxy_klasses;
+  GrowableArrayCHeap<InstanceKlass*, mtClassShared>* _proxy_klasses;
   DumpTimeLambdaProxyClassInfo() : _proxy_klasses(nullptr) {}
   DumpTimeLambdaProxyClassInfo& operator=(const DumpTimeLambdaProxyClassInfo&) = delete;
   ~DumpTimeLambdaProxyClassInfo();
 
   void add_proxy_klass(InstanceKlass* proxy_klass) {
     if (_proxy_klasses == nullptr) {
-      _proxy_klasses = new (mtClassShared) GrowableArray<InstanceKlass*>(5, mtClassShared);
+      _proxy_klasses = new GrowableArrayCHeap<InstanceKlass*, mtClassShared>(5);
     }
     assert(_proxy_klasses != nullptr, "sanity");
     _proxy_klasses->append(proxy_klass);

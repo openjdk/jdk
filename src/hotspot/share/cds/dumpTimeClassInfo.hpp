@@ -126,10 +126,10 @@ public:
   int                          _id;
   int                          _clsfile_size;
   int                          _clsfile_crc32;
-  GrowableArray<DTVerifierConstraint>* _verifier_constraints;
-  GrowableArray<char>*                 _verifier_constraint_flags;
-  GrowableArray<DTLoaderConstraint>*   _loader_constraints;
-  GrowableArray<int>*                  _enum_klass_static_fields;
+  GrowableArrayCHeap<DTVerifierConstraint, mtClass>* _verifier_constraints;
+  GrowableArrayCHeap<char, mtClass>*                 _verifier_constraint_flags;
+  GrowableArrayCHeap<DTLoaderConstraint, mtClass>*   _loader_constraints;
+  GrowableArrayCHeap<int, mtClass>*                  _enum_klass_static_fields;
 
   DumpTimeClassInfo() {
     _klass = nullptr;
@@ -159,7 +159,7 @@ public:
 
 private:
   template <typename T>
-  static int array_length_or_zero(GrowableArray<T>* array) {
+  static int array_length_or_zero(GrowableArrayCHeap<T, mtClass>* array) {
     if (array == nullptr) {
       return 0;
     } else {

@@ -357,3 +357,9 @@ bool Arena::contains( const void *ptr ) const {
   }
   return false;                 // Not in any Chunk, so not in Arena
 }
+
+#ifdef ASSERT
+bool Arena_contains(const Arena* arena, const void* ptr) {
+  return arena->contains(ptr);
+}
+#endif // ASSERT

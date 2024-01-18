@@ -31,7 +31,7 @@
 #include "utilities/globalDefinitions.hpp"
 
 StringArrayArgument::StringArrayArgument() {
-  _array = new (mtServiceability) GrowableArray<char *>(32, mtServiceability);
+  _array = new GrowableArrayCHeap<char*, mtServiceability>(32);
   assert(_array != nullptr, "Sanity check");
 }
 

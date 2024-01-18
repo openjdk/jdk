@@ -57,7 +57,7 @@ class PhaseTypeGuard : public StackObj {
 Semaphore PhaseTypeGuard::_mutex_semaphore(1);
 
 // Table for mapping compiler phases names to int identifiers.
-static GrowableArray<const char*>* phase_names = nullptr;
+static GrowableArrayCHeap<const char*, mtCompiler>* phase_names = nullptr;
 
 class CompilerPhaseTypeConstant : public JfrSerializer {
  public:
@@ -90,7 +90,7 @@ int CompilerEvent::PhaseEvent::get_phase_id(const char* phase_name, bool may_exi
   {
     PhaseTypeGuard guard(sync);
     if (phase_names == nullptr) {
-      phase_names = new (mtInternal) GrowableArray<const char*>(100, mtCompiler);
+      phase_names = new GrowableArrayCHeap<const char*, mtCompiler>(100);
       register_jfr_serializer = true;
     } else if (may_exist) {
       index = lookup_phase(phase_name);

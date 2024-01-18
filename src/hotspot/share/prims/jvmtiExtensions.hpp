@@ -38,8 +38,8 @@
 
 class JvmtiExtensions : public AllStatic {
  private:
-  static GrowableArray<jvmtiExtensionFunctionInfo*>* _ext_functions;
-  static GrowableArray<jvmtiExtensionEventInfo*>* _ext_events;
+  static GrowableArrayCHeap<jvmtiExtensionFunctionInfo*, mtServiceability>* _ext_functions;
+  static GrowableArrayCHeap<jvmtiExtensionEventInfo*, mtServiceability>* _ext_events;
 
  public:
   // register extensions function

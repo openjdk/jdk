@@ -166,11 +166,11 @@ class SignatureHandlerLibrary: public AllStatic {
   enum { blob_size   = 32*K }; // the size of a handler code blob.
 
  private:
-  static BufferBlob*              _handler_blob; // the current buffer blob containing the generated handlers
-  static address                  _handler;      // next available address within _handler_blob;
-  static GrowableArray<uint64_t>* _fingerprints; // the fingerprint collection
-  static GrowableArray<address>*  _handlers;     // the corresponding handlers
-  static address                  _buffer;       // the temporary code buffer
+  static BufferBlob*                           _handler_blob; // the current buffer blob containing the generated handlers
+  static address                               _handler;      // next available address within _handler_blob;
+  static GrowableArrayCHeap<uint64_t, mtCode>* _fingerprints; // the fingerprint collection
+  static GrowableArrayCHeap<address, mtCode>*  _handlers;     // the corresponding handlers
+  static address                               _buffer;       // the temporary code buffer
 
   static address set_handler_blob();
   static void initialize();

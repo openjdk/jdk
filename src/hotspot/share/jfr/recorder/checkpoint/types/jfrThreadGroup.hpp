@@ -40,7 +40,7 @@ class JfrThreadGroup : public JfrCHeapObj {
  private:
   static JfrThreadGroup* _instance;
   class JfrThreadGroupEntry;
-  GrowableArray<JfrThreadGroupEntry*>* _list;
+  GrowableArrayCHeap<JfrThreadGroupEntry*, mtTracing>* _list;
 
   JfrThreadGroup();
   JfrThreadGroupEntry* find_entry(const JfrThreadGroupPointers& ptrs) const;

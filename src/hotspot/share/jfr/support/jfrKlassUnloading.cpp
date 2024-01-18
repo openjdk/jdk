@@ -35,43 +35,43 @@
 static const int initial_array_size = 64;
 
 template <typename T>
-static GrowableArray<T>* c_heap_allocate_array(int size = initial_array_size) {
-  return new (mtTracing) GrowableArray<T>(size, mtTracing);
+static GrowableArrayCHeap<T, mtTracing>* c_heap_allocate_array(int size = initial_array_size) {
+  return new GrowableArrayCHeap<T, mtTracing>(size);
 }
 
 // Track the set of unloaded klasses during a chunk / epoch.
-static GrowableArray<traceid>* _unload_set_epoch_0 = nullptr;
-static GrowableArray<traceid>* _unload_set_epoch_1 = nullptr;
+static GrowableArrayCHeap<traceid, mtTracing>* _unload_set_epoch_0 = nullptr;
+static GrowableArrayCHeap<traceid, mtTracing>* _unload_set_epoch_1 = nullptr;
 
 static s8 event_klass_unloaded_count = 0;
 
-static GrowableArray<traceid>* unload_set_epoch_0() {
+static GrowableArrayCHeap<traceid, mtTracing>* unload_set_epoch_0() {
   if (_unload_set_epoch_0 == nullptr) {
     _unload_set_epoch_0 = c_heap_allocate_array<traceid>(initial_array_size);
   }
   return _unload_set_epoch_0;
 }
 
-static GrowableArray<traceid>* unload_set_epoch_1() {
+static GrowableArrayCHeap<traceid, mtTracing>* unload_set_epoch_1() {
   if (_unload_set_epoch_1 == nullptr) {
     _unload_set_epoch_1 = c_heap_allocate_array<traceid>(initial_array_size);
   }
   return _unload_set_epoch_1;
 }
 
-static GrowableArray<traceid>* get_unload_set(u1 epoch) {
+static GrowableArrayCHeap<traceid, mtTracing>* get_unload_set(u1 epoch) {
   return epoch == 0 ? unload_set_epoch_0() : unload_set_epoch_1();
 }
 
-static GrowableArray<traceid>* get_unload_set() {
+static GrowableArrayCHeap<traceid, mtTracing>* get_unload_set() {
   return get_unload_set(JfrTraceIdEpoch::current());
 }
 
-static GrowableArray<traceid>* get_unload_set_previous_epoch() {
+static GrowableArrayCHeap<traceid, mtTracing>* get_unload_set_previous_epoch() {
   return get_unload_set(JfrTraceIdEpoch::previous());
 }
 
-static void sort_set(GrowableArray<traceid>* set) {
+static void sort_set(GrowableArrayCHeap<traceid, mtTracing>* set) {
   assert(set != nullptr, "invariant");
   assert(set->is_nonempty(), "invariant");
   set->sort(sort_traceid);
@@ -103,7 +103,7 @@ void JfrKlassUnloading::clear() {
 
 static bool add_to_unloaded_klass_set(traceid klass_id, bool current_epoch) {
   assert_locked_or_safepoint(ClassLoaderDataGraph_lock);
-  GrowableArray<traceid>* const unload_set = current_epoch ? get_unload_set() : get_unload_set_previous_epoch();
+  GrowableArrayCHeap<traceid, mtTracing>* const unload_set = current_epoch ? get_unload_set() : get_unload_set_previous_epoch();
   assert(unload_set != nullptr, "invariant");
   assert(unload_set->find(klass_id) == -1, "invariant");
   unload_set->append(klass_id);

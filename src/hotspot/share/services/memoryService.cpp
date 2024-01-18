@@ -43,14 +43,14 @@
 #include "utilities/growableArray.hpp"
 #include "utilities/macros.hpp"
 
-GrowableArray<MemoryPool*>* MemoryService::_pools_list =
-  new (mtServiceability) GrowableArray<MemoryPool*>(init_pools_list_size, mtServiceability);
-GrowableArray<MemoryManager*>* MemoryService::_managers_list =
-  new (mtServiceability) GrowableArray<MemoryManager*>(init_managers_list_size, mtServiceability);
+GrowableArrayCHeap<MemoryPool*, mtServiceability>* MemoryService::_pools_list =
+  new GrowableArrayCHeap<MemoryPool*, mtServiceability>(init_pools_list_size);
+GrowableArrayCHeap<MemoryManager*, mtServiceability>* MemoryService::_managers_list =
+  new GrowableArrayCHeap<MemoryManager*, mtServiceability>(init_managers_list_size);
 
 MemoryManager*   MemoryService::_code_cache_manager    = nullptr;
-GrowableArray<MemoryPool*>* MemoryService::_code_heap_pools =
-    new (mtServiceability) GrowableArray<MemoryPool*>(init_code_heap_pools_size, mtServiceability);
+GrowableArrayCHeap<MemoryPool*, mtServiceability>* MemoryService::_code_heap_pools =
+  new GrowableArrayCHeap<MemoryPool*, mtServiceability>(init_code_heap_pools_size);
 MemoryPool*      MemoryService::_metaspace_pool        = nullptr;
 MemoryPool*      MemoryService::_compressed_class_pool = nullptr;
 

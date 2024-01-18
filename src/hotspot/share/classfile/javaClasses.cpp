@@ -795,8 +795,8 @@ int java_lang_Class::_classData_offset;
 int java_lang_Class::_classRedefinedCount_offset;
 
 bool java_lang_Class::_offsets_computed = false;
-GrowableArray<Klass*>* java_lang_Class::_fixup_mirror_list = nullptr;
-GrowableArray<Klass*>* java_lang_Class::_fixup_module_field_list = nullptr;
+GrowableArrayCHeap<Klass*, mtClass>* java_lang_Class::_fixup_mirror_list = nullptr;
+GrowableArrayCHeap<Klass*, mtModule>* java_lang_Class::_fixup_module_field_list = nullptr;
 
 #ifdef ASSERT
 inline static void assert_valid_static_string_field(fieldDescriptor* fd) {
@@ -962,13 +962,8 @@ void java_lang_Class::set_mirror_module_field(JavaThread* current, Klass* k, Han
 
 // Statically allocate fixup lists because they always get created.
 void java_lang_Class::allocate_fixup_lists() {
-  GrowableArray<Klass*>* mirror_list =
-    new (mtClass) GrowableArray<Klass*>(40, mtClass);
-  set_fixup_mirror_list(mirror_list);
-
-  GrowableArray<Klass*>* module_list =
-    new (mtModule) GrowableArray<Klass*>(500, mtModule);
-  set_fixup_module_field_list(module_list);
+  set_fixup_mirror_list(new GrowableArrayCHeap<Klass*, mtClass>(40));
+  set_fixup_module_field_list(new GrowableArrayCHeap<Klass*, mtModule>(500));
 }
 
 void java_lang_Class::allocate_mirror(Klass* k, bool is_scratch, Handle protection_domain, Handle classData,
@@ -1778,8 +1773,8 @@ oop java_lang_Thread::async_get_stack_trace(oop java_thread, TRAPS) {
     const Handle _java_thread;
     int _depth;
     bool _retry_handshake;
-    GrowableArray<Method*>* _methods;
-    GrowableArray<int>*     _bcis;
+    GrowableArrayCHeap<Method*, mtInternal>* _methods;
+    GrowableArrayCHeap<int, mtInternal>*     _bcis;
 
     GetStackTraceClosure(Handle java_thread) :
         HandshakeClosure("GetStackTraceClosure"), _java_thread(java_thread), _depth(0), _retry_handshake(false),
@@ -1826,8 +1821,8 @@ oop java_lang_Thread::async_get_stack_trace(oop java_thread, TRAPS) {
 
       // Pick minimum length that will cover most cases
       int init_length = 64;
-      _methods = new (mtInternal) GrowableArray<Method*>(init_length, mtInternal);
-      _bcis = new (mtInternal) GrowableArray<int>(init_length, mtInternal);
+      _methods = new GrowableArrayCHeap<Method*, mtInternal>(init_length);
+      _bcis = new GrowableArrayCHeap<int, mtInternal>(init_length);
 
       int total_count = 0;
       for (vframeStream vfst(thread, false, false, carrier); // we don't process frames as we don't care about oops

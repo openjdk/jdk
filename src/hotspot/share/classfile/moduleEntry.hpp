@@ -68,7 +68,7 @@ private:
                                        // for shared classes from this module
   Symbol*          _name;              // name of this module
   ClassLoaderData* _loader_data;
-  GrowableArray<ModuleEntry*>* _reads; // list of modules that are readable by this module
+  GrowableArrayCHeap<ModuleEntry*, mtModule>* _reads; // list of modules that are readable by this module
   Symbol* _version;                    // module version number
   Symbol* _location;                   // module location
   CDS_ONLY(int _shared_path_index;)    // >=0 if classes in this module are in CDS archive
@@ -177,8 +177,8 @@ public:
   void init_as_archived_entry();
   static ModuleEntry* get_archived_entry(ModuleEntry* orig_entry);
   bool has_been_archived();
-  static Array<ModuleEntry*>* write_growable_array(GrowableArray<ModuleEntry*>* array);
-  static GrowableArray<ModuleEntry*>* restore_growable_array(Array<ModuleEntry*>* archived_array);
+  static Array<ModuleEntry*>* write_growable_array(GrowableArrayCHeap<ModuleEntry*, mtModule>* array);
+  static GrowableArrayCHeap<ModuleEntry*, mtModule>* restore_growable_array(Array<ModuleEntry*>* archived_array);
   void load_from_archive(ClassLoaderData* loader_data);
   void restore_archived_oops(ClassLoaderData* loader_data);
   void clear_archived_oops();

@@ -392,7 +392,7 @@ class ClassFieldMap: public CHeapObj<mtInternal> {
   };
 
   // list of field descriptors
-  GrowableArray<ClassFieldDescriptor*>* _fields;
+  GrowableArrayCHeap<ClassFieldDescriptor*, mtServiceability>* _fields;
 
   // constructor
   ClassFieldMap();
@@ -413,8 +413,7 @@ class ClassFieldMap: public CHeapObj<mtInternal> {
 };
 
 ClassFieldMap::ClassFieldMap() {
-  _fields = new (mtServiceability)
-    GrowableArray<ClassFieldDescriptor*>(initial_field_count, mtServiceability);
+  _fields = new GrowableArrayCHeap<ClassFieldDescriptor*, mtServiceability>(initial_field_count);
 }
 
 ClassFieldMap::~ClassFieldMap() {
@@ -495,7 +494,7 @@ class JvmtiCachedClassFieldMap : public CHeapObj<mtInternal> {
   JvmtiCachedClassFieldMap(ClassFieldMap* field_map);
   ~JvmtiCachedClassFieldMap();
 
-  static GrowableArray<InstanceKlass*>* _class_list;
+  static GrowableArrayCHeap<InstanceKlass*, mtServiceability>* _class_list;
   static void add_to_class_list(InstanceKlass* ik);
 
  public:
@@ -511,7 +510,7 @@ class JvmtiCachedClassFieldMap : public CHeapObj<mtInternal> {
   static int cached_field_map_count();
 };
 
-GrowableArray<InstanceKlass*>* JvmtiCachedClassFieldMap::_class_list;
+GrowableArrayCHeap<InstanceKlass*, mtServiceability>* JvmtiCachedClassFieldMap::_class_list;
 
 JvmtiCachedClassFieldMap::JvmtiCachedClassFieldMap(ClassFieldMap* field_map) {
   _field_map = field_map;
@@ -547,8 +546,7 @@ bool ClassFieldMapCacheMark::_is_active;
 // record that the given InstanceKlass is caching a field map
 void JvmtiCachedClassFieldMap::add_to_class_list(InstanceKlass* ik) {
   if (_class_list == nullptr) {
-    _class_list = new (mtServiceability)
-      GrowableArray<InstanceKlass*>(initial_class_count, mtServiceability);
+    _class_list = new GrowableArrayCHeap<InstanceKlass*, mtServiceability>(initial_class_count);
   }
   _class_list->push(ik);
 }
@@ -1216,8 +1214,8 @@ class TagObjectCollector : public JvmtiTagMapKeyClosure {
   jint _tag_count;
   bool _some_dead_found;
 
-  GrowableArray<jobject>* _object_results;  // collected objects (JNI weak refs)
-  GrowableArray<uint64_t>* _tag_results;    // collected tags
+  GrowableArrayCHeap<jobject, mtServiceability>* _object_results;  // collected objects (JNI weak refs)
+  GrowableArrayCHeap<uint64_t, mtServiceability>* _tag_results;    // collected tags
 
  public:
   TagObjectCollector(JvmtiEnv* env, const jlong* tags, jint tag_count) :
@@ -1226,8 +1224,8 @@ class TagObjectCollector : public JvmtiTagMapKeyClosure {
     _tags((jlong*)tags),
     _tag_count(tag_count),
     _some_dead_found(false),
-    _object_results(new (mtServiceability) GrowableArray<jobject>(1, mtServiceability)),
-    _tag_results(new (mtServiceability) GrowableArray<uint64_t>(1, mtServiceability)) { }
+    _object_results(new GrowableArrayCHeap<jobject, mtServiceability>(1)),
+    _tag_results(new GrowableArrayCHeap<uint64_t, mtServiceability>(1)) { }
 
   ~TagObjectCollector() {
     delete _object_results;
@@ -1449,13 +1447,13 @@ class CallbackInvoker : AllStatic {
   // context needed for all heap walks
   static JvmtiTagMap* _tag_map;
   static const void* _user_data;
-  static GrowableArray<oop>* _visit_stack;
+  static GrowableArrayCHeap<oop, mtServiceability>* _visit_stack;
   static JVMTIBitSet* _bitset;
 
   // accessors
-  static JvmtiTagMap* tag_map()                        { return _tag_map; }
-  static const void* user_data()                       { return _user_data; }
-  static GrowableArray<oop>* visit_stack()             { return _visit_stack; }
+  static JvmtiTagMap* tag_map()                                   { return _tag_map; }
+  static const void* user_data()                                  { return _user_data; }
+  static GrowableArrayCHeap<oop, mtServiceability>* visit_stack() { return _visit_stack; }
 
   // if the object hasn't been visited then push it onto the visit stack
   // so that it will be visited later
@@ -1489,14 +1487,14 @@ class CallbackInvoker : AllStatic {
  public:
   // initialize for basic mode
   static void initialize_for_basic_heap_walk(JvmtiTagMap* tag_map,
-                                             GrowableArray<oop>* visit_stack,
+                                             GrowableArrayCHeap<oop, mtServiceability>* visit_stack,
                                              const void* user_data,
                                              BasicHeapWalkContext context,
                                              JVMTIBitSet* bitset);
 
   // initialize for advanced mode
   static void initialize_for_advanced_heap_walk(JvmtiTagMap* tag_map,
-                                                GrowableArray<oop>* visit_stack,
+                                                GrowableArrayCHeap<oop, mtServiceability>* visit_stack,
                                                 const void* user_data,
                                                 AdvancedHeapWalkContext context,
                                                 JVMTIBitSet* bitset);
@@ -1531,12 +1529,12 @@ BasicHeapWalkContext CallbackInvoker::_basic_context;
 AdvancedHeapWalkContext CallbackInvoker::_advanced_context;
 JvmtiTagMap* CallbackInvoker::_tag_map;
 const void* CallbackInvoker::_user_data;
-GrowableArray<oop>* CallbackInvoker::_visit_stack;
+GrowableArrayCHeap<oop, mtServiceability>* CallbackInvoker::_visit_stack;
 JVMTIBitSet* CallbackInvoker::_bitset;
 
 // initialize for basic heap walk (IterateOverReachableObjects et al)
 void CallbackInvoker::initialize_for_basic_heap_walk(JvmtiTagMap* tag_map,
-                                                     GrowableArray<oop>* visit_stack,
+                                                     GrowableArrayCHeap<oop, mtServiceability>* visit_stack,
                                                      const void* user_data,
                                                      BasicHeapWalkContext context,
                                                      JVMTIBitSet* bitset) {
@@ -1551,7 +1549,7 @@ void CallbackInvoker::initialize_for_basic_heap_walk(JvmtiTagMap* tag_map,
 
 // initialize for advanced heap walk (FollowReferences)
 void CallbackInvoker::initialize_for_advanced_heap_walk(JvmtiTagMap* tag_map,
-                                                        GrowableArray<oop>* visit_stack,
+                                                        GrowableArrayCHeap<oop, mtServiceability>* visit_stack,
                                                         const void* user_data,
                                                         AdvancedHeapWalkContext context,
                                                         JVMTIBitSet* bitset) {
@@ -2385,7 +2383,7 @@ class VM_HeapWalkOperation: public VM_Operation {
   bool _is_advanced_heap_walk;                      // indicates FollowReferences
   JvmtiTagMap* _tag_map;
   Handle _initial_object;
-  GrowableArray<oop>* _visit_stack;                 // the visit stack
+  GrowableArrayCHeap<oop, mtServiceability>* _visit_stack; // the visit stack
 
   JVMTIBitSet _bitset;
 
@@ -2398,8 +2396,8 @@ class VM_HeapWalkOperation: public VM_Operation {
   bool _reporting_primitive_array_values;
   bool _reporting_string_values;
 
-  GrowableArray<oop>* create_visit_stack() {
-    return new (mtServiceability) GrowableArray<oop>(initial_visit_stack_size, mtServiceability);
+  GrowableArrayCHeap<oop, mtServiceability>* create_visit_stack() {
+    return new GrowableArrayCHeap<oop, mtServiceability>(initial_visit_stack_size);
   }
 
   // accessors
@@ -2413,7 +2411,7 @@ class VM_HeapWalkOperation: public VM_Operation {
   bool is_reporting_primitive_array_values() const { return _reporting_primitive_array_values; }
   bool is_reporting_string_values() const          { return _reporting_string_values; }
 
-  GrowableArray<oop>* visit_stack() const          { return _visit_stack; }
+  GrowableArrayCHeap<oop, mtServiceability>* visit_stack() const { return _visit_stack; }
 
   // iterate over the various object types
   inline bool iterate_over_array(oop o);

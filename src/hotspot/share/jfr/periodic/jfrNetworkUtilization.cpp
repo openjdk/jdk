@@ -42,7 +42,7 @@ struct InterfaceEntry {
   mutable bool written;
 };
 
-static GrowableArray<InterfaceEntry>* _interfaces = nullptr;
+static GrowableArrayCHeap<InterfaceEntry, mtTracing>* _interfaces = nullptr;
 
 void JfrNetworkUtilization::destroy() {
   if (_interfaces != nullptr) {
@@ -54,7 +54,7 @@ void JfrNetworkUtilization::destroy() {
   }
 }
 
-static InterfaceEntry& new_entry(const NetworkInterface* iface, GrowableArray<InterfaceEntry>* interfaces) {
+static InterfaceEntry& new_entry(const NetworkInterface* iface, GrowableArrayCHeap<InterfaceEntry, mtTracing>* interfaces) {
   assert(iface != nullptr, "invariant");
   assert(interfaces != nullptr, "invariant");
 
@@ -75,9 +75,9 @@ static InterfaceEntry& new_entry(const NetworkInterface* iface, GrowableArray<In
   return _interfaces->at(_interfaces->append(entry));
 }
 
-static GrowableArray<InterfaceEntry>* get_interfaces() {
+static GrowableArrayCHeap<InterfaceEntry, mtTracing>* get_interfaces() {
   if (_interfaces == nullptr) {
-    _interfaces = new (mtTracing) GrowableArray<InterfaceEntry>(10, mtTracing);
+    _interfaces = new GrowableArrayCHeap<InterfaceEntry, mtTracing>(10);
   }
   return _interfaces;
 }
@@ -87,7 +87,7 @@ static InterfaceEntry& get_entry(const NetworkInterface* iface) {
   // in the same order every time.
   static int saved_index = -1;
 
-  GrowableArray<InterfaceEntry>* interfaces = get_interfaces();
+  GrowableArrayCHeap<InterfaceEntry, mtTracing>* interfaces = get_interfaces();
   assert(interfaces != nullptr, "invariant");
   for (int i = 0; i < _interfaces->length(); ++i) {
     saved_index = (saved_index + 1) % _interfaces->length();

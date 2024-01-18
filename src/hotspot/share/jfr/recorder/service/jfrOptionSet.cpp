@@ -758,7 +758,7 @@ bool JfrOptionSet::parse_flight_recorder_option(const JavaVMOption** option, cha
   return false;
 }
 
-static GrowableArray<const char*>* start_flight_recording_options_array = nullptr;
+static GrowableArrayCHeap<const char*, mtTracing>* start_flight_recording_options_array = nullptr;
 
 bool JfrOptionSet::parse_start_flight_recording_option(const JavaVMOption** option, char* delimiter) {
   assert(option != nullptr, "invariant");
@@ -782,7 +782,7 @@ bool JfrOptionSet::parse_start_flight_recording_option(const JavaVMOption** opti
   const size_t value_length = strlen(value);
 
   if (start_flight_recording_options_array == nullptr) {
-    start_flight_recording_options_array = new (mtTracing) GrowableArray<const char*>(8, mtTracing);
+    start_flight_recording_options_array = new GrowableArrayCHeap<const char*, mtTracing>(8);
   }
   assert(start_flight_recording_options_array != nullptr, "invariant");
   char* const startup_value = NEW_C_HEAP_ARRAY(char, value_length + 1, mtTracing);
@@ -792,7 +792,7 @@ bool JfrOptionSet::parse_start_flight_recording_option(const JavaVMOption** opti
   return false;
 }
 
-const GrowableArray<const char*>* JfrOptionSet::start_flight_recording_options() {
+const GrowableArrayCHeap<const char*, mtTracing>* JfrOptionSet::start_flight_recording_options() {
   return start_flight_recording_options_array;
 }
 

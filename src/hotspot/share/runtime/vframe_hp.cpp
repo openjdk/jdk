@@ -69,7 +69,7 @@ StackValueCollection* compiledVFrame::locals() const {
   // Replace the original values with any stores that have been
   // performed through compiledVFrame::update_locals.
   if (!register_map()->in_cont()) { // LOOM TODO
-    GrowableArray<jvmtiDeferredLocalVariableSet*>* list = JvmtiDeferredUpdates::deferred_locals(thread());
+    GrowableArrayCHeap<jvmtiDeferredLocalVariableSet*, mtCompiler>* list = JvmtiDeferredUpdates::deferred_locals(thread());
     if (list != nullptr ) {
       // In real life this never happens or is typically a single element search
       for (int i = 0; i < list->length(); i++) {
@@ -110,7 +110,7 @@ void compiledVFrame::update_monitor(int index, MonitorInfo* val) {
 void compiledVFrame::update_deferred_value(BasicType type, int index, jvalue value) {
   assert(fr().is_deoptimized_frame(), "frame must be scheduled for deoptimization");
   assert(!Continuation::is_frame_in_continuation(thread(), fr()), "No support for deferred values in continuations");
-  GrowableArray<jvmtiDeferredLocalVariableSet*>* deferred = JvmtiDeferredUpdates::deferred_locals(thread());
+  GrowableArrayCHeap<jvmtiDeferredLocalVariableSet*, mtCompiler>* deferred = JvmtiDeferredUpdates::deferred_locals(thread());
   jvmtiDeferredLocalVariableSet* locals = nullptr;
   if (deferred != nullptr ) {
     // See if this vframe has already had locals with deferred writes
@@ -202,7 +202,7 @@ StackValueCollection* compiledVFrame::expressions() const {
   if (!register_map()->in_cont()) { // LOOM TODO
     // Replace the original values with any stores that have been
     // performed through compiledVFrame::update_stack.
-    GrowableArray<jvmtiDeferredLocalVariableSet*>* list = JvmtiDeferredUpdates::deferred_locals(thread());
+    GrowableArrayCHeap<jvmtiDeferredLocalVariableSet*, mtCompiler>* list = JvmtiDeferredUpdates::deferred_locals(thread());
     if (list != nullptr ) {
       // In real life this never happens or is typically a single element search
       for (int i = 0; i < list->length(); i++) {
@@ -413,7 +413,7 @@ jvmtiDeferredLocalVariableSet::jvmtiDeferredLocalVariableSet(Method* method, int
   _id = id;
   _vframe_id = vframe_id;
   // Always will need at least one, must be on C heap
-  _locals = new(mtCompiler) GrowableArray<jvmtiDeferredLocalVariable*> (1, mtCompiler);
+  _locals = new GrowableArrayCHeap<jvmtiDeferredLocalVariable*, mtCompiler>(1);
   _objects_are_deoptimized = false;
 }
 

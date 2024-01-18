@@ -49,15 +49,15 @@ private:
     init_code_heap_pools_size = 9
   };
 
-  static GrowableArray<MemoryPool*>*    _pools_list;
-  static GrowableArray<MemoryManager*>* _managers_list;
+  static GrowableArrayCHeap<MemoryPool*, mtServiceability>*    _pools_list;
+  static GrowableArrayCHeap<MemoryManager*, mtServiceability>* _managers_list;
 
   // memory manager and code heap pools for the CodeCache
-  static MemoryManager*                 _code_cache_manager;
-  static GrowableArray<MemoryPool*>*    _code_heap_pools;
+  static MemoryManager*                                        _code_cache_manager;
+  static GrowableArrayCHeap<MemoryPool*, mtServiceability>*    _code_heap_pools;
 
-  static MemoryPool*                    _metaspace_pool;
-  static MemoryPool*                    _compressed_class_pool;
+  static MemoryPool*                                           _metaspace_pool;
+  static MemoryPool*                                           _compressed_class_pool;
 
 public:
   static void set_universe_heap(CollectedHeap* heap);

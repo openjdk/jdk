@@ -111,7 +111,8 @@ private:
   int _num_empty_buckets;
   int _num_value_only_buckets;
   int _num_other_buckets;
-  GrowableArray<Entry>** _buckets;
+  typedef GrowableArrayCHeap<Entry, mtSymbol> EntryBucket;
+  EntryBucket** _buckets;
   CompactHashtableStats* _stats;
   Array<u4>* _compact_buckets;
   Array<u4>* _compact_entries;

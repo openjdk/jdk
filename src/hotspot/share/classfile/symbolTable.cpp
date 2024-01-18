@@ -649,7 +649,7 @@ void SymbolTable::dump(outputStream* st, bool verbose) {
 }
 
 #if INCLUDE_CDS
-void SymbolTable::copy_shared_symbol_table(GrowableArray<Symbol*>* symbols,
+void SymbolTable::copy_shared_symbol_table(const GrowableArrayView<Symbol*>* symbols,
                                            CompactHashtableWriter* writer) {
   ArchiveBuilder* builder = ArchiveBuilder::current();
   int len = symbols->length();
@@ -670,7 +670,7 @@ size_t SymbolTable::estimate_size_for_archive() {
   return CompactHashtableWriter::estimate_size(int(_items_count));
 }
 
-void SymbolTable::write_to_archive(GrowableArray<Symbol*>* symbols) {
+void SymbolTable::write_to_archive(const GrowableArrayView<Symbol*>* symbols) {
   CompactHashtableWriter writer(int(_items_count), ArchiveBuilder::symbol_stats());
   copy_shared_symbol_table(symbols, &writer);
   if (CDSConfig::is_dumping_static_archive()) {

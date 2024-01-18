@@ -952,7 +952,7 @@ JvmtiEnvBase::get_current_contended_monitor(JavaThread *calling_thread, JavaThre
 
 jvmtiError
 JvmtiEnvBase::get_owned_monitors(JavaThread *calling_thread, JavaThread* java_thread,
-                                 GrowableArray<jvmtiMonitorStackDepthInfo*> *owned_monitors_list) {
+                                 GrowableArrayCHeap<jvmtiMonitorStackDepthInfo*, mtServiceability>* owned_monitors_list) {
   // Note:
   // calling_thread is the thread that requested the list of monitors for java_thread.
   // java_thread is the thread owning the monitors.
@@ -999,7 +999,7 @@ JvmtiEnvBase::get_owned_monitors(JavaThread *calling_thread, JavaThread* java_th
 
 jvmtiError
 JvmtiEnvBase::get_owned_monitors(JavaThread* calling_thread, JavaThread* java_thread, javaVFrame* jvf,
-                                 GrowableArray<jvmtiMonitorStackDepthInfo*> *owned_monitors_list) {
+                                 GrowableArrayCHeap<jvmtiMonitorStackDepthInfo*, mtServiceability> *owned_monitors_list) {
   jvmtiError err = JVMTI_ERROR_NONE;
   Thread *current_thread = Thread::current();
   assert(java_thread->is_handshake_safe_for(current_thread),
@@ -1027,7 +1027,8 @@ JvmtiEnvBase::get_owned_monitors(JavaThread* calling_thread, JavaThread* java_th
 // Save JNI local handles for any objects that this frame owns.
 jvmtiError
 JvmtiEnvBase::get_locked_objects_in_frame(JavaThread* calling_thread, JavaThread* java_thread,
-                                 javaVFrame *jvf, GrowableArray<jvmtiMonitorStackDepthInfo*>* owned_monitors_list, jint stack_depth) {
+                                 javaVFrame *jvf,
+                                 GrowableArrayCHeap<jvmtiMonitorStackDepthInfo*, mtServiceability>* owned_monitors_list, jint stack_depth) {
   jvmtiError err = JVMTI_ERROR_NONE;
   Thread* current_thread = Thread::current();
   ResourceMark rm(current_thread);
@@ -1814,7 +1815,7 @@ JvmtiEnvBase::resume_thread(oop thread_oop, JavaThread* java_thread, bool single
 
 ResourceTracker::ResourceTracker(JvmtiEnv* env) {
   _env = env;
-  _allocations = new (mtServiceability) GrowableArray<unsigned char*>(20, mtServiceability);
+  _allocations = new GrowableArrayCHeap<unsigned char*, mtServiceability>(20);
   _failed = false;
 }
 ResourceTracker::~ResourceTracker() {

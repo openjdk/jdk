@@ -84,11 +84,11 @@ class LoaderConstraint : public CHeapObj<mtClass> {
   // Loader constraints enforce correct linking behavior.
   // Thus, it really operates on ClassLoaderData which represents linking domain,
   // not class loaders.
-  GrowableArray<ClassLoaderData*>*  _loaders;                // initiating loaders
+  GrowableArrayCHeap<ClassLoaderData*, mtClass>* _loaders; // initiating loaders
  public:
   LoaderConstraint(InstanceKlass* klass, ClassLoaderData* loader1, ClassLoaderData* loader2) :
      _klass(klass) {
-    _loaders = new (mtClass) GrowableArray<ClassLoaderData*>(10, mtClass);
+    _loaders = new GrowableArrayCHeap<ClassLoaderData*, mtClass>(10);
     add_loader_data(loader1);
     add_loader_data(loader2);
   }
@@ -115,7 +115,7 @@ class LoaderConstraint : public CHeapObj<mtClass> {
 // For this class name, these are the set of LoaderConstraints for classes loaded with this name.
 class ConstraintSet {                               // copied into hashtable as value
  private:
-  GrowableArray<LoaderConstraint*>*  _constraints;   // loader constraints for this class name.
+  GrowableArrayCHeap<LoaderConstraint*, mtClass>* _constraints; // loader constraints for this class name.
 
  public:
   ConstraintSet() : _constraints(nullptr) {}
@@ -123,7 +123,7 @@ class ConstraintSet {                               // copied into hashtable as 
   ConstraintSet& operator=(const ConstraintSet&) = delete;
 
   void initialize(LoaderConstraint* constraint) {
-    _constraints = new (mtClass) GrowableArray<LoaderConstraint*>(5, mtClass);
+    _constraints = new GrowableArrayCHeap<LoaderConstraint*, mtClass>(5);
     _constraints->push(constraint);
   }
 

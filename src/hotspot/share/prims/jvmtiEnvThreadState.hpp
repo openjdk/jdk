@@ -78,7 +78,7 @@ class JvmtiFramePop {
 
 class JvmtiFramePops : public CHeapObj<mtInternal> {
  private:
-  GrowableArray<int>* _pops;
+  GrowableArrayCHeap<int, mtServiceability>* _pops;
 
   // should only be used by JvmtiEventControllerPrivate
   // to insure they only occur at safepoints.
