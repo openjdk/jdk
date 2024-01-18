@@ -53,12 +53,12 @@ import jdk.internal.vm.annotation.Stable;
  * access is possible when a session is being closed (see {@link jdk.internal.misc.ScopedMemoryAccess}).
  */
 public final class MemorySessionImpl implements Scope {
-    // This is the session of all zero-length memory segments
-    public static final MemorySessionImpl GLOBAL_SESSION = new MemorySessionImpl(null, null, null, NONCLOSEABLE);
-
     private static final int NONCLOSEABLE = 1;
     private static final int OPEN = 0;
     private static final int CLOSED = -1;
+
+    // This is the session of all zero-length memory segments
+    public static final MemorySessionImpl GLOBAL_SESSION = new MemorySessionImpl(null, null, null, NONCLOSEABLE);
 
     private static final VarHandle STATE;
     private static final VarHandle ACQUIRE_COUNT;
@@ -388,7 +388,7 @@ public final class MemorySessionImpl implements Scope {
      * is shared or confined, different implementations of this class will be used, see {@link ConfinedResourceList}
      * and {@link SharedResourceList}.
      */
-    private abstract static class ResourceList implements Runnable {
+    public abstract static class ResourceList implements Runnable {
         ResourceCleanup fst;
 
         abstract void add(ResourceCleanup cleanup);
@@ -420,7 +420,7 @@ public final class MemorySessionImpl implements Scope {
             }
         }
 
-        private abstract static class ResourceCleanup {
+        public abstract static class ResourceCleanup {
             ResourceCleanup next;
 
             public abstract void cleanup();
