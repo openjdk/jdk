@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,11 +50,13 @@ import com.sun.tools.javac.util.ListBuffer;
  * risk.  This code and its internal interfaces are subject to change
  * or deletion without notice.</b></p>
  */
-public abstract sealed class AnnoConstruct implements AnnotatedConstruct
-                                           permits Symbol, Type {
+public abstract class AnnoConstruct implements AnnotatedConstruct {
+
+
     // Override to enforce a narrower return type.
     @Override @DefinedBy(Api.LANGUAGE_MODEL)
     public abstract List<? extends Attribute.Compound> getAnnotationMirrors();
+
 
     // This method is part of the javax.lang.model API, do not use this in javac code.
     protected <A extends Annotation> Attribute.Compound getAttribute(Class<A> annoType) {
@@ -73,6 +75,7 @@ public abstract sealed class AnnoConstruct implements AnnotatedConstruct
     protected <A extends Annotation> A[] getInheritedAnnotations(Class<A> annoType) {
         return (A[]) java.lang.reflect.Array.newInstance(annoType, 0);  // annoType is the Class for A
     }
+
 
     // This method is part of the javax.lang.model API, do not use this in javac code.
     @DefinedBy(Api.LANGUAGE_MODEL)
@@ -195,4 +198,5 @@ public abstract sealed class AnnoConstruct implements AnnotatedConstruct
         // contained type or null
         return ((Attribute.Array)container.member(container.type.tsym.name.table.names.value)).values;
     }
+
 }
