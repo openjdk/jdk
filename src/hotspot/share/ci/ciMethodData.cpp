@@ -141,6 +141,7 @@ void ciMethodData::load_remaining_extra_data() {
   prepare_metadata();
   // After metadata preparation, there is no stale metadata,
   // and no safepoints can introduce more stale metadata.
+  NoSafepointVerifier no_safepoint;
 
   assert((mdo->data_size() == _data_size) && (mdo->extra_data_size() == _extra_data_size), "sanity, unchanged");
   assert(extra_data_base() == (DataLayout*)((address) _data + _data_size), "sanity");
