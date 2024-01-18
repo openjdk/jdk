@@ -109,7 +109,6 @@ public class ConstantsSummaryWriter extends HtmlDocletWriter {
 
         this.typeElementsWithConstFields = new HashSet<>();
         this.packageGroupHeadings = new TreeSet<>(utils::compareStrings);
-        this.tableOfContents = new TableOfContents(this);
     }
 
     @Override

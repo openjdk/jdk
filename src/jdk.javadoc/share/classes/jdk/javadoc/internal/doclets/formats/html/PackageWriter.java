@@ -96,7 +96,6 @@ public class PackageWriter extends HtmlDocletWriter {
                 configuration.docPaths.forPackage(packageElement)
                 .resolve(DocPaths.PACKAGE_SUMMARY));
         this.packageElement = packageElement;
-        this.tableOfContents = new TableOfContents(this);
         computePackageData();
     }
 

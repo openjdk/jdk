@@ -72,7 +72,6 @@ public class HelpWriter extends HtmlDocletWriter {
                 ? DocPaths.INDEX_FILES.resolve(DocPaths.indexN(1))
                 : DocPaths.INDEX_ALL;
         indexLink = links.createLink(dp, resources.getText("doclet.Index"));
-        tableOfContents = new TableOfContents(this);
     }
 
     @Override

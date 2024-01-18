@@ -31,6 +31,7 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.ListBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
+import jdk.javadoc.internal.doclets.formats.html.markup.Text;
 
 /**
  * A class used by various {@link HtmlDocletWriter} subclasses to build tables of contents.
@@ -74,18 +75,23 @@ public class TableOfContents {
     }
 
     /**
-     * Returns a content object containing the complete table of contents.
+     * Returns a content object containing the table of contents, consisting
+     * of a header and the contents list itself. If the contents list is empty,
+     * an empty content object is returned.
      *
      * @param hasFilterInput whether to add a filter text input
      * @return a content object
      */
     protected Content toContent(boolean hasFilterInput) {
-        var sidebar = HtmlTree.NAV()
+        if (listBuilder.isEmpty()) {
+            return Text.EMPTY;
+        }
+        var content = HtmlTree.NAV()
                 .setStyle(HtmlStyle.toc)
                 .put(HtmlAttr.ARIA_LABEL, writer.resources.getText("doclet.table_of_contents"));
-        var sidebarHeader = HtmlTree.DIV(HtmlStyle.tocHeader, writer.contents.contentsHeading);
+        var header = HtmlTree.DIV(HtmlStyle.tocHeader, writer.contents.contentsHeading);
         if (hasFilterInput) {
-            sidebarHeader.add(Entity.NO_BREAK_SPACE)
+            header.add(Entity.NO_BREAK_SPACE)
                     .add(HtmlTree.INPUT(HtmlAttr.InputType.TEXT, HtmlStyle.filterInput)
                             .put(HtmlAttr.PLACEHOLDER, writer.resources.getText("doclet.filter_label"))
                             .put(HtmlAttr.ARIA_LABEL, writer.resources.getText("doclet.filter_table_of_contents"))
@@ -94,14 +100,14 @@ public class TableOfContents {
                     .add(HtmlTree.INPUT(HtmlAttr.InputType.RESET, HtmlStyle.resetFilter)
                             .put(HtmlAttr.VALUE, writer.resources.getText("doclet.filter_reset")));
         }
-        sidebar.add(sidebarHeader);
-        sidebar.add(new HtmlTree(TagName.BUTTON).addStyle(HtmlStyle.hideSidebar)
+        content.add(header);
+        content.add(new HtmlTree(TagName.BUTTON).addStyle(HtmlStyle.hideSidebar)
                 .add(HtmlTree.SPAN(writer.contents.hideSidebar).add(Entity.NO_BREAK_SPACE))
                 .add(Entity.LEFT_POINTING_ANGLE));
-        sidebar.add(new HtmlTree(TagName.BUTTON).addStyle(HtmlStyle.showSidebar)
+        content.add(new HtmlTree(TagName.BUTTON).addStyle(HtmlStyle.showSidebar)
                 .add(Entity.RIGHT_POINTING_ANGLE)
                 .add(HtmlTree.SPAN(Entity.NO_BREAK_SPACE).add(writer.contents.showSidebar)));
-        return sidebar.add(listBuilder);
+        return content.add(listBuilder);
     }
 
 }

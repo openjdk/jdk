@@ -162,7 +162,6 @@ public class ModuleWriter extends HtmlDocletWriter {
         super(configuration, configuration.docPaths.moduleSummary(mdle));
         this.mdle = mdle;
         this.moduleMode = configuration.docEnv.getModuleMode();
-        this.tableOfContents = new TableOfContents(this);
         computeModulesData();
     }
 

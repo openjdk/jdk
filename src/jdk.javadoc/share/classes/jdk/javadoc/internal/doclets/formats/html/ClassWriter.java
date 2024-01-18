@@ -96,7 +96,6 @@ public class ClassWriter extends SubWriterHolderWriter {
         this.classTree = classTree;
 
         pHelper = new PropertyUtils.PropertyHelper(configuration, typeElement);
-        tableOfContents = new TableOfContents(this);
 
         switch (typeElement.getKind()) {
             case ENUM   -> setEnumDocumentation(typeElement);

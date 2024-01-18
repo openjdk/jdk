@@ -166,7 +166,7 @@ public abstract class HtmlDocletWriter {
 
     private final Set<String> headingIds = new HashSet<>();
 
-    protected TableOfContents tableOfContents;
+    protected final TableOfContents tableOfContents;
 
     /**
      * To check whether the repeated annotations is documented or not.
@@ -223,6 +223,7 @@ public abstract class HtmlDocletWriter {
         this.pathToRoot = path.parent().invert();
         this.docPaths = configuration.docPaths;
         this.mainBodyScript = new Script();
+        this.tableOfContents = new TableOfContents(this);
 
         if (generating) {
             writeGenerating();
