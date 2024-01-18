@@ -32,11 +32,12 @@ import java.lang.foreign.MemorySegment.Scope;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 import java.lang.ref.Cleaner;
+import java.lang.ref.Reference;
 import java.util.Objects;
 
-import jdk.internal.foreign.GlobalSession.HeapSession;
 import jdk.internal.misc.ScopedMemoryAccess;
 import jdk.internal.vm.annotation.ForceInline;
+import jdk.internal.vm.annotation.Stable;
 
 /**
  * This class manages the temporal bounds associated with a memory segment as well
@@ -51,34 +52,63 @@ import jdk.internal.vm.annotation.ForceInline;
  * shared sessions use a more sophisticated synchronization mechanism, which guarantees that no concurrent
  * access is possible when a session is being closed (see {@link jdk.internal.misc.ScopedMemoryAccess}).
  */
-public abstract sealed class MemorySessionImpl
-        implements Scope
-        permits ConfinedSession, GlobalSession, SharedSession {
+public final class MemorySessionImpl implements Scope {
+    private static final int NONCLOSEABLE = 1;
     static final int OPEN = 0;
     static final int CLOSED = -1;
 
     static final VarHandle STATE;
+    private static final VarHandle ACQUIRE_COUNT;
+    private static final VarHandle ASYNC_RELEASE_COUNT;
     static final int MAX_FORKS = Integer.MAX_VALUE;
 
+    private static final ScopedMemoryAccess SCOPED_MEMORY_ACCESS = ScopedMemoryAccess.getScopedMemoryAccess();
     static final ScopedMemoryAccess.ScopedAccessError ALREADY_CLOSED = new ScopedMemoryAccess.ScopedAccessError(MemorySessionImpl::alreadyClosed);
     static final ScopedMemoryAccess.ScopedAccessError WRONG_THREAD = new ScopedMemoryAccess.ScopedAccessError(MemorySessionImpl::wrongThread);
     // This is the session of all zero-length memory segments
-    public static final MemorySessionImpl GLOBAL_SESSION = new GlobalSession();
+    public static final MemorySessionImpl GLOBAL_SESSION = new MemorySessionImpl(null, null, null, NONCLOSEABLE);
 
-    final ResourceList resourceList;
-    final Thread owner;
-    int state = OPEN;
+    private final Thread owner;
+    private final Object ref;
+    private final ResourceList resourceList;
+
+    // There are 4 important operations on a MemorySession: checkValidStateRaw,
+    // justClose, acquire0, release0.
+    //
+    // There are 3 kinds of MemorySession:
+    //
+    // Confined session - owner is not null:
+    // - Only the owner can access state and acquireCount.
+    // - Only the owner can invoke checkValidStateRaw, justClose, acquire0.
+    // - Any thread can invoke release0.
+    //
+    // Shared session - owner is null, state is not NONCLOSEABLE:
+    // - Any thread can access any field, as well as invoke any method.
+    // - justClose, acquire0, and release0 synchronize with themselves and with
+    //   each other using acquireCount.
+    //
+    // Implicit session - owner is null, state is NONCLOSEABLE:
+    // - No thread can invoke justClose.
+    // - All fields are constant.
+    // - Any thread can invoke checkValidStateRaw, acquire0 and release0.
+    @Stable
+    private int state;
+    private int acquireCount;
+    private int asyncReleaseCount;
 
     static {
         try {
-            STATE = MethodHandles.lookup().findVarHandle(MemorySessionImpl.class, "state", int.class);
+            var lookup = MethodHandles.lookup();
+            STATE = lookup.findVarHandle(MemorySessionImpl.class, "state", int.class);
+            ACQUIRE_COUNT = lookup.findVarHandle(MemorySessionImpl.class, "acquireCount", int.class);
+            ASYNC_RELEASE_COUNT = lookup.findVarHandle(MemorySessionImpl.class, "asyncReleaseCount", int.class);
         } catch (Exception ex) {
             throw new ExceptionInInitializerError(ex);
         }
     }
 
     public Arena asArena() {
-        return new ArenaImpl(this);
+        return new ArenaImpl(this, !isCloseable() && resourceList != null);
     }
 
     @ForceInline
@@ -86,7 +116,7 @@ public abstract sealed class MemorySessionImpl
         return (MemorySessionImpl) arena.scope();
     }
 
-    public final boolean isCloseableBy(Thread thread) {
+    public boolean isCloseableBy(Thread thread) {
         Objects.requireNonNull(thread);
         return isCloseable() &&
                 (owner == null || owner == thread);
@@ -124,33 +154,94 @@ public abstract sealed class MemorySessionImpl
         // called `ResourceList::cleanup` to run all the cleanup actions. If not, we can still add this resource
         // to the list (and, in case of an add vs. close race, it might happen that the cleanup action will be
         // called immediately after).
-        resourceList.add(resource);
+        if (resourceList != null) {
+            resourceList.add(resource);
+        }
     }
 
-    protected MemorySessionImpl(Thread owner, ResourceList resourceList) {
+    private MemorySessionImpl(Thread owner, Object ref, ResourceList resourceList, int initialState) {
         this.owner = owner;
+        this.ref = ref;
         this.resourceList = resourceList;
+        if (initialState == NONCLOSEABLE) {
+            VarHandle.releaseFence();
+            this.state = initialState;
+        }
     }
 
     public static MemorySessionImpl createConfined(Thread thread) {
-        return new ConfinedSession(thread);
+        return new MemorySessionImpl(thread, null, new ConfinedResourceList(), OPEN);
     }
 
     public static MemorySessionImpl createShared() {
-        return new SharedSession();
+        return new MemorySessionImpl(null, null, new SharedResourceList(), OPEN);
     }
 
     public static MemorySessionImpl createImplicit(Cleaner cleaner) {
-        return new ImplicitSession(cleaner);
+        var res = new MemorySessionImpl(null, null, new SharedResourceList(), NONCLOSEABLE);
+        cleaner.register(res, res.resourceList);
+        return res;
     }
 
     public static MemorySessionImpl createHeap(Object ref) {
-        return new HeapSession(ref);
+        Objects.requireNonNull(ref);
+        return new MemorySessionImpl(null, ref, null, NONCLOSEABLE);
     }
 
-    public abstract void release0();
+    public void release0() {
+        if (owner == Thread.currentThread()) {
+            acquireCount--;
+            return;
+        } else if (owner != null) {
+            // It is possible to end up here in two cases: this session was kept
+            // alive by some other confined session which is implicitly released
+            // (in which case the release call comes from the cleaner thread).
+            // Or, this session might be kept alive by a shared session, which
+            // means the release call can come from any thread.
+            int a = (int)ASYNC_RELEASE_COUNT.getAndAdd(this, 1);
+            return;
+        }
 
-    public abstract void acquire0();
+        VarHandle.acquireFence();
+        if (state == NONCLOSEABLE) {
+            Reference.reachabilityFence(this);
+            return;
+        }
+
+        int a = (int)ACQUIRE_COUNT.getAndAdd(this, -1);
+    }
+
+    public void acquire0() {
+        if (owner == Thread.currentThread()) {
+            if (state == CLOSED) {
+                throw alreadyClosed();
+            }
+            if (acquireCount == MAX_FORKS) {
+                throw tooManyAcquires();
+            }
+            acquireCount++;
+            return;
+        } else if (owner != null) {
+            throw wrongThread();
+        }
+
+        VarHandle.acquireFence();
+        if (state == NONCLOSEABLE) {
+            return;
+        }
+
+        while (true) {
+            int acquireCount = (int)ACQUIRE_COUNT.getVolatile(this);
+            if (acquireCount < OPEN) {
+                throw alreadyClosed();
+            } else if (acquireCount == MAX_FORKS) {
+                throw tooManyAcquires();
+            }
+            if (ACQUIRE_COUNT.compareAndSet(this, acquireCount, acquireCount + 1)) {
+                break;
+            }
+        }
+    }
 
     public void whileAlive(Runnable action) {
         Objects.requireNonNull(action);
@@ -162,11 +253,11 @@ public abstract sealed class MemorySessionImpl
         }
     }
 
-    public final Thread ownerThread() {
+    public Thread ownerThread() {
         return owner;
     }
 
-    public final boolean isAccessibleBy(Thread thread) {
+    public boolean isAccessibleBy(Thread thread) {
         Objects.requireNonNull(thread);
         return owner == null || owner == thread;
     }
@@ -189,7 +280,12 @@ public abstract sealed class MemorySessionImpl
      */
     @ForceInline
     public void checkValidStateRaw() {
-        if (owner != null && owner != Thread.currentThread()) {
+        if (owner == Thread.currentThread()) {
+            if (state < OPEN) {
+                throw ALREADY_CLOSED;
+            }
+            return;
+        } else if (owner != null) {
             throw WRONG_THREAD;
         }
         if (state < OPEN) {
@@ -220,7 +316,7 @@ public abstract sealed class MemorySessionImpl
     }
 
     public boolean isCloseable() {
-        return true;
+        return state <= 0;
     }
 
     /**
@@ -233,13 +329,43 @@ public abstract sealed class MemorySessionImpl
         resourceList.cleanup();
     }
 
-    abstract void justClose();
+    private void justClose() {
+        if (owner == Thread.currentThread()) {
+            if (state < OPEN) {
+                throw alreadyClosed();
+            }
+            if (acquireCount > OPEN) {
+                int asyncCount = (int)ASYNC_RELEASE_COUNT.getVolatile(this);
+                if (asyncCount != acquireCount) {
+                    throw alreadyAcquired(acquireCount - asyncCount);
+                }
+            }
+            state = CLOSED;
+            return;
+        } else if (owner != null) {
+            throw wrongThread();
+        }
+
+        VarHandle.acquireFence();
+        if (state == NONCLOSEABLE) {
+            throw nonCloseable();
+        }
+
+        int acquireCount = (int)ACQUIRE_COUNT.compareAndExchange(this, OPEN, CLOSED);
+        if (acquireCount > OPEN) {
+            throw alreadyAcquired(acquireCount);
+        } else if (acquireCount < OPEN) {
+            throw alreadyClosed();
+        }
+        STATE.setVolatile(this, CLOSED);
+        SCOPED_MEMORY_ACCESS.closeScope(this, ALREADY_CLOSED);
+    }
 
     /**
      * A list of all cleanup actions associated with a memory session. Cleanup actions are modelled as instances
      * of the {@link ResourceCleanup} class, and, together, form a linked list. Depending on whether a session
-     * is shared or confined, different implementations of this class will be used, see {@link ConfinedSession.ConfinedResourceList}
-     * and {@link SharedSession.SharedResourceList}.
+     * is shared or confined, different implementations of this class will be used, see {@link ConfinedResourceList}
+     * and {@link SharedResourceList}.
      */
     public abstract static class ResourceList implements Runnable {
         ResourceCleanup fst;
@@ -292,6 +418,85 @@ public abstract sealed class MemorySessionImpl
                         cleanupAction.run();
                     }
                 };
+            }
+        }
+    }
+
+    /**
+     * A confined resource list; no races are possible here.
+     */
+    static final class ConfinedResourceList extends ResourceList {
+        @Override
+        void add(ResourceCleanup cleanup) {
+            if (fst != ResourceCleanup.CLOSED_LIST) {
+                cleanup.next = fst;
+                fst = cleanup;
+            } else {
+                throw alreadyClosed();
+            }
+        }
+
+        @Override
+        void cleanup() {
+            if (fst != ResourceCleanup.CLOSED_LIST) {
+                ResourceCleanup prev = fst;
+                fst = ResourceCleanup.CLOSED_LIST;
+                cleanup(prev);
+            } else {
+                throw alreadyClosed();
+            }
+        }
+    }
+
+    /**
+     * A shared resource list; this implementation has to handle add vs. add races, as well as add vs. cleanup races.
+     */
+    static class SharedResourceList extends ResourceList {
+
+        static final VarHandle FST;
+
+        static {
+            try {
+                FST = MethodHandles.lookup().findVarHandle(ResourceList.class, "fst", ResourceCleanup.class);
+            } catch (Throwable ex) {
+                throw new ExceptionInInitializerError();
+            }
+        }
+
+        @Override
+        void add(ResourceCleanup cleanup) {
+            while (true) {
+                ResourceCleanup prev = (ResourceCleanup) FST.getVolatile(this);
+                if (prev == ResourceCleanup.CLOSED_LIST) {
+                    // too late
+                    throw alreadyClosed();
+                }
+                cleanup.next = prev;
+                if (FST.compareAndSet(this, prev, cleanup)) {
+                    return; //victory
+                }
+                // keep trying
+            }
+        }
+
+        void cleanup() {
+            // At this point we are only interested about add vs. close races - not close vs. close
+            // (because MemorySessionImpl::justClose ensured that this thread won the race to close the session).
+            // So, the only "bad" thing that could happen is that some other thread adds to this list
+            // while we're closing it.
+            if (FST.getAcquire(this) != ResourceCleanup.CLOSED_LIST) {
+                //ok now we're really closing down
+                ResourceCleanup prev = null;
+                while (true) {
+                    prev = (ResourceCleanup) FST.getVolatile(this);
+                    // no need to check for DUMMY, since only one thread can get here!
+                    if (FST.compareAndSet(this, prev, ResourceCleanup.CLOSED_LIST)) {
+                        break;
+                    }
+                }
+                cleanup(prev);
+            } else {
+                throw alreadyClosed();
             }
         }
     }
