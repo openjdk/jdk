@@ -890,7 +890,7 @@ public class ModuleWriter extends HtmlDocletWriter {
 
     protected void addModuleContent(Content source) {
         bodyContents.addMainContent(source);
-        bodyContents.setSideContent(tableOfContents.getSideBar(false));
+        bodyContents.setSideContent(tableOfContents.toContent(false));
     }
 
     protected void addModuleFooter() {

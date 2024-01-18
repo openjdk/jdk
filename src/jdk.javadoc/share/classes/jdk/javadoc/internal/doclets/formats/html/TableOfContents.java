@@ -74,13 +74,12 @@ public class TableOfContents {
     }
 
     /**
-     * Returns a sidebar content object containing a header with various controls as well as
-     * the given {@code content}.
+     * Returns a content object containing the complete table of contents.
      *
      * @param hasFilterInput whether to add a filter text input
      * @return a content object
      */
-    protected Content getSideBar(boolean hasFilterInput) {
+    protected Content toContent(boolean hasFilterInput) {
         var sidebar = HtmlTree.NAV()
                 .setStyle(HtmlStyle.toc)
                 .put(HtmlAttr.ARIA_LABEL, writer.resources.getText("doclet.table_of_contents"));

@@ -44,7 +44,8 @@ import jdk.javadoc.internal.doclets.formats.html.Content;
 public class ListBuilder extends Content {
 
     private final HtmlTree root;
-    private final Deque<HtmlTree[]> stack = new ArrayDeque<>();
+    private record Pair(HtmlTree list, HtmlTree item) {}
+    private final Deque<Pair> stack = new ArrayDeque<>();
     private HtmlTree currentList;
     private HtmlTree currentItem;
 
@@ -81,7 +82,7 @@ public class ListBuilder extends Content {
      */
     public ListBuilder pushNestedList(HtmlTree list) {
         Objects.requireNonNull(currentItem, "List item required for nested list");
-        stack.push(new HtmlTree[] {currentList, currentItem});
+        stack.push(new Pair(currentList, currentItem));
         currentList = list;
         currentItem = null;
         return this;
@@ -94,11 +95,11 @@ public class ListBuilder extends Content {
      * @throws NoSuchElementException if the stack is empty
      */
     public ListBuilder popNestedList() {
-        HtmlTree[] listAndItem = stack.pop();
+        Pair pair = stack.pop();
         // First restore currentItem and add nested list to it before restoring currentList to outer list.
-        currentItem = listAndItem[1];
+        currentItem = pair.item;
         currentItem.add(currentList);
-        currentList = listAndItem[0];
+        currentList = pair.list;
         return this;
     }
 

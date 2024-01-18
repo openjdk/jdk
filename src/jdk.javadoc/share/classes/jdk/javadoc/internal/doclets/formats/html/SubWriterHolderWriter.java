@@ -191,7 +191,7 @@ public abstract class SubWriterHolderWriter extends HtmlDocletWriter {
      */
     public void addClassContent(Content classContent) {
         bodyContents.addMainContent(classContent);
-        bodyContents.setSideContent(tableOfContents.getSideBar(true));
+        bodyContents.setSideContent(tableOfContents.toContent(true));
     }
 
     /**

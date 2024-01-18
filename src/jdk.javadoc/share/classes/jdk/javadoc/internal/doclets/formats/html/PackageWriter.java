@@ -421,7 +421,7 @@ public class PackageWriter extends HtmlDocletWriter {
 
     protected void addPackageContent(Content packageContent) {
         bodyContents.addMainContent(packageContent);
-        bodyContents.setSideContent(tableOfContents.getSideBar(false));
+        bodyContents.setSideContent(tableOfContents.toContent(false));
     }
 
     protected void addPackageFooter() {

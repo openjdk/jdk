@@ -155,7 +155,7 @@ public class ConstantsSummaryWriter extends HtmlDocletWriter {
             }
         }
         tableOfContents.popNestedList();
-        bodyContents.setSideContent(tableOfContents.getSideBar(true));
+        bodyContents.setSideContent(tableOfContents.toContent(true));
     }
 
     /**

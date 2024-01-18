@@ -84,7 +84,7 @@ public class HelpWriter extends HtmlDocletWriter {
         body.add(new BodyContents()
                 .setHeader(getHeader(PageMode.HELP))
                 .addMainContent(helpFileContent)
-                .setSideContent(tableOfContents.getSideBar(false))
+                .setSideContent(tableOfContents.toContent(false))
                 .setFooter(getFooter()));
         printHtmlDocument(null, "help", body);
     }
