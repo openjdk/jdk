@@ -23,17 +23,14 @@
 
 /**
  * @test
- * @bug 8192985
- * @summary Test the clhsdb 'jstack -l' command
+ * @bug 8324066
+ * @summary Test the clhsdb 'jstack -l' command for printing concurrent lock information
  * @requires vm.hasSA
  * @library /test/lib
- * @run main/othervm/timeout=480 ClhsdbJstackWithConcurrentLock
+ * @run main/othervm ClhsdbJstackWithConcurrentLock
  */
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.ArrayList;
 import jdk.test.lib.apps.LingeredApp;
 import jtreg.SkippedException;
 
@@ -47,11 +44,13 @@ public class ClhsdbJstackWithConcurrentLock {
             ClhsdbLauncher test = new ClhsdbLauncher();
 
             theApp = new LingeredAppWithConcurrentLock();
+            // Use a small heap so the scan is quick.
             LingeredApp.startApp(theApp, "-Xmx4m");
             System.out.println("Started LingeredApp with pid " + theApp.getPid());
 
-            // Run the 'jstack -v -l' command to get the 
-            List<String> cmds = List.of("jstack -v -l");
+            // Run the 'jstack -l' command to get the stack and have java.util.concurrent
+            // lock information included.
+            List<String> cmds = List.of("jstack -l");
             String jstackOutput = test.run(theApp.getPid(), cmds, null, null);
 
             // We are looking for:
@@ -79,7 +78,7 @@ public class ClhsdbJstackWithConcurrentLock {
                 throw new RuntimeException("Token '" + key + "' not found in jstack output");
             }
 
-            // We are looking for:
+            // We are looking for the following java frame:
             //  - jdk.internal.misc.Unsafe.park(boolean, long)...
             //      - parking to wait for <0x00000000ffc2ed70> (a java/util/concurrent/locks/ReentrantLock$NonfairSync)
             // Note the address matches the one we found above.
