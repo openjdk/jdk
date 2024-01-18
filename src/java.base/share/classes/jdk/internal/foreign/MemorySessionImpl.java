@@ -58,7 +58,11 @@ public final class MemorySessionImpl implements Scope {
     private static final int CLOSED = -1;
 
     // This is the session of all zero-length memory segments
-    public static final MemorySessionImpl GLOBAL_SESSION = new MemorySessionImpl(null, null, null, NONCLOSEABLE);
+    public static final MemorySessionImpl GLOBAL_SESSION;
+    static {
+        GLOBAL_SESSION = new MemorySessionImpl(null, null, null);
+        GLOBAL_SESSION.state = NONCLOSEABLE;
+    }
 
     private static final VarHandle STATE;
     private static final VarHandle ACQUIRE_COUNT;
@@ -160,33 +164,34 @@ public final class MemorySessionImpl implements Scope {
         }
     }
 
-    private MemorySessionImpl(Thread owner, Object ref, ResourceList resourceList, int initialState) {
+    private MemorySessionImpl(Thread owner, Object ref, ResourceList resourceList) {
         this.owner = owner;
         this.ref = ref;
         this.resourceList = resourceList;
-        if (initialState == NONCLOSEABLE) {
-            VarHandle.releaseFence();
-            this.state = initialState;
-        }
     }
 
     public static MemorySessionImpl createConfined(Thread thread) {
-        return new MemorySessionImpl(thread, null, new ConfinedResourceList(), OPEN);
+        return new MemorySessionImpl(thread, null, new ConfinedResourceList());
     }
 
     public static MemorySessionImpl createShared() {
-        return new MemorySessionImpl(null, null, new SharedResourceList(), OPEN);
+        return new MemorySessionImpl(null, null, new SharedResourceList());
     }
 
     public static MemorySessionImpl createImplicit(Cleaner cleaner) {
-        var res = new MemorySessionImpl(null, null, new SharedResourceList(), NONCLOSEABLE);
+        var res = new MemorySessionImpl(null, null, new SharedResourceList());
+        res.state = NONCLOSEABLE;
+        VarHandle.releaseFence();
         cleaner.register(res, res.resourceList);
         return res;
     }
 
     public static MemorySessionImpl createHeap(Object ref) {
         Objects.requireNonNull(ref);
-        return new MemorySessionImpl(null, ref, null, NONCLOSEABLE);
+        var res = new MemorySessionImpl(null, ref, null);
+        res.state = NONCLOSEABLE;
+        VarHandle.releaseFence();
+        return res;
     }
 
     public void release0() {
