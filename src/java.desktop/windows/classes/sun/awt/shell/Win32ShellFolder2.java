@@ -1195,17 +1195,16 @@ final class Win32ShellFolder2 extends ShellFolder {
                     newIcon = makeIcon(hIcon);
                     disposeIcon(hIcon);
 
+                    if (newIcon == null) {
+                        return null;
+                    }
                     multiResolutionIcon.put(s, newIcon);
                     if (size < MIN_QUALITY_ICON || size > MAX_QUALITY_ICON) {
                         break;
                     }
                 }
             }
-            if (multiResolutionIcon.containsValue(null)) {
-                return null;
-            } else {
-                return new MultiResolutionIconImage(size, multiResolutionIcon);
-            }
+            return new MultiResolutionIconImage(size, multiResolutionIcon);
         });
     }
 
@@ -1418,17 +1417,14 @@ final class Win32ShellFolder2 extends ShellFolder {
         final Map<Integer, Image> resolutionVariants = new HashMap<>();
 
         public MultiResolutionIconImage(int baseSize, Map<Integer, Image> resolutionVariants) {
-            if (resolutionVariants.containsValue(null)) {
-                throw new NullPointerException("There are null icons in the MRI variants map");
-            }
+            assert !resolutionVariants.containsValue(null)
+                    : "There are null icons in the MRI variants map";
             this.baseSize = baseSize;
             this.resolutionVariants.putAll(resolutionVariants);
         }
 
         public MultiResolutionIconImage(int baseSize, Image image) {
-            if (image == null) {
-                throw new NullPointerException("Null icon passed as the base image for MRI");
-            }
+            assert image != null : "Null icon passed as the base image for MRI";
             this.baseSize = baseSize;
             this.resolutionVariants.put(baseSize, image);
         }
