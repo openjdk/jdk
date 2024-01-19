@@ -58,7 +58,7 @@ public class StringTableCleaningTest {
         subargs.addAll(List.of("-Xlog:gc,gc+start,stringtable*=trace", "-Xmx1g"));
         subargs.add(Tester.class.getName());
         subargs.addAll(Arrays.asList(args));
-        OutputAnalyzer output = ProcessTools.executeTestJvm(subargs);
+        OutputAnalyzer output = ProcessTools.executeTestJava(subargs);
         output.shouldHaveExitValue(0);
         checkOutput(output);
     }

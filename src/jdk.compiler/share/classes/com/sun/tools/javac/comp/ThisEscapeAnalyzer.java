@@ -532,7 +532,7 @@ class ThisEscapeAnalyzer extends TreeScanner {
     public void visitApply(JCMethodInvocation invoke) {
 
         // Get method symbol
-        MethodSymbol sym = (MethodSymbol)TreeInfo.symbolFor(invoke.meth);
+        Symbol sym = TreeInfo.symbolFor(invoke.meth);
 
         // Recurse on method expression and gather references from the method itself (if non-static)
         scan(invoke.meth);
@@ -552,7 +552,7 @@ class ThisEscapeAnalyzer extends TreeScanner {
         invoke(invoke, sym, invoke.args, receiverRefs);
     }
 
-    private void invoke(JCTree site, MethodSymbol sym, List<JCExpression> args, RefSet<ThisRef> receiverRefs) {
+    private void invoke(JCTree site, Symbol sym, List<JCExpression> args, RefSet<ThisRef> receiverRefs) {
 
         // Skip if ignoring warnings for a constructor invoked via 'this()'
         if (suppressed.contains(sym))
@@ -599,8 +599,9 @@ class ThisEscapeAnalyzer extends TreeScanner {
     }
 
     // Can we conclude that "info" represents the actual method invoked?
-    private boolean isTargetMethod(MethodInfo info, MethodSymbol method, TypeSymbol receiverType) {
-        return info.declaration.name == method.name &&                          // method name matches
+    private boolean isTargetMethod(MethodInfo info, Symbol method, TypeSymbol receiverType) {
+        return method.kind == MTH &&                                            // not an error symbol, etc.
+          info.declaration.name == method.name &&                               // method name matches
           info.declaringClass.sym == receiverType &&                            // same class as receiver
           !info.declaration.sym.isConstructor() &&                              // not a constructor
           (info.declaration.sym.flags() & Flags.STATIC) == 0 &&                 // not a static method
@@ -962,6 +963,10 @@ class ThisEscapeAnalyzer extends TreeScanner {
 
     @Override
     public void visitReference(JCMemberReference tree) {
+        if (tree.type.isErroneous()) {
+            //error recovery - ignore erroneous member references
+            return ;
+        }
 
         // Scan target expression and extract 'this' references, if any
         scan(tree.expr);

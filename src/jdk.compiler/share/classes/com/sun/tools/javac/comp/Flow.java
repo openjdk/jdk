@@ -945,8 +945,8 @@ public class Flow {
                 current.complete();
 
                 if (current.isSealed() && current.isAbstract()) {
-                    for (Symbol sym : current.permitted) {
-                        ClassSymbol csym = (ClassSymbol) sym;
+                    for (Type t : current.getPermittedSubclasses()) {
+                        ClassSymbol csym = (ClassSymbol) t.tsym;
 
                         if (accept.test(csym)) {
                             permittedSubtypesClosure = permittedSubtypesClosure.prepend(csym);

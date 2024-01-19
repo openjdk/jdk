@@ -1,6 +1,6 @@
 ###########################################################################
 #
-# Copyright (c) 2009, 2023, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2009, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -624,7 +624,6 @@ sun/security/provider/PolicyFile/GrantAllPermToExtWhenNoPolicy.java 8039280 gene
 sun/security/provider/PolicyParser/PrincipalExpansionError.java 8039280 generic-all
 
 sun/security/pkcs11/sslecc/ClientJSSEServerJSSE.java            8316183 linux-ppc64le
-sun/security/pkcs11/Provider/MultipleLogins.sh                  8319128 linux-aarch64
 
 ############################################################################
 
