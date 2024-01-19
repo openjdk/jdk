@@ -552,7 +552,7 @@ execution:
     // We only deal with not-so-long names.
     // 04 01 00 ** 06 ** OID len:int32 name
     int mechLen = KRB5_OID.length;
-    char* buffer = static_cast<char*>(malloc(10 + mechLen + len));
+    char* buffer = static_cast<char*>(std::malloc(10 + mechLen + len));
     if (buffer == nullptr) {
         goto err;
     }
