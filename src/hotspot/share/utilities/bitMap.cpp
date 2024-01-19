@@ -101,14 +101,12 @@ void GrowableBitMap<BitMapWithAllocator>::resize(idx_t new_size_in_bits, bool cl
 
 template <class BitMapWithAllocator>
 void GrowableBitMap<BitMapWithAllocator>::slice(idx_t start_bit, idx_t end_bit, bool clear) {
-  assert(start_bit > 0, "Invalid start bit");
   assert(start_bit < end_bit, "End bit must come after start bit");
+  assert(end_bit <= size(), "End bit not in bitmap");
   idx_t start_word = to_words_align_up(start_bit);
-  idx_t end_word = to_words_align_up(end_bit);
+  idx_t end_word = to_words_align_down(end_bit);
   bm_word_t* const old_map = map();
   const idx_t new_size_in_bits = end_bit-start_bit;
-
-  BitMapWithAllocator* derived = static_cast<BitMapWithAllocator*>(this);
 
   // Shift over elements to avoid allocating a new array
   for (idx_t word = start_word; word < end_word; word++) {

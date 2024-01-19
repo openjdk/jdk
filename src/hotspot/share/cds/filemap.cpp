@@ -1601,23 +1601,30 @@ char* FileMapInfo::write_bitmap_region(const CHeapBitMap* ptrmap, ArchiveHeapInf
 
 size_t FileMapInfo::write_heap_region(ArchiveHeapInfo* heap_info) {
   char* buffer_start = heap_info->buffer_start();
-  size_t buffer_size = heap_info->buffer_byte_size();
-  write_region(MetaspaceShared::hp, buffer_start, buffer_size, false, false);
-  header()->set_heap_roots_offset(heap_info->heap_roots_offset());
+
   header()->set_heap_oopmap_leading_zeros(heap_info->oopmap()->find_first_set_bit(0));
   header()->set_heap_ptrmap_leading_zeros(heap_info->ptrmap()->find_first_set_bit(0));
 
   // Remove leading zeros
   size_t old_oop_zeros = header()->heap_oopmap_leading_zeros();
   size_t old_ptr_zeros = header()->heap_ptrmap_leading_zeros();
-  heap_info->oopmap()->slice(header()->heap_oopmap_leading_zeros(), heap_info->oopmap()->size());
-  header()->set_heap_oopmap_leading_zeros(heap_info->oopmap()->find_first_set_bit(0));
 
-  heap_info->ptrmap()->slice(header()->heap_ptrmap_leading_zeros(), heap_info->ptrmap()->size());
+  heap_info->oopmap()->slice(header()->heap_oopmap_leading_zeros());
+  heap_info->ptrmap()->slice(header()->heap_ptrmap_leading_zeros());
+
+  header()->set_heap_oopmap_leading_zeros(heap_info->oopmap()->find_first_set_bit(0));
   header()->set_heap_ptrmap_leading_zeros(heap_info->ptrmap()->find_first_set_bit(0));
 
   assert(header()->heap_oopmap_leading_zeros() < old_oop_zeros, "Should have removed leading zeros");
   assert(header()->heap_ptrmap_leading_zeros() < old_ptr_zeros, "Should have removed leading zeros");
+  if (UseNewCode) {
+    tty->print_cr("Oop leading zeroes: %ld -> %ld", old_oop_zeros, header()->heap_oopmap_leading_zeros());
+    tty->print_cr("Ptr leading zeroes: %ld -> %ld", old_ptr_zeros, header()->heap_ptrmap_leading_zeros());
+  }
+
+  size_t buffer_size = heap_info->buffer_byte_size();
+  write_region(MetaspaceShared::hp, buffer_start, buffer_size, false, false);
+  header()->set_heap_roots_offset(heap_info->heap_roots_offset());
 
   return buffer_size;
 }
