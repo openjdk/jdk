@@ -146,6 +146,8 @@ void magic_divide_constants(T d, T N_neg, T N_pos, juint min_s, T& c, bool& c_ov
 
   while (true) {
     if (s >= min_s) {
+      // qv_ovf || rc < qv is the test for rc < qv with overflow taken into
+      // consideration
       if (qv_ovf || rc < qv || (rc == qv && (tolerate_equal || rv > 0))) {
         break;
       }
@@ -153,26 +155,23 @@ void magic_divide_constants(T d, T N_neg, T N_pos, juint min_s, T& c, bool& c_ov
     assert(!c_ovf, "must be");
     s++;
 
-    T new_rc = rc * 2;
-    if (new_rc < rc || new_rc > d) {
+    if (rc > d - rc) {  // 2 * rc > d
       c_ovf = c > min_signed;
-      c = c * 2 - 1;
-      rc = new_rc - d;
-    } else {
+      c += c - 1;
+      rc += rc - d;     // rc = 2 * rc - d
+    } else {            // 2 * rc <= d
       c_ovf = c >= min_signed;
-      c = c * 2;
-      rc = new_rc;
+      c += c;
+      rc += rc;         // rc = 2 * rc
     }
-
-    T new_rv = rv * 2;
-    if (new_rv < rv || new_rv >= v) {
+    if (rv >= v - rv) { // 2 * rv >= v
       qv_ovf = qv >= min_signed;
-      qv = qv * 2 + 1;
-      rv = new_rv - v;
-    } else {
+      qv += qv + 1;
+      rv += rv - v;     // rv = 2 * rv - v
+    } else {            // 2 * rv < v
       qv_ovf = qv >= min_signed;
-      qv = qv * 2;
-      rv = new_rv;
+      qv += qv;
+      rv += rv;         // rv = 2 * rv
     }
   }
 }
