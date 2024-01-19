@@ -128,6 +128,7 @@ void C2FastUnlockLightweightStub::emit(C2_MacroAssembler& masm) {
     __ movptr(Address(monitor, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)), NULL_WORD);
 
     // Fence.
+    // Instead of MFENCE we use a dummy locked add of 0 to the top-of-stack.
     __ lock(); __ addl(Address(rsp, 0), 0);
 
     // Recheck successor.
