@@ -81,7 +81,7 @@ class TenuredGeneration: public Generation {
 
   void compute_new_size_inner();
  public:
-  virtual void compute_new_size();
+  void compute_new_size();
 
   TenuredSpace* space() const { return _the_space; }
 

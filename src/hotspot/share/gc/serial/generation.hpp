@@ -248,11 +248,6 @@ class Generation: public CHeapObj<mtGC> {
   // generation since the last call to "save_marks".
   virtual bool no_allocs_since_save_marks() = 0;
 
-  // When an older generation has been collected, and perhaps resized,
-  // this method will be invoked on all younger generations (from older to
-  // younger), allowing them to resize themselves as appropriate.
-  virtual void compute_new_size() = 0;
-
   // Printing
   virtual const char* name() const = 0;
   virtual const char* short_name() const = 0;

@@ -250,7 +250,7 @@ class DefNewGeneration: public Generation {
   void reset_scratch();
 
   // GC support
-  virtual void compute_new_size();
+  void compute_new_size();
 
   // Returns true if the collection is likely to be safely
   // completed. Even if this method returns true, a collection
