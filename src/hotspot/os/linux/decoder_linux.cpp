@@ -46,8 +46,8 @@ bool ElfDecoder::demangle(const char* symbol, char *buf, int buflen) {
   // may use different malloc/realloc mechanism that allocates 'buf'.
   if ((result = abi::__cxa_demangle(symbol, nullptr, nullptr, &status)) != nullptr) {
     jio_snprintf(buf, buflen, "%s", result);
-      // call c library's free
-      ALLOW_C_FUNCTION(::free, ::free(result);)
+      // call C library's free
+      ALLOW_C_FUNCTION(free, result);
       return true;
   }
   return false;
