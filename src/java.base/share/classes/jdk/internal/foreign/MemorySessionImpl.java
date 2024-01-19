@@ -86,6 +86,7 @@ public final class MemorySessionImpl implements Scope {
     // - Only the owner can access state and acquireCount.
     // - Only the owner can invoke checkValidStateRaw, justClose, acquire0.
     // - Any thread can invoke release0.
+    // - state cannot be NONCLOSEABLE.
     //
     // Shared session - owner is null, state is not NONCLOSEABLE:
     // - Any thread can access any field, as well as invoke any method.
@@ -96,6 +97,11 @@ public final class MemorySessionImpl implements Scope {
     // - No thread can invoke justClose.
     // - All fields are constant.
     // - Any thread can invoke checkValidStateRaw, acquire0 and release0.
+
+    // state starts as OPEN(0) or NONCLOSEABLE(1) and can only transits from
+    // OPEN to CLOSED(-1).
+    // This field is marked as Stable so lifetime checks on implicit and global
+    // sessions are folded away.
     @Stable
     private int state;
     private int acquireCount;
@@ -194,6 +200,44 @@ public final class MemorySessionImpl implements Scope {
         return res;
     }
 
+    public void acquire0() {
+        if (owner == Thread.currentThread()) {
+            confinedAcquire0();
+            return;
+        } else if (owner != null) {
+            throw wrongThread();
+        }
+
+        VarHandle.acquireFence();
+        if (state != NONCLOSEABLE) {
+            sharedAcquire0();
+        }
+    }
+
+    private void confinedAcquire0() {
+        if (state == CLOSED) {
+            throw alreadyClosed();
+        }
+        if (acquireCount == MAX_FORKS) {
+            throw tooManyAcquires();
+        }
+        acquireCount++;
+    }
+
+    private void sharedAcquire0() {
+        while (true) {
+            int acquireCount = (int)ACQUIRE_COUNT.getVolatile(this);
+            if (acquireCount < OPEN) {
+                throw alreadyClosed();
+            } else if (acquireCount == MAX_FORKS) {
+                throw tooManyAcquires();
+            }
+            if (ACQUIRE_COUNT.weakCompareAndSet(this, acquireCount, acquireCount + 1)) {
+                break;
+            }
+        }
+    }
+
     public void release0() {
         if (owner == Thread.currentThread()) {
             acquireCount--;
@@ -215,38 +259,6 @@ public final class MemorySessionImpl implements Scope {
         }
 
         int a = (int)ACQUIRE_COUNT.getAndAdd(this, -1);
-    }
-
-    public void acquire0() {
-        if (owner == Thread.currentThread()) {
-            if (state == CLOSED) {
-                throw alreadyClosed();
-            }
-            if (acquireCount == MAX_FORKS) {
-                throw tooManyAcquires();
-            }
-            acquireCount++;
-            return;
-        } else if (owner != null) {
-            throw wrongThread();
-        }
-
-        VarHandle.acquireFence();
-        if (state == NONCLOSEABLE) {
-            return;
-        }
-
-        while (true) {
-            int acquireCount = (int)ACQUIRE_COUNT.getVolatile(this);
-            if (acquireCount < OPEN) {
-                throw alreadyClosed();
-            } else if (acquireCount == MAX_FORKS) {
-                throw tooManyAcquires();
-            }
-            if (ACQUIRE_COUNT.compareAndSet(this, acquireCount, acquireCount + 1)) {
-                break;
-            }
-        }
     }
 
     public void whileAlive(Runnable action) {
@@ -274,7 +286,11 @@ public final class MemorySessionImpl implements Scope {
      */
     @Override
     public boolean isAlive() {
-        return state >= OPEN;
+        if (owner != null) {
+            // Confined sessions do not synchronise so the result cannot be exact
+            return state >= OPEN;
+        }
+        return (int)ACQUIRE_COUNT.getVolatile(this) >= OPEN;
     }
 
     /**
@@ -287,12 +303,7 @@ public final class MemorySessionImpl implements Scope {
      */
     @ForceInline
     public void checkValidStateRaw() {
-        if (owner == Thread.currentThread()) {
-            if (state < OPEN) {
-                throw ALREADY_CLOSED;
-            }
-            return;
-        } else if (owner != null) {
+        if (owner != Thread.currentThread() && owner != null) {
             throw WRONG_THREAD;
         }
         if (state < OPEN) {
@@ -339,16 +350,7 @@ public final class MemorySessionImpl implements Scope {
 
     private void justClose() {
         if (owner == Thread.currentThread()) {
-            if (state < OPEN) {
-                throw alreadyClosed();
-            }
-            if (acquireCount > OPEN) {
-                int asyncCount = (int)ASYNC_RELEASE_COUNT.getVolatile(this);
-                if (asyncCount != acquireCount) {
-                    throw alreadyAcquired(acquireCount - asyncCount);
-                }
-            }
-            state = CLOSED;
+            confinedJustClose();
             return;
         } else if (owner != null) {
             throw wrongThread();
@@ -359,6 +361,23 @@ public final class MemorySessionImpl implements Scope {
             throw nonCloseable();
         }
 
+        sharedJustClose();
+    }
+
+    private void confinedJustClose() {
+        if (state < OPEN) {
+            throw alreadyClosed();
+        }
+        if (acquireCount > OPEN) {
+            int asyncCount = (int)ASYNC_RELEASE_COUNT.getVolatile(this);
+            if (asyncCount != acquireCount) {
+                throw alreadyAcquired(acquireCount - asyncCount);
+            }
+        }
+        state = CLOSED;
+    }
+
+    private void sharedJustClose() {
         int acquireCount = (int)ACQUIRE_COUNT.compareAndExchange(this, OPEN, CLOSED);
         if (acquireCount > OPEN) {
             throw alreadyAcquired(acquireCount);
