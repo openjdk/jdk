@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021, 2022, THL A29 Limited, a Tencent company. All rights reserved.
+ * Copyright (C) 2021, 2024, THL A29 Limited, a Tencent company. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,9 @@ import java.nio.ByteOrder;
  * @summary Vector API intrinsincs should not modify IR when bailing out
  * @modules jdk.incubator.vector
  * @run main/othervm -Xbatch -XX:+IgnoreUnrecognizedVMOptions -XX:UseAVX=1
+ *                   -XX:-TieredCompilation compiler.vectorapi.TestIntrinsicBailOut
+ * @run main/othervm -Xcomp -XX:-InlineUnsafeOps -XX:+IgnoreUnrecognizedVMOptions -XX:UseAVX=3
+ *                   -XX:CompileCommand=compileonly,compiler.vectorapi.TestIntrinsicBailOut::test -XX:CompileCommand=quiet
  *                   -XX:-TieredCompilation compiler.vectorapi.TestIntrinsicBailOut
  */
 

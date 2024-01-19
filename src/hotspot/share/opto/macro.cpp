@@ -766,7 +766,7 @@ SafePointScalarObjectNode* PhaseMacroExpand::create_scalarized_object_descriptio
     }
   }
 
-  SafePointScalarObjectNode* sobj = new SafePointScalarObjectNode(res_type, alloc, first_ind, nfields);
+  SafePointScalarObjectNode* sobj = new SafePointScalarObjectNode(res_type, alloc, first_ind, sfpt->jvms()->depth(), nfields);
   sobj->init_req(0, C->root());
   transform_later(sobj);
 
