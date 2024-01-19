@@ -4932,9 +4932,9 @@ int os::open(const char *path, int oflag, int mode) {
 
   //If the open succeeded, the file might still be a directory
   {
-    struct stat buf64;
-    int ret = ::fstat(fd, &buf64);
-    int st_mode = buf64.st_mode;
+    struct stat buf;
+    int ret = ::fstat(fd, &buf);
+    int st_mode = buf.st_mode;
 
     if (ret != -1) {
       if ((st_mode & S_IFMT) == S_IFDIR) {
