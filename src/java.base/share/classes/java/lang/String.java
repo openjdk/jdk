@@ -4236,6 +4236,7 @@ public final class String
      * @return String with escape sequences translated.
      *
      * @jls 3.10.7 Escape Sequences
+     * @jls 3.3 Unicode Escapes
      *
      * @since 15
      */
