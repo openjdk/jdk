@@ -224,14 +224,6 @@ class Generation: public CHeapObj<mtGC> {
   // still unsuccessful, return "null".
   virtual HeapWord* expand_and_allocate(size_t word_size, bool is_tlab) = 0;
 
-  // Some generations may require some cleanup or preparation actions before
-  // allowing a collection.  The default is to do nothing.
-  virtual void gc_prologue(bool full) {}
-
-  // Some generations may require some cleanup actions after a collection.
-  // The default is to do nothing.
-  virtual void gc_epilogue(bool full) {}
-
   // Save the high water marks for the used space in a generation.
   virtual void record_spaces_top() {}
 
@@ -255,11 +247,6 @@ class Generation: public CHeapObj<mtGC> {
   // This function is "true" iff any no allocations have occurred in the
   // generation since the last call to "save_marks".
   virtual bool no_allocs_since_save_marks() = 0;
-
-  // When an older generation has been collected, and perhaps resized,
-  // this method will be invoked on all younger generations (from older to
-  // younger), allowing them to resize themselves as appropriate.
-  virtual void compute_new_size() = 0;
 
   // Printing
   virtual const char* name() const = 0;
