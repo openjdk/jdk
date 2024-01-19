@@ -13,7 +13,7 @@ import jdk.test.whitebox.WhiteBox;
  * @test id=testSuccessfulFlow
  * @summary Test that memory allocation logging works when allocation operations run without error
  * @library /test/lib
- * @requires os.family == "linux"
+ * @requires os.family != "windows"
  * @modules java.base/jdk.internal.misc
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
@@ -24,7 +24,7 @@ import jdk.test.whitebox.WhiteBox;
  * @test id=testAttemptedReserveFailed
  * @summary Test that memory allocation logging warns when attempted reservation fails
  * @library /test/lib
- * @requires os.family == "linux"
+ * @requires os.family != "windows"
  * @modules java.base/jdk.internal.misc
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
@@ -35,7 +35,7 @@ import jdk.test.whitebox.WhiteBox;
  * @test id=testReserveFailed
  * @summary Test that memory allocation logging warns when reservation fails
  * @library /test/lib
- * @requires os.family == "linux"
+ * @requires os.family != "windows"
  * @modules java.base/jdk.internal.misc
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
@@ -46,7 +46,7 @@ import jdk.test.whitebox.WhiteBox;
  * @test id=testCommitFailed
  * @summary Test that memory allocation logging warns when commit attempts fail
  * @library /test/lib
- * @requires os.family == "linux"
+ * @requires os.family != "windows"
  * @modules java.base/jdk.internal.misc
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
@@ -57,7 +57,7 @@ import jdk.test.whitebox.WhiteBox;
  * @test id=testUncommitFailed
  * @summary Test that memory allocation logging warns when memory uncommitment fails
  * @library /test/lib
- * @requires os.family == "linux"
+ * @requires os.family != "windows"
  * @modules java.base/jdk.internal.misc
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
@@ -68,7 +68,7 @@ import jdk.test.whitebox.WhiteBox;
  * @test id=testReleaseFailed
  * @summary Test that memory allocation logging warns when memory release fails
  * @library /test/lib
- * @requires os.family == "linux"
+ * @requires os.family != "windows"
  * @modules java.base/jdk.internal.misc
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
@@ -86,7 +86,7 @@ public class TestMemoryAllocationLogging {
             throw new RuntimeException("Argument error");
         }
         String[] options = new String[] {
-                "-Xlog:os+map=debug",
+                "-Xlog:os+map=trace", // trace level will also print debug level
                 "-XX:-CreateCoredumpOnCrash",
                 "-Xms17m",
                 "-Xmx17m",
@@ -98,9 +98,12 @@ public class TestMemoryAllocationLogging {
                 args[0]};
 
         String[] expectedLogs;
+
+        /* Debug logging level tests */
         switch (args[0]) {
             case "testSuccessfulFlow": {
                 expectedLogs = new String[]{
+                        /* Debug level log */
                         String.format("Reserved \\[0x.* - 0x.*\\] \\(%d bytes\\).", PAGE_SIZE),
                         String.format("Committed \\[0x.* - 0x.*\\] \\(%d bytes\\).", COMMIT_SIZE),
                         String.format("Uncommitted \\[0x.* - 0x.*\\] \\(%d bytes\\).", COMMIT_SIZE),
@@ -110,39 +113,57 @@ public class TestMemoryAllocationLogging {
             }
             case "testAttemptedReserveFailed": {
                 expectedLogs = new String[] {
+                        /* Debug level log */
                         String.format("Reserved \\[0x.* - 0x.*\\] \\(%d bytes\\).", PAGE_SIZE),
-                        String.format("Attempt to reserve \\[0x.* - 0x.*\\] \\(%d bytes\\) failed", PAGE_SIZE)
+                        String.format("Attempt to reserve \\[0x.* - 0x.*\\] \\(.* bytes\\) failed"),
+                        /* Trace level log */
+                        String.format("mmap failed: \\[0x.* - 0x.*\\], \\(.* bytes\\); errno=\\(%d\\)", 12)
                 };
                 break;
             }
             case "testReserveFailed": {
-                expectedLogs = new String[] { "Reserve failed \\(.* bytes\\)"
+                expectedLogs = new String[] {
+                        /* Debug level log */
+                        "Reserve failed \\(.* bytes\\)",
+                        /* Trace level log */
+                        String.format("mmap failed: \\[0x.* - 0x.*\\], \\(.* bytes\\); errno=\\(%d\\)", 12)
                 };
                 break;
             }
             case "testCommitFailed": {
                 expectedLogs = new String[] {
-                        String.format("Failed to commit \\[0x.* - 0x.*\\] \\(%d bytes\\)", COMMIT_SIZE)
+                        /* Debug level log */
+                        String.format("Failed to commit \\[0x.* - 0x.*\\] \\(%d bytes\\)", COMMIT_SIZE),
+                        /* Trace level log */
+                        String.format("mmap failed: \\[0x.* - 0x.*\\], \\(.* bytes\\); errno=\\(%d\\)", 22)
                 };
                 break;
             }
             case "testUncommitFailed": {
                 expectedLogs = new String[] {
+                        /* Debug level log */
                         String.format("Reserved \\[0x.* - 0x.*\\] \\(%d bytes\\).", PAGE_SIZE),
-                       "Failed to uncommit \\[0x.* - 0x.*\\] \\(.* bytes\\)"
+                        "Failed to uncommit \\[0x.* - 0x.*\\] \\(.* bytes\\)",
+                        /* Trace level log */
+                        String.format("mmap failed: \\[0x.* - 0x.*\\], \\(.* bytes\\); errno=\\(%d\\)", 12)
                 };
                 break;
             }
             case "testReleaseFailed": {
                 expectedLogs = new String[] {
-                        "Failed to release \\[0x.* - 0x.*\\] \\(.* bytes\\)"
+                        /* Debug level log */
+                        "Failed to release \\[0x.* - 0x.*\\] \\(.* bytes\\)",
+                        /* Trace level log */
+                        String.format("munmap failed: \\[0x.* - 0x.*\\], \\(.* bytes\\); errno=\\(%d\\)", 22)
                 };
                 break;
             }
+
             default: {
                 throw new RuntimeException("Invalid test " + args[0]);
             }
         }
+
         OutputAnalyzer output = runTestWithOptions(options);
         checkExpectedLogMessages(output, expectedLogs);
     }
@@ -175,7 +196,7 @@ public class TestMemoryAllocationLogging {
                 }
                 case "testAttemptedReserveFailed": {
                     long addr = wb.NMTReserveMemory(PAGE_SIZE);
-                    wb.NMTAttemptReserveMemoryAt(addr, PAGE_SIZE);
+                    wb.NMTAttemptReserveMemoryAt(addr, tooBig);
                     break;
                 }
                 case "testReserveFailed": {

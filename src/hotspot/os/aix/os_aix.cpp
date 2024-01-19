@@ -79,6 +79,7 @@
 #include "utilities/defaultStream.hpp"
 #include "utilities/events.hpp"
 #include "utilities/growableArray.hpp"
+#include "utilities/preserveErrno.hpp"
 #include "utilities/vmError.hpp"
 #if INCLUDE_JFR
 #include "jfr/support/jfrNativeLibraryLoadEvent.hpp"
@@ -295,6 +296,8 @@ static bool my_disclaim64(char* addr, size_t size) {
 
   for (unsigned int i = 0; i < numFullDisclaimsNeeded; i ++) {
     if (::disclaim(p, maxDisclaimSize, DISCLAIM_ZEROMEM) != 0) {
+      ErrnoPreserver ep;
+      log_trace(os,map)("Cannot disclaim %p - %p (errno %d)\n", p, p + maxDisclaimSize, errno);
       trcVerbose("Cannot disclaim %p - %p (errno %d)\n", p, p + maxDisclaimSize, errno);
       return false;
     }
@@ -303,6 +306,8 @@ static bool my_disclaim64(char* addr, size_t size) {
 
   if (lastDisclaimSize > 0) {
     if (::disclaim(p, lastDisclaimSize, DISCLAIM_ZEROMEM) != 0) {
+      ErrnoPreserver ep;
+      log_trace(os,map)("Cannot disclaim %p - %p (errno %d)\n", p, p + lastDisclaimSize, errno);
       trcVerbose("Cannot disclaim %p - %p (errno %d)\n", p, p + lastDisclaimSize, errno);
       return false;
     }
@@ -1470,10 +1475,15 @@ struct vmembk_t {
       trcVerbose("[" PTR_FORMAT " - " PTR_FORMAT "] is not a sub "
               "range of [" PTR_FORMAT " - " PTR_FORMAT "].",
               p2i(p), p2i(p + s), p2i(addr), p2i(addr + size));
+      log_trace(os,map)("[" PTR_FORMAT " - " PTR_FORMAT "] is not a sub "
+              "range of [" PTR_FORMAT " - " PTR_FORMAT "].",
+              p2i(p), p2i(p + s), p2i(addr), p2i(addr + size));
       guarantee0(false);
     }
     if (!is_aligned_to(p, pagesize) || !is_aligned_to(p + s, pagesize)) {
       trcVerbose("range [" PTR_FORMAT " - " PTR_FORMAT "] is not"
+              " aligned to pagesize (%lu)", p2i(p), p2i(p + s), (unsigned long) pagesize);
+      log_trace(os,map)("range [" PTR_FORMAT " - " PTR_FORMAT "] is not"
               " aligned to pagesize (%lu)", p2i(p), p2i(p + s), (unsigned long) pagesize);
       guarantee0(false);
     }
@@ -1543,6 +1553,7 @@ static char* reserve_shmated_memory (size_t bytes, char* requested_addr) {
   // BRK because that may cause malloc OOM.
   if (requested_addr != nullptr && is_close_to_brk((address)requested_addr)) {
     trcVerbose("Wish address " PTR_FORMAT " is too close to the BRK segment.", p2i(requested_addr));
+    log_trace(os,map)("Wish address " PTR_FORMAT " is too close to the BRK segment.", p2i(requested_addr));
     // Since we treat an attach to the wrong address as an error later anyway,
     // we return null here
     return nullptr;
@@ -1560,6 +1571,8 @@ static char* reserve_shmated_memory (size_t bytes, char* requested_addr) {
   // Reserve the shared segment.
   int shmid = shmget(IPC_PRIVATE, size, IPC_CREAT | S_IRUSR | S_IWUSR);
   if (shmid == -1) {
+    ErrorPreserver ep;
+    log_trace(os,map)("shmget(.., " UINTX_FORMAT ", ..) failed (errno: %d).", size, errno);
     trcVerbose("shmget(.., " UINTX_FORMAT ", ..) failed (errno: %d).", size, errno);
     return nullptr;
   }
@@ -1574,6 +1587,9 @@ static char* reserve_shmated_memory (size_t bytes, char* requested_addr) {
   memset(&shmbuf, 0, sizeof(shmbuf));
   shmbuf.shm_pagesize = 64*K;
   if (shmctl(shmid, SHM_PAGESIZE, &shmbuf) != 0) {
+    ErrorPreserver ep;
+    log_trace(os,map)("Failed to set page size (need " UINTX_FORMAT " 64K pages) - shmctl failed with %d.",
+               size / (64*K), errno);
     trcVerbose("Failed to set page size (need " UINTX_FORMAT " 64K pages) - shmctl failed with %d.",
                size / (64*K), errno);
     // I want to know if this ever happens.
@@ -1592,12 +1608,16 @@ static char* reserve_shmated_memory (size_t bytes, char* requested_addr) {
 
   // (A) Right after shmat and before handing shmat errors delete the shm segment.
   if (::shmctl(shmid, IPC_RMID, nullptr) == -1) {
+    ErrorPreserver ep;
+    log_trace(os,map)("shmctl(%u, IPC_RMID) failed (%d)\n", shmid, errno);
     trcVerbose("shmctl(%u, IPC_RMID) failed (%d)\n", shmid, errno);
     assert(false, "failed to remove shared memory segment!");
   }
 
   // Handle shmat error. If we failed to attach, just return.
   if (addr == (char*)-1) {
+    ErrorPreserver ep;
+    log_trace(os,map)("Failed to attach segment at " PTR_FORMAT " (%d).", p2i(requested_addr), errno_shmat);
     trcVerbose("Failed to attach segment at " PTR_FORMAT " (%d).", p2i(requested_addr), errno_shmat);
     return nullptr;
   }
@@ -1606,6 +1626,7 @@ static char* reserve_shmated_memory (size_t bytes, char* requested_addr) {
   // work (see above), the system may have given us something other then 4K (LDR_CNTRL).
   const size_t real_pagesize = os::Aix::query_pagesize(addr);
   if (real_pagesize != (size_t)shmbuf.shm_pagesize) {
+    log_trace(os,map)("pagesize is, surprisingly, " SIZE_FORMAT, real_pagesize);
     trcVerbose("pagesize is, surprisingly, " SIZE_FORMAT, real_pagesize);
   }
 
@@ -1614,8 +1635,10 @@ static char* reserve_shmated_memory (size_t bytes, char* requested_addr) {
       p2i(addr), p2i(addr + size - 1), size, size/real_pagesize, describe_pagesize(real_pagesize));
   } else {
     if (requested_addr != nullptr) {
+      log_trace(os,map)("failed to shm-allocate " UINTX_FORMAT " bytes at with address " PTR_FORMAT ".", size, p2i(requested_addr));
       trcVerbose("failed to shm-allocate " UINTX_FORMAT " bytes at with address " PTR_FORMAT ".", size, p2i(requested_addr));
     } else {
+      log_trace(os,map)("failed to shm-allocate " UINTX_FORMAT " bytes at any address.", size);
       trcVerbose("failed to shm-allocate " UINTX_FORMAT " bytes at any address.", size);
     }
   }
@@ -1636,6 +1659,8 @@ static bool release_shmated_memory(char* addr, size_t size) {
 
   // TODO: is there a way to verify shm size without doing bookkeeping?
   if (::shmdt(addr) != 0) {
+    ErrnoPreserver ep;
+    log_trace(os,map)("shmdt failed: " RANGEFMT " errno=(%d)", RANGEFMTARGS(addr, size), errno);
     trcVerbose("error (%d).", errno);
   } else {
     trcVerbose("ok.");
@@ -1667,6 +1692,7 @@ static char* reserve_mmaped_memory(size_t bytes, char* requested_addr) {
     bytes, p2i(requested_addr));
 
   if (requested_addr && !is_aligned_to(requested_addr, os::vm_page_size()) != 0) {
+    log_trace(os,map)("Wish address " PTR_FORMAT " not aligned to page boundary.", p2i(requested_addr));
     trcVerbose("Wish address " PTR_FORMAT " not aligned to page boundary.", p2i(requested_addr));
     return nullptr;
   }
@@ -1674,6 +1700,7 @@ static char* reserve_mmaped_memory(size_t bytes, char* requested_addr) {
   // We must prevent anyone from attaching too close to the
   // BRK because that may cause malloc OOM.
   if (requested_addr != nullptr && is_close_to_brk((address)requested_addr)) {
+    log_trace(os,map)("Wish address " PTR_FORMAT " is too close to the BRK segment.", p2i(requested_addr));
     trcVerbose("Wish address " PTR_FORMAT " is too close to the BRK segment.", p2i(requested_addr));
     // Since we treat an attach to the wrong address as an error later anyway,
     // we return null here
@@ -1717,9 +1744,13 @@ static char* reserve_mmaped_memory(size_t bytes, char* requested_addr) {
       PROT_READ|PROT_WRITE|PROT_EXEC, flags, -1, 0);
 
   if (addr == MAP_FAILED) {
+    ErrnoPreserver ep;
+    log_trace(os,map)("mmap(" PTR_FORMAT ", " UINTX_FORMAT ", ..) failed (%d)", p2i(requested_addr), size, errno);
     trcVerbose("mmap(" PTR_FORMAT ", " UINTX_FORMAT ", ..) failed (%d)", p2i(requested_addr), size, errno);
     return nullptr;
   } else if (requested_addr != nullptr && addr != requested_addr) {
+    log_trace(os,map)("mmap(" PTR_FORMAT ", " UINTX_FORMAT ", ..) succeeded, but at a different address than requested (" PTR_FORMAT "), will unmap",
+               p2i(requested_addr), size, p2i(addr));
     trcVerbose("mmap(" PTR_FORMAT ", " UINTX_FORMAT ", ..) succeeded, but at a different address than requested (" PTR_FORMAT "), will unmap",
                p2i(requested_addr), size, p2i(addr));
     ::munmap(addr, extra_size);
@@ -1760,6 +1791,8 @@ static bool release_mmaped_memory(char* addr, size_t size) {
   bool rc = false;
 
   if (::munmap(addr, size) != 0) {
+    ErrnoPreserver ep;
+    log_trace(os,map)("munmap failed: " RANGEFMT " errno=(%d)", RANGEFMTARGS(addr, size), errno);
     trcVerbose("failed (%d)\n", errno);
     rc = false;
   } else {
@@ -1781,6 +1814,8 @@ static bool uncommit_mmaped_memory(char* addr, size_t size) {
 
   // Uncommit mmap memory with msync MS_INVALIDATE.
   if (::msync(addr, size, MS_INVALIDATE) != 0) {
+    ErrnoPreserver ep;
+    log_trace(os,map)("msync failed: " RANGEFMT " errno=(%d)", RANGEFMTARGS(addr, size), errno);
     trcVerbose("failed (%d)\n", errno);
     rc = false;
   } else {
