@@ -2862,6 +2862,7 @@ void LIR_Assembler::rt_call(LIR_Opr result, address dest,
   if (info != nullptr) {
     add_call_info_here(info);
   }
+  assert(__ last_calls_return_pc() == __ pc(), "pcn not at return pc");
   __ post_call_nop();
 }
 
