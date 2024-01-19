@@ -42,8 +42,7 @@ const MallocSiteHashtableEntry* MallocSiteTable::_hash_entry_allocation_site = n
  */
 bool MallocSiteTable::initialize() {
 
-  ALLOW_C_FUNCTION(::calloc,
-                   _table = (MallocSiteHashtableEntry**)::calloc(table_size, sizeof(MallocSiteHashtableEntry*));)
+  _table = (MallocSiteHashtableEntry**) ALLOW_C_FUNCTION(calloc, table_size, sizeof(MallocSiteHashtableEntry*));
   if (_table == nullptr) {
     return false;
   }
