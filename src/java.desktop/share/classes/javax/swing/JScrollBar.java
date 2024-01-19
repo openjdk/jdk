@@ -760,6 +760,8 @@ public class JScrollBar extends JComponent implements Adjustable, Accessible
      * Thus, it overrides {@code JComponent.setMinimumSize} contract
      * that subsequent calls to getMinimumSize will return the
      * same value as set in {@code JComponent.setMinimumSize}
+     *
+     * @param minimumSize the new minimum size of this component
      */
     public void setMinimumSize(Dimension minimumSize) {
         super.setMinimumSize(minimumSize);
@@ -772,6 +774,8 @@ public class JScrollBar extends JComponent implements Adjustable, Accessible
      * Thus, it overrides {@code JComponent.setMaximumSize} contract
      * that subsequent calls to getMaximumSize will return the
      * same value as set in {@code JComponent.setMaximumSize}
+     *
+     * @param maximumSize the desired maximum allowable size
      */
     public void setMaximumSize(Dimension maximumSize) {
         super.setMaximumSize(maximumSize);
@@ -780,6 +784,10 @@ public class JScrollBar extends JComponent implements Adjustable, Accessible
     /**
      * The scrollbar is flexible along it's scrolling axis and
      * rigid along the other axis.
+     *
+     * @return the value of the {@code minimumSize} property if set by user
+     *         or if not set, minimum size derived from
+     *         preferred size in one axis and fixed size in another axis
      */
     public Dimension getMinimumSize() {
         if (isMinimumSizeSet()) {
@@ -796,6 +804,10 @@ public class JScrollBar extends JComponent implements Adjustable, Accessible
     /**
      * The scrollbar is flexible along it's scrolling axis and
      * rigid along the other axis.
+     *
+     * @return the value of the {@code maximumSize} property if set by user
+     *         or if not set, maximum size derived from
+     *         preferred size in one axis and fixed size in another axis
      */
     public Dimension getMaximumSize() {
         if (isMaximumSizeSet()) {
