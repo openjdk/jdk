@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2009,7 +2009,7 @@ extern "C" {
   }
 }
 
-// this is called _after_ the global arguments have been parsed
+// This is called _after_ the global arguments have been parsed
 jint os::init_2(void) {
 
   // This could be set after os::Posix::init() but all platforms
@@ -2032,7 +2032,7 @@ jint os::init_2(void) {
   FLAG_SET_ERGO(UseNUMAInterleaving, false);
 
   if (MaxFDLimit) {
-    // set the number of file descriptors to max. print out error
+    // Set the number of file descriptors to max. Print out error
     // if getrlimit/setrlimit fails but continue regardless.
     struct rlimit nbr_files;
     int status = getrlimit(RLIMIT_NOFILE, &nbr_files);
@@ -2041,7 +2041,7 @@ jint os::init_2(void) {
     } else {
       rlim_t rlim_original = nbr_files.rlim_cur;
 
-      // on macOS according to setrlimit(2), OPEN_MAX must be used instead
+      // On macOS according to setrlimit(2), OPEN_MAX must be used instead
       // of RLIM_INFINITY, but testing on macOS >= 10.6, reveals that
       // we can, in fact, use even RLIM_INFINITY, so try the max value
       // that the system claims can be used first, same as other BSD OSes.
@@ -2053,7 +2053,7 @@ jint os::init_2(void) {
 
       status = setrlimit(RLIMIT_NOFILE, &nbr_files);
       if (status != 0) {
-        // if that fails then try lowering the limit to either OPEN_MAX
+        // If that fails then try lowering the limit to either OPEN_MAX
         // (which is safe) or the original limit, whichever was greater.
         nbr_files.rlim_cur = MAX(OPEN_MAX, rlim_original);
         status = setrlimit(RLIMIT_NOFILE, &nbr_files);
@@ -2064,18 +2064,18 @@ jint os::init_2(void) {
     }
   }
 
-  // at-exit methods are called in the reverse order of their registration.
+  // At-exit methods are called in the reverse order of their registration.
   // atexit functions are called on return from main or as a result of a
   // call to exit(3C). There can be only 32 of these functions registered
   // and atexit() does not set errno.
 
   if (PerfAllowAtExitRegistration) {
-    // only register atexit functions if PerfAllowAtExitRegistration is set.
+    // Only register atexit functions if PerfAllowAtExitRegistration is set.
     // atexit functions can be delayed until process exit time, which
     // can be problematic for embedded VM situations. Embedded VMs should
     // call DestroyJavaVM() to assure that VM resources are released.
 
-    // note: perfMemory_exit_helper atexit function may be removed in
+    // Note: perfMemory_exit_helper atexit function may be removed in
     // the future if the appropriate cleanup code can be added to the
     // VM_Exit VMOperation's doit method.
     if (atexit(perfMemory_exit_helper) != 0) {
@@ -2083,11 +2083,11 @@ jint os::init_2(void) {
     }
   }
 
-  // initialize thread priority policy
+  // Initialize thread priority policy
   prio_init();
 
 #ifdef __APPLE__
-  // dynamically link to objective c gc registration
+  // Dynamically link to objective c gc registration
   void *handleLibObjc = dlopen(OBJC_LIB, RTLD_LAZY);
   if (handleLibObjc != nullptr) {
     objc_registerThreadWithCollectorFunction = (objc_registerThreadWithCollector_t) dlsym(handleLibObjc, OBJC_GCREGISTER);
