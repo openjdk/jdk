@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,8 @@
 
 package sun.util.locale.provider;
 
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.Locale;
 import java.util.Set;
 
@@ -50,16 +52,18 @@ public class FallbackLocaleProviderAdapter extends JRELocaleProviderAdapter {
     @Override
     protected Set<String> createLanguageTagSet(String category) {
         return switch (category) {
-//            case "BreakIteratorInfo", "BreakIteratorRules", "CollationData" -> {
-//                // ensure to include en-US/en/ROOT
-//                var s = new HashSet<>(super.createLanguageTagSet(category));
-//                s.addAll(Set.of("en-US", "en", "und"));
-//                yield Collections.unmodifiableSet(s);
-//            }
+            case "BreakIteratorInfo", "BreakIteratorRules", "CollationData" -> {
+                // ensure to include en-US/en/ROOT
+                var s = new HashSet<>(super.createLanguageTagSet(category));
+                s.addAll(Set.of("en-US", "en", "und"));
+                yield Collections.unmodifiableSet(s);
+            }
+
             // check for super class whether to include "ja" for IncludeLocales
             // jlink plugin
             case "FormatData" -> super.createLanguageTagSet(category).contains("ja") ?
                     Set.of("ja", "und") : Set.of("und");
+
             default -> Set.of("und");
         };
     }
