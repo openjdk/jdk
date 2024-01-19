@@ -63,11 +63,11 @@ char* XMountPoint::get_mountpoint(const char* line, const char* filesystem) cons
       strcmp(line_filesystem, filesystem) != 0 ||
       access(line_mountpoint, R_OK|W_OK|X_OK) != 0) {
     // Not a matching or accessible filesystem
-    ALLOW_C_FUNCTION(::free, ::free(line_mountpoint);)
+    ALLOW_C_FUNCTION(free, line_mountpoint);
     line_mountpoint = nullptr;
   }
 
-  ALLOW_C_FUNCTION(::free, ::free(line_filesystem);)
+  ALLOW_C_FUNCTION(free, line_filesystem);
 
   return line_mountpoint;
 }
@@ -91,14 +91,14 @@ void XMountPoint::get_mountpoints(const char* filesystem, XArray<char*>* mountpo
   }
 
   // readline will return malloced memory. Need raw ::free, not os::free.
-  ALLOW_C_FUNCTION(::free, ::free(line);)
+  ALLOW_C_FUNCTION(free, line);
   fclose(fd);
 }
 
 void XMountPoint::free_mountpoints(XArray<char*>* mountpoints) const {
   XArrayIterator<char*> iter(mountpoints);
   for (char* mountpoint; iter.next(&mountpoint);) {
-    ALLOW_C_FUNCTION(::free, ::free(mountpoint);) // *not* os::free
+    ALLOW_C_FUNCTION(free, mountpoint); // *not* os::free
   }
   mountpoints->clear();
 }
