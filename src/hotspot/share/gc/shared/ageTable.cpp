@@ -73,11 +73,10 @@ void AgeTable::clear() {
 
 #ifndef PRODUCT
 bool AgeTable::is_clear() {
-  size_t total = 0;
   for (size_t* p = sizes; p < sizes + table_size; ++p) {
-    total += *p;
+    if (*p != 0) return false;
   }
-  return total == 0;
+  return true;
 }
 #endif // !PRODUCT
 
