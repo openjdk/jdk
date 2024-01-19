@@ -28,8 +28,12 @@ package org.jcp.xml.dsig.internal.dom;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.io.IOException;
-import java.util.*;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Set;
+
 import javax.xml.crypto.XMLCryptoContext;
+
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 

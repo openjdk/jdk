@@ -259,6 +259,7 @@ public interface SignatureMethod extends XMLStructure, AlgorithmMethod {
      */
     String RSA_PSS = "http://www.w3.org/2007/05/xmldsig-more#rsa-pss";
 
+
     /**
      * Returns the algorithm-specific input parameters of this
      * <code>SignatureMethod</code>.
