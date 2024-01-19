@@ -553,6 +553,9 @@ public class MessageFormat extends Format {
      * The string is constructed from internal information and therefore
      * does not necessarily equal the previously applied pattern.
      *
+     * @implNote The string returned by this method can be used to create
+     * an instance that is semantically equivalent to this instance.
+     *
      * @return a pattern representing the current state of the message format
      */
     public String toPattern() {
