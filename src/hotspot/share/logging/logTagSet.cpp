@@ -149,7 +149,7 @@ void LogTagSet::vwrite(LogLevelType level, const char* fmt, va_list args) {
   } else {
     // Buffer too small, allocate a large enough buffer using malloc/free to avoid circularity.
     // Since logging is a very basic function, conceivably used within NMT itself, avoid os::malloc/free
-    ALLOW_C_FUNCTION(::malloc, char* newbuf = (char*)::malloc(newbuf_len * sizeof(char));)
+    char* newbuf = (char*) ALLOW_C_FUNCTION(malloc, newbuf_len * sizeof(char));
     if (newbuf != nullptr) {
       prefix_len = _write_prefix(newbuf, newbuf_len);
       ret = os::vsnprintf(newbuf + prefix_len, newbuf_len - prefix_len, fmt, saved_args);
@@ -159,7 +159,7 @@ void LogTagSet::vwrite(LogLevelType level, const char* fmt, va_list args) {
       if (ret < 0) {
         log(level, "Log message newbuf issue");
       }
-      ALLOW_C_FUNCTION(::free, ::free(newbuf);)
+      ALLOW_C_FUNCTION(free, newbuf);
     } else {
       // Native OOM, use buf to output the least message. At this moment buf is full of either
       // truncated prefix or truncated prefix + string. Put trunc_msg at the end of buf.
