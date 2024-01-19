@@ -1184,7 +1184,7 @@ public class TestModules extends JavadocTester {
                     her Modules</button>\
                     </div>
                     <div id="all-modules-table.tabpanel" role="tabpanel">
-                    <div class="summary-table two-column-summary" aria-labelledby="all-modules-table-tab0">""");
+                    <div class="summary-table two-column-summary">""");
         checkOutput("index.html", false,
                 """
                     <div class="overview-summary">
@@ -1265,7 +1265,7 @@ public class TestModules extends JavadocTester {
                     ackage Group 1</button>\
                     </div>
                     <div id="all-packages-table.tabpanel" role="tabpanel">
-                    <div class="summary-table two-column-summary" aria-labelledby="all-packages-table-tab0">""");
+                    <div class="summary-table two-column-summary">""");
     }
 
     void checkGroupOptionPackageOrdering() {
@@ -1413,7 +1413,7 @@ public class TestModules extends JavadocTester {
                     """);
         checkOutput("allclasses-index.html", found,
                 """
-                    <div class="summary-table two-column-summary" aria-labelledby="all-classes-table-tab0">
+                    <div class="summary-table two-column-summary">
                     """);
         checkOutput("allpackages-index.html", found,
                 """
