@@ -4155,7 +4155,7 @@ public final class String
 
     /**
      * Returns a string whose value is this string, with escape sequences
-     * translated as if in a string literal.
+     * and unicode escape sequences translated as if in a string literal.
      * <p>
      * Escape sequences are translated as follows;
      * <table class="striped">
