@@ -34,7 +34,15 @@ import java.nio.ByteOrder;
  * @modules jdk.incubator.vector
  * @run main/othervm -Xbatch -XX:+IgnoreUnrecognizedVMOptions -XX:UseAVX=1
  *                   -XX:-TieredCompilation compiler.vectorapi.TestIntrinsicBailOut
- * @run main/othervm -Xcomp -XX:-InlineUnsafeOps -XX:+IgnoreUnrecognizedVMOptions -XX:UseAVX=3
+ */
+
+/*
+ * @test
+ * @bug 8317299
+ * @summary Vector API intrinsincs should handle JVM state correctly whith late inlining when compiling with -InlineUnsafeOps
+ * @modules jdk.incubator.vector
+ * @requires vm.cpu.features ~= ".*avx512.*"
+ * @run main/othervm -Xcomp -XX:+UnlockDiagnosticVMOptions -XX:-InlineUnsafeOps -XX:+IgnoreUnrecognizedVMOptions -XX:UseAVX=3
  *                   -XX:CompileCommand=compileonly,compiler.vectorapi.TestIntrinsicBailOut::test -XX:CompileCommand=quiet
  *                   -XX:-TieredCompilation compiler.vectorapi.TestIntrinsicBailOut
  */
