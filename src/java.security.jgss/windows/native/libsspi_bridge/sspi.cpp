@@ -379,7 +379,6 @@ err:
     return GSS_S_FAILURE;
 
 execution:
-
     len = MultiByteToWideChar(CP_UTF8, 0, input, len, value, len+1);
     if (len == 0) {
         goto err;
@@ -534,13 +533,11 @@ gss_export_name(OM_uint32 *minor_status,
     SEC_WCHAR* name = input_name->name;
     SEC_WCHAR* fullname = get_full_name(name);
     goto execution;
-cleanup:
-    static_cast<void>(0);
 err:
     if (fullname != name) {
         delete[] fullname;
     }
-    goto finish;
+    return result;
 execution:
     if (!fullname) {
         goto err;
@@ -577,8 +574,9 @@ execution:
     exported_name->length = 10 + mechLen + len;
     exported_name->value = buffer;
     result = GSS_S_COMPLETE;
-    goto cleanup;
-finish:
+    if (fullname != name) {
+        delete[] fullname;
+    }
     return result;
 }
 
@@ -918,7 +916,6 @@ err:
     return GSS_S_FAILURE;
 
 execution:
-
     DWORD outFlag;
     TCHAR outName[100];
 
