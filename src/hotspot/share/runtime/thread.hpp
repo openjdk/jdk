@@ -306,6 +306,7 @@ class Thread: public ThreadShadow {
   RunState _run_state;  // for lifecycle checks
 #endif
 
+
  public:
   // invokes <ChildThreadClass>::run(), with common preparations and cleanups.
   void call_run();

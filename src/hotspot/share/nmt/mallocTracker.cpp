@@ -154,7 +154,8 @@ bool MallocTracker::initialize(NMT_TrackingLevel level) {
 
 // Record a malloc memory allocation
 void* MallocTracker::record_malloc(void* malloc_base, size_t size, MEMFLAGS flags,
-  const NativeCallStack& stack) {
+  const NativeCallStack& stack)
+{
   assert(MemTracker::enabled(), "precondition");
   assert(malloc_base != nullptr, "precondition");
 
@@ -180,6 +181,7 @@ void* MallocTracker::record_malloc(void* malloc_base, size_t size, MEMFLAGS flag
     assert(header2->flags() == flags, "Wrong flags");
   }
 #endif
+
   return memblock;
 }
 
@@ -189,6 +191,7 @@ void* MallocTracker::record_free_block(void* memblock) {
 
   MallocHeader* header = MallocHeader::resolve_checked(memblock);
   MEMFLAGS flags = header->flags();
+
   deaccount(header->free_info());
 
   header->mark_block_as_dead();

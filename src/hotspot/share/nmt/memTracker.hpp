@@ -96,7 +96,6 @@ class MemTracker : AllStatic {
   static inline void* record_malloc(void* mem_base, size_t size, MEMFLAGS flag,
     const NativeCallStack& stack) {
     assert(mem_base != nullptr, "caller should handle null");
-
     if (enabled()) {
       return MallocTracker::record_malloc(mem_base, size, flag, stack);
     }
@@ -113,7 +112,6 @@ class MemTracker : AllStatic {
     }
     return memblock;
   }
-
   static inline void deaccount(MallocHeader::FreeInfo free_info) {
     assert(enabled(), "NMT must be enabled");
     MallocTracker::deaccount(free_info);
