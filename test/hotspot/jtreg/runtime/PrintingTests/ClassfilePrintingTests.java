@@ -31,9 +31,14 @@ import jdk.test.lib.Platform;
  * @bug 8211821 8323685
  * @requires vm.flagless
  * @library /test/lib
- * @compile SampleClass.java
  * @run driver ClassfilePrintingTests
  */
+
+class SampleClass {
+    public static void main(java.lang.String[] unused) {
+        System.out.println("Hello from the sample class");
+    }
+}
 
 public class ClassfilePrintingTests {
     private static void printStringTableStatsTest() throws Exception {
@@ -50,7 +55,7 @@ public class ClassfilePrintingTests {
             "-XX:+PrintSystemDictionaryAtExit",
             "SampleClass");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
-        output.shouldContain("SampleClass");
+        output.shouldContain(SampleClass.class.getName());
         output.shouldContain("jdk/internal/loader/ClassLoaders$AppClassLoader");
         output.shouldHaveExitValue(0);
     }
