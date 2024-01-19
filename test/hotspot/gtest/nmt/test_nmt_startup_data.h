@@ -26,8 +26,7 @@
 
 #include "stddef.h"
 
-typedef struct DataStruct
-{
+typedef struct DataStruct {
   long time;
   long pointer;
   long pointer_prev;

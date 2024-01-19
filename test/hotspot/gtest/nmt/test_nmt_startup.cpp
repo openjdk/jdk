@@ -56,7 +56,7 @@ static jlong benchmark(int count, int* indexes, void** pointers, DataStruct* dat
       NativeCallStack stack = NativeCallStack(&frames[0], sizeof(frames)/sizeof(address));
       if (data[i].pointer_prev == 0L) { // malloc
         ALLOW_C_FUNCTION(::malloc, pointers[i] = os::malloc(data[i].actual, NMTUtil::index_to_flag(data[i].flags), stack);)
-        assert(pointers[i]!=nullptr, "malloc pointers[i]!=nullptr");
+        assert(pointers[i] != nullptr, "malloc pointers[i]!=nullptr");
         //fprintf(stderr, "    malloc pointers[i]:%p\n", pointers[i]);
       } else { // realloc
         int index = indexes[i];
@@ -64,16 +64,16 @@ static jlong benchmark(int count, int* indexes, void** pointers, DataStruct* dat
         // i.e. before NMT was initialized, and we only capture after NMT is initialized
         if (index >= 0) {
           assert(index >= 0, "realloc must be (%d > 0)", index);
-          assert(pointers[index]!=nullptr, "realloc pointers[index]!=nullptr");
+          assert(pointers[index] != nullptr, "realloc pointers[index]!=nullptr");
           //fprintf(stderr, "    pointers[%d]:%p\n", index, pointers[index]);
           ALLOW_C_FUNCTION(::realloc, pointers[i] = os::realloc(pointers[index], data[i].actual, NMTUtil::index_to_flag(data[i].flags), stack);)
-          assert(pointers[i]!=nullptr, "realloc pointers[i]!=nullptr");
+          assert(pointers[i] != nullptr, "realloc pointers[i]!=nullptr");
           pointers[index] = nullptr;
           //fprintf(stderr, "    realloc pointers[%d]:%p\n", i, pointers[i]);
         } else {
           // substitute malloc for realloc here, so that any "free" that references this "realloc" has something to reference
           ALLOW_C_FUNCTION(::malloc, pointers[i] = os::malloc(data[i].actual, NMTUtil::index_to_flag(data[i].flags), stack);)
-          assert(pointers[i]!=nullptr, "substitute malloc pointers[i]!=nullptr");
+          assert(pointers[i] != nullptr, "substitute malloc pointers[i]!=nullptr");
           //fprintf(stderr, "    substitute malloc pointers[%d]:%p\n", i, pointers[i]);
         }
       }
@@ -83,7 +83,7 @@ static jlong benchmark(int count, int* indexes, void** pointers, DataStruct* dat
       // i.e. before NMT was initialized, and we only capture after NMT is initialized
       if (index >= 0) {
         assert(index >= 0, "must be (%d > 0)", index);
-        assert(pointers[index]!=nullptr, "free pointers[index]!=nullptr");
+        assert(pointers[index] != nullptr, "free pointers[index]!=nullptr");
         //fprintf(stderr, "    free pointers[%6d]:%p\n", index, pointers[index]);
         ALLOW_C_FUNCTION(::free, os::free(pointers[index]);)
         pointers[index] = nullptr;
@@ -195,8 +195,8 @@ TEST_VM(NMTPerformance, test_startup_memory_mac_data) {
   ALLOW_C_FUNCTION(::calloc, void** pointers = (void**)calloc(count, sizeof(void*));)
   DataStruct* data = data_mac;
 
-  assert(indexes!=nullptr, "indexes!=nullptr");
-  assert(pointers!=nullptr, "pointers!=nullptr");
+  assert(indexes != nullptr, "indexes!=nullptr");
+  assert(pointers != nullptr, "pointers!=nullptr");
 
   test(count, indexes, pointers, data);
 
@@ -212,8 +212,8 @@ TEST_VM(NMTPerformance, test_startup_memory_linux_data) {
   ALLOW_C_FUNCTION(::calloc, void** pointers = (void**)calloc(count, sizeof(void*));)
   DataStruct* data = data_linux;
 
-  assert(indexes!=nullptr, "indexes!=nullptr");
-  assert(pointers!=nullptr, "pointers!=nullptr");
+  assert(indexes != nullptr, "indexes!=nullptr");
+  assert(pointers != nullptr, "pointers!=nullptr");
 
   test(count, indexes, pointers, data);
 
