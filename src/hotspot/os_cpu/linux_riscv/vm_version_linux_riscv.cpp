@@ -242,6 +242,8 @@ void VM_Version::rivos_features() {
 
   ext_Zcb.enable_feature();
 
+  ext_Zfh.enable_feature();
+
   ext_Zicsr.enable_feature();
   ext_Zifencei.enable_feature();
   ext_Zic64b.enable_feature();
