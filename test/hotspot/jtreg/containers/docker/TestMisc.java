@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -132,6 +132,11 @@ public class TestMisc {
             if (str.contains("cgroupv2")) {
                 out.shouldContain("memory_swap_current_in_bytes");
                 out.shouldContain("memory_swap_max_limit_in_bytes");
+	              for (String s : str.split(System.lineSeparator())) {
+	                if (s.contains("memory_swap_current_in_bytes")) {
+	                  s.shouldNotContain("unlimited");
+	                }
+	              }
             } else {
                 throw new RuntimeException("Output has to contain information about cgroupv1 or cgroupv2");
             }
