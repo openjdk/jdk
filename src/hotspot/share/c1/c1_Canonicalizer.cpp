@@ -469,6 +469,7 @@ void Canonicalizer::do_CompareOp      (CompareOp*       x) {
 
 
 void Canonicalizer::do_IfOp(IfOp* x) {
+  ShouldNotReachHere();
 }
 
 
