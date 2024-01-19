@@ -5288,7 +5288,7 @@ void C2_MacroAssembler::vector_compress_expand_avx2(int opcode, XMMRegister dst,
   assert(opcode == Op_CompressV || opcode == Op_ExpandV, "");
   if (bt == T_INT || bt == T_FLOAT) {
     vmovmskps(rtmp, mask, vec_enc);
-    shlq(rtmp, 5);  // for 32 bit rows (8 ints)
+    shlq(rtmp, 5);  // for 32 byte permute row of 8 x 32 bits.
     if (opcode == Op_CompressV) {
       lea(rscratch, ExternalAddress(StubRoutines::x86::compress_perm_table32()));
     } else {
@@ -5306,7 +5306,7 @@ void C2_MacroAssembler::vector_compress_expand_avx2(int opcode, XMMRegister dst,
   } else {
     assert(bt == T_LONG || bt == T_DOUBLE, "");
     vmovmskpd(rtmp, mask, vec_enc);
-    shlq(rtmp, 5); // for 64 bit rows (4 longs)
+    shlq(rtmp, 5); // for 32 bytes permute row of 4 x 64 bits.
     if (opcode == Op_CompressV) {
       lea(rscratch, ExternalAddress(StubRoutines::x86::compress_perm_table64()));
     } else {
