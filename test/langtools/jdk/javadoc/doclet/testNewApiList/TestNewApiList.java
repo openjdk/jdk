@@ -142,7 +142,7 @@ public class TestNewApiList extends JavadocTester {
                 <div class="caption"><span>New Modules</span></div>
                 </div>
                 <div id="module.tabpanel" role="tabpanel">
-                <div class="summary-table three-column-release-summary" aria-labelledby="module-tab0">
+                <div class="summary-table three-column-release-summary">
                 <div class="table-header col-first sort-asc" onclick="sortTable(this, 0, 3)">Module</div>
                 <div class="table-header col-second" onclick="sortTable(this, 1, 3)">Added in</div>
                 <div class="table-header col-last">Description</div>
@@ -158,7 +158,7 @@ public class TestNewApiList extends JavadocTester {
                 <div class="caption"><span>New Packages</span></div>
                 </div>
                 <div id="package.tabpanel" role="tabpanel">
-                <div class="summary-table three-column-release-summary" aria-labelledby="package-tab0">
+                <div class="summary-table three-column-release-summary">
                 <div class="table-header col-first sort-asc" onclick="sortTable(this, 0, 3)">Package</div>
                 <div class="table-header col-second" onclick="sortTable(this, 1, 3)">Added in</div>
                 <div class="table-header col-last">Description</div>
@@ -174,7 +174,7 @@ public class TestNewApiList extends JavadocTester {
                 <div class="caption"><span>New Interfaces</span></div>
                 </div>
                 <div id="interface.tabpanel" role="tabpanel">
-                <div class="summary-table three-column-release-summary" aria-labelledby="interface-tab0">
+                <div class="summary-table three-column-release-summary">
                 <div class="table-header col-first sort-asc" onclick="sortTable(this, 0, 3)">Interface</div>
                 <div class="table-header col-second" onclick="sortTable(this, 1, 3)">Added in</div>
                 <div class="table-header col-last">Description</div>
@@ -190,7 +190,7 @@ public class TestNewApiList extends JavadocTester {
                 <div class="caption"><span>New Classes</span></div>
                 </div>
                 <div id="class.tabpanel" role="tabpanel">
-                <div class="summary-table three-column-release-summary" aria-labelledby="class-tab0">
+                <div class="summary-table three-column-release-summary">
                 <div class="table-header col-first sort-asc" onclick="sortTable(this, 0, 3)">Class</div>
                 <div class="table-header col-second" onclick="sortTable(this, 1, 3)">Added in</div>
                 <div class="table-header col-last">Description</div>
@@ -206,7 +206,7 @@ public class TestNewApiList extends JavadocTester {
                 <div class="caption"><span>New Enum Classes</span></div>
                 </div>
                 <div id="enum-class.tabpanel" role="tabpanel">
-                <div class="summary-table three-column-release-summary" aria-labelledby="enum-class-tab0">
+                <div class="summary-table three-column-release-summary">
                 <div class="table-header col-first sort-asc" onclick="sortTable(this, 0, 3)">Enum Class</div>
                 <div class="table-header col-second" onclick="sortTable(this, 1, 3)">Added in</div>
                 <div class="table-header col-last">Description</div>
@@ -222,7 +222,7 @@ public class TestNewApiList extends JavadocTester {
                 <div class="caption"><span>New Exception Classes</span></div>
                 </div>
                 <div id="exception-class.tabpanel" role="tabpanel">
-                <div class="summary-table three-column-release-summary" aria-labelledby="exception-class-tab0">
+                <div class="summary-table three-column-release-summary">
                 <div class="table-header col-first sort-asc" onclick="sortTable(this, 0, 3)">Exception Class</div>
                 <div class="table-header col-second" onclick="sortTable(this, 1, 3)">Added in</div>
                 <div class="table-header col-last">Description</div>
@@ -244,7 +244,7 @@ public class TestNewApiList extends JavadocTester {
                 <div class="caption"><span>New Record Classes</span></div>
                 </div>
                 <div id="record-class.tabpanel" role="tabpanel">
-                <div class="summary-table three-column-release-summary" aria-labelledby="record-class-tab0">
+                <div class="summary-table three-column-release-summary">
                 <div class="table-header col-first sort-asc" onclick="sortTable(this, 0, 3)">Record Class</div>
                 <div class="table-header col-second" onclick="sortTable(this, 1, 3)">Added in</div>
                 <div class="table-header col-last">Description</div>
@@ -260,7 +260,7 @@ public class TestNewApiList extends JavadocTester {
                 <div class="caption"><span>New Annotation Interfaces</span></div>
                 </div>
                 <div id="annotation-interface.tabpanel" role="tabpanel">
-                <div class="summary-table three-column-release-summary" aria-labelledby="annotation-interface-tab0">
+                <div class="summary-table three-column-release-summary">
                 <div class="table-header col-first sort-asc" onclick="sortTable(this, 0, 3)">Annotation Interface</div>
                 <div class="table-header col-second" onclick="sortTable(this, 1, 3)">Added in</div>
                 <div class="table-header col-last">Description</div>
@@ -275,7 +275,7 @@ public class TestNewApiList extends JavadocTester {
                 <div class="caption"><span>New Fields</span></div>
                 </div>
                 <div id="field.tabpanel" role="tabpanel">
-                <div class="summary-table three-column-release-summary" aria-labelledby="field-tab0">
+                <div class="summary-table three-column-release-summary">
                 <div class="table-header col-first sort-asc" onclick="sortTable(this, 0, 3)">Field</div>
                 <div class="table-header col-second" onclick="sortTable(this, 1, 3)">Added in</div>
                 <div class="table-header col-last">Description</div>
@@ -309,7 +309,7 @@ public class TestNewApiList extends JavadocTester {
                 <div class="caption"><span>New Methods</span></div>
                 </div>
                 <div id="method.tabpanel" role="tabpanel">
-                <div class="summary-table three-column-release-summary" aria-labelledby="method-tab0">
+                <div class="summary-table three-column-release-summary">
                 <div class="table-header col-first sort-asc" onclick="sortTable(this, 0, 3)">Method</div>
                 <div class="table-header col-second" onclick="sortTable(this, 1, 3)">Added in</div>
                 <div class="table-header col-last">Description</div>
@@ -375,7 +375,7 @@ public class TestNewApiList extends JavadocTester {
                 <div class="caption"><span>New Constructors</span></div>
                 </div>
                 <div id="constructor.tabpanel" role="tabpanel">
-                <div class="summary-table three-column-release-summary" aria-labelledby="constructor-tab0">
+                <div class="summary-table three-column-release-summary">
                 <div class="table-header col-first sort-asc" onclick="sortTable(this, 0, 3)">Constructor</div>
                 <div class="table-header col-second" onclick="sortTable(this, 1, 3)">Added in</div>
                 <div class="table-header col-last">Description</div>
@@ -410,7 +410,7 @@ public class TestNewApiList extends JavadocTester {
                 <div class="caption"><span>New Enum Constants</span></div>
                 </div>
                 <div id="enum-constant.tabpanel" role="tabpanel">
-                <div class="summary-table three-column-release-summary" aria-labelledby="enum-constant-tab0">
+                <div class="summary-table three-column-release-summary">
                 <div class="table-header col-first sort-asc" onclick="sortTable(this, 0, 3)">Enum Constant</div>
                 <div class="table-header col-second" onclick="sortTable(this, 1, 3)">Added in</div>
                 <div class="table-header col-last">Description</div>
@@ -444,7 +444,7 @@ public class TestNewApiList extends JavadocTester {
                 <div class="caption"><span>New Annotation Interface Elements</span></div>
                 </div>
                 <div id="annotation-interface-member.tabpanel" role="tabpanel">
-                <div class="summary-table three-column-release-summary" aria-labelledby="annotation-interface-member-tab0">
+                <div class="summary-table three-column-release-summary">
                 <div class="table-header col-first sort-asc" onclick="sortTable(this, 0, 3)">Annotation Interface Element</div>
                 <div class="table-header col-second" onclick="sortTable(this, 1, 3)">Added in</div>
                 <div class="table-header col-last">Description</div>
@@ -472,7 +472,7 @@ public class TestNewApiList extends JavadocTester {
                 <div class="caption"><span>Terminally Deprecated Elements</span></div>
                 </div>
                 <div id="for-removal.tabpanel" role="tabpanel">
-                <div class="summary-table three-column-release-summary" aria-labelledby="for-removal-tab0">
+                <div class="summary-table three-column-release-summary">
                 <div class="table-header col-first sort-asc" onclick="sortTable(this, 0, 3)">Element</div>
                 <div class="table-header col-second" onclick="sortTable(this, 1, 3)">Deprecated in</div>
                 <div class="table-header col-last">Description</div>
@@ -487,7 +487,7 @@ public class TestNewApiList extends JavadocTester {
                 <div class="caption"><span>Deprecated Methods</span></div>
                 </div>
                 <div id="method.tabpanel" role="tabpanel">
-                <div class="summary-table three-column-release-summary" aria-labelledby="method-tab0">
+                <div class="summary-table three-column-release-summary">
                 <div class="table-header col-first sort-asc" onclick="sortTable(this, 0, 3)">Method</div>
                 <div class="table-header col-second" onclick="sortTable(this, 1, 3)">Deprecated in</div>
                 <div class="table-header col-last">Description</div>
@@ -502,7 +502,7 @@ public class TestNewApiList extends JavadocTester {
                 <div class="caption"><span>Deprecated Constructors</span></div>
                 </div>
                 <div id="constructor.tabpanel" role="tabpanel">
-                <div class="summary-table three-column-release-summary" aria-labelledby="constructor-tab0">
+                <div class="summary-table three-column-release-summary">
                 <div class="table-header col-first sort-asc" onclick="sortTable(this, 0, 3)">Constructor</div>
                 <div class="table-header col-second" onclick="sortTable(this, 1, 3)">Deprecated in</div>
                 <div class="table-header col-last">Description</div>
@@ -517,7 +517,7 @@ public class TestNewApiList extends JavadocTester {
                 <div class="caption"><span>Deprecated Enum Constants</span></div>
                 </div>
                 <div id="enum-constant.tabpanel" role="tabpanel">
-                <div class="summary-table three-column-release-summary" aria-labelledby="enum-constant-tab0">
+                <div class="summary-table three-column-release-summary">
                 <div class="table-header col-first sort-asc" onclick="sortTable(this, 0, 3)">Enum Constant</div>
                 <div class="table-header col-second" onclick="sortTable(this, 1, 3)">Deprecated in</div>
                 <div class="table-header col-last">Description</div>
@@ -532,7 +532,7 @@ public class TestNewApiList extends JavadocTester {
                 <div class="caption"><span>Deprecated Annotation Interface Elements</span></div>
                 </div>
                 <div id="annotation-interface-member.tabpanel" role="tabpanel">
-                <div class="summary-table three-column-release-summary" aria-labelledby="annotation-interface-member-tab0">
+                <div class="summary-table three-column-release-summary">
                 <div class="table-header col-first sort-asc" onclick="sortTable(this, 0, 3)">Annotation Interface Element</div>
                 <div class="table-header col-second" onclick="sortTable(this, 1, 3)">Deprecated in</div>
                 <div class="table-header col-last">Description</div>
@@ -617,7 +617,7 @@ public class TestNewApiList extends JavadocTester {
                 <div class="caption"><span>Terminally Deprecated Elements</span></div>
                 </div>
                 <div id="for-removal.tabpanel" role="tabpanel">
-                <div class="summary-table three-column-release-summary" aria-labelledby="for-removal-tab0">
+                <div class="summary-table three-column-release-summary">
                 <div class="table-header col-first sort-asc" onclick="sortTable(this, 0, 3)">Element</div>
                 <div class="table-header col-second" onclick="sortTable(this, 1, 3)">Deprecated in</div>
                 <div class="table-header col-last">Description</div>
@@ -632,7 +632,7 @@ public class TestNewApiList extends JavadocTester {
                 <div class="caption"><span>Deprecated Methods</span></div>
                 </div>
                 <div id="method.tabpanel" role="tabpanel">
-                <div class="summary-table three-column-release-summary" aria-labelledby="method-tab0">
+                <div class="summary-table three-column-release-summary">
                 <div class="table-header col-first sort-asc" onclick="sortTable(this, 0, 3)">Method</div>
                 <div class="table-header col-second" onclick="sortTable(this, 1, 3)">Deprecated in</div>
                 <div class="table-header col-last">Description</div>
@@ -647,7 +647,7 @@ public class TestNewApiList extends JavadocTester {
                 <div class="caption"><span>Deprecated Constructors</span></div>
                 </div>
                 <div id="constructor.tabpanel" role="tabpanel">
-                <div class="summary-table three-column-release-summary" aria-labelledby="constructor-tab0">
+                <div class="summary-table three-column-release-summary">
                 <div class="table-header col-first sort-asc" onclick="sortTable(this, 0, 3)">Constructor</div>
                 <div class="table-header col-second" onclick="sortTable(this, 1, 3)">Deprecated in</div>
                 <div class="table-header col-last">Description</div>
@@ -691,7 +691,7 @@ public class TestNewApiList extends JavadocTester {
                 <div class="caption"><span>New Classes</span></div>
                 </div>
                 <div id="class.tabpanel" role="tabpanel">
-                <div class="summary-table three-column-release-summary" aria-labelledby="class-tab0">
+                <div class="summary-table three-column-release-summary">
                 <div class="table-header col-first sort-asc" onclick="sortTable(this, 0, 3)">Class</div>
                 <div class="table-header col-second" onclick="sortTable(this, 1, 3)">Added in</div>
                 <div class="table-header col-last">Description</div>
@@ -707,7 +707,7 @@ public class TestNewApiList extends JavadocTester {
                 <div class="caption"><span>New Fields</span></div>
                 </div>
                 <div id="field.tabpanel" role="tabpanel">
-                <div class="summary-table three-column-release-summary" aria-labelledby="field-tab0">
+                <div class="summary-table three-column-release-summary">
                 <div class="table-header col-first sort-asc" onclick="sortTable(this, 0, 3)">Field</div>
                 <div class="table-header col-second" onclick="sortTable(this, 1, 3)">Added in</div>
                 <div class="table-header col-last">Description</div>
@@ -723,7 +723,7 @@ public class TestNewApiList extends JavadocTester {
                 <div class="caption"><span>New Methods</span></div>
                 </div>
                 <div id="method.tabpanel" role="tabpanel">
-                <div class="summary-table three-column-release-summary" aria-labelledby="method-tab0">
+                <div class="summary-table three-column-release-summary">
                 <div class="table-header col-first sort-asc" onclick="sortTable(this, 0, 3)">Method</div>
                 <div class="table-header col-second" onclick="sortTable(this, 1, 3)">Added in</div>
                 <div class="table-header col-last">Description</div>
@@ -752,7 +752,7 @@ public class TestNewApiList extends JavadocTester {
                 <div class="caption"><span>New Constructors</span></div>
                 </div>
                 <div id="constructor.tabpanel" role="tabpanel">
-                <div class="summary-table three-column-release-summary" aria-labelledby="constructor-tab0">
+                <div class="summary-table three-column-release-summary">
                 <div class="table-header col-first sort-asc" onclick="sortTable(this, 0, 3)">Constructor</div>
                 <div class="table-header col-second" onclick="sortTable(this, 1, 3)">Added in</div>
                 <div class="table-header col-last">Description</div>

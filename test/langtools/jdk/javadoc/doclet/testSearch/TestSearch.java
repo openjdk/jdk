@@ -809,7 +809,7 @@ public class TestSearch extends JavadocTester {
                     notation Interfaces</button>\
                     </div>
                     <div id="all-classes-table.tabpanel" role="tabpanel">
-                    <div class="summary-table two-column-summary" aria-labelledby="all-classes-table-tab0">
+                    <div class="summary-table two-column-summary">
                     <div class="table-header col-first">Class</div>
                     <div class="table-header col-last">Description</div>""");
         checkOutput("allpackages-index.html", true,
