@@ -96,11 +96,15 @@
 //   tail allows the statement to contain non-nested commas.
 
 #ifndef FORBID_C_FUNCTION
-#define FORBID_C_FUNCTION(signature, alternative)
+#define FORBID_C_FUNCTION(signature, alternative) \
+  namespace { \
+    [[deprecated(alternative)]] \
+    signature noexcept; \
+  }
 #endif
 
 #ifndef ALLOW_C_FUNCTION
-#define ALLOW_C_FUNCTION(name, ...) __VA_ARGS__
+#define ALLOW_C_FUNCTION(name, ...) ::name(__VA_ARGS__)
 #endif
 
 #endif // SHARE_UTILITIES_COMPILERWARNINGS_HPP
