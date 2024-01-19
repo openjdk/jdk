@@ -642,7 +642,7 @@ ifeq ($(ENABLE_PANDOC), true)
   GLOBAL_SPECS_DEFAULT_CSS_FILE := $(DOCS_OUTPUTDIR)/resources/jdk-default.css
   # Unset the following to suppress the link to the tool guides
   NAV_LINK_GUIDES := --nav-link-guides
-  HEADER_RIGHT_SIDE_INFO := <strong>$(subst &amp;,&,$(JDK_SHORT_NAME))$(DRAFT_MARKER_STR)</strong>
+  HEADER_RIGHT_SIDE_INFO := <strong>$(subst &amp;,&,$(JDK_SHORT_NAME))</strong>$(DRAFT_MARKER_STR)
 
   $(foreach m, $(ALL_MODULES), \
     $(eval SPECS_$m := $(call FindModuleSpecsDirs, $m)) \
