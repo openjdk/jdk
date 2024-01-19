@@ -159,7 +159,7 @@ class SCCompacter {
     return fwd;
   }
 
-#if ASSERT
+#ifdef ASSERT
   // Clear table (only required for assertion in forwardee()).
   void clear(HeapWord* from, HeapWord* to) {
     size_t from_block = addr_to_block_idx(from);
@@ -363,7 +363,7 @@ public:
   }
 };
 
-#if ASSERT
+#ifdef ASSERT
 static ContiguousSpace* space_containing(HeapWord* addr) {
   SerialHeap* heap = SerialHeap::heap();
   TenuredGeneration* old_gen = heap->old_gen();
