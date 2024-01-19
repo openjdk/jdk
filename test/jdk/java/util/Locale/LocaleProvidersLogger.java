@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,23 +21,29 @@
  * questions.
  */
 
-/* @test
-   @bug 4206838
-   @summary getEntry() will search for a directory
-            even without an ending '/'.
+/*
+ * @test
+ * @bug 8245241 8246721 8261919
+ * @summary Test the Locale provider preference is logged
+ * @library /test/lib
+ * @build LocaleProviders
+ * @modules java.base/sun.util.locale.provider
+ * @run junit/othervm -Djdk.lang.Process.allowAmbiguousCommands=false LocaleProvidersLogger
  */
 
-import java.io.*;
-import java.util.zip.*;
+import org.junit.jupiter.api.Test;
 
-public class GetDirEntry {
-    public static void main(String args[]) throws Exception {
-        try (ZipFile zf = new ZipFile(new File(System.getProperty("test.src", "."),
-                                               "input.jar"))) {
-            ZipEntry ze = zf.getEntry("META-INF");
-            if (ze == null) {
-                throw new Exception("failed to find a directory entry");
-            }
-        }
+public class LocaleProvidersLogger {
+
+    /*
+     * 8245241 8246721 8261919: Ensure if an incorrect system property for locale providers is set,
+     * it should be logged and presented to the user. The option
+     * jdk.lang.Process.allowAmbiguousCommands=false is needed for properly escaping
+     * double quotes in the string argument.
+     */
+    @Test
+    public void logIncorrectLocaleProvider() throws Throwable {
+        LocaleProviders.test("FOO", "bug8245241Test",
+                "Invalid locale provider adapter \"FOO\" ignored.");
     }
 }
