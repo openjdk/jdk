@@ -306,7 +306,11 @@ public class TestInheritFD {
                     Thread.sleep(300 * 1000);
                 }
             } catch (CompletionException e) {
-                System.out.println("(Third VM) Timed out waiting for second VM: " + e.toString());
+                if (e.getCause() instanceof TimeoutException) {
+                    System.out.println("(Third VM) Timed out waiting for second VM: " + e.toString());
+                } else {
+                    System.out.println("(Third VM) Exception was thrown: " + e.toString());
+                }
                 throw e;
             } catch (Exception e) {
                 System.out.println("(Third VM) Exception was thrown: " + e.toString());
