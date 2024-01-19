@@ -541,6 +541,11 @@ Parse::Parse(JVMState* caller, ciMethod* parse_method, float expected_uses, PEAS
 #endif
 
 #ifndef PRODUCT
+  // Dump CFG in RPO order before Parsing.
+  if (Verbose && !CITraceTypeFlow) {
+    _flow->rpo_print_on(tty);
+  }
+
   if (_flow->has_irreducible_entry()) {
     C->set_parsed_irreducible_loop(true);
   }
