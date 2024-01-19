@@ -4238,6 +4238,8 @@ public final class String
      * @jls 3.10.7 Escape Sequences
      * @jls 3.3 Unicode Escapes
      *
+     * @see String#encodeEscapes()
+     *
      * @since 15
      */
     public String translateEscapes() {
@@ -4323,6 +4325,77 @@ public final class String
 
         return new String(chars, 0, to);
     }
+
+    /**
+     * Translate characters to their escaped equivalents, if necessary, such that the
+     * resulting string, when embedded in double quotes, can be parsed by the compiler
+     * to reproduce this string.
+     * <p>
+     * The characters in the range {@code '\u005Cu0000'} through {@code '\u005Cu001F'}
+     * inclusive will be translated to unicode escapes, except for {@code '\u005Cb'}
+     * (backspace), {@code '\u005Ct'} (tab), {@code '\u005Cn'} (newline), {@code '\u005Cf'}
+     * (formfeed) and {@code '\u005Cr'} (return) which will be translated to
+     * their corresponding escape sequences. The characters in the range {@code '\u005Cu0020'}
+     * through {@code '\u005Cu007E'} will be left untranslated, except
+     * for {@code "} (double quote), {@code '} (quote) and {@code \u005C} (backslash)
+     * which will be translated to their corresponding escaped sequences. All other
+     * characters will be translated to unicode escapes. Example:
+     * {@snippet lang=JAVA :
+     * String encoded = "\u2022This is a line.\n\t followed by this line.".encodeEscapes();
+     * System.out.println(encoded.equals("\\u2022This is a line.\\n\\t followed by this line."));
+     * }
+     * will print out {@code true}.
+     * <p>
+     * The result of this method is lossless and as such the original string can always be
+     * reproduced using {@link String#translateEscapes()}. Also because of losslessness,
+     * specific characters that don't require escaping can be reverted by simply using a
+     * replace method. For example: if newlines need to be maintained in the resulting
+     * string then just apply {@code replace("\\n", "\n")} to the result.
+     *
+     * @return string with characters encoded using escape sequences
+     *
+     * @since 23
+     *
+     * @implNote If no characters were translated then the original string will be returned.
+     *
+     * @implSpec {@code string.encodeEscapes().translateEscapes().equals(string)} will
+     * always be {@code true}. However, this method is not the reciprocal to
+     * {@link String#translateEscapes()} as any string yielded by
+     * {@link String#translateEscapes()} may have many variations of original string.
+     *
+     * @see String#translateEscapes()
+     *
+     * @jls 3.10.7 Escape Sequences
+     * @jls 3.3 Unicode Escapes
+     */
+    public String encodeEscapes() {
+        int length = length();
+        StringBuilder sb = new StringBuilder(length + (length >> 2));
+        for (int i = 0; i < length; i++) {
+            char ch = charAt(i);
+            switch (ch) {
+                case '\b': sb.append('\\'); sb.append('b'); break;
+                case '\t': sb.append('\\'); sb.append('t'); break;
+                case '\n': sb.append('\\'); sb.append('n'); break;
+                case '\f': sb.append('\\'); sb.append('f'); break;
+                case '\r': sb.append('\\'); sb.append('r'); break;
+                case '\"': sb.append('\\'); sb.append('\"'); break;
+                case '\'': sb.append('\\'); sb.append('\''); break;
+                case '\\': sb.append('\\'); sb.append('\\'); break;
+                default: if (' ' <= ch && ch <= '~') {
+                    sb.append(ch);
+                } else {
+                    String hex = Integer.toHexString(ch);
+                    sb.append('\\');
+                    sb.append('u');
+                    sb.repeat('0', 4 - hex.length());
+                    sb.append(hex);
+                }
+            }
+        }
+        return sb.length() != length ? sb.toString() : this;
+    }
+
 
     /**
      * This method allows the application of a function to {@code this}
