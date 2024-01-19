@@ -184,6 +184,8 @@ int LinuxAttachListener::init() {
   char initial_path[UNIX_PATH_MAX];  // socket file during setup
   int listener;                      // listener socket (file descriptor)
 
+  static_assert(sizeof(off_t) == 8);
+
   // register function to cleanup
   if (!_atexit_registered) {
     _atexit_registered = true;

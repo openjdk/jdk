@@ -2753,6 +2753,8 @@ void os::jvm_path(char *buf, jint buflen) {
 void linux_wrap_code(char* base, size_t size) {
   static volatile jint cnt = 0;
 
+  static_assert(sizeof(off_t) == 8);
+
   if (!UseOprofile) {
     return;
   }
