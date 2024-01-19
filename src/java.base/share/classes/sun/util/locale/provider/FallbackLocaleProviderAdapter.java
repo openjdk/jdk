@@ -25,10 +25,15 @@
 
 package sun.util.locale.provider;
 
+import jdk.internal.vm.annotation.Stable;
+
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Locale;
 import java.util.Set;
+import java.util.stream.Stream;
 
 /*
  * FallbackProviderAdapter implementation. Fallback provider serves the
@@ -37,9 +42,12 @@ import java.util.Set;
  * - Locale data for ROOT, in case CLDR provider is absent.
  * - Locale data for BreakIterator/Collator resources for all locales.
  * - "Gan-nen" support for SimpleDateFormat (provides "FirstYear" for
- *   Japanese locales.
+ *   Japanese locales).
  */
 public class FallbackLocaleProviderAdapter extends JRELocaleProviderAdapter {
+    // Required locales/langtags
+    private static final Locale[] AVAILABLE_LOCS = {Locale.US, Locale.ENGLISH, Locale.ROOT};
+    private static final Set<String> AVAILABLE_LANGTAGS = Set.of("en-US", "en", "und");
 
     /**
      * Returns the type of this LocaleProviderAdapter
@@ -50,22 +58,16 @@ public class FallbackLocaleProviderAdapter extends JRELocaleProviderAdapter {
     }
 
     @Override
+    public Locale[] getAvailableLocales() {
+        return Stream.concat(Arrays.stream(super.getAvailableLocales()), Stream.of(AVAILABLE_LOCS))
+                .distinct().toArray(Locale[]::new);
+    }
+
+    @Override
     protected Set<String> createLanguageTagSet(String category) {
-        return switch (category) {
-            case "BreakIteratorInfo", "BreakIteratorRules", "CollationData" -> {
-                // ensure to include en-US/en/ROOT
-                var s = new HashSet<>(super.createLanguageTagSet(category));
-                s.addAll(Set.of("en-US", "en", "und"));
-                yield Collections.unmodifiableSet(s);
-            }
-
-            // check for super class whether to include "ja" for IncludeLocales
-            // jlink plugin
-            case "FormatData" -> super.createLanguageTagSet(category).contains("ja") ?
-                    Set.of("ja", "und") : Set.of("und");
-
-            default -> Set.of("und");
-        };
+        var s = new HashSet<>(super.createLanguageTagSet(category));
+        s.addAll(AVAILABLE_LANGTAGS);
+        return s;
     }
 
     @Override
