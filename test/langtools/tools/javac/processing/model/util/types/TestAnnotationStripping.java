@@ -67,18 +67,20 @@ public class TestAnnotationStripping extends JavacTestingAbstractProcessor {
                 System.err.println("Checking " + returnType);
 
                 testVacuous(returnType);
-                checkEmptyAnnotations(typeUtils.stripAnnotations(returnType));
+                checkDeepEmptyAnnotations(typeUtils.stripAnnotations(returnType));
 
                 checkExpectedTypeAnnotations(returnType, expectedAnnotation);
 
-                System.err.print("\tasElement()");
-                checkEmptyAnnotations(typeUtils.asElement(returnType));
+                // System.err.print("\tasElement()");
+                // When mapping from a type to its element, the
+                // element may have declaration annotations on it.
+                // checkEmptyAnnotations(typeUtils.asElement(returnType));
 
                 System.err.print("\tcapture()");
-                checkEmptyAnnotations(typeUtils.capture(returnType));
+                checkDeepEmptyAnnotations(typeUtils.capture(returnType));
 
                 System.err.print("\terasure()");
-                checkEmptyAnnotations(typeUtils.erasure(returnType));
+                checkDeepEmptyAnnotations(typeUtils.erasure(returnType));
 
                 System.err.print("\tgetArrayType()");
                 ArrayType arrayType = typeUtils.getArrayType(returnType);
@@ -142,12 +144,15 @@ public class TestAnnotationStripping extends JavacTestingAbstractProcessor {
         if (ac == null)
             return;
         else {
+            // Previously, was likely getting by-catch of annotations
+            // on element declartions, can likely just print the size
+            // of the list.
             List<? extends AnnotationMirror> annotations = ac.getAnnotationMirrors();
             int count = 0;
             for (AnnotationMirror annotation : annotations) {
-              if (((TypeElement) annotation.getAnnotationType().asElement()).getQualifiedName().contentEquals("jdk.internal.ValueBased")) {
-                continue;
-              }
+//               if (((TypeElement) annotation.getAnnotationType().asElement()).getQualifiedName().contentEquals("jdk.internal.ValueBased")) {
+//                 continue;
+//               }
               count++;
             }
             if (count != 0) {
@@ -156,6 +161,55 @@ public class TestAnnotationStripping extends JavacTestingAbstractProcessor {
                 System.err.println("\t\t\tUnexpected nonzero annotations size: " + annotations);
             }
         }
+    }
+
+
+    void checkDeepEmptyAnnotations(TypeMirror ac) {
+        System.err.println("\t" + ac);
+        if (ac == null) {
+            return;
+        }
+        new SimpleTypeVisitor14<Void, Void>() {
+            @Override
+            protected Void defaultAction(TypeMirror t, Void o) {
+                checkEmptyAnnotations(t);
+                return null;
+            }
+
+            @Override
+            public Void visitArray(ArrayType t, Void o) {
+                scan(t.getComponentType());
+                return super.visitArray(t, o);
+            }
+
+            @Override
+            public Void visitDeclared(DeclaredType t, Void o) {
+                scan(t.getEnclosingType());
+                t.getTypeArguments().stream().forEach(this::scan);
+                return super.visitDeclared(t, o);
+            }
+
+            @Override
+            public Void visitTypeVariable(TypeVariable t, Void o) {
+                // the bounds correspond to the type variable declaration, not its use
+                // scan(t.getUpperBound());
+                // scan(t.getLowerBound());
+                return super.visitTypeVariable(t, o);
+            }
+
+            @Override
+            public Void visitWildcard(WildcardType t, Void o) {
+                scan(t.getExtendsBound());
+                scan(t.getSuperBound());
+                return super.visitWildcard(t, o);
+            }
+
+            private void scan(TypeMirror t) {
+                if (t != null) {
+                    visit(t);
+                }
+            }
+        }.visit(ac);
     }
 
     void checkEqualTypeAndAnnotations(TypeMirror tm1, TypeMirror tm2) {
@@ -187,6 +241,8 @@ class HostClass {
     public static  String @TestTypeAnnotation("foo5")[]  foo5() {return null;}
 
     public static  java.util. @TestTypeAnnotation("foo6") Set < @TestTypeAnnotation("foo7") String> foo6() {return null;}
+
+    public static <@TestTypeAnnotation("foo8") T extends @TestTypeAnnotation("foo9") String> @TestTypeAnnotation("foo10") T foo8() {return null;}
 }
 
 @Retention(RetentionPolicy.RUNTIME)

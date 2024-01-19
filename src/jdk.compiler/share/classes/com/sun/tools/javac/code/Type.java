@@ -426,6 +426,12 @@ public abstract class Type extends AnnoConstruct implements TypeMirror, PoolCons
         return accept(stripMetadata, null);
     }
     //where
+        /**
+         * Note: this visitor only needs to handle cases where 'contained'
+         * types can be annotated. These cases are described ing JVMS
+         * 4.7.20.2 and are : classes (for type parameters and enclosing
+         * types), wildcards, and arrays.
+         */
         private static final TypeMapping<Void> stripMetadata = new StructuralTypeMapping<Void>() {
             @Override
             public Type visitClassType(ClassType t, Void aVoid) {
