@@ -38,6 +38,9 @@ public class ModuleOption {
         final String moduleOption = "jdk.httpserver/sun.net.httpserver.simpleserver.Main";
         final String incubatorModule = "jdk.incubator.vector";
         final String loggingOption = "-Xlog:cds=debug,cds+module=debug,cds+heap=info,module=trace";
+        // Pattern of a module version string.
+        // e.g. JDK 22:     "java 22"
+        //      JDK 22.0.1: "java 22.0.1"
         final String versionPattern = "java.[0-9][0-9].*";
         final String subgraphCannotBeUsed = "subgraph jdk.internal.module.ArchivedBootLayer cannot be used because full module graph is disabled";
         String archiveName = TestCommon.getNewArchiveName("module-option");
