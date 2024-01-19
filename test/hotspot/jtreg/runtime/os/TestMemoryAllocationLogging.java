@@ -111,31 +111,31 @@ public class TestMemoryAllocationLogging {
             case "testAttemptedReserveFailed": {
                 expectedLogs = new String[] {
                         String.format("Reserved \\[0x.* - 0x.*\\] \\(%d bytes\\).", PAGE_SIZE),
-                        String.format("Attempt to reserve \\[0x.* - 0x.*\\] \\(%d bytes\\) failed, errno", PAGE_SIZE)
+                        String.format("Attempt to reserve \\[0x.* - 0x.*\\] \\(%d bytes\\) failed", PAGE_SIZE)
                 };
                 break;
             }
             case "testReserveFailed": {
-                expectedLogs = new String[] { "Reserve failed \\(.* bytes\\), errno"
+                expectedLogs = new String[] { "Reserve failed \\(.* bytes\\)"
                 };
                 break;
             }
             case "testCommitFailed": {
                 expectedLogs = new String[] {
-                        String.format("Failed to commit \\[0x.* - 0x.*\\] \\(%d bytes\\), errno", COMMIT_SIZE)
+                        String.format("Failed to commit \\[0x.* - 0x.*\\] \\(%d bytes\\)", COMMIT_SIZE)
                 };
                 break;
             }
             case "testUncommitFailed": {
                 expectedLogs = new String[] {
                         String.format("Reserved \\[0x.* - 0x.*\\] \\(%d bytes\\).", PAGE_SIZE),
-                       "Failed to uncommit \\[0x.* - 0x.*\\] \\(.* bytes\\), errno"
+                       "Failed to uncommit \\[0x.* - 0x.*\\] \\(.* bytes\\)"
                 };
                 break;
             }
             case "testReleaseFailed": {
                 expectedLogs = new String[] {
-                        "Failed to release \\[0x.* - 0x.*\\] \\(.* bytes\\), errno"
+                        "Failed to release \\[0x.* - 0x.*\\] \\(.* bytes\\)"
                 };
                 break;
             }
