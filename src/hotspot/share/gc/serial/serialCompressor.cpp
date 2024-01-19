@@ -154,7 +154,9 @@ class SCCompacter {
     HeapWord* block_base = align_down(addr, bytes_per_block());
     size_t block = addr_to_block_idx(addr);
     assert(_bot[block] != nullptr, "must have initialized BOT entry");
-    return _bot[block] + _mark_bitmap.count_marked_words(block_base, addr);
+    HeapWord* fwd = _bot[block] + _mark_bitmap.count_marked_words(block_base, addr);
+    assert(SerialHeap::heap()->is_in_reserved(fwd), "forward addresses must be in heap: addr: " PTR_FORMAT ", fwd: " PTR_FORMAT ", block: " SIZE_FORMAT ", bot[block]: " PTR_FORMAT ", block_base: " PTR_FORMAT, p2i(addr), p2i(fwd), block, p2i(_bot[block]), p2i(block_base));
+    return fwd;
   }
 
 #if ASSERT
@@ -219,9 +221,14 @@ class SCCompacter {
           current = next_marked;
         }
       }
-
-      HeapWord* next = _mark_bitmap.get_next_unmarked_addr(next_marked, top);
-      size_t live_in_block = pointer_delta(next, current);
+      HeapWord* chunk_end = _mark_bitmap.get_next_unmarked_addr(next_marked, top);
+      HeapWord* next_dead = chunk_end;
+      HeapWord* next_live = _mark_bitmap.get_next_marked_addr(next_dead, top);
+      while (addr_to_block_idx(next_dead) == addr_to_block_idx(next_live) && next_dead < top) {
+        next_dead = _mark_bitmap.get_next_unmarked_addr(next_live, top);
+        next_live = _mark_bitmap.get_next_marked_addr(next_dead, top);
+      }
+      size_t live_in_block = pointer_delta(next_dead, current);
 
       while (live_in_block > pointer_delta(_spaces[_index]._space->end(),
                                            compact_top)) {
@@ -234,7 +241,7 @@ class SCCompacter {
 
       // Record addresses of the first live word of all blocks covered by the live span.
       current = next_marked;
-      live_in_block = pointer_delta(next, current);
+      live_in_block = pointer_delta(chunk_end, current);
       size_t head = MIN2(pointer_delta(align_up(current, bytes_per_block()), current), live_in_block);
       if (head > 0) {
         HeapWord* block_start = align_down(current, bytes_per_block());
@@ -244,27 +251,29 @@ class SCCompacter {
         size_t num_live = _mark_bitmap.count_marked_words(block_start, current);
         // Note that we only record the address for blocks with live words. That
         // is ok, because we only ask for forwarding address of object-starts, i.e. live words.
-        _bot[addr_to_block_idx(current)] = compact_top - num_live;
+        HeapWord* block_offset = compact_top - num_live;
+        assert(SerialHeap::heap()->is_in_reserved(block_offset), "block-offset must be in heap: " PTR_FORMAT ", compact_top: " PTR_FORMAT ", num_live: " SIZE_FORMAT ", _bot[]: " PTR_FORMAT, p2i(block_offset), p2i(compact_top), num_live, p2i(_bot[addr_to_block_idx(current)]));
+        _bot[addr_to_block_idx(current)] = block_offset;
         assert(forwardee(current) == compact_top, "must match");
         compact_top += head;
         current += head;
       }
       // Middle block.
-      while (pointer_delta(next, current) > words_per_block()) {
+      while (pointer_delta(chunk_end, current) > words_per_block()) {
         _bot[addr_to_block_idx(current)] = compact_top;
         assert(forwardee(current) == compact_top, "must match");
         current += words_per_block();
         compact_top += words_per_block();
       }
       // Tail.
-      size_t tail = pointer_delta(next, current);
+      size_t tail = pointer_delta(chunk_end, current);
       if (tail > 0) {
         _bot[addr_to_block_idx(current)] = compact_top;
         assert(forwardee(current) == compact_top, "must match");
         compact_top += tail;
         current += tail;
       }
-      assert(current == next, "must arrive at next unmarked");
+      assert(current == chunk_end, "must arrive at next unmarked");
     }
     if (!record_first_dead_done) {
       record_first_dead(idx, top);
@@ -337,6 +346,7 @@ private:
       assert(SerialHeap::heap()->is_in_reserved(obj), "should be in heap");
       oop forwardee = cast_to_oop(_compacter.forwardee(cast_from_oop<HeapWord*>(obj)));
       if (forwardee != obj) {
+        assert(SerialHeap::heap()->is_in_reserved(forwardee), "should be in heap");
         RawAccess<IS_NOT_NULL>::oop_store(ptr, forwardee);
       }
     }
@@ -353,6 +363,29 @@ public:
   }
 };
 
+#if ASSERT
+static ContiguousSpace* space_containing(HeapWord* addr) {
+  SerialHeap* heap = SerialHeap::heap();
+  TenuredGeneration* old_gen = heap->old_gen();
+  if (old_gen->is_in_reserved(addr)) {
+    ContiguousSpace* tenured = old_gen->space();
+    assert(tenured->is_in_reserved(addr), "must be");
+    return tenured;
+  }
+  Generation* young_gen = heap->young_gen();
+  assert(young_gen->is_in_reserved(addr), "must be");
+  ContiguousSpace* space = young_gen->first_compaction_space();
+  while (space != nullptr) {
+    if (space->is_in_reserved(addr)) {
+      return space;
+    }
+    space = space->next_compaction_space();
+  }
+  assert(false, "must find a space containing heap obj");
+  return nullptr;
+}
+#endif
+
 // Compact live objects in a space.
 void SCCompacter::compact_space(uint idx) const {
   ContiguousSpace* space = get_space(idx);
@@ -362,6 +395,9 @@ void SCCompacter::compact_space(uint idx) const {
   SCUpdateRefsClosure cl(*this);
 
   TenuredSpace* tenured_space = SerialHeap::heap()->old_gen()->space();
+
+  DEBUG_ONLY(HeapWord* next_compact_addr = nullptr;)
+  DEBUG_ONLY(HeapWord* last_compact_addr = nullptr;)
 
   // Visit all live objects in the space.
   while (current < top) {
@@ -395,14 +431,21 @@ void SCCompacter::compact_space(uint idx) const {
 
     // Copy the whole chunk.
     if (chunk_fwd != current) {
-      Copy::aligned_conjoint_words(current, chunk_fwd, pointer_delta(next_dead, current));
+      size_t size = pointer_delta(next_dead, current);
+      assert(next_compact_addr == nullptr || next_compact_addr == chunk_fwd || space_containing(last_compact_addr) != space_containing(chunk_fwd),
+             "must compact without gaps, except when switching spaces");
+
+      Copy::aligned_conjoint_words(current, chunk_fwd, size);
+
+      DEBUG_ONLY(last_compact_addr = chunk_fwd;)
+      DEBUG_ONLY(next_compact_addr = chunk_fwd + size;)
     }
 
     // Advance to next live object.
-    assert(!_mark_bitmap.is_marked(next_dead), "must not be live");
     if (next_dead >= top) {
       break;
     }
+    assert(!_mark_bitmap.is_marked(next_dead), "must not be live");
     if (next_dead < get_first_dead(idx)) {
       // Dead-spacer object, not a record of next live object.
       current = _mark_bitmap.get_next_marked_addr(next_dead, top);
