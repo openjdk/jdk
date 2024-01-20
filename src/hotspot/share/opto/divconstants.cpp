@@ -157,21 +157,21 @@ void magic_divide_constants(T d, T N_neg, T N_pos, juint min_s, T& c, bool& c_ov
 
     if (rc > d - rc) {  // 2 * rc > d
       c_ovf = c > min_signed;
-      c += c - 1;
-      rc += rc - d;     // rc = 2 * rc - d
+      c = c * 2 - 1;
+      rc = rc * 2 - d;
     } else {            // 2 * rc <= d
       c_ovf = c >= min_signed;
-      c += c;
-      rc += rc;         // rc = 2 * rc
+      c = c * 2;
+      rc = rc * 2;
     }
     if (rv >= v - rv) { // 2 * rv >= v
       qv_ovf = qv >= min_signed;
-      qv += qv + 1;
-      rv += rv - v;     // rv = 2 * rv - v
+      qv = qv * 2 + 1;
+      rv = rv * 2 - v;
     } else {            // 2 * rv < v
       qv_ovf = qv >= min_signed;
-      qv += qv;
-      rv += rv;         // rv = 2 * rv
+      qv = qv * 2;
+      rv = rv * 2;
     }
   }
 }
