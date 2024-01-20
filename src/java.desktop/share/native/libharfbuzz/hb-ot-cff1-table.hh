@@ -1420,7 +1420,7 @@ struct cff1
       hb_sorted_vector_t<gname_t> *names = glyph_names.get_acquire ();
       if (unlikely (!names))
       {
-        names = (hb_sorted_vector_t<gname_t> *) hb_calloc (sizeof (hb_sorted_vector_t<gname_t>), 1);
+        names = (hb_sorted_vector_t<gname_t> *) hb_calloc (1, sizeof (hb_sorted_vector_t<gname_t>));
         if (likely (names))
         {
           names->init ();
