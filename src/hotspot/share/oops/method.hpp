@@ -395,7 +395,8 @@ public:
   void remove_unshareable_flags() NOT_CDS_RETURN;
 
   // the number of argument reg slots that the compiled method uses on the stack.
-  int num_stack_arg_slots() const { return constMethod()->num_stack_arg_slots(); }
+  int num_stack_arg_slots(bool rounded = true) const {
+    return rounded ? align_up(constMethod()->num_stack_arg_slots(), 2) : constMethod()->num_stack_arg_slots(); }
 
   virtual void metaspace_pointers_do(MetaspaceClosure* iter);
   virtual MetaspaceObj::Type type() const { return MethodType; }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -88,7 +88,7 @@ public class PreviewListWriter extends SummaryListWriter<PreviewAPIListBuilder> 
                 HtmlId htmlId = HtmlId.of("feature-" + index);
                 String jepUrl = resources.getText("doclet.Preview_JEP_URL", jep.number());
                 list.add(HtmlTree.LI(HtmlTree.LABEL(htmlId.name(),
-                                HtmlTree.INPUT("checkbox", htmlId)
+                                HtmlTree.INPUT(HtmlAttr.InputType.CHECKBOX, htmlId)
                                         .put(HtmlAttr.CHECKED, "")
                                         .put(HtmlAttr.ONCLICK,
                                                 "toggleGlobal(this, '" + index + "', 3)"))

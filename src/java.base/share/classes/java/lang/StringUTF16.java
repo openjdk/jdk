@@ -415,7 +415,7 @@ final class StringUTF16 {
         int n = computeCodePointSize(val, index, end);
 
         byte[] buf = newBytesFor(n);
-        return extractCodepoints(val, index, len, buf, 0);
+        return extractCodepoints(val, index, end, buf, 0);
      }
 
     public static byte[] toBytes(char c) {

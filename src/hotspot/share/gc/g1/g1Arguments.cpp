@@ -126,7 +126,6 @@ void G1Arguments::initialize_mark_stack_size() {
     FLAG_SET_ERGO(MarkStackSize, mark_stack_size);
   }
 
-  log_trace(gc)("MarkStackSize: %uk  MarkStackSizeMax: %uk", (uint)(MarkStackSize / K), (uint)(MarkStackSizeMax / K));
 }
 
 
