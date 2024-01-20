@@ -24,6 +24,7 @@
 package compiler.c2.loopopts;
 
 import compiler.lib.ir_framework.*;
+import jdk.test.lib.Asserts;
 
 /*
  * @test
@@ -42,7 +43,7 @@ public class InvariantCodeMotionReassociateCmp {
     private void blackhole() {}
 
     @Test
-    @Arguments({Argument.NUMBER_42, Argument.NUMBER_42})
+    @Arguments({Argument.RANDOM_EACH, Argument.RANDOM_EACH})
     @IR(counts = {IRNode.SUB_I, "1"})
     public void equalsAddInt(int inv1, int inv2) {
         for (int i = 0; i < 500; ++i) {
@@ -54,7 +55,7 @@ public class InvariantCodeMotionReassociateCmp {
     }
 
     @Test
-    @Arguments({Argument.NUMBER_42, Argument.NUMBER_42})
+    @Arguments({Argument.RANDOM_EACH, Argument.RANDOM_EACH})
     @IR(counts = {IRNode.SUB_L, "1"})
     public void equalsAdtLong(long inv1, long inv2) {
         for (int i = 0; i < 500; ++i) {
@@ -114,7 +115,7 @@ public class InvariantCodeMotionReassociateCmp {
     }
 
     @Test
-    @Arguments({Argument.NUMBER_42, Argument.NUMBER_42})
+    @Arguments({Argument.RANDOM_EACH, Argument.RANDOM_EACH})
     @IR(counts = {IRNode.SUB_I, "1"})
     public void notEqualsAddInt(int inv1, int inv2) {
         for (int i = 0; i < 500; ++i) {
@@ -126,7 +127,7 @@ public class InvariantCodeMotionReassociateCmp {
     }
 
     @Test
-    @Arguments({Argument.NUMBER_42, Argument.NUMBER_42})
+    @Arguments({Argument.RANDOM_EACH, Argument.RANDOM_EACH})
     @IR(counts = {IRNode.SUB_L, "1"})
     public void notEqualsAdtLong(long inv1, long inv2) {
         for (int i = 0; i < 500; ++i) {
@@ -162,7 +163,7 @@ public class InvariantCodeMotionReassociateCmp {
     }
 
     @Test
-    @Arguments({Argument.NUMBER_42, Argument.NUMBER_42})
+    @Arguments({Argument.RANDOM_EACH, Argument.RANDOM_EACH})
     @IR(counts = {IRNode.ADD_I, "2"})
     public void notEqualsVariantSubInvariantInt(int inv1, int inv2) {
         for (int i = 0; i < 500; ++i) {
@@ -174,7 +175,7 @@ public class InvariantCodeMotionReassociateCmp {
     }
 
     @Test
-    @Arguments({Argument.NUMBER_42, Argument.NUMBER_42})
+    @Arguments({Argument.RANDOM_EACH, Argument.RANDOM_EACH})
     @IR(counts = {IRNode.ADD_L, "1"})
     public void notEqualsVariantSubInvariantLong(long inv1, long inv2) {
         for (int i = 0; i < 500; ++i) {
@@ -189,7 +190,8 @@ public class InvariantCodeMotionReassociateCmp {
     @Arguments({Argument.NUMBER_42, Argument.NUMBER_42})
     @IR(failOn = {IRNode.SUB_I})
     public void leDontReassociate(int inv1, int inv2) {
-        for (int i = 0; i < 500; ++i) {
+        int i = 0;
+        for (; i < 500; ++i) {
             if (inv1 + i <= inv2) {
                 blackhole();
             }
@@ -197,25 +199,31 @@ public class InvariantCodeMotionReassociateCmp {
     }
 
     @Test
-    @Arguments({Argument.NUMBER_42, Argument.NUMBER_42})
+    @Arguments({Argument.NUMBER_42, Argument.MIN})
     @IR(failOn = {IRNode.SUB_I})
     public void gtDontReassociate(int inv1, int inv2) {
-        for (int i = 0; i < 500; ++i) {
+        int i = 0;
+        for (; i < 500; ++i) {
             if (inv1 + i > inv2) {
                 blackhole();
+                break;
             }
         }
+        Asserts.assertEQ(i, 0, "illegal reassociation of a + b > c");
     }
 
     @Test
-    @Arguments({Argument.NUMBER_42, Argument.NUMBER_42})
+    @Arguments({Argument.NUMBER_42, Argument.MIN})
     @IR(failOn = {IRNode.SUB_I})
     public void geDontReassociate(int inv1, int inv2) {
-        for (int i = 0; i < 500; ++i) {
+        int i = 0;
+        for (; i < 500; ++i) {
             if (inv1 + i >= inv2) {
                 blackhole();
+                break;
             }
         }
+        Asserts.assertEQ(i, 0, "illegal reassociation of a + b >= c");
     }
 }
 
