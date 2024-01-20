@@ -31,8 +31,7 @@
 import javax.crypto.EncryptedPrivateKeyInfo;
 import java.io.IOException;
 import java.security.*;
-import java.security.interfaces.ECPublicKey;
-import java.security.interfaces.RSAPublicKey;
+import java.security.interfaces.*;
 import java.util.*;
 import java.util.Arrays;
 
@@ -48,17 +47,27 @@ public class PEMDecoderTest {
         PEMCerts.entryList.stream().forEach(entry -> test(entry, SecurityObject.class));
         PEMCerts.encryptedList.stream().forEach(entry -> testEncrypted(entry));
         testTwoKeys();
-        testFailure(PEMCerts.getEntry("ecprivpem"), ECPublicKey.class, false);
-        testFailure(PEMCerts.getEntry(PEMCerts.failureEntryList, "rsaOpenSSL"), RSAPublicKey.class, false);
+        test(PEMCerts.getEntry("privpem"), RSAKey.class);
+        PEMCerts.failureEntryList.stream().forEach(entry -> testFailure(entry));
+        testFailure(PEMCerts.getEntry("ecprivpem"), ECPublicKey.class);
+        testFailure(PEMCerts.getEntry(PEMCerts.failureEntryList, "rsaOpenSSL"), RSAPublicKey.class);
     }
 
-    static void testFailure(PEMCerts.Entry entry, Class c, boolean expected) {
+    static void testFailure(PEMCerts.Entry entry) {
+        testFailure(entry, entry.clazz());
+    }
+
+    static void testFailure(PEMCerts.Entry entry, Class c) {
         try {
             test(entry.pem(), c, new PEMDecoder());
             throw new AssertionError("Failure with " +
                 entry.name() + ":  Not supposed to succeed.");
-        } catch (Exception e) {
-            System.out.println("PASS (" + entry.name() + "):  " + e.getMessage());
+        } catch (NullPointerException e) {
+            System.out.println("PASS (" + entry.name() + "):  " + e.getClass() +
+                ": " +e.getMessage());
+        } catch (IOException|RuntimeException e) {
+            System.out.println("PASS (" + entry.name() + "):  " + e.getClass() +
+                ": " +e.getMessage());
         }
     }
 

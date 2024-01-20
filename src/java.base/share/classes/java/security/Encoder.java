@@ -28,17 +28,20 @@ package java.security;
 import java.io.IOException;
 
 /**
- * The interface Encoder.
+ * This is a high-level generic interface for encoding cryptographic object
+ * into a textual or binary format. The generic T defines what class or
+ * interface the class will restrict operations on.
  *
  * @param <T> the type parameter
  */
 public interface Encoder<T> {
     /**
-     * Encode string.
+     * Encode a cryptographic object of type T, and that result returned as
+     * a byte array.
      *
-     * @param tClass the t class
-     * @return the string
-     * @throws IOException the io exception
+     * @param tClass the cryptographic object to be encoded
+     * @return the byte array
+     * @throws IOException on error during the operation.
      */
-    String encode(T tClass) throws IOException;
+    byte[] encode(T tClass) throws IOException;
 }

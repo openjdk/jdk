@@ -35,24 +35,34 @@ import java.security.cert.CertificateFactory;
 import java.security.spec.KeySpec;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.Objects;
 
 /**
  * PEMDecoder is an immutable Privacy-Enhanced Mail (PEM) decoding class.
- * Decoding is limited to specific classes which implement
- * {@link SecurityObject}, such as:  PublicKey, PrivateKey, EncodedKeySpec,
- * EncryptedPrivateKeyInfo, Certificate, and CRL.
- * <p>
- * PEM is a textual encoding used for storing and transferring security
+ * Decoding will return a {@link SecurityObject} unless specified by the
+ * specialized methods.  {@code instanceof} can be used to determine what
+ * SecurityObject was returned with heterogenous key, certificate, or CRL usage.
+ *
+ * <p> PEM is a textual encoding used for storing and transferring security
  * objects, such as asymmetric keys, certificates, and certificate revocation
- * lists (CRL). Defined in RFC 1421 and RFC7468, PEM consists of a
+ * lists (CRL). Defined in RFC 1421 and RFC 7468, PEM consists of a
  * Base64-formatted binary encoding surrounded by a type identifying header
  * and footer.
+
+ * <p> The PEMEncoder returned by {@linkplain #withFactoryFrom} and/or
+ * {@linkplain #withDecryption} are immutably configuration.  Configuring an
+ * instance for decryption does not prevent decoding with unencrypted PEM. Any
+ * encrypted PEM that does not use the configured password will cause an
+ * exception. A decoder instance not configured with decryption will return an
+ * {@link EncryptedPrivateKeyInfo} with encrypted PEM.  EncryptedPrivateKeyInfo
+ * methods must be used to retrieve the {@link PrivateKey}.
+ *
  */
 final public class PEMDecoder implements Decoder<SecurityObject> {
-    final Provider factory;
-    final char[] password;
+    final private Provider factory;
+    final private char[] password;
 
     /**
      * Create an immutable instance of PEMDecoder.
@@ -74,24 +84,29 @@ final public class PEMDecoder implements Decoder<SecurityObject> {
         password = withPassword;
     }
 
-    private SecurityObject decode(byte[] data, String header,
-        String footer) throws IOException {
+    /**
+     * After the header, footer, and base64 have been separated, identify the
+     * header and footer and proceed with decoding the base64 for the
+     * appropriate type.
+     */
+    private SecurityObject decode(byte[] data, byte[] header,
+        byte[] footer) throws IOException {
         Pem.KeyType keyType;
 
-        if (header.equalsIgnoreCase(Pem.PUBHEADER) &&
-            footer.equalsIgnoreCase(Pem.PUBFOOTER)) {
+        if (Arrays.mismatch(header, Pem.PUBHEADER) == -1 &&
+            Arrays.mismatch(footer, Pem.PUBFOOTER) == -1) {
             keyType = Pem.KeyType.PUBLIC;
-        } else if (header.startsWith(Pem.PKCS8HEADER) &&
-            footer.equalsIgnoreCase(Pem.PKCS8FOOTER)) {
+        } else if (Arrays.mismatch(header, Pem.PKCS8HEADER) == -1 &&
+            Arrays.mismatch(footer, Pem.PKCS8FOOTER) == -1) {
             keyType = Pem.KeyType.PRIVATE;
-        } else if (header.startsWith(Pem.PKCS8ENCHEADER) &&
-            footer.equalsIgnoreCase(Pem.PKCS8ENCFOOTER)) {
+        } else if (Arrays.mismatch(header, Pem.PKCS8ENCHEADER) == -1 &&
+            Arrays.mismatch(footer, Pem.PKCS8ENCFOOTER) == -1) {
             keyType = Pem.KeyType.ENCRYPTED_PRIVATE;
-        } else if (header.startsWith(Pem.CERTHEADER) &&
-            footer.equalsIgnoreCase(Pem.CERTFOOTER)) {
+        } else if (Arrays.mismatch(header, Pem.CERTHEADER) == -1 &&
+            Arrays.mismatch(footer, Pem.CERTFOOTER) == -1) {
             keyType = Pem.KeyType.CERTIFICATE;
-        } else if (header.startsWith(Pem.CRLHEADER) &&
-            footer.equalsIgnoreCase(Pem.CRLFOOTER)) {
+        } else if (Arrays.mismatch(header, Pem.CRLHEADER) == -1 &&
+            Arrays.mismatch(footer, Pem.CRLFOOTER) == -1) {
             keyType = Pem.KeyType.CRL;
         } else {
             throw new IOException("Unsupported PEM header/footer");
@@ -124,7 +139,7 @@ final public class PEMDecoder implements Decoder<SecurityObject> {
                     KeyFactory kf = (KeyFactory)
                         getFactory(keyType, p8key.getAlgorithm());
                     priKey = kf.generatePrivate(
-                        new PKCS8EncodedKeySpec(p8key.getEncoded(),//getPrivKeyMaterial(),
+                        new PKCS8EncodedKeySpec(p8key.getEncoded(),
                             p8key.getAlgorithm()));
                     // If there is a public key, it's an OAS.
                     if (p8key.getPubKeyEncoded() != null) {
@@ -151,11 +166,8 @@ final public class PEMDecoder implements Decoder<SecurityObject> {
                 try {
                     CertificateFactory cf =
                         (CertificateFactory) getFactory(keyType, "X509");
-                    /*yield cf.generateCertificate(
-                        new ByteArrayInputStream((header + "\n" + data +
-                            footer + "\n").getBytes()));
-                     */
-                    yield cf.generateCertificate(new ByteArrayInputStream(decoder.decode(data)));
+                    yield cf.generateCertificate(
+                        new ByteArrayInputStream(decoder.decode(data)));
                 } catch (CertificateException e) {
                     throw new IOException(e);
                 }
@@ -164,9 +176,9 @@ final public class PEMDecoder implements Decoder<SecurityObject> {
                 try {
                     CertificateFactory cf =
                         (CertificateFactory) getFactory(keyType, "X509");
-                    yield cf.generateCRL(new ByteArrayInputStream(decoder.decode(data)));
-                    //yield cf.generateCRL(new ByteArrayInputStream((header +
-                    //    "\n" + data + footer + "\n").getBytes()));
+                    yield cf.generateCRL(
+                        new ByteArrayInputStream(decoder.decode(data)));
+
                 } catch (Exception e) {
                     throw new IOException(e);
                 }
@@ -174,6 +186,101 @@ final public class PEMDecoder implements Decoder<SecurityObject> {
             default -> throw new IOException("Unsupported type or not " +
                 "properly formatted PEM");
         };
+    }
+
+    /**
+     * Decodes and returns {@code SecurityObject} from the given string.
+     *
+     * @param str PEM data in a String.
+     * @return a SecurityObject that is contained in the PEM data.
+     * @throws IOException on an error in decoding or if the PEM is unsupported.
+     */
+    @Override
+    public SecurityObject decode(String str) throws IOException {
+        Objects.requireNonNull(str);
+        return decode(new ByteArrayInputStream(str.getBytes()));
+    }
+
+    /**
+     * Decodes and returns a {@code SecurityObject} from the given
+     * {@code InputStream}.
+     * The method will read the {@code InputStream} until PEM data is
+     * found or until the end of the stream.
+     *
+     * @param is InputStream containing PEM data.
+     * @return an object that is contained in the PEM data.
+     * @throws IOException on an error in decoding or if the PEM is unsupported.
+     */
+    @Override
+    public SecurityObject decode(InputStream is) throws IOException {
+        Objects.requireNonNull(is);
+        Pem pem = Pem.readPEM(is);
+        if (pem == null) {
+            throw new IOException("No PEM data found.");
+        }
+        return decode(pem.getData(), pem.getHeader(), pem.getFooter());
+    }
+
+    /**
+     * Decodes and returns an object from the given PEM string. The user must
+     * have prior knowledge of the PEM data class type and specify the
+     * returned object's class.
+     *
+     * @param <S> Type parameter
+     * @param string the String containing PEM data.
+     * @param tClass  the returned object class that implementing
+     * {@code SecurityObject}.
+     * @return The SecurityObject typecast to tClass.
+     * @throws IOException on an error in decoding, unsupported PEM, or
+     * error casting to tClass.
+     */
+    @Override
+    public <S extends SecurityObject> S decode(String string,
+        Class<S> tClass) throws IOException {
+        Objects.requireNonNull(string);
+        Objects.requireNonNull(tClass);
+
+        // KeySpec's other that EncodedKeySpec's do not differentiate between
+        // public or private key via a subclass.  Specifying each class is
+        // in this the decoder error-prone and not extensible.
+        if (tClass.isInstance(KeySpec.class) &&
+            (!tClass.isInstance(X509EncodedKeySpec.class) &&
+                !tClass.isInstance(PKCS8EncodedKeySpec.class))) {
+            throw new IOException("Decoder does not support the provided " +
+                "KeySpec.");
+        }
+
+        try {
+            return tClass.cast(decode(new ByteArrayInputStream(string.getBytes())));
+        } catch (ClassCastException e) {
+            throw new IOException(e);
+        }
+    }
+
+    /**
+     * Decodes and returns an object from the given Reader. The user must have prior
+     * knowledge of the PEM data class type and specify the returned object's
+     * class.  The method will read the {@code InputStream} until PEM data is
+     * found or until the end of the stream.
+     *
+     * @param <S>    the type parameter
+     * @param is a Reader that provides a stream of PEM data.
+     * @param tClass the returned object class that implementing
+     *   {@code SecurityObject}.
+     * @return an object that is contained in the PEM with the specified class.
+     * @throws IOException on an error in decoding, unsupported PEM, or
+     * error casting to tClass.
+     */
+    @Override
+    public <S extends SecurityObject> S decode(InputStream is,
+        Class<S> tClass) throws IOException {
+        Objects.requireNonNull(is);
+        Objects.requireNonNull(tClass);
+        try {
+            return tClass.cast(decode(is));
+        } catch (ClassCastException e) {
+            throw new IOException(e);
+        }
     }
 
     // Convenience method to avoid provider getInstance checks clutter
@@ -202,8 +309,8 @@ final public class PEMDecoder implements Decoder<SecurityObject> {
     }
 
     /**
-     * Returns a new PEMDecoder instance from the existing instance that only
-     * generates using Key and Certificate factories from the given Provider.
+     * Creates a new PEMDecoder instance from the current instance that uses
+     * Key and Certificate factories from the given Provider.
      *
      * @param provider the Factory provider for the new decoder instance.
      * @return a new PEM decoder instance.
@@ -213,100 +320,15 @@ final public class PEMDecoder implements Decoder<SecurityObject> {
     }
 
     /**
-     * Returns a new PEMDecoder instance from the existing instance that will
-     * use the given password for any encrypted private keys decoded.
+     * Creates a new PEMDecoder instance from the current instance that uses
+     * the given password to decode encrypted PEM data.
      * Non-encrypted PEM may still be decoded from this instance.
      *
-     * @param password the password used on encrypted private keys
+     * @param password the password to decrypt encrypted PEM data.
      * @return the decoder
      */
     public PEMDecoder withDecryption(char[] password) {
         Objects.requireNonNull(password);
         return new PEMDecoder(factory, password);
-    }
-
-    /**
-     * Decodes and returns {@code SecurityObject} from the given string.
-     *
-     * @param str PEM data in a String.
-     * @return an object that is contained in the PEM data.
-     * @throws IOException on an error in decoding or if the PEM is unsupported.
-     */
-    @Override
-    public SecurityObject decode(String str) throws IOException {
-        Objects.requireNonNull(str);
-        return decode(new ByteArrayInputStream(str.getBytes()));
-    }
-
-    /**
-     * Decodes and returns {@code SecurityObject} from the given Reader.
-     *
-     * @param is PEM data from a Reader
-     * @return an object that is contained in the PEM data.
-     * @throws IOException on an error in decoding or if the PEM is unsupported.
-     */
-    @Override
-    public SecurityObject decode(InputStream is) throws IOException {
-        Objects.requireNonNull(is);
-        Pem pem = Pem.readPEM(is);
-        return decode(pem.getData(), pem.getHeader(), pem.getFooter());
-    }
-
-
-    /**
-     * Decodes and returns an object from the given Reader. The user must have prior
-     * knowledge of the PEM data class type and specify the returned object's
-     * class.
-     *
-     * @param <S>    the type parameter
-     * @param is a Reader that provides a stream of PEM data.
-     * @param tClass the class instance of the returned object.  The class must implement {@code SecurityObject}.
-     * @return foo s
-     * @throws IOException on an error in decoding or if the PEM is unsupported.
-     */
-    @Override
-    public <S extends SecurityObject> S decode(InputStream is,
-        Class<S> tClass) throws IOException {
-        Objects.requireNonNull(is);
-        Objects.requireNonNull(tClass);
-        try {
-            return tClass.cast(decode(is));
-        } catch (ClassCastException e) {
-            throw new IOException(e);
-        }
-    }
-
-    /**
-     * Decodes and returns an object from the given PEM string. The user must have prior
-     * knowledge of the PEM data class type and specify the returned object's
-     * class.
-     *
-     * @param <S> Type parameter
-     * @param string the String containing PEM data.
-     * @param tClass the class instance of the returned object.  The class must implement {@code SecurityObject}.
-     * @return The SecurityObject typecasted to tClass.
-     * @throws IOException on an error in decoding or if the PEM is unsupported.
-     */
-    @Override
-    public <S extends SecurityObject> S decode(String string,
-        Class<S> tClass) throws IOException {
-        Objects.requireNonNull(string);
-        Objects.requireNonNull(tClass);
-
-        // KeySpec's other that EncodedKeySpec's do not differentiate between
-        // public or private key via a subclass.  Specifying each class is
-        // in this the decoder error-prone and not extensible.
-        if (tClass.isInstance(KeySpec.class) &&
-            (!tClass.isInstance(X509EncodedKeySpec.class) &&
-                !tClass.isInstance(PKCS8EncodedKeySpec.class))) {
-            throw new IOException("Decoder does not support the provided " +
-                "KeySpec.");
-        }
-
-        try {
-            return tClass.cast(decode(new ByteArrayInputStream(string.getBytes())));
-        } catch (ClassCastException e) {
-            throw new IOException(e);
-        }
     }
 }

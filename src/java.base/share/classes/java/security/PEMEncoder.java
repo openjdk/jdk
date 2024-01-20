@@ -36,6 +36,7 @@ import javax.crypto.EncryptedPrivateKeyInfo;
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.PBEKeySpec;
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.security.cert.*;
 import java.security.cert.Certificate;
 import java.security.spec.AlgorithmParameterSpec;
@@ -46,26 +47,27 @@ import java.util.Objects;
 
 /**
  * PEMEncoder is an immutable Privacy-Enhanced Mail (PEM) encoding class.
- * Encoding is limited to specific classes which implement
- * {@link SecurityObject}, such as:  PublicKey, PrivateKey, KeySpec,
- * KeyPair, EncryptedPrivateKeyInfo, Certificate, and CRL.
- * <p>
  * PEM is a textual encoding used for storing and transferring security
  * objects, such as asymmetric keys, certificates, and certificate revocation
- * lists (CRL). Defined in RFC 1421 and RFC7468, PEM consists of a
+ * lists (CRL). Defined in RFC 1421 and RFC 7468, PEM consists of a
  * Base64-formatted binary encoding surrounded by a type identifying header
  * and footer.
- * <p>
- * When encrypting private key's, this class uses the Security Property
+
+ * <p> Encoding is limited to classes that implement {@link SecurityObject},
+ * which include classes and interfaces like
+ * {@link PublicKey}, {@link PrivateKey}, {@link KeyPair},
+ * {@link EncryptedPrivateKeyInfo}, {@link Certificate}, and {@link CRL}.
+
+ * <p> When encrypting private key's, this class uses the Security Property
  * {@code jdk.epkcs8.defaultAlgorithm} for the default algorithm.  To configure
- * all the encryption options see {@link EncryptedPrivateKeyInfo#encryptKey(
+ * all the encryption options see {@linkplain EncryptedPrivateKeyInfo#encryptKey(
  * PrivateKey, char[], String, AlgorithmParameterSpec, Provider)} and use the
- * returned object with {@link #encode(SecurityObject)}.
+ * returned object with {@linkplain #encode}.
  */
 final public class PEMEncoder implements Encoder<SecurityObject> {
 
     // If non-null, encoder is configured for encryption
-    Cipher cipher;
+    private Cipher cipher;
 
     /**
      * Create an immutable instance of PEMEncoder.
@@ -90,55 +92,66 @@ final public class PEMEncoder implements Encoder<SecurityObject> {
      * @param encoded the encoded
      * @return the string
      */
-    private String pemEncoded(Pem.KeyType keyType, byte[] encoded) {
-        StringBuilder sb = new StringBuilder(200);
+    private byte[] pemEncoded(Pem.KeyType keyType, byte[] encoded) {
+        ByteArrayOutputStream os = new ByteArrayOutputStream(1024);
         switch (keyType) {
             case PUBLIC -> {
-                sb.append(Pem.PUBHEADER);
-                sb.append(Pem.LINESEPARATOR);
-                sb.append(convertToPEM(encoded));
-                sb.append(Pem.PUBFOOTER);
-                sb.append(Pem.LINESEPARATOR);
+                os.writeBytes(Pem.PUBHEADER);
+                os.writeBytes(Pem.LINESEPARATOR);
+                os.writeBytes(convertToPEM(encoded));
+                os.writeBytes(Pem.PUBFOOTER);
+                os.writeBytes(Pem.LINESEPARATOR);
             }
             case PRIVATE -> {
-                sb.append(Pem.PKCS8HEADER);
-                sb.append(Pem.LINESEPARATOR);
-                sb.append(convertToPEM(encoded));
-                sb.append(Pem.PKCS8FOOTER);
-                sb.append(Pem.LINESEPARATOR);
+                os.writeBytes(Pem.PKCS8HEADER);
+                os.writeBytes(Pem.LINESEPARATOR);
+                os.writeBytes(convertToPEM(encoded));
+                os.writeBytes(Pem.PKCS8FOOTER);
+                os.writeBytes(Pem.LINESEPARATOR);
             }
             case ENCRYPTED_PRIVATE -> {
-                sb.append(Pem.PKCS8ENCHEADER);
-                sb.append(Pem.LINESEPARATOR);
-                sb.append(convertToPEM(encoded));
-                sb.append(Pem.PKCS8ENCFOOTER);
-                sb.append(Pem.LINESEPARATOR);
+                os.writeBytes(Pem.PKCS8ENCHEADER);
+                os.writeBytes(Pem.LINESEPARATOR);
+                os.writeBytes(convertToPEM(encoded));
+                os.writeBytes(Pem.PKCS8ENCFOOTER);
+                os.writeBytes(Pem.LINESEPARATOR);
             }
             default -> {
-                return "";
+                return new byte[0];
             }
         }
-        return sb.toString();
+        return os.toByteArray();
     }
 
-    static String convertToPEM(byte[] encoding) {
+    static byte[] convertToPEM(byte[] encoding) {
         if (encoding.length == 0) {
-            return "";
+            return new byte[0];
         }
         Base64.Encoder e = Base64.getEncoder();
-        String pem = e.encodeToString(encoding);
-        int len = pem.length();
-        int lines = (pem.length() / 64);
-        StringBuffer buf = new StringBuffer(len + (lines * 2));
+        ByteArrayOutputStream os = new ByteArrayOutputStream(1024);
+        byte[] pem = e.encode(encoding);
+        int len = pem.length;
         int i = 0;
         while (i + 64 < len) {
-            buf.append(pem.substring(i, i + 64));
-            buf.append(Pem.LINESEPARATOR);
+            os.write(pem, i, 64);
+            os.writeBytes(Pem.LINESEPARATOR);
             i += 64;
         }
-        buf.append(pem.substring(i));
-        buf.append(Pem.LINESEPARATOR);
-        return buf.toString();
+        os.write(pem, i, pem.length - i);
+        os.writeBytes(Pem.LINESEPARATOR);
+        return os.toByteArray();
+    }
+
+    /**
+     * Encoded a given SecurityObject and return the PEM encoding in a String
+     *
+     * @param so a cryptographic object to be PEM encoded that implements
+     *           SecurityObject.
+     * @return PEM encoding in a String
+     * @throws IOException on any error with the object or the encoding process.
+     */
+    public String encodeToString(SecurityObject so) throws IOException {
+            return new String(encode(so), StandardCharsets.UTF_8);
     }
 
     /**
@@ -149,7 +162,7 @@ final public class PEMEncoder implements Encoder<SecurityObject> {
      * @throws IOException on any error with the object or the encoding process.
      */
     @Override
-    public String encode(SecurityObject so) throws IOException {
+    public byte[] encode(SecurityObject so) throws IOException {
         Objects.requireNonNull(so);
         return switch (so) {
             case PublicKey pu -> build(null, pu.getEncoded());
@@ -174,43 +187,46 @@ final public class PEMEncoder implements Encoder<SecurityObject> {
                 yield pemEncoded(Pem.KeyType.ENCRYPTED_PRIVATE, e.getEncoded());
             }
             case Certificate c -> {
-                StringBuffer sb = new StringBuffer(512);
-                sb.append(Pem.CERTHEADER);
+                ByteArrayOutputStream os = new ByteArrayOutputStream(1024);
+                os.writeBytes(Pem.CERTHEADER);
                 try {
-                    sb.append(Base64.getMimeEncoder().encodeToString(c.getEncoded()));
+                    os.writeBytes(Base64.getMimeEncoder().encode(c.getEncoded()));
                 } catch (CertificateException e) {
                     throw new IOException(e);
                 }
-                sb.append(Pem.CERTFOOTER);
-                yield sb.toString();
+                os.writeBytes(Pem.CERTFOOTER);
+                yield os.toByteArray();
             }
             case CRL crl -> {
                 X509CRL xcrl = (X509CRL)crl;
-                StringBuffer sb = new StringBuffer(512);
-                sb.append(Pem.CRLHEADER);
+                ByteArrayOutputStream os = new ByteArrayOutputStream(1024);
+                os.write(Pem.CRLHEADER);
                 try {
-                    sb.append(Base64.getMimeEncoder().encodeToString(xcrl.getEncoded()));
+                    os.writeBytes(Base64.getMimeEncoder().encode(xcrl.getEncoded()));
                 } catch (CRLException e) {
                     throw new IOException(e);
                 }
-                sb.append(Pem.CRLFOOTER);
-                yield sb.toString();
+                os.write(Pem.CRLFOOTER);
+                yield os.toByteArray();
             }
             default -> throw new IOException("PEM does not support " +
                 so.getClass().getCanonicalName());
         };
-
     }
 
     /**
-     * Get a PEMEncoder instance configured to the default encrypt algorithm
-     * and a particular password.
-     * <p>
-     * Default algorithm defined by Security Property {@code
-     * jdk.epkcs8.defaultAlgorithm}
-     * To configure more encryption options, see
-     * {@link EncryptedPrivateKeyInfo}.encryptKey(), then use {@code encode()}
-     * with the EncryptedPrivateKeyInfo object.
+     * Get a new immutable PEMEncoder instance configured to the default
+     * encrypt algorithm and a given password.
+     *
+     * <p> Only {@link PrivateKey} will be encrypted with this newly configured
+     * instance.  Other {@link SecurityObject} classes that do not support
+     * encrypted PEM will be encoded unencrypted by this instance.
+     *
+     * <p> Default algorithm defined by Security Property {@code
+     * jdk.epkcs8.defaultAlgorithm}.  To configure all the encryption options
+     * see {@link EncryptedPrivateKeyInfo#encryptKey(PrivateKey, char[], String,
+     * AlgorithmParameterSpec, Provider)} and use the returned object with
+     * {@link #encode(SecurityObject)}.
      *
      * @param password the password
      * @return a new PEMEncoder
@@ -238,16 +254,10 @@ final public class PEMEncoder implements Encoder<SecurityObject> {
 
     }
 
-
     /**
-     * Build string.
-     *
-     * @param privateBytes the private bytes
-     * @param publicBytes  the public bytes
-     * @return the string
-     * @throws IOException the io exception
+     * Build PEM encoding.
      */
-    private String build(byte[] privateBytes, byte[] publicBytes)
+    private byte[] build(byte[] privateBytes, byte[] publicBytes)
         throws IOException {
         DerOutputStream out = new DerOutputStream();
         byte[] encoded;

@@ -426,5 +426,7 @@ class PEMCerts {
         passList.addAll(encryptedList);
 
         failureEntryList.add(new Entry("rsaOpenSSL", rsaOpenSSL, RSAPrivateKey.class, null));
+        failureEntryList.add(new Entry("emptyPEM", "", SecurityObject.class, null));
+        failureEntryList.add(new Entry("nullPEM", null, SecurityObject.class, null));
     }
 }

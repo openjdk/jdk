@@ -29,6 +29,7 @@
  */
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.security.*;
 import java.util.*;
 import java.util.regex.Pattern;
@@ -48,6 +49,10 @@ public class PEMEncoderTest {
         keymap.keySet().stream().forEach(key -> test(key, encoder));
         System.out.println("New instance Encoder test:");
         keymap.keySet().stream().forEach(key -> test(key, new PEMEncoder()));
+        System.out.println("Same instance Encoder testToString:");
+        keymap.keySet().stream().forEach(key -> testToString(key, encoder));
+        System.out.println("New instance Encoder testToString:");
+        keymap.keySet().stream().forEach(key -> testToString(key, new PEMEncoder()));
 
         keymap = generateObjKeyMap(PEMCerts.encryptedList);
         System.out.println("Same instance Encoder new withEnc test:");
@@ -79,10 +84,23 @@ public class PEMEncoderTest {
     }
 
     static void test(String key, PEMEncoder encoder) {
-        String result;
+        byte[] result;
         PEMCerts.Entry entry = PEMCerts.getEntry(key);
         try {
             result = encoder.encode(keymap.get(key));
+        } catch (IOException e) {
+            throw new AssertionError("Encoder use failure with " + entry.name(), e);
+        }
+
+        checkResults(entry, new String(result, StandardCharsets.UTF_8));
+        System.out.println("PASS: " + entry.name());
+    }
+
+    static void testToString(String key, PEMEncoder encoder) {
+        String result;
+        PEMCerts.Entry entry = PEMCerts.getEntry(key);
+        try {
+            result = encoder.encodeToString(keymap.get(key));
         } catch (IOException e) {
             throw new AssertionError("Encoder use failure with " + entry.name(), e);
         }
@@ -92,7 +110,7 @@ public class PEMEncoderTest {
     }
 
     static void testEncrypted(String key, PEMEncoder encoder) {
-        String result;
+        byte[] result;
         PEMCerts.Entry entry = PEMCerts.getEntry(key);
         try {
             result = encoder.withEncryption(entry.password()).encode(keymap.get(key));
@@ -100,7 +118,7 @@ public class PEMEncoderTest {
             throw new AssertionError("Encrypted encoder use failure with " + entry.name(), e);
         }
 
-        checkResults(entry, result);
+        checkResults(entry, new String(result, StandardCharsets.UTF_8));
         System.out.println("PASS: " + entry.name());
     }
 

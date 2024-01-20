@@ -30,16 +30,39 @@ import java.io.InputStream;
 import java.io.Reader;
 
 /**
- * The interface Decoder.
+ * This interface defines decoding methods that with given encoded data
+ * converts into a Java cryptographic object.
  *
  * @param <T> the type parameter
  */
 public interface Decoder<T> {
+
     /**
-     * Decode t.
+     * With a given {@code String} that contains encoded data, the implemented
+     * method decodes and converts it into a cryptographic object T.
+     * @param string encoded data
+     * @return the t
+     * @throws IOException the io exception
+     */
+    T decode(String string) throws IOException;
+
+    /**
+     * With a given {@code InputStream} that contains encoded data, the
+     * implemented method decodes and converts it into a cryptographic object
+     * T.
      *
-     * @param <S>    the type parameter
-     * @param string the string
+     * @param is encoded data from an InputStream
+     * @return the T
+     * @throws IOException the io exception
+     */
+    T decode(InputStream is) throws IOException;
+
+    /**
+     * With a given {@code String} that contains encoded data, the implemented
+     * method decodes and converts it into a cryptographic object of type T.
+     *
+     * @param <S> the type parameter that implements T
+     * @param string encoded data
      * @param tClass the t class
      * @return the t
      * @throws IOException the io exception
@@ -47,32 +70,15 @@ public interface Decoder<T> {
     <S extends T> S decode(String string, Class <S> tClass) throws IOException;
 
     /**
-     * Decode t.
+     * With a given {@code InputStream} that contains encoded data, the
+     * implemented method decodes and converts it into a cryptographic object
+     * of type T.
      *
-     * @param <S>    the type parameter
-     * @param reader the reader
+     * @param <S> the type parameter that implements T
+     * @param is encoded data
      * @param tClass the t class
      * @return the t
      * @throws IOException the io exception
      */
-    <S extends T> S decode(InputStream reader, Class <S> tClass) throws IOException;
-
-    /**
-     * Decode t.
-     *
-     * @param string the string
-     * @return the t
-     * @throws IOException the io exception
-     */
-    T decode(String string) throws IOException;
-
-    /**
-     * Decode t.
-     *
-     * @param reader the reader
-     * @return the t
-     * @throws IOException the io exception
-     */
-    T decode(InputStream reader) throws IOException;
+    <S extends T> S decode(InputStream is, Class <S> tClass) throws IOException;
 }
-

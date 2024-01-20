@@ -43,34 +43,45 @@ public class Pem {
     /**
      * Public Key PEM header & footer
      */
-    public static final String PUBHEADER = "-----BEGIN PUBLIC KEY-----";
-    public static final String PUBFOOTER = "-----END PUBLIC KEY-----";
+    public static final byte[] PUBHEADER = "-----BEGIN PUBLIC KEY-----"
+        .getBytes(StandardCharsets.UTF_8);
+    public static final byte[] PUBFOOTER = "-----END PUBLIC KEY-----"
+        .getBytes(StandardCharsets.UTF_8);
 
     /**
      * Private Key PEM header & footer
      */
-    public static final String PKCS8HEADER = "-----BEGIN PRIVATE KEY-----";
-    public static final String PKCS8FOOTER = "-----END PRIVATE KEY-----";
+    public static final byte[] PKCS8HEADER = "-----BEGIN PRIVATE KEY-----"
+        .getBytes(StandardCharsets.UTF_8);
+    public static final byte[] PKCS8FOOTER = "-----END PRIVATE KEY-----"
+        .getBytes(StandardCharsets.UTF_8);
 
     /**
      * Encrypted Private Key PEM header & footer
      */
-    public static final String PKCS8ENCHEADER = "-----BEGIN ENCRYPTED PRIVATE KEY-----";
-    public static final String PKCS8ENCFOOTER = "-----END ENCRYPTED PRIVATE KEY-----";
+    public static final byte[] PKCS8ENCHEADER = "-----BEGIN ENCRYPTED PRIVATE KEY-----"
+        .getBytes(StandardCharsets.UTF_8);
+    public static final byte[] PKCS8ENCFOOTER = "-----END ENCRYPTED PRIVATE KEY-----"
+        .getBytes(StandardCharsets.UTF_8);
 
     /**
      * Certificate PEM header & footer
      */
-    public static final String CERTHEADER = "-----BEGIN CERTIFICATE-----";
-    public static final String CERTFOOTER = "-----END CERTIFICATE-----";
+    public static final byte[] CERTHEADER = "-----BEGIN CERTIFICATE-----"
+        .getBytes(StandardCharsets.UTF_8);
+    public static final byte[] CERTFOOTER = "-----END CERTIFICATE-----"
+        .getBytes(StandardCharsets.UTF_8);
 
     /**
      * CRL PEM header & footer
      */
-    public static final String CRLHEADER = "-----BEGIN CRL-----";
-    public static final String CRLFOOTER = "-----END CRL-----";
+    public static final byte[] CRLHEADER = "-----BEGIN CRL-----"
+        .getBytes(StandardCharsets.UTF_8);
+    public static final byte[] CRLFOOTER = "-----END CRL-----"
+        .getBytes(StandardCharsets.UTF_8);
 
-    public static final String LINESEPARATOR = "\r\n";
+    public static final byte[] LINESEPARATOR = "\r\n"
+        .getBytes(StandardCharsets.UTF_8);
 
     private static final Pem NULLPEM = new Pem(null, null, null);
 
@@ -84,10 +95,10 @@ public class Pem {
         DEFAULT_ALGO = Security.getProperty("jdk.epkcs8.defaultAlgorithm");
     }
 
-    private String header, footer;
+    private byte[] header, footer;
     private byte[] data;
 
-    private Pem(String header, byte[] data, String footer) {
+    private Pem(byte[] header, byte[] data, byte[] footer) {
         this.header = header;
         this.data = data;
         this.footer = footer;
@@ -102,7 +113,7 @@ public class Pem {
      */
     public static byte[] decode(String input) throws IOException {
         byte[] src = input.replaceAll("\\s+", "")
-            .getBytes(StandardCharsets.ISO_8859_1);
+            .getBytes(StandardCharsets.UTF_8);
         try {
             return Base64.getDecoder().decode(src);
         } catch (IllegalArgumentException e) {
@@ -156,7 +167,7 @@ public class Pem {
             switch (is.read()) {
                 case '-' -> hyphen++;
                 case -1 -> {
-                    return null;//return NULLPEM;//throw new IOException("No PEM data found in input");
+                    return null;
                 }
                 default -> hyphen = 0;
             }
@@ -277,18 +288,20 @@ public class Pem {
                 header + " " + footer);
         }
 
-        return new Pem(header, data.getBytes(), footer);
+        return new Pem(header.getBytes(StandardCharsets.UTF_8),
+            data.getBytes(StandardCharsets.UTF_8),
+            footer.getBytes(StandardCharsets.UTF_8));
     }
 
     public byte[] getData() {
         return data;
     }
 
-    public String getHeader() {
+    public byte[] getHeader() {
         return header;
     }
 
-    public String getFooter() {
+    public byte[] getFooter() {
         return footer;
     }
 
