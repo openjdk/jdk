@@ -60,6 +60,7 @@ static void test_normalize_constraints_simple() {
       U nones = 0;
       bool empty = false;
       normalize_constraints(empty, nlo, nhi, nulo, nuhi, nzeros, nones);
+      DEBUG_ONLY(verify_constraints(nlo, nhi, nulo, nuhi, nzeros, nones));
       ASSERT_FALSE(empty);
       ASSERT_EQ(lo, nlo);
       ASSERT_EQ(hi, nhi);
@@ -83,6 +84,7 @@ static void test_normalize_constraints_simple() {
       U nones = 0;
       bool empty = false;
       normalize_constraints(empty, nlo, nhi, nulo, nuhi, nzeros, nones);
+      DEBUG_ONLY(verify_constraints(nlo, nhi, nulo, nuhi, nzeros, nones));
       ASSERT_FALSE(empty);
       ASSERT_EQ(ulo, nulo);
       ASSERT_EQ(uhi, nuhi);
@@ -107,6 +109,7 @@ static void test_normalize_constraints_simple() {
       U nones = ones;
       bool empty = false;
       normalize_constraints(empty, nlo, nhi, nulo, nuhi, nzeros, nones);
+      DEBUG_ONLY(verify_constraints(nlo, nhi, nulo, nuhi, nzeros, nones));
       ASSERT_FALSE(empty);
       ASSERT_EQ(zeros, nzeros);
       ASSERT_EQ(ones, nones);
@@ -135,28 +138,30 @@ static void test_normalize_constraints_random() {
     U intersection = b1 & b2;
     U zeros = b1 ^ intersection;
     U ones = b2 ^ intersection;
-    T ns1 = s1;
-    T ns2 = s2;
-    U nu1 = u1;
-    U nu2 = u2;
+    T nlo = lo;
+    T nhi = hi;
+    U nulo = ulo;
+    U nuhi = uhi;
     U nzeros = zeros;
     U nones = ones;
     bool empty = false;
-    normalize_constraints(empty, ns1, ns2, nu1, nu2, nzeros, nones);
+    normalize_constraints(empty, nlo, nhi, nulo, nuhi, nzeros, nones);
     auto contains = [](T lo, T hi, U ulo, U uhi, U zeros, U ones, T value) {
       U u = value;
       return value >= lo && value <= hi && u >= ulo && u <= uhi &&
              (u & zeros) == 0 && (~u & ones) == 0;
     };
+#ifdef ASSERT
     if (!empty) {
-      non_empty++;
+      verify_constraints(nlo, nhi, nulo, nuhi, nzeros, nones);
     }
+#endif // ASSERT
     for (int j = 0; j < samples; j++) {
       T v = uniform_random<U>();
       if (empty) {
-        ASSERT_FALSE(contains(s1, s2, u1, u2, zeros, ones, v));
+        ASSERT_FALSE(contains(lo, hi, ulo, uhi, zeros, ones, v));
       } else {
-        ASSERT_EQ(contains(s1, s2, u1, u2, zeros, ones, v), contains(ns1, ns2, nu1, nu2, nzeros, nones, v));
+        ASSERT_EQ(contains(lo, hi, ulo, uhi, zeros, ones, v), contains(nlo, nhi, nulo, nuhi, nzeros, nones, v));
       }
     }
   }

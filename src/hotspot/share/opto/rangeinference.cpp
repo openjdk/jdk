@@ -163,7 +163,7 @@ void normalize_constraints(bool& empty, T& lo, T& hi, U& ulo, U& uhi, U& zeros, 
   U ones2 = ones;
   normalize_constraints_simple(empty2, lo2, hi2, zeros2, ones2);
 
-  if (empty1 & empty2) {
+  if (empty1 && empty2) {
     empty = true;
   } else if (empty1) {
     lo = lo2;
