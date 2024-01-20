@@ -337,6 +337,11 @@ public interface Types {
 
     /**
      * {@return a type mirror equal to the argument and with no annotations}
+     * If the type mirror is a composite type, such as an array type
+     * or a wildcard type, any constitute types, such as the
+     * component type of an array and the type of the bounds of a
+     * wildcard type, also have no annotations, recursively.
+     *
      * @param t the type mirror
      * @param <T> the specific type of type mirror
      * @implSpec
