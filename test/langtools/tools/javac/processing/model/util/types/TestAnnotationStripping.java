@@ -62,6 +62,29 @@ public class TestAnnotationStripping extends JavacTestingAbstractProcessor {
             TypeMirror expectedAnnotation = eltUtils.getTypeElement("TestTypeAnnotation").asType();
 
             for (ExecutableElement m : methodsIn(hostClassElt.getEnclosedElements())) {
+                /*
+                 * The kinds of types include:
+                 *
+                 * arrays
+                 * declared types (classes, interfaces, etc.)
+                 * error types
+                 * executable types
+                 * intersection types
+                 * no-type
+                 * null type
+                 * primitive types
+                 * type variable
+                 * union type
+                 * wildcards
+                 *
+                 * A subset of these can appear at the return type of
+                 * a method. The general methodology is to verify that
+                 * types that can appear as return types when
+                 * annotated with type annotations appear as specified
+                 * as the result of type operations or when new types
+                 * are constructed.
+                 */
+
                 TypeMirror returnType = m.getReturnType();
 
                 System.err.println("Checking " + returnType);
@@ -71,10 +94,9 @@ public class TestAnnotationStripping extends JavacTestingAbstractProcessor {
 
                 checkExpectedTypeAnnotations(returnType, expectedAnnotation);
 
-                // System.err.print("\tasElement()");
-                // When mapping from a type to its element, the
-                // element may have declaration annotations on it.
-                // checkEmptyAnnotations(typeUtils.asElement(returnType));
+                // Note: the result of Types.asElement is *not*
+                // checked for its annotations since the return value
+                // is an Element and not a TypeMirror.
 
                 System.err.print("\tcapture()");
                 checkDeepEmptyAnnotations(typeUtils.capture(returnType));
@@ -144,17 +166,8 @@ public class TestAnnotationStripping extends JavacTestingAbstractProcessor {
         if (ac == null)
             return;
         else {
-            // Previously, was likely getting by-catch of annotations
-            // on element declartions, can likely just print the size
-            // of the list.
             List<? extends AnnotationMirror> annotations = ac.getAnnotationMirrors();
-            int count = 0;
-            for (AnnotationMirror annotation : annotations) {
-//               if (((TypeElement) annotation.getAnnotationType().asElement()).getQualifiedName().contentEquals("jdk.internal.ValueBased")) {
-//                 continue;
-//               }
-              count++;
-            }
+            int count = annotations.size();
             if (count != 0) {
                 failures++;
                 System.err.println(ac.getClass());
@@ -162,7 +175,6 @@ public class TestAnnotationStripping extends JavacTestingAbstractProcessor {
             }
         }
     }
-
 
     void checkDeepEmptyAnnotations(TypeMirror ac) {
         System.err.println("\t" + ac);
@@ -223,26 +235,38 @@ public class TestAnnotationStripping extends JavacTestingAbstractProcessor {
             System.err.printf("Unequal annotations on and %s.%n", tm1, tm2);
         }
     }
-
 }
 
 /*
  * Class to host annotations for testing
  */
 class HostClass {
+    // Declared type Integer
     public static @TestTypeAnnotation("foo") Integer foo() {return null;}
 
+    // Primitive type int
     public static @TestTypeAnnotation("foo2") int foo2() {return 0;}
 
     public static @TestTypeAnnotation("foo3") String foo3() {return null;}
 
+    // Declared raw type Set
     public static  java.util.@TestTypeAnnotation("foo4")Set foo4() {return null;}
 
+    // Array type
     public static  String @TestTypeAnnotation("foo5")[]  foo5() {return null;}
 
+    // Declared type Set with instantiated type parameter
     public static  java.util. @TestTypeAnnotation("foo6") Set < @TestTypeAnnotation("foo7") String> foo6() {return null;}
 
-    public static <@TestTypeAnnotation("foo8") T extends @TestTypeAnnotation("foo9") String> @TestTypeAnnotation("foo10") T foo8() {return null;}
+    // Type variable
+    public static <@TestTypeAnnotation("foo8") T extends @TestTypeAnnotation("foo9") String> @TestTypeAnnotation("foo10") T foo7() {return null;}
+
+    // Declared type including wildcard
+    public static  java.util. @TestTypeAnnotation("foo11") Set < @TestTypeAnnotation("foo12") ? extends @TestTypeAnnotation("foo13") Number> foo8() {return null;}
+
+    // Type variable with intersection type
+    public static <@TestTypeAnnotation("foo14") S extends Number &  Runnable> @TestTypeAnnotation("foo15") S foo9() {return null;}
+
 }
 
 @Retention(RetentionPolicy.RUNTIME)
