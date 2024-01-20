@@ -982,7 +982,8 @@ address StubGenerator::generate_compress_perm_table(const char *stub_name, int32
       int ctr = 0;
       for (int j = 0; j < 4; j++) {
         if (mask & (1 << j)) {
-          __ emit_data64(j, relocInfo::none);
+          __ emit_data(2 * j, relocInfo::none);
+          __ emit_data(2 * j + 1, relocInfo::none);
           ctr++;
         }
       }
@@ -1017,13 +1018,16 @@ address StubGenerator::generate_expand_perm_table(const char *stub_name, int32_t
     assert(esize == 64, "");
     // Loop to generate 16 x 4 long expand permute index table. A row is accessed
     // using 4 bit index computed using vector mask. An entry in the row holds either
-    // a valid permute index (starting from least significant lane) placed at poisition
-    // corresponding to set bit position or a -1 (default) value.
+    // a valid doubleword permute index pair representing a quadword index (starting
+    // from least significant lane) placed at poisition corresponding to set bit
+    // position or a -1 (default) value.
     for (int mask = 0; mask < 16; mask++) {
       int ctr = 0;
       for (int j = 0; j < 4; j++) {
         if (mask & (1 << j)) {
-          __ emit_data64(ctr++, relocInfo::none);
+          __ emit_data(2 * ctr, relocInfo::none);
+          __ emit_data(2 * ctr + 1, relocInfo::none);
+          ctr++;
         } else {
           __ emit_data64(-1L, relocInfo::none);
         }

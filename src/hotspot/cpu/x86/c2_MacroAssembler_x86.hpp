@@ -393,7 +393,7 @@ public:
 
   void vector_compress_expand_avx2(int opcode, XMMRegister dst, XMMRegister src, XMMRegister mask,
                                    Register rtmp, Register rscratch, XMMRegister permv, XMMRegister xtmp,
-                                   XMMRegister xtmp1, BasicType bt, int vec_enc);
+                                   BasicType bt, int vec_enc);
 #endif // _LP64
 
   void udivI(Register rax, Register divisor, Register rdx);

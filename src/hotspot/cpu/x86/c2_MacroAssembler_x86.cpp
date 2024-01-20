@@ -5281,55 +5281,38 @@ void C2_MacroAssembler::vector_mask_compress(KRegister dst, KRegister src, Regis
 }
 
 #ifdef _LP64
-void C2_MacroAssembler::vector_compress_expand_avx2(int opcode, XMMRegister dst, XMMRegister src, XMMRegister mask,
-                                                    Register rtmp, Register rscratch, XMMRegister permv,
-                                                    XMMRegister xtmp, XMMRegister xtmp1, BasicType bt, int vec_enc) {
+void C2_MacroAssembler::vector_compress_expand_avx2(int opcode, XMMRegister dst, XMMRegister src,
+                                                    XMMRegister mask, Register rtmp, Register rscratch,
+                                                    XMMRegister permv, XMMRegister xtmp, BasicType bt,
+                                                    int vec_enc) {
   assert(type2aelembytes(bt) >= 4, "");
   assert(opcode == Op_CompressV || opcode == Op_ExpandV, "");
-  if (bt == T_INT || bt == T_FLOAT) {
-    vmovmskps(rtmp, mask, vec_enc);
-    shlq(rtmp, 5);  // for 32 byte permute row of 8 x 32 bits.
-    if (opcode == Op_CompressV) {
-      lea(rscratch, ExternalAddress(StubRoutines::x86::compress_perm_table32()));
-    } else {
-      lea(rscratch, ExternalAddress(StubRoutines::x86::expand_perm_table32()));
-    }
-    addptr(rtmp, rscratch);
-    vmovdqu(permv, Address(rtmp));
-    vpermps(dst, permv, src, Assembler::AVX_256bit);
-    vpxor(xtmp, xtmp, xtmp, vec_enc);
-    // Blend the result with zero vector using permute mask, each row of
-    // permute table contains either a valid permute index or a -1 (default)
-    // value, this can potentially be used as a blending mask after
-    // compressing/expanding the source vector lanes.
-    vblendvps(dst, dst, xtmp, permv, vec_enc, false, xtmp1);
-  } else {
-    assert(bt == T_LONG || bt == T_DOUBLE, "");
+  address compress_perm_table = nullptr;
+  address expand_perm_table = nullptr;
+  if (type2aelembytes(bt) == 8) {
+    compress_perm_table = StubRoutines::x86::compress_perm_table64();
+    expand_perm_table  = StubRoutines::x86::expand_perm_table64();
     vmovmskpd(rtmp, mask, vec_enc);
-    shlq(rtmp, 5); // for 32 bytes permute row of 4 x 64 bits.
-    if (opcode == Op_CompressV) {
-      lea(rscratch, ExternalAddress(StubRoutines::x86::compress_perm_table64()));
-    } else {
-      lea(rscratch, ExternalAddress(StubRoutines::x86::expand_perm_table64()));
-    }
-    addptr(rtmp, rscratch);
-    vmovdqu(permv, Address(rtmp));
-    vmovdqu(xtmp, permv);
-    // Multiply permute index by 2 to get double word index.
-    vpsllq(permv, permv, 1, vec_enc);
-    // Duplicate each double word shuffle
-    vpsllq(dst, permv, 32, vec_enc);
-    vpor(permv, permv, dst, vec_enc);
-    // Add one to get alternate double word index
-    vpaddd(permv, permv, ExternalAddress(StubRoutines::x86::vector_long_shuffle_mask()), vec_enc, noreg);
-    vpermps(dst, permv, src, Assembler::AVX_256bit);
-    vpxor(permv, permv, permv, vec_enc);
-    // Blend the result with zero vector using permute mask, each row of
-    // permute table contains either a valid permute index or a -1 (default)
-    // value, this can potentially be used as a blending mask after
-    // compressing/expanding the source vector lanes.
-    vblendvps(dst, dst, permv, xtmp, vec_enc, false, xtmp1);
+  } else {
+    compress_perm_table = StubRoutines::x86::compress_perm_table32();
+    expand_perm_table = StubRoutines::x86::expand_perm_table32();
+    vmovmskps(rtmp, mask, vec_enc);
   }
+  shlq(rtmp, 5); // for 32 byte permute row of 8 x 32 bits.
+  if (opcode == Op_CompressV) {
+    lea(rscratch, ExternalAddress(compress_perm_table));
+  } else {
+    lea(rscratch, ExternalAddress(expand_perm_table));
+  }
+  addptr(rtmp, rscratch);
+  vmovdqu(permv, Address(rtmp));
+  vpermps(dst, permv, src, Assembler::AVX_256bit);
+  vpxor(xtmp, xtmp, xtmp, vec_enc);
+  // Blend the result with zero vector using permute mask, each column entry
+  // in a permute table row contains either a valid permute index or a -1 (default)
+  // value, this can potentially be used as a blending mask after
+  // compressing/expanding the source vector lanes.
+  vblendvps(dst, dst, xtmp, permv, vec_enc, false, permv);
 }
 #endif
 
