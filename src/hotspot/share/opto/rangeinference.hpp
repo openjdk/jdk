@@ -50,7 +50,7 @@ U cardinality_from_bounds(T lo, T hi, U ulo, U uhi) {
 template <class T, class U>
 int normalize_widen(T lo, T hi, U ulo, U uhi, U zeros, U ones, int w);
 
-template <class CT, class T = decltype(CT::_lo), class UT = decltype(CT::_hi)>
+template <class CT, class T, class UT>
 const Type* int_type_xmeet(const CT* i1, const Type* t2, const Type* (*make)(T, T, UT, UT, UT, UT, int, bool), bool dual);
 
 template <class CT>

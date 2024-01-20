@@ -250,7 +250,7 @@ int normalize_widen(T lo, T hi, U ulo, U uhi, U zeros, U ones, int w) {
 template int normalize_widen(jint lo, jint hi, juint ulo, juint uhi, juint zeros, juint ones, int w);
 template int normalize_widen(jlong lo, jlong hi, julong ulo, julong uhi, julong zeros, julong ones, int w);
 
-template <class CT, class T = decltype(CT::_lo), class UT = decltype(CT::_hi)>
+template <class CT, class T, class UT>
 const Type* int_type_xmeet(const CT* i1, const Type* t2, const Type* (*make)(T, T, UT, UT, UT, UT, int, bool), bool dual) {
   // Perform a fast test for common case; meeting the same types together.
   if (i1 == t2 || t2 == Type::TOP) {
