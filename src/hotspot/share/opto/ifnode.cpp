@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -642,9 +642,9 @@ const TypeInt* IfNode::filtered_int_type(PhaseGVN* gvn, Node* val, Node* if_proj
               const TypeInt* val_t = gvn->type(val)->isa_int();
               if (val_t != nullptr && !val_t->singleton() && cmp2_t->is_con()) {
                 if (val_t->_lo == lo) {
-                  return TypeInt::make(val_t->_lo + 1, val_t->_hi, val_t->_widen);
+                  return TypeInt::make(val_t->_lo + 1, val_t->_hi, val_t->_widen)->is_int();
                 } else if (val_t->_hi == hi) {
-                  return TypeInt::make(val_t->_lo, val_t->_hi - 1, val_t->_widen);
+                  return TypeInt::make(val_t->_lo, val_t->_hi - 1, val_t->_widen)->is_int();
                 }
               }
               // Can't refine type
@@ -674,7 +674,7 @@ const TypeInt* IfNode::filtered_int_type(PhaseGVN* gvn, Node* val, Node* if_proj
             default:
               break;
             }
-            const TypeInt* rtn_t = TypeInt::make(lo, hi, cmp2_t->_widen);
+            const TypeInt* rtn_t = TypeInt::make(lo, hi, cmp2_t->_widen)->is_int();
             return rtn_t;
           }
         }
@@ -1014,8 +1014,7 @@ bool IfNode::fold_compares_helper(ProjNode* proj, ProjNode* success, ProjNode* f
     if (failtype != nullptr) {
       const TypeInt* type2 = filtered_int_type(igvn, n, fail);
       if (type2 != nullptr) {
-        failtype = failtype->join(type2)->is_int();
-        if (failtype->_lo > failtype->_hi) {
+        if (failtype->filter(type2) == Type::TOP) {
           // previous if determines the result of this if so
           // replace Bool with constant
           igvn->replace_input_of(this, 1, igvn->intcon(success->_con));

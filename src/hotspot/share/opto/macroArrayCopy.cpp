@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,7 +56,7 @@ Node* PhaseMacroExpand::array_element_address(Node* ary, Node* idx, BasicType el
 #ifdef _LP64
   // see comment in GraphKit::array_element_address
   int index_max = max_jint - 1;  // array size is max_jint, index is one less
-  const TypeLong* lidxtype = TypeLong::make(CONST64(0), index_max, Type::WidenMax);
+  const TypeLong* lidxtype = TypeLong::make(CONST64(0), index_max, Type::WidenMax)->is_long();
   idx = transform_later( new ConvI2LNode(idx, lidxtype) );
 #endif
   Node* scale = new LShiftXNode(idx, intcon(shift));
