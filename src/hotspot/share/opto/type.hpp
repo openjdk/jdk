@@ -26,6 +26,7 @@
 #define SHARE_OPTO_TYPE_HPP
 
 #include "opto/adlcVMDeps.hpp"
+#include "opto/compile.hpp"
 #include "runtime/handles.hpp"
 
 // Portions of code courtesy of Clifford Click

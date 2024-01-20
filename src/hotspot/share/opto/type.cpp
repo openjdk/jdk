@@ -38,6 +38,7 @@
 #include "opto/matcher.hpp"
 #include "opto/node.hpp"
 #include "opto/opcodes.hpp"
+#include "opto/rangeinference.hpp"
 #include "opto/type.hpp"
 #include "utilities/checkedCast.hpp"
 #include "utilities/powerOfTwo.hpp"
@@ -418,7 +419,6 @@ int Type::uhash( const Type *const t ) {
   return (int)t->hash();
 }
 
-constexpr juint SMALLINT = 3;  // a value too insignificant to consider widening
 #define POSITIVE_INFINITE_F 0x7f800000 // hex representation for IEEE 754 single precision positive infinite
 #define POSITIVE_INFINITE_D 0x7ff0000000000000 // hex representation for IEEE 754 double precision positive infinite
 
@@ -493,7 +493,6 @@ void Type::Initialize_shared(Compile* current) {
   assert( TypeInt::CC_GT == TypeInt::ONE,     "types must match for CmpL to work" );
   assert( TypeInt::CC_EQ == TypeInt::ZERO,    "types must match for CmpL to work" );
   assert( TypeInt::CC_GE == TypeInt::BOOL,    "types must match for CmpL to work" );
-  assert( (juint)(TypeInt::CC->_hi - TypeInt::CC->_lo) <= SMALLINT, "CC is truly small");
 
   TypeLong::MAX = TypeLong::make(max_jlong);  // Long MAX
   TypeLong::MIN = TypeLong::make(min_jlong);  // Long MIN
@@ -1561,351 +1560,6 @@ const TypeInteger* TypeInteger::minus_1(BasicType bt) {
   return TypeLong::MINUS_1;
 }
 
-template <class T>
-static bool adjust_bounds_from_bits(bool& empty, T& lo, T& hi, T zeros, T ones) {
-  static_assert(std::is_unsigned<T>::value, "");
-
-  auto adjust_lo = [](T lo, T zeros, T ones) {
-    constexpr size_t W = sizeof(T) * 8;
-    T zero_violation = lo & zeros;
-    T one_violation = ~lo & ones;
-    if (zero_violation == 0 && one_violation == 0) {
-      return lo;
-    }
-
-    if (zero_violation < one_violation) {
-      // Align the last violation of ones unset all the lower bits
-      // so we don't care about violations of zeros
-      juint last_violation = W - 1 - count_leading_zeros(one_violation);
-      T alignment = T(1) << last_violation;
-      lo = (lo & -alignment) + alignment;
-      return lo | ones;
-    }
-
-    // Suppose lo = 00110010, zeros = 01010010, ones = 10001000
-    // Since the 4-th bit must be 0, we need to align up the lower bound.
-    // This results in lo = 01000000, but then the 6-th bit does not match,
-    // align up again gives us 10000000.
-    // We can align up directly to 10000000 by finding the first place after
-    // the highest mismatch such that both the corresponding bits are unset.
-    // Since all bits lower than the alignment are unset we don't need to
-    // align for the violations of ones anymore.
-    juint last_violation = W - 1 - count_leading_zeros(zero_violation);
-    T find_mask = std::numeric_limits<T>::max() << last_violation;
-    T either = lo | zeros;
-    T tmp = ~either & find_mask;
-    T alignment = tmp & (-tmp);
-    lo = (lo & -alignment) + alignment;
-    return lo | ones;
-  };
-
-  T new_lo = adjust_lo(lo, zeros, ones);
-  if (new_lo < lo) {
-    empty = true;
-    return true;
-  }
-
-  T new_hi = ~adjust_lo(~hi, ones, zeros);
-  if (new_hi > hi) {
-    empty = true;
-    return true;
-  }
-  bool progress = (new_lo != lo) || (new_hi != hi);
-  lo = new_lo;
-  hi = new_hi;
-  empty = lo > hi;
-  return progress;
-}
-
-template <class T>
-static bool adjust_bits_from_bounds(bool& empty, T& zeros, T& ones, T lo, T hi) {
-  static_assert(std::is_unsigned<T>::value, "");
-  T mismatch = lo ^ hi;
-  T match_mask = mismatch == 0 ? std::numeric_limits<T>::max()
-                               : ~(std::numeric_limits<T>::max() >> count_leading_zeros(mismatch));
-  T new_zeros = zeros | (match_mask &~ lo);
-  T new_ones = ones | (match_mask & lo);
-  bool progress = (new_zeros != zeros) || (new_ones != ones);
-  zeros = new_zeros;
-  ones = new_ones;
-  empty = ((zeros & ones) != 0);
-  return progress;
-}
-
-template <class T>
-static void normalize_constraints_simple(bool& empty, T& lo, T& hi, T& zeros, T& ones) {
-  adjust_bits_from_bounds(empty, zeros, ones, lo, hi);
-  if (empty) {
-    return;
-  }
-  while (true) {
-    bool progress = adjust_bounds_from_bits(empty, lo, hi, zeros, ones);
-    if (!progress || empty) {
-      return;
-    }
-    progress = adjust_bits_from_bounds(empty, zeros, ones, lo, hi);
-    if (!progress || empty) {
-      return;
-    }
-  }
-}
-
-template <class T, class U>
-static void normalize_constraints(bool& empty, T& lo, T& hi, U& ulo, U& uhi, U& zeros, U& ones) {
-  static_assert(std::is_signed<T>::value, "");
-  static_assert(std::is_unsigned<U>::value, "");
-  static_assert(sizeof(T) == sizeof(U), "");
-
-  if (lo > hi || ulo > uhi || (zeros & ones) != 0) {
-    empty = true;
-    return;
-  }
-
-  if (T(ulo) > T(uhi)) {
-    if (T(uhi) < lo) {
-      uhi = std::numeric_limits<T>::max();
-    } else if (T(ulo) > hi) {
-      ulo = std::numeric_limits<T>::min();
-    }
-  }
-
-  if (T(ulo) <= T(uhi)) {
-    ulo = MAX2<T>(ulo, lo);
-    uhi = MIN2<T>(uhi, hi);
-    if (ulo > uhi) {
-      empty = true;
-      return;
-    }
-
-    normalize_constraints_simple(empty, ulo, uhi, zeros, ones);
-    lo = ulo;
-    hi = uhi;
-    return;
-  }
-
-  bool empty1 = false;
-  U lo1 = lo;
-  U hi1 = uhi;
-  U zeros1 = zeros;
-  U ones1 = ones;
-  normalize_constraints_simple(empty1, lo1, hi1, zeros1, ones1);
-
-  bool empty2 = false;
-  U lo2 = ulo;
-  U hi2 = hi;
-  U zeros2 = zeros;
-  U ones2 = ones;
-  normalize_constraints_simple(empty2, lo2, hi2, zeros2, ones2);
-
-  if (empty1 & empty2) {
-    empty = true;
-  } else if (empty1) {
-    lo = lo2;
-    hi = hi2;
-    ulo = lo2;
-    uhi = hi2;
-    zeros = zeros2;
-    ones = ones2;
-  } else if (empty2) {
-    lo = lo1;
-    hi = hi1;
-    ulo = lo1;
-    uhi = hi1;
-    zeros = zeros1;
-    ones = ones1;
-  } else {
-    lo = lo1;
-    hi = hi2;
-    ulo = lo2;
-    uhi = hi1;
-    zeros = zeros1 & zeros2;
-    ones = ones1 & ones2;
-  }
-}
-
-#ifdef ASSERT
-template <class T, class U>
-static void verify_constraints(T lo, T hi, U ulo, U uhi, U zeros, U ones) {
-  static_assert(std::is_signed<T>::value, "");
-  static_assert(std::is_unsigned<U>::value, "");
-  static_assert(sizeof(T) == sizeof(U), "");
-
-  // Assert that the bounds cannot be further tightened
-  assert(lo <= hi && U(lo) >= ulo && U(lo) <= uhi && (lo & zeros) == 0 && (~lo & ones) == 0, "");
-  assert(hi >= lo && U(hi) >= ulo && U(hi) <= uhi && (hi & zeros) == 0 && (~hi & ones) == 0, "");
-  assert(T(ulo) >= lo && T(ulo) <= hi && ulo <= uhi && (ulo & zeros) == 0 && (~ulo & ones) == 0, "");
-  assert(T(uhi) >= lo && T(uhi) <= hi && uhi >= ulo && (uhi & zeros) == 0 && (~uhi & ones) == 0, "");
-
-  // Assert that the bits cannot be further tightened
-  if (U(lo) == ulo) {
-    bool empty = false;
-    assert(!adjust_bits_from_bounds(empty, zeros, ones, ulo, uhi), "");
-  } else {
-    bool empty1 = false;
-    U lo1 = lo;
-    U hi1 = uhi;
-    U zeros1 = zeros;
-    U ones1 = ones;
-    adjust_bits_from_bounds(empty1, zeros1, ones1, lo1, hi1);
-    assert(!empty1, "");
-    assert(!adjust_bounds_from_bits(empty1, lo1, hi1, zeros1, ones1), "");
-
-    bool empty2 = false;
-    U lo2 = ulo;
-    U hi2 = hi;
-    U zeros2 = zeros;
-    U ones2 = ones;
-    adjust_bits_from_bounds(empty2, zeros2, ones2, lo2, hi2);
-    assert(!empty2, "");
-    assert(!adjust_bounds_from_bits(empty2, lo2, hi2, zeros2, ones2), "");
-
-    assert((zeros1 & zeros2) == zeros && (ones1 & ones2) == ones, "");
-  }
-}
-#endif
-
-// The result is tuned down by one since we do not have empty type
-// and this is not required to be accurate
-template <class T, class U>
-static U cardinality_from_bounds(T lo, T hi, U ulo, U uhi) {
-  if (U(lo) == ulo) {
-    return uhi - ulo;
-  }
-
-  return uhi - U(lo) + U(hi) - ulo + 1;
-}
-
-template <class T, class U>
-static int normalize_widen(T lo, T hi, U ulo, U uhi, U zeros, U ones, int w) {
-  // Certain normalizations keep us sane when comparing types.
-  // The 'SMALLINT' covers constants and also CC and its relatives.
-  if (cardinality_from_bounds(lo, hi, ulo, uhi) <= SMALLINT) {
-    return Type::WidenMin;
-  }
-  if (lo == std::numeric_limits<T>::min() && hi == std::numeric_limits<T>::max() &&
-      ulo == std::numeric_limits<U>::min() && uhi == std::numeric_limits<U>::max() &&
-      zeros == 0 && ones == 0) {
-    // bottom type
-    return Type::WidenMax;
-  }
-  return w;
-}
-
-template <class CT>
-static bool int_type_equal(const CT* t1, const CT* t2) {
-  return t1->_lo == t2->_lo && t1->_hi == t2->_hi && t1->_ulo == t2->_ulo && t1->_uhi == t2->_uhi &&
-         t1->_zeros == t2->_zeros && t1->_ones == t2->_ones;
-}
-
-template <class CT>
-static bool int_type_subset(const CT* super, const CT* sub) {
-  return super->_lo <= sub->_lo && super->_hi >= sub->_hi && super->_ulo <= sub->_ulo && super->_uhi >= sub->_uhi &&
-         (super->_zeros &~ sub->_zeros) == 0 && (super->_ones &~ sub->_ones) == 0;
-}
-
-// Called in PhiNode::Value during CCP, monotically widen the value set, do so rigorously
-// first, after WidenMax attempts, if the type has still not converged we speed up the
-// convergence by abandoning the bounds
-template <class CT>
-static const Type* int_type_widen(const CT* nt, const CT* ot, const CT* lt, const CT* bot) {
-  using T = std::remove_const_t<decltype(CT::_lo)>;
-  using U = std::remove_const_t<decltype(CT::_ulo)>;
-
-  if (ot == nullptr) {
-    return nt;
-  }
-
-  // If new guy is equal to old guy, no widening
-  if (int_type_equal(nt, ot)) {
-    return ot;
-  }
-
-  // If old guy contains new, then we probably widened too far & dropped to
-  // bottom. Return the wider fellow.
-  if (int_type_subset(ot, nt)) {
-    return ot;
-  }
-
-  // Neither contains each other, weird?
-  // fatal("Integer value range is not subset");
-  // return this;
-  if (!int_type_subset(nt, ot)) {
-    return bot;
-  }
-
-  // If old guy was a constant, do not bother
-  if (ot->singleton()) {
-    return nt;
-  }
-
-  // If new guy contains old, then we widened
-  // If new guy is already wider than old, no widening
-  if (nt->_widen > ot->_widen) {
-    return nt;
-  }
-
-  if (nt->_widen < Type::WidenMax) {
-    // Returned widened new guy
-    return CT::make(nt->_lo, nt->_hi, nt->_ulo, nt->_uhi, nt->_zeros, nt->_ones, nt->_widen + 1);
-  }
-
-  // Speed up the convergence by abandoning the bounds, there are only a couple of bits so
-  // they converge fast
-  T min = std::numeric_limits<T>::min();
-  T max = std::numeric_limits<T>::max();
-  U umin = std::numeric_limits<U>::min();
-  U umax = std::numeric_limits<U>::max();
-  U zeros = nt->_zeros;
-  U ones = nt->_ones;
-  if (lt != nullptr) {
-    min = lt->_lo;
-    max = lt->_hi;
-    umin = lt->_ulo;
-    umax = lt->_uhi;
-    zeros |= lt->_zeros;
-    ones |= lt->_ones;
-  }
-  return CT::make(min, max, umin, umax, zeros, ones, Type::WidenMax);
-}
-
-// Called by PhiNode::Value during GVN, monotonically narrow the value set, only
-// narrow if the bits change or if the bounds are tightened enough to avoid
-// slow convergence
-template <class CT>
-static const Type* int_type_narrow(const CT* nt, const CT* ot, const CT* bot) {
-  using T = decltype(CT::_lo);
-  using U = decltype(CT::_ulo);
-
-  if (nt->singleton() || ot == nullptr) {
-    return nt;
-  }
-
-  // If new guy is equal to old guy, no narrowing
-  if (int_type_equal(nt, ot)) {
-    return ot;
-  }
-
-  // If old guy was maximum range, allow the narrowing
-  if (int_type_equal(ot, bot)) {
-    return nt;
-  }
-
-  // Doesn't narrow; pretty weird
-  if (!int_type_subset(ot, nt)) {
-    return nt;
-  }
-
-  // Bits change
-  if (ot->_zeros != nt->_zeros || ot->_ones != nt->_ones) {
-    return nt;
-  }
-
-  // Only narrow if the range shrinks a lot
-  U oc = cardinality_from_bounds(ot->_lo, ot->_hi, ot->_ulo, ot->_uhi);
-  U nc = cardinality_from_bounds(nt->_lo, nt->_hi, nt->_ulo, nt->_uhi);
-  return (nc > (oc >> 1) + (SMALLINT * 2)) ? ot : nt;
-}
-
 //=============================================================================
 // Convenience common pre-built types.
 const TypeInt* TypeInt::MAX;    // INT_MAX
@@ -1977,57 +1631,8 @@ bool TypeInt::properly_contains(const TypeInt* t) const {
   return int_type_subset(this, t) && !int_type_equal(this, t);
 }
 
-//------------------------------meet-------------------------------------------
-// Compute the MEET of two types.  It returns a new Type representation object
-// with reference count equal to the number of Types pointing at it.
-// Caller should wrap a Types around it.
 const Type* TypeInt::xmeet(const Type* t) const {
-  // Perform a fast test for common case; meeting the same types together.
-  if (this == t) {
-    return this;
-  }
-
-  // Currently "this->_base" is a TypeInt
-  switch (t->base()) {          // Switch on original type
-  case AnyPtr:                  // Mixing with oops happens when javac
-  case RawPtr:                  // reuses local variables
-  case OopPtr:
-  case InstPtr:
-  case AryPtr:
-  case MetadataPtr:
-  case KlassPtr:
-  case InstKlassPtr:
-  case AryKlassPtr:
-  case NarrowOop:
-  case NarrowKlass:
-  case Long:
-  case FloatTop:
-  case FloatCon:
-  case FloatBot:
-  case DoubleTop:
-  case DoubleCon:
-  case DoubleBot:
-  case Bottom:                  // Ye Olde Default
-    return Type::BOTTOM;
-  default:                      // All else is a mistake
-    typerr(t);
-  case Top:                     // No change
-    return this;
-  case Int:                     // Int vs Int?
-    break;
-  }
-
-  // Expand covered set
-  const TypeInt* i = t->is_int();
-  assert(_dual == i->_dual, "");
-  if (!_dual) {
-    // meet
-    return make(MIN2(_lo, i->_lo), MAX2(_hi, i->_hi), MIN2(_ulo, i->_ulo), MAX2(_uhi, i->_uhi),
-                _zeros & i->_zeros, _ones & i->_ones, MAX2(_widen, i->_widen), false);
-  }
-  // join
-  return make(MAX2(_lo, i->_lo), MIN2(_hi, i->_hi), MAX2(_ulo, i->_ulo), MIN2(_uhi, i->_uhi),
-              _zeros | i->_zeros, _ones | i->_ones, MIN2(_widen, i->_widen), true);
+  return int_type_xmeet(this, t, TypeInt::make, _dual);
 }
 
 const Type* TypeInt::xdual() const {
@@ -2036,7 +1641,7 @@ const Type* TypeInt::xdual() const {
 
 const Type* TypeInt::widen(const Type* old, const Type* limit) const {
   assert(!_dual, "");
-  return int_type_widen(this, old->isa_int(), limit->isa_int(), TypeInt::INT);
+  return int_type_widen(this, old->isa_int(), limit->isa_int());
 }
 
 const Type* TypeInt::narrow(const Type* old) const {
@@ -2045,7 +1650,7 @@ const Type* TypeInt::narrow(const Type* old) const {
     return this;
   }
 
-  return int_type_narrow(this, old->isa_int(), TypeInt::INT);
+  return int_type_narrow(this, old->isa_int());
 }
 
 //-----------------------------filter------------------------------------------
@@ -2156,55 +1761,8 @@ bool TypeLong::properly_contains(const TypeLong* t) const {
   return int_type_subset(this, t) && !int_type_equal(this, t);
 }
 
-//------------------------------meet-------------------------------------------
-// Compute the MEET of two types.  It returns a new Type representation object
-// with reference count equal to the number of Types pointing at it.
-// Caller should wrap a Types around it.
-const Type *TypeLong::xmeet( const Type *t ) const {
-  // Perform a fast test for common case; meeting the same types together.
-  if( this == t ) return this;  // Meeting same type?
-
-  // Currently "this->_base" is a TypeLong
-  switch (t->base()) {          // Switch on original type
-  case AnyPtr:                  // Mixing with oops happens when javac
-  case RawPtr:                  // reuses local variables
-  case OopPtr:
-  case InstPtr:
-  case AryPtr:
-  case MetadataPtr:
-  case KlassPtr:
-  case InstKlassPtr:
-  case AryKlassPtr:
-  case NarrowOop:
-  case NarrowKlass:
-  case Int:
-  case FloatTop:
-  case FloatCon:
-  case FloatBot:
-  case DoubleTop:
-  case DoubleCon:
-  case DoubleBot:
-  case Bottom:                  // Ye Olde Default
-    return Type::BOTTOM;
-  default:                      // All else is a mistake
-    typerr(t);
-  case Top:                     // No change
-    return this;
-  case Long:                    // Long vs Long?
-    break;
-  }
-
-  // Expand covered set
-  const TypeLong* i = t->is_long();
-  assert(_dual == i->_dual, "");
-  if (!_dual) {
-    // meet
-    return make(MIN2(_lo, i->_lo), MAX2(_hi, i->_hi), MIN2(_ulo, i->_ulo), MAX2(_uhi, i->_uhi),
-                _zeros & i->_zeros, _ones & i->_ones, MAX2(_widen, i->_widen), false);
-  }
-  // join
-  return make(MAX2(_lo, i->_lo), MIN2(_hi, i->_hi), MAX2(_ulo, i->_ulo), MIN2(_uhi, i->_uhi),
-              _zeros | i->_zeros, _ones | i->_ones, MIN2(_widen, i->_widen), true);
+const Type *TypeLong::xmeet(const Type* t) const {
+  return int_type_xmeet(this, t, TypeLong::make, _dual);
 }
 
 const Type* TypeLong::xdual() const {
@@ -2213,7 +1771,7 @@ const Type* TypeLong::xdual() const {
 
 const Type* TypeLong::widen(const Type* old, const Type* limit) const {
   assert(!_dual, "");
-  return int_type_widen(this, old->isa_long(), limit->isa_long(), TypeLong::LONG);
+  return int_type_widen(this, old->isa_long(), limit->isa_long());
 }
 
 const Type* TypeLong::narrow(const Type* old) const {
@@ -2222,7 +1780,7 @@ const Type* TypeLong::narrow(const Type* old) const {
     return this;
   }
 
-  return int_type_narrow(this, old->isa_long(), TypeLong::LONG);
+  return int_type_narrow(this, old->isa_long());
 }
 
 //-----------------------------filter------------------------------------------
@@ -2275,131 +1833,6 @@ bool TypeLong::empty(void) const {
 
 //------------------------------dump2------------------------------------------
 #ifndef PRODUCT
-template <class T>
-static const char* intnamenear(T origin, const char* xname, char* buf, size_t buf_size, T n) {
-  if (n < origin) {
-    if (n <= origin - 10000) {
-      return nullptr;
-    }
-    os::snprintf_checked(buf, buf_size, "%s-" INT32_FORMAT, xname, jint(origin - n));
-  } else if (n > origin) {
-    if (n >= origin + 10000) {
-      return nullptr;
-    }
-    os::snprintf_checked(buf, buf_size, "%s+" INT32_FORMAT, xname, jint(n - origin));
-  } else {
-    return xname;
-  }
-  return buf;
-}
-
-static const char* intname(char* buf, size_t buf_size, jint n) {
-  const char* str = intnamenear<jint>(max_jint, "maxint", buf, buf_size, n);
-  if (str != nullptr) {
-    return str;
-  }
-
-  str = intnamenear<jint>(min_jint, "minint", buf, buf_size, n);
-  if (str != nullptr) {
-    return str;
-  }
-
-  os::snprintf_checked(buf, buf_size, INT32_FORMAT, n);
-  return buf;
-}
-
-static const char* uintname(char* buf, size_t buf_size, juint n) {
-  const char* str = intnamenear<juint>(max_juint, "maxuint", buf, buf_size, n);
-  if (str != nullptr) {
-    return str;
-  }
-
-  str = intnamenear<juint>(max_jint, "maxint", buf, buf_size, n);
-  if (str != nullptr) {
-    return str;
-  }
-
-  os::snprintf_checked(buf, buf_size, UINT32_FORMAT"u", n);
-  return buf;
-}
-
-static const char* longname(char* buf, size_t buf_size, jlong n) {
-  const char* str = intnamenear<jlong>(max_jlong, "maxlong", buf, buf_size, n);
-  if (str != nullptr) {
-    return str;
-  }
-
-  str = intnamenear<jlong>(min_jlong, "minlong", buf, buf_size, n);
-  if (str != nullptr) {
-    return str;
-  }
-
-  str = intnamenear<jlong>(max_juint, "maxuint", buf, buf_size, n);
-  if (str != nullptr) {
-    return str;
-  }
-
-  str = intnamenear<jlong>(max_jint, "maxint", buf, buf_size, n);
-  if (str != nullptr) {
-    return str;
-  }
-
-  str = intnamenear<jlong>(min_jint, "minint", buf, buf_size, n);
-  if (str != nullptr) {
-    return str;
-  }
-
-  os::snprintf_checked(buf, buf_size, JLONG_FORMAT, n);
-  return buf;
-}
-
-static const char* ulongname(char* buf, size_t buf_size, julong n) {
-  const char* str = intnamenear<julong>(max_julong, "maxulong", buf, buf_size, n);
-  if (str != nullptr) {
-    return str;
-  }
-
-  str = intnamenear<julong>(max_jlong, "maxlong", buf, buf_size, n);
-  if (str != nullptr) {
-    return str;
-  }
-
-  str = intnamenear<julong>(max_juint, "maxuint", buf, buf_size, n);
-  if (str != nullptr) {
-    return str;
-  }
-
-  str = intnamenear<julong>(max_jint, "maxint", buf, buf_size, n);
-  if (str != nullptr) {
-    return str;
-  }
-
-  os::snprintf_checked(buf, buf_size, JULONG_FORMAT"u", n);
-  return buf;
-}
-
-template <class U>
-static const char* bitname(char* buf, size_t buf_size, U zeros, U ones) {
-  constexpr juint W = sizeof(U) * 8;
-
-  if (buf_size < W + 1) {
-    return "#####";
-  }
-
-  for (juint i = 0; i < W; i++) {
-    U mask = U(1) << (W - 1 - i);
-    if ((zeros & mask) != 0) {
-      buf[i] = '0';
-    } else if ((ones & mask) != 0) {
-      buf[i] = '1';
-    } else {
-      buf[i] = '*';
-    }
-  }
-  buf[W] = 0;
-  return buf;
-}
-
 void TypeInt::dump2( Dict &d, uint depth, outputStream *st ) const {
   char buf1[40], buf2[40], buf3[40], buf4[40], buf5[40];
   if (int_type_equal(this, TypeInt::INT)) {
