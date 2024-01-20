@@ -45,11 +45,13 @@ class ShenandoahConcurrentGC : public ShenandoahGC {
 private:
   ShenandoahConcurrentMark  _mark;
   ShenandoahDegenPoint      _degen_point;
+  bool                      _abbreviated;
 
 public:
   ShenandoahConcurrentGC();
   bool collect(GCCause::Cause cause);
   ShenandoahDegenPoint degen_point() const;
+  bool abbreviated() const { return _abbreviated; }
 
   // Cancel ongoing concurrent GC
   static void cancel();

@@ -39,9 +39,12 @@ public:
 class ShenandoahCollectorPolicy : public CHeapObj<mtGC> {
 private:
   size_t _success_concurrent_gcs;
+  size_t _abbreviated_concurrent_gcs;
   size_t _success_degenerated_gcs;
+  size_t _abbreviated_degenerated_gcs;
   // Written by control thread, read by mutators
   volatile size_t _success_full_gcs;
+  uint _consecutive_degenerated_gcs;
   size_t _alloc_failure_degenerated;
   size_t _alloc_failure_degenerated_upgrade_to_full;
   size_t _alloc_failure_full;
@@ -49,13 +52,12 @@ private:
   size_t _explicit_full;
   size_t _implicit_concurrent;
   size_t _implicit_full;
+  size_t _cycle_counter;
   size_t _degen_points[ShenandoahGC::_DEGENERATED_LIMIT];
 
   ShenandoahSharedFlag _in_shutdown;
-
   ShenandoahTracer* _tracer;
 
-  size_t _cycle_counter;
 
 public:
   ShenandoahCollectorPolicy();
@@ -64,8 +66,8 @@ public:
   // These two encompass the entire cycle.
   void record_cycle_start();
 
-  void record_success_concurrent();
-  void record_success_degenerated();
+  void record_success_concurrent(bool is_abbreviated);
+  void record_success_degenerated(bool is_abbreviated);
   void record_success_full();
   void record_alloc_failure_to_degenerated(ShenandoahGC::ShenandoahDegenPoint point);
   void record_alloc_failure_to_full();
@@ -86,6 +88,10 @@ public:
 
   size_t full_gc_count() const {
     return _success_full_gcs + _alloc_failure_degenerated_upgrade_to_full;
+  }
+
+  inline size_t consecutive_degenerated_gc_count() const {
+    return _consecutive_degenerated_gcs;
   }
 };
 
