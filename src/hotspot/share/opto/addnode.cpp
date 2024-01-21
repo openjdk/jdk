@@ -806,6 +806,13 @@ Node* OrINode::Ideal(PhaseGVN* phase, bool can_reshape) {
       return new RotateRightNode(in(1)->in(1), shift, TypeInt::INT);
     }
   }
+
+  // Convert "~a | ~b" into "~(a & b)"
+  if (AddNode::is_not(phase, in(1), T_INT) && AddNode::is_not(phase, in(2), T_INT)) {
+    Node* and_a_b = new AndINode(in(1)->in(1), in(2)->in(1));
+    Node* tn = phase->transform(and_a_b);
+    return AddNode::make_not(phase, tn, T_INT);
+  }
   return nullptr;
 }
 
@@ -872,6 +879,14 @@ Node* OrLNode::Ideal(PhaseGVN* phase, bool can_reshape) {
       return new RotateRightNode(in(1)->in(1), shift, TypeLong::LONG);
     }
   }
+
+  // Convert "~a | ~b" into "~(a & b)"
+  if (AddNode::is_not(phase, in(1), T_LONG) && AddNode::is_not(phase, in(2), T_LONG)) {
+    Node* and_a_b = new AndLNode(in(1)->in(1), in(2)->in(1));
+    Node* tn = phase->transform(and_a_b);
+    return AddNode::make_not(phase, tn, T_LONG);
+  }
+
   return nullptr;
 }
 

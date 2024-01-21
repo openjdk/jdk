@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,13 +25,11 @@
 
 package sun.security.ec;
 
-import sun.security.ec.point.AffinePoint;
 import sun.security.ec.point.Point;
 import sun.security.util.ArrayUtil;
 import sun.security.util.CurveDB;
 import sun.security.util.ECUtil;
 import sun.security.util.NamedCurve;
-import sun.security.util.math.ImmutableIntegerModuloP;
 import sun.security.util.math.IntegerFieldModuloP;
 import sun.security.util.math.MutableIntegerModuloP;
 import sun.security.util.math.SmallValue;
@@ -63,7 +61,7 @@ public final class ECDHKeyAgreement extends KeyAgreementSpi {
 
     // private key, if initialized
     private ECPrivateKey privateKey;
-    ECOperations privateKeyOps;
+    private ECOperations privateKeyOps;
 
     // public key, non-null between doPhase() & generateSecret() only
     private ECPublicKey publicKey;
@@ -80,20 +78,26 @@ public final class ECDHKeyAgreement extends KeyAgreementSpi {
     // Generic init
     private void init(Key key) throws
         InvalidKeyException, InvalidAlgorithmParameterException {
+        privateKey = null;
+        privateKeyOps = null;
+        publicKey = null;
+
         if (!(key instanceof PrivateKey)) {
             throw new InvalidKeyException("Key must be instance of PrivateKey");
         }
-        privateKey = (ECPrivateKey)ECKeyFactory.toECKey(key);
-        publicKey = null;
+
+        ECPrivateKey ecPrivateKey = (ECPrivateKey)ECKeyFactory.toECKey(key);
         Optional<ECOperations> opsOpt =
-            ECOperations.forParameters(privateKey.getParams());
+            ECOperations.forParameters(ecPrivateKey.getParams());
         if (opsOpt.isEmpty()) {
-            NamedCurve nc = CurveDB.lookup(privateKey.getParams());
+            NamedCurve nc = CurveDB.lookup(ecPrivateKey.getParams());
             throw new InvalidAlgorithmParameterException(
                 "Curve not supported: " + (nc != null ? nc.toString() :
                     "unknown"));
         }
-        ECUtil.checkPrivateKey(privateKey);
+        ECUtil.checkPrivateKey(ecPrivateKey);
+
+        privateKey = ecPrivateKey;
         privateKeyOps = opsOpt.get();
     }
 
@@ -139,14 +143,14 @@ public final class ECDHKeyAgreement extends KeyAgreementSpi {
                 ("Key must be a PublicKey with algorithm EC");
         }
 
+        // Validate public key
+        validate(privateKeyOps, (ECPublicKey) key);
+
         this.publicKey = (ECPublicKey) key;
 
         int keyLenBits =
             publicKey.getParams().getCurve().getField().getFieldSize();
         secretLen = (keyLenBits + 7) >> 3;
-
-        // Validate public key
-        validate(privateKeyOps, publicKey);
 
         return null;
     }
@@ -154,11 +158,7 @@ public final class ECDHKeyAgreement extends KeyAgreementSpi {
     // Verify that x and y are integers in the interval [0, p - 1].
     private static void validateCoordinate(BigInteger c, BigInteger mod)
         throws InvalidKeyException{
-        if (c.compareTo(BigInteger.ZERO) < 0) {
-            throw new InvalidKeyException("Invalid coordinate");
-        }
-
-        if (c.compareTo(mod) >= 0) {
+        if (c.compareTo(BigInteger.ZERO) < 0 || c.compareTo(mod) >= 0) {
             throw new InvalidKeyException("Invalid coordinate");
         }
     }
