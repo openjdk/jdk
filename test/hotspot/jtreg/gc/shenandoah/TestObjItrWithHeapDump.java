@@ -41,9 +41,8 @@ public class TestObjItrWithHeapDump {
         String[] cmds = Arrays.copyOf(args, args.length + 2);
         cmds[args.length] = TestObjItrWithHeapDump.class.getName();
         cmds[args.length + 1] = "test";
-        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(cmds);
+        OutputAnalyzer output = ProcessTools.executeLimitedTestJava(cmds);
 
-        OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldHaveExitValue(0);
         output.shouldContain("Class Histogram (before full gc)");
         output.shouldContain("Class Histogram (after full gc)");

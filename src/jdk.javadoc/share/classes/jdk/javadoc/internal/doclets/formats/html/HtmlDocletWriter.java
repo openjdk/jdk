@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@ import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
@@ -70,6 +71,7 @@ import com.sun.source.doctree.EndElementTree;
 import com.sun.source.doctree.EntityTree;
 import com.sun.source.doctree.ErroneousTree;
 import com.sun.source.doctree.EscapeTree;
+import com.sun.source.doctree.IndexTree;
 import com.sun.source.doctree.InheritDocTree;
 import com.sun.source.doctree.InlineTagTree;
 import com.sun.source.doctree.LinkTree;
@@ -82,11 +84,13 @@ import com.sun.source.util.SimpleDocTreeVisitor;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.Entity;
 import jdk.javadoc.internal.doclets.formats.html.markup.Head;
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlAttr;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlDocument;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlId;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.Links;
+import jdk.javadoc.internal.doclets.formats.html.markup.ListBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.RawHtml;
 import jdk.javadoc.internal.doclets.formats.html.markup.Script;
 import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
@@ -162,6 +166,8 @@ public abstract class HtmlDocletWriter {
 
     private final Set<String> headingIds = new HashSet<>();
 
+    protected final TableOfContents tableOfContents;
+
     /**
      * To check whether the repeated annotations is documented or not.
      */
@@ -217,6 +223,7 @@ public abstract class HtmlDocletWriter {
         this.pathToRoot = path.parent().invert();
         this.docPaths = configuration.docPaths;
         this.mainBodyScript = new Script();
+        this.tableOfContents = new TableOfContents(this);
 
         if (generating) {
             writeGenerating();
@@ -1465,6 +1472,15 @@ public abstract class HtmlDocletWriter {
                 sb.append(text.getBody());
             } else if (docTree instanceof LiteralTree literal) {
                 sb.append(literal.getBody().getBody());
+            } else if (docTree instanceof IndexTree index) {
+                DocTree searchTerm = index.getSearchTerm();
+                String tagText = (searchTerm instanceof TextTree tt) ? tt.getBody() : "";
+                if (tagText.charAt(0) == '"' && tagText.charAt(tagText.length() - 1) == '"') {
+                    tagText = tagText.substring(1, tagText.length() - 1);
+                }
+                sb.append(tagText);
+            } else if (docTree instanceof EntityTree entity) {
+                sb.append(utils.docTrees.getCharacters(entity));
             } else if (docTree instanceof LinkTree link) {
                 var label = link.getLabel();
                 sb.append(label.isEmpty() ? link.getReference().getSignature() : label.toString());
@@ -1483,6 +1499,8 @@ public abstract class HtmlDocletWriter {
             HtmlId htmlId = htmlIds.forHeading(headingContent, headingIds);
             id = htmlId.name();
             attrs.add("id=\"").add(htmlId.name()).add("\"");
+        } else {
+            headingIds.add(id);
         }
         // Generate index item
         if (!headingContent.isEmpty() && configuration.indexBuilder != null) {
@@ -1492,6 +1510,10 @@ public abstract class HtmlDocletWriter {
                     resources.getText("doclet.Section"),
                     new DocLink(path, id));
             configuration.indexBuilder.add(item);
+        }
+        // Record second-level headings for use in table of contents
+        if (tableOfContents != null && node.getName().toString().equalsIgnoreCase("h2")) {
+            tableOfContents.addLink(HtmlId.of(id), Text.of(headingContent));
         }
     }
 

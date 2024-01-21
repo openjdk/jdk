@@ -1105,10 +1105,11 @@ void os::print_summary_info(outputStream* st, char* buf, size_t buflen) {
   st->cr();
 }
 
+static constexpr int secs_per_day  = 86400;
+static constexpr int secs_per_hour = 3600;
+static constexpr int secs_per_min  = 60;
+
 void os::print_date_and_time(outputStream *st, char* buf, size_t buflen) {
-  const int secs_per_day  = 86400;
-  const int secs_per_hour = 3600;
-  const int secs_per_min  = 60;
 
   time_t tloc;
   (void)time(&tloc);
@@ -1134,9 +1135,15 @@ void os::print_date_and_time(outputStream *st, char* buf, size_t buflen) {
   }
 
   double t = os::elapsedTime();
+  st->print(" elapsed time: ");
+  print_elapsed_time(st, t);
+  st->cr();
+}
+
+void os::print_elapsed_time(outputStream* st, double time) {
   // NOTE: a crash using printf("%f",...) on Linux was historically noted here.
-  int eltime = (int)t;  // elapsed time in seconds
-  int eltimeFraction = (int) ((t - eltime) * 1000000);
+  int eltime = (int)time;  // elapsed time in seconds
+  int eltimeFraction = (int) ((time - eltime) * 1000000);
 
   // print elapsed time in a human-readable format:
   int eldays = eltime / secs_per_day;
@@ -1146,7 +1153,7 @@ void os::print_date_and_time(outputStream *st, char* buf, size_t buflen) {
   int elmins = (eltime - day_secs - hour_secs) / secs_per_min;
   int minute_secs = elmins * secs_per_min;
   int elsecs = (eltime - day_secs - hour_secs - minute_secs);
-  st->print_cr(" elapsed time: %d.%06d seconds (%dd %dh %dm %ds)", eltime, eltimeFraction, eldays, elhours, elmins, elsecs);
+  st->print("%d.%06d seconds (%dd %dh %dm %ds)", eltime, eltimeFraction, eldays, elhours, elmins, elsecs);
 }
 
 

@@ -1137,10 +1137,7 @@ static void install_post_call_nop_displacement(nmethod* nm, address pc) {
   int oopmap_slot = nm->oop_maps()->find_slot_for_offset(int((intptr_t) pc - (intptr_t) nm->code_begin()));
   if (oopmap_slot < 0) { // this can happen at asynchronous (non-safepoint) stackwalks
     log_debug(codecache)("failed to find oopmap for cb: " INTPTR_FORMAT " offset: %d", cbaddr, (int) offset);
-  } else if (((oopmap_slot & 0xff) == oopmap_slot) && ((offset & 0xffffff) == offset)) {
-    jint value = (oopmap_slot << 24) | (jint) offset;
-    nop->patch(value);
-  } else {
+  } else if (!nop->patch(oopmap_slot, offset)) {
     log_debug(codecache)("failed to encode %d %d", oopmap_slot, (int) offset);
   }
 }
@@ -3019,7 +3016,7 @@ void nmethod::print_nmethod_labels(outputStream* stream, address block_begin, bo
         assert(sig_index == sizeargs, "");
       }
       const char* spname = "sp"; // make arch-specific?
-      intptr_t out_preserve = SharedRuntime::java_calling_convention(sig_bt, regs, sizeargs);
+      SharedRuntime::java_calling_convention(sig_bt, regs, sizeargs);
       int stack_slot_offset = this->frame_size() * wordSize;
       int tab1 = 14, tab2 = 24;
       int sig_index = 0;

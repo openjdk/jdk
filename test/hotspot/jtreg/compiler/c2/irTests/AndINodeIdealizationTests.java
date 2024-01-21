@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,22 +38,24 @@ public class AndINodeIdealizationTests {
         TestFramework.run();
     }
 
-    @Run(test = { "test1" })
+    @Run(test = { "test1", "test2" })
     public void runMethod() {
         int a = RunInfo.getRandom().nextInt();
+        int b = RunInfo.getRandom().nextInt();
 
         int min = Integer.MIN_VALUE;
         int max = Integer.MAX_VALUE;
 
-        assertResult(0);
-        assertResult(a);
-        assertResult(min);
-        assertResult(max);
+        assertResult(0, 0);
+        assertResult(a, b);
+        assertResult(min, min);
+        assertResult(max, max);
     }
 
     @DontCompile
-    public void assertResult(int a) {
+    public void assertResult(int a, int b) {
         Asserts.assertEQ((0 - a) & 1, test1(a));
+        Asserts.assertEQ((~a) & (~b), test2(a, b));
     }
 
     @Test
@@ -62,5 +64,14 @@ public class AndINodeIdealizationTests {
     // Checks (0 - x) & 1 => x & 1
     public int test1(int x) {
         return (0 - x) & 1;
+    }
+
+    @Test
+    @IR(failOn = { IRNode.AND })
+    @IR(counts = { IRNode.OR, "1",
+                   IRNode.XOR, "1" })
+    // Checks (~a) & (~b) => ~(a | b)
+    public int test2(int a, int b) {
+        return (~a) & (~b);
     }
 }
