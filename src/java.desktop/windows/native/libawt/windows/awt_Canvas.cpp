@@ -202,8 +202,9 @@ MsgRouting AwtCanvas::HandleEvent(MSG *msg, BOOL synthetic)
     return AwtComponent::HandleEvent(msg, synthetic);
 }
 
-void AwtCanvas::_SetEraseBackground(void *param) {
-    JNIEnv *env = (JNIEnv *) JNU_GetEnv(jvm, JNI_VERSION_1_2);
+void AwtCanvas::_SetEraseBackground(void *param)
+{
+    JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
 
     SetEraseBackgroundStruct *sebs = static_cast<SetEraseBackgroundStruct *>(param);
     jobject canvas = sebs->canvas;
