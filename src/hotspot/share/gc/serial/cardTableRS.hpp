@@ -32,6 +32,7 @@
 class Space;
 class TenuredGeneration;
 class TenuredSpace;
+class OldGenScanClosure;
 
 // This RemSet uses a card table both as shared data structure
 // for a mod ref barrier set and for the rem set information.
@@ -61,7 +62,7 @@ class CardTableRS : public CardTable {
 public:
   CardTableRS(MemRegion whole_heap);
 
-  void younger_refs_in_space_iterate(TenuredSpace* sp, OopIterateClosure* cl);
+  void younger_refs_in_space_iterate(TenuredSpace* sp);
 
   virtual void verify_used_region_at_save_marks(Space* sp) const NOT_DEBUG_RETURN;
 
@@ -88,7 +89,7 @@ public:
   // of mr. Clears the dirty cards as they are processed.
   void non_clean_card_iterate(TenuredSpace* sp,
                               MemRegion mr,
-                              OopIterateClosure* cl,
+                              OldGenScanClosure* cl,
                               CardTableRS* ct);
 
   bool is_in_young(const void* p) const override;
