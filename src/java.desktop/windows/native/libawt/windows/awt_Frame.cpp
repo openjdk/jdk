@@ -1336,8 +1336,9 @@ ret:
     }
 }
 
-void AwtFrame::_SetState(void *param) {
-    JNIEnv *env = (JNIEnv *) JNU_GetEnv(jvm, JNI_VERSION_1_2);
+void AwtFrame::_SetState(void *param)
+{
+    JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
 
     SetStateStruct *sss = static_cast<SetStateStruct *>(param);
     jobject self = sss->frame;
@@ -1578,7 +1579,7 @@ ret:
 
 void AwtFrame::_NotifyModalBlocked(void *param)
 {
-    JNIEnv *env = (JNIEnv *) JNU_GetEnv(jvm, JNI_VERSION_1_2);
+    JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
 
     NotifyModalBlockedStruct *nmbs = static_cast<NotifyModalBlockedStruct *>(param);
     jobject self = nmbs->frame;
