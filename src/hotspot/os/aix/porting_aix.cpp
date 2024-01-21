@@ -250,7 +250,7 @@ bool AixSymbols::get_function_name (
           p_name[namelen-1] = '\0';
         }
         if (demangled_name != nullptr) {
-          ALLOW_C_FUNCTION(free, demangled_name);
+          ALLOW_C_FUNCTION(::free, (demangled_name));
         }
       }
     } else {
