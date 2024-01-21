@@ -30,16 +30,4 @@
 #define PRAGMA_DIAG_PUSH _Pragma("warning(push)")
 #define PRAGMA_DIAG_POP  _Pragma("warning(pop)")
 
-// ALLOW_C_FUNCTIONS disables deprecation warnings over the statement scope.
-// Some of the functions we're interested in allowing are conditionally
-// deprecated on Windows, under the control of various preprocessor defines
-// such as _CRT_SECURE_NO_WARNINGS.  Annotating vetted uses allows those
-// warnings to catch unchecked uses.
-
-#define ALLOW_C_FUNCTION(name, ...)             \
-  PRAGMA_DIAG_PUSH                              \
-  PRAGMA_DISABLE_MSVC_WARNING(4996)             \
-  ::name(__VA_ARGS__)                           \
-  PRAGMA_DIAG_POP
-
 #endif // SHARE_UTILITIES_COMPILERWARNINGS_VISCPP_HPP
