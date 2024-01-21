@@ -524,7 +524,7 @@ void ShenandoahControlThread::handle_requested_gc(GCCause::Cause cause) {
   }
 }
 
-void ShenandoahControlThread::handle_alloc_failure(ShenandoahAllocRequest& req) {
+void ShenandoahControlThread::handle_alloc_failure(ShenandoahAllocRequest& req, bool block) {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
 
   assert(current()->is_Java_thread(), "expect Java thread here");
@@ -539,9 +539,12 @@ void ShenandoahControlThread::handle_alloc_failure(ShenandoahAllocRequest& req) 
     heap->cancel_gc(GCCause::_allocation_failure);
   }
 
-  MonitorLocker ml(&_alloc_failure_waiters_lock);
-  while (is_alloc_failure_gc()) {
-    ml.wait();
+
+  if (block) {
+    MonitorLocker ml(&_alloc_failure_waiters_lock);
+    while (is_alloc_failure_gc()) {
+      ml.wait();
+    }
   }
 }
 

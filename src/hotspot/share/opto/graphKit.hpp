@@ -82,7 +82,8 @@ class GraphKit : public Phase {
 
 #ifdef ASSERT
   ~GraphKit() {
-    assert(!has_exceptions(), "user must call transfer_exceptions_into_jvms");
+    assert(failing() || !has_exceptions(),
+           "unless compilation failed, user must call transfer_exceptions_into_jvms");
   }
 #endif
 
@@ -193,7 +194,7 @@ class GraphKit : public Phase {
   bool stopped();
 
   // Tell if this method or any caller method has exception handlers.
-  bool has_ex_handler();
+  bool has_exception_handler();
 
   // Save an exception without blowing stack contents or other JVM state.
   // (The extra pointer is stuck with add_req on the map, beyond the JVMS.)
@@ -897,14 +898,14 @@ class GraphKit : public Phase {
     return iff;
   }
 
-  void add_empty_predicates(int nargs = 0);
-  void add_empty_predicate_impl(Deoptimization::DeoptReason reason, int nargs);
+  void add_parse_predicates(int nargs = 0);
+  void add_parse_predicate(Deoptimization::DeoptReason reason, int nargs);
 
   Node* make_constant_from_field(ciField* field, Node* obj);
 
   // Vector API support (implemented in vectorIntrinsics.cpp)
   Node* box_vector(Node* in, const TypeInstPtr* vbox_type, BasicType elem_bt, int num_elem, bool deoptimize_on_exception = false);
-  Node* unbox_vector(Node* in, const TypeInstPtr* vbox_type, BasicType elem_bt, int num_elem);
+  Node* unbox_vector(Node* in, const TypeInstPtr* vbox_type, BasicType elem_bt, int num_elem, bool shuffle_to_vector = false);
   Node* vector_shift_count(Node* cnt, int shift_op, BasicType bt, int num_elem);
 };
 

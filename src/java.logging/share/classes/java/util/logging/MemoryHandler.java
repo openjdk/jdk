@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -178,7 +178,21 @@ public class MemoryHandler extends Handler {
      *                 silently ignored and is not published
      */
     @Override
-    public synchronized void publish(LogRecord record) {
+    public void publish(LogRecord record) {
+        if (tryUseLock()) {
+            try {
+                publish0(record);
+            } finally {
+                unlock();
+            }
+        } else {
+            synchronized (this) {
+                publish0(record);
+            }
+        }
+    }
+
+    private void publish0(LogRecord record) {
         if (!isLoggable(record)) {
             return;
         }
@@ -200,7 +214,21 @@ public class MemoryHandler extends Handler {
      * <p>
      * The buffer is then cleared.
      */
-    public synchronized void push() {
+    public void push() {
+        if (tryUseLock()) {
+            try {
+                push0();
+            } finally {
+                unlock();
+            }
+        } else {
+            synchronized (this) {
+                push0();
+            }
+        }
+    }
+
+    private void push0() {
         for (int i = 0; i < count; i++) {
             int ix = (start+i)%buffer.length;
             LogRecord record = buffer[ix];
@@ -244,7 +272,21 @@ public class MemoryHandler extends Handler {
      * @throws  SecurityException  if a security manager exists and if
      *             the caller does not have {@code LoggingPermission("control")}.
      */
-    public synchronized void setPushLevel(Level newLevel) throws SecurityException {
+    public void setPushLevel(Level newLevel) throws SecurityException {
+        if (tryUseLock()) {
+            try {
+                setPushLevel0(newLevel);
+            } finally {
+                unlock();
+            }
+        } else {
+            synchronized (this) {
+                setPushLevel0(newLevel);
+            }
+        }
+    }
+
+    private void setPushLevel0(Level newLevel) throws SecurityException {
         if (newLevel == null) {
             throw new NullPointerException();
         }

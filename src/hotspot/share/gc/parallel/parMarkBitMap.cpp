@@ -26,10 +26,10 @@
 #include "gc/parallel/parMarkBitMap.inline.hpp"
 #include "gc/parallel/psCompactionManager.inline.hpp"
 #include "gc/parallel/psParallelCompact.inline.hpp"
+#include "nmt/memTracker.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/os.hpp"
-#include "services/memTracker.hpp"
 #include "utilities/align.hpp"
 #include "utilities/bitMap.inline.hpp"
 
@@ -51,8 +51,8 @@ ParMarkBitMap::initialize(MemRegion covered_region)
     MAX2(page_sz, granularity);
   ReservedSpace rs(_reserved_byte_size, rs_align, page_sz);
   const size_t used_page_sz = rs.page_size();
-  os::trace_page_sizes("Mark Bitmap", raw_bytes, raw_bytes, used_page_sz,
-                       rs.base(), rs.size());
+  os::trace_page_sizes("Mark Bitmap", raw_bytes, raw_bytes,
+                       rs.base(), rs.size(), used_page_sz);
 
   MemTracker::record_virtual_memory_type((address)rs.base(), mtGC);
 

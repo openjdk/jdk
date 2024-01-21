@@ -1,24 +1,7 @@
-## Apache Santuario v2.3.0
-
-### Apache Santuario Notice
-<pre>
-
-  Apache Santuario - XML Security for Java
-  Copyright 1999-2021 The Apache Software Foundation
-
-  This product includes software developed at
-  The Apache Software Foundation (http://www.apache.org/).
-
-  It was originally based on software copyright (c) 2001, Institute for
-  Data Communications Systems, <http://www.nue.et-inf.uni-siegen.de/>.
-
-  The development of this software was partly funded by the European
-  Commission in the <WebSig> project in the ISIS Programme.
-
-</pre>
+## Apache Santuario v3.0.3
 
 ### Apache 2.0 License
-<pre>
+```
 
                               Apache License
                         Version 2.0, January 2004
@@ -222,4 +205,23 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 
-</pre>
+```
+
+### Apache Santuario Notice
+```
+
+Apache Santuario - XML Security for Java
+Copyright 1999-2023 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+It was originally based on software copyright (c) 2001, Institute for
+Data Communications Systems, <http://www.nue.et-inf.uni-siegen.de/>.
+
+The development of this software was partly funded by the European
+Commission in the <WebSig> project in the ISIS Programme.
+
+This product contains software that is
+copyright (c) 2021, Oracle and/or its affiliates.
+```

@@ -95,4 +95,3 @@ void PretouchTask::pretouch(const char* task_name, char* start_address, char* en
     task.work(0);
   }
 }
-

@@ -25,8 +25,8 @@
 #ifndef SHARE_CDS_ARCHIVEUTILS_HPP
 #define SHARE_CDS_ARCHIVEUTILS_HPP
 
+#include "cds/serializeClosure.hpp"
 #include "logging/log.hpp"
-#include "memory/iterator.hpp"
 #include "memory/virtualspace.hpp"
 #include "utilities/bitMap.hpp"
 #include "utilities/exceptions.hpp"
@@ -184,11 +184,13 @@ public:
     _dump_region = r;
   }
 
-  void do_ptr(void** p) {
-    _dump_region->append_intptr_t((intptr_t)*p, true);
-  }
+  void do_ptr(void** p);
 
   void do_u4(u4* p) {
+    _dump_region->append_intptr_t((intptr_t)(*p));
+  }
+
+  void do_int(int* p) {
     _dump_region->append_intptr_t((intptr_t)(*p));
   }
 
@@ -200,7 +202,6 @@ public:
     _dump_region->append_intptr_t((intptr_t)tag);
   }
 
-  void do_oop(oop* o);
   void do_region(u_char* start, size_t size);
   bool reading() const { return false; }
 };
@@ -221,9 +222,9 @@ public:
 
   void do_ptr(void** p);
   void do_u4(u4* p);
+  void do_int(int* p);
   void do_bool(bool *p);
   void do_tag(int tag);
-  void do_oop(oop *p);
   void do_region(u_char* start, size_t size);
   bool reading() const { return true; }
 };

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,10 +31,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.StringJoiner;
+import jdk.jfr.internal.util.SpellChecker;
 
 final class ArgumentParser {
     private final Map<String, Object> options = new HashMap<>();
     private final Map<String, Object> extendedOptions = new HashMap<>();
+    private final List<String> conflictedOptions = new ArrayList<>();
     private final StringBuilder builder = new StringBuilder();
     private final String text;
     private final char delimiter;
@@ -42,8 +44,7 @@ final class ArgumentParser {
     private final String valueDelimiter;
     private final Argument[] arguments;
     private int position;
-
-    private final List<String> conflictedOptions = new ArrayList<>();
+    private int argumentIndex;
 
     ArgumentParser(Argument[] arguments, String text, char delimiter) {
         this.text = text;
@@ -60,6 +61,11 @@ final class ArgumentParser {
             String value = null;
             if (accept('=')) {
                 value = readText(valueDelimiter);
+            } else {
+                if (hasArgumentsLeft()) {
+                    value = key;
+                    key = nextArgument().name();
+                }
             }
             if (!atEnd() && !accept(delimiter)) { // must be followed by delimiter
                 throw new IllegalArgumentException("Expected delimiter, but found " + currentChar());
@@ -70,6 +76,25 @@ final class ArgumentParser {
         checkConflict();
         checkMandatory();
         return options;
+    }
+
+    private boolean hasArgumentsLeft() {
+        for (int index = argumentIndex; index < arguments.length; index++) {
+            if (!arguments[index].option()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private Argument nextArgument() {
+        while (argumentIndex < arguments.length) {
+            Argument argument = arguments[argumentIndex++];
+            if (!argument.option()) {
+                return argument;
+            }
+        }
+        return null;
     }
 
     protected void checkConflict() {
@@ -85,26 +110,27 @@ final class ArgumentParser {
             sb.append("s ");
             StringJoiner sj = new StringJoiner(", ");
             while (conflictedOptions.size() > 1) {
-                sj.add(conflictedOptions.remove(0));
+                sj.add(conflictedOptions.removeFirst());
             }
             sb.append(sj);
             sb.append(" and");
         }
 
         sb.append(" ");
-        sb.append(conflictedOptions.remove(0));
+        sb.append(conflictedOptions.removeFirst());
         sb.append(" can only be specified once.");
         throw new IllegalArgumentException(sb.toString());
     }
 
-    private void checkMandatory() {
+    public boolean checkMandatory() {
         for (Argument arg : arguments) {
             if (!options.containsKey(arg.name())) {
                 if (arg.mandatory()) {
-                    throw new IllegalArgumentException("The argument '" + arg.name() + "' is mandatory");
+                    return false;
                 }
             }
         }
+        return true;
     }
 
     @SuppressWarnings({"unchecked", "rawtypes"})
@@ -194,12 +220,29 @@ final class ArgumentParser {
 
     private Object value(String name, String type, String text) {
         return switch (type) {
+            case "JULONG" -> parseLong(name, text);
             case "STRING", "STRING SET" -> text == null ? "" : text;
             case "BOOLEAN" -> parseBoolean(name, text);
             case "NANOTIME" -> parseNanotime(name, text);
             case "MEMORY SIZE" -> parseMemorySize(name, text);
             default -> throw new InternalError("Unknown type: " + type);
         };
+    }
+
+    private Long parseLong(String name, String text) {
+        if (text == null) {
+            throw new IllegalArgumentException("Parsing error long value: syntax error, value is null");
+        }
+        try {
+            long value = Long.parseLong(text);
+            if (value >= 0) {
+                return value;
+            }
+        } catch (NumberFormatException nfe) {
+          // fall through
+        }
+        String msg = "Integer parsing error in command argument '" + name + "'. Could not parse: " + text + ".";
+        throw new IllegalArgumentException(msg);
     }
 
     private Boolean parseBoolean(String name, String text) {
@@ -309,61 +352,17 @@ final class ArgumentParser {
     }
 
     void checkSpelling(Set<String> excludeSet) {
+        List<String> alternatives = new ArrayList<>();
+        for (Argument a : arguments) {
+            alternatives.add(a.name());
+        }
         for (String name : extendedOptions.keySet()) {
             if (!excludeSet.contains(name)) { // ignore names specified in .jfc
-                checkSpellingError(name);
-            }
-        }
-    }
-
-    private void checkSpellingError(String name) {
-        for (Argument a : arguments) {
-            String expected = a.name();
-            String s = name.toLowerCase();
-            int lengthDifference = expected.length() - s.length();
-            boolean spellingError = false;
-            if (lengthDifference == 0) {
-                if (expected.equals(s)) {
-                    spellingError = true; // incorrect case, or we wouldn't be here
-                } else {
-                    if (s.length() < 6) {
-                        spellingError = diff(expected, s) < 2; // one incorrect letter
-                    } else {
-                        spellingError = diff(expected, s) < 3; // two incorrect letter
-                    }
+                String suggestion = SpellChecker.check(name, alternatives);
+                if (suggestion != null) {
+                    throw new IllegalArgumentException("Error! Did you mean '" + suggestion + "' instead of '" + name + "'?");
                 }
             }
-            if (lengthDifference == 1) {
-                spellingError = inSequence(expected, s); // missing letter
-            }
-            if (lengthDifference == -1) {
-                spellingError = inSequence(s, expected); // additional letter
-            }
-            if (spellingError) {
-                throw new IllegalArgumentException("Error! Did you mean '" + expected + "' instead of '" + name + "'?");
-            }
         }
-    }
-
-    private int diff(String a, String b) {
-        int count = a.length();
-        for (int i = 0; i < a.length(); i++) {
-            if (a.charAt(i) == b.charAt(i)) {
-                count--;
-            }
-        }
-        return count;
-    }
-
-    private boolean inSequence(String longer, String shorter) {
-        int l = 0;
-        int s = 0;
-        while (l < longer.length() && s < shorter.length()) {
-            if (longer.charAt(l) == shorter.charAt(s)) {
-                s++;
-            }
-            l++;
-        }
-        return shorter.length() == s; // if 0, all letters in longer found in shorter
     }
 }

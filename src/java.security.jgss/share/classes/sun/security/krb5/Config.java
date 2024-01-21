@@ -31,7 +31,6 @@
 package sun.security.krb5;
 
 import java.io.*;
-import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.Path;
@@ -43,6 +42,7 @@ import java.security.AccessController;
 import java.security.PrivilegedExceptionAction;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
 import jdk.internal.util.OperatingSystem;
 import sun.net.dns.ResolverConfiguration;
@@ -610,9 +610,8 @@ public class Config {
                 } else if (line.startsWith("includedir ")) {
                     Path dir = Paths.get(
                             line.substring("includedir ".length()).trim());
-                    try (DirectoryStream<Path> files =
-                                 Files.newDirectoryStream(dir)) {
-                        for (Path p: files) {
+                    try (Stream<Path> files = Files.list(dir)) {
+                        for (Path p: files.sorted().toList()) {
                             if (Files.isDirectory(p)) continue;
                             String name = p.getFileName().toString();
                             if (name.matches("[a-zA-Z0-9_-]+") ||
@@ -671,6 +670,9 @@ public class Config {
     private List<String> loadConfigFile(final String fileName)
             throws IOException, KrbException {
 
+        if (DEBUG) {
+            System.out.println("Loading config file from " + fileName);
+        }
         List<String> result = new ArrayList<>();
         List<String> raw = new ArrayList<>();
         Set<Path> dupsCheck = new HashSet<>();
@@ -781,6 +783,9 @@ public class Config {
             throws KrbException {
         Hashtable<String,Object> current = stanzaTable;
         for (String line: v) {
+            if (DEBUG) {
+                System.out.println(line);
+            }
             // There are only 3 kinds of lines
             // 1. a = b
             // 2. a = {
@@ -979,16 +984,22 @@ public class Config {
         String default_enctypes;
         default_enctypes = get("libdefaults", configName);
         if (default_enctypes == null && !configName.equals("permitted_enctypes")) {
+            if (DEBUG) {
+                System.out.println("Getting permitted_enctypes from libdefaults");
+            }
             default_enctypes = get("libdefaults", "permitted_enctypes");
         }
         int[] etype;
         if (default_enctypes == null) {
             if (DEBUG) {
-                System.out.println("Using builtin default etypes for " +
+                System.out.println("default_enctypes were null, using builtin default etypes for configuration " +
                     configName);
             }
             etype = EType.getBuiltInDefaults();
         } else {
+            if (DEBUG) {
+                System.out.println("default_enctypes:" + default_enctypes);
+            }
             String delim = " ";
             StringTokenizer st;
             for (int j = 0; j < default_enctypes.length(); j++) {
@@ -1010,7 +1021,8 @@ public class Config {
                 }
             }
             if (ls.isEmpty()) {
-                throw new KrbException("no supported default etypes for "
+                throw new KrbException("out of " + len +
+                        " default etypes no supported etypes found for configuration "
                         + configName);
             } else {
                 etype = new int[ls.size()];
@@ -1255,7 +1267,7 @@ public class Config {
             if (defaultKDC != null) {
                 return defaultKDC;
             }
-            KrbException ke = new KrbException("Cannot locate KDC");
+            KrbException ke = new KrbException("Cannot locate KDC for " + realm);
             if (cause != null) {
                 ke.initCause(cause);
             }

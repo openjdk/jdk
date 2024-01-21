@@ -32,6 +32,7 @@
 // a description of how to extend it, see the stubRoutines.hpp file.
 
 jint    StubRoutines::x86::_mxcsr_std = 0;
+jint    StubRoutines::x86::_mxcsr_rz = 0;
 
 address StubRoutines::x86::_get_previous_sp_entry = nullptr;
 
@@ -43,5 +44,4 @@ address StubRoutines::x86::_float_sign_mask = nullptr;
 address StubRoutines::x86::_float_sign_flip = nullptr;
 address StubRoutines::x86::_double_sign_mask = nullptr;
 address StubRoutines::x86::_double_sign_flip = nullptr;
-address StubRoutines::x86::_method_entry_barrier = nullptr;
 

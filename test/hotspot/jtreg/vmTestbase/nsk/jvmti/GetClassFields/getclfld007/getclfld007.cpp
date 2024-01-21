@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,69 +33,25 @@ extern "C" {
 #define PASSED 0
 #define STATUS_FAILED 2
 
-typedef struct {
-    const char *name;
-    const char *sig;
-} fld_info;
-
-typedef struct {
-    const char *name;
-    jint fcount;
-    fld_info *flds;
-} class_info;
-
 static jvmtiEnv *jvmti = NULL;
 static jint result = PASSED;
-static jboolean printdump = JNI_FALSE;
 
-static fld_info f0[] = {
-    { "fld_1", "Ljava/lang/String;" }
-};
 
-static fld_info f1[] = {
-    { "fld_n1", "I" }
-};
-
-static fld_info f2[] = {
-    { "fld_n2", "I" }
-};
-
-static fld_info f4[] = {
-    { "fld_o2", "I" }
-};
-
-static fld_info f5[] = {
-    { "fld_o3", "I" }
-};
-
-static fld_info f6[] = {
-    { "fld_i1", "I" }
-};
-
-static fld_info f7[] = {
-    { "fld_i2", "I" }
-};
-
-static fld_info f8[] = {
-    { "fld_i2", "I" }
-};
-
-static fld_info f9[] = {
-    { "fld_i1", "I" }
-};
-
-static class_info classes[] = {
-    { "InnerClass1", 1, f0 },
-    { "InnerInterface", 1, f1 },
-    { "InnerClass2", 1, f2 },
-    { "OuterClass1", 0, NULL },
-    { "OuterClass2", 1, f4 },
-    { "OuterClass3", 1, f5 },
-    { "OuterInterface1", 1, f6 },
-    { "OuterInterface2", 1, f7 },
-    { "OuterClass4", 1, f8 },
-    { "OuterClass5", 1, f9 }
-};
+// compares 'value' with jobject_arr[index]
+static bool equals_str(JNIEnv *env, const char *value, jobjectArray jobject_arr, jint index) {
+    jstring jstr = (jstring)env->GetObjectArrayElement(jobject_arr, index);
+    const char* utf = env->GetStringUTFChars(jstr, NULL);
+    bool res = false;
+    if (utf != NULL) {
+        res = strcmp(value, utf) == 0;
+        env->ReleaseStringUTFChars(jstr, utf);
+    } else {
+        printf("GetStringUTFChars failed\n");
+        result = STATUS_FAILED;
+    }
+    env->DeleteLocalRef(jstr);
+    return res;
+}
 
 #ifdef STATIC_BUILD
 JNIEXPORT jint JNICALL Agent_OnLoad_getclfld007(JavaVM *jvm, char *options, void *reserved) {
@@ -111,10 +67,6 @@ JNIEXPORT jint JNI_OnLoad_getclfld007(JavaVM *jvm, char *options, void *reserved
 jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     jint res;
 
-    if (options != NULL && strcmp(options, "printdump") == 0) {
-        printdump = JNI_TRUE;
-    }
-
     res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
     if (res != JNI_OK || jvmti == NULL) {
         printf("Wrong result of a valid call to GetEnv!\n");
@@ -125,61 +77,62 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
 }
 
 JNIEXPORT void JNICALL
-Java_nsk_jvmti_GetClassFields_getclfld007_check(JNIEnv *env, jclass cls, jint i, jclass clazz) {
+Java_nsk_jvmti_GetClassFields_getclfld007_check(JNIEnv *env, jclass cls, jclass clazz, jobjectArray fieldArr) {
     jvmtiError err;
     jint fcount;
     jfieldID *fields;
-    char *name, *sig, *generic;
+    char *name, *sig;
     int j;
 
     if (jvmti == NULL) {
         printf("JVMTI client was not properly loaded!\n");
+        fflush(0);
         result = STATUS_FAILED;
         return;
     }
 
-    if (printdump == JNI_TRUE) {
-        printf(">>> %s:\n", classes[i].name);
-    }
+    // fieldArr contains 2 elements for each field
+    jint field_count = env->GetArrayLength(fieldArr) / 2;
 
     err = jvmti->GetClassFields(clazz, &fcount, &fields);
     if (err != JVMTI_ERROR_NONE) {
-        printf("(GetClassFields#%d) unexpected error: %s (%d)\n",
-               i, TranslateError(err), err);
+        printf("GetClassFields unexpected error: %s (%d)\n",
+               TranslateError(err), err);
+        fflush(0);
         result = STATUS_FAILED;
         return;
     }
 
-    if (fcount != classes[i].fcount) {
-        printf("(%d) wrong number of fields: %d, expected: %d\n",
-               i, fcount, classes[i].fcount);
+    if (fcount != field_count) {
+        printf("wrong number of fields: %d, expected: %d\n",
+               fcount, field_count);
         result = STATUS_FAILED;
     }
     for (j = 0; j < fcount; j++) {
         if (fields[j] == NULL) {
-            printf("(%d:%d) fieldID = null\n", i, j);
-        } else {
-            err = jvmti->GetFieldName(clazz, fields[j],
-                &name, &sig, &generic);
-            if (err != JVMTI_ERROR_NONE) {
-                printf("(GetFieldName#%d:%d) unexpected error: %s (%d)\n",
-                       i, j, TranslateError(err), err);
-            } else {
-                if (printdump == JNI_TRUE) {
-                    printf(">>>   [%d]: %s, sig = \"%s\"\n", j, name, sig);
-                }
-                if ((j < classes[i].fcount) &&
-                       (name == NULL || sig == NULL ||
-                        strcmp(name, classes[i].flds[j].name) != 0 ||
-                        strcmp(sig, classes[i].flds[j].sig) != 0)) {
-                    printf("(%d:%d) wrong field: \"%s%s\"", i, j, name, sig);
-                    printf(", expected: \"%s%s\"\n",
-                           classes[i].flds[j].name, classes[i].flds[j].sig);
-                    result = STATUS_FAILED;
-                }
-            }
+            printf("(%d) fieldID = null\n", j);
+            result = STATUS_FAILED;
+            continue;
         }
+        err = jvmti->GetFieldName(clazz, fields[j], &name, &sig, NULL);
+        if (err != JVMTI_ERROR_NONE) {
+            printf("(GetFieldName#%d) unexpected error: %s (%d)\n",
+                   j, TranslateError(err), err);
+            result = STATUS_FAILED;
+            continue;
+        }
+        printf(">>>   [%d]: %s, sig = \"%s\"\n", j, name, sig);
+        if ((j < field_count) &&
+               (name == NULL || sig == NULL ||
+                !equals_str(env, name, fieldArr, j * 2) ||
+                !equals_str(env, sig, fieldArr, j * 2 + 1))) {
+            printf("(%d) wrong field: \"%s%s\"", j, name, sig);
+            result = STATUS_FAILED;
+        }
+        jvmti->Deallocate((unsigned char *)name);
+        jvmti->Deallocate((unsigned char *)sig);
     }
+    fflush(0);
 }
 
 JNIEXPORT int JNICALL

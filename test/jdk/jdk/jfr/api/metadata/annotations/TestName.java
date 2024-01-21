@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -269,7 +269,7 @@ public class TestName {
     private static void assertIllegalFieldName(Class<? extends Event> eventClass) throws Exception {
         EventType type = EventType.getEventType(eventClass);
         if (type.getField("field") == null) {
-            String illegal = type.getFields().get(type.getFields().size() - 1).getName();
+            String illegal = type.getFields().getLast().getName();
             throw new Exception("Expected default field name 'field' for event " + type.getName() + ", not illegal name " + illegal);
         }
     }

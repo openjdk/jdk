@@ -46,7 +46,7 @@ ElfFuncDescTable::ElfFuncDescTable(FILE* file, Elf_Shdr shdr, int index) :
 ElfFuncDescTable::~ElfFuncDescTable() {
 }
 
-address ElfFuncDescTable::lookup(Elf_Word index) {
+address ElfFuncDescTable::lookup(Elf_Addr index) {
   if (NullDecoder::is_error(_status)) {
     return nullptr;
   }

@@ -34,7 +34,7 @@ import org.w3c.dom.Node;
  * Handles {@code &lt;ds:Object&gt;} elements
  * {@code Object} {@link Element} supply facility which can contain any kind data
  *
- * $todo$ if we remove childen, the boolean values are not updated
+ * $todo$ if we remove children, the boolean values are not updated
  */
 public class ObjectContainer extends SignatureElementProxy {
 
@@ -130,6 +130,7 @@ public class ObjectContainer extends SignatureElementProxy {
     }
 
     /** {@inheritDoc} */
+    @Override
     public String getBaseLocalName() {
         return Constants._TAG_OBJECT;
     }

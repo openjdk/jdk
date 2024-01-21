@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -5050,11 +5050,11 @@ public abstract class JComponent extends Container implements Serializable,
             return;
         }
 
-        JComponent paintingOigin = SwingUtilities.getPaintingOrigin(this);
-        if (paintingOigin != null) {
+        JComponent paintingOrigin = SwingUtilities.getPaintingOrigin(this);
+        if (paintingOrigin != null) {
             Rectangle rectangle = SwingUtilities.convertRectangle(
-                    c, new Rectangle(x, y, w, h), paintingOigin);
-            paintingOigin.paintImmediately(rectangle.x, rectangle.y, rectangle.width, rectangle.height);
+                    c, new Rectangle(x, y, w, h), paintingOrigin);
+            paintingOrigin.paintImmediately(rectangle.x, rectangle.y, rectangle.width, rectangle.height);
             return;
         }
 
@@ -5510,7 +5510,7 @@ public abstract class JComponent extends Container implements Serializable,
         /**
          * This is the method that's called after the entire graph
          * of objects has been read in.  It initializes
-         * the UI property of all of the copmonents with
+         * the UI property of all of the components with
          * <code>SwingUtilities.updateComponentTreeUI</code>.
          */
         public void validateObject() throws InvalidObjectException {

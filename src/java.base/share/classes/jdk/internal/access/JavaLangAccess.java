@@ -27,6 +27,7 @@ package jdk.internal.access;
 
 import java.io.InputStream;
 import java.lang.annotation.Annotation;
+import java.lang.foreign.MemorySegment;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
 import java.lang.module.ModuleDescriptor;
@@ -63,6 +64,11 @@ public interface JavaLangAccess {
      * and parameter types.
      */
     List<Method> getDeclaredPublicMethods(Class<?> klass, String name, Class<?>... parameterTypes);
+
+    /**
+     * Return most specific method that matches name and parameterTypes.
+     */
+    Method findMethod(Class<?> klass, boolean publicOnly, String name, Class<?>... parameterTypes);
 
     /**
      * Return the constant pool for a class.
@@ -176,11 +182,6 @@ public interface JavaLangAccess {
     Package definePackage(ClassLoader cl, String name, Module module);
 
     /**
-     * Invokes Long.fastUUID
-     */
-    String fastUUID(long lsb, long msb);
-
-    /**
      * Record the non-exported packages of the modules in the given layer
      */
     void addNonExportedPackages(ModuleLayer layer);
@@ -277,7 +278,7 @@ public interface JavaLangAccess {
      * Ensure that the given module has native access. If not, warn or
      * throw exception depending on the configuration.
      */
-    void ensureNativeAccess(Module m, Class<?> owner, String methodName);
+    void ensureNativeAccess(Module m, Class<?> owner, String methodName, Class<?> currentClass);
 
     /**
      * Returns the ServicesCatalog for the given Layer.
@@ -420,6 +421,21 @@ public interface JavaLangAccess {
      */
     long stringConcatMix(long lengthCoder, String constant);
 
+   /**
+    * Get the coder for the supplied character.
+    */
+   long stringConcatCoder(char value);
+
+   /**
+    * Update lengthCoder for StringBuilder.
+    */
+   long stringBuilderConcatMix(long lengthCoder, StringBuilder sb);
+
+    /**
+     * Prepend StringBuilder content.
+    */
+   long stringBuilderConcatPrepend(long lengthCoder, byte[] buf, StringBuilder sb);
+
     /**
      * Join strings
      */
@@ -513,15 +529,6 @@ public interface JavaLangAccess {
     Object scopedValueBindings();
 
     /**
-     * Set the current thread's scoped value bindings.
-     */
-    void setScopedValueBindings(Object bindings);
-
-    Object findScopedValueBindings();
-
-    void ensureMaterializedForStackWalk(Object value);
-
-    /**
      * Returns the innermost mounted continuation
      */
     Continuation getContinuation(Thread thread);
@@ -569,4 +576,14 @@ public interface JavaLangAccess {
      * explicitly set otherwise <qualified-class-name> @<id>
      */
     String getLoaderNameID(ClassLoader loader);
+
+    /**
+     * Copy the string bytes to an existing segment, avoiding intermediate copies.
+     */
+    void copyToSegmentRaw(String string, MemorySegment segment, long offset);
+
+    /**
+     * Are the string bytes compatible with the given charset?
+     */
+    boolean bytesCompatible(String string, Charset charset);
 }

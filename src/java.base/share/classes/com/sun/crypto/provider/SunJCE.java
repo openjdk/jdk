@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,6 +73,10 @@ import static sun.security.util.SecurityProviderConstants.*;
  * - Diffie-Hellman Key Agreement
  *
  * - HMAC-MD5, HMAC-SHA1, HMAC with SHA2 family and SHA3 family of digests
+ *
+ * - JCEKS KeyStore
+ *
+ * - DHKEM
  *
  */
 
@@ -742,6 +746,15 @@ public final class SunJCE extends Provider {
          */
         ps("KeyStore", "JCEKS",
                 "com.sun.crypto.provider.JceKeyStore");
+
+        /*
+         * KEMs
+         */
+        attrs.clear();
+        attrs.put("ImplementedIn", "Software");
+        attrs.put("SupportedKeyClasses", "java.security.interfaces.ECKey" +
+                "|java.security.interfaces.XECKey");
+        ps("KEM", "DHKEM", "com.sun.crypto.provider.DHKEM", null, attrs);
 
         /*
          * SSL/TLS mechanisms

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@ import jdk.internal.net.http.frame.SettingsFrame;
 import jdk.internal.net.http.frame.WindowUpdateFrame;
 import jdk.internal.net.http.common.Utils;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.ReentrantLock;
 
 abstract class WindowUpdateSender {
 
@@ -40,6 +41,7 @@ abstract class WindowUpdateSender {
     final int limit;
     final Http2Connection connection;
     final AtomicInteger received = new AtomicInteger();
+    final ReentrantLock sendLock = new ReentrantLock();
 
     WindowUpdateSender(Http2Connection connection) {
         this(connection, connection.clientSettings.getParameter(SettingsFrame.INITIAL_WINDOW_SIZE));
@@ -70,12 +72,15 @@ abstract class WindowUpdateSender {
         int rcv = received.addAndGet(delta);
         if (debug.on()) debug.log("update: %d, received: %d, limit: %d", delta, rcv, limit);
         if (rcv > limit) {
-            synchronized (this) {
+            sendLock.lock();
+            try {
                 int tosend = received.get();
                 if( tosend > limit) {
                     received.getAndAdd(-tosend);
                     sendWindowUpdate(tosend);
                 }
+            } finally {
+                sendLock.unlock();
             }
         }
     }

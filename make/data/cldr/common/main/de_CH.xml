@@ -49,10 +49,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</types>
 	</localeDisplayNames>
 	<characters>
-		<exemplarCharacters>[a ä b c d e f g h i j k l m n o ö p q r s t u ü v w x y z]</exemplarCharacters>
+		<exemplarCharacters>[aä b c d e f g h i j k l m n oö p q r s t uü v w x y z]</exemplarCharacters>
 		<exemplarCharacters type="numbers">[\- ‑ . ’ % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
 		<parseLenients scope="general" level="lenient">
-			<parseLenient sample="’">['ʼ՚᾽᾿’＇]</parseLenient>
+			<parseLenient sample="’">['＇’ ՚ ᾽᾿ ʼ]</parseLenient>
 		</parseLenients>
 	</characters>
 	<dates>
@@ -180,28 +180,23 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="area-square-foot">
 				<displayName>Quadratfuss</displayName>
 				<unitPattern count="one">{0} Quadratfuss</unitPattern>
-				<unitPattern count="one" case="accusative">{0} Quadratfuss</unitPattern>
-				<unitPattern count="one" case="dative">{0} Quadratfuss</unitPattern>
 				<unitPattern count="one" case="genitive">{0} Quadratfusses</unitPattern>
 				<unitPattern count="other">{0} Quadratfuss</unitPattern>
-				<unitPattern count="other" case="accusative">{0} Quadratfuss</unitPattern>
-				<unitPattern count="other" case="dative">{0} Quadratfuss</unitPattern>
 				<unitPattern count="other" case="genitive">{0} Quadratfuss</unitPattern>
 			</unit>
 			<unit type="duration-quarter">
 				<displayName>Quartal</displayName>
 			</unit>
 			<unit type="length-foot">
-				<displayName>Fuss</displayName>
 				<unitPattern count="one">{0} Fuss</unitPattern>
-				<unitPattern count="one" case="accusative">{0} Fuss</unitPattern>
-				<unitPattern count="one" case="dative">{0} Fuss</unitPattern>
 				<unitPattern count="one" case="genitive">{0} Fusses</unitPattern>
 				<unitPattern count="other">{0} Fuss</unitPattern>
-				<unitPattern count="other" case="accusative">{0} Fuss</unitPattern>
-				<unitPattern count="other" case="dative">{0} Fuss</unitPattern>
 				<unitPattern count="other" case="genitive">{0} Fuss</unitPattern>
 				<perUnitPattern>{0} pro Fuss</perUnitPattern>
+			</unit>
+			<unit type="speed-beaufort">
+				<unitPattern count="one">{0} Beaufort</unitPattern>
+				<unitPattern count="other">{0} Beaufort</unitPattern>
 			</unit>
 			<unit type="volume-cubic-foot">
 				<displayName>Kubikfuss</displayName>
@@ -214,17 +209,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="dative">{0} Kubikfuss</unitPattern>
 				<unitPattern count="other" case="genitive">{0} Kubikfuss</unitPattern>
 			</unit>
-			<unit type="volume-gallon-imperial">
-				<unitPattern count="one">{0} gal Imp.</unitPattern>
-				<unitPattern count="one" case="accusative">{0} gal Imp.</unitPattern>
-				<unitPattern count="one" case="dative">{0} gal Imp.</unitPattern>
-				<unitPattern count="one" case="genitive">{0} gal Imp.</unitPattern>
-				<unitPattern count="other">{0} gal Imp.</unitPattern>
-				<unitPattern count="other" case="accusative">{0} gal Imp.</unitPattern>
-				<unitPattern count="other" case="dative">{0} gal Imp.</unitPattern>
-				<unitPattern count="other" case="genitive">{0} gal Imp.</unitPattern>
-				<perUnitPattern>{0}/gal Imp.</perUnitPattern>
-			</unit>
 		</unitLength>
 		<unitLength type="short">
 			<unit type="duration-quarter">
@@ -233,8 +217,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="length-foot">
 				<displayName>Fuss</displayName>
 			</unit>
-			<unit type="volume-gallon-imperial">
-				<perUnitPattern>{0}/gal Imp.</perUnitPattern>
+			<unit type="speed-beaufort">
+				<unitPattern count="one">{0} Bft</unitPattern>
+				<unitPattern count="other">{0} Bft</unitPattern>
 			</unit>
 			<unit type="volume-dram">
 				<displayName>Dram</displayName>
@@ -249,12 +234,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="volume-pinch">
 				<unitPattern count="one">{0} Prise</unitPattern>
 				<unitPattern count="other">{0} Prise</unitPattern>
-			</unit>
-		</unitLength>
-		<unitLength type="narrow">
-			<unit type="volume-jigger">
-				<unitPattern count="one">Schuss</unitPattern>
-				<unitPattern count="other">{0} Schuss</unitPattern>
 			</unit>
 		</unitLength>
 	</units>

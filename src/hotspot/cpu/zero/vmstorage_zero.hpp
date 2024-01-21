@@ -44,7 +44,7 @@ constexpr inline StorageType VMStorage::stack_type() { return StorageType::STACK
 constexpr inline StorageType VMStorage::placeholder_type() { return StorageType::PLACEHOLDER; }
 constexpr inline StorageType VMStorage::frame_data_type() { return StorageType::FRAME_DATA; }
 
-inline VMStorage as_VMStorage(VMReg reg) {
+inline VMStorage as_VMStorage(VMReg reg, BasicType bt) {
   ShouldNotReachHere();
   return VMStorage::invalid();
 }

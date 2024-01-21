@@ -62,6 +62,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<script type="Syrc">siríaco</script>
 		</scripts>
 		<territories>
+			<territory type="001">mundo</territory>
 			<territory type="011">África del Oeste</territory>
 			<territory type="014">África del Este</territory>
 			<territory type="015">África del Norte</territory>
@@ -82,9 +83,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="CI">Costa de Marfil</territory>
 			<territory type="EZ">Eurozona</territory>
 			<territory type="GB" alt="short">R. U.</territory>
+			<territory type="GS">Islas Georgia del Sur y Sándwich del Sur</territory>
 			<territory type="IC">Islas Canarias</territory>
 			<territory type="QO">Islas Ultramarinas</territory>
-			<territory type="TA">Tristán da Cunha</territory>
+			<territory type="RO">Rumania</territory>
+			<territory type="SA">Arabia Saudita</territory>
+			<territory type="TL">Timor Oriental</territory>
 			<territory type="TR" alt="variant">Türkiye</territory>
 			<territory type="UM">Islas Ultramarinas de EE.UU.</territory>
 		</territories>
@@ -92,8 +96,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<key type="colNormalization">orden normalizado</key>
 		</keys>
 		<types>
-			<type key="calendar" type="islamic-rgsa">calendario islámico (Arabia Saudita)</type>
-			<type key="calendar" type="islamic-tbla">calendario islámico tabular</type>
+			<type key="calendar" type="islamic-rgsa" draft="provisional">calendario islámico (Arabia Saudita)</type>
+			<type key="calendar" type="islamic-tbla" draft="provisional">calendario islámico tabular</type>
 			<type key="colAlternate" type="non-ignorable">ordenar símbolos</type>
 			<type key="colAlternate" type="shifted">ordenar ignorando símbolos</type>
 			<type key="colBackwards" type="no">ordenar acentos normalmente</type>
@@ -113,64 +117,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<codePattern type="script">Alfabeto: {0}</codePattern>
 		</codePatterns>
 	</localeDisplayNames>
-	<delimiters>
-		<quotationStart>“</quotationStart>
-		<quotationEnd>”</quotationEnd>
-		<alternateQuotationStart>‘</alternateQuotationStart>
-		<alternateQuotationEnd>’</alternateQuotationEnd>
-	</delimiters>
 	<dates>
 		<calendars>
 			<calendar type="coptic">
 				<months>
 					<monthContext type="format">
-						<monthWidth type="abbreviated">
-							<month type="1">Tout</month>
-							<month type="2">Baba</month>
-							<month type="3">Hator</month>
-							<month type="4">Kiahk</month>
-							<month type="5">Toba</month>
-							<month type="6">Amshir</month>
-							<month type="7">Baramhat</month>
-							<month type="8">Baramouda</month>
-							<month type="9">Bashans</month>
-							<month type="10">Paona</month>
-							<month type="11">Epep</month>
-							<month type="12">Mesra</month>
-							<month type="13">Nasie</month>
-						</monthWidth>
-						<monthWidth type="wide">
-							<month type="1">Tout</month>
-							<month type="2">Baba</month>
-							<month type="3">Hator</month>
-							<month type="4">Kiahk</month>
-							<month type="5">Toba</month>
-							<month type="6">Amshir</month>
-							<month type="7">Baramhat</month>
-							<month type="8">Baramouda</month>
-							<month type="9">Bashans</month>
-							<month type="10">Paona</month>
-							<month type="11">Epep</month>
-							<month type="12">Mesra</month>
-							<month type="13">Nasie</month>
-						</monthWidth>
-					</monthContext>
-					<monthContext type="stand-alone">
-						<monthWidth type="abbreviated">
-							<month type="1">Tout</month>
-							<month type="2">Baba</month>
-							<month type="3">Hator</month>
-							<month type="4">Kiahk</month>
-							<month type="5">Toba</month>
-							<month type="6">Amshir</month>
-							<month type="7">Baramhat</month>
-							<month type="8">Baramouda</month>
-							<month type="9">Bashans</month>
-							<month type="10">Paona</month>
-							<month type="11">Epep</month>
-							<month type="12">Mesra</month>
-							<month type="13">Nasie</month>
-						</monthWidth>
 						<monthWidth type="wide">
 							<month type="1">Tout</month>
 							<month type="2">Baba</month>
@@ -227,12 +178,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="medium">
 						<dateTimeFormat>
-							<pattern>{1} {0}</pattern>
+							<pattern>{1}, {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="short">
 						<dateTimeFormat>
-							<pattern>{1} {0}</pattern>
+							<pattern>{1}, {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<availableFormats>
@@ -280,17 +231,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</calendar>
 			<calendar type="gregorian">
 				<days>
-					<dayContext type="format">
-						<dayWidth type="narrow">
-							<day type="sun">D</day>
-							<day type="mon">L</day>
-							<day type="tue">M</day>
-							<day type="wed">M</day>
-							<day type="thu">J</day>
-							<day type="fri">V</day>
-							<day type="sat">S</day>
-						</dayWidth>
-					</dayContext>
 					<dayContext type="stand-alone">
 						<dayWidth type="narrow">
 							<day type="sun">D</day>
@@ -312,15 +252,25 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<quarter type="4">4.º trimestre</quarter>
 						</quarterWidth>
 					</quarterContext>
-					<quarterContext type="stand-alone">
-						<quarterWidth type="wide">
-							<quarter type="1">1.º trimestre</quarter>
-							<quarter type="2">2.º trimestre</quarter>
-							<quarter type="3">3.º trimestre</quarter>
-							<quarter type="4">4.º trimestre</quarter>
-						</quarterWidth>
-					</quarterContext>
 				</quarters>
+				<dayPeriods>
+					<dayPeriodContext type="format">
+						<dayPeriodWidth type="abbreviated">
+							<dayPeriod type="am">a.m.</dayPeriod>
+							<dayPeriod type="pm">p.m.</dayPeriod>
+						</dayPeriodWidth>
+						<dayPeriodWidth type="wide">
+							<dayPeriod type="am">a.m.</dayPeriod>
+							<dayPeriod type="pm">p.m.</dayPeriod>
+						</dayPeriodWidth>
+					</dayPeriodContext>
+					<dayPeriodContext type="stand-alone">
+						<dayPeriodWidth type="wide">
+							<dayPeriod type="am">a.m.</dayPeriod>
+							<dayPeriod type="pm">p.m.</dayPeriod>
+						</dayPeriodWidth>
+					</dayPeriodContext>
+				</dayPeriods>
 				<eras>
 					<eraAbbr>
 						<era type="0">a.C.</era>
@@ -354,26 +304,26 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<timeFormats>
 					<timeFormatLength type="full">
 						<timeFormat>
-							<pattern>HH:mm:ss zzzz</pattern>
-							<datetimeSkeleton>HHmmsszzzz</datetimeSkeleton>
+							<pattern>h:mm:ss a zzzz</pattern>
+							<datetimeSkeleton>ahmmsszzzz</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="long">
 						<timeFormat>
-							<pattern>HH:mm:ss z</pattern>
-							<datetimeSkeleton>HHmmssz</datetimeSkeleton>
+							<pattern>h:mm:ss a z</pattern>
+							<datetimeSkeleton>ahmmssz</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="medium">
 						<timeFormat>
-							<pattern>HH:mm:ss</pattern>
-							<datetimeSkeleton>HHmmss</datetimeSkeleton>
+							<pattern>h:mm:ss a</pattern>
+							<datetimeSkeleton>ahmmss</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="short">
 						<timeFormat>
-							<pattern>HH:mm</pattern>
-							<datetimeSkeleton>HHmm</datetimeSkeleton>
+							<pattern>h:mm a</pattern>
+							<datetimeSkeleton>ahmm</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 				</timeFormats>
@@ -390,7 +340,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="medium">
 						<dateTimeFormat>
-							<pattern>{1} {0}</pattern>
+							<pattern>{1}, {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="short">
@@ -504,56 +454,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<calendar type="hebrew">
 				<months>
 					<monthContext type="format">
-						<monthWidth type="abbreviated">
-							<month type="1">Tishri</month>
-							<month type="2">Heshvan</month>
-							<month type="3">Kislev</month>
-							<month type="4">Tevet</month>
-							<month type="5">Shevat</month>
-							<month type="6">Adar I</month>
-							<month type="7">Adar</month>
-							<month type="7" yeartype="leap">Adar II</month>
-							<month type="8">Nisan</month>
-							<month type="9">Iyar</month>
-							<month type="10">Sivan</month>
-							<month type="11">Tamuz</month>
-							<month type="12">Av</month>
-							<month type="13">Elul</month>
-						</monthWidth>
-						<monthWidth type="wide">
-							<month type="1">Tishri</month>
-							<month type="2">Heshvan</month>
-							<month type="3">Kislev</month>
-							<month type="4">Tevet</month>
-							<month type="5">Shevat</month>
-							<month type="6">Adar I</month>
-							<month type="7">Adar</month>
-							<month type="7" yeartype="leap">Adar II</month>
-							<month type="8">Nisan</month>
-							<month type="9">Iyar</month>
-							<month type="10">Sivan</month>
-							<month type="11">Tamuz</month>
-							<month type="12">Av</month>
-							<month type="13">Elul</month>
-						</monthWidth>
-					</monthContext>
-					<monthContext type="stand-alone">
-						<monthWidth type="abbreviated">
-							<month type="1">Tishri</month>
-							<month type="2">Heshvan</month>
-							<month type="3">Kislev</month>
-							<month type="4">Tevet</month>
-							<month type="5">Shevat</month>
-							<month type="6">Adar I</month>
-							<month type="7">Adar</month>
-							<month type="7" yeartype="leap">Adar II</month>
-							<month type="8">Nisan</month>
-							<month type="9">Iyar</month>
-							<month type="10">Sivan</month>
-							<month type="11">Tamuz</month>
-							<month type="12">av</month>
-							<month type="13">elul</month>
-						</monthWidth>
 						<monthWidth type="wide">
 							<month type="1">Tishri</month>
 							<month type="2">Heshvan</month>
@@ -576,50 +476,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<calendar type="indian">
 				<months>
 					<monthContext type="format">
-						<monthWidth type="abbreviated">
-							<month type="1">Chaitra</month>
-							<month type="2">Vaisakha</month>
-							<month type="3">Jyaistha</month>
-							<month type="4">Asadha</month>
-							<month type="5">Sravana</month>
-							<month type="6">Bhadra</month>
-							<month type="7">Asvina</month>
-							<month type="8">Kartika</month>
-							<month type="9">Agrahayana</month>
-							<month type="10">Pausa</month>
-							<month type="11">Magha</month>
-							<month type="12">Phalguna</month>
-						</monthWidth>
-						<monthWidth type="wide">
-							<month type="1">Chaitra</month>
-							<month type="2">Vaisakha</month>
-							<month type="3">Jyaistha</month>
-							<month type="4">Asadha</month>
-							<month type="5">Sravana</month>
-							<month type="6">Bhadra</month>
-							<month type="7">Asvina</month>
-							<month type="8">Kartika</month>
-							<month type="9">Agrahayana</month>
-							<month type="10">Pausa</month>
-							<month type="11">Magha</month>
-							<month type="12">Phalguna</month>
-						</monthWidth>
-					</monthContext>
-					<monthContext type="stand-alone">
-						<monthWidth type="abbreviated">
-							<month type="1">Chaitra</month>
-							<month type="2">Vaisakha</month>
-							<month type="3">Jyaistha</month>
-							<month type="4">Asadha</month>
-							<month type="5">Sravana</month>
-							<month type="6">Bhadra</month>
-							<month type="7">Asvina</month>
-							<month type="8">Kartika</month>
-							<month type="9">Agrahayana</month>
-							<month type="10">Pausa</month>
-							<month type="11">Magha</month>
-							<month type="12">Phalguna</month>
-						</monthWidth>
 						<monthWidth type="wide">
 							<month type="1">Chaitra</month>
 							<month type="2">Vaisakha</month>
@@ -637,15 +493,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					</monthContext>
 				</months>
 				<eras>
-					<eraNames>
-						<era type="0">Saka</era>
-					</eraNames>
 					<eraAbbr>
 						<era type="0">Saka</era>
 					</eraAbbr>
-					<eraNarrow>
-						<era type="0">Saka</era>
-					</eraNarrow>
 				</eras>
 			</calendar>
 			<calendar type="islamic">
@@ -680,52 +530,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<month type="12">Dhuʻl-Hijjah</month>
 						</monthWidth>
 					</monthContext>
-					<monthContext type="stand-alone">
-						<monthWidth type="abbreviated">
-							<month type="1">Muh.</month>
-							<month type="2">Saf.</month>
-							<month type="3">Rab. I</month>
-							<month type="4">Rab. II</month>
-							<month type="5">Jum. I</month>
-							<month type="6">Jum. II</month>
-							<month type="7">Raj.</month>
-							<month type="8">Sha.</month>
-							<month type="9">Ram.</month>
-							<month type="10">Shaw.</month>
-							<month type="11">Dhuʻl-Q.</month>
-							<month type="12">Dhuʻl-H.</month>
-						</monthWidth>
-						<monthWidth type="wide">
-							<month type="1">Muharram</month>
-							<month type="2">Safar</month>
-							<month type="3">Rabiʻ I</month>
-							<month type="4">Rabiʻ II</month>
-							<month type="5">Jumada I</month>
-							<month type="6">Jumada II</month>
-							<month type="7">Rajab</month>
-							<month type="8">Shaʻban</month>
-							<month type="9">Ramadan</month>
-							<month type="10">Shawwal</month>
-							<month type="11">Dhuʻl-Qiʻdah</month>
-							<month type="12">Dhuʻl-Hijjah</month>
-						</monthWidth>
-					</monthContext>
 				</months>
 			</calendar>
 			<calendar type="roc">
 				<eras>
-					<eraNames>
-						<era type="0">antes de R.O.C.</era>
-						<era type="1">R.O.C.</era>
-					</eraNames>
 					<eraAbbr>
 						<era type="0">antes de R.O.C.</era>
 						<era type="1">R.O.C.</era>
 					</eraAbbr>
-					<eraNarrow>
-						<era type="0">antes de R.O.C.</era>
-						<era type="1">R.O.C.</era>
-					</eraNarrow>
 				</eras>
 			</calendar>
 		</calendars>
@@ -736,16 +548,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<relative type="1">próx. sem.</relative>
 				<relativePeriod>la semana del {0}</relativePeriod>
 			</field>
-			<field type="week-narrow">
-				<relative type="-1">sem. pas.</relative>
-				<relative type="0">esta sem.</relative>
-				<relative type="1">próx. sem.</relative>
-				<relativePeriod>la semana del {0}</relativePeriod>
-			</field>
 			<field type="weekOfMonth-short">
-				<displayName>sem. del mes</displayName>
-			</field>
-			<field type="weekOfMonth-narrow">
 				<displayName>sem. del mes</displayName>
 			</field>
 			<field type="day-short">
@@ -758,20 +561,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<relativeTimePattern count="other">hace {0} días</relativeTimePattern>
 				</relativeTime>
 			</field>
-			<field type="day-narrow">
-				<relativeTime type="future">
-					<relativeTimePattern count="one">dentro de {0} día</relativeTimePattern>
-					<relativeTimePattern count="other">dentro de {0} días</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">hace {0} día</relativeTimePattern>
-					<relativeTimePattern count="other">hace {0} días</relativeTimePattern>
-				</relativeTime>
-			</field>
 			<field type="dayOfYear-short">
-				<displayName>día del año</displayName>
-			</field>
-			<field type="dayOfYear-narrow">
 				<displayName>día del año</displayName>
 			</field>
 			<field type="weekdayOfMonth">
@@ -780,19 +570,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<field type="weekdayOfMonth-short">
 				<displayName>día hábil del mes</displayName>
 			</field>
-			<field type="weekdayOfMonth-narrow">
-				<displayName>día hábil del mes</displayName>
-			</field>
 			<field type="sun">
 				<relativeTime type="future">
 					<relativeTimePattern count="one">en {0} domingo</relativeTimePattern>
 					<relativeTimePattern count="other">en {0} domingos</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="tue">
-				<relativeTime type="future">
-					<relativeTimePattern count="one">dentro de {0} martes</relativeTimePattern>
-					<relativeTimePattern count="other">en {0} martes</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="fri-short">
@@ -813,13 +594,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<relativeTimePattern count="other">hace {0} sábados</relativeTimePattern>
 				</relativeTime>
 			</field>
-			<field type="dayperiod-short">
-				<displayName>a.m./p.m.</displayName>
-			</field>
 			<field type="dayperiod">
-				<displayName>a.m./p.m.</displayName>
-			</field>
-			<field type="dayperiod-narrow">
 				<displayName>a.m./p.m.</displayName>
 			</field>
 		</fields>
@@ -859,9 +634,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<long>
 					<daylight>hora estándar de Irlanda</daylight>
 				</long>
-			</zone>
-			<zone type="Pacific/Kanton">
-				<exemplarCity>Kanton</exemplarCity>
 			</zone>
 			<zone type="Asia/Khandyga">
 				<exemplarCity>Khandyga</exemplarCity>
@@ -1005,7 +777,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<symbols numberSystem="latn">
 			<decimal>.</decimal>
 			<group>,</group>
-			<approximatelySign>~</approximatelySign>
 		</symbols>
 		<decimalFormats numberSystem="latn">
 			<decimalFormatLength type="long">
@@ -1029,15 +800,18 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				</decimalFormat>
 			</decimalFormatLength>
 		</decimalFormats>
+		<percentFormats numberSystem="latn">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern>#,##0%</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
 		<currencyFormats numberSystem="latn">
 			<currencyFormatLength>
 				<currencyFormat type="standard">
 					<pattern>¤#,##0.00</pattern>
 					<pattern alt="alphaNextToNumber" draft="provisional">¤ #,##0.00</pattern>
-				</currencyFormat>
-				<currencyFormat type="accounting">
-					<pattern>¤#,##0.00</pattern>
-					<pattern alt="alphaNextToNumber">¤ #,##0.00</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 			<currencyFormatLength type="short">
@@ -1092,7 +866,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<pattern type="100000000000000" count="other" alt="alphaNextToNumber">¤ 000 B</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
-			<currencyPatternAppendISO>{0} ¤¤</currencyPatternAppendISO>
 		</currencyFormats>
 		<currencies>
 			<currency type="ANG">
@@ -1255,6 +1028,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} mpg imp.</unitPattern>
 				<unitPattern count="other">{0} mpg imp.</unitPattern>
 			</unit>
+			<unit type="digital-byte">
+				<unitPattern count="one">{0} byte</unitPattern>
+				<unitPattern count="other">{0} byte</unitPattern>
+			</unit>
 			<unit type="duration-year">
 				<displayName>aa.</displayName>
 				<unitPattern count="one">{0} a.</unitPattern>
@@ -1306,11 +1083,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="length-point">
 				<displayName>pto.</displayName>
 			</unit>
-			<unit type="mass-tonne">
-				<displayName>t</displayName>
-				<unitPattern count="one">{0} t</unitPattern>
-				<unitPattern count="other">{0} t</unitPattern>
-			</unit>
 			<unit type="mass-ton">
 				<displayName>ton</displayName>
 				<unitPattern count="one">{0} ton</unitPattern>
@@ -1350,9 +1122,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 		</unitLength>
 		<unitLength type="narrow">
-			<unit type="acceleration-g-force">
-				<displayName>G</displayName>
-			</unit>
 			<unit type="area-square-meter">
 				<displayName>metros²</displayName>
 			</unit>
@@ -1366,10 +1135,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>a.</displayName>
 				<unitPattern count="one">{0}a.</unitPattern>
 				<unitPattern count="other">{0}aa.</unitPattern>
-			</unit>
-			<unit type="duration-quarter">
-				<unitPattern count="one">{0}/trim</unitPattern>
-				<unitPattern count="other">{0}/trim</unitPattern>
 			</unit>
 			<unit type="duration-month">
 				<displayName>m.</displayName>
@@ -1387,11 +1152,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>d.</displayName>
 				<unitPattern count="one">{0}d.</unitPattern>
 				<unitPattern count="other">{0}dd.</unitPattern>
-				<perUnitPattern>{0}/d.</perUnitPattern>
 			</unit>
-			<unit type="duration-minute">
-				<unitPattern count="one">{0}m</unitPattern>
-				<unitPattern count="other">{0}m</unitPattern>
+			<unit type="energy-calorie">
+				<unitPattern count="one">{0} cal</unitPattern>
+				<unitPattern count="other">{0}cal</unitPattern>
 			</unit>
 			<unit type="energy-therm-us">
 				<unitPattern count="one">{0}thm EE.UU.</unitPattern>
@@ -1401,6 +1165,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} kWh/100km</unitPattern>
 				<unitPattern count="other">{0} kWh/100km</unitPattern>
 			</unit>
+			<unit type="graphics-dot">
+				<unitPattern count="one">{0}p</unitPattern>
+				<unitPattern count="other">{0}p</unitPattern>
+			</unit>
 			<unit type="length-parsec">
 				<displayName>parsec</displayName>
 			</unit>
@@ -1409,11 +1177,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0}a. l.</unitPattern>
 				<unitPattern count="other">{0}a.a. l.</unitPattern>
 			</unit>
-			<unit type="length-astronomical-unit">
-				<displayName>ua</displayName>
-			</unit>
 			<unit type="length-nautical-mile">
-				<displayName>nmi</displayName>
 				<unitPattern count="one">{0}nmi</unitPattern>
 				<unitPattern count="other">{0}nmi</unitPattern>
 			</unit>
@@ -1422,38 +1186,49 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0}mi esc.</unitPattern>
 			</unit>
 			<unit type="mass-ton">
-				<displayName>ton</displayName>
 				<unitPattern count="one">{0}ton</unitPattern>
 				<unitPattern count="other">{0}ton</unitPattern>
 			</unit>
+			<unit type="mass-pound">
+				<unitPattern count="one">{0} lb</unitPattern>
+				<unitPattern count="other">{0}lb</unitPattern>
+			</unit>
+			<unit type="mass-ounce">
+				<unitPattern count="one">{0} oz</unitPattern>
+				<unitPattern count="other">{0}oz</unitPattern>
+			</unit>
 			<unit type="mass-ounce-troy">
-				<displayName>ozt</displayName>
 				<unitPattern count="one">{0}ozt</unitPattern>
 				<unitPattern count="other">{0}ozt</unitPattern>
 			</unit>
 			<unit type="power-horsepower">
-				<displayName>hp</displayName>
 				<unitPattern count="one">{0}hp</unitPattern>
 				<unitPattern count="other">{0}hp</unitPattern>
+			</unit>
+			<unit type="speed-beaufort">
+				<unitPattern count="one">B {0}</unitPattern>
+				<unitPattern count="other">B {0}</unitPattern>
 			</unit>
 			<unit type="volume-milliliter">
 				<unitPattern count="one">{0}ml</unitPattern>
 				<unitPattern count="other">{0}ml</unitPattern>
+			</unit>
+			<unit type="volume-acre-foot">
+				<unitPattern count="one">{0} ac ft</unitPattern>
+				<unitPattern count="other">{0}ac ft</unitPattern>
 			</unit>
 			<unit type="volume-pint">
 				<displayName>pt</displayName>
 				<unitPattern count="one">{0}pt</unitPattern>
 				<unitPattern count="other">{0}pt</unitPattern>
 			</unit>
-			<unit type="volume-tablespoon">
-				<displayName>cdas.</displayName>
-			</unit>
-			<unit type="volume-teaspoon">
-				<displayName>cdtas.</displayName>
-			</unit>
 			<unit type="volume-barrel">
 				<unitPattern count="one">{0}bbl</unitPattern>
 				<unitPattern count="other">{0}bbl</unitPattern>
+			</unit>
+			<unit type="volume-quart-imperial">
+				<unitPattern count="one">{0} qt imp.</unitPattern>
+				<unitPattern count="other">{0}qt imp</unitPattern>
 			</unit>
 		</unitLength>
 	</units>
@@ -1536,8 +1311,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<styleName type="wght" subtype="950" alt="ultraheavy">ultrapesada</styleName>
 	</typographicNames>
 	<personNames>
-		<initialPattern type="initial">{0}.</initialPattern>
-		<initialPattern type="initialSequence">{0} {1}</initialPattern>
 		<personName order="givenFirst" length="medium" usage="referring" formality="formal">
 			<namePattern>{given} {given2-initial} {surname} {credentials}</namePattern>
 		</personName>
@@ -1554,12 +1327,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<nameField type="given">Diego</nameField>
 		</sampleName>
 		<sampleName item="nativeGS">
-			<nameField type="surname">García</nameField>
+			<nameField type="surname">García Pérez</nameField>
 		</sampleName>
 		<sampleName item="nativeGGS">
 			<nameField type="given">Juan</nameField>
-			<nameField type="given2">Manuel</nameField>
-			<nameField type="surname">Rodríguez</nameField>
+			<nameField type="given2">Luis Antonio</nameField>
+			<nameField type="surname">Rodríguez Ruiz</nameField>
 		</sampleName>
 		<sampleName item="foreignFull">
 			<nameField type="title">Prof. Dra.</nameField>

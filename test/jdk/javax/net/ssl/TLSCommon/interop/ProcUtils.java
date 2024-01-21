@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,7 @@ public class ProcUtils {
      */
     public static OutputAnalyzer java(Path javaPath, Class<?> clazz,
             Map<String, String> props) {
-        ProcessBuilder pb = createJavaProcessBuilder(javaPath, clazz, props);
+        ProcessBuilder pb = createLimitedTestJavaProcessBuilder(javaPath, clazz, props);
         try {
             return ProcessTools.executeCommand(pb);
         } catch (Throwable e) {
@@ -50,7 +50,7 @@ public class ProcUtils {
         }
     }
 
-    private static ProcessBuilder createJavaProcessBuilder(Path javaPath,
+    private static ProcessBuilder createLimitedTestJavaProcessBuilder(Path javaPath,
             Class<?> clazz, Map<String, String> props) {
         List<String> cmds = new ArrayList<>();
         cmds.add(javaPath.toString());

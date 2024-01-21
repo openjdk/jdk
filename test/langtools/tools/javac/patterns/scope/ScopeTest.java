@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,18 +23,11 @@
 
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.List;
 import java.util.stream.Collectors;
-
-import org.testng.ITestResult;
-import org.testng.annotations.AfterMethod;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 import tools.javac.combo.JavacTemplateTestBase;
 
-import static java.util.stream.Collectors.toList;
-
-@Test
-public class ScopeTest extends JavacTemplateTestBase {
+class ScopeTest extends JavacTemplateTestBase {
 
     private static String st_block(String... statements) {
         return Arrays.stream(statements).collect(Collectors.joining("", "{", "}"));
@@ -84,14 +77,6 @@ public class ScopeTest extends JavacTemplateTestBase {
         return "!(" + expr + ")";
     }
 
-    @AfterMethod
-    public void dumpTemplateIfError(ITestResult result) {
-        // Make sure offending template ends up in log file on failure
-        if (!result.isSuccess()) {
-            System.err.printf("Diagnostics: %s%nTemplate: %s%n", diags.errorKeys(), sourceFiles.stream().map(p -> p.snd).collect(toList()));
-        }
-    }
-
     private void program(String block) {
         String s = "class C { void m(Object o) " + block + "}";
         addSourceFile("C.java", s);
@@ -121,24 +106,28 @@ public class ScopeTest extends JavacTemplateTestBase {
         assertCompileFailed(expectedDiag);
     }
 
-    public void testIf() {
+    @Test
+    void testIf() {
         assertOK(st_block(st_if(expr_o_match_str(), st_s_use(), st_return()), st_s_use()));
         assertOK(st_block(st_if(expr_not(expr_o_match_str()), st_return(), st_s_use()), st_s_use()));
         assertFail("compiler.err.cant.resolve.location", st_block(st_if(expr_o_match_str(), st_s_use(), st_noop()), st_s_use()));
         assertFail("compiler.err.cant.resolve.location", st_block(st_if(expr_not(expr_o_match_str()), st_noop(), st_s_use()), st_s_use()));
     }
 
-    public void testWhile() {
+    @Test
+    void testWhile() {
         assertOK(st_block(st_while(expr_not(expr_o_match_str()), st_noop()), st_s_use()));
         assertFail("compiler.err.cant.resolve.location", st_block(st_while(expr_not(expr_o_match_str()), st_break()), st_s_use()));
     }
 
-    public void testDoWhile() {
+    @Test
+    void testDoWhile() {
         assertOK(st_block(st_do_while(st_noop(), expr_not(expr_o_match_str())), st_s_use()));
         assertFail("compiler.err.cant.resolve.location", st_block(st_do_while(st_break(), expr_not(expr_o_match_str())), st_s_use()));
     }
 
-    public void testFor() {
+    @Test
+    void testFor() {
         assertOK(st_block(st_for(expr_empty(), expr_not(expr_o_match_str()), expr_empty(), st_noop()), st_s_use()));
         assertFail("compiler.err.cant.resolve.location", st_block(st_for(expr_empty(), expr_not(expr_o_match_str()), expr_empty(), st_break()), st_s_use()));
     }

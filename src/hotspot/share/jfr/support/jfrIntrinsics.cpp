@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@
 
 #ifdef ASSERT
 static void assert_precondition(JavaThread* jt) {
-  assert(jt != NULL, "invariant");
+  assert(jt != nullptr, "invariant");
   DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_java(jt);)
   assert(jt->has_last_Java_frame(), "invariant");
 }
@@ -71,8 +71,19 @@ void* JfrIntrinsicSupport::write_checkpoint(JavaThread* jt) {
   return JfrJavaEventWriter::event_writer(jt);
 }
 
+void* JfrIntrinsicSupport::return_lease(JavaThread* jt) {
+  DEBUG_ONLY(assert_precondition(jt);)
+  ThreadStateTransition::transition_from_java(jt, _thread_in_native);
+  assert(jt->jfr_thread_local()->has_java_event_writer(), "invariant");
+  assert(jt->jfr_thread_local()->shelved_buffer() != nullptr, "invariant");
+  JfrJavaEventWriter::flush(jt->jfr_thread_local()->java_event_writer(), 0, 0, jt);
+  assert(jt->jfr_thread_local()->shelved_buffer() == nullptr, "invariant");
+  ThreadStateTransition::transition_from_native(jt, _thread_in_Java);
+  return nullptr;
+}
+
 void JfrIntrinsicSupport::load_barrier(const Klass* klass) {
-  assert(klass != NULL, "sanity");
+  assert(klass != nullptr, "sanity");
   JfrTraceIdLoadBarrier::load_barrier(klass);
 }
 

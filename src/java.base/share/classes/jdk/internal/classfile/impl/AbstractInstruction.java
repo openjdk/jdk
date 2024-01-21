@@ -28,42 +28,43 @@ import java.lang.constant.ConstantDesc;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import jdk.internal.classfile.Classfile;
-import jdk.internal.classfile.Instruction;
-import jdk.internal.classfile.constantpool.ClassEntry;
-import jdk.internal.classfile.instruction.SwitchCase;
-import jdk.internal.classfile.constantpool.FieldRefEntry;
-import jdk.internal.classfile.constantpool.InterfaceMethodRefEntry;
-import jdk.internal.classfile.constantpool.InvokeDynamicEntry;
-import jdk.internal.classfile.constantpool.LoadableConstantEntry;
-import jdk.internal.classfile.constantpool.MemberRefEntry;
-import jdk.internal.classfile.instruction.ArrayLoadInstruction;
-import jdk.internal.classfile.instruction.ArrayStoreInstruction;
-import jdk.internal.classfile.instruction.BranchInstruction;
-import jdk.internal.classfile.instruction.ConstantInstruction;
-import jdk.internal.classfile.instruction.ConvertInstruction;
-import jdk.internal.classfile.instruction.FieldInstruction;
-import jdk.internal.classfile.instruction.IncrementInstruction;
-import jdk.internal.classfile.instruction.InvokeDynamicInstruction;
-import jdk.internal.classfile.instruction.InvokeInstruction;
-import jdk.internal.classfile.instruction.LoadInstruction;
-import jdk.internal.classfile.instruction.LookupSwitchInstruction;
-import jdk.internal.classfile.instruction.MonitorInstruction;
-import jdk.internal.classfile.instruction.NewMultiArrayInstruction;
-import jdk.internal.classfile.instruction.NewObjectInstruction;
-import jdk.internal.classfile.instruction.NewPrimitiveArrayInstruction;
-import jdk.internal.classfile.instruction.NewReferenceArrayInstruction;
-import jdk.internal.classfile.instruction.NopInstruction;
-import jdk.internal.classfile.instruction.OperatorInstruction;
-import jdk.internal.classfile.instruction.ReturnInstruction;
-import jdk.internal.classfile.instruction.StackInstruction;
-import jdk.internal.classfile.instruction.StoreInstruction;
-import jdk.internal.classfile.instruction.TableSwitchInstruction;
-import jdk.internal.classfile.instruction.ThrowInstruction;
-import jdk.internal.classfile.instruction.TypeCheckInstruction;
-import jdk.internal.classfile.Label;
-import jdk.internal.classfile.Opcode;
-import jdk.internal.classfile.TypeKind;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.Instruction;
+import java.lang.classfile.constantpool.ClassEntry;
+import java.lang.classfile.instruction.SwitchCase;
+import java.lang.classfile.constantpool.FieldRefEntry;
+import java.lang.classfile.constantpool.InterfaceMethodRefEntry;
+import java.lang.classfile.constantpool.InvokeDynamicEntry;
+import java.lang.classfile.constantpool.LoadableConstantEntry;
+import java.lang.classfile.constantpool.MemberRefEntry;
+import java.lang.classfile.instruction.ArrayLoadInstruction;
+import java.lang.classfile.instruction.ArrayStoreInstruction;
+import java.lang.classfile.instruction.BranchInstruction;
+import java.lang.classfile.instruction.ConstantInstruction;
+import java.lang.classfile.instruction.ConvertInstruction;
+import java.lang.classfile.instruction.DiscontinuedInstruction;
+import java.lang.classfile.instruction.FieldInstruction;
+import java.lang.classfile.instruction.IncrementInstruction;
+import java.lang.classfile.instruction.InvokeDynamicInstruction;
+import java.lang.classfile.instruction.InvokeInstruction;
+import java.lang.classfile.instruction.LoadInstruction;
+import java.lang.classfile.instruction.LookupSwitchInstruction;
+import java.lang.classfile.instruction.MonitorInstruction;
+import java.lang.classfile.instruction.NewMultiArrayInstruction;
+import java.lang.classfile.instruction.NewObjectInstruction;
+import java.lang.classfile.instruction.NewPrimitiveArrayInstruction;
+import java.lang.classfile.instruction.NewReferenceArrayInstruction;
+import java.lang.classfile.instruction.NopInstruction;
+import java.lang.classfile.instruction.OperatorInstruction;
+import java.lang.classfile.instruction.ReturnInstruction;
+import java.lang.classfile.instruction.StackInstruction;
+import java.lang.classfile.instruction.StoreInstruction;
+import java.lang.classfile.instruction.TableSwitchInstruction;
+import java.lang.classfile.instruction.ThrowInstruction;
+import java.lang.classfile.instruction.TypeCheckInstruction;
+import java.lang.classfile.Label;
+import java.lang.classfile.Opcode;
+import java.lang.classfile.TypeKind;
 
 public abstract sealed class AbstractInstruction
         extends AbstractElement
@@ -89,7 +90,8 @@ public abstract sealed class AbstractInstruction
             FMT_TableSwitch = "TableSwitch[OP=%s]",
             FMT_Throw = "Throw[OP=%s]",
             FMT_TypeCheck = "TypeCheck[OP=%s, type=%s]",
-            FMT_Unbound = "%s[op=%s]";
+            FMT_Unbound = "%s[op=%s]",
+            FMT_Discontinued = "Discontinued[OP=%s]";
 
     final Opcode op;
     final int size;
@@ -381,7 +383,7 @@ public abstract sealed class AbstractInstruction
         @Override
         public FieldRefEntry field() {
             if (fieldEntry == null)
-                fieldEntry = (FieldRefEntry) code.classReader.readEntry(pos + 1);
+                fieldEntry = code.classReader.readEntry(pos + 1, FieldRefEntry.class);
             return fieldEntry;
         }
 
@@ -411,18 +413,18 @@ public abstract sealed class AbstractInstruction
         @Override
         public MemberRefEntry method() {
             if (methodEntry == null)
-                methodEntry = (MemberRefEntry) code.classReader.readEntry(pos + 1);
+                methodEntry = code.classReader.readEntry(pos + 1, MemberRefEntry.class);
             return methodEntry;
         }
 
         @Override
         public boolean isInterface() {
-            return method().tag() == Classfile.TAG_INTERFACEMETHODREF;
+            return method().tag() == ClassFile.TAG_INTERFACEMETHODREF;
         }
 
         @Override
         public int count() {
-            return Util.parameterSlots(type().stringValue());
+            return 0;
         }
 
         @Override
@@ -451,7 +453,7 @@ public abstract sealed class AbstractInstruction
         @Override
         public MemberRefEntry method() {
             if (methodEntry == null)
-                methodEntry = (InterfaceMethodRefEntry) code.classReader.readEntry(pos + 1);
+                methodEntry = code.classReader.readEntry(pos + 1, InterfaceMethodRefEntry.class);
             return methodEntry;
         }
 
@@ -491,7 +493,7 @@ public abstract sealed class AbstractInstruction
         @Override
         public InvokeDynamicEntry invokedynamic() {
             if (indyEntry == null)
-                indyEntry = (InvokeDynamicEntry) code.classReader.readEntry(pos + 1);
+                indyEntry = code.classReader.readEntry(pos + 1, InvokeDynamicEntry.class);
             return indyEntry;
         }
 
@@ -705,6 +707,59 @@ public abstract sealed class AbstractInstruction
 
     }
 
+    public static final class BoundJsrInstruction
+            extends BoundInstruction implements DiscontinuedInstruction.JsrInstruction {
+
+        public BoundJsrInstruction(Opcode op, CodeImpl code, int pos) {
+            super(op, op.sizeIfFixed(), code, pos);
+        }
+
+        @Override
+        public Label target() {
+            return offsetToLabel(branchByteOffset());
+        }
+
+        public int branchByteOffset() {
+            return size == 3
+                   ? code.classReader.readS2(pos + 1)
+                   : code.classReader.readInt(pos + 1);
+        }
+
+        @Override
+        public void writeTo(DirectCodeBuilder writer) {
+            writer.writeBranch(opcode(), target());
+        }
+
+        @Override
+        public String toString() {
+            return String.format(FMT_Discontinued, this.opcode());
+        }
+
+    }
+
+    public static final class BoundRetInstruction
+            extends BoundInstruction implements DiscontinuedInstruction.RetInstruction {
+
+        public BoundRetInstruction(Opcode op, CodeImpl code, int pos) {
+            super(op, op.sizeIfFixed(), code, pos);
+        }
+
+        @Override
+        public String toString() {
+            return String.format(FMT_Discontinued, this.opcode());
+        }
+
+        @Override
+        public int slot() {
+            return switch (size) {
+                case 2 -> code.classReader.readU1(pos + 1);
+                case 4 -> code.classReader.readU2(pos + 2);
+                default -> throw new IllegalArgumentException("Unexpected op size: " + op.sizeIfFixed() + " -- " + op);
+            };
+        }
+
+    }
+
     public static abstract sealed class UnboundInstruction extends AbstractInstruction {
 
         UnboundInstruction(Opcode op) {
@@ -744,7 +799,7 @@ public abstract sealed class AbstractInstruction
 
         @Override
         public void writeTo(DirectCodeBuilder writer) {
-            writer.writeLoad(op, slot);
+            writer.writeLocalVar(op, slot);
         }
 
         @Override
@@ -775,7 +830,7 @@ public abstract sealed class AbstractInstruction
 
         @Override
         public void writeTo(DirectCodeBuilder writer) {
-            writer.writeStore(op, slot);
+            writer.writeLocalVar(op, slot);
         }
 
         @Override
@@ -1004,7 +1059,7 @@ public abstract sealed class AbstractInstruction
         @Override
         public int count() {
             return op == Opcode.INVOKEINTERFACE
-                   ? Util.parameterSlots(methodEntry.nameAndType().type().stringValue()) + 1
+                   ? Util.parameterSlots(Util.methodTypeSymbol(methodEntry.nameAndType())) + 1
                    : 0;
         }
 
@@ -1338,5 +1393,55 @@ public abstract sealed class AbstractInstruction
             super(Opcode.NOP);
         }
 
+    }
+
+    public static final class UnboundJsrInstruction
+            extends UnboundInstruction implements DiscontinuedInstruction.JsrInstruction {
+        final Label target;
+
+        public UnboundJsrInstruction(Opcode op, Label target) {
+            super(op);
+            this.target = target;
+        }
+
+        @Override
+        public Label target() {
+            return target;
+        }
+
+        @Override
+        public void writeTo(DirectCodeBuilder writer) {
+            writer.writeBranch(op, target);
+        }
+
+        @Override
+        public String toString() {
+            return String.format(FMT_Discontinued, this.opcode());
+        }
+    }
+
+    public static final class UnboundRetInstruction
+            extends UnboundInstruction implements DiscontinuedInstruction.RetInstruction {
+        final int slot;
+
+        public UnboundRetInstruction(Opcode op, int slot) {
+            super(op);
+            this.slot = slot;
+        }
+
+        @Override
+        public int slot() {
+            return slot;
+        }
+
+        @Override
+        public void writeTo(DirectCodeBuilder writer) {
+            writer.writeLocalVar(op, slot);
+        }
+
+        @Override
+        public String toString() {
+            return String.format(FMT_Discontinued, this.opcode());
+        }
     }
 }

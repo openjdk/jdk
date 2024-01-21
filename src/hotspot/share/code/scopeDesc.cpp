@@ -114,7 +114,6 @@ GrowableArray<ScopeValue*>* ScopeDesc::decode_object_values(int decode_offset) {
     // object's fields could reference it (OBJECT_ID_CODE).
     (void)ScopeValue::read_from(stream);
   }
-  assert(result->length() == length, "inconsistent debug information");
   return result;
 }
 
@@ -127,6 +126,38 @@ GrowableArray<MonitorValue*>* ScopeDesc::decode_monitor_values(int decode_offset
   for (int index = 0; index < length; index++) {
     result->push(new MonitorValue(stream));
   }
+  return result;
+}
+
+GrowableArray<ScopeValue*>* ScopeDesc::objects_to_rematerialize(frame& frm, RegisterMap& map) {
+  if (_objects == nullptr) {
+    return nullptr;
+  }
+
+  GrowableArray<ScopeValue*>* result = new GrowableArray<ScopeValue*>();
+  for (int i = 0; i < _objects->length(); i++) {
+    assert(_objects->at(i)->is_object(), "invalid debug information");
+    ObjectValue* sv = _objects->at(i)->as_ObjectValue();
+
+    // If the object is not referenced in current JVM state, then it's only
+    // a candidate in an ObjectMergeValue, we don't need to rematerialize it
+    // unless when/if it's returned by 'select()' below.
+    if (!sv->is_root()) {
+      continue;
+    }
+
+    if (sv->is_object_merge()) {
+      sv = sv->as_ObjectMergeValue()->select(frm, map);
+      // If select() returns nullptr, then the object doesn't need to be
+      // rematerialized.
+      if (sv == nullptr) {
+        continue;
+      }
+    }
+
+    result->append_if_missing(sv);
+  }
+
   return result;
 }
 
@@ -238,8 +269,12 @@ void ScopeDesc::print_on(outputStream* st, PcDesc* pd) const {
     st->print_cr("   Objects");
     for (int i = 0; i < _objects->length(); i++) {
       ObjectValue* sv = (ObjectValue*) _objects->at(i);
-      st->print("    - %d: ", sv->id());
-      st->print("%s ", java_lang_Class::as_Klass(sv->klass()->as_ConstantOopReadValue()->value()())->external_name());
+      st->print("    - %d: %c ", i, sv->is_root() ? 'R' : ' ');
+      sv->print_on(st);
+      st->print(", ");
+      if (!sv->is_object_merge()) {
+        st->print("%s", java_lang_Class::as_Klass(sv->klass()->as_ConstantOopReadValue()->value()())->external_name());
+      }
       sv->print_fields_on(st);
       st->cr();
     }

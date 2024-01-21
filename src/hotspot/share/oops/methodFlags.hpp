@@ -25,6 +25,7 @@
 #ifndef SHARE_OOPS_METHODFLAGS_HPP
 #define SHARE_OOPS_METHODFLAGS_HPP
 
+#include "runtime/atomic.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 
@@ -86,8 +87,8 @@ class MethodFlags {
 #undef M_STATUS_GET_SET
 
   int as_int() const { return _status; }
-  void atomic_set_bits(u4 bits);
-  void atomic_clear_bits(u4 bits);
+  void atomic_set_bits(u4 bits)   { Atomic::fetch_then_or(&_status, bits); }
+  void atomic_clear_bits(u4 bits) { Atomic::fetch_then_and(&_status, ~bits); }
   void print_on(outputStream* st) const;
 };
 

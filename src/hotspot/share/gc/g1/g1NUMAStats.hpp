@@ -91,7 +91,7 @@ public:
   };
 
 private:
-  const int* _node_ids;
+  const uint* _node_ids;
   uint _num_node_ids;
 
   NodeDataArray* _node_data[NodeDataItemsSentinel];
@@ -101,7 +101,7 @@ private:
   void print_mutator_alloc_stat_debug();
 
 public:
-  G1NUMAStats(const int* node_ids, uint num_node_ids);
+  G1NUMAStats(const uint* node_ids, uint num_node_ids);
   ~G1NUMAStats();
 
   void clear(G1NUMAStats::NodeDataItems phase);

@@ -70,10 +70,13 @@
           "Allocation averaging weight")                                    \
           range(0, 100)                                                     \
                                                                             \
+  /* At GC all TLABs are retired, and each thread's active  */              \
+  /* TLAB is assumed to be half full on average. The        */              \
+  /* remaining space is waste, proportional to TLAB size.   */              \
+  product(uintx, TLABWasteTargetPercent, 1,                                 \
+          "Percentage of Eden that can be wasted (half-full TLABs at GC)")  \
   /* Limit the lower bound of this flag to 1 as it is used  */              \
   /* in a division expression.                              */              \
-  product(uintx, TLABWasteTargetPercent, 1,                                 \
-          "Percentage of Eden that can be wasted")                          \
           range(1, 100)                                                     \
                                                                             \
   product(uintx, TLABRefillWasteFraction,    64,                            \

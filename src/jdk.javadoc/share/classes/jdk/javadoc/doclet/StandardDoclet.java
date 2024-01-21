@@ -65,6 +65,8 @@ import jdk.javadoc.internal.doclets.formats.html.HtmlDoclet;
  *
  * @spec javadoc/doc-comment-spec.html Documentation Comment Specification for the Standard Doclet
  * @spec https://www.w3.org/TR/html52 HTML Standard
+ *
+ * @since 9
  */
 public class StandardDoclet implements Doclet {
 

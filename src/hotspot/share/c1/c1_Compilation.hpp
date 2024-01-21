@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@
 #include "memory/resourceArea.hpp"
 #include "runtime/deoptimization.hpp"
 
+class CompilationFailureInfo;
 class CompilationResourceObj;
 class XHandlers;
 class ExceptionInfo;
@@ -85,6 +86,8 @@ class Compilation: public StackObj {
   bool               _has_monitors; // Fastpath monitors detection for Continuations
   bool               _install_code;
   const char*        _bailout_msg;
+  CompilationFailureInfo* _first_failure_details; // Details for the first failure happening during compilation
+  bool               _oom;
   ExceptionInfoList* _exception_info_list;
   ExceptionHandlerTable _exception_handler_table;
   ImplicitExceptionTable _implicit_exception_table;
@@ -198,20 +201,25 @@ class Compilation: public StackObj {
 #ifndef PRODUCT
   void maybe_print_current_instruction();
   CFGPrinterOutput* cfg_printer_output() {
-    guarantee(_cfg_printer_output != NULL, "CFG printer output not initialized");
+    guarantee(_cfg_printer_output != nullptr, "CFG printer output not initialized");
     return _cfg_printer_output;
   }
 #endif // PRODUCT
 
+  // MemLimit handling
+  bool oom() const { return _oom; }
+  void set_oom() { _oom = true; }
+
   // error handling
   void bailout(const char* msg);
-  bool bailed_out() const                        { return _bailout_msg != NULL; }
+  bool bailed_out() const                        { return _bailout_msg != nullptr; }
   const char* bailout_msg() const                { return _bailout_msg; }
+  const CompilationFailureInfo* first_failure_details() const { return _first_failure_details; }
 
-  static int desired_max_code_buffer_size() {
-    return (int)NMethodSizeLimit;  // default 64K
+  static uint desired_max_code_buffer_size() {
+    return (uint)NMethodSizeLimit;  // default 64K
   }
-  static int desired_max_constant_size() {
+  static uint desired_max_constant_size() {
     return desired_max_code_buffer_size() / 10;
   }
 

@@ -69,7 +69,9 @@ public:
   CodeBlobClosure* weak_codeblobs()        { return &_weak._codeblobs; }
 };
 
-G1EvacuationRootClosures* G1EvacuationRootClosures::create_root_closures(G1ParScanThreadState* pss, G1CollectedHeap* g1h) {
+G1EvacuationRootClosures* G1EvacuationRootClosures::create_root_closures(G1CollectedHeap* g1h,
+                                                                         G1ParScanThreadState* pss,
+                                                                         bool process_only_dirty_klasses) {
   G1EvacuationRootClosures* res = nullptr;
   if (g1h->collector_state()->in_concurrent_start_gc()) {
     if (ClassUnloadingWithConcurrentMark) {
@@ -78,7 +80,7 @@ G1EvacuationRootClosures* G1EvacuationRootClosures::create_root_closures(G1ParSc
       res = new G1ConcurrentStartMarkClosures<true>(g1h, pss);
     }
   } else {
-    res = new G1EvacuationClosures(g1h, pss, g1h->collector_state()->in_young_only_phase());
+    res = new G1EvacuationClosures(g1h, pss, process_only_dirty_klasses);
   }
   return res;
 }

@@ -1,0 +1,3 @@
+networkaddress.cache.ttl=-1
+networkaddress.cache.negative.ttl=-1
+networkaddress.cache.stale.ttl=10000

@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "cds/archiveUtils.hpp"
 #include "cds/archiveBuilder.hpp"
+#include "cds/cdsConfig.hpp"
 #include "cds/cppVtables.hpp"
 #include "cds/metaspaceShared.hpp"
 #include "logging/log.hpp"
@@ -215,7 +216,7 @@ void CppVtableCloner<T>::init_orig_cpp_vtptr(int kind) {
 CppVtableInfo** CppVtables::_index = nullptr;
 
 char* CppVtables::dumptime_init(ArchiveBuilder* builder) {
-  assert(DumpSharedSpaces, "must");
+  assert(CDSConfig::is_dumping_static_archive(), "cpp tables are only dumped into static archive");
   size_t vtptrs_bytes = _num_cloned_vtable_kinds * sizeof(CppVtableInfo*);
   _index = (CppVtableInfo**)builder->rw_region()->allocate(vtptrs_bytes);
 
@@ -228,7 +229,7 @@ char* CppVtables::dumptime_init(ArchiveBuilder* builder) {
 }
 
 void CppVtables::serialize(SerializeClosure* soc) {
-  soc->do_ptr((void**)&_index);
+  soc->do_ptr(&_index);
   if (soc->reading()) {
     CPP_VTABLE_TYPES_DO(INITIALIZE_VTABLE);
   }
@@ -240,7 +241,7 @@ intptr_t* CppVtables::get_archived_vtable(MetaspaceObj::Type msotype, address ob
     _orig_cpp_vtptrs_inited = true;
   }
 
-  Arguments::assert_is_dumping_archive();
+  assert(CDSConfig::is_dumping_archive(), "sanity");
   int kind = -1;
   switch (msotype) {
   case MetaspaceObj::SymbolType:
@@ -253,6 +254,7 @@ intptr_t* CppVtables::get_archived_vtable(MetaspaceObj::Type msotype, address ob
   case MetaspaceObj::ConstantPoolCacheType:
   case MetaspaceObj::AnnotationsType:
   case MetaspaceObj::MethodCountersType:
+  case MetaspaceObj::SharedClassPathEntryType:
   case MetaspaceObj::RecordComponentType:
     // These have no vtables.
     break;
@@ -268,7 +270,7 @@ intptr_t* CppVtables::get_archived_vtable(MetaspaceObj::Type msotype, address ob
     }
     if (kind >= _num_cloned_vtable_kinds) {
       fatal("Cannot find C++ vtable for " INTPTR_FORMAT " -- you probably added"
-            " a new subtype of Klass or MetaData without updating CPP_VTABLE_TYPES_DO",
+            " a new subtype of Klass or MetaData without updating CPP_VTABLE_TYPES_DO or the cases in this 'switch' statement",
             p2i(obj));
     }
   }
@@ -282,7 +284,7 @@ intptr_t* CppVtables::get_archived_vtable(MetaspaceObj::Type msotype, address ob
 }
 
 void CppVtables::zero_archived_vtables() {
-  assert(DumpSharedSpaces, "dump-time only");
+  assert(CDSConfig::is_dumping_static_archive(), "cpp tables are only dumped into static archive");
   for (int kind = 0; kind < _num_cloned_vtable_kinds; kind ++) {
     _index[kind]->zero();
   }

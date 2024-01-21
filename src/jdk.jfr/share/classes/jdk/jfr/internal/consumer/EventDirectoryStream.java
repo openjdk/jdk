@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,9 +38,12 @@ import java.util.function.Consumer;
 import jdk.jfr.Configuration;
 import jdk.jfr.consumer.RecordedEvent;
 import jdk.jfr.internal.JVM;
+import jdk.jfr.internal.LogLevel;
+import jdk.jfr.internal.LogTag;
+import jdk.jfr.internal.Logger;
 import jdk.jfr.internal.PlatformRecording;
 import jdk.jfr.internal.SecuritySupport;
-import jdk.jfr.internal.Utils;
+import jdk.jfr.internal.util.Utils;
 import jdk.jfr.internal.management.StreamBarrier;
 
 /**
@@ -113,20 +116,19 @@ public final class EventDirectoryStream extends AbstractEventStream {
 
     @Override
     protected void process() throws IOException {
-        JVM jvm = JVM.getJVM();
         Thread t = Thread.currentThread();
         try {
-            if (jvm.isExcluded(t)) {
+            if (JVM.isExcluded(t)) {
                 threadExclusionLevel++;
             } else {
-                jvm.exclude(t);
+                JVM.exclude(t);
             }
             processRecursionSafe();
         } finally {
             if (threadExclusionLevel > 0) {
                 threadExclusionLevel--;
             } else {
-                jvm.include(t);
+                JVM.include(t);
             }
         }
     }
@@ -166,9 +168,7 @@ public final class EventDirectoryStream extends AbstractEventStream {
                         processUnordered(disp);
                     }
                     currentParser.resetCache();
-                    long endNanos = currentParser.getStartNanos() + currentParser.getChunkDuration();
-                    // same conversion as in RecordingInfo
-                    if (endNanos > filterEnd) {
+                    if (currentParser.getLastFlush() > filterEnd) {
                         return;
                     }
                 }
@@ -199,6 +199,9 @@ public final class EventDirectoryStream extends AbstractEventStream {
                     // Avoid reading the same chunk again and again if
                     // duration is 0 ns
                     durationNanos++;
+                    if (Logger.shouldLog(LogTag.JFR_SYSTEM_PARSER, LogLevel.INFO)) {
+                        Logger.log(LogTag.JFR_SYSTEM_PARSER, LogLevel.INFO, "Unexpected chunk with 0 ns duration");
+                    }
                 }
                 path = repositoryFiles.nextPath(currentChunkStartNanos + durationNanos, true);
                 if (path == null) {

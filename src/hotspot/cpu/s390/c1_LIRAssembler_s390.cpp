@@ -856,13 +856,13 @@ void LIR_Assembler::stack2stack(LIR_Opr src, LIR_Opr dest, BasicType type) {
 // 4-byte accesses only! Don't use it to access 8 bytes!
 Address LIR_Assembler::as_Address_hi(LIR_Address* addr) {
   ShouldNotCallThis();
-  return 0; // unused
+  return Address(); // unused
 }
 
 // 4-byte accesses only! Don't use it to access 8 bytes!
 Address LIR_Assembler::as_Address_lo(LIR_Address* addr) {
   ShouldNotCallThis();
-  return 0; // unused
+  return Address(); // unused
 }
 
 void LIR_Assembler::mem2reg(LIR_Opr src_opr, LIR_Opr dest, BasicType type, LIR_PatchCode patch_code,
@@ -2670,7 +2670,6 @@ void LIR_Assembler::emit_compare_and_swap(LIR_OpCompareAndSwap* op) {
   Register addr = op->addr()->as_pointer_register();
   Register t1_cmp = Z_R1_scratch;
   if (op->code() == lir_cas_long) {
-    assert(VM_Version::supports_cx8(), "wrong machine");
     Register cmp_value_lo = op->cmp_value()->as_register_lo();
     Register new_value_lo = op->new_value()->as_register_lo();
     __ z_lgr(t1_cmp, cmp_value_lo);
@@ -2722,7 +2721,7 @@ void LIR_Assembler::emit_lock(LIR_OpLock* op) {
   Register obj = op->obj_opr()->as_register();  // May not be an oop.
   Register hdr = op->hdr_opr()->as_register();
   Register lock = op->lock_opr()->as_register();
-  if (UseHeavyMonitors) {
+  if (LockingMode == LM_MONITOR) {
     if (op->info() != nullptr) {
       add_debug_info_for_null_check_here(op->info());
       __ null_check(obj);

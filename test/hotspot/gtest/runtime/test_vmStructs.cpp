@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,7 +58,7 @@ TEST(VMStructs, VMTypes_duplicates)  {
   for (int i = 0; VMStructs::localHotSpotVMTypes[i].typeName != NULL; i++) {
     for (int j = i + 1; VMStructs::localHotSpotVMTypes[j].typeName != NULL; j++) {
       EXPECT_STRNE(VMStructs::localHotSpotVMTypes[i].typeName, VMStructs::localHotSpotVMTypes[j].typeName)
-              << "Duplicate entries on indexes " << i << " and " << j;
+              << "Duplicate entries on indexes " << i << " and " << j << " : " << VMStructs::localHotSpotVMTypes[i].typeName;
     }
   }
 }

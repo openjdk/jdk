@@ -826,7 +826,10 @@ public class GregorianCalendar extends Calendar {
         }
 
         if (year > gregorianCutoverYear) {
-            return (year%100 != 0) || (year%400 == 0); // Gregorian
+            // A multiple of 100, 200 and 300 is not divisible by 16, but 400 is.
+            // So for a year that's divisible by 4, checking that it's also divisible by 16
+            // is sufficient to determine it must be a leap year.
+            return (year & 15) == 0 || (year % 100 != 0); // Gregorian
         }
         if (year < gregorianCutoverYearJulian) {
             return true; // Julian
@@ -840,7 +843,7 @@ public class GregorianCalendar extends Calendar {
         } else {
             gregorian = year == gregorianCutoverYear;
         }
-        return gregorian ? (year%100 != 0) || (year%400 == 0) : true;
+        return !gregorian || (year & 15) == 0 || (year % 100 != 0);
     }
 
     /**

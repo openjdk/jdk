@@ -206,14 +206,8 @@ final class LCMSTransform implements ColorTransform {
             }
             int idx;
             // TODO check for src npixels = dst npixels
-            srcIL = new LCMSImageLayout(
-                    srcLine, srcLine.length/getNumInComponents(),
-                    LCMSImageLayout.CHANNELS_SH(getNumInComponents()) |
-                    LCMSImageLayout.BYTES_SH(1), getNumInComponents());
-            dstIL = new LCMSImageLayout(
-                    dstLine, dstLine.length/getNumOutComponents(),
-                    LCMSImageLayout.CHANNELS_SH(getNumOutComponents()) |
-                    LCMSImageLayout.BYTES_SH(1), getNumOutComponents());
+            srcIL = new LCMSImageLayout(srcLine, getNumInComponents());
+            dstIL = new LCMSImageLayout(dstLine, getNumOutComponents());
             // process each scanline
             for (int y = 0; y < h; y++) {
                 // convert src scanline
@@ -262,15 +256,8 @@ final class LCMSTransform implements ColorTransform {
                 alpha = new float[w];
             }
             int idx;
-            srcIL = new LCMSImageLayout(
-                    srcLine, srcLine.length/getNumInComponents(),
-                    LCMSImageLayout.CHANNELS_SH(getNumInComponents()) |
-                    LCMSImageLayout.BYTES_SH(2), getNumInComponents()*2);
-
-            dstIL = new LCMSImageLayout(
-                    dstLine, dstLine.length/getNumOutComponents(),
-                    LCMSImageLayout.CHANNELS_SH(getNumOutComponents()) |
-                    LCMSImageLayout.BYTES_SH(2), getNumOutComponents()*2);
+            srcIL = new LCMSImageLayout(srcLine, getNumInComponents());
+            dstIL = new LCMSImageLayout(dstLine, getNumOutComponents());
             // process each scanline
             for (int y = 0; y < h; y++) {
                 // convert src scanline
@@ -379,15 +366,8 @@ final class LCMSTransform implements ColorTransform {
         short[] srcLine = new short[w * srcNumBands];
         short[] dstLine = new short[w * dstNumBands];
         int idx;
-        srcIL = new LCMSImageLayout(
-                srcLine, srcLine.length/getNumInComponents(),
-                LCMSImageLayout.CHANNELS_SH(getNumInComponents()) |
-                LCMSImageLayout.BYTES_SH(2), getNumInComponents()*2);
-
-        dstIL = new LCMSImageLayout(
-                dstLine, dstLine.length/getNumOutComponents(),
-                LCMSImageLayout.CHANNELS_SH(getNumOutComponents()) |
-                LCMSImageLayout.BYTES_SH(2), getNumOutComponents()*2);
+        srcIL = new LCMSImageLayout(srcLine, getNumInComponents());
+        dstIL = new LCMSImageLayout(dstLine, getNumOutComponents());
         // process each scanline
         for (int y = 0; y < h; y++, ys++, yd++) {
             // get src scanline
@@ -478,14 +458,8 @@ final class LCMSTransform implements ColorTransform {
             byte[] dstLine = new byte[w * dstNumBands];
             int idx;
             // TODO check for src npixels = dst npixels
-            srcIL = new LCMSImageLayout(
-                    srcLine, srcLine.length/getNumInComponents(),
-                    LCMSImageLayout.CHANNELS_SH(getNumInComponents()) |
-                    LCMSImageLayout.BYTES_SH(1), getNumInComponents());
-            dstIL = new LCMSImageLayout(
-                    dstLine, dstLine.length/getNumOutComponents(),
-                    LCMSImageLayout.CHANNELS_SH(getNumOutComponents()) |
-                    LCMSImageLayout.BYTES_SH(1), getNumOutComponents());
+            srcIL = new LCMSImageLayout(srcLine, getNumInComponents());
+            dstIL = new LCMSImageLayout(dstLine, getNumOutComponents());
             // process each scanline
             for (int y = 0; y < h; y++, ys++, yd++) {
                 // get src scanline
@@ -517,15 +491,8 @@ final class LCMSTransform implements ColorTransform {
             short[] srcLine = new short[w * srcNumBands];
             short[] dstLine = new short[w * dstNumBands];
             int idx;
-            srcIL = new LCMSImageLayout(
-                    srcLine, srcLine.length/getNumInComponents(),
-                    LCMSImageLayout.CHANNELS_SH(getNumInComponents()) |
-                    LCMSImageLayout.BYTES_SH(2), getNumInComponents()*2);
-
-            dstIL = new LCMSImageLayout(
-                    dstLine, dstLine.length/getNumOutComponents(),
-                    LCMSImageLayout.CHANNELS_SH(getNumOutComponents()) |
-                    LCMSImageLayout.BYTES_SH(2), getNumOutComponents()*2);
+            srcIL = new LCMSImageLayout(srcLine, getNumInComponents());
+            dstIL = new LCMSImageLayout(dstLine, getNumOutComponents());
             // process each scanline
             for (int y = 0; y < h; y++, ys++, yd++) {
                 // get src scanline
@@ -561,40 +528,20 @@ final class LCMSTransform implements ColorTransform {
     /* the number of colors is (size of the array) / (number of input/output
        components */
     public short[] colorConvert(short[] src, short[] dst) {
-
         if (dst == null) {
-            dst = new short [(src.length/getNumInComponents())*getNumOutComponents()];
+            dst = new short[(src.length / numInComponents) * numOutComponents];
         }
-        LCMSImageLayout srcIL = new LCMSImageLayout(
-                src, src.length/getNumInComponents(),
-                LCMSImageLayout.CHANNELS_SH(getNumInComponents()) |
-                LCMSImageLayout.BYTES_SH(2), getNumInComponents()*2);
-
-        LCMSImageLayout dstIL = new LCMSImageLayout(
-                dst, dst.length/getNumOutComponents(),
-                LCMSImageLayout.CHANNELS_SH(getNumOutComponents()) |
-                LCMSImageLayout.BYTES_SH(2), getNumOutComponents()*2);
-
-        doTransform(srcIL, dstIL);
-
+        doTransform(new LCMSImageLayout(src, numInComponents),
+                    new LCMSImageLayout(dst, numOutComponents));
         return dst;
     }
 
     public byte[] colorConvert(byte[] src, byte[] dst) {
         if (dst == null) {
-            dst = new byte [(src.length/getNumInComponents())*getNumOutComponents()];
+            dst = new byte[(src.length / numInComponents) * numOutComponents];
         }
-        LCMSImageLayout srcIL = new LCMSImageLayout(
-                src, src.length/getNumInComponents(),
-                LCMSImageLayout.CHANNELS_SH(getNumInComponents()) |
-                LCMSImageLayout.BYTES_SH(1), getNumInComponents());
-
-        LCMSImageLayout dstIL = new LCMSImageLayout(
-                dst, dst.length/getNumOutComponents(),
-                LCMSImageLayout.CHANNELS_SH(getNumOutComponents()) |
-                LCMSImageLayout.BYTES_SH(1), getNumOutComponents());
-
-        doTransform(srcIL, dstIL);
+        doTransform(new LCMSImageLayout(src, numInComponents),
+                    new LCMSImageLayout(dst, numOutComponents));
 
         return dst;
     }

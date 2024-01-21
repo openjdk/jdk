@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -26,7 +27,7 @@
  * @bug 8263189
  * @summary C2: assert(!had_error) failed: bad dominance
  *
- * @run main/othervm -Xcomp -XX:-TieredCompilation -XX:CompileOnly=TestDeadLongPhi TestDeadLongPhi
+ * @run main/othervm -Xcomp -XX:-TieredCompilation -XX:CompileOnly=TestDeadLongPhi::* TestDeadLongPhi
  *
  */
 
@@ -72,4 +73,3 @@ public class TestDeadLongPhi {
     }
 
 }
-

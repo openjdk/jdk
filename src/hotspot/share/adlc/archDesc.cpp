@@ -1,5 +1,5 @@
 //
-// Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -85,9 +85,9 @@ void ChainList::dump() {
 
 void ChainList::output(FILE *fp) {
   fprintf(fp, "\nChain Rules: output resets iterator\n");
-  const char   *cost  = NULL;
-  const char   *name  = NULL;
-  const char   *rule  = NULL;
+  const char   *cost  = nullptr;
+  const char   *name  = nullptr;
+  const char   *rule  = nullptr;
   bool   chains_exist = false;
   for(reset(); (iter(name,cost,rule)) == true; ) {
     fprintf(fp, "Chain to <%s> at cost #%s using %s_rule\n",name, cost ? cost : "0", rule);
@@ -113,7 +113,7 @@ bool MatchList::search(const char *opc, const char *res, const char *lch,
     if ((lch == _lchild) || (lch && _lchild && !strcmp(lch, _lchild))) {
       if ((rch == _rchild) || (rch && _rchild && !strcmp(rch, _rchild))) {
         char * predStr = get_pred();
-        char * prStr = pr?pr->_pred:NULL;
+        char * prStr = pr?pr->_pred:nullptr;
         if (ADLParser::equivalent_expressions(prStr, predStr)) {
           return true;
         }
@@ -146,12 +146,12 @@ ArchDesc::ArchDesc()
     _internalOps(cmpstr,hashstr, Form::arena),
     _internalMatch(cmpstr,hashstr, Form::arena),
     _chainRules(cmpstr,hashstr, Form::arena),
-    _cisc_spill_operand(NULL),
+    _cisc_spill_operand(nullptr),
     _needs_deep_clone_jvms(false) {
 
-      // Initialize the opcode to MatchList table with NULLs
+      // Initialize the opcode to MatchList table with nulls
       for( int i=0; i<_last_opcode; ++i ) {
-        _mlistab[i] = NULL;
+        _mlistab[i] = nullptr;
       }
 
       // Set-up the global tables
@@ -185,18 +185,18 @@ ArchDesc::ArchDesc()
       _internal_errs     = 0;
 
       // Initialize I/O Files
-      _ADL_file._name = NULL; _ADL_file._fp = NULL;
+      _ADL_file._name = nullptr; _ADL_file._fp = nullptr;
       // Machine dependent output files
-      _DFA_file._name    = NULL;  _DFA_file._fp = NULL;
-      _HPP_file._name    = NULL;  _HPP_file._fp = NULL;
-      _CPP_file._name    = NULL;  _CPP_file._fp = NULL;
-      _bug_file._name    = "bugs.out";      _bug_file._fp = NULL;
+      _DFA_file._name    = nullptr;  _DFA_file._fp = nullptr;
+      _HPP_file._name    = nullptr;  _HPP_file._fp = nullptr;
+      _CPP_file._name    = nullptr;  _CPP_file._fp = nullptr;
+      _bug_file._name    = "bugs.out";      _bug_file._fp = nullptr;
 
       // Initialize Register & Pipeline Form Pointers
-      _register = NULL;
-      _encode = NULL;
-      _pipeline = NULL;
-      _frame = NULL;
+      _register = nullptr;
+      _encode = nullptr;
+      _pipeline = nullptr;
+      _frame = nullptr;
 }
 
 ArchDesc::~ArchDesc() {
@@ -232,12 +232,12 @@ void ArchDesc::inspectOperands() {
   // Iterate through all operands
   _operands.reset();
   OperandForm *op;
-  for( ; (op = (OperandForm*)_operands.iter()) != NULL;) {
+  for( ; (op = (OperandForm*)_operands.iter()) != nullptr;) {
     // Construct list of top-level operands (components)
     op->build_components();
 
     // Ensure that match field is defined.
-    if ( op->_matrule == NULL )  continue;
+    if ( op->_matrule == nullptr )  continue;
 
     // Type check match rules
     check_optype(op->_matrule);
@@ -274,7 +274,7 @@ void ArchDesc::inspectOperands() {
 
     // Construct a MatchList for this entry.
     // Iterate over the list to enumerate all match cases for operands with multiple match rules.
-    for (; mrule != NULL; mrule = mrule->_next) {
+    for (; mrule != nullptr; mrule = mrule->_next) {
       mrule->_machType = rootOp;
       buildMatchList(mrule, result, rootOp, pred, cost);
     }
@@ -287,12 +287,12 @@ void ArchDesc::inspectInstructions() {
   // Iterate through all instructions
   _instructions.reset();
   InstructForm *instr;
-  for( ; (instr = (InstructForm*)_instructions.iter()) != NULL; ) {
+  for( ; (instr = (InstructForm*)_instructions.iter()) != nullptr; ) {
     // Construct list of top-level operands (components)
     instr->build_components();
 
     // Ensure that match field is defined.
-    if ( instr->_matrule == NULL )  continue;
+    if ( instr->_matrule == nullptr )  continue;
 
     MatchRule &mrule = *instr->_matrule;
     Predicate *pred  =  instr->build_predicate();
@@ -316,7 +316,7 @@ void ArchDesc::inspectInstructions() {
     }
 
     Attribute *attr = instr->_attribs;
-    while (attr != NULL) {
+    while (attr != nullptr) {
       if (strcmp(attr->_ident,"ins_short_branch") == 0 &&
           attr->int_val(*this) != 0) {
         if (!instr->is_ideal_branch() || instr->label_position() == -1) {
@@ -358,7 +358,7 @@ const char *ArchDesc::getMatchListIndex(MatchRule &mrule) {
 //------------------------------left reduction---------------------------------
 // Return the left reduction associated with an internal name
 const char *ArchDesc::reduceLeft(char         *internalName) {
-  const char *left  = NULL;
+  const char *left  = nullptr;
   MatchNode *mnode = (MatchNode*)_internalMatch[internalName];
   if (mnode->_lChild) {
     mnode = mnode->_lChild;
@@ -370,7 +370,7 @@ const char *ArchDesc::reduceLeft(char         *internalName) {
 
 //------------------------------right reduction--------------------------------
 const char *ArchDesc::reduceRight(char  *internalName) {
-  const char *right  = NULL;
+  const char *right  = nullptr;
   MatchNode *mnode = (MatchNode*)_internalMatch[internalName];
   if (mnode->_rChild) {
     mnode = mnode->_rChild;
@@ -388,10 +388,10 @@ void ArchDesc::check_optype(MatchRule *mrule) {
   //   // Cycle through the list of match rules
   //   while(mrule) {
   //     // Check for a filled in type field
-  //     if (mrule->_opType == NULL) {
+  //     if (mrule->_opType == nullptr) {
   //     const Form  *form    = operands[_result];
-  //     OpClassForm *opcForm = form ? form->is_opclass() : NULL;
-  //     assert(opcForm != NULL, "Match Rule contains invalid operand name.");
+  //     OpClassForm *opcForm = form ? form->is_opclass() : nullptr;
+  //     assert(opcForm != nullptr, "Match Rule contains invalid operand name.");
   //     }
   //     char *opType = opcForm->_ident;
   //   }
@@ -402,12 +402,12 @@ void ArchDesc::add_chain_rule_entry(const char *src, const char *cost,
                                     const char *result) {
   // Look-up the operation in chain rule table
   ChainList *lst = (ChainList *)_chainRules[src];
-  if (lst == NULL) {
+  if (lst == nullptr) {
     lst = new ChainList();
     _chainRules.Insert(src, lst);
   }
   if (!lst->search(result)) {
-    if (cost == NULL) {
+    if (cost == nullptr) {
       cost = ((AttributeForm*)_globalNames[AttributeForm::_op_cost])->_attrdef;
     }
     lst->insert(result, cost, result);
@@ -420,8 +420,8 @@ void ArchDesc::build_chain_rule(OperandForm *oper) {
 
   // Check for chain rules here
   // If this is only a chain rule
-  if ((oper->_matrule) && (oper->_matrule->_lChild == NULL) &&
-      (oper->_matrule->_rChild == NULL)) {
+  if ((oper->_matrule) && (oper->_matrule->_lChild == nullptr) &&
+      (oper->_matrule->_rChild == nullptr)) {
 
     {
       const Form *form = _globalNames[oper->_matrule->_opType];
@@ -441,7 +441,7 @@ void ArchDesc::build_chain_rule(OperandForm *oper) {
             (form->ideal_only() == false)) {
           add_chain_rule_entry(rule->_opType, oper->cost(), oper->_ident);
         }
-      } while(rule->_next != NULL);
+      } while(rule->_next != nullptr);
     }
   }
   else if ((oper->_matrule) && (oper->_matrule->_next)) {
@@ -453,10 +453,10 @@ void ArchDesc::build_chain_rule(OperandForm *oper) {
       const Form *form = _globalNames[rule->_opType];
       if ((form) && form->is_operand() &&
           (form->ideal_only() == false)) {
-        assert( oper->cost(), "This case expects NULL cost, not default cost");
+        assert( oper->cost(), "This case expects null cost, not default cost");
         add_chain_rule_entry(rule->_opType, oper->cost(), oper->_ident);
       }
-    } while(rule->_next != NULL);
+    } while(rule->_next != nullptr);
   }
 
 }
@@ -469,7 +469,7 @@ void ArchDesc::buildMatchList(MatchRule *mrule, const char *resultStr,
   const char *leftstr, *rightstr;
   MatchNode  *mnode;
 
-  leftstr = rightstr = NULL;
+  leftstr = rightstr = nullptr;
   // Check for chain rule, and do not generate a match list for it
   if ( mrule->is_chain_rule(_globalNames) ) {
     return;
@@ -507,16 +507,16 @@ void ArchDesc::buildMatchList(MatchRule *mrule, const char *resultStr,
   // for the parent's matchlist entry if it exists
   mnode = mrule->_lChild;
   if (mnode) {
-    buildMList(mnode, NULL, NULL, NULL, NULL);
+    buildMList(mnode, nullptr, nullptr, nullptr, nullptr);
     leftstr = mnode->_internalop ? mnode->_internalop : mnode->_opType;
   }
   mnode = mrule->_rChild;
   if (mnode) {
-    buildMList(mnode, NULL, NULL, NULL, NULL);
+    buildMList(mnode, nullptr, nullptr, nullptr, nullptr);
     rightstr = mnode->_internalop ? mnode->_internalop : mnode->_opType;
   }
   // Search for an identical matchlist entry already on the list
-  if ((_mlistab[index] == NULL) ||
+  if ((_mlistab[index] == nullptr) ||
       (_mlistab[index] &&
        !_mlistab[index]->search(rootOp, resultStr, leftstr, rightstr, pred))) {
     // Place this match rule at front of list
@@ -537,10 +537,10 @@ void ArchDesc::buildMList(MatchNode *node, const char *rootOp,
   MatchNode  *mnode;
   Form       *form;
 
-  leftstr = rightstr = NULL;
+  leftstr = rightstr = nullptr;
   // Do not process leaves of the Match Tree if they are not ideal
-  if ((node) && (node->_lChild == NULL) && (node->_rChild == NULL) &&
-      ((form = (Form *)_globalNames[node->_opType]) != NULL) &&
+  if ((node) && (node->_lChild == nullptr) && (node->_rChild == nullptr) &&
+      ((form = (Form *)_globalNames[node->_opType]) != nullptr) &&
       (!form->ideal_only())) {
     return;
   }
@@ -554,8 +554,8 @@ void ArchDesc::buildMList(MatchNode *node, const char *rootOp,
     assert(0, "fatal error");
   }
 
-  if (node == NULL) {
-    fprintf(stderr, "error: node is NULL\n");
+  if (node == nullptr) {
+    fprintf(stderr, "error: node is null\n");
     assert(0, "fatal error");
   }
   // Build MatchLists for children
@@ -563,27 +563,27 @@ void ArchDesc::buildMList(MatchNode *node, const char *rootOp,
   // for the parent's matchlist entry if it exists
   mnode = node->_lChild;
   if (mnode) {
-    buildMList(mnode, NULL, NULL, NULL, NULL);
+    buildMList(mnode, nullptr, nullptr, nullptr, nullptr);
     leftstr = mnode->_internalop ? mnode->_internalop : mnode->_opType;
   }
   mnode = node->_rChild;
   if (mnode) {
-    buildMList(mnode, NULL, NULL, NULL, NULL);
+    buildMList(mnode, nullptr, nullptr, nullptr, nullptr);
     rightstr = mnode->_internalop ? mnode->_internalop : mnode->_opType;
   }
   // Grab the string for the opcode of this list entry
-  if (rootOp == NULL) {
+  if (rootOp == nullptr) {
     opcode = (node->_internalop) ? node->_internalop : node->_opType;
   } else {
     opcode = rootOp;
   }
   // Grab the string for the result of this list entry
-  if (resultOp == NULL) {
+  if (resultOp == nullptr) {
     resultop = (node->_internalop) ? node->_internalop : node->_opType;
   }
   else resultop = resultOp;
   // Search for an identical matchlist entry already on the list
-  if ((_mlistab[index] == NULL) || (_mlistab[index] &&
+  if ((_mlistab[index] == nullptr) || (_mlistab[index] &&
                                     !_mlistab[index]->search(opcode, resultop, leftstr, rightstr, pred))) {
     // Place this match rule at front of list
     MatchList *mList =
@@ -595,21 +595,21 @@ void ArchDesc::buildMList(MatchNode *node, const char *rootOp,
 
 // Count number of OperandForms defined
 int  ArchDesc::operandFormCount() {
-  // Only interested in ones with non-NULL match rule
+  // Only interested in ones with non-null match rule
   int  count = 0; _operands.reset();
   OperandForm *cur;
-  for( ; (cur = (OperandForm*)_operands.iter()) != NULL; ) {
-    if (cur->_matrule != NULL) ++count;
+  for( ; (cur = (OperandForm*)_operands.iter()) != nullptr; ) {
+    if (cur->_matrule != nullptr) ++count;
   };
   return count;
 }
 
 // Count number of OpClassForms defined
 int  ArchDesc::opclassFormCount() {
-  // Only interested in ones with non-NULL match rule
+  // Only interested in ones with non-null match rule
   int  count = 0; _operands.reset();
   OpClassForm *cur;
-  for( ; (cur = (OpClassForm*)_opclass.iter()) != NULL; ) {
+  for( ; (cur = (OpClassForm*)_opclass.iter()) != nullptr; ) {
     ++count;
   };
   return count;
@@ -617,11 +617,11 @@ int  ArchDesc::opclassFormCount() {
 
 // Count number of InstructForms defined
 int  ArchDesc::instructFormCount() {
-  // Only interested in ones with non-NULL match rule
+  // Only interested in ones with non-null match rule
   int  count = 0; _instructions.reset();
   InstructForm *cur;
-  for( ; (cur = (InstructForm*)_instructions.iter()) != NULL; ) {
-    if (cur->_matrule != NULL) ++count;
+  for( ; (cur = (InstructForm*)_instructions.iter()) != nullptr; ) {
+    if (cur->_matrule != nullptr) ++count;
   };
   return count;
 }
@@ -629,24 +629,24 @@ int  ArchDesc::instructFormCount() {
 
 //------------------------------get_preproc_def--------------------------------
 // Return the textual binding for a given CPP flag name.
-// Return NULL if there is no binding, or it has been #undef-ed.
+// Return null if there is no binding, or it has been #undef-ed.
 char* ArchDesc::get_preproc_def(const char* flag) {
-  // In case of syntax errors, flag may take the value NULL.
-  SourceForm* deff = NULL;
-  if (flag != NULL)
+  // In case of syntax errors, flag may take the value null.
+  SourceForm* deff = nullptr;
+  if (flag != nullptr)
     deff = (SourceForm*) _preproc_table[flag];
-  return (deff == NULL) ? NULL : deff->_code;
+  return (deff == nullptr) ? nullptr : deff->_code;
 }
 
 
 //------------------------------set_preproc_def--------------------------------
 // Change or create a textual binding for a given CPP flag name.
-// Giving NULL means the flag name is to be #undef-ed.
+// Giving null means the flag name is to be #undef-ed.
 // In any case, _preproc_list collects all names either #defined or #undef-ed.
 void ArchDesc::set_preproc_def(const char* flag, const char* def) {
   SourceForm* deff = (SourceForm*) _preproc_table[flag];
-  if (deff == NULL) {
-    deff = new SourceForm(NULL);
+  if (deff == nullptr) {
+    deff = new SourceForm(nullptr);
     _preproc_table.Insert(flag, deff);
     _preproc_list.addName(flag);   // this supports iteration
   }
@@ -713,31 +713,31 @@ void ArchDesc::dump() {
 //------------------------------init_keywords----------------------------------
 // Load the keywords into the global name table
 void ArchDesc::initKeywords(FormDict& names) {
-  // Insert keyword strings into Global Name Table.  Keywords have a NULL value
+  // Insert keyword strings into Global Name Table.  Keywords have a null value
   // field for quick easy identification when checking identifiers.
-  names.Insert("instruct", NULL);
-  names.Insert("operand", NULL);
-  names.Insert("attribute", NULL);
-  names.Insert("source", NULL);
-  names.Insert("register", NULL);
-  names.Insert("pipeline", NULL);
-  names.Insert("constraint", NULL);
-  names.Insert("predicate", NULL);
-  names.Insert("encode", NULL);
-  names.Insert("enc_class", NULL);
-  names.Insert("interface", NULL);
-  names.Insert("opcode", NULL);
-  names.Insert("ins_encode", NULL);
-  names.Insert("match", NULL);
-  names.Insert("effect", NULL);
-  names.Insert("expand", NULL);
-  names.Insert("rewrite", NULL);
-  names.Insert("reg_def", NULL);
-  names.Insert("reg_class", NULL);
-  names.Insert("alloc_class", NULL);
-  names.Insert("resource", NULL);
-  names.Insert("pipe_class", NULL);
-  names.Insert("pipe_desc", NULL);
+  names.Insert("instruct", nullptr);
+  names.Insert("operand", nullptr);
+  names.Insert("attribute", nullptr);
+  names.Insert("source", nullptr);
+  names.Insert("register", nullptr);
+  names.Insert("pipeline", nullptr);
+  names.Insert("constraint", nullptr);
+  names.Insert("predicate", nullptr);
+  names.Insert("encode", nullptr);
+  names.Insert("enc_class", nullptr);
+  names.Insert("interface", nullptr);
+  names.Insert("opcode", nullptr);
+  names.Insert("ins_encode", nullptr);
+  names.Insert("match", nullptr);
+  names.Insert("effect", nullptr);
+  names.Insert("expand", nullptr);
+  names.Insert("rewrite", nullptr);
+  names.Insert("reg_def", nullptr);
+  names.Insert("reg_class", nullptr);
+  names.Insert("alloc_class", nullptr);
+  names.Insert("resource", nullptr);
+  names.Insert("pipe_class", nullptr);
+  names.Insert("pipe_desc", nullptr);
 }
 
 
@@ -802,7 +802,7 @@ int ArchDesc::emit_msg(int quiet, int flag, int line, const char *fmt,
 
 // Construct the name of the register mask.
 static const char *getRegMask(const char *reg_class_name) {
-  if( reg_class_name == NULL ) return "RegMask::Empty";
+  if( reg_class_name == nullptr ) return "RegMask::Empty";
 
   if (strcmp(reg_class_name,"Universe")==0) {
     return "RegMask::Empty";
@@ -827,7 +827,7 @@ const char *ArchDesc::reg_class_to_reg_mask(const char *rc_name) {
 
   if( _register ) {
     RegClass *reg_class  = _register->getRegClass(rc_name);
-    if (reg_class == NULL) {
+    if (reg_class == nullptr) {
       syntax_err(0, "Use of an undefined register class %s", rc_name);
       return reg_mask;
     }
@@ -846,7 +846,7 @@ const char *ArchDesc::reg_mask(OperandForm  &opForm) {
 
   // Check constraints on result's register class
   const char *result_class = opForm.constrained_reg_class();
-  if (result_class == NULL) {
+  if (result_class == nullptr) {
     opForm.dump();
     syntax_err(opForm._linenum,
                "Use of an undefined result class for operand: %s",
@@ -863,7 +863,7 @@ const char *ArchDesc::reg_mask(OperandForm  &opForm) {
 const char *ArchDesc::reg_mask(InstructForm &inForm) {
   const char *result = inForm.reduce_result();
 
-  if (result == NULL) {
+  if (result == nullptr) {
     syntax_err(inForm._linenum,
                "Did not find result operand or RegMask"
                " for this instruction: %s",
@@ -878,13 +878,13 @@ const char *ArchDesc::reg_mask(InstructForm &inForm) {
 
   // Lookup this result operand and get its register class
   Form *form = (Form*)_globalNames[result];
-  if (form == NULL) {
+  if (form == nullptr) {
     syntax_err(inForm._linenum,
                "Did not find result operand for result: %s", result);
     abort();
   }
   OperandForm *oper = form->is_operand();
-  if (oper == NULL) {
+  if (oper == nullptr) {
     syntax_err(inForm._linenum, "Form is not an OperandForm:");
     form->dump();
     abort();
@@ -898,7 +898,7 @@ char *ArchDesc::stack_or_reg_mask(OperandForm  &opForm) {
   // name of cisc_spillable version
   const char *reg_mask_name = reg_mask(opForm);
 
-  if (reg_mask_name == NULL) {
+  if (reg_mask_name == nullptr) {
      syntax_err(opForm._linenum,
                 "Did not find reg_mask for opForm: %s",
                 opForm._ident);
@@ -959,13 +959,13 @@ const char *ArchDesc::getIdealType(const char *idealOp) {
   case 'L':    return "TypeLong::LONG";
   case 's':    return "TypeInt::CC /*flags*/";
   default:
-    return NULL;
+    return nullptr;
     // !!!!!
     // internal_err("Ideal type %s with unrecognized type\n",idealOp);
     break;
   }
 
-  return NULL;
+  return nullptr;
 }
 
 
@@ -1130,7 +1130,7 @@ void ArchDesc::addPreprocessorChecks(FILE *fp) {
   if (_preproc_list.count() > 0 && !_preproc_list.current_is_signal()) {
     fprintf(fp, "// Check consistency of C++ compilation with ADLC options:\n");
   }
-  for (_preproc_list.reset(); (flag = _preproc_list.iter()) != NULL; ) {
+  for (_preproc_list.reset(); (flag = _preproc_list.iter()) != nullptr; ) {
     if (_preproc_list.current_is_signal())  break;
     char* def = get_preproc_def(flag);
     fprintf(fp, "// Check adlc ");

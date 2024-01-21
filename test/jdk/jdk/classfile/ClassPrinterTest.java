@@ -4,9 +4,7 @@
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -25,7 +23,7 @@
 
 /*
  * @test
- * @summary Testing Classfile ClassPrinter.
+ * @summary Testing ClassFile ClassPrinter.
  * @run junit ClassPrinterTest
  */
 import java.io.IOException;
@@ -34,24 +32,25 @@ import java.lang.constant.ConstantDescs;
 import java.lang.constant.MethodTypeDesc;
 import java.util.List;
 import java.util.Optional;
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.attribute.*;
-import jdk.internal.classfile.components.ClassPrinter;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.*;
+import java.lang.classfile.components.ClassPrinter;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
 class ClassPrinterTest {
 
     ClassModel getClassModel() {
-        return Classfile.parse(Classfile.build(ClassDesc.of("Foo"), clb ->
+        var cc = ClassFile.of();
+        return cc.parse(cc.build(ClassDesc.of("Foo"), clb ->
             clb.withVersion(61, 0)
-                .withFlags(Classfile.ACC_PUBLIC)
+                .withFlags(ClassFile.ACC_PUBLIC)
                 .with(SourceFileAttribute.of("Foo.java"))
                 .withSuperclass(ClassDesc.of("Boo"))
                 .withInterfaceSymbols(ClassDesc.of("Phee"), ClassDesc.of("Phoo"))
                 .with(InnerClassesAttribute.of(
-                        InnerClassInfo.of(ClassDesc.of("Phee"), Optional.of(ClassDesc.of("Phoo")), Optional.of("InnerName"), Classfile.ACC_PROTECTED),
-                        InnerClassInfo.of(ClassDesc.of("Phoo"), Optional.empty(), Optional.empty(), Classfile.ACC_PRIVATE)))
+                        InnerClassInfo.of(ClassDesc.of("Phee"), Optional.of(ClassDesc.of("Phoo")), Optional.of("InnerName"), ClassFile.ACC_PROTECTED),
+                        InnerClassInfo.of(ClassDesc.of("Phoo"), Optional.empty(), Optional.empty(), ClassFile.ACC_PRIVATE)))
                 .with(EnclosingMethodAttribute.of(ClassDesc.of("Phee"), Optional.of("enclosingMethod"), Optional.of(MethodTypeDesc.of(ConstantDescs.CD_Double, ConstantDescs.CD_Collection))))
                 .with(SyntheticAttribute.of())
                 .with(SignatureAttribute.of(ClassSignature.of(Signature.ClassTypeSig.of(ClassDesc.of("Boo")), Signature.ClassTypeSig.of(ClassDesc.of("Phee")), Signature.ClassTypeSig.of(ClassDesc.of("Phoo")))))
@@ -67,9 +66,9 @@ class ClassPrinterTest {
                 .with(RuntimeInvisibleAnnotationsAttribute.of(Annotation.of(ClassDesc.of("Phoo"), AnnotationElement.ofFloat("flfl", 2),  AnnotationElement.ofFloat("frfl", 3))))
                 .with(PermittedSubclassesAttribute.ofSymbols(ClassDesc.of("Boo"), ClassDesc.of("Phoo")))
                 .withField("f", ConstantDescs.CD_String, fb -> fb
-                        .withFlags(Classfile.ACC_PRIVATE)
+                        .withFlags(ClassFile.ACC_PRIVATE)
                         .with(RuntimeVisibleAnnotationsAttribute.of(Annotation.of(ClassDesc.of("Phoo"), AnnotationElement.ofFloat("flfl", 0),  AnnotationElement.ofFloat("frfl", 1)))))
-                .withMethod("m", MethodTypeDesc.of(ConstantDescs.CD_Void, ConstantDescs.CD_boolean, ConstantDescs.CD_Throwable), Classfile.ACC_PROTECTED, mb -> mb
+                .withMethod("m", MethodTypeDesc.of(ConstantDescs.CD_Void, ConstantDescs.CD_boolean, ConstantDescs.CD_Throwable), ClassFile.ACC_PROTECTED, mb -> mb
                         .with(AnnotationDefaultAttribute.of(AnnotationValue.ofArray(
                             AnnotationValue.ofBoolean(true),
                             AnnotationValue.ofByte((byte)12),
@@ -226,12 +225,12 @@ class ClassPrinterTest {
                         flags: [PROTECTED]
                         method type: (ZLjava/lang/Throwable;)Ljava/lang/Void;
                         attributes: [AnnotationDefault, RuntimeVisibleParameterAnnotations, RuntimeInvisibleParameterAnnotations, Exceptions, Code]
-                        annotation default: {array: [{boolean: true}, {byte: 12}, {char: 99}, {class: LPhee;}, {double: 1.3}, {enum class: LBoo;, contant name: BOO}, {float: 3.7}, {int: 33}, {long: 3333}, {short: 25}, {string: BOO}, {annotation class: LPhoo;}]}
+                        annotation default: {array: [{boolean: true}, {byte: 12}, {char: 99}, {class: LPhee;}, {double: 1.3}, {enum class: LBoo;, constant name: BOO}, {float: 3.7}, {int: 33}, {long: 3333}, {short: 25}, {string: BOO}, {annotation class: LPhoo;}]}
                         visible parameter annotations:
                             parameter 1: [{annotation class: LPhoo;, values: [{name: flfl, value: {float: 22.0}}, {name: frfl, value: {float: 11.0}}]}]
                         invisible parameter annotations:
                             parameter 1: [{annotation class: LPhoo;, values: [{name: flfl, value: {float: '-22.0'}}, {name: frfl, value: {float: '-11.0'}}]}]
-                        excceptions: [Phoo, Boo, Bee]
+                        exceptions: [Phoo, Boo, Bee]
                         code:
                             max stack: 1
                             max locals: 3
@@ -458,12 +457,12 @@ class ClassPrinterTest {
                             "flags": ["PROTECTED"],
                             "method type": "(ZLjava/lang/Throwable;)Ljava/lang/Void;",
                             "attributes": ["AnnotationDefault", "RuntimeVisibleParameterAnnotations", "RuntimeInvisibleParameterAnnotations", "Exceptions", "Code"],
-                            "annotation default": {"array": [{"boolean": "true"}, {"byte": "12"}, {"char": "99"}, {"class": "LPhee;"}, {"double": "1.3"}, {"enum class": "LBoo;", "contant name": "BOO"}, {"float": "3.7"}, {"int": "33"}, {"long": "3333"}, {"short": "25"}, {"string": "BOO"}, {"annotation class": "LPhoo;"}]},
+                            "annotation default": {"array": [{"boolean": "true"}, {"byte": "12"}, {"char": "99"}, {"class": "LPhee;"}, {"double": "1.3"}, {"enum class": "LBoo;", "constant name": "BOO"}, {"float": "3.7"}, {"int": "33"}, {"long": "3333"}, {"short": "25"}, {"string": "BOO"}, {"annotation class": "LPhoo;"}]},
                             "visible parameter annotations": {
                                 "parameter 1": [{"annotation class": "LPhoo;", "values": [{"name": "flfl", "value": {"float": "22.0"}}, {"name": "frfl", "value": {"float": "11.0"}}]}]},
                             "invisible parameter annotations": {
                                 "parameter 1": [{"annotation class": "LPhoo;", "values": [{"name": "flfl", "value": {"float": "-22.0"}}, {"name": "frfl", "value": {"float": "-11.0"}}]}]},
-                            "excceptions": ["Phoo", "Boo", "Bee"],
+                            "exceptions": ["Phoo", "Boo", "Bee"],
                             "code": {
                                 "max stack": 1,
                                 "max locals": 3,
@@ -695,12 +694,12 @@ class ClassPrinterTest {
                             <flags><flag>PROTECTED</flag></flags>
                             <method_type>(ZLjava/lang/Throwable;)Ljava/lang/Void;</method_type>
                             <attributes><attribute>AnnotationDefault</attribute><attribute>RuntimeVisibleParameterAnnotations</attribute><attribute>RuntimeInvisibleParameterAnnotations</attribute><attribute>Exceptions</attribute><attribute>Code</attribute></attributes>
-                            <annotation_default><array><value><boolean>true</boolean></value><value><byte>12</byte></value><value><char>99</char></value><value><class>LPhee;</class></value><value><double>1.3</double></value><value><enum_class>LBoo;</enum_class><contant_name>BOO</contant_name></value><value><float>3.7</float></value><value><int>33</int></value><value><long>3333</long></value><value><short>25</short></value><value><string>BOO</string></value><value><annotation_class>LPhoo;</annotation_class></value></array></annotation_default>
+                            <annotation_default><array><value><boolean>true</boolean></value><value><byte>12</byte></value><value><char>99</char></value><value><class>LPhee;</class></value><value><double>1.3</double></value><value><enum_class>LBoo;</enum_class><constant_name>BOO</constant_name></value><value><float>3.7</float></value><value><int>33</int></value><value><long>3333</long></value><value><short>25</short></value><value><string>BOO</string></value><value><annotation_class>LPhoo;</annotation_class></value></array></annotation_default>
                             <visible_parameter_annotations>
                                 <parameter_1><anno><annotation_class>LPhoo;</annotation_class><values><pair><name>flfl</name><value><float>22.0</float></value></pair><pair><name>frfl</name><value><float>11.0</float></value></pair></values></anno></parameter_1></visible_parameter_annotations>
                             <invisible_parameter_annotations>
                                 <parameter_1><anno><annotation_class>LPhoo;</annotation_class><values><pair><name>flfl</name><value><float>-22.0</float></value></pair><pair><name>frfl</name><value><float>-11.0</float></value></pair></values></anno></parameter_1></invisible_parameter_annotations>
-                            <excceptions><exc>Phoo</exc><exc>Boo</exc><exc>Bee</exc></excceptions>
+                            <exceptions><exc>Phoo</exc><exc>Boo</exc><exc>Bee</exc></exceptions>
                             <code>
                                 <max_stack>1</max_stack>
                                 <max_locals>3</max_locals>

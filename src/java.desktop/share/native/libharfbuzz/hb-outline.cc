@@ -4,7 +4,6 @@
  * Copyright © 2005  Werner Lemberg
  * Copyright © 2013-2015  Alexei Podtelezhnikov
  *
- *
  *  This is part of HarfBuzz, a text shaping library.
  *
  * Permission is hereby granted, without written agreement and without
@@ -85,7 +84,7 @@ void hb_outline_t::replay (hb_draw_funcs_t *pen, void *pen_data) const
   }
 }
 
-float hb_outline_t::area () const
+float hb_outline_t::control_area () const
 {
   float a = 0;
   unsigned first = 0;
@@ -118,7 +117,7 @@ void hb_outline_t::embolden (float x_strength, float y_strength,
   x_strength /= 2.f;
   y_strength /= 2.f;
 
-  bool orientation_negative = area () < 0;
+  bool orientation_negative = control_area () < 0;
 
   signed first = 0;
   for (unsigned c = 0; c < contours.length; c++)

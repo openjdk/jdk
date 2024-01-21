@@ -23,7 +23,6 @@
 
 package toolbox;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.file.Path;
@@ -89,7 +88,7 @@ public class JavadocTask extends AbstractTask<JavadocTask> {
      * @return this task object
      */
     public JavadocTask classpath(String classpath) {
-        this.classpath = Stream.of(classpath.split(File.pathSeparator))
+        this.classpath = Stream.of(classpath.split(ToolBox.pathSeparator))
                 .filter(s -> !s.isEmpty())
                 .map(s -> Paths.get(s))
                 .collect(Collectors.toList());
@@ -122,7 +121,7 @@ public class JavadocTask extends AbstractTask<JavadocTask> {
      * @return this task object
      */
     public JavadocTask sourcepath(String sourcepath) {
-        this.sourcepath = Stream.of(sourcepath.split(File.pathSeparator))
+        this.sourcepath = Stream.of(sourcepath.split(ToolBox.pathSeparator))
                 .filter(s -> !s.isEmpty())
                 .map(s -> Paths.get(s))
                 .collect(Collectors.toList());
@@ -397,7 +396,7 @@ public class JavadocTask extends AbstractTask<JavadocTask> {
     private String toSearchPath(List<Path> files) {
         return files.stream()
             .map(Path::toString)
-            .collect(Collectors.joining(File.pathSeparator));
+            .collect(Collectors.joining(ToolBox.pathSeparator));
     }
 
     private Iterable<? extends JavaFileObject> joinFiles(

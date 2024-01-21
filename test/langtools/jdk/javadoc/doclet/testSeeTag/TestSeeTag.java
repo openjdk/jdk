@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      8017191 8182765 8200432 8239804 8250766 8262992 8281944
+ * @bug      8017191 8182765 8200432 8239804 8250766 8262992 8281944 8307377
  * @summary  Javadoc is confused by at-link to imported classes outside of the set of generated packages
  * @library  /tools/lib ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -62,7 +62,7 @@ public class TestSeeTag extends JavadocTester {
                 <li><a href="Test.InnerOne.html#foo()"><code>Test.InnerOne.foo()</code></a></li>
                 <li><a href="Test.InnerOne.html#bar(java.lang.Object)"><code>Test.InnerOne.bar(Object)</code></a></li>
                 <li><a href="http://docs.oracle.com/javase/7/docs/technotes/tools/windows/javadoc.html#see">Javadoc</a></li>
-                <li><a href="Test.InnerOne.html#baz(float)"><code>something</code></a></li>
+                <li><a href="Test.InnerOne.html#baz(float)">something</a></li>
                 <li><a href="Test.InnerOne.html#format(java.lang.String,java.lang.Object...)"><code>\
                 Test.InnerOne.format(java.lang.String, java.lang.Object...)</code></a></li>
                 </ul>
@@ -80,7 +80,7 @@ public class TestSeeTag extends JavadocTester {
                 <dd>
                 <ul class="tag-list-long">
                 <li><code>Serializable</code></li>
-                <li><a href="Test.html" title="class in pkg"><code>See tag with very long label text</code></a></li>
+                <li><a href="Test.html" title="class in pkg">See tag with very long label text</a></li>
                 </ul>
                 </dd>
                 </dl>""");
@@ -102,11 +102,11 @@ public class TestSeeTag extends JavadocTester {
                     <dl class="notes">
                     <dt>See Also:</dt>
                     <dd>
-                    <ul class="tag-list">
+                    <ul class="tag-list-long">
                     <li><code>Object</code></li>
                     <li>
                     <details class="invalid-tag">
-                    <summary>invalid @see</summary>
+                    <summary>invalid reference</summary>
                     <pre><code>Foo&lt;String&gt;</code></pre>
                     </details>
                     </li>
@@ -213,17 +213,17 @@ public class TestSeeTag extends JavadocTester {
                 "<section class=\"detail\" id=\"noComma()\">",
                 """
                     <ul class="tag-list">
-                    <li><a href="#noArgs()"><code>no args</code></a></li>
-                    <li><a href="#oneArg(int)"><code>one arg</code></a></li>
-                    <li><a href="#twoArgs(int,int)"><code>two args</code></a></li>
+                    <li><a href="#noArgs()">no args</a></li>
+                    <li><a href="#oneArg(int)">one arg</a></li>
+                    <li><a href="#twoArgs(int,int)">two args</a></li>
                     </ul>""",
 
                 "<section class=\"detail\" id=\"commaInDescription()\">",
                 """
                     <ul class="tag-list-long">
-                    <li><a href="#noArgs()"><code>no args</code></a></li>
-                    <li><a href="#oneArg(int)"><code>one arg</code></a></li>
-                    <li><a href="#twoArgs(int,int)"><code>two args with a comma , in the description</code></a></li>
+                    <li><a href="#noArgs()">no args</a></li>
+                    <li><a href="#oneArg(int)">one arg</a></li>
+                    <li><a href="#twoArgs(int,int)">two args with a comma , in the description</a></li>
                     </ul>""",
 
                 "<section class=\"detail\" id=\"commaInDefaultDescription()\">",

@@ -131,7 +131,7 @@ private:
                                    int pool_index, int cache_index,
                                    ciInstanceKlass* accessor);
   ciField*   get_field_by_index(ciInstanceKlass* loading_klass,
-                                int field_index);
+                                int field_index, Bytecodes::Code bc);
   ciMethod*  get_method_by_index(const constantPoolHandle& cpool,
                                  int method_index, Bytecodes::Code bc,
                                  ciInstanceKlass* loading_klass);
@@ -149,7 +149,7 @@ private:
                                         int pool_index, int cache_index,
                                         ciInstanceKlass* loading_klass);
   ciField*   get_field_by_index_impl(ciInstanceKlass* loading_klass,
-                                     int field_index);
+                                     int field_index, Bytecodes::Code bc);
   ciMethod*  get_method_by_index_impl(const constantPoolHandle& cpool,
                                       int method_index, Bytecodes::Code bc,
                                       ciInstanceKlass* loading_klass);
@@ -319,10 +319,10 @@ public:
 
   // This is true if the compilation is not going to produce code.
   // (It is reasonable to retry failed compilations.)
-  bool failing() { return _failure_reason != nullptr; }
+  bool failing() const { return _failure_reason != nullptr; }
 
   // Reason this compilation is failing, such as "too many basic blocks".
-  const char* failure_reason() { return _failure_reason; }
+  const char* failure_reason() const { return _failure_reason; }
 
   // Return state of appropriate compatibility
   int compilable() { return _compilable; }
@@ -362,7 +362,7 @@ public:
 
   // The compiler task which has created this env.
   // May be useful to find out compile_id, comp_level, etc.
-  CompileTask* task() { return _task; }
+  CompileTask* task() const { return _task; }
 
   // Handy forwards to the task:
   int comp_level();   // task()->comp_level()
@@ -444,7 +444,7 @@ public:
   static ciEnv* current(CompilerThread *thread) { return thread->env(); }
 
   // Per-compiler data.  (Used by C2 to publish the Compile* pointer.)
-  void* compiler_data() { return _compiler_data; }
+  void* compiler_data() const { return _compiler_data; }
   void set_compiler_data(void* x) { _compiler_data = x; }
 
   // Notice that a method has been inlined in the current compile;
@@ -496,6 +496,7 @@ public:
   void dump_replay_data_unsafe(outputStream* out);
   void dump_replay_data_helper(outputStream* out);
   void dump_compile_data(outputStream* out);
+  void dump_replay_data_version(outputStream* out);
 
   const char *dyno_name(const InstanceKlass* ik) const;
   const char *replay_name(const InstanceKlass* ik) const;

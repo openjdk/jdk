@@ -56,6 +56,7 @@ import java.util.function.BiPredicate;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
+import jdk.internal.util.OperatingSystem;
 import jdk.tools.jlink.internal.BasicImageWriter;
 import jdk.tools.jlink.internal.ExecutableImage;
 import jdk.tools.jlink.internal.Platform;
@@ -63,7 +64,6 @@ import jdk.tools.jlink.plugin.PluginException;
 import jdk.tools.jlink.plugin.ResourcePool;
 import jdk.tools.jlink.plugin.ResourcePoolEntry;
 import jdk.tools.jlink.plugin.ResourcePoolEntry.Type;
-import jdk.tools.jlink.plugin.ResourcePoolModule;
 
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.mapping;
@@ -144,16 +144,21 @@ public final class DefaultImageBuilder implements ImageBuilder {
     private final Map<String, String> launchers;
     private final Path mdir;
     private final Set<String> modules = new HashSet<>();
-    private Platform platform;
+    private final Platform platform;
 
     /**
      * Default image builder constructor.
      *
      * @param root The image root directory.
+     * @param launchers mapping of launcher command name to their module/main class
+     * @param targetPlatform target platform of the image
      * @throws IOException
+     * @throws NullPointerException If any of the params is null
      */
-    public DefaultImageBuilder(Path root, Map<String, String> launchers) throws IOException {
+    public DefaultImageBuilder(Path root, Map<String, String> launchers, Platform targetPlatform)
+            throws IOException {
         this.root = Objects.requireNonNull(root);
+        this.platform = Objects.requireNonNull(targetPlatform);
         this.launchers = Objects.requireNonNull(launchers);
         this.mdir = root.resolve("lib");
         Files.createDirectories(mdir);
@@ -167,15 +172,6 @@ public final class DefaultImageBuilder implements ImageBuilder {
     @Override
     public void storeFiles(ResourcePool files) {
         try {
-            String value = files.moduleView()
-                                .findModule("java.base")
-                                .map(ResourcePoolModule::targetPlatform)
-                                .orElse(null);
-            if (value == null) {
-                throw new PluginException("ModuleTarget attribute is missing for java.base module");
-            }
-            this.platform = Platform.parsePlatform(value);
-
             checkResourcePool(files);
 
             Path bin = root.resolve(BIN_DIRNAME);
@@ -490,7 +486,7 @@ public final class DefaultImageBuilder implements ImageBuilder {
     }
 
     private boolean isWindows() {
-        return platform.os() == Platform.OperatingSystem.WINDOWS;
+        return platform.os() == OperatingSystem.WINDOWS;
     }
 
     /**
@@ -561,37 +557,6 @@ public final class DefaultImageBuilder implements ImageBuilder {
                     }
                 });
         }
-    }
-
-    public static ExecutableImage getExecutableImage(Path root) {
-        Path binDir = root.resolve(BIN_DIRNAME);
-        if (Files.exists(binDir.resolve("java")) ||
-            Files.exists(binDir.resolve("java.exe"))) {
-            return new DefaultExecutableImage(root, retrieveModules(root), Platform.UNKNOWN);
-        }
-        return null;
-    }
-
-    private static Set<String> retrieveModules(Path root) {
-        Path releaseFile = root.resolve("release");
-        Set<String> modules = new HashSet<>();
-        if (Files.exists(releaseFile)) {
-            Properties release = new Properties();
-            try (FileInputStream fi = new FileInputStream(releaseFile.toFile())) {
-                release.load(fi);
-            } catch (IOException ex) {
-                System.err.println("Can't read release file " + ex);
-            }
-            String mods = release.getProperty("MODULES");
-            if (mods != null) {
-                String[] arr = mods.substring(1, mods.length() - 1).split(" ");
-                for (String m : arr) {
-                    modules.add(m.trim());
-                }
-
-            }
-        }
-        return modules;
     }
 
     // finds subpaths matching the given criteria (up to 2 levels deep) and applies the given lambda

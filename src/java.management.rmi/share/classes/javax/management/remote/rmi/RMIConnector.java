@@ -185,7 +185,7 @@ public class RMIConnector implements JMXConnector, Serializable, JMXAddressable 
      * syntaxes, for example:</p>
      *
      * <pre>
-     * service:jmx:iiop://<em>[host[:port]]</em>/stub/<em>encoded-stub</em>
+     * service:jmx:myprotocolname://<em>[host[:port]]</em>/stub/<em>encoded-stub</em>
      * </pre>
      *
      * @param url the address of the RMI connector server.
@@ -2297,12 +2297,6 @@ public class RMIConnector implements JMXConnector, Serializable, JMXAddressable 
     private transient NotificationBroadcasterSupport connectionBroadcaster;
 
     private transient ClientCommunicatorAdmin communicatorAdmin;
-
-    /**
-     * A static WeakReference to an {@link org.omg.CORBA.ORB ORB} to
-     * connect unconnected stubs.
-     **/
-    private static volatile WeakReference<Object> orb = null;
 
     // TRACES & DEBUG
     //---------------

@@ -44,7 +44,7 @@ import jdk.vm.ci.meta.TriState;
 /**
  * Access to a HotSpot {@code MethodData} structure (defined in methodData.hpp).
  */
-final class HotSpotMethodData {
+final class HotSpotMethodData implements MetaspaceObject {
 
     /**
      * VM state that can be reset when building an AOT image.
@@ -63,12 +63,11 @@ final class HotSpotMethodData {
         final int takenDisplacementOffset = cellIndexToOffset(config.jumpDataDisplacementOffset);
         final int typeDataRowSize = cellsToBytes(config.receiverTypeDataReceiverTypeRowCellCount);
 
-        final int nonprofiledCountOffset = cellIndexToOffset(config.receiverTypeDataNonprofiledCountOffset);
         final int typeDataFirstTypeOffset = cellIndexToOffset(config.receiverTypeDataReceiver0Offset);
         final int typeDataFirstTypeCountOffset = cellIndexToOffset(config.receiverTypeDataCount0Offset);
 
-        final int typeCheckDataSize = cellIndexToOffset(2) + typeDataRowSize * config.typeProfileWidth;
-        final int virtualCallDataSize = cellIndexToOffset(2) + typeDataRowSize * (config.typeProfileWidth + config.methodProfileWidth);
+        final int typeCheckDataSize = cellIndexToOffset(1) + typeDataRowSize * config.typeProfileWidth;
+        final int virtualCallDataSize = cellIndexToOffset(1) + typeDataRowSize * (config.typeProfileWidth + config.methodProfileWidth);
         final int virtualCallDataFirstMethodOffset = typeDataFirstTypeOffset + typeDataRowSize * config.typeProfileWidth;
         final int virtualCallDataFirstMethodCountOffset = typeDataFirstTypeCountOffset + typeDataRowSize * config.typeProfileWidth;
 
@@ -174,6 +173,11 @@ final class HotSpotMethodData {
         this.state = VMState.instance();
     }
 
+    @Override
+    public long getMetaspacePointer() {
+        return methodDataPointer;
+    }
+
     /**
      * @return value of the MethodData::_data_size field
      */
@@ -197,16 +201,19 @@ final class HotSpotMethodData {
         return normalDataSize() > 0;
     }
 
+    /**
+     * Return true if there is an extra data section and the first tag is non-zero.
+     */
     public boolean hasExtraData() {
-        return extraDataSize() > 0;
+        return extraDataSize() > 0 && HotSpotMethodDataAccessor.readTag(state.config, this, getExtraDataBeginOffset()) != 0;
     }
 
-    public int getExtraDataBeginOffset() {
+    private int getExtraDataBeginOffset() {
         return normalDataSize();
     }
 
     public boolean isWithin(int position) {
-        return position >= 0 && position < normalDataSize() + extraDataSize();
+        return position >= 0 && position < normalDataSize();
     }
 
     public int getDeoptimizationCount(DeoptimizationReason reason) {
@@ -239,17 +246,6 @@ final class HotSpotMethodData {
         }
 
         return getData(position);
-    }
-
-    public HotSpotMethodDataAccessor getExtraData(int position) {
-        if (position >= normalDataSize() + extraDataSize()) {
-            return null;
-        }
-        HotSpotMethodDataAccessor data = getData(position);
-        if (data != null) {
-            return data;
-        }
-        return data;
     }
 
     public static HotSpotMethodDataAccessor getNoDataAccessor(boolean exceptionPossiblyNotRecorded) {
@@ -308,7 +304,7 @@ final class HotSpotMethodData {
 
     private HotSpotResolvedObjectTypeImpl readKlass(int position, int offsetInBytes) {
         long fullOffsetInBytes = state.computeFullOffset(position, offsetInBytes);
-        return compilerToVM().getResolvedJavaType(methodDataPointer + fullOffsetInBytes);
+        return compilerToVM().getResolvedJavaType(this, fullOffsetInBytes);
     }
 
     /**
@@ -344,20 +340,6 @@ final class HotSpotMethodData {
             }
         }
 
-        if (hasExtraData()) {
-            int pos = getExtraDataBeginOffset();
-            HotSpotMethodDataAccessor data;
-            while ((data = getExtraData(pos)) != null) {
-                if (pos == getExtraDataBeginOffset()) {
-                    sb.append(nl).append("--- Extra data:");
-                }
-                int bci = data.getBCI(this, pos);
-                sb.append(String.format("%n%-6d bci: %-6d%-20s", pos, bci, data.getClass().getSimpleName()));
-                sb.append(data.appendTo(new StringBuilder(), this, pos).toString().replace(nl, nlIndent));
-                pos = pos + data.getSize(this, pos);
-            }
-
-        }
         return sb.toString();
     }
 
@@ -519,14 +501,8 @@ final class HotSpotMethodData {
                 }
             }
 
-            totalCount += getTypesNotRecordedExecutionCount(data, position);
+            totalCount += getCounterValue(data, position);
             return new RawItemProfile<>(entries, types, counts, totalCount);
-        }
-
-        protected abstract long getTypesNotRecordedExecutionCount(HotSpotMethodData data, int position);
-
-        public int getNonprofiledCount(HotSpotMethodData data, int position) {
-            return data.readUnsignedIntAsSignedInt(position, state.nonprofiledCountOffset);
         }
 
         private JavaTypeProfile createTypeProfile(TriState nullSeen, RawItemProfile<ResolvedJavaType> profile) {
@@ -563,8 +539,8 @@ final class HotSpotMethodData {
             RawItemProfile<ResolvedJavaType> profile = getRawTypeProfile(data, pos);
             TriState nullSeen = getNullSeen(data, pos);
             TriState exceptionSeen = getExceptionSeen(data, pos);
-            sb.append(format("count(%d) null_seen(%s) exception_seen(%s) nonprofiled_count(%d) entries(%d)", getCounterValue(data, pos), nullSeen, exceptionSeen,
-                            getNonprofiledCount(data, pos), profile.entries));
+            sb.append(format("count(%d) null_seen(%s) exception_seen(%s) entries(%d)", getCounterValue(data, pos), nullSeen, exceptionSeen,
+                            profile.entries));
             for (int i = 0; i < profile.entries; i++) {
                 long count = profile.counts[i];
                 sb.append(format("%n  %s (%d, %4.2f)", profile.items[i].toJavaName(), count, (double) count / profile.totalCount));
@@ -586,11 +562,6 @@ final class HotSpotMethodData {
         @Override
         public int getExecutionCount(HotSpotMethodData data, int position) {
             return -1;
-        }
-
-        @Override
-        protected long getTypesNotRecordedExecutionCount(HotSpotMethodData data, int position) {
-            return getNonprofiledCount(data, position);
         }
     }
 
@@ -618,15 +589,6 @@ final class HotSpotMethodData {
         }
 
         @Override
-        protected long getTypesNotRecordedExecutionCount(HotSpotMethodData data, int position) {
-            return getCounterValue(data, position);
-        }
-
-        private long getMethodsNotRecordedExecutionCount(HotSpotMethodData data, int position) {
-            return data.readUnsignedIntAsSignedInt(position, state.nonprofiledCountOffset);
-        }
-
-        @Override
         public JavaMethodProfile getMethodProfile(HotSpotMethodData data, int position) {
             return createMethodProfile(getRawMethodProfile(data, position));
         }
@@ -650,8 +612,6 @@ final class HotSpotMethodData {
                     entries++;
                 }
             }
-
-            totalCount += getMethodsNotRecordedExecutionCount(data, position);
 
             // Fixup the case of C1's inability to optimize profiling of a statically bindable call
             // site. If it's a monomorphic call site, attribute all the counts to the first type (if

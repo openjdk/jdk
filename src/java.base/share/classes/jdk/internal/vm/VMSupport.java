@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.lang.annotation.Annotation;
 import java.lang.annotation.IncompleteAnnotationException;
+import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -101,19 +102,6 @@ public class VMSupport {
         return serializePropertiesToByteArray(onlyStrings(getAgentProperties()));
     }
 
-    /**
-     * Serializes {@link VM#getSavedProperties()} to a byte array.
-     *
-     * Used by JVMCI to copy properties into libjvmci.
-     */
-    public static byte[] serializeSavedPropertiesToByteArray() throws IOException {
-        Properties props = new Properties();
-        for (var e : VM.getSavedProperties().entrySet()) {
-            props.put(e.getKey(), e.getValue());
-        }
-        return serializePropertiesToByteArray(props);
-    }
-
     /*
      * Return the temporary directory that the VM uses for the attach
      * and perf data files.
@@ -125,36 +113,46 @@ public class VMSupport {
     public static native String getVMTemporaryDirectory();
 
     /**
-     * Decodes the exception encoded in {@code errorOrBuffer} and throws it.
+     * Decodes the exception described by {@code format} and {@code buffer} and throws it.
      *
-     * @param errorOrBuffer an error code or a native byte errorOrBuffer containing an exception encoded by
-     *            {@link #encodeThrowable}. Error code values and their meanings are:
-     *
+     * @param format specifies how to interpret {@code buffer}:
      *            <pre>
-     *             0: native memory for the errorOrBuffer could not be allocated
-     *            -1: an OutOfMemoryError was thrown while encoding the exception
-     *            -2: some other throwable was thrown while encoding the exception
+     *             0: {@code buffer} was created by {@link #encodeThrowable}
+     *             1: native memory for {@code buffer} could not be allocated
+     *             2: an OutOfMemoryError was thrown while encoding the exception
+     *             3: some other problem occured while encoding the exception. If {@code buffer != 0},
+     *                it contains a {@code struct { u4 len; char[len] desc}} where {@code desc} describes the problem
      *            </pre>
-     * @param errorOrBuffer a native byte errorOrBuffer containing an exception encoded by
-     *            {@link #encodeThrowable}
+     * @param buffer encoded info about the exception to throw (depends on {@code format})
      * @param inJVMHeap [@code true} if executing in the JVM heap, {@code false} otherwise
      */
-    public static void decodeAndThrowThrowable(long errorOrBuffer, boolean inJVMHeap) throws Throwable {
-        if (errorOrBuffer >= -2L && errorOrBuffer <= 0) {
+    public static void decodeAndThrowThrowable(int format, long buffer, boolean inJVMHeap) throws Throwable {
+        if (format != 0) {
             String context = String.format("while encoding an exception to translate it %s the JVM heap",
                     inJVMHeap ? "to" : "from");
-            if (errorOrBuffer == 0) {
-                throw new InternalError("native errorOrBuffer could not be allocated " + context);
+            if (format == 1) {
+                throw new InternalError("native buffer could not be allocated " + context);
             }
-            if (errorOrBuffer == -1L) {
+            if (format == 2) {
                 throw new OutOfMemoryError("OutOfMemoryError occurred " + context);
+            }
+            if (format == 3 && buffer != 0L) {
+                byte[] bytes = bufferToBytes(buffer);
+                throw new InternalError("unexpected problem occurred " + context + ": " + new String(bytes, StandardCharsets.UTF_8));
             }
             throw new InternalError("unexpected problem occurred " + context);
         }
-        int encodingLength = U.getInt(errorOrBuffer);
-        byte[] encoding = new byte[encodingLength];
-        U.copyMemory(null, errorOrBuffer + 4, encoding, Unsafe.ARRAY_BYTE_BASE_OFFSET, encodingLength);
-        throw TranslatedException.decodeThrowable(encoding);
+        throw TranslatedException.decodeThrowable(bufferToBytes(buffer));
+    }
+
+    private static byte[] bufferToBytes(long buffer) {
+        if (buffer == 0) {
+            return null;
+        }
+        int len = U.getInt(buffer);
+        byte[] bytes = new byte[len];
+        U.copyMemory(null, buffer + 4, bytes, Unsafe.ARRAY_BYTE_BASE_OFFSET, len);
+        return bytes;
     }
 
     /**

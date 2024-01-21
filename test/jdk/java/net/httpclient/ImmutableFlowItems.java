@@ -27,6 +27,7 @@
  *          and that the buffers are read-only
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.test.lib.net.SimpleSSLContext jdk.httpclient.test.lib.http2.Http2TestServer
+ *        jdk.httpclient.test.lib.common.TestServerConfigurator
  * @run testng/othervm ImmutableFlowItems
  */
 
@@ -43,7 +44,6 @@ import java.util.concurrent.Flow;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
-import com.sun.net.httpserver.HttpsConfigurator;
 import com.sun.net.httpserver.HttpsServer;
 import java.net.http.HttpClient;
 import java.net.http.HttpHeaders;
@@ -53,6 +53,8 @@ import java.net.http.HttpResponse.BodyHandler;
 import java.net.http.HttpResponse.BodySubscriber;
 import java.net.http.HttpResponse.BodySubscribers;
 import javax.net.ssl.SSLContext;
+
+import jdk.httpclient.test.lib.common.TestServerConfigurator;
 import jdk.httpclient.test.lib.http2.Http2TestServer;
 import jdk.httpclient.test.lib.http2.Http2TestExchange;
 import jdk.httpclient.test.lib.http2.Http2Handler;
@@ -189,7 +191,7 @@ public class ImmutableFlowItems {
         httpURI_chunk = "http://" + serverAuthority(httpTestServer) + "/http1/chunk";
 
         httpsTestServer = HttpsServer.create(sa, 0);
-        httpsTestServer.setHttpsConfigurator(new HttpsConfigurator(sslContext));
+        httpsTestServer.setHttpsConfigurator(new TestServerConfigurator(sa.getAddress(), sslContext));
         httpsTestServer.createContext("/https1/fixed", h1_fixedLengthHandler);
         httpsTestServer.createContext("/https1/chunk", h1_chunkHandler);
         httpsURI_fixed = "https://" + serverAuthority(httpsTestServer) + "/https1/fixed";

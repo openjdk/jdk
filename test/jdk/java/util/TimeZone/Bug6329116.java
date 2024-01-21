@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,27 +27,24 @@
  *      7039469 7090843 7103108 7103405 7158483 8008577 8059206 8064560 8072042
  *      8077685 8151876 8166875 8169191 8170316 8176044
  * @summary Make sure that timezone short display names are idenical to Olson's data.
- * @library /java/text/testlib
- * @build Bug6329116 TextFileReader
- * @run main/othervm -Djava.locale.providers=COMPAT,SPI Bug6329116
+ * @run junit/othervm -Djava.locale.providers=COMPAT,SPI Bug6329116
  */
 
 import java.io.*;
 import java.text.*;
 import java.util.*;
 
-public class Bug6329116 extends IntlTest {
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.fail;
+
+public class Bug6329116 {
 
     static Locale[] locales = Locale.getAvailableLocales();
     static String[] timezones = TimeZone.getAvailableIDs();
 
-    public static void main(String[] args) throws IOException {
-        if (bug6329116()) {
-            throw new RuntimeException("At least one timezone display name is incorrect.");
-        }
-    }
-
-    static boolean bug6329116() throws IOException {
+    @Test
+    public void bug6329116() throws IOException {
         boolean err = false;
 
         HashMap<String, String> aliasTable = new HashMap<>();
@@ -200,7 +197,9 @@ public class Bug6329116 extends IntlTest {
             }
         }
 
-        return err;
+        if (err) {
+            fail("At least one timezone display name is incorrect.");
+        }
     }
 
     static boolean useLocalzedShortDisplayName(TimeZone tz,

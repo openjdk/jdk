@@ -229,9 +229,8 @@ public:
   uint8_t barrier_data() const { return _barrier; }
   void set_barrier_data(uint8_t data) { _barrier = data; }
 
-  // Copy inputs and operands to new node of instruction.
+  // Copy index, inputs, and operands to a new version of the instruction.
   // Called from cisc_version() and short_branch_version().
-  // !!!! The method's body is defined in ad_<arch>.cpp file.
   void fill_new_machnode(MachNode *n) const;
 
   // Return an equivalent instruction using memory for cisc_operand position
@@ -898,9 +897,9 @@ public:
   float        _cnt;          // Estimate of number of times called
   bool         _guaranteed_safepoint; // Do we need to observe safepoint?
 
-  const TypeFunc* tf()        const { return _tf; }
-  const address entry_point() const { return _entry_point; }
-  const float   cnt()         const { return _cnt; }
+  const TypeFunc* tf()  const { return _tf; }
+  address entry_point() const { return _entry_point; }
+  float   cnt()         const { return _cnt; }
 
   void set_tf(const TypeFunc* tf)       { _tf = tf; }
   void set_entry_point(address p)       { _entry_point = p; }

@@ -84,7 +84,7 @@ public class ProdRed_Int {
         failOn = {IRNode.MUL_REDUCTION_VI})
     @IR(applyIfCPUFeature = {"sse4.1", "true"},
         applyIfAnd = {"SuperWordReductions", "true", "LoopMaxUnroll", ">= 8"},
-        counts = {IRNode.MUL_REDUCTION_VI, ">= 1"})
+        counts = {IRNode.MUL_REDUCTION_VI, ">= 1", IRNode.MUL_REDUCTION_VI, "<= 2"}) // one for main-loop, one for vector-post-loop
     public static int prodReductionImplement(int[] a, int[] b, int total) {
         for (int i = 0; i < a.length; i++) {
             total *= a[i] + b[i];

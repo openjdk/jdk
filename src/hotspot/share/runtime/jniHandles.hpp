@@ -178,7 +178,7 @@ class JNIHandleBlock : public CHeapObj<mtInternal> {
   void set_pop_frame_link(JNIHandleBlock* block)  { _pop_frame_link = block; }
 
   // Stub generator support
-  static int top_offset_in_bytes()                { return offset_of(JNIHandleBlock, _top); }
+  static ByteSize top_offset()           { return byte_offset_of(JNIHandleBlock, _top); }
 
   // Garbage collection support
   // Traversal of handles

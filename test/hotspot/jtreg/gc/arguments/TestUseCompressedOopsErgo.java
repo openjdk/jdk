@@ -89,4 +89,3 @@ public class TestUseCompressedOopsErgo {
     TestUseCompressedOopsErgoTools.checkCompressedOopsErgo(gcFlags);
   }
 }
-

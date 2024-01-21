@@ -25,6 +25,7 @@
 /**
  * @test
  * @bug 8033277
+ * @key printer
  * @summary Confirm that scaling of printout is correct.  Manual comparison with printout using a supported resolution is needed.
  * @run main/manual TestUnsupportedResolution
  */

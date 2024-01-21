@@ -162,7 +162,7 @@ void HandleMark::chop_later_chunks() {
   // reset arena size before delete chunks. Otherwise, the total
   // arena size could exceed total chunk size
   _area->set_size_in_bytes(size_in_bytes());
-  _chunk->next_chop();
+  Chunk::next_chop(_chunk);
 }
 
 void* HandleMark::operator new(size_t size) throw() {

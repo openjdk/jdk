@@ -57,8 +57,8 @@ void DirectivesParser::clean_tmp() {
   assert(_tmp_depth == 0, "Consistency");
 }
 
-int DirectivesParser::parse_string(const char* text, outputStream* st) {
-  DirectivesParser cd(text, st, false);
+int DirectivesParser::parse_string(const char* text, outputStream* st, bool silent) {
+  DirectivesParser cd(text, st, silent);
   if (cd.valid()) {
     return cd.install_directives();
   } else {
@@ -77,16 +77,16 @@ bool DirectivesParser::parse_from_flag() {
   return parse_from_file(CompilerDirectivesFile, tty);
 }
 
-bool DirectivesParser::parse_from_file(const char* filename, outputStream* st) {
+bool DirectivesParser::parse_from_file(const char* filename, outputStream* st, bool silent) {
   assert(filename != nullptr, "Test before calling this");
-  if (!parse_from_file_inner(filename, st)) {
+  if (!parse_from_file_inner(filename, st, silent)) {
     st->print_cr("Could not load file: %s", filename);
     return false;
   }
   return true;
 }
 
-bool DirectivesParser::parse_from_file_inner(const char* filename, outputStream* stream) {
+bool DirectivesParser::parse_from_file_inner(const char* filename, outputStream* stream, bool silent) {
   struct stat st;
   ResourceMark rm;
   if (os::stat(filename, &st) == 0) {
@@ -99,7 +99,7 @@ bool DirectivesParser::parse_from_file_inner(const char* filename, outputStream*
       ::close(file_handle);
       if (num_read >= 0) {
         buffer[num_read] = '\0';
-        return parse_string(buffer, stream) > 0;
+        return parse_string(buffer, stream, silent) > 0;
       }
     }
   }
@@ -315,35 +315,42 @@ bool DirectivesParser::set_option_flag(JSON_TYPE t, JSON_VAL* v, const key* opti
         error(VALUE_ERROR, "Cannot use string value for a %s flag", flag_type_names[option_key->flag_type]);
         return false;
       } else {
-        char* s = NEW_C_HEAP_ARRAY(char, v->str.length+1,  mtCompiler);
+        char* s = NEW_C_HEAP_ARRAY(char, v->str.length + 1, mtCompiler);
         strncpy(s, v->str.start, v->str.length + 1);
         s[v->str.length] = '\0';
-        (set->*test)((void *)&s);
+
+        bool valid = true;
 
         if (strncmp(option_key->name, "ControlIntrinsic", 16) == 0) {
           ControlIntrinsicValidator validator(s, false/*disabled_all*/);
 
-          if (!validator.is_valid()) {
+          valid = validator.is_valid();
+          if (!valid) {
             error(VALUE_ERROR, "Unrecognized intrinsic detected in ControlIntrinsic: %s", validator.what());
-            return false;
           }
         } else if (strncmp(option_key->name, "DisableIntrinsic", 16) == 0) {
           ControlIntrinsicValidator validator(s, true/*disabled_all*/);
 
-          if (!validator.is_valid()) {
+          valid = validator.is_valid();
+          if (!valid) {
             error(VALUE_ERROR, "Unrecognized intrinsic detected in DisableIntrinsic: %s", validator.what());
-            return false;
           }
         } else if (strncmp(option_key->name, "PrintIdealPhase", 15) == 0) {
-          uint64_t mask = 0;
-          PhaseNameValidator validator(s, mask);
+          PhaseNameValidator validator(s);
 
-          if (!validator.is_valid()) {
+          valid = validator.is_valid();
+          if (valid) {
+            set->set_ideal_phase_name_set(validator.phase_name_set());
+          } else {
             error(VALUE_ERROR, "Unrecognized phase name detected in PrintIdealPhase: %s", validator.what());
-            return false;
           }
-          set->set_ideal_phase_mask(mask);
         }
+
+        if (!valid) {
+          FREE_C_HEAP_ARRAY(char, s);
+          return false;
+        }
+        (set->*test)((void *)&s);  // Takes ownership.
       }
       break;
 

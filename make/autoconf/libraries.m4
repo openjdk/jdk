@@ -108,12 +108,6 @@ AC_DEFUN([LIB_SETUP_JVM_LIBS],
       BASIC_JVM_LIBS_$1="$BASIC_JVM_LIBS_$1 -latomic"
     fi
   fi
-
-  # Because RISC-V only has word-sized atomics, it requires libatomic where
-  # other common architectures do not, so link libatomic by default.
-  if test "x$OPENJDK_$1_OS" = xlinux && test "x$OPENJDK_$1_CPU" = xriscv64; then
-    BASIC_JVM_LIBS_$1="$BASIC_JVM_LIBS_$1 -latomic"
-  fi
 ])
 
 ################################################################################

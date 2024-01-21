@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@ import java.nio.file.Paths;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class Platform {
@@ -260,6 +261,36 @@ public class Platform {
         return true;
     }
 
+    private static Process launchCodesignOnJavaBinary() throws IOException {
+        String jdkPath = System.getProperty("java.home");
+        Path javaPath = Paths.get(jdkPath + "/bin/java");
+        String javaFileName = javaPath.toAbsolutePath().toString();
+        if (Files.notExists(javaPath)) {
+            throw new FileNotFoundException("Could not find file " + javaFileName);
+        }
+        ProcessBuilder pb = new ProcessBuilder("codesign", "--display", "--verbose", javaFileName);
+        pb.redirectErrorStream(true); // redirect stderr to stdout
+        Process codesignProcess = pb.start();
+        return codesignProcess;
+    }
+
+    public static boolean hasOSXPlistEntries() throws IOException {
+        Process codesignProcess = launchCodesignOnJavaBinary();
+        BufferedReader is = new BufferedReader(new InputStreamReader(codesignProcess.getInputStream()));
+        String line;
+        while ((line = is.readLine()) != null) {
+            System.out.println("STDOUT: " + line);
+            if (line.indexOf("Info.plist=not bound") != -1) {
+                return false;
+            }
+            if (line.indexOf("Info.plist entries=") != -1) {
+                return true;
+            }
+        }
+        System.out.println("No matching Info.plist entry was found");
+        return false;
+    }
+
     /**
      * Return true if the test JDK is hardened, otherwise false. Only valid on OSX.
      */
@@ -269,19 +300,7 @@ public class Platform {
         if (getOsVersionMajor() == 10 && getOsVersionMinor() < 14) {
             return false; // assume not hardened
         }
-
-        // Find the path to the java binary.
-        String jdkPath = System.getProperty("java.home");
-        Path javaPath = Paths.get(jdkPath + "/bin/java");
-        String javaFileName = javaPath.toAbsolutePath().toString();
-        if (Files.notExists(javaPath)) {
-            throw new FileNotFoundException("Could not find file " + javaFileName);
-        }
-
-        // Run codesign on the java binary.
-        ProcessBuilder pb = new ProcessBuilder("codesign", "--display", "--verbose", javaFileName);
-        pb.redirectErrorStream(true); // redirect stderr to stdout
-        Process codesignProcess = pb.start();
+        Process codesignProcess = launchCodesignOnJavaBinary();
         BufferedReader is = new BufferedReader(new InputStreamReader(codesignProcess.getInputStream()));
         String line;
         boolean isHardened = false;
@@ -330,6 +349,20 @@ public class Platform {
                       .matches();
     }
 
+    public static boolean isOracleLinux7() {
+        if (System.getProperty("os.name").toLowerCase().contains("linux") &&
+                System.getProperty("os.version").toLowerCase().contains("el")) {
+            Pattern p = Pattern.compile("el(\\d+)");
+            Matcher m = p.matcher(System.getProperty("os.version"));
+            if (m.find()) {
+                try {
+                    return Integer.parseInt(m.group(1)) <= 7;
+                } catch (NumberFormatException nfe) {}
+            }
+        }
+        return false;
+    }
+
     /**
      * Returns file extension of shared library, e.g. "so" on linux, "dll" on windows.
      * @return file extension
@@ -342,6 +375,27 @@ public class Platform {
         } else {
             return "so";
         }
+    }
+
+    /**
+     * Returns the usual file prefix of a shared library, e.g. "lib" on linux, empty on windows.
+     * @return file name prefix
+     */
+    public static String sharedLibraryPrefix() {
+        if (isWindows()) {
+            return "";
+        } else {
+            return "lib";
+        }
+    }
+
+    /**
+     * Returns the usual full shared lib name of a name without prefix and extension, e.g. for jsig
+     * "libjsig.so" on linux, "jsig.dll" on windows.
+     * @return the full shared lib name
+     */
+    public static String buildSharedLibraryName(String name) {
+        return sharedLibraryPrefix() + name + "." + sharedLibraryExt();
     }
 
     /*

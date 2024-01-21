@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,10 @@
 
 package jdk.jpackage.internal;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.PrintStream;
 import java.io.Writer;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -49,9 +51,14 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathFactory;
+import jdk.internal.util.OperatingSystem;
+import jdk.internal.util.OSVersion;
 import static jdk.jpackage.internal.MacAppBundler.BUNDLE_ID_SIGNING_PREFIX;
 import static jdk.jpackage.internal.MacAppBundler.DEVELOPER_ID_APP_SIGNING_KEY;
+import static jdk.jpackage.internal.MacAppBundler.APP_IMAGE_SIGN_IDENTITY;
 import static jdk.jpackage.internal.MacBaseInstallerBundler.SIGNING_KEYCHAIN;
+import static jdk.jpackage.internal.MacBaseInstallerBundler.SIGNING_KEY_USER;
+import static jdk.jpackage.internal.MacBaseInstallerBundler.INSTALLER_SIGN_IDENTITY;
 import static jdk.jpackage.internal.OverridableResource.createResource;
 import static jdk.jpackage.internal.StandardBundlerParam.APP_NAME;
 import static jdk.jpackage.internal.StandardBundlerParam.CONFIG_ROOT;
@@ -393,15 +400,28 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
             } catch (InterruptedException e) {
                 Log.error(e.getMessage());
             }
-            String signingIdentity =
-                    DEVELOPER_ID_APP_SIGNING_KEY.fetchFrom(params);
+            String signingIdentity = null;
+            // Try --mac-app-image-sign-identity first if set
+            if (!APP_IMAGE_SIGN_IDENTITY.getIsDefaultValue(params)) {
+                signingIdentity = APP_IMAGE_SIGN_IDENTITY.fetchFrom(params);
+            } else {
+                // Check if INSTALLER_SIGN_IDENTITY is set and if it is set
+                // then do not sign app image, otherwise use --mac-signing-key-user-name
+                if (INSTALLER_SIGN_IDENTITY.getIsDefaultValue(params)) {
+                    // --mac-sign and/or --mac-signing-key-user-name case
+                    signingIdentity = DEVELOPER_ID_APP_SIGNING_KEY.fetchFrom(params);
+                }
+            }
             if (signingIdentity != null) {
                 signAppBundle(params, root, signingIdentity,
                         BUNDLE_ID_SIGNING_PREFIX.fetchFrom(params),
                         ENTITLEMENTS.fetchFrom(params));
+            } else {
+                // Case when user requested to sign installer only
+                signAppBundle(params, root, "-", null, null);
             }
             restoreKeychainList(params);
-        } else if (Platform.isMac()) {
+        } else if (OperatingSystem.isMacOS()) {
             signAppBundle(params, root, "-", null, null);
         } else {
             // Calling signAppBundle() without signingIdentity will result in
@@ -608,9 +628,7 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
 
     public static void addNewKeychain(Map<String, ? super Object> params)
                                     throws IOException, InterruptedException {
-        if (Platform.getMajorVersion() < 10 ||
-                (Platform.getMajorVersion() == 10 &&
-                Platform.getMinorVersion() < 12)) {
+        if (OSVersion.current().compareTo(new OSVersion(10, 12)) < 0) {
             // we need this for OS X 10.12+
             return;
         }
@@ -662,9 +680,7 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
 
     public static void restoreKeychainList(Map<String, ? super Object> params)
             throws IOException{
-        if (Platform.getMajorVersion() < 10 ||
-                (Platform.getMajorVersion() == 10 &&
-                Platform.getMinorVersion() < 12)) {
+        if (OSVersion.current().compareTo(new OSVersion(10, 12)) < 0) {
             // we need this for OS X 10.12+
             return;
         }
@@ -717,7 +733,26 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
         return args;
     }
 
-    private static void signAppBundle(
+    private static void runCodesign(ProcessBuilder pb, boolean quiet)
+                                                            throws IOException {
+        try (ByteArrayOutputStream baos = new ByteArrayOutputStream();
+             PrintStream ps = new PrintStream(baos)) {
+            try {
+            IOUtils.exec(pb, false, ps, false,
+                         Executor.INFINITE_TIMEOUT, quiet);
+            } catch (IOException ioe) {
+                // Log output of "codesign" in case of
+                // error. It should help user to diagnose
+                // issue when using --mac-app-image-sign-identity
+                Log.info(MessageFormat.format(I18N.getString(
+                         "error.tool.failed.with.output"), "codesign"));
+                Log.info(baos.toString().strip());
+                throw ioe;
+            }
+        }
+    }
+
+    static void signAppBundle(
             Map<String, ? super Object> params, Path appLocation,
             String signingIdentity, String identifierPrefix, Path entitlements)
             throws IOException {
@@ -783,8 +818,7 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
                             p.toFile().setWritable(true, true);
                             ProcessBuilder pb = new ProcessBuilder(args);
                             // run quietly
-                            IOUtils.exec(pb, false, null, false,
-                                    Executor.INFINITE_TIMEOUT, true);
+                            runCodesign(pb, true);
                             Files.setPosixFilePermissions(p, oldPermissions);
                         } catch (IOException ioe) {
                             toThrow.set(ioe);
@@ -812,8 +846,7 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
                 List<String> args = getCodesignArgs(true, path, signingIdentity,
                             identifierPrefix, entitlements, keyChain);
                 ProcessBuilder pb = new ProcessBuilder(args);
-
-                IOUtils.exec(pb);
+                runCodesign(pb, false);
             } catch (IOException e) {
                 toThrow.set(e);
             }
@@ -844,8 +877,7 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
         List<String> args = getCodesignArgs(true, appLocation, signingIdentity,
                 identifierPrefix, entitlements, keyChain);
         ProcessBuilder pb = new ProcessBuilder(args);
-
-        IOUtils.exec(pb);
+        runCodesign(pb, false);
     }
 
     private static String extractBundleIdentifier(Map<String, Object> params) {

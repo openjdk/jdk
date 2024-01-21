@@ -1,0 +1,229 @@
+//
+// Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2020, 2021, Huawei Technologies Co., Ltd. All rights reserved.
+// DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+//
+// This code is free software; you can redistribute it and/or modify it
+// under the terms of the GNU General Public License version 2 only, as
+// published by the Free Software Foundation.
+//
+// This code is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+// version 2 for more details (a copy is included in the LICENSE file that
+// accompanied this code).
+//
+// You should have received a copy of the GNU General Public License version
+// 2 along with this work; if not, write to the Free Software Foundation,
+// Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+//
+// Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+// or visit www.oracle.com if you need additional information or have any
+// questions.
+//
+
+source_hpp %{
+
+#include "gc/shared/gc_globals.hpp"
+#include "gc/x/c2/xBarrierSetC2.hpp"
+#include "gc/x/xThreadLocalData.hpp"
+
+%}
+
+source %{
+
+static void x_load_barrier(MacroAssembler& _masm, const MachNode* node, Address ref_addr, Register ref, Register tmp, int barrier_data) {
+  if (barrier_data == XLoadBarrierElided) {
+    return;
+  }
+  XLoadBarrierStubC2* const stub = XLoadBarrierStubC2::create(node, ref_addr, ref, tmp, barrier_data);
+  __ ld(tmp, Address(xthread, XThreadLocalData::address_bad_mask_offset()));
+  __ andr(tmp, tmp, ref);
+  __ bnez(tmp, *stub->entry(), true /* far */);
+  __ bind(*stub->continuation());
+}
+
+static void x_load_barrier_slow_path(MacroAssembler& _masm, const MachNode* node, Address ref_addr, Register ref, Register tmp) {
+  XLoadBarrierStubC2* const stub = XLoadBarrierStubC2::create(node, ref_addr, ref, tmp, XLoadBarrierStrong);
+  __ j(*stub->entry());
+  __ bind(*stub->continuation());
+}
+
+%}
+
+// Load Pointer
+instruct xLoadP(iRegPNoSp dst, memory mem, iRegPNoSp tmp)
+%{
+  match(Set dst (LoadP mem));
+  predicate(UseZGC && !ZGenerational && (n->as_Load()->barrier_data() != 0));
+  effect(TEMP dst, TEMP tmp);
+
+  ins_cost(4 * DEFAULT_COST);
+
+  format %{ "ld  $dst, $mem, #@zLoadP" %}
+
+  ins_encode %{
+    const Address ref_addr (as_Register($mem$$base), $mem$$disp);
+    __ ld($dst$$Register, ref_addr);
+    x_load_barrier(_masm, this, ref_addr, $dst$$Register, $tmp$$Register /* tmp */, barrier_data());
+  %}
+
+  ins_pipe(iload_reg_mem);
+%}
+
+instruct xCompareAndSwapP(iRegINoSp res, indirect mem, iRegP oldval, iRegP newval, iRegPNoSp tmp) %{
+  match(Set res (CompareAndSwapP mem (Binary oldval newval)));
+  match(Set res (WeakCompareAndSwapP mem (Binary oldval newval)));
+  predicate(UseZGC && !ZGenerational && !needs_acquiring_load_reserved(n) && n->as_LoadStore()->barrier_data() == XLoadBarrierStrong);
+  effect(TEMP_DEF res, TEMP tmp);
+
+  ins_cost(2 * VOLATILE_REF_COST);
+
+  format %{ "cmpxchg $mem, $oldval, $newval, #@zCompareAndSwapP\n\t"
+            "mv $res, $res == $oldval" %}
+
+  ins_encode %{
+    Label failed;
+    guarantee($mem$$index == -1 && $mem$$disp == 0, "impossible encoding");
+    __ cmpxchg($mem$$Register, $oldval$$Register, $newval$$Register, Assembler::int64,
+               Assembler::relaxed /* acquire */, Assembler::rl /* release */, $tmp$$Register);
+    __ sub(t0, $tmp$$Register, $oldval$$Register);
+    __ seqz($res$$Register, t0);
+    if (barrier_data() != XLoadBarrierElided) {
+      Label good;
+      __ ld(t0, Address(xthread, XThreadLocalData::address_bad_mask_offset()));
+      __ andr(t0, t0, $tmp$$Register);
+      __ beqz(t0, good);
+      x_load_barrier_slow_path(_masm, this, Address($mem$$Register), $tmp$$Register /* ref */, $res$$Register /* tmp */);
+      __ cmpxchg($mem$$Register, $oldval$$Register, $newval$$Register, Assembler::int64,
+                 Assembler::relaxed /* acquire */, Assembler::rl /* release */, $res$$Register,
+                 true /* result_as_bool */);
+      __ bind(good);
+    }
+  %}
+
+  ins_pipe(pipe_slow);
+%}
+
+instruct xCompareAndSwapPAcq(iRegINoSp res, indirect mem, iRegP oldval, iRegP newval, iRegPNoSp tmp) %{
+  match(Set res (CompareAndSwapP mem (Binary oldval newval)));
+  match(Set res (WeakCompareAndSwapP mem (Binary oldval newval)));
+  predicate(UseZGC && !ZGenerational && needs_acquiring_load_reserved(n) && (n->as_LoadStore()->barrier_data() == XLoadBarrierStrong));
+  effect(TEMP_DEF res, TEMP tmp);
+
+  ins_cost(2 * VOLATILE_REF_COST);
+
+  format %{ "cmpxchg $mem, $oldval, $newval, #@zCompareAndSwapPAcq\n\t"
+            "mv $res, $res == $oldval" %}
+
+  ins_encode %{
+    Label failed;
+    guarantee($mem$$index == -1 && $mem$$disp == 0, "impossible encoding");
+    __ cmpxchg($mem$$Register, $oldval$$Register, $newval$$Register, Assembler::int64,
+               Assembler::aq /* acquire */, Assembler::rl /* release */, $tmp$$Register);
+    __ sub(t0, $tmp$$Register, $oldval$$Register);
+    __ seqz($res$$Register, t0);
+    if (barrier_data() != XLoadBarrierElided) {
+      Label good;
+      __ ld(t0, Address(xthread, XThreadLocalData::address_bad_mask_offset()));
+      __ andr(t0, t0, $tmp$$Register);
+      __ beqz(t0, good);
+      x_load_barrier_slow_path(_masm, this, Address($mem$$Register), $tmp$$Register /* ref */, $res$$Register /* tmp */);
+      __ cmpxchg($mem$$Register, $oldval$$Register, $newval$$Register, Assembler::int64,
+                 Assembler::aq /* acquire */, Assembler::rl /* release */, $res$$Register,
+                 true /* result_as_bool */);
+      __ bind(good);
+    }
+  %}
+
+  ins_pipe(pipe_slow);
+%}
+
+instruct xCompareAndExchangeP(iRegPNoSp res, indirect mem, iRegP oldval, iRegP newval, iRegPNoSp tmp) %{
+  match(Set res (CompareAndExchangeP mem (Binary oldval newval)));
+  predicate(UseZGC && !ZGenerational && !needs_acquiring_load_reserved(n) && n->as_LoadStore()->barrier_data() == XLoadBarrierStrong);
+  effect(TEMP_DEF res, TEMP tmp);
+
+  ins_cost(2 * VOLATILE_REF_COST);
+
+  format %{ "cmpxchg $res = $mem, $oldval, $newval, #@zCompareAndExchangeP" %}
+
+  ins_encode %{
+    guarantee($mem$$index == -1 && $mem$$disp == 0, "impossible encoding");
+    __ cmpxchg($mem$$Register, $oldval$$Register, $newval$$Register, Assembler::int64,
+               Assembler::relaxed /* acquire */, Assembler::rl /* release */, $res$$Register);
+    if (barrier_data() != XLoadBarrierElided) {
+      Label good;
+      __ ld(t0, Address(xthread, XThreadLocalData::address_bad_mask_offset()));
+      __ andr(t0, t0, $res$$Register);
+      __ beqz(t0, good);
+      x_load_barrier_slow_path(_masm, this, Address($mem$$Register), $res$$Register /* ref */, $tmp$$Register /* tmp */);
+      __ cmpxchg($mem$$Register, $oldval$$Register, $newval$$Register, Assembler::int64,
+                 Assembler::relaxed /* acquire */, Assembler::rl /* release */, $res$$Register);
+      __ bind(good);
+    }
+  %}
+
+  ins_pipe(pipe_slow);
+%}
+
+instruct xCompareAndExchangePAcq(iRegPNoSp res, indirect mem, iRegP oldval, iRegP newval, iRegPNoSp tmp) %{
+  match(Set res (CompareAndExchangeP mem (Binary oldval newval)));
+  predicate(UseZGC && !ZGenerational && needs_acquiring_load_reserved(n) && n->as_LoadStore()->barrier_data() == XLoadBarrierStrong);
+  effect(TEMP_DEF res, TEMP tmp);
+
+  ins_cost(2 * VOLATILE_REF_COST);
+
+  format %{ "cmpxchg $res = $mem, $oldval, $newval, #@zCompareAndExchangePAcq" %}
+
+  ins_encode %{
+    guarantee($mem$$index == -1 && $mem$$disp == 0, "impossible encoding");
+    __ cmpxchg($mem$$Register, $oldval$$Register, $newval$$Register, Assembler::int64,
+               Assembler::aq /* acquire */, Assembler::rl /* release */, $res$$Register);
+    if (barrier_data() != XLoadBarrierElided) {
+      Label good;
+      __ ld(t0, Address(xthread, XThreadLocalData::address_bad_mask_offset()));
+      __ andr(t0, t0, $res$$Register);
+      __ beqz(t0, good);
+      x_load_barrier_slow_path(_masm, this, Address($mem$$Register), $res$$Register /* ref */, $tmp$$Register /* tmp */);
+      __ cmpxchg($mem$$Register, $oldval$$Register, $newval$$Register, Assembler::int64,
+                 Assembler::aq /* acquire */, Assembler::rl /* release */, $res$$Register);
+      __ bind(good);
+    }
+  %}
+
+  ins_pipe(pipe_slow);
+%}
+
+instruct xGetAndSetP(indirect mem, iRegP newv, iRegPNoSp prev, iRegPNoSp tmp) %{
+  match(Set prev (GetAndSetP mem newv));
+  predicate(UseZGC && !ZGenerational && !needs_acquiring_load_reserved(n) && n->as_LoadStore()->barrier_data() != 0);
+  effect(TEMP_DEF prev, TEMP tmp);
+
+  ins_cost(2 * VOLATILE_REF_COST);
+
+  format %{ "atomic_xchg  $prev, $newv, [$mem], #@zGetAndSetP" %}
+
+  ins_encode %{
+    __ atomic_xchg($prev$$Register, $newv$$Register, as_Register($mem$$base));
+    x_load_barrier(_masm, this, Address(noreg, 0), $prev$$Register, $tmp$$Register /* tmp */, barrier_data());
+  %}
+
+  ins_pipe(pipe_serial);
+%}
+
+instruct xGetAndSetPAcq(indirect mem, iRegP newv, iRegPNoSp prev, iRegPNoSp tmp) %{
+  match(Set prev (GetAndSetP mem newv));
+  predicate(UseZGC && !ZGenerational && needs_acquiring_load_reserved(n) && (n->as_LoadStore()->barrier_data() != 0));
+  effect(TEMP_DEF prev, TEMP tmp);
+
+  ins_cost(VOLATILE_REF_COST);
+
+  format %{ "atomic_xchg_acq  $prev, $newv, [$mem], #@zGetAndSetPAcq" %}
+
+  ins_encode %{
+    __ atomic_xchgal($prev$$Register, $newv$$Register, as_Register($mem$$base));
+    x_load_barrier(_masm, this, Address(noreg, 0), $prev$$Register, $tmp$$Register /* tmp */, barrier_data());
+  %}
+  ins_pipe(pipe_serial);
+%}

@@ -427,7 +427,7 @@ public:
   int scan_string_prefix();
   int scan_symbol_prefix();
 
-  jchar unescape(const char* from, const char* end, int count);
+  int unescape(const char* from, const char* end, int count);
   void get_utf8(char* utf8_buffer, int utf8_length);
   static void put_utf8(outputStream* st, const char* utf8_string, int utf8_length);
 };

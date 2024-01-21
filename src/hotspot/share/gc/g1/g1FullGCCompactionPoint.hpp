@@ -32,11 +32,13 @@
 
 class G1FullCollector;
 class HeapRegion;
+class PreservedMarks;
 
 class G1FullGCCompactionPoint : public CHeapObj<mtGC> {
   G1FullCollector* _collector;
   HeapRegion* _current_region;
   HeapWord*   _compaction_top;
+  PreservedMarks* _preserved_stack;
   GrowableArray<HeapRegion*>* _compaction_regions;
   GrowableArrayIterator<HeapRegion*> _compaction_region_iterator;
 
@@ -47,7 +49,7 @@ class G1FullGCCompactionPoint : public CHeapObj<mtGC> {
   uint find_contiguous_before(HeapRegion* hr, uint num_regions);
 
 public:
-  G1FullGCCompactionPoint(G1FullCollector* collector);
+  G1FullGCCompactionPoint(G1FullCollector* collector, PreservedMarks* preserved_stack);
   ~G1FullGCCompactionPoint();
 
   bool has_regions();
@@ -55,7 +57,7 @@ public:
   void initialize(HeapRegion* hr);
   void update();
   void forward(oop object, size_t size);
-  uint forward_humongous(HeapRegion* hr);
+  void forward_humongous(HeapRegion* hr);
   void add(HeapRegion* hr);
   void add_humongous(HeapRegion* hr);
 
@@ -63,6 +65,16 @@ public:
   HeapRegion* current_region();
 
   GrowableArray<HeapRegion*>* regions();
+
+  PreservedMarks* preserved_stack() const {
+    assert(_preserved_stack != nullptr, "must be initialized");
+    return _preserved_stack;
+  }
+
+  void set_preserved_stack(PreservedMarks* preserved_stack) {
+    assert(_preserved_stack == nullptr, "only initialize once");
+    _preserved_stack = preserved_stack;
+  }
 };
 
 #endif // SHARE_GC_G1_G1FULLGCCOMPACTIONPOINT_HPP

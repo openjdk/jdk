@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -240,6 +240,7 @@ public class Krb5NameElement
      * @return true if they both refer to the same entity, else false
      * @see #equals(GSSNameSpi)
      */
+    @Override
     public boolean equals(Object another) {
         if (this == another) {
             return true;
@@ -255,12 +256,11 @@ public class Krb5NameElement
     }
 
     /**
-     * Returns a hashcode value for this GSSNameSpi.
-     *
-     * @return a hashCode value
+     * {@return a hashcode value for this GSSNameSpi}
      */
+    @Override
     public int hashCode() {
-        return 37 * 17 + krb5PrincipalName.getName().hashCode();
+        return krb5PrincipalName.getName().hashCode();
     }
 
 

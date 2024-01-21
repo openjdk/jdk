@@ -110,15 +110,10 @@ class WatcherThread: public NonJavaThread {
  private:
   static WatcherThread* _watcher_thread;
 
-  static bool _startable;
+  static bool _run_all_tasks;
   // volatile due to at least one lock-free read
   volatile static bool _should_terminate;
  public:
-
-  enum SomeConstants {
-    delay_interval = 10                          // interrupt delay in milliseconds
-  };
-
   // Constructor
   WatcherThread();
 
@@ -142,9 +137,9 @@ class WatcherThread: public NonJavaThread {
   // Create and start the single instance of WatcherThread, or stop it on shutdown
   static void start();
   static void stop();
-  // Only allow start once the VM is sufficiently initialized
-  // Otherwise the first task to enroll will trigger the start
-  static void make_startable();
+  // Allow executing registered tasks once the VM is sufficiently
+  // initialized. Meanwhile only error reporting will be checked.
+  static void run_all_tasks();
  private:
   int sleep() const;
 };

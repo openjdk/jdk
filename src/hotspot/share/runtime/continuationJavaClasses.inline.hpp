@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,6 +79,10 @@ inline void jdk_internal_vm_StackChunk::set_parent_raw(oop chunk, oop value) {
 template<DecoratorSet decorators>
 inline void jdk_internal_vm_StackChunk::set_parent_access(oop chunk, oop value) {
   chunk->obj_field_put_access<decorators>(_parent_offset, value);
+}
+
+inline oop jdk_internal_vm_StackChunk::cont(oop chunk) {
+  return chunk->obj_field(_cont_offset);
 }
 
 template<typename P>

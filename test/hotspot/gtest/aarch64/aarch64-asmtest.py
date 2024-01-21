@@ -546,6 +546,33 @@ class SVEComparisonWithZero(Instruction):
                     str(self.preg), str(self.reg), self._width.astr()))
           return val
 
+class SVEComparisonWithImm(Instruction):
+    def __init__(self, arg):
+          Instruction.__init__(self, "cmp")
+          self.condition = arg
+          self.dest = OperandFactory.create('p').generate()
+          self.reg = SVEVectorRegister().generate()
+          self._width = RegVariant(0, 3)
+          self.preg = OperandFactory.create('P').generate()
+
+    def generate(self):
+          if self.condition in ['HI', 'HS', 'LO', 'LS']:
+            self.immed = random.randint(0, 127)
+          else:
+            self.immed = random.randint(-16, 15)
+          return Instruction.generate(self)
+
+    def cstr(self):
+          return ("%s(%s, %s, %s, %s, %s, %d);"
+                  % ("__ sve_" + self._name, "Assembler::" + self.condition,
+                     str(self.dest), self._width.cstr(), str(self.preg), str(self.reg), self.immed))
+
+    def astr(self):
+          val = ("%s%s\t%s%s, %s/z, %s%s, #%d"
+                 % (self._name, self.condition.lower(), str(self.dest), self._width.astr(),
+                    str(self.preg), str(self.reg), self._width.astr(), self.immed))
+          return val
+
 class MultiOp():
 
     def multipleForms(self):
@@ -1738,6 +1765,8 @@ for pre in neonVectorCompareInstructionPrefix:
 generate(NEONVectorCompare, neonVectorCompareArgs)
 
 generate(SVEComparisonWithZero, ["EQ", "GT", "GE", "LT", "LE", "NE"])
+
+generate(SVEComparisonWithImm, ["EQ", "GT", "GE", "LT", "LE", "NE", "HS", "HI", "LS", "LO"])
 
 generate(SpecialCases, [["ccmn",   "__ ccmn(zr, zr, 3u, Assembler::LE);",                "ccmn\txzr, xzr, #3, LE"],
                         ["ccmnw",  "__ ccmnw(zr, zr, 5u, Assembler::EQ);",               "ccmn\twzr, wzr, #5, EQ"],

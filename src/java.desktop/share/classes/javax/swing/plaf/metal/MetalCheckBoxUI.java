@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,7 +54,7 @@ import java.io.Serializable;
 @SuppressWarnings("serial") // Same-version serialization only
 public class MetalCheckBoxUI extends MetalRadioButtonUI {
 
-    // NOTE: MetalCheckBoxUI inherts from MetalRadioButtonUI instead
+    // NOTE: MetalCheckBoxUI inherits from MetalRadioButtonUI instead
     // of BasicCheckBoxUI because we want to pick up all the
     // painting changes made in MetalRadioButtonUI.
 

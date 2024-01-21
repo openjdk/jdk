@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -94,6 +94,10 @@ class ReflectAccess implements jdk.internal.access.JavaLangReflectAccess {
         return ex.getSharedParameterTypes();
     }
 
+    public Class<?>[] getExecutableSharedExceptionTypes(Executable ex) {
+        return ex.getSharedExceptionTypes();
+    }
+
     //
     // Copying routines, needed to quickly fabricate new Field,
     // Method, and Constructor objects from templates
@@ -126,10 +130,5 @@ class ReflectAccess implements jdk.internal.access.JavaLangReflectAccess {
         throws IllegalAccessException, InstantiationException, InvocationTargetException
     {
         return ctor.newInstanceWithCaller(args, true, caller);
-    }
-
-    public Object invokeDefault(Object proxy, Method method, Object[] args, Class<?> caller)
-            throws Throwable {
-        return Proxy.invokeDefault(proxy, method, args, caller);
     }
 }

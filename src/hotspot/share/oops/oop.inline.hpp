@@ -32,7 +32,7 @@
 #include "oops/access.inline.hpp"
 #include "oops/arrayKlass.hpp"
 #include "oops/arrayOop.hpp"
-#include "oops/compressedOops.inline.hpp"
+#include "oops/compressedKlass.inline.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/markWord.hpp"
 #include "oops/oopsHierarchy.hpp"
@@ -64,6 +64,10 @@ void oopDesc::set_mark(markWord m) {
 
 void oopDesc::set_mark(HeapWord* mem, markWord m) {
   *(markWord*)(((char*)mem) + mark_offset_in_bytes()) = m;
+}
+
+void oopDesc::release_set_mark(HeapWord* mem, markWord m) {
+  Atomic::release_store((markWord*)(((char*)mem) + mark_offset_in_bytes()), m);
 }
 
 void oopDesc::release_set_mark(markWord m) {
@@ -292,20 +296,22 @@ oop oopDesc::forwardee() const {
 
 // The following method needs to be MT safe.
 uint oopDesc::age() const {
-  assert(!mark().is_marked(), "Attempt to read age from forwarded mark");
-  if (has_displaced_mark()) {
-    return displaced_mark().age();
+  markWord m = mark();
+  assert(!m.is_marked(), "Attempt to read age from forwarded mark");
+  if (m.has_displaced_mark_helper()) {
+    return m.displaced_mark_helper().age();
   } else {
-    return mark().age();
+    return m.age();
   }
 }
 
 void oopDesc::incr_age() {
-  assert(!mark().is_marked(), "Attempt to increment age of forwarded mark");
-  if (has_displaced_mark()) {
-    set_displaced_mark(displaced_mark().incr_age());
+  markWord m = mark();
+  assert(!m.is_marked(), "Attempt to increment age of forwarded mark");
+  if (m.has_displaced_mark_helper()) {
+    m.set_displaced_mark_helper(m.displaced_mark_helper().incr_age());
   } else {
-    set_mark(mark().incr_age());
+    set_mark(m.incr_age());
   }
 }
 

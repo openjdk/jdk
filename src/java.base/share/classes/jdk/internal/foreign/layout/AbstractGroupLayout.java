@@ -29,7 +29,6 @@ import java.lang.foreign.MemoryLayout;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.function.LongBinaryOperator;
 import java.util.stream.Collectors;
 
 /**
@@ -40,22 +39,20 @@ import java.util.stream.Collectors;
  *
  * @implSpec
  * This class is immutable, thread-safe and <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>.
- *
- * @since 19
  */
-public sealed abstract class AbstractGroupLayout<L extends AbstractGroupLayout<L> & MemoryLayout>
+abstract sealed class AbstractGroupLayout<L extends AbstractGroupLayout<L> & MemoryLayout>
         extends AbstractLayout<L>
         permits StructLayoutImpl, UnionLayoutImpl {
 
     private final Kind kind;
     private final List<MemoryLayout> elements;
-    final long minBitAlignment;
+    final long minByteAlignment;
 
-    AbstractGroupLayout(Kind kind, List<MemoryLayout> elements, long bitSize, long bitAlignment, long minBitAlignment, Optional<String> name) {
-        super(bitSize, bitAlignment, name); // Subclassing creates toctou problems here
+    AbstractGroupLayout(Kind kind, List<MemoryLayout> elements, long byteSize, long byteAlignment, long minByteAlignment, Optional<String> name) {
+        super(byteSize, byteAlignment, name); // Subclassing creates toctou problems here
         this.kind = kind;
         this.elements = List.copyOf(elements);
-        this.minBitAlignment = minBitAlignment;
+        this.minByteAlignment = minByteAlignment;
     }
 
     /**
@@ -82,11 +79,11 @@ public sealed abstract class AbstractGroupLayout<L extends AbstractGroupLayout<L
     }
 
     @Override
-    public L withBitAlignment(long bitAlignment) {
-        if (bitAlignment < minBitAlignment) {
+    public L withByteAlignment(long byteAlignment) {
+        if (byteAlignment < minByteAlignment) {
             throw new IllegalArgumentException("Invalid alignment constraint");
         }
-        return super.withBitAlignment(bitAlignment);
+        return super.withByteAlignment(byteAlignment);
     }
 
     /**
@@ -111,7 +108,7 @@ public sealed abstract class AbstractGroupLayout<L extends AbstractGroupLayout<L
 
     @Override
     public final boolean hasNaturalAlignment() {
-        return bitAlignment() == minBitAlignment;
+        return byteAlignment() == minByteAlignment;
     }
 
     /**

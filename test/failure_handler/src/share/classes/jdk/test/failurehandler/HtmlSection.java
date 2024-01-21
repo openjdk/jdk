@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -148,6 +148,17 @@ public class HtmlSection {
         }
         pw.printf("<a href=\"#%1$s\" onclick=\"show(document.getElementById('%1$s')); return true;\">%2$s</a>%n",
                 path, name);
+    }
+
+    /**
+     * Creates a {@code <a href></a>} link with {@code targetAddress} being the value for {@code href}
+     * and the {@code linkText} being the text for the link.
+     *
+     * @param targetAddress the target address
+     * @param linkText      the text for the link
+     */
+    public void createLink(String targetAddress, String linkText) {
+        pw.printf("<a href=\"%1$s\">%2$s</a>%n", targetAddress, linkText);
     }
 
     public HtmlSection createChildren(String[] sections) {

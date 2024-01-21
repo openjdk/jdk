@@ -35,6 +35,7 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Executable;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Type;
+import java.util.BitSet;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
@@ -86,22 +87,6 @@ final class HotSpotResolvedJavaMethodImpl extends HotSpotMethod implements HotSp
     private String nameCache;
 
     /**
-     * Gets the holder of a HotSpot metaspace method native object.
-     *
-     * @param metaspaceHandle a handle to a metaspace Method object
-     * @return the {@link ResolvedJavaType} corresponding to the holder of the
-     *         {@code metaspaceMethod}
-     */
-    private static HotSpotResolvedObjectTypeImpl getHolder(long metaspaceHandle) {
-        HotSpotVMConfig config = config();
-        long methodPointer = UNSAFE.getLong(metaspaceHandle);
-        assert methodPointer != 0 : metaspaceHandle;
-        final long constMethodPointer = UNSAFE.getAddress(methodPointer + config.methodConstMethodOffset);
-        final long constantPoolPointer = UNSAFE.getAddress(constMethodPointer + config.constMethodConstantsOffset);
-        return Objects.requireNonNull(compilerToVM().getResolvedJavaType(constantPoolPointer + config.constantPoolHolderOffset));
-    }
-
-    /**
      * Gets the JVMCI mirror from a HotSpot method. The VM is responsible for ensuring that the
      * Method* is kept alive for the duration of this call and the {@link HotSpotJVMCIRuntime} keeps
      * it alive after that.
@@ -113,8 +98,7 @@ final class HotSpotResolvedJavaMethodImpl extends HotSpotMethod implements HotSp
      */
     @SuppressWarnings("unused")
     @VMEntryPoint
-    private static HotSpotResolvedJavaMethod fromMetaspace(long metaspaceHandle) {
-        HotSpotResolvedObjectTypeImpl holder = getHolder(metaspaceHandle);
+    private static HotSpotResolvedJavaMethod fromMetaspace(long metaspaceHandle, HotSpotResolvedObjectTypeImpl holder) {
         return holder.createMethod(metaspaceHandle);
     }
 
@@ -783,5 +767,16 @@ final class HotSpotResolvedJavaMethodImpl extends HotSpotMethod implements HotSp
     private List<AnnotationData> getAnnotationData0(ResolvedJavaType... filter) {
         byte[] encoded = compilerToVM().getEncodedExecutableAnnotationData(this, filter);
         return VMSupport.decodeAnnotations(encoded, AnnotationDataDecoder.INSTANCE);
+    }
+
+    @Override
+    public BitSet getOopMapAt(int bci) {
+        if (getCodeSize() == 0) {
+            throw new IllegalArgumentException("has no bytecode");
+        }
+        int nwords = ((getMaxLocals() + getMaxStackSize() - 1) / 64) + 1;
+        long[] oopMap = new long[nwords];
+        compilerToVM().getOopMapAt(this, bci, oopMap);
+        return BitSet.valueOf(oopMap);
     }
 }

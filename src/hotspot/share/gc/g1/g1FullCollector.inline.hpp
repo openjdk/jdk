@@ -99,4 +99,3 @@ GrowableArrayCHeap<HeapRegion*, mtGC>& G1FullCollector::humongous_compaction_reg
 }
 
 #endif // SHARE_GC_G1_G1FULLCOLLECTOR_INLINE_HPP
-

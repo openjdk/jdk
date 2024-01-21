@@ -33,7 +33,7 @@ inline bool Bytecode_invoke::has_appendix() {
   if (invoke_code() == Bytecodes::_invokedynamic) {
     return resolved_indy_entry()->has_appendix();
   } else {
-    return cpcache_entry()->has_appendix();
+    return resolved_method_entry()->has_appendix();
   }
 }
 

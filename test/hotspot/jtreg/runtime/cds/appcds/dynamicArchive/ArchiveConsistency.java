@@ -218,32 +218,5 @@ public class ArchiveConsistency extends DynamicArchiveTestBase {
         runTwo(nonExistBase, nonExistTop,
                appJar, mainClass, isAuto ? 0 : 1,
                "Specified shared archive not found (" + nonExistBase + ")");
-
-        // following two tests:
-        //   -Xshare:auto -XX:SharedArchiveFile=top.jsa, but base does not exist.
-
-      if (!isUseSharedSpacesDisabled()) {
-        new File(baseArchiveName).delete();
-
-        startTest("11. -XX:+AutoCreateSharedArchive -XX:SharedArchiveFile=" + topArchiveName);
-        run(topArchiveName,
-            "-Xshare:auto",
-            "-XX:+AutoCreateSharedArchive",
-            "-cp",
-            appJar, mainClass)
-            .assertNormalExit(output -> {
-                output.shouldContain("warning: -XX:+AutoCreateSharedArchive is unsupported when base CDS archive is not loaded");
-            });
-
-        startTest("12. -XX:SharedArchiveFile=" + topArchiveName + " -XX:ArchiveClassesAtExit=" + getNewArchiveName("top3"));
-        run(topArchiveName,
-            "-Xshare:auto",
-            "-XX:ArchiveClassesAtExit=" + getNewArchiveName("top3"),
-            "-cp",
-            appJar, mainClass)
-            .assertNormalExit(output -> {
-                output.shouldContain("-XX:ArchiveClassesAtExit is unsupported when base CDS archive is not loaded");
-            });
-      }
     }
 }

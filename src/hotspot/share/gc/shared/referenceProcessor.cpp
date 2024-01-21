@@ -67,9 +67,6 @@ void ReferenceProcessor::init_statics() {
   } else {
     _default_soft_ref_policy = new LRUCurrentHeapPolicy();
   }
-  guarantee(RefDiscoveryPolicy == ReferenceBasedDiscovery ||
-            RefDiscoveryPolicy == ReferentBasedDiscovery,
-            "Unrecognized RefDiscoveryPolicy");
 }
 
 void ReferenceProcessor::enable_discovery() {
@@ -921,32 +918,16 @@ bool ReferenceProcessor::is_subject_to_discovery(oop const obj) const {
   return _is_subject_to_discovery->do_object_b(obj);
 }
 
-// We mention two of several possible choices here:
-// #0: if the reference object is not in the "originating generation"
-//     (or part of the heap being collected, indicated by our "span")
-//     we don't treat it specially (i.e. we scan it as we would
-//     a normal oop, treating its references as strong references).
-//     This means that references can't be discovered unless their
-//     referent is also in the same span. This is the simplest,
-//     most "local" and most conservative approach, albeit one
-//     that may cause weak references to be enqueued least promptly.
-//     We call this choice the "ReferenceBasedDiscovery" policy.
-// #1: the reference object may be in any generation (span), but if
-//     the referent is in the generation (span) being currently collected
-//     then we can discover the reference object, provided
-//     the object has not already been discovered by
-//     a different concurrently running discoverer (as may be the
-//     case, for instance, if the reference object is in G1 old gen and
-//     the referent in G1 young gen), and provided the processing
-//     of this reference object by the current collector will
-//     appear atomically to every other discoverer in the system.
-//     (Thus, for instance, a concurrent discoverer may not
-//     discover references in other generations even if the
-//     referent is in its own generation). This policy may,
-//     in certain cases, enqueue references somewhat sooner than
-//     might Policy #0 above, but at marginally increased cost
-//     and complexity in processing these references.
-//     We call this choice the "ReferentBasedDiscovery" policy.
+// Reference discovery policy:
+//   if the reference object is not in the "originating generation"
+//   (or part of the heap being collected, indicated by our "span")
+//   we don't treat it specially (i.e. we scan it as we would
+//   a normal oop, treating its references as strong references).
+//   This means that references can't be discovered unless their
+//   referent is also in the same span. This is the simplest,
+//   most "local" and most conservative approach, albeit one
+//   that may cause weak references to be enqueued least promptly.
+//   We call this choice the "ReferenceBasedDiscovery" policy.
 bool ReferenceProcessor::discover_reference(oop obj, ReferenceType rt) {
   // Make sure we are discovering refs (rather than processing discovered refs).
   if (!_discovering_refs || !RegisterReferences) {
@@ -958,8 +939,7 @@ bool ReferenceProcessor::discover_reference(oop obj, ReferenceType rt) {
     return false;
   }
 
-  if (RefDiscoveryPolicy == ReferenceBasedDiscovery &&
-      !is_subject_to_discovery(obj)) {
+  if (!is_subject_to_discovery(obj)) {
     // Reference is not in the originating generation;
     // don't treat it specially (i.e. we want to scan it as a normal
     // object with strong references).
@@ -997,36 +977,12 @@ bool ReferenceProcessor::discover_reference(oop obj, ReferenceType rt) {
     // The reference has already been discovered...
     log_develop_trace(gc, ref)("Already discovered reference (" PTR_FORMAT ": %s)",
                                p2i(obj), obj->klass()->internal_name());
-    if (RefDiscoveryPolicy == ReferentBasedDiscovery) {
-      // assumes that an object is not processed twice;
-      // if it's been already discovered it must be on another
-      // generation's discovered list; so we won't discover it.
-      return false;
-    } else {
-      assert(RefDiscoveryPolicy == ReferenceBasedDiscovery,
-             "Unrecognized policy");
-      // Check assumption that an object is not potentially
-      // discovered twice except by concurrent collectors that potentially
-      // trace the same Reference object twice.
-      assert(UseG1GC, "Only possible with a concurrent marking collector");
-      return true;
-    }
-  }
 
-  if (RefDiscoveryPolicy == ReferentBasedDiscovery) {
-    verify_referent(obj);
-    // Discover if and only if EITHER:
-    // .. reference is in our span, OR
-    // .. we are a stw discoverer and referent is in our span
-    if (is_subject_to_discovery(obj) ||
-        (discovery_is_stw() &&
-         is_subject_to_discovery(java_lang_ref_Reference::unknown_referent_no_keepalive(obj)))) {
-    } else {
-      return false;
-    }
-  } else {
-    assert(RefDiscoveryPolicy == ReferenceBasedDiscovery &&
-           is_subject_to_discovery(obj), "code inconsistency");
+    // Check assumption that an object is not potentially
+    // discovered twice except by concurrent collectors that potentially
+    // trace the same Reference object twice.
+    assert(UseG1GC, "Only possible with a concurrent marking collector");
+    return true;
   }
 
   // Get the right type of discovered queue head.

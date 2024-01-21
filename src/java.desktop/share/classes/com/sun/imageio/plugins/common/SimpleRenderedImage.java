@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,7 +79,7 @@ public abstract class SimpleRenderedImage implements RenderedImage {
     }
 
     /**
-     * Returns the X coordinate of the column immediatetely to the
+     * Returns the X coordinate of the column immediately to the
      * right of the rightmost column of the image.  getMaxX() is
      * implemented in terms of getMinX() and getWidth() and so does
      * not need to be implemented by subclasses.

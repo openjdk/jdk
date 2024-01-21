@@ -125,7 +125,6 @@ public class ServerSocket implements java.io.Closeable {
      * Creates an unbound server socket.
      *
      * @throws    IOException IO error when opening the socket.
-     * @revised 1.4
      */
     public ServerSocket() throws IOException {
         this.impl = createImpl();
@@ -532,7 +531,6 @@ public class ServerSocket implements java.io.Closeable {
      *
      * @return the new Socket
      * @see SecurityManager#checkAccept
-     * @revised 1.4
      */
     public Socket accept() throws IOException {
         if (isClosed())
@@ -575,7 +573,6 @@ public class ServerSocket implements java.io.Closeable {
      *         to accept a connection with the given socket
      *
      * @since   1.1
-     * @revised 1.4
      */
     protected final void implAccept(Socket s) throws IOException {
         SocketImpl si = s.impl();
@@ -741,7 +738,6 @@ public class ServerSocket implements java.io.Closeable {
      * as well.
      *
      * @throws     IOException  if an I/O error occurs when closing the socket.
-     * @revised 1.4
      */
     public void close() throws IOException {
         synchronized (socketLock) {

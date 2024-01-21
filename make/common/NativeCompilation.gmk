@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -48,12 +48,12 @@ define GetSymbols
         $(SED) -e 's/#.*//;s/global://;s/local://;s/\;//;s/^[ 	]*/_/;/^_$$$$/d' | \
         $(EGREP) -v "JNI_OnLoad|JNI_OnUnload|Agent_OnLoad|Agent_OnUnload|Agent_OnAttach" > \
         $$(@D)/$$(basename $$(@F)).symbols || true; \
-    $(NM) $$($1_TARGET) | $(GREP)  " T " | \
+    $(NM) $(NMFLAGS) $$($1_TARGET) | $(GREP)  " T " | \
         $(EGREP) "JNI_OnLoad|JNI_OnUnload|Agent_OnLoad|Agent_OnUnload|Agent_OnAttach" | \
         $(CUT) -d ' ' -f 3 >>  $$(@D)/$$(basename $$(@F)).symbols || true;\
   else \
     $(ECHO) "Getting symbols from nm"; \
-    $(NM) -m $$($1_TARGET) | $(GREP)  "__TEXT" | \
+    $(NM) $(NMFLAGS) -m $$($1_TARGET) | $(GREP)  "__TEXT" | \
         $(EGREP) -v "non-external|private extern|__TEXT,__eh_frame" | \
         $(SED) -e  's/.* //' > $$(@D)/$$(basename $$(@F)).symbols; \
   fi
@@ -215,7 +215,24 @@ DEPENDENCY_TARGET_SED_PATTERN := \
 # The fix-deps-file macro is used to adjust the contents of the generated make
 # dependency files to contain paths compatible with make.
 #
+REWRITE_PATHS_RELATIVE = false
 ifeq ($(ALLOW_ABSOLUTE_PATHS_IN_OUTPUT)-$(FILE_MACRO_CFLAGS), false-)
+  REWRITE_PATHS_RELATIVE = true
+endif
+
+# CCACHE_BASEDIR needs fix-deps-file as makefiles use absolute filenames for
+# object files while CCACHE_BASEDIR will make ccache relativize all paths for
+# its compiler. The compiler then produces relative dependency files.
+# make does not know a relative and absolute filename is the same so it will
+# ignore such dependencies. This only applies when the OUTPUTDIR is inside
+# the WORKSPACE_ROOT.
+ifneq ($(CCACHE), )
+  ifneq ($(filter $(WORKSPACE_ROOT)/%, $(OUTPUTDIR)), )
+    REWRITE_PATHS_RELATIVE = true
+  endif
+endif
+
+ifeq ($(REWRITE_PATHS_RELATIVE), true)
   # Need to handle -I flags as both '-Ifoo' and '-I foo'.
   MakeCommandRelative = \
       $(CD) $(WORKSPACE_ROOT) && \
@@ -500,7 +517,7 @@ endef
 #       used both for C and C++.
 #   LIBS_<toolchain> the libraries to link to for the specified toolchain,
 #       used both for C and C++.
-#   LIBS_<OS>_<toolchain> the libraries to link to for the specified target
+#   LIBS_<toolchain>_<OS> the libraries to link to for the specified target
 #       OS and toolchain, used both for C and C++.
 #   ARFLAGS the archiver flags to be used
 #   OBJECT_DIR the directory where we store the object files
@@ -548,6 +565,7 @@ endef
 #   PRECOMPILED_HEADER Header file to use as precompiled header
 #   PRECOMPILED_HEADER_EXCLUDE List of source files that should not use PCH
 #   BUILD_INFO_LOG_MACRO Overrides log level of the build info log message, default LogWarn
+#   STATIC_LIB_EXCLUDE_OBJS exclude objects that matches from static library
 #
 # After being called, some variables are exported from this macro, all prefixed
 # with parameter 1 followed by a '_':
@@ -726,6 +744,12 @@ define SetupNativeCompilationBody
   endif
   # Sort to remove duplicates and provide a reproducible order on the input files to the linker.
   $1_ALL_OBJS := $$(sort $$($1_EXPECTED_OBJS) $$($1_EXTRA_OBJECT_FILES))
+  ifeq ($(STATIC_LIBS), true)
+    # Exclude the object files that match with $1_STATIC_LIB_EXCLUDE_OBJS.
+    ifneq ($$($1_STATIC_LIB_EXCLUDE_OBJS), )
+      $1_ALL_OBJS := $$(call not-containing, $$($1_STATIC_LIB_EXCLUDE_OBJS), $$($1_ALL_OBJS))
+    endif
+  endif
 
   # Pickup extra OPENJDK_TARGET_OS_TYPE, OPENJDK_TARGET_OS, TOOLCHAIN_TYPE and
   # OPENJDK_TARGET_OS plus OPENJDK_TARGET_CPU pair dependent variables for CFLAGS.
@@ -1024,12 +1048,11 @@ define SetupNativeCompilationBody
 
   # Pickup extra OPENJDK_TARGET_OS_TYPE, OPENJDK_TARGET_OS and TOOLCHAIN_TYPE
   # dependent variables for LDFLAGS and LIBS, and additionally the pair dependent
-  # TOOLCHAIN_TYPE plus OPENJDK_TARGET_OS for LDFLAGS, or OPENJDK_TARGET_OS plus
-  # TOOLCHAIN_TYPE for LIBS
+  # TOOLCHAIN_TYPE plus OPENJDK_TARGET_OS
   $1_EXTRA_LDFLAGS += $$($1_LDFLAGS_$(OPENJDK_TARGET_OS_TYPE)) $$($1_LDFLAGS_$(OPENJDK_TARGET_OS)) \
       $$($1_LDFLAGS_$(TOOLCHAIN_TYPE)) $$($1_LDFLAGS_$(TOOLCHAIN_TYPE)_$(OPENJDK_TARGET_OS))
   $1_EXTRA_LIBS += $$($1_LIBS_$(OPENJDK_TARGET_OS_TYPE)) $$($1_LIBS_$(OPENJDK_TARGET_OS)) \
-      $$($1_LIBS_$(OPENJDK_TARGET_OS)_$(TOOLCHAIN_TYPE)) $$($1_LIBS_$(TOOLCHAIN_TYPE))
+      $$($1_LIBS_$(TOOLCHAIN_TYPE)) $$($1_LIBS_$(TOOLCHAIN_TYPE)_$(OPENJDK_TARGET_OS))
 
   ifneq ($$($1_REAL_MAPFILE), )
     $1_EXTRA_LDFLAGS += $(call SET_SHARED_LIBRARY_MAPFILE,$$($1_REAL_MAPFILE))
@@ -1050,13 +1073,13 @@ define SetupNativeCompilationBody
       ifneq ($$($1_TYPE), STATIC_LIBRARY)
         # Generate debuginfo files.
         ifeq ($(call isTargetOs, windows), true)
-          $1_EXTRA_LDFLAGS += -debug "-pdb:$$($1_SYMBOLS_DIR)/$$($1_NOSUFFIX).pdb" \
-              "-map:$$($1_SYMBOLS_DIR)/$$($1_NOSUFFIX).map"
+          $1_EXTRA_LDFLAGS += -debug "-pdb:$$($1_SYMBOLS_DIR)/$$($1_BASENAME).pdb" \
+              "-map:$$($1_SYMBOLS_DIR)/$$($1_BASENAME).map"
           ifeq ($(SHIP_DEBUG_SYMBOLS), public)
-            $1_EXTRA_LDFLAGS += "-pdbstripped:$$($1_SYMBOLS_DIR)/$$($1_NOSUFFIX).stripped.pdb"
+            $1_EXTRA_LDFLAGS += "-pdbstripped:$$($1_SYMBOLS_DIR)/$$($1_BASENAME).stripped.pdb"
           endif
-          $1_DEBUGINFO_FILES := $$($1_SYMBOLS_DIR)/$$($1_NOSUFFIX).pdb \
-              $$($1_SYMBOLS_DIR)/$$($1_NOSUFFIX).map
+          $1_DEBUGINFO_FILES := $$($1_SYMBOLS_DIR)/$$($1_BASENAME).pdb \
+              $$($1_SYMBOLS_DIR)/$$($1_BASENAME).map
 
         else ifeq ($(call isTargetOs, linux), true)
           $1_DEBUGINFO_FILES := $$($1_SYMBOLS_DIR)/$$($1_NOSUFFIX).debuginfo
@@ -1104,7 +1127,11 @@ define SetupNativeCompilationBody
         $1 += $$($1_DEBUGINFO_FILES)
 
         ifeq ($$($1_ZIP_EXTERNAL_DEBUG_SYMBOLS), true)
-          $1_DEBUGINFO_ZIP := $$($1_SYMBOLS_DIR)/$$($1_NOSUFFIX).diz
+          ifeq ($(call isTargetOs, windows), true)
+            $1_DEBUGINFO_ZIP := $$($1_SYMBOLS_DIR)/$$($1_BASENAME).diz
+          else
+            $1_DEBUGINFO_ZIP := $$($1_SYMBOLS_DIR)/$$($1_NOSUFFIX).diz
+          endif
           $1 += $$($1_DEBUGINFO_ZIP)
 
           # The dependency on TARGET is needed for debuginfo files
@@ -1130,9 +1157,60 @@ define SetupNativeCompilationBody
     endif
   endif
 
+  $1_LD_OBJ_ARG := $$($1_ALL_OBJS)
+
+  # If there are many object files, use an @-file...
+  ifneq ($$(word 17, $$($1_ALL_OBJS)), )
+    $1_OBJ_FILE_LIST := $$($1_OBJECT_DIR)/_$1_objectfilenames.txt
+    ifneq ($(COMPILER_COMMAND_FILE_FLAG), )
+      $1_LD_OBJ_ARG := $(COMPILER_COMMAND_FILE_FLAG)$$($1_OBJ_FILE_LIST)
+    else
+      # ...except for toolchains which don't support them.
+      $1_LD_OBJ_ARG := `cat $$($1_OBJ_FILE_LIST)`
+    endif
+
+    # If we are building static library, 'AR' on macosx/aix may not support @-file.
+    ifeq ($$($1_TYPE), STATIC_LIBRARY)
+      ifeq ($(call isTargetOs, macosx aix), true)
+        $1_LD_OBJ_ARG := `cat $$($1_OBJ_FILE_LIST)`
+      endif
+    endif
+  endif
+
+  # Unfortunately the @-file trick does not work reliably when using clang.
+  # Clang does not propagate the @-file parameter to the ld sub process, but
+  # instead puts the full content on the command line. At least the llvm ld
+  # does not even support an @-file.
+  #
+  # When linking a large amount of object files, we risk hitting the limit
+  # of the command line length even on posix systems if the path length of
+  # the output dir is very long due to our use of absolute paths. To
+  # mitigate this, use paths relative to the output dir when linking over
+  # 500 files with clang and the output dir path is deep.
+  ifneq ($$(word 500, $$($1_ALL_OBJS)), )
+    ifeq ($$(TOOLCHAIN_TYPE), clang)
+      # There is no strlen function in make, but checking path depth is a
+      # reasonable approximation.
+      ifneq ($$(word 10, $$(subst /, ,$$(OUTPUTDIR))), )
+        $1_LINK_OBJS_RELATIVE := true
+        $1_ALL_OBJS_RELATIVE := $$(patsubst $$(OUTPUTDIR)/%, %, $$($1_ALL_OBJS))
+      endif
+    endif
+  endif
+
   ifeq ($$($1_TYPE), STATIC_LIBRARY)
+    # Include partial linking when building the static library with clang on linux.
+    ifeq ($(call isTargetOs, linux), true)
+      ifneq ($(findstring $(TOOLCHAIN_TYPE), clang), )
+        $1_ENABLE_PARTIAL_LINKING := true
+      endif
+    endif
+
     $1_VARDEPS := $$($1_AR) $$(ARFLAGS) $$($1_ARFLAGS) $$($1_LIBS) \
         $$($1_EXTRA_LIBS)
+    ifeq ($$($1_ENABLE_PARTIAL_LINKING), true)
+      $1_VARDEPS += $$($1_LD) $$($1_SYSROOT_LDFLAGS)
+    endif
     $1_VARDEPS_FILE := $$(call DependOnVariable, $1_VARDEPS, \
         $$($1_OBJECT_DIR)/$$($1_NOSUFFIX).vardeps)
 
@@ -1145,11 +1223,35 @@ define SetupNativeCompilationBody
 
     $1_TARGET_DEPS := $$($1_ALL_OBJS) $$($1_RES) $$($1_VARDEPS_FILE) $$(STATIC_MAPFILE_DEP)
 
+    $1_AR_OBJ_ARG := $$($1_LD_OBJ_ARG)
+    # With clang on linux, partial linking is enabled and 'AR' takes the output
+    # object from the partial linking step.
+    ifeq ($$($1_ENABLE_PARTIAL_LINKING), true)
+      $1_TARGET_RELOCATABLE := $$($1_OBJECT_DIR)/$$($1_PREFIX)$$($1_NAME)_relocatable$(OBJ_SUFFIX)
+      $1_AR_OBJ_ARG := $$($1_TARGET_RELOCATABLE)
+    endif
+
     $$($1_TARGET): $$($1_TARGET_DEPS)
+        ifneq ($$($1_OBJ_FILE_LIST), )
+          ifeq ($$($1_LINK_OBJS_RELATIVE), true)
+	    $$(eval $$(call ListPathsSafely, $1_ALL_OBJS_RELATIVE, $$($1_OBJ_FILE_LIST)))
+          else
+	    $$(eval $$(call ListPathsSafely, $1_ALL_OBJS, $$($1_OBJ_FILE_LIST)))
+          endif
+        endif
 	$$(call LogInfo, Building static library $$($1_BASENAME))
 	$$(call MakeDir, $$($1_OUTPUT_DIR) $$($1_SYMBOLS_DIR))
+        # Do partial linking.
+        ifeq ($$($1_ENABLE_PARTIAL_LINKING), true)
+	  $$(call ExecuteWithLog, $$($1_OBJECT_DIR)/$$($1_SAFE_NAME)_partial_link, \
+	    $(if $$($1_LINK_OBJS_RELATIVE), $$(CD) $$(OUTPUTDIR) ; ) \
+	      $$($1_LD) $(LDFLAGS_CXX_PARTIAL_LINKING) $$($1_SYSROOT_LDFLAGS) \
+	        $(LD_OUT_OPTION)$$($1_TARGET_RELOCATABLE) \
+                $$($1_LD_OBJ_ARG))
+        endif
 	$$(call ExecuteWithLog, $$($1_OBJECT_DIR)/$$($1_SAFE_NAME)_link, \
-	    $$($1_AR) $$(ARFLAGS) $$($1_ARFLAGS) $(AR_OUT_OPTION)$$($1_TARGET) $$($1_ALL_OBJS) \
+	  $(if $$($1_LINK_OBJS_RELATIVE), $$(CD) $$(OUTPUTDIR) ; ) \
+	    $$($1_AR) $$(ARFLAGS) $$($1_ARFLAGS) $(AR_OUT_OPTION)$$($1_TARGET) $$($1_AR_OBJ_ARG) \
 	        $$($1_RES))
         ifeq ($(STATIC_BUILD), true)
           ifeq ($$($1_USE_MAPFILE_FOR_SYMBOLS), true)
@@ -1200,40 +1302,6 @@ define SetupNativeCompilationBody
         $$($1_STRIP_CMD) $$($1_CREATE_DEBUGLINK_CMDS)
     $1_VARDEPS_FILE := $$(call DependOnVariable, $1_VARDEPS, \
         $$($1_OBJECT_DIR)/$$($1_NOSUFFIX).vardeps)
-
-    $1_LD_OBJ_ARG := $$($1_ALL_OBJS)
-
-    # If there are many object files, use an @-file...
-    ifneq ($$(word 17, $$($1_ALL_OBJS)), )
-      $1_OBJ_FILE_LIST := $$($1_OBJECT_DIR)/_$1_objectfilenames.txt
-      ifneq ($(COMPILER_COMMAND_FILE_FLAG), )
-        $1_LD_OBJ_ARG := $(COMPILER_COMMAND_FILE_FLAG)$$($1_OBJ_FILE_LIST)
-      else
-        # ...except for toolchains which don't support them.
-        $1_LD_OBJ_ARG := `cat $$($1_OBJ_FILE_LIST)`
-      endif
-    endif
-
-    # Unfortunately the @-file trick does not work reliably when using clang.
-    # Clang does not propagate the @-file parameter to the ld sub process, but
-    # instead puts the full content on the command line. At least the llvm ld
-    # does not even support an @-file.
-    #
-    # When linking a large amount of object files, we risk hitting the limit
-    # of the command line length even on posix systems if the path length of
-    # the output dir is very long due to our use of absolute paths. To
-    # mitigate this, use paths relative to the output dir when linking over
-    # 500 files with clang and the output dir path is deep.
-    ifneq ($$(word 500, $$($1_ALL_OBJS)), )
-      ifeq ($$(TOOLCHAIN_TYPE), clang)
-        # There is no strlen function in make, but checking path depth is a
-        # reasonable approximation.
-        ifneq ($$(word 10, $$(subst /, ,$$(OUTPUTDIR))), )
-          $1_LINK_OBJS_RELATIVE := true
-          $1_ALL_OBJS_RELATIVE := $$(patsubst $$(OUTPUTDIR)/%, %, $$($1_ALL_OBJS))
-        endif
-      endif
-    endif
 
     $1_TARGET_DEPS := $$($1_ALL_OBJS) $$($1_RES) $$($1_MANIFEST) \
         $$($1_REAL_MAPFILE) $$($1_VARDEPS_FILE)

@@ -30,6 +30,7 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 
+import java.lang.foreign.FunctionDescriptor;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.SymbolLookup;
 
@@ -49,8 +50,12 @@ public class MethodHandleLookup {
     static Object[][] restrictedMethods() {
         try {
             return new Object[][]{
-                    { MethodHandles.lookup().findStatic(Linker.class, "nativeLinker",
-                            MethodType.methodType(Linker.class)), "Linker::nativeLinker" },
+                    { MethodHandles.lookup().findVirtual(Linker.class, "downcallHandle",
+                            MethodType.methodType(MethodHandle.class, FunctionDescriptor.class, Linker.Option[].class)), "Linker::downcallHandle/1" },
+                    { MethodHandles.lookup().findVirtual(Linker.class, "downcallHandle",
+                            MethodType.methodType(MethodHandle.class, MemorySegment.class, FunctionDescriptor.class, Linker.Option[].class)), "Linker::downcallHandle/2" },
+                    { MethodHandles.lookup().findVirtual(Linker.class, "upcallStub",
+                            MethodType.methodType(MemorySegment.class, MethodHandle.class, FunctionDescriptor.class, Arena.class, Linker.Option[].class)), "Linker::upcallStub" },
                     { MethodHandles.lookup().findVirtual(MemorySegment.class, "reinterpret",
                             MethodType.methodType(MemorySegment.class, long.class)),
                             "MemorySegment::reinterpret/1" },

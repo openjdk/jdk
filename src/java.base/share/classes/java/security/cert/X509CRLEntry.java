@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package java.security.cert;
 
 import java.math.BigInteger;
+import java.util.Arrays;
 import java.util.Date;
 import javax.security.auth.x500.X500Principal;
 
@@ -83,6 +84,7 @@ public abstract class X509CRLEntry implements X509Extension {
      * @return true iff the encoded forms of the two CRL entries
      * match, false otherwise.
      */
+    @Override
     public boolean equals(Object other) {
         if (this == other)
             return true;
@@ -92,34 +94,23 @@ public abstract class X509CRLEntry implements X509Extension {
             byte[] thisCRLEntry = this.getEncoded();
             byte[] otherCRLEntry = ((X509CRLEntry)other).getEncoded();
 
-            if (thisCRLEntry.length != otherCRLEntry.length)
-                return false;
-            for (int i = 0; i < thisCRLEntry.length; i++)
-                 if (thisCRLEntry[i] != otherCRLEntry[i])
-                     return false;
+            return Arrays.equals(thisCRLEntry, otherCRLEntry);
         } catch (CRLException ce) {
             return false;
         }
-        return true;
     }
 
     /**
-     * Returns a hashcode value for this CRL entry from its
-     * encoded form.
-     *
-     * @return the hashcode value.
+     * {@return the hashcode value for this CRL entry from its
+     * encoded form}
      */
+    @Override
     public int hashCode() {
-        int     retval = 0;
         try {
-            byte[] entryData = this.getEncoded();
-            for (int i = 1; i < entryData.length; i++)
-                 retval += entryData[i] * i;
-
+            return Arrays.hashCode(this.getEncoded());
         } catch (CRLException ce) {
-            return(retval);
+            return 0;
         }
-        return(retval);
     }
 
     /**

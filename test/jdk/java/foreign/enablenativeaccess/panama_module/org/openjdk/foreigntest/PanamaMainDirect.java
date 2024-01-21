@@ -33,9 +33,9 @@ public class PanamaMainDirect {
     }
 
     public static void testDirectAccessCLinker() {
-        System.out.println("Trying to get Linker");
-        Linker.nativeLinker();
-        System.out.println("Got Linker");
+        System.out.println("Trying to obtain a downcall handle");
+        Linker.nativeLinker().downcallHandle(FunctionDescriptor.ofVoid());
+        System.out.println("Got downcall handle");
    }
 
     public static void testDirectAccessMemorySegment() {

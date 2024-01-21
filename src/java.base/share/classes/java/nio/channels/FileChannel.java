@@ -122,7 +122,8 @@ import jdk.internal.javac.PreviewFeature;
  * the originating object, and vice versa. Changing the file's length via the
  * file channel will change the length seen via the originating object, and vice
  * versa.  Changing the file's content by writing bytes will change the content
- * seen by the originating object, and vice versa.
+ * seen by the originating object, and vice versa. Closing the channel will
+ * close the originating object.
  *
  * <a id="open-mode"></a> <p> At various points this class specifies that an
  * instance that is "open for reading," "open for writing," or "open for
@@ -316,9 +317,10 @@ public abstract class FileChannel
      *
      * <p> An invocation of this method behaves in exactly the same way as the
      * invocation
-     * <pre>
-     *     fc.{@link #open(Path,Set,FileAttribute[]) open}(file, opts, new FileAttribute&lt;?&gt;[0]);
-     * </pre>
+     * {@snippet lang=java :
+     *     // @link substring="open" target="#open(Path,Set,FileAttribute[])" :
+     *     fc.open(file, opts, new FileAttribute<?>[0]);
+     * }
      * where {@code opts} is a set of the options specified in the {@code
      * options} array.
      *
@@ -1043,52 +1045,51 @@ public abstract class FileChannel
      *          The file mapping mode, see
      *          {@link FileChannel#map(FileChannel.MapMode, long, long)};
      *          the mapping mode might affect the behavior of the returned
-     *          memory mapped segment (see {@link MemorySegment#force()}).
+     *          memory mapped segment (see {@link MemorySegment#force()})
      *
      * @param   offset
      *          The offset (expressed in bytes) within the file at which the
-     *          mapped segment is to start.
+     *          mapped segment is to start
      *
      * @param   size
      *          The size (in bytes) of the mapped memory backing the memory
-     *          segment.
+     *          segment
      *
      * @param   arena
-     *          The segment arena.
+     *          The segment arena
      *
-     * @return  A new mapped memory segment.
+     * @return  A new mapped memory segment
      *
      * @throws  IllegalArgumentException
      *          If {@code offset < 0}, {@code size < 0} or
-     *          {@code offset + size} overflows the range of {@code long}.
+     *          {@code offset + size} overflows the range of {@code long}
      *
      * @throws  IllegalStateException
-     *          If {@code arena.isAlive() == false}.
+     *          If {@code arena.isAlive() == false}
      *
      * @throws  WrongThreadException
-     *          If {@code arena} is a confined scoped arena, and this method is called from a
-     *          thread {@code T}, other than the scoped arena's owner thread.
+     *          If {@code arena} is a confined scoped arena, and this method is called
+     *          from a thread {@code T}, other than the scoped arena's owner thread
      *
      * @throws  NonReadableChannelException
      *          If the {@code mode} is {@link MapMode#READ_ONLY READ_ONLY} or
      *          an implementation specific map mode requiring read access,
-     *          but this channel was not opened for reading.
+     *          but this channel was not opened for reading
      *
      * @throws  NonWritableChannelException
      *          If the {@code mode} is {@link MapMode#READ_WRITE READ_WRITE},
      *          {@link MapMode#PRIVATE PRIVATE} or an implementation specific
      *          map mode requiring write access, but this channel was not
-     *          opened for both reading and writing.
+     *          opened for both reading and writing
      *
      * @throws  IOException
-     *          If some other I/O error occurs.
+     *          If some other I/O error occurs
      *
      * @throws  UnsupportedOperationException
-     *          If an unsupported map mode is specified.
+     *          If an unsupported map mode is specified
      *
-     * @since   19
+     * @since   22
      */
-    @PreviewFeature(feature=PreviewFeature.Feature.FOREIGN)
     public MemorySegment map(MapMode mode, long offset, long size, Arena arena)
         throws IOException
     {
@@ -1200,8 +1201,10 @@ public abstract class FileChannel
      * <p> An invocation of this method of the form {@code fc.lock()} behaves
      * in exactly the same way as the invocation
      *
-     * <pre>
-     *     fc.{@link #lock(long,long,boolean) lock}(0L, Long.MAX_VALUE, false) </pre>
+     * {@snippet lang=java :
+     *     // @link substring="lock" target="#lock(long,long,boolean)" :
+     *     fc.lock(0L, Long.MAX_VALUE, false)
+     * }
      *
      * @return  A lock object representing the newly-acquired lock
      *
@@ -1324,8 +1327,10 @@ public abstract class FileChannel
      * <p> An invocation of this method of the form {@code fc.tryLock()}
      * behaves in exactly the same way as the invocation
      *
-     * <pre>
-     *     fc.{@link #tryLock(long,long,boolean) tryLock}(0L, Long.MAX_VALUE, false) </pre>
+     * {@snippet lang=java :
+     *     // @link substring="tryLock" target="#tryLock(long,long,boolean)" :
+     *     fc.tryLock(0L, Long.MAX_VALUE, false)
+     * }
      *
      * @return  A lock object representing the newly-acquired lock,
      *          or {@code null} if the lock could not be acquired

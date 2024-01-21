@@ -62,7 +62,7 @@ public class TestPrimitiveClasses {
             r.stop();
             List<RecordedEvent> events = Events.fromRecording(r);
             Events.hasEvents(events);
-            RecordedEvent event = events.get(0);
+            RecordedEvent event = events.getFirst();
             System.out.println(event);
             testField(event, "booleanClass", boolean.class);
             testField(event, "charClass", char.class);

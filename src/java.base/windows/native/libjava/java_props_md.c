@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,10 +39,6 @@
 
 #include "locale_str.h"
 #include "java_props.h"
-
-#ifndef VER_PLATFORM_WIN32_WINDOWS
-#define VER_PLATFORM_WIN32_WINDOWS 1
-#endif
 
 #ifndef PROCESSOR_ARCHITECTURE_AMD64
 #define PROCESSOR_ARCHITECTURE_AMD64 9
@@ -134,18 +130,19 @@ getEncodingInternal(LCID lcid)
 
 static char* getConsoleEncoding()
 {
-    char* buf = malloc(16);
+    size_t buflen = 16;
+    char* buf = malloc(buflen);
     int cp;
     if (buf == NULL) {
         return NULL;
     }
     cp = GetConsoleCP();
     if (cp >= 874 && cp <= 950)
-        sprintf(buf, "ms%d", cp);
+        snprintf(buf, buflen, "ms%d", cp);
     else if (cp == 65001)
-        sprintf(buf, "UTF-8");
+        snprintf(buf, buflen, "UTF-8");
     else
-        sprintf(buf, "cp%d", cp);
+        snprintf(buf, buflen, "cp%d", cp);
     return buf;
 }
 
@@ -212,39 +209,13 @@ getHomeFromShell32()
      */
     static WCHAR *u_path = NULL;
     if (u_path == NULL) {
-        HRESULT hr;
-
-        /*
-         * SHELL32 DLL is delay load DLL and we can use the trick with
-         * __try/__except block.
-         */
-        __try {
-            /*
-             * For Windows Vista and later (or patched MS OS) we need to use
-             * [SHGetKnownFolderPath] call to avoid MAX_PATH length limitation.
-             * Shell32.dll (version 6.0.6000 or later)
-             */
-            hr = SHGetKnownFolderPath(&FOLDERID_Profile, KF_FLAG_DONT_VERIFY, NULL, &u_path);
-        } __except(EXCEPTION_EXECUTE_HANDLER) {
-            /* Exception: no [SHGetKnownFolderPath] entry */
-            hr = E_FAIL;
-        }
+        WCHAR *tmpPath = NULL;
+        HRESULT hr = SHGetKnownFolderPath(&FOLDERID_Profile, KF_FLAG_DONT_VERIFY, NULL, &tmpPath);
 
         if (FAILED(hr)) {
-            WCHAR path[MAX_PATH+1];
-
-            /* fallback solution for WinXP and Windows 2000 */
-            hr = SHGetFolderPathW(NULL, CSIDL_FLAG_DONT_VERIFY | CSIDL_PROFILE, NULL, SHGFP_TYPE_CURRENT, path);
-            if (FAILED(hr)) {
-                /* we can't find the shell folder. */
-                u_path = NULL;
-            } else {
-                /* Just to be sure about the path length until Windows Vista approach.
-                 * [S_FALSE] could not be returned due to [CSIDL_FLAG_DONT_VERIFY] flag and UNICODE version.
-                 */
-                path[MAX_PATH] = 0;
-                u_path = _wcsdup(path);
-            }
+            CoTaskMemFree(tmpPath);
+        } else {
+            u_path = tmpPath;
         }
     }
     return u_path;
@@ -575,7 +546,7 @@ GetJavaProperties(JNIEnv* env)
             sprops.os_name = "Windows (unknown)";
             break;
         }
-        sprintf(buf, "%d.%d", majorVersion, minorVersion);
+        snprintf(buf, sizeof(buf), "%d.%d", majorVersion, minorVersion);
         sprops.os_version = _strdup(buf);
 #if defined(_M_AMD64)
         sprops.os_arch = "amd64";

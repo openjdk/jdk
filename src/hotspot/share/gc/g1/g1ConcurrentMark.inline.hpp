@@ -59,14 +59,9 @@ inline bool G1CMIsAliveClosure::do_object_b(oop obj) {
 }
 
 inline bool G1CMSubjectToDiscoveryClosure::do_object_b(oop obj) {
-  // Re-check whether the passed object is null. With ReferentBasedDiscovery the
-  // mutator may have changed the referent's value (i.e. cleared it) between the
-  // time the referent was determined to be potentially alive and calling this
-  // method.
-  if (obj == nullptr) {
-    return false;
-  }
+  assert(obj != nullptr, "precondition");
   assert(_g1h->is_in_reserved(obj), "Trying to discover obj " PTR_FORMAT " not in heap", p2i(obj));
+
   return _g1h->heap_region_containing(obj)->is_old_or_humongous();
 }
 

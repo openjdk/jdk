@@ -59,7 +59,7 @@ public class MethodHandleInvoker {
 
     static final Map<Class<?>, Object> DEFAULT_VALUES = new HashMap<>();
 
-    static <Z> void addDefaultMapping(Class<Z> carrier, Z value) {
+    static void addDefaultMapping(Class<?> carrier, Object value) {
         DEFAULT_VALUES.put(carrier, value);
     }
 
@@ -67,7 +67,7 @@ public class MethodHandleInvoker {
         addDefaultMapping(Linker.class, Linker.nativeLinker());
         addDefaultMapping(Path.class, Path.of("nonExistent"));
         addDefaultMapping(String.class, "Hello!");
-        addDefaultMapping(Runnable.class, () -> {});
+        addDefaultMapping(Runnable.class, (Runnable)() -> {});
         addDefaultMapping(MethodHandle.class, MethodHandles.identity(int.class));
         addDefaultMapping(Charset.class, Charset.defaultCharset());
         addDefaultMapping(MethodType.class, MethodType.methodType(void.class));
@@ -88,6 +88,8 @@ public class MethodHandleInvoker {
         addDefaultMapping(AddressLayout.class, ValueLayout.ADDRESS);
         addDefaultMapping(SymbolLookup.class, SymbolLookup.loaderLookup());
         addDefaultMapping(Consumer.class, (Consumer<Object>)(Object o) -> {});
+        addDefaultMapping(FunctionDescriptor.class, FunctionDescriptor.ofVoid());
+        addDefaultMapping(Linker.Option[].class, null);
         addDefaultMapping(byte.class, (byte)0);
         addDefaultMapping(boolean.class, true);
         addDefaultMapping(char.class, (char)0);
@@ -105,10 +107,9 @@ public class MethodHandleInvoker {
     }
 
     static Object makeArg(Class<?> clazz) {
-        Object value = DEFAULT_VALUES.get(clazz);
-        if (value == null) {
+        if (!DEFAULT_VALUES.containsKey(clazz)) {
             throw new UnsupportedOperationException(clazz.getName());
         }
-        return value;
+        return DEFAULT_VALUES.get(clazz);
     }
 }

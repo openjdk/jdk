@@ -495,7 +495,12 @@ public class DocCommentTester {
             }
 
             public Void visitInheritDoc(InheritDocTree node, Void p) {
-                header(node, "");
+                header(node);
+                indent(+1);
+                print("supertype", node.getSupertype());
+                indent(-1);
+                indent();
+                out.println("]");
                 return null;
             }
 
@@ -907,7 +912,10 @@ public class DocCommentTester {
             var annos = (path.getLeaf() instanceof MethodTree m)
                     ? m.getModifiers().getAnnotations().toString()
                     : "";
-            boolean normalizeTags = !annos.equals("@NormalizeTags(false)");
+            if (annos.contains("@PrettyCheck(false)")) {
+                return;
+            }
+            boolean normalizeTags = !annos.contains("@NormalizeTags(false)");
 
             String raw = trees.getDocComment(path);
             String normRaw = normalize(raw, normalizeTags);

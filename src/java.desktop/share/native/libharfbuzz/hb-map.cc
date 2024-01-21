@@ -365,7 +365,7 @@ hb_map_update (hb_map_t *map,
  * @key: (out): Key retrieved
  * @value: (out): Value retrieved
  *
- * Fetches the next key/value paire in @map.
+ * Fetches the next key/value pair in @map.
  *
  * Set @idx to -1 to get started.
  *
@@ -399,7 +399,7 @@ void
 hb_map_keys (const hb_map_t *map,
              hb_set_t *keys)
 {
-  map->keys (*keys);
+  hb_copy (map->keys() , *keys);
 }
 
 /**
@@ -415,5 +415,5 @@ void
 hb_map_values (const hb_map_t *map,
                hb_set_t *values)
 {
-  map->values (*values);
+  hb_copy (map->values() , *values);
 }

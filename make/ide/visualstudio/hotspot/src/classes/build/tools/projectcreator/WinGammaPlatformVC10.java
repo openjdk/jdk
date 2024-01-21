@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -329,7 +329,7 @@ class CompilerInterfaceVC10 extends CompilerInterface {
         addAttr(rv, "PrecompiledHeaderOutputFile", outDir+Util.sep+"vm.pch");
         addAttr(rv, "AssemblerListingLocation", outDir);
         addAttr(rv, "ObjectFileName", outDir+Util.sep);
-        addAttr(rv, "ProgramDataBaseFileName", outDir+Util.sep+"jvm.pdb");
+        addAttr(rv, "ProgramDataBaseFileName", outDir+Util.sep+"jvm.dll.pdb");
         // Set /nologo option
         addAttr(rv, "SuppressStartupBanner", "true");
         // Surpass the default /Tc or /Tp.
@@ -409,7 +409,7 @@ class CompilerInterfaceVC10 extends CompilerInterface {
         addAttr(rv, "OutputFile", outDll);
         addAttr(rv, "SuppressStartupBanner", "true");
         addAttr(rv, "ModuleDefinitionFile", outDir+Util.sep+"vm.def");
-        addAttr(rv, "ProgramDatabaseFile", outDir+Util.sep+"jvm.pdb");
+        addAttr(rv, "ProgramDatabaseFile", outDir+Util.sep+"jvm.dll.pdb");
         addAttr(rv, "SubSystem", "Windows");
         addAttr(rv, "BaseAddress", "0x8000000");
         addAttr(rv, "ImportLibrary", outDir+Util.sep+"jvm.lib");

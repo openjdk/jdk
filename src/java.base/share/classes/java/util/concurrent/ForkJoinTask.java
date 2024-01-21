@@ -39,6 +39,7 @@ import java.io.Serializable;
 import java.lang.reflect.Constructor;
 import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
 import java.util.RandomAccess;
 import java.util.concurrent.locks.LockSupport;
 import jdk.internal.misc.Unsafe;
@@ -208,20 +209,29 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
      * See the internal documentation of class ForkJoinPool for a
      * general implementation overview.  ForkJoinTasks are mainly
      * responsible for maintaining their "status" field amidst relays
-     * to methods in ForkJoinWorkerThread and ForkJoinPool.
+     * to methods in ForkJoinWorkerThread and ForkJoinPool, along with
+     * recording and reporting exceptions.  The status field mainly
+     * holds bits recording completion status.  Note that there is no
+     * status bit representing "running", recording whether incomplete
+     * tasks are queued vs executing. However these cases can be
+     * distinguished in subclasses of InterruptibleTask that adds this
+     * capability by recording the running thread.  Cancellation is
+     * recorded in status bits (ABNORMAL but not THROWN), but reported
+     * in joining methods by throwing an exception. Other exceptions
+     * of completed (THROWN) tasks are recorded in the "aux" field,
+     * but are reconstructed (in getException) to produce more useful
+     * stack traces when reported. Sentinels for interruptions or
+     * timeouts while waiting for completion are not recorded as
+     * status bits but are included in return values of methods in
+     * which they occur.
      *
      * The methods of this class are more-or-less layered into
      * (1) basic status maintenance
      * (2) execution and awaiting completion
      * (3) user-level methods that additionally report results.
+     * (4) Subclasses for adaptors and internal usages
      * This is sometimes hard to see because this file orders exported
      * methods in a way that flows well in javadocs.
-     *
-     * Revision notes: This class uses jdk-internal Unsafe for atomics
-     * and special memory modes, rather than VarHandles, to avoid
-     * initialization dependencies in other jdk components that
-     * require early parallelism. It also simplifies handling of
-     * pool-submitted tasks, among other minor improvements.
      */
 
     /**
@@ -231,9 +241,9 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
      * waiters. Cancelled waiters try to unsplice.
      */
     static final class Aux {
-        final Thread thread;
-        final Throwable ex;  // null if a waiter
-        Aux next;            // accessed only via memory-acquire chains
+        Thread thread;          // thrower or waiter
+        final Throwable ex;
+        Aux next;               // accessed only via memory-acquire chains
         Aux(Thread thread, Throwable ex) {
             this.thread = thread;
             this.ex = ex;
@@ -259,17 +269,13 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
      * control bits occupy only (some of) the upper half (16 bits) of
      * status field. The lower bits are used for user-defined tags.
      */
-    static final int DONE         = 1 << 31; // must be negative
-    static final int ABNORMAL     = 1 << 16;
-    static final int THROWN       = 1 << 17;
-    static final int SMASK        = 0xffff;  // short bits for tags
-    static final int UNCOMPENSATE = 1 << 16; // helpJoin return sentinel
-    static final int POOLSUBMIT   = 1 << 18; // for pool.submit vs fork
-
-    // flags for awaitDone (in addition to above)
-    static final int RAN           = 1;
-    static final int INTERRUPTIBLE = 2;
-    static final int TIMED         = 4;
+    static final int DONE           = 1 << 31; // must be negative
+    static final int ABNORMAL       = 1 << 16;
+    static final int THROWN         = 1 << 17;
+    static final int HAVE_EXCEPTION = DONE | ABNORMAL | THROWN;
+    static final int MARKER         = 1 << 30; // utility marker
+    static final int SMASK          = 0xffff;  // short bits for tags
+    static final int UNCOMPENSATE   = 1 << 16; // helpJoin sentinel
 
     // Fields
     volatile int status;                // accessed directly by pool and workers
@@ -285,25 +291,24 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
     private boolean casStatus(int c, int v) {
         return U.compareAndSetInt(this, STATUS, c, v);
     }
+
+    // Support for waiting and signalling
+
     private boolean casAux(Aux c, Aux v) {
         return U.compareAndSetReference(this, AUX, c, v);
     }
-
-    /**
-     * Marks this task as an external pool submission.
-     */
-    final void markPoolSubmission() {
-        getAndBitwiseOrStatus(POOLSUBMIT);
+    private Aux compareAndExchangeAux(Aux c, Aux v) {
+        return (Aux)U.compareAndExchangeReference(this, AUX, c, v);
     }
-
     /** Removes and unparks waiters */
     private void signalWaiters() {
-        for (Aux a; (a = aux) != null && a.ex == null; ) {
-            if (casAux(a, null)) {             // detach entire list
-                for (Thread t; a != null; a = a.next) {
-                    if ((t = a.thread) != Thread.currentThread() && t != null)
-                        LockSupport.unpark(t); // don't self-signal
-                }
+        for (Aux a = aux;;) {
+            if (a == null || a.ex != null)
+                break;
+            if (a == (a = compareAndExchangeAux(a, null))) {
+                do {                // detach entire list
+                    LockSupport.unpark(a.thread);
+                } while ((a = a.next) != null);
                 break;
             }
         }
@@ -311,23 +316,27 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
 
     /**
      * Sets DONE status and wakes up threads waiting to join this task.
-     * @return status on exit
      */
-    private int setDone() {
-        int s = getAndBitwiseOrStatus(DONE) | DONE;
+    private void setDone() {
+        getAndBitwiseOrStatus(DONE);
         signalWaiters();
-        return s;
     }
 
     /**
      * Sets ABNORMAL DONE status unless already done, and wakes up threads
      * waiting to join this task.
-     * @return status on exit
+     * @return previous status
      */
-    private int trySetCancelled() {
+    final int trySetCancelled() {
         int s;
-        do {} while ((s = status) >= 0 && !casStatus(s, s |= (DONE | ABNORMAL)));
-        signalWaiters();
+        for (;;) {
+            if ((s = status) < 0)
+                break;
+            if (casStatus(s, s | (DONE | ABNORMAL))) {
+                signalWaiters();
+                break;
+            }
+        }
         return s;
     }
 
@@ -337,174 +346,174 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
      * If losing a race with setDone or trySetCancelled, the exception
      * may be recorded but not reported.
      *
-     * @return status on exit
+     * @return true if set
      */
-    final int trySetThrown(Throwable ex) {
-        Aux h = new Aux(Thread.currentThread(), ex), p = null;
-        boolean installed = false;
+    final boolean trySetThrown(Throwable ex) {
         int s;
-        while ((s = status) >= 0) {
-            Aux a;
-            if (!installed && ((a = aux) == null || a.ex == null) &&
-                (installed = casAux(a, h)))
-                p = a; // list of waiters replaced by h
-            if (installed && casStatus(s, s |= (DONE | ABNORMAL | THROWN)))
-                break;
-        }
-        for (; p != null; p = p.next)
-            LockSupport.unpark(p.thread);
-        return s;
-    }
-
-    /**
-     * Records exception unless already done. Overridable in subclasses.
-     *
-     * @return status on exit
-     */
-    int trySetException(Throwable ex) {
-        return trySetThrown(ex);
-    }
-
-    /**
-     * Constructor for subclasses to call.
-     */
-    public ForkJoinTask() {}
-
-    static boolean isExceptionalStatus(int s) {  // needed by subclasses
-        return (s & THROWN) != 0;
-    }
-
-    /**
-     * Unless done, calls exec and records status if completed, but
-     * doesn't wait for completion otherwise.
-     *
-     * @return status on exit from this method
-     */
-    final int doExec() {
-        int s; boolean completed;
+        boolean set = false, installed = false;
         if ((s = status) >= 0) {
-            try {
-                completed = exec();
-            } catch (Throwable rex) {
-                s = trySetException(rex);
-                completed = false;
-            }
-            if (completed)
-                s = setDone();
+            Aux a, p = null, h = new Aux(Thread.currentThread(), ex);
+            do {
+                if (!installed && ((a = aux) == null || a.ex == null) &&
+                    (installed = casAux(a, h)))
+                    p = a; // list of waiters replaced by h
+                if (installed && (set = casStatus(s, s | HAVE_EXCEPTION)))
+                    break;
+            } while ((s = status) >= 0);
+            for (; p != null; p = p.next)
+                LockSupport.unpark(p.thread);
         }
-        return s;
+        return set;
     }
 
     /**
-     * Helps and/or waits for completion from join, get, or invoke;
-     * called from either internal or external threads.
-     *
-     * @param how flags for POOLSUBMIT, RAN, INTERRUPTIBLE, TIMED
-     * @param deadline if timed, timeout deadline
-     * @return ABNORMAL if interrupted, else status on exit
+     * Overridable action on setting exception
      */
-    private int awaitDone(int how, long deadline) {
-        int s; Thread t; ForkJoinWorkerThread wt; ForkJoinPool p;
-        ForkJoinPool.WorkQueue q = null;
-        boolean timed = (how & TIMED) != 0;
-        boolean owned = false, uncompensate = false;
-        if ((t = Thread.currentThread()) instanceof ForkJoinWorkerThread) {
-            owned = true;
-            q = (wt = (ForkJoinWorkerThread)t).workQueue;
-            p = wt.pool;
-        }
-        else if ((p = ForkJoinPool.common) != null && (how & POOLSUBMIT) == 0)
-            q = p.externalQueue();
-        if (q != null && p != null) { // try helping
-            if (this instanceof CountedCompleter)
-                s = p.helpComplete(this, q, owned, timed);
-            else if ((how & RAN) != 0 ||
-                     (s = q.tryRemoveAndExec(this, owned)) >= 0)
-                s = (owned) ? p.helpJoin(this, q, timed) : 0;
-            if (s < 0)
-                return s;
-            if (s == UNCOMPENSATE)
-                uncompensate = true;
-        }
-        Aux node = null;
-        long ns = 0L;
-        boolean interrupted = false, queued = false;
-        for (;;) {                    // install node and await signal
-            Aux a;
-            if ((s = status) < 0)
-                break;
-            else if (node == null)
-                node = new Aux(Thread.currentThread(), null);
-            else if (!queued) {
-                if (((a = aux) == null || a.ex == null) &&
-                    (queued = casAux(node.next = a, node)))
-                    LockSupport.setCurrentBlocker(this);
-            }
-            else if (timed && (ns = deadline - System.nanoTime()) <= 0) {
-                s = 0;
-                break;
-            }
-            else if (Thread.interrupted()) {
-                interrupted = true;
-                if ((how & POOLSUBMIT) != 0 && p != null && p.runState < 0)
-                    cancelIgnoringExceptions(this); // cancel on shutdown
-                else if ((how & INTERRUPTIBLE) != 0) {
-                    s = ABNORMAL;
-                    break;
-                }
-            }
-            else if ((s = status) < 0) // recheck
-                break;
-            else if (timed)
-                LockSupport.parkNanos(ns);
-            else
-                LockSupport.park();
-        }
-        if (uncompensate)
-            p.uncompensate();
+    void onAuxExceptionSet(Throwable ex) {
+    }
 
-        if (queued) {
-            LockSupport.setCurrentBlocker(null);
-            if (s >= 0) { // cancellation similar to AbstractQueuedSynchronizer
-                outer: for (Aux a; (a = aux) != null && a.ex == null; ) {
-                    for (Aux trail = null;;) {
-                        Aux next = a.next;
-                        if (a == node) {
-                            if (trail != null)
-                                trail.casNext(trail, next);
-                            else if (casAux(a, next))
-                                break outer; // cannot be re-encountered
-                            break;           // restart
-                        } else {
-                            trail = a;
-                            if ((a = next) == null)
-                                break outer;
+    /**
+     * Tries to set exception, if so invoking onAuxExceptionSet
+     */
+    final void trySetException(Throwable ex) {
+        if (trySetThrown(ex))
+            onAuxExceptionSet(ex);
+    }
+
+    /*
+     * Waits for signal, interrupt, timeout, or pool termination.
+     *
+     * @param pool if nonnull, the pool of ForkJoinWorkerThread caller
+     * @param compensation result from a helping method
+     * @param interruptible if wait is interruptible
+     * @param deadline if nonzero, timeout deadline
+     * @return ABNORMAL if interrupted, 0 on timeout, else status on exit
+     */
+    private int awaitDone(ForkJoinPool pool, int compensation,
+                          boolean interruptible, long deadline) {
+        int s;
+        if ((s = status) >= 0) {
+            Aux node = null;
+            try {                             // spinwait if out of memory
+                node = new Aux(Thread.currentThread(), null);
+            } catch (OutOfMemoryError ex) {
+            }
+            boolean queued = false;
+            for (Aux a;;) {                   // try to install node
+                if ((s = status) < 0)
+                    break;
+                else if (node == null)
+                    Thread.onSpinWait();
+                else if (((a = aux) == null || a.ex == null) &&
+                         (queued = casAux(node.next = a, node)))
+                    break;
+            }
+            if (queued) {                     // await signal or interrupt
+                LockSupport.setCurrentBlocker(this);
+                int interrupts = 0;           // < 0 : throw; > 0 : re-interrupt
+                for (;;) {
+                    if ((s = status) < 0)
+                        break;
+                    else if (interrupts < 0) {
+                        s = ABNORMAL;         // interrupted and not done
+                        break;
+                    }
+                    else if (Thread.interrupted()) {
+                        if (!ForkJoinPool.poolIsStopping(pool))
+                            interrupts = interruptible ? -1 : 1;
+                        else {
+                            interrupts = 1;   // re-assert if cleared
+                            try {
+                                cancel(true);
+                            } catch (Throwable ignore) {
+                            }
                         }
                     }
+                    else if (deadline != 0L) {
+                        long ns;
+                        if ((ns = deadline - System.nanoTime()) <= 0) {
+                            s = 0;
+                            break;
+                        }
+                        LockSupport.parkNanos(ns);
+                    }
+                    else
+                        LockSupport.park();
                 }
-            }
-            else {
-                signalWaiters();             // help clean or signal
-                if (interrupted)
+                node.thread = null;           // help clean aux; raciness OK
+                clean: for (Aux a;;) {        // remove node if still present
+                    if ((a = aux) == null || a.ex != null)
+                        break;
+                    for (Aux prev = null;;) {
+                        Aux next = a.next;
+                        if (a == node) {
+                            if (prev != null)
+                                prev.casNext(prev, next);
+                            else if (casAux(a, next))
+                                break clean;
+                            break;            // check for failed or stale CAS
+                        }
+                        prev = a;
+                        if ((a = next) == null)
+                            break clean;      // not found
+                    }
+                }
+                LockSupport.setCurrentBlocker(null);
+                if (interrupts > 0)
                     Thread.currentThread().interrupt();
             }
         }
+        if (compensation == UNCOMPENSATE && pool != null)
+            pool.uncompensate();
         return s;
     }
 
     /**
-     * Cancels, ignoring any exceptions thrown by cancel.  Cancel is
-     * spec'ed not to throw any exceptions, but if it does anyway, we
-     * have no recourse, so guard against this case.
+     * Tries applicable helping steps while joining this task,
+     * otherwise invokes blocking version of awaitDone. Called only
+     * when pre-checked not to be done, and pre-screened for
+     * interrupts and timeouts, if applicable.
+     *
+     * @param interruptible if wait is interruptible
+     * @param deadline if nonzero, timeout deadline
+     * @return ABNORMAL if interrupted, else status on exit
      */
-    static final void cancelIgnoringExceptions(Future<?> t) {
-        if (t != null) {
+    private int awaitDone(boolean interruptible, long deadline) {
+        ForkJoinWorkerThread wt; ForkJoinPool p; ForkJoinPool.WorkQueue q;
+        Thread t; boolean internal; int s;
+        if (internal =
+            (t = Thread.currentThread()) instanceof ForkJoinWorkerThread) {
+            p = (wt = (ForkJoinWorkerThread)t).pool;
+            q = wt.workQueue;
+        }
+        else
+            q = ForkJoinPool.externalQueue(p = ForkJoinPool.common);
+        return (((s = (p == null) ? 0 :
+                  ((this instanceof CountedCompleter) ?
+                   p.helpComplete(this, q, internal) :
+                   (this instanceof InterruptibleTask) && !internal ? status :
+                   p.helpJoin(this, q, internal))) < 0)) ? s :
+            awaitDone(internal ? p : null, s, interruptible, deadline);
+    }
+
+    /**
+     * Runs a task body: Unless done, calls exec and records status if
+     * completed, but doesn't wait for completion otherwise.
+     */
+    final void doExec() {
+        if (status >= 0) {
+            boolean completed = false;
             try {
-                t.cancel(true);
-            } catch (Throwable ignore) {
+                completed = exec();
+            } catch (Throwable rex) {
+                trySetException(rex);
             }
+            if (completed)
+                setDone();
         }
     }
+
+    // Reporting Exceptions
 
     /**
      * Returns a rethrowable exception for this task, if available.
@@ -518,13 +527,19 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
      * still correct, although it may contain a misleading stack
      * trace.
      *
+     * @param asExecutionException true if wrap as ExecutionException
      * @return the exception, or null if none
      */
-    private Throwable getThrowableException() {
-        Throwable ex; Aux a;
-        if ((a = aux) == null)
-            ex = null;
-        else if ((ex = a.ex) != null && a.thread != Thread.currentThread()) {
+    private Throwable getException(boolean asExecutionException) {
+        int s; Throwable ex; Aux a;
+        if ((s = status) >= 0 || (s & ABNORMAL) == 0)
+            return null;
+        else if ((s & THROWN) == 0 || (a = aux) == null || (ex = a.ex) == null) {
+            ex = new CancellationException();
+            if (!asExecutionException || !(this instanceof InterruptibleTask))
+                return ex;         // else wrap below
+        }
+        else if (a.thread != Thread.currentThread()) {
             try {
                 Constructor<?> noArgCtor = null, oneArgCtor = null;
                 for (Constructor<?> c : ex.getClass().getConstructors()) {
@@ -546,40 +561,16 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
             } catch (Exception ignore) {
             }
         }
-        return ex;
+        return (asExecutionException) ? new ExecutionException(ex) : ex;
     }
 
     /**
-     * Returns exception associated with the given status, or null if none.
+     * Throws thrown exception, or CancellationException if none
+     * recorded.
      */
-    private Throwable getException(int s) {
-        Throwable ex = null;
-        if ((s & ABNORMAL) != 0 && (ex = getThrowableException()) == null)
-            ex = new CancellationException();
-        return ex;
-    }
-
-    /**
-     * Throws exception associated with the given status, or
-     * CancellationException if none recorded.
-     */
-    private void reportException(int s) {
-        ForkJoinTask.<RuntimeException>uncheckedThrow(getThrowableException());
-    }
-
-    /**
-     * Throws exception for (timed or untimed) get, wrapping if
-     * necessary in an ExecutionException.
-     */
-    private void reportExecutionException(int s) {
-        Throwable ex = null, rx;
-        if (s == ABNORMAL)
-            ex = new InterruptedException();
-        else if (s >= 0)
-            ex = new TimeoutException();
-        else if ((rx = getThrowableException()) != null)
-            ex = new ExecutionException(rx);
-        ForkJoinTask.<RuntimeException>uncheckedThrow(ex);
+    private void reportException(boolean asExecutionException) {
+        ForkJoinTask.<RuntimeException>
+            uncheckedThrow(getException(asExecutionException));
     }
 
     /**
@@ -603,7 +594,28 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
         throw (T)t; // rely on vacuous cast
     }
 
+    // Utilities shared among ForkJoinTask, ForkJoinPool
+
+    /**
+     * Sets MARKER bit, returning nonzero if previously set
+     */
+    final int setForkJoinTaskStatusMarkerBit() {
+        return getAndBitwiseOrStatus(MARKER) & MARKER;
+    }
+
+    /**
+     * Returns nonzero if MARKER bit set.
+     */
+    final int getForkJoinTaskStatusMarkerBit() {
+        return status & MARKER;
+    }
+
     // public methods
+
+    /**
+     * Constructor for subclasses to call.
+     */
+    public ForkJoinTask() {}
 
     /**
      * Arranges to asynchronously execute this task in the pool the
@@ -622,15 +634,15 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
      */
     public final ForkJoinTask<V> fork() {
         Thread t; ForkJoinWorkerThread wt;
-        ForkJoinPool p; ForkJoinPool.WorkQueue q;
-        U.storeStoreFence();  // ensure safely publishable
-        if ((t = Thread.currentThread()) instanceof ForkJoinWorkerThread) {
-            p = (wt = (ForkJoinWorkerThread)t).pool;
-            q = wt.workQueue;
+        ForkJoinPool p; ForkJoinPool.WorkQueue q; boolean internal;
+        if (internal =
+            (t = Thread.currentThread()) instanceof ForkJoinWorkerThread) {
+            q = (wt = (ForkJoinWorkerThread)t).workQueue;
+            p = wt.pool;
         }
         else
-            q = (p = ForkJoinPool.common).submissionQueue(false);
-        q.push(this, p, true);
+            q = (p = ForkJoinPool.common).externalSubmissionQueue();
+        q.push(this, p, internal);
         return this;
     }
 
@@ -647,10 +659,8 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
      */
     public final V join() {
         int s;
-        if ((s = status) >= 0)
-            s = awaitDone(s & POOLSUBMIT, 0L);
-        if ((s & ABNORMAL) != 0)
-            reportException(s);
+        if ((((s = status) < 0 ? s : awaitDone(false, 0L)) & ABNORMAL) != 0)
+            reportException(false);
         return getRawResult();
     }
 
@@ -663,12 +673,8 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
      * @return the computed result
      */
     public final V invoke() {
-        int s;
-        if ((s = doExec()) >= 0)
-            s = awaitDone(RAN, 0L);
-        if ((s & ABNORMAL) != 0)
-            reportException(s);
-        return getRawResult();
+        doExec();
+        return join();
     }
 
     /**
@@ -693,18 +699,15 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
         if (t1 == null || t2 == null)
             throw new NullPointerException();
         t2.fork();
-        if ((s1 = t1.doExec()) >= 0)
-            s1 = t1.awaitDone(RAN, 0L);
-        if ((s1 & ABNORMAL) != 0) {
-            cancelIgnoringExceptions(t2);
-            t1.reportException(s1);
+        t1.doExec();
+        if ((((s1 = t1.status) < 0 ? s1 :
+              t1.awaitDone(false, 0L)) & ABNORMAL) != 0) {
+            t2.cancel(false);
+            t1.reportException(false);
         }
-        else {
-            if ((s2 = t2.status) >= 0)
-                s2 = t2.awaitDone(0, 0L);
-            if ((s2 & ABNORMAL) != 0)
-                t2.reportException(s2);
-        }
+        else if ((((s2 = t2.status) < 0 ? s2 :
+                   t2.awaitDone(false, 0L)) & ABNORMAL) != 0)
+            t2.reportException(false);
     }
 
     /**
@@ -726,36 +729,36 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
         Throwable ex = null;
         int last = tasks.length - 1;
         for (int i = last; i >= 0; --i) {
-            ForkJoinTask<?> t;
+            ForkJoinTask<?> t; int s;
             if ((t = tasks[i]) == null) {
                 ex = new NullPointerException();
                 break;
             }
             if (i == 0) {
-                int s;
-                if ((s = t.doExec()) >= 0)
-                    s = t.awaitDone(RAN, 0L);
-                if ((s & ABNORMAL) != 0)
-                    ex = t.getException(s);
+                t.doExec();
+                if ((((s = t.status) < 0 ? s :
+                      t.awaitDone(false, 0L)) & ABNORMAL) != 0)
+                    ex = t.getException(false);
                 break;
             }
             t.fork();
         }
         if (ex == null) {
             for (int i = 1; i <= last; ++i) {
-                ForkJoinTask<?> t;
-                if ((t = tasks[i]) != null) {
-                    int s;
-                    if ((s = t.status) >= 0)
-                        s = t.awaitDone(0, 0L);
-                    if ((s & ABNORMAL) != 0 && (ex = t.getException(s)) != null)
-                        break;
-                }
+                ForkJoinTask<?> t; int s;
+                if ((t = tasks[i]) != null &&
+                    ((((s = t.status) < 0 ? s :
+                       t.awaitDone(false, 0L)) & ABNORMAL) != 0) &&
+                    (ex = t.getException(false)) != null)
+                    break;
             }
         }
         if (ex != null) {
-            for (int i = 1; i <= last; ++i)
-                cancelIgnoringExceptions(tasks[i]);
+            for (int i = 1; i <= last; ++i) {
+                ForkJoinTask<?> t;
+                if ((t = tasks[i]) != null)
+                    t.cancel(false);
+            }
             rethrow(ex);
         }
     }
@@ -789,36 +792,36 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
         Throwable ex = null;
         int last = ts.size() - 1;  // nearly same as array version
         for (int i = last; i >= 0; --i) {
-            ForkJoinTask<?> t;
+            ForkJoinTask<?> t; int s;
             if ((t = ts.get(i)) == null) {
                 ex = new NullPointerException();
                 break;
             }
             if (i == 0) {
-                int s;
-                if ((s = t.doExec()) >= 0)
-                    s = t.awaitDone(RAN, 0L);
-                if ((s & ABNORMAL) != 0)
-                    ex = t.getException(s);
+                t.doExec();
+                if ((((s = t.status) < 0 ? s :
+                      t.awaitDone(false, 0L)) & ABNORMAL) != 0)
+                    ex = t.getException(false);
                 break;
             }
             t.fork();
         }
         if (ex == null) {
             for (int i = 1; i <= last; ++i) {
-                ForkJoinTask<?> t;
-                if ((t = ts.get(i)) != null) {
-                    int s;
-                    if ((s = t.status) >= 0)
-                        s = t.awaitDone(0, 0L);
-                    if ((s & ABNORMAL) != 0 && (ex = t.getException(s)) != null)
-                        break;
-                }
+                ForkJoinTask<?> t; int s;
+                if ((t = ts.get(i)) != null &&
+                    ((((s = t.status) < 0 ? s :
+                       t.awaitDone(false, 0L)) & ABNORMAL) != 0) &&
+                    (ex = t.getException(false)) != null)
+                    break;
             }
         }
         if (ex != null) {
-            for (int i = 1; i <= last; ++i)
-                cancelIgnoringExceptions(ts.get(i));
+            for (int i = 1; i <= last; ++i) {
+                ForkJoinTask<?> t;
+                if ((t = ts.get(i)) != null)
+                    t.cancel(false);
+            }
             rethrow(ex);
         }
         return tasks;
@@ -852,7 +855,8 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
      * @return {@code true} if this task is now cancelled
      */
     public boolean cancel(boolean mayInterruptIfRunning) {
-        return (trySetCancelled() & (ABNORMAL | THROWN)) == ABNORMAL;
+        int s = trySetCancelled();
+        return (s >= 0 || (s & (ABNORMAL | THROWN)) == ABNORMAL);
     }
 
     public final boolean isDone() {
@@ -894,16 +898,25 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
 
     @Override
     public V resultNow() {
-        if (!isCompletedNormally())
-            throw new IllegalStateException();
+        int s = status;
+        if ((s & DONE) == 0)
+             throw new IllegalStateException("Task has not completed");
+        if ((s & ABNORMAL) != 0) {
+            if ((s & THROWN) != 0)
+                throw new IllegalStateException("Task completed with exception");
+            else
+                throw new IllegalStateException("Task was cancelled");
+        }
         return getRawResult();
     }
 
     @Override
     public Throwable exceptionNow() {
-        if ((status & (ABNORMAL | THROWN)) != (ABNORMAL | THROWN))
+        Throwable ex;
+        if ((status & HAVE_EXCEPTION) != HAVE_EXCEPTION ||
+            (ex = getException(false)) == null)
             throw new IllegalStateException();
-        return getThrowableException();
+        return ex;
     }
 
     /**
@@ -914,7 +927,7 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
      * @return the exception, or {@code null} if none
      */
     public final Throwable getException() {
-        return getException(status);
+        return getException(false);
     }
 
     /**
@@ -984,13 +997,14 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
      * member of a ForkJoinPool and was interrupted while waiting
      */
     public final V get() throws InterruptedException, ExecutionException {
-        int s;
-        if (Thread.interrupted())
-            s = ABNORMAL;
-        else if ((s = status) >= 0)
-            s = awaitDone((s & POOLSUBMIT) | INTERRUPTIBLE, 0L);
-        if ((s & ABNORMAL) != 0)
-            reportExecutionException(s);
+        int stat = status;
+        int s = ((stat < 0) ? stat :
+                 (Thread.interrupted()) ? ABNORMAL :
+                 awaitDone(true, 0L));
+        if (s == ABNORMAL)
+            throw new InterruptedException();
+        else if ((s & ABNORMAL) != 0)
+            reportException(true);
         return getRawResult();
     }
 
@@ -1011,14 +1025,17 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
     public final V get(long timeout, TimeUnit unit)
         throws InterruptedException, ExecutionException, TimeoutException {
         long nanos = unit.toNanos(timeout);
-        int s;
-        if (Thread.interrupted())
-            s = ABNORMAL;
-        else if ((s = status) >= 0 && nanos > 0L)
-            s = awaitDone((s & POOLSUBMIT) | INTERRUPTIBLE | TIMED,
-                          nanos + System.nanoTime());
-        if (s >= 0 || (s & ABNORMAL) != 0)
-            reportExecutionException(s);
+        int stat = status;
+        int s = ((stat < 0) ? stat :
+                 (Thread.interrupted()) ? ABNORMAL :
+                 (nanos <= 0L) ? 0 :
+                 awaitDone(true,  (System.nanoTime() + nanos) | 1L));
+        if (s == ABNORMAL)
+            throw new InterruptedException();
+        else if (s >= 0)
+            throw new TimeoutException();
+        else if ((s & ABNORMAL) != 0)
+            reportException(true);
         return getRawResult();
     }
 
@@ -1029,9 +1046,8 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
      * known to have aborted.
      */
     public final void quietlyJoin() {
-        int s;
-        if ((s = status) >= 0)
-            awaitDone(s & POOLSUBMIT, 0L);
+        if (status >= 0)
+            awaitDone(false, 0L);
     }
 
     /**
@@ -1040,9 +1056,9 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
      * exception.
      */
     public final void quietlyInvoke() {
-        int s;
-        if ((s = doExec()) >= 0)
-            awaitDone(RAN, 0L);
+        doExec();
+        if (status >= 0)
+            awaitDone(false, 0L);
     }
 
     /**
@@ -1059,17 +1075,15 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
      */
     public final boolean quietlyJoin(long timeout, TimeUnit unit)
         throws InterruptedException {
-        int s;
         long nanos = unit.toNanos(timeout);
-        if (Thread.interrupted())
-            s = ABNORMAL;
-        else if ((s = status) >= 0 && nanos > 0L)
-            s = awaitDone((s & POOLSUBMIT) | INTERRUPTIBLE | TIMED,
-                          nanos + System.nanoTime());
+        int stat = status;
+        int s = ((stat < 0) ? stat :
+                 (Thread.interrupted()) ? ABNORMAL :
+                 (nanos <= 0L) ? 0 :
+                 awaitDone(true, (System.nanoTime() + nanos) | 1L));
         if (s == ABNORMAL)
             throw new InterruptedException();
-        else
-            return (s < 0);
+        return (s < 0);
     }
 
     /**
@@ -1086,8 +1100,26 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
         int s;
         long nanos = unit.toNanos(timeout);
         if ((s = status) >= 0 && nanos > 0L)
-            s = awaitDone((s & POOLSUBMIT) | TIMED, nanos + System.nanoTime());
+            s = awaitDone(false, (System.nanoTime() + nanos) | 1L);
         return (s < 0);
+    }
+
+    /**
+     * Utility for possibly-timed ForkJoinPool.invokeAll
+     */
+    final void quietlyJoinPoolInvokeAllTask(long deadline)
+        throws InterruptedException {
+        int s;
+        if ((s = status) >= 0) {
+            if (Thread.interrupted())
+                s = ABNORMAL;
+            else if (deadline == 0L || deadline - System.nanoTime() > 0L)
+                s = awaitDone(true, deadline);
+            if (s == ABNORMAL)
+                throw new InterruptedException();
+            else if (s >= 0)
+                cancel(true);
+        }
     }
 
     /**
@@ -1160,12 +1192,13 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
      * @return {@code true} if unforked
      */
     public boolean tryUnfork() {
-        Thread t; ForkJoinPool.WorkQueue q; boolean owned;
-        if (owned = (t = Thread.currentThread()) instanceof ForkJoinWorkerThread)
+        Thread t; ForkJoinPool.WorkQueue q; boolean internal;
+        if (internal =
+            (t = Thread.currentThread()) instanceof ForkJoinWorkerThread)
             q = ((ForkJoinWorkerThread)t).workQueue;
         else
             q = ForkJoinPool.commonQueue();
-        return (q != null && q.tryUnpush(this, owned));
+        return (q != null && q.tryUnpush(this, internal));
     }
 
     /**
@@ -1361,159 +1394,7 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
         }
     }
 
-    /**
-     * Adapter for Runnables. This implements RunnableFuture
-     * to be compliant with AbstractExecutorService constraints
-     * when used in ForkJoinPool.
-     */
-    static final class AdaptedRunnable<T> extends ForkJoinTask<T>
-        implements RunnableFuture<T> {
-        @SuppressWarnings("serial") // Conditionally serializable
-        final Runnable runnable;
-        @SuppressWarnings("serial") // Conditionally serializable
-        T result;
-        AdaptedRunnable(Runnable runnable, T result) {
-            if (runnable == null) throw new NullPointerException();
-            this.runnable = runnable;
-            this.result = result; // OK to set this even before completion
-        }
-        public final T getRawResult() { return result; }
-        public final void setRawResult(T v) { result = v; }
-        public final boolean exec() { runnable.run(); return true; }
-        public final void run() { invoke(); }
-        public String toString() {
-            return super.toString() + "[Wrapped task = " + runnable + "]";
-        }
-        private static final long serialVersionUID = 5232453952276885070L;
-    }
-
-    /**
-     * Adapter for Runnables without results.
-     */
-    static final class AdaptedRunnableAction extends ForkJoinTask<Void>
-        implements RunnableFuture<Void> {
-        @SuppressWarnings("serial") // Conditionally serializable
-        final Runnable runnable;
-        AdaptedRunnableAction(Runnable runnable) {
-            if (runnable == null) throw new NullPointerException();
-            this.runnable = runnable;
-        }
-        public final Void getRawResult() { return null; }
-        public final void setRawResult(Void v) { }
-        public final boolean exec() { runnable.run(); return true; }
-        public final void run() { invoke(); }
-        public String toString() {
-            return super.toString() + "[Wrapped task = " + runnable + "]";
-        }
-        private static final long serialVersionUID = 5232453952276885070L;
-    }
-
-    /**
-     * Adapter for Runnables in which failure forces worker exception.
-     */
-    static final class RunnableExecuteAction extends ForkJoinTask<Void> {
-        @SuppressWarnings("serial") // Conditionally serializable
-        final Runnable runnable;
-        RunnableExecuteAction(Runnable runnable) {
-            if (runnable == null) throw new NullPointerException();
-            this.runnable = runnable;
-        }
-        public final Void getRawResult() { return null; }
-        public final void setRawResult(Void v) { }
-        public final boolean exec() { runnable.run(); return true; }
-        int trySetException(Throwable ex) { // if a handler, invoke it
-            int s; Thread t; java.lang.Thread.UncaughtExceptionHandler h;
-            if (isExceptionalStatus(s = trySetThrown(ex)) &&
-                (h = ((t = Thread.currentThread()).
-                      getUncaughtExceptionHandler())) != null) {
-                try {
-                    h.uncaughtException(t, ex);
-                } catch (Throwable ignore) {
-                }
-            }
-            return s;
-        }
-        private static final long serialVersionUID = 5232453952276885070L;
-    }
-
-    /**
-     * Adapter for Callables.
-     */
-    static final class AdaptedCallable<T> extends ForkJoinTask<T>
-        implements RunnableFuture<T> {
-        @SuppressWarnings("serial") // Conditionally serializable
-        final Callable<? extends T> callable;
-        @SuppressWarnings("serial") // Conditionally serializable
-        T result;
-        AdaptedCallable(Callable<? extends T> callable) {
-            if (callable == null) throw new NullPointerException();
-            this.callable = callable;
-        }
-        public final T getRawResult() { return result; }
-        public final void setRawResult(T v) { result = v; }
-        public final boolean exec() {
-            try {
-                result = callable.call();
-                return true;
-            } catch (RuntimeException rex) {
-                throw rex;
-            } catch (Exception ex) {
-                throw new RuntimeException(ex);
-            }
-        }
-        public final void run() { invoke(); }
-        public String toString() {
-            return super.toString() + "[Wrapped task = " + callable + "]";
-        }
-        private static final long serialVersionUID = 2838392045355241008L;
-    }
-
-    static final class AdaptedInterruptibleCallable<T> extends ForkJoinTask<T>
-        implements RunnableFuture<T> {
-        @SuppressWarnings("serial") // Conditionally serializable
-        final Callable<? extends T> callable;
-        transient volatile Thread runner;
-        @SuppressWarnings("serial") // Conditionally serializable
-        T result;
-        AdaptedInterruptibleCallable(Callable<? extends T> callable) {
-            if (callable == null) throw new NullPointerException();
-            this.callable = callable;
-        }
-        public final T getRawResult() { return result; }
-        public final void setRawResult(T v) { result = v; }
-        public final boolean exec() {
-            Thread.interrupted();
-            runner = Thread.currentThread();
-            try {
-                if (!isDone()) // recheck
-                    result = callable.call();
-                return true;
-            } catch (RuntimeException rex) {
-                throw rex;
-            } catch (Exception ex) {
-                throw new RuntimeException(ex);
-            } finally {
-                runner = null;
-                Thread.interrupted();
-            }
-        }
-        public final void run() { invoke(); }
-        public final boolean cancel(boolean mayInterruptIfRunning) {
-            Thread t;
-            boolean stat = super.cancel(false);
-            if (mayInterruptIfRunning && (t = runner) != null) {
-                try {
-                    t.interrupt();
-                } catch (Throwable ignore) {
-                }
-            }
-            return stat;
-        }
-        public String toString() {
-            return super.toString() + "[Wrapped task = " + callable + "]";
-        }
-        private static final long serialVersionUID = 2838392045355241008L;
-    }
+    // Factory methods for adaptors below
 
     /**
      * Returns a new {@code ForkJoinTask} that performs the {@code run}
@@ -1570,8 +1451,44 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
      * @since 19
      */
     public static <T> ForkJoinTask<T> adaptInterruptible(Callable<? extends T> callable) {
-        // https://bugs.openjdk.org/browse/JDK-8246587
         return new AdaptedInterruptibleCallable<T>(callable);
+    }
+
+    /**
+     * Returns a new {@code ForkJoinTask} that performs the {@code run}
+     * method of the given {@code Runnable} as its action, and returns
+     * the given result upon {@link #join}, translating any checked exceptions
+     * encountered into {@code RuntimeException}.  Additionally,
+     * invocations of {@code cancel} with {@code mayInterruptIfRunning
+     * true} will attempt to interrupt the thread performing the task.
+     *
+     * @param runnable the runnable action
+     * @param result the result upon completion
+     * @param <T> the type of the result
+     * @return the task
+     *
+     * @since 22
+     */
+    public static <T> ForkJoinTask<T> adaptInterruptible(Runnable runnable, T result) {
+        return new AdaptedInterruptibleRunnable<T>(runnable, result);
+    }
+
+    /**
+     * Returns a new {@code ForkJoinTask} that performs the {@code
+     * run} method of the given {@code Runnable} as its action, and
+     * returns null upon {@link #join}, translating any checked
+     * exceptions encountered into {@code RuntimeException}.
+     * Additionally, invocations of {@code cancel} with {@code
+     * mayInterruptIfRunning true} will attempt to interrupt the
+     * thread performing the task.
+     *
+     * @param runnable the runnable action
+     * @return the task
+     *
+     * @since 22
+     */
+    public static ForkJoinTask<?> adaptInterruptible(Runnable runnable) {
+        return new AdaptedInterruptibleRunnable<Void>(runnable, null);
     }
 
     // Serialization support
@@ -1605,7 +1522,7 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
         s.defaultReadObject();
         Object ex = s.readObject();
         if (ex != null)
-            trySetThrown((Throwable)ex);
+            aux = new Aux(Thread.currentThread(), (Throwable)ex);
     }
 
     static {
@@ -1616,4 +1533,319 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
         Class<?> dep2 = Aux.class;
     }
 
+    // Special subclasses for adaptors and internal tasks
+
+    /**
+     * Adapter for Runnables. This implements RunnableFuture
+     * to be compliant with AbstractExecutorService constraints
+     * when used in ForkJoinPool.
+     */
+    static final class AdaptedRunnable<T> extends ForkJoinTask<T>
+        implements RunnableFuture<T> {
+        @SuppressWarnings("serial") // Conditionally serializable
+        final Runnable runnable;
+        @SuppressWarnings("serial") // Conditionally serializable
+        T result;
+        AdaptedRunnable(Runnable runnable, T result) {
+            Objects.requireNonNull(runnable);
+            this.runnable = runnable;
+            this.result = result; // OK to set this even before completion
+        }
+        public final T getRawResult() { return result; }
+        public final void setRawResult(T v) { result = v; }
+        public final boolean exec() { runnable.run(); return true; }
+        public final void run() { invoke(); }
+        public String toString() {
+            return super.toString() + "[Wrapped task = " + runnable + "]";
+        }
+        private static final long serialVersionUID = 5232453952276885070L;
+    }
+
+    /**
+     * Adapter for Runnables without results.
+     */
+    static final class AdaptedRunnableAction extends ForkJoinTask<Void>
+        implements RunnableFuture<Void> {
+        @SuppressWarnings("serial") // Conditionally serializable
+        final Runnable runnable;
+        AdaptedRunnableAction(Runnable runnable) {
+            Objects.requireNonNull(runnable);
+            this.runnable = runnable;
+        }
+        public final Void getRawResult() { return null; }
+        public final void setRawResult(Void v) { }
+        public final boolean exec() { runnable.run(); return true; }
+        public final void run() { invoke(); }
+        public String toString() {
+            return super.toString() + "[Wrapped task = " + runnable + "]";
+        }
+        private static final long serialVersionUID = 5232453952276885070L;
+    }
+
+    /**
+     * Adapter for Callables.
+     */
+    static final class AdaptedCallable<T> extends ForkJoinTask<T>
+        implements RunnableFuture<T> {
+        @SuppressWarnings("serial") // Conditionally serializable
+        final Callable<? extends T> callable;
+        @SuppressWarnings("serial") // Conditionally serializable
+        T result;
+        AdaptedCallable(Callable<? extends T> callable) {
+            Objects.requireNonNull(callable);
+            this.callable = callable;
+        }
+        public final T getRawResult() { return result; }
+        public final void setRawResult(T v) { result = v; }
+        public final boolean exec() {
+            try {
+                result = callable.call();
+                return true;
+            } catch (RuntimeException rex) {
+                throw rex;
+            } catch (Exception ex) {
+                throw new RuntimeException(ex);
+            }
+        }
+        public final void run() { invoke(); }
+        public String toString() {
+            return super.toString() + "[Wrapped task = " + callable + "]";
+        }
+        private static final long serialVersionUID = 2838392045355241008L;
+    }
+
+    /**
+     * Tasks with semantics conforming to ExecutorService conventions.
+     * Tasks are interruptible when cancelled, including cases of
+     * cancellation upon pool termination. In addition to recording
+     * the running thread to enable interrupt in cancel(true), the
+     * task checks for termination before executing the compute
+     * method, to cover shutdown races in which the task has not yet
+     * been cancelled on entry and might not otherwise be cancelled by
+     * others.
+     */
+    static abstract class InterruptibleTask<T> extends ForkJoinTask<T>
+        implements RunnableFuture<T> {
+        transient volatile Thread runner;
+        abstract T compute() throws Exception;
+        public final boolean exec() {
+            Thread.interrupted();
+            Thread t = runner = Thread.currentThread();
+            try {
+                if ((t instanceof ForkJoinWorkerThread) &&
+                    ForkJoinPool.poolIsStopping(((ForkJoinWorkerThread)t).pool))
+                    cancel(true);
+                else {
+                    try {
+                        if (status >= 0)
+                            setRawResult(compute());
+                    } catch (Exception ex) {
+                        trySetException(ex);
+                    }
+                }
+            } finally {
+                runner = null;
+            }
+            return true;
+        }
+        public boolean cancel(boolean mayInterruptIfRunning) {
+            Thread t;
+            if (trySetCancelled() >= 0) {
+                if (mayInterruptIfRunning && (t = runner) != null) {
+                    try {
+                        t.interrupt();
+                    } catch (Throwable ignore) {
+                    }
+                }
+                return true;
+            }
+            return isCancelled();
+        }
+        public final void run() { quietlyInvoke(); }
+        Object adaptee() { return null; } // for printing and diagnostics
+        public String toString() {
+            Object a = adaptee();
+            String s = super.toString();
+            return ((a == null) ? s :
+                    (s + "[Wrapped task = " + a.toString() + "]"));
+        }
+        private static final long serialVersionUID = 2838392045355241008L;
+    }
+
+    /**
+     * Adapter for Callable-based interruptible tasks.
+     */
+    static final class AdaptedInterruptibleCallable<T> extends InterruptibleTask<T> {
+        @SuppressWarnings("serial") // Conditionally serializable
+        final Callable<? extends T> callable;
+        @SuppressWarnings("serial") // Conditionally serializable
+        T result;
+        AdaptedInterruptibleCallable(Callable<? extends T> callable) {
+            Objects.requireNonNull(callable);
+            this.callable = callable;
+        }
+        public final T getRawResult() { return result; }
+        public final void setRawResult(T v) { result = v; }
+        final T compute() throws Exception { return callable.call(); }
+        final Object adaptee() { return callable; }
+        private static final long serialVersionUID = 2838392045355241008L;
+    }
+
+    /**
+     * Adapter for Runnable-based interruptible tasks.
+     */
+    static final class AdaptedInterruptibleRunnable<T> extends InterruptibleTask<T> {
+        @SuppressWarnings("serial") // Conditionally serializable
+        final Runnable runnable;
+        @SuppressWarnings("serial") // Conditionally serializable
+        final T result;
+        AdaptedInterruptibleRunnable(Runnable runnable, T result) {
+            Objects.requireNonNull(runnable);
+            this.runnable = runnable;
+            this.result = result;
+        }
+        public final T getRawResult() { return result; }
+        public final void setRawResult(T v) { }
+        final T compute() { runnable.run(); return result; }
+        final Object adaptee() { return runnable; }
+        private static final long serialVersionUID = 2838392045355241008L;
+    }
+
+    /**
+     * Adapter for Runnables in which failure forces worker exception.
+     */
+    static final class RunnableExecuteAction extends InterruptibleTask<Void> {
+        @SuppressWarnings("serial") // Conditionally serializable
+        final Runnable runnable;
+        RunnableExecuteAction(Runnable runnable) {
+            Objects.requireNonNull(runnable);
+            this.runnable = runnable;
+        }
+        public final Void getRawResult() { return null; }
+        public final void setRawResult(Void v) { }
+        final Void compute() { runnable.run(); return null; }
+        final Object adaptee() { return runnable; }
+        void onAuxExceptionSet(Throwable ex) { // if a handler, invoke it
+            Thread t; java.lang.Thread.UncaughtExceptionHandler h;
+            if ((h = ((t = Thread.currentThread()).
+                      getUncaughtExceptionHandler())) != null) {
+                try {
+                    h.uncaughtException(t, ex);
+                } catch (Throwable ignore) {
+                }
+            }
+        }
+        private static final long serialVersionUID = 5232453952276885070L;
+    }
+
+    /**
+     * Task (that is never forked) to hold results for
+     * ForkJoinPool.invokeAny, or to report exception if all subtasks
+     * fail or are cancelled or the pool is terminating. Both
+     * InvokeAnyRoot and InvokeAnyTask objects exist only transiently
+     * during invokeAny invocations, so serialization support would be
+     * nonsensical and is omitted.
+     */
+    @SuppressWarnings("serial")
+    static final class InvokeAnyRoot<T> extends InterruptibleTask<T> {
+        volatile T result;
+        volatile int count; // number of tasks; decremented in case all tasks fail
+        InvokeAnyRoot() { }
+        final void tryComplete(InvokeAnyTask<T> f, T v, Throwable ex,
+                               boolean completed) {
+            if (f != null && !isDone()) {
+                if (ForkJoinPool.poolIsStopping(getPool()))
+                    trySetCancelled();
+                else if (f.setForkJoinTaskStatusMarkerBit() == 0) {
+                    if (completed) {
+                        result = v;
+                        quietlyComplete();
+                    }
+                    else if (U.getAndAddInt(this, COUNT, -1) <= 1) {
+                        if (ex == null)
+                            trySetCancelled();
+                        else
+                            trySetException(ex);
+                    }
+                }
+            }
+        }
+        public final T compute()            { return null; } // never forked
+        public final T getRawResult()       { return result; }
+        public final void setRawResult(T v) { }
+
+        // Common support for timed and untimed versions of invokeAny
+        final T invokeAny(Collection<? extends Callable<T>> tasks,
+                          ForkJoinPool pool, boolean timed, long nanos)
+            throws InterruptedException, ExecutionException, TimeoutException {
+            if ((count = tasks.size()) <= 0)
+                throw new IllegalArgumentException();
+            if (pool == null)
+                throw new NullPointerException();
+            InvokeAnyTask<T> t = null; // list of submitted tasks
+            try {
+                for (Callable<T> c : tasks)
+                    pool.execute((ForkJoinTask<?>)
+                                 (t = new InvokeAnyTask<T>(c, this, t)));
+                return timed ? get(nanos, TimeUnit.NANOSECONDS) : get();
+            } finally {
+                for (; t != null; t = t.pred)
+                    t.onRootCompletion();
+            }
+        }
+
+        private static final Unsafe U;
+        private static final long COUNT;
+        static {
+            U = Unsafe.getUnsafe();
+            COUNT = U.objectFieldOffset(InvokeAnyRoot.class, "count");
+        }
+    }
+
+    /**
+     * Task with results in InvokeAnyRoot (and never independently
+     * joined).
+     */
+    @SuppressWarnings("serial")
+    static final class InvokeAnyTask<T> extends InterruptibleTask<Void> {
+        final Callable<? extends T> callable;
+        final InvokeAnyRoot<T> root;
+        final InvokeAnyTask<T> pred; // to traverse on cancellation
+        InvokeAnyTask(Callable<T> callable, InvokeAnyRoot<T> root,
+                      InvokeAnyTask<T> pred) {
+            Objects.requireNonNull(callable);
+            this.callable = callable;
+            this.root = root;
+            this.pred = pred;
+        }
+        final Void compute() throws Exception {
+            InvokeAnyRoot<T> r = root;
+            T v = null; Throwable ex = null; boolean completed = false;
+            if (r != null && !r.isDone()) {
+                try {
+                    v = callable.call();
+                    completed = true;
+                } catch (Exception rex) {
+                    ex = rex;
+                } finally {
+                    r.tryComplete(this, v, ex, completed);
+                }
+            }
+            return null;
+        }
+        public final boolean cancel(boolean mayInterruptIfRunning) {
+            InvokeAnyRoot<T> r;
+            boolean stat = super.cancel(mayInterruptIfRunning);
+            if ((r = root) != null)
+                r.tryComplete(this, null, null, false);
+            return stat;
+        }
+        final void onRootCompletion() {
+            if (!isDone())
+                super.cancel(true); // no need for tryComplete
+        }
+        public final Void getRawResult() { return null; }
+        public final void setRawResult(Void v) { }
+        final Object adaptee() { return callable; }
+    }
 }

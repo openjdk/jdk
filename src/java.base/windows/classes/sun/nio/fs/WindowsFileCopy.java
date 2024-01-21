@@ -238,9 +238,9 @@ class WindowsFileCopy {
             } else {
                 String linkTarget = WindowsLinkSupport.readLink(source);
                 int flags = SYMBOLIC_LINK_FLAG_DIRECTORY;
-                CreateSymbolicLink(targetPath,
-                                   WindowsPath.addPrefixIfNeeded(linkTarget),
-                                   flags);
+                WindowsLinkSupport.createSymbolicLink(targetPath,
+                                                      WindowsPath.addPrefixIfNeeded(linkTarget),
+                                                      flags);
             }
         } catch (WindowsException x) {
             x.rethrowAsIOException(target);
@@ -441,9 +441,9 @@ class WindowsFileCopy {
                 CreateDirectory(targetPath, 0L);
             } else {
                 String linkTarget = WindowsLinkSupport.readLink(source);
-                CreateSymbolicLink(targetPath,
-                                   WindowsPath.addPrefixIfNeeded(linkTarget),
-                                   SYMBOLIC_LINK_FLAG_DIRECTORY);
+                WindowsLinkSupport.createSymbolicLink(targetPath,
+                                                      WindowsPath.addPrefixIfNeeded(linkTarget),
+                                                      SYMBOLIC_LINK_FLAG_DIRECTORY);
             }
         } catch (WindowsException x) {
             x.rethrowAsIOException(target);

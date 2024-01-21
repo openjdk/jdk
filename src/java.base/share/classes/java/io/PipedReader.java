@@ -146,11 +146,15 @@ public class PipedReader extends Reader {
      * is an unconnected piped reader, they
      * may be connected by either the call:
      *
-     * <pre>{@code snk.connect(src)} </pre>
+     * {@snippet lang=java :
+     *     snk.connect(src)
+     * }
      * <p>
      * or the call:
      *
-     * <pre>{@code src.connect(snk)} </pre>
+     * {@snippet lang=java :
+     *     src.connect(snk)
+     * }
      * <p>
      * The two calls have the same effect.
      *

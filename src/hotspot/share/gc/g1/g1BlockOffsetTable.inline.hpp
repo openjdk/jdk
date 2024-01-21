@@ -46,7 +46,7 @@ inline HeapWord* G1BlockOffsetTablePart::block_start_reaching_into_card(const vo
 
   size_t index = _bot->index_for(addr);
 
-  uint offset = _bot->offset_array(index);
+  u_char offset = _bot->offset_array(index);
   while (offset >= BOTConstants::card_size_in_words()) {
     // The excess of the offset from N_words indicates a power of Base
     // to go back by.

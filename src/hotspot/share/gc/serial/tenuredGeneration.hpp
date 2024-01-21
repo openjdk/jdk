@@ -26,12 +26,12 @@
 #define SHARE_GC_SERIAL_TENUREDGENERATION_HPP
 
 #include "gc/serial/cSpaceCounters.hpp"
-#include "gc/shared/generation.hpp"
+#include "gc/serial/generation.hpp"
 #include "gc/shared/gcStats.hpp"
 #include "gc/shared/generationCounters.hpp"
 #include "utilities/macros.hpp"
 
-class BlockOffsetSharedArray;
+class SerialBlockOffsetSharedArray;
 class CardTableRS;
 class ContiguousSpace;
 
@@ -50,7 +50,7 @@ class TenuredGeneration: public Generation {
   // This is shared with other generations.
   CardTableRS* _rs;
   // This is local to this generation.
-  BlockOffsetSharedArray* _bts;
+  SerialBlockOffsetSharedArray* _bts;
 
   // Current shrinking effect: this damps shrinking when the heap gets empty.
   size_t _shrink_factor;
@@ -70,8 +70,6 @@ class TenuredGeneration: public Generation {
   GenerationCounters* _gen_counters;
   CSpaceCounters*     _space_counters;
 
-  // Accessing spaces
-  TenuredSpace* space() const { return _the_space; }
 
   // Attempt to expand the generation by "bytes".  Expand by at a
   // minimum "expand_bytes".  Return true if some amount (not
@@ -83,9 +81,9 @@ class TenuredGeneration: public Generation {
 
   void compute_new_size_inner();
  public:
-  virtual void compute_new_size();
+  void compute_new_size();
 
-  virtual void invalidate_remembered_set();
+  TenuredSpace* space() const { return _the_space; }
 
   // Grow generation with specified size (returns false if unable to grow)
   bool grow_by(size_t bytes);
@@ -102,8 +100,6 @@ class TenuredGeneration: public Generation {
   void younger_refs_iterate(OopIterateClosure* blk);
 
   bool is_in(const void* p) const;
-
-  ContiguousSpace* first_compaction_space() const;
 
   TenuredGeneration(ReservedSpace rs,
                     size_t initial_byte_size,
@@ -135,8 +131,6 @@ class TenuredGeneration: public Generation {
 
   bool no_allocs_since_save_marks();
 
-  inline size_t block_size(const HeapWord* addr) const;
-
   inline bool block_is_obj(const HeapWord* addr) const;
 
   virtual void collect(bool full,
@@ -146,8 +140,8 @@ class TenuredGeneration: public Generation {
 
   HeapWord* expand_and_allocate(size_t size, bool is_tlab);
 
-  virtual void gc_prologue(bool full);
-  virtual void gc_epilogue(bool full);
+  void gc_prologue();
+  void gc_epilogue();
 
   bool should_collect(bool   full,
                       size_t word_size,
@@ -162,7 +156,11 @@ class TenuredGeneration: public Generation {
 
   virtual void update_gc_stats(Generation* current_generation, bool full);
 
-  virtual bool promotion_attempt_is_safe(size_t max_promoted_in_bytes) const;
+  // Returns true if promotions of the specified amount are
+  // likely to succeed without a promotion failure.
+  // Promotion of the full amount is not guaranteed but
+  // might be attempted in the worst case.
+  bool promotion_attempt_is_safe(size_t max_promoted_in_bytes) const;
 
   virtual void verify();
   virtual void print_on(outputStream* st) const;

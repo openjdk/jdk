@@ -726,7 +726,7 @@ public class JShell implements AutoCloseable {
         }
         String value;
         try {
-            value = executionControl().varValue(snippet.classFullName(), snippet.name());
+            value = executionControl().varValue(snippet.classFullName(), snippet.fieldName());
         } catch (EngineTerminationException ex) {
             throw new IllegalStateException(ex.getMessage());
         } catch (ExecutionControlException ex) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package sun.jvm.hotspot.utilities;
 import sun.jvm.hotspot.code.*;
 import sun.jvm.hotspot.debugger.*;
 import sun.jvm.hotspot.debugger.cdbg.*;
+import sun.jvm.hotspot.gc.serial.*;
 import sun.jvm.hotspot.gc.shared.*;
 import sun.jvm.hotspot.interpreter.*;
 import sun.jvm.hotspot.memory.*;
@@ -84,12 +85,12 @@ public class PointerFinder {
 
     // Check if address is in the java heap.
     CollectedHeap heap = VM.getVM().getUniverse().heap();
-    if (heap instanceof GenCollectedHeap) {
-      GenCollectedHeap genheap = (GenCollectedHeap) heap;
-      if (genheap.isIn(a)) {
+    if (heap instanceof SerialHeap) {
+      SerialHeap sh = (SerialHeap) heap;
+      if (sh.isIn(a)) {
         loc.heap = heap;
-        for (int i = 0; i < genheap.nGens(); i++) {
-          Generation g = genheap.getGen(i);
+        for (int i = 0; i < sh.nGens(); i++) {
+          Generation g = sh.getGen(i);
           if (g.isIn(a)) {
             loc.gen = g;
             break;

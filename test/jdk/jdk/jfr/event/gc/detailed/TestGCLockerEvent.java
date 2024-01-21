@@ -26,11 +26,12 @@
  * @test TestGCLockerEvent
  * @key jfr
  * @requires vm.hasJFR
- * @requires vm.gc.G1
+ * @requires vm.gc.Serial | vm.gc.Parallel
+ * @requires vm.gc != null
  * @library /test/lib
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xmx32m -Xms32m -Xmn12m -XX:+UseG1GC jdk.jfr.event.gc.detailed.TestGCLockerEvent
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xmx32m -Xms32m -Xmn12m jdk.jfr.event.gc.detailed.TestGCLockerEvent
  */
 
 package jdk.jfr.event.gc.detailed;
@@ -88,7 +89,7 @@ public class TestGCLockerEvent {
         // Verify recording
         var all = Events.fromRecording(recording);
         Events.hasEvents(all);
-        var event = all.get(0);
+        var event = all.getFirst();
 
         assertTrue(Events.isEventType(event, EVENT_NAME));
         Events.assertField(event, "lockCount").equal(CRITICAL_THREAD_COUNT);

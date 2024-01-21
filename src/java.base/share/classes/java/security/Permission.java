@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -138,7 +138,7 @@ public abstract class Permission implements Guard, java.io.Serializable {
      *
      * @return {@code true} if both {@code Permission} objects are equivalent.
      */
-
+    @Override
     public abstract boolean equals(Object obj);
 
     /**
@@ -161,7 +161,7 @@ public abstract class Permission implements Guard, java.io.Serializable {
      *
      * @return a hash code value for this object.
      */
-
+    @Override
     public abstract int hashCode();
 
     /**

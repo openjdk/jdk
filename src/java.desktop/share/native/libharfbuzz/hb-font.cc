@@ -59,6 +59,11 @@
  *
  * HarfBuzz provides a built-in set of lightweight default
  * functions for each method in #hb_font_funcs_t.
+ *
+ * The default font functions are implemented in terms of the
+ * #hb_font_funcs_t methods of the parent font object.  This allows
+ * client programs to override only the methods they need to, and
+ * otherwise inherit the parent font's implementation, if any.
  **/
 
 
@@ -1061,7 +1066,7 @@ hb_font_get_nominal_glyph (hb_font_t      *font,
  * @glyph_stride: The stride between successive glyph IDs
  *
  * Fetches the nominal glyph IDs for a sequence of Unicode code points. Glyph
- * IDs must be returned in a #hb_codepoint_t output parameter. Stopes at the
+ * IDs must be returned in a #hb_codepoint_t output parameter. Stops at the
  * first unsupported glyph ID.
  *
  * Return value: the number of code points processed
@@ -1384,10 +1389,11 @@ hb_font_get_glyph_from_name (hb_font_t      *font,
   return font->get_glyph_from_name (name, len, glyph);
 }
 
+#ifndef HB_DISABLE_DEPRECATED
 /**
  * hb_font_get_glyph_shape:
  * @font: #hb_font_t to work upon
- * @glyph: : The glyph ID
+ * @glyph: The glyph ID
  * @dfuncs: #hb_draw_funcs_t to draw to
  * @draw_data: User data to pass to draw callbacks
  *
@@ -1405,11 +1411,12 @@ hb_font_get_glyph_shape (hb_font_t *font,
 {
   hb_font_draw_glyph (font, glyph, dfuncs, draw_data);
 }
+#endif
 
 /**
  * hb_font_draw_glyph:
  * @font: #hb_font_t to work upon
- * @glyph: : The glyph ID
+ * @glyph: The glyph ID
  * @dfuncs: #hb_draw_funcs_t to draw to
  * @draw_data: User data to pass to draw callbacks
  *
@@ -2643,10 +2650,80 @@ hb_font_set_variations (hb_font_t            *font,
       if (axes[axis_index].axisTag == tag)
         design_coords[axis_index] = v;
   }
-  font->face->table.avar->map_coords (normalized, coords_length);
 
   hb_ot_var_normalize_coords (font->face, coords_length, design_coords, normalized);
   _hb_font_adopt_var_coords (font, normalized, design_coords, coords_length);
+}
+
+/**
+ * hb_font_set_variation:
+ * @font: #hb_font_t to work upon
+ * @tag: The #hb_tag_t tag of the variation-axis name
+ * @value: The value of the variation axis
+ *
+ * Change the value of one variation axis on the font.
+ *
+ * Note: This function is expensive to be called repeatedly.
+ *   If you want to set multiple variation axes at the same time,
+ *   use hb_font_set_variations() instead.
+ *
+ * Since: 7.1.0
+ */
+void
+hb_font_set_variation (hb_font_t *font,
+                       hb_tag_t tag,
+                       float    value)
+{
+  if (hb_object_is_immutable (font))
+    return;
+
+  font->serial_coords = ++font->serial;
+
+  // TODO Share some of this code with set_variations()
+
+  const OT::fvar &fvar = *font->face->table.fvar;
+  auto axes = fvar.get_axes ();
+  const unsigned coords_length = axes.length;
+
+  int *normalized = coords_length ? (int *) hb_calloc (coords_length, sizeof (int)) : nullptr;
+  float *design_coords = coords_length ? (float *) hb_calloc (coords_length, sizeof (float)) : nullptr;
+
+  if (unlikely (coords_length && !(normalized && design_coords)))
+  {
+    hb_free (normalized);
+    hb_free (design_coords);
+    return;
+  }
+
+  /* Initialize design coords. */
+  if (font->design_coords)
+  {
+    assert (coords_length == font->num_coords);
+    for (unsigned int i = 0; i < coords_length; i++)
+      design_coords[i] = font->design_coords[i];
+  }
+  else
+  {
+    for (unsigned int i = 0; i < coords_length; i++)
+      design_coords[i] = axes[i].get_default ();
+    if (font->instance_index != HB_FONT_NO_VAR_NAMED_INSTANCE)
+    {
+      unsigned count = coords_length;
+      /* This may fail if index is out-of-range;
+       * That's why we initialize design_coords from fvar above
+       * unconditionally. */
+      hb_ot_var_named_instance_get_design_coords (font->face, font->instance_index,
+                                                  &count, design_coords);
+    }
+  }
+
+  for (unsigned axis_index = 0; axis_index < coords_length; axis_index++)
+    if (axes[axis_index].axisTag == tag)
+      design_coords[axis_index] = value;
+
+  hb_ot_var_normalize_coords (font->face, coords_length, design_coords, normalized);
+  _hb_font_adopt_var_coords (font, normalized, design_coords, coords_length);
+
 }
 
 /**
@@ -2980,6 +3057,7 @@ hb_font_funcs_set_glyph_func (hb_font_funcs_t          *ffuncs,
 #endif
 
 
+#ifndef HB_DISABLE_DEPRECATED
 void
 hb_font_funcs_set_glyph_shape_func (hb_font_funcs_t               *ffuncs,
                                    hb_font_get_glyph_shape_func_t  func,
@@ -2988,3 +3066,4 @@ hb_font_funcs_set_glyph_shape_func (hb_font_funcs_t               *ffuncs,
 {
   hb_font_funcs_set_draw_glyph_func (ffuncs, func, user_data, destroy);
 }
+#endif

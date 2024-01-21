@@ -30,10 +30,10 @@
 #include "gc/shared/space.inline.hpp"
 #include "logging/log.hpp"
 #include "memory/virtualspace.hpp"
+#include "nmt/memTracker.hpp"
 #include "runtime/init.hpp"
 #include "runtime/java.hpp"
 #include "runtime/os.hpp"
-#include "services/memTracker.hpp"
 #include "utilities/align.hpp"
 #if INCLUDE_PARALLELGC
 #include "gc/parallel/objectStartArray.hpp"
@@ -53,11 +53,6 @@ void CardTable::initialize_card_size() {
 
   // Set blockOffsetTable size based on card table entry size
   BOTConstants::initialize_bot_size(_card_shift);
-
-#if INCLUDE_PARALLELGC
-  // Set ObjectStartArray block size based on card table entry size
-  ObjectStartArray::initialize_block_size(_card_shift);
-#endif
 
   log_info_p(gc, init)("CardTable entry size: " UINT32_FORMAT,  _card_size);
 }
@@ -97,7 +92,7 @@ void CardTable::initialize(void* region0_start, void* region1_start) {
   MemTracker::record_virtual_memory_type((address)heap_rs.base(), mtGC);
 
   os::trace_page_sizes("Card Table", num_bytes, num_bytes,
-                       _page_size, heap_rs.base(), heap_rs.size());
+                       heap_rs.base(), heap_rs.size(), _page_size);
   if (!heap_rs.is_reserved()) {
     vm_exit_during_initialization("Could not reserve enough space for the "
                                   "card marking array");

@@ -78,8 +78,6 @@ GrowableArray<FilteredField*> *FilteredFieldsMap::_filtered_fields =
 void FilteredFieldsMap::initialize() {
   int offset = reflect_ConstantPool::oop_offset();
   _filtered_fields->append(new FilteredField(vmClasses::reflect_ConstantPool_klass(), offset));
-  offset = reflect_UnsafeStaticFieldAccessorImpl::base_offset();
-  _filtered_fields->append(new FilteredField(vmClasses::reflect_UnsafeStaticFieldAccessorImpl_klass(), offset));
 }
 
 int FilteredFieldStream::field_count() {

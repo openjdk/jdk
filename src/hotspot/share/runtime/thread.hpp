@@ -43,6 +43,7 @@
 #include "jfr/support/jfrThreadExtension.hpp"
 #endif
 
+class CompilerThread;
 class HandleArea;
 class HandleMark;
 class ICRefillVerifier;
@@ -55,6 +56,7 @@ class SafeThreadsListPtr;
 class ThreadClosure;
 class ThreadsList;
 class ThreadsSMRSupport;
+class VMErrorCallback;
 
 class OopClosure;
 class CodeBlobClosure;
@@ -104,6 +106,8 @@ class JavaThread;
 //       - this->entry_point()  // set differently for each kind of JavaThread
 
 class Thread: public ThreadShadow {
+  friend class VMError;
+  friend class VMErrorCallbackMark;
   friend class VMStructs;
   friend class JVMCIVMStructs;
  private:
@@ -202,6 +206,8 @@ class Thread: public ThreadShadow {
 
  private:
   DEBUG_ONLY(bool _suspendible_thread;)
+  DEBUG_ONLY(bool _indirectly_suspendible_thread;)
+  DEBUG_ONLY(bool _indirectly_safepoint_thread;)
 
  public:
   // Determines if a heap allocation failure will be retried
@@ -213,15 +219,17 @@ class Thread: public ThreadShadow {
   virtual bool in_retryable_allocation() const { return false; }
 
 #ifdef ASSERT
-  void set_suspendible_thread() {
-    _suspendible_thread = true;
-  }
+  void set_suspendible_thread()   { _suspendible_thread = true; }
+  void clear_suspendible_thread() { _suspendible_thread = false; }
+  bool is_suspendible_thread()    { return _suspendible_thread; }
 
-  void clear_suspendible_thread() {
-    _suspendible_thread = false;
-  }
+  void set_indirectly_suspendible_thread()   { _indirectly_suspendible_thread = true; }
+  void clear_indirectly_suspendible_thread() { _indirectly_suspendible_thread = false; }
+  bool is_indirectly_suspendible_thread()    { return _indirectly_suspendible_thread; }
 
-  bool is_suspendible_thread() { return _suspendible_thread; }
+  void set_indirectly_safepoint_thread()   { _indirectly_safepoint_thread = true; }
+  void clear_indirectly_safepoint_thread() { _indirectly_safepoint_thread = false; }
+  bool is_indirectly_safepoint_thread()    { return _indirectly_safepoint_thread; }
 #endif
 
  private:
@@ -319,6 +327,14 @@ class Thread: public ThreadShadow {
   virtual bool is_Named_thread() const               { return false; }
   virtual bool is_Worker_thread() const              { return false; }
   virtual bool is_JfrSampler_thread() const          { return false; }
+  virtual bool is_AttachListener_thread() const      { return false; }
+  virtual bool is_monitor_deflation_thread() const   { return false; }
+
+  // Convenience cast functions
+  CompilerThread* as_Compiler_thread() const {
+    assert(is_Compiler_thread(), "Must be compiler thread");
+    return (CompilerThread*)this;
+  }
 
   // Can this thread make Java upcalls
   virtual bool can_call_java() const                 { return false; }
@@ -337,7 +353,7 @@ class Thread: public ThreadShadow {
   // and logging.
   virtual const char* type_name() const { return "Thread"; }
 
-  // Returns the current thread (ASSERTS if nullptr)
+  // Returns the current thread (ASSERTS if null)
   static inline Thread* current();
   // Returns the current thread, or null if not attached
   static inline Thread* current_or_null();
@@ -633,6 +649,9 @@ protected:
     Thread *cur = Thread::current_or_null_safe();
     return cur != nullptr && cur->in_asgct();
   }
+
+ private:
+  VMErrorCallback* _vm_error_callbacks;
 };
 
 class ThreadInAsgct {

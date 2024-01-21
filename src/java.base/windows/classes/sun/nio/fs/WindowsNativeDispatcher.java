@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -975,19 +975,6 @@ class WindowsNativeDispatcher {
         try {
             CreateSymbolicLink0(linkBuffer.address(), targetBuffer.address(),
                                 flags);
-        } catch (WindowsException x) {
-            if (x.lastError() == ERROR_PRIVILEGE_NOT_HELD) {
-                flags |= SYMBOLIC_LINK_FLAG_ALLOW_UNPRIVILEGED_CREATE;
-                try {
-                    CreateSymbolicLink0(linkBuffer.address(),
-                                        targetBuffer.address(), flags);
-                    return;
-                } catch (WindowsException ignored) {
-                    // Will fail with ERROR_INVALID_PARAMETER for Windows
-                    // builds older than 14972.
-                }
-            }
-            throw x;
         } finally {
             targetBuffer.release();
             linkBuffer.release();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,21 +29,21 @@
 #include "gc/z/zAddress.inline.hpp"
 #include "utilities/debug.hpp"
 
-inline ZPhysicalMemorySegment::ZPhysicalMemorySegment() :
-    _start(UINTPTR_MAX),
-    _end(UINTPTR_MAX),
+inline ZPhysicalMemorySegment::ZPhysicalMemorySegment()
+  : _start(zoffset(UINTPTR_MAX)),
+    _end(zoffset(UINTPTR_MAX)),
     _committed(false) {}
 
-inline ZPhysicalMemorySegment::ZPhysicalMemorySegment(uintptr_t start, size_t size, bool committed) :
-    _start(start),
+inline ZPhysicalMemorySegment::ZPhysicalMemorySegment(zoffset start, size_t size, bool committed)
+  : _start(start),
     _end(start + size),
     _committed(committed) {}
 
-inline uintptr_t ZPhysicalMemorySegment::start() const {
+inline zoffset ZPhysicalMemorySegment::start() const {
   return _start;
 }
 
-inline uintptr_t ZPhysicalMemorySegment::end() const {
+inline zoffset ZPhysicalMemorySegment::end() const {
   return _end;
 }
 

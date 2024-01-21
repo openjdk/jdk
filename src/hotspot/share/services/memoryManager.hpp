@@ -140,11 +140,10 @@ private:
   GCStatInfo*  _current_gc_stat;
   int          _num_gc_threads;
   volatile bool _notification_enabled;
-  const char*  _gc_end_message;
   bool         _pool_always_affected_by_gc[MemoryManager::max_num_pools];
 
 public:
-  GCMemoryManager(const char* name, const char* gc_end_message);
+  GCMemoryManager(const char* name);
   ~GCMemoryManager();
 
   void add_pool(MemoryPool* pool);
@@ -167,7 +166,7 @@ public:
                   bool recordAccumulatedGCTime);
   void   gc_end(bool recordPostGCUsage, bool recordAccumulatedGCTime,
                 bool recordGCEndTime, bool countCollection, GCCause::Cause cause,
-                bool allMemoryPoolsAffected);
+                bool allMemoryPoolsAffected, const char* message);
 
   void        reset_gc_stat()   { _num_collections = 0; _accumulated_timer.reset(); }
 

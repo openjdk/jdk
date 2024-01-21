@@ -92,13 +92,15 @@ public class PKCS8Key implements PrivateKey, InternalPrivateKey {
      * This method is also used by {@link #parseKey} to create a raw key.
      */
     protected PKCS8Key(byte[] input) throws InvalidKeyException {
-        decode(new ByteArrayInputStream(input));
+        try {
+            decode(new DerValue(input));
+        } catch (IOException e) {
+            throw new InvalidKeyException("Unable to decode key", e);
+        }
     }
 
-    private void decode(InputStream is) throws InvalidKeyException {
-        DerValue val = null;
+    private void decode(DerValue val) throws InvalidKeyException {
         try {
-            val = new DerValue(is);
             if (val.tag != DerValue.tag_Sequence) {
                 throw new InvalidKeyException("invalid key format");
             }
@@ -132,7 +134,7 @@ public class PKCS8Key implements PrivateKey, InternalPrivateKey {
             }
             throw new InvalidKeyException("Extra bytes");
         } catch (IOException e) {
-            throw new InvalidKeyException("IOException : " + e.getMessage());
+            throw new InvalidKeyException("Unable to decode key", e);
         } finally {
             if (val != null) {
                 val.clear();
@@ -241,10 +243,9 @@ public class PKCS8Key implements PrivateKey, InternalPrivateKey {
     @java.io.Serial
     private void readObject(ObjectInputStream stream) throws IOException {
         try {
-            decode(stream);
+            decode(new DerValue(stream));
         } catch (InvalidKeyException e) {
-            throw new IOException("deserialized key is invalid: " +
-                                  e.getMessage());
+            throw new IOException("deserialized key is invalid", e);
         }
     }
 
@@ -258,6 +259,7 @@ public class PKCS8Key implements PrivateKey, InternalPrivateKey {
      * @return {@code true} if this key has the same encoding as the
      *          object argument; {@code false} otherwise.
      */
+    @Override
     public boolean equals(Object object) {
         if (this == object) {
             return true;
@@ -287,6 +289,7 @@ public class PKCS8Key implements PrivateKey, InternalPrivateKey {
      * Calculates a hash code value for this object. Objects
      * which are equal will also have the same hashcode.
      */
+    @Override
     public int hashCode() {
         return Arrays.hashCode(getEncodedInternal());
     }

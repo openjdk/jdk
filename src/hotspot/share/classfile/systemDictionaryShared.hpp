@@ -110,7 +110,6 @@
 class BootstrapInfo;
 class ClassFileStream;
 class ConstantPoolCache;
-class ConstantPoolCacheEntry;
 class Dictionary;
 class DumpTimeClassInfo;
 class DumpTimeSharedClassTable;
@@ -155,7 +154,7 @@ class SystemDictionaryShared: public SystemDictionary {
   };
 
 public:
-  enum {
+  enum : char {
     FROM_FIELD_IS_PROTECTED = 1 << 0,
     FROM_IS_ARRAY           = 1 << 1,
     FROM_IS_OBJECT          = 1 << 2
@@ -164,9 +163,7 @@ public:
 private:
 
   static DumpTimeSharedClassTable* _dumptime_table;
-  static DumpTimeSharedClassTable* _cloned_dumptime_table;
   static DumpTimeLambdaProxyClassDictionary* _dumptime_lambda_proxy_class_dictionary;
-  static DumpTimeLambdaProxyClassDictionary* _cloned_dumptime_lambda_proxy_class_dictionary;
 
   static ArchiveInfo _static_archive;
   static ArchiveInfo _dynamic_archive;
@@ -201,6 +198,7 @@ private:
   static bool check_for_exclusion_impl(InstanceKlass* k);
   static void remove_dumptime_info(InstanceKlass* k) NOT_CDS_RETURN;
   static bool has_been_redefined(InstanceKlass* k);
+  static InstanceKlass* retrieve_lambda_proxy_class(const RunTimeLambdaProxyClassInfo* info) NOT_CDS_RETURN_(nullptr);
 
   DEBUG_ONLY(static bool _class_loading_may_happen;)
 
@@ -289,15 +287,6 @@ public:
     return (k->shared_classpath_index() != UNREGISTERED_INDEX);
   }
   static bool add_unregistered_class(Thread* current, InstanceKlass* k);
-
-  // For repeatable dumping, we
-  //   1. clone DumpTimeSharedClassTable, same for DumpTimeLambdaProxyClassDictionary
-  //      clone SharedClassPathTable
-  //   2. do dumping
-  //   3. restore DumpTimeSharedClassTable, DumpTimeLambdaProxyClassDictionary and SharedClassPathTable
-  //      from cloned versions.
-  static void clone_dumptime_tables();
-  static void restore_dumptime_tables();
 
   static void check_excluded_classes();
   static bool check_for_exclusion(InstanceKlass* k, DumpTimeClassInfo* info);

@@ -26,8 +26,8 @@
 # Create a bundle in the build directory, containing what's needed to
 # build and run JMH microbenchmarks from the OpenJDK build.
 
-JMH_VERSION=1.36
-COMMONS_MATH3_VERSION=3.2
+JMH_VERSION=1.37
+COMMONS_MATH3_VERSION=3.6.1
 JOPT_SIMPLE_VERSION=5.0.4
 
 BUNDLE_NAME=jmh-$JMH_VERSION.tar.gz

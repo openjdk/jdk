@@ -46,6 +46,7 @@ public class SingleCertificateResolver extends StorageResolverSpi {
     }
 
     /** {@inheritDoc} */
+    @Override
     public Iterator<Certificate> getIterator() {
         return new InternalIterator(this.certificate);
     }
@@ -71,11 +72,13 @@ public class SingleCertificateResolver extends StorageResolverSpi {
         }
 
         /** {@inheritDoc} */
+        @Override
         public boolean hasNext() {
             return !this.alreadyReturned;
         }
 
         /** {@inheritDoc} */
+        @Override
         public Certificate next() {
             if (this.alreadyReturned) {
                 throw new NoSuchElementException();
@@ -87,6 +90,7 @@ public class SingleCertificateResolver extends StorageResolverSpi {
         /**
          * Method remove
          */
+        @Override
         public void remove() {
             throw new UnsupportedOperationException("Can't remove keys from KeyStore");
         }

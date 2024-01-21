@@ -46,7 +46,7 @@ RootSetClosure<Delegate>::RootSetClosure(Delegate* delegate) : _delegate(delegat
 
 template <typename Delegate>
 void RootSetClosure<Delegate>::do_oop(oop* ref) {
-  assert(ref != NULL, "invariant");
+  assert(ref != nullptr, "invariant");
   assert(is_aligned(ref, HeapWordSize), "invariant");
   if (NativeAccess<>::oop_load(ref) != nullptr) {
     _delegate->do_root(UnifiedOopRef::encode_in_native(ref));
@@ -55,7 +55,7 @@ void RootSetClosure<Delegate>::do_oop(oop* ref) {
 
 template <typename Delegate>
 void RootSetClosure<Delegate>::do_oop(narrowOop* ref) {
-  assert(ref != NULL, "invariant");
+  assert(ref != nullptr, "invariant");
   assert(is_aligned(ref, sizeof(narrowOop)), "invariant");
   if (!CompressedOops::is_null(*ref)) {
     _delegate->do_root(UnifiedOopRef::encode_in_native(ref));
@@ -72,7 +72,7 @@ public:
   RawRootClosure(Delegate* delegate) : _delegate(delegate) {}
 
   void do_oop(oop* ref) {
-    assert(ref != NULL, "invariant");
+    assert(ref != nullptr, "invariant");
     assert(is_aligned(ref, HeapWordSize), "invariant");
     if (*ref != nullptr) {
       _delegate->do_root(UnifiedOopRef::encode_as_raw(ref));
@@ -80,7 +80,7 @@ public:
   }
 
   void do_oop(narrowOop* ref) {
-    assert(ref != NULL, "invariant");
+    assert(ref != nullptr, "invariant");
     assert(is_aligned(ref, sizeof(narrowOop)), "invariant");
     if (!CompressedOops::is_null(*ref)) {
       _delegate->do_root(UnifiedOopRef::encode_as_raw(ref));
@@ -99,7 +99,7 @@ void RootSetClosure<Delegate>::process() {
 
   // We don't follow code blob oops, because they have misaligned oops.
   RawRootClosure<Delegate> rrc(_delegate);
-  Threads::oops_do(&rrc, NULL);
+  Threads::oops_do(&rrc, nullptr);
 }
 
 template class RootSetClosure<BFSClosure>;

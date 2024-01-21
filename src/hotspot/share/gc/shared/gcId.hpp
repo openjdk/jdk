@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,12 @@
 
 #include "memory/allocation.hpp"
 
+class GCIdPrinter : public CHeapObj<mtGC> {
+public:
+  virtual ~GCIdPrinter() {}
+  virtual size_t print_gc_id(uint gc_id, char* buf, size_t len);
+};
+
 class GCId : public AllStatic {
 private:
   friend class GCIdMark;
@@ -34,6 +40,10 @@ private:
   static uint _next_id;
   static const uint UNDEFINED = UINT_MAX;
   static uint create();
+
+  // Default printer used unless a custom printer is set
+  static GCIdPrinter _default_printer;
+  static GCIdPrinter* _printer;
 
 public:
   // Returns the currently active GC id. Asserts that there is an active GC id.
@@ -44,9 +54,14 @@ public:
   static uint peek();
   static uint undefined() { return UNDEFINED; }
   static size_t print_prefix(char* buf, size_t len);
+  // Set a custom GCId printer
+  static void set_printer(GCIdPrinter* printer);
 };
 
 class GCIdMark : public StackObj {
+private:
+  const uint _previous_gc_id;
+
 public:
   GCIdMark();
   GCIdMark(uint gc_id);

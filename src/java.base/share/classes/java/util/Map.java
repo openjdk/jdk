@@ -737,8 +737,8 @@ public interface Map<K, V> {
     /**
      * Replaces each entry's value with the result of invoking the given
      * function on that entry until all entries have been processed or the
-     * function throws an exception.  Exceptions thrown by the function are
-     * relayed to the caller.
+     * function throws an exception (optional operation). Exceptions thrown
+     * by the function are relayed to the caller.
      *
      * @implSpec
      * <p>The default implementation is equivalent to, for this {@code map}:
@@ -753,8 +753,9 @@ public interface Map<K, V> {
      * concurrency properties.
      *
      * @param function the function to apply to each entry
-     * @throws UnsupportedOperationException if the {@code set} operation
-     *         is not supported by this map's entry set iterator.
+     * @throws UnsupportedOperationException if the {@code replaceAll} operation
+     *         is not supported by this map
+     *         ({@linkplain Collection##optional-restrictions optional})
      * @throws ClassCastException if the class of a replacement value
      *         prevents it from being stored in this map
      *         ({@linkplain Collection##optional-restrictions optional})
@@ -796,7 +797,7 @@ public interface Map<K, V> {
     /**
      * If the specified key is not already associated with a value (or is mapped
      * to {@code null}) associates it with the given value and returns
-     * {@code null}, else returns the current value.
+     * {@code null}, else returns the current value (optional operation).
      *
      * @implSpec
      * The default implementation is equivalent to, for this {@code map}:
@@ -821,7 +822,7 @@ public interface Map<K, V> {
      *         (A {@code null} return can also indicate that the map
      *         previously associated {@code null} with the key,
      *         if the implementation supports null values.)
-     * @throws UnsupportedOperationException if the {@code put} operation
+     * @throws UnsupportedOperationException if the {@code putIfAbsent} operation
      *         is not supported by this map
      *         ({@linkplain Collection##optional-restrictions optional})
      * @throws ClassCastException if the key or value is of an inappropriate
@@ -845,7 +846,7 @@ public interface Map<K, V> {
 
     /**
      * Removes the entry for the specified key only if it is currently
-     * mapped to the specified value.
+     * mapped to the specified value (optional operation).
      *
      * @implSpec
      * The default implementation is equivalent to, for this {@code map}:
@@ -889,7 +890,7 @@ public interface Map<K, V> {
 
     /**
      * Replaces the entry for the specified key only if currently
-     * mapped to the specified value.
+     * mapped to the specified value (optional operation).
      *
      * @implSpec
      * The default implementation is equivalent to, for this {@code map}:
@@ -915,8 +916,9 @@ public interface Map<K, V> {
      * @param oldValue value expected to be associated with the specified key
      * @param newValue value to be associated with the specified key
      * @return {@code true} if the value was replaced
-     * @throws UnsupportedOperationException if the {@code put} operation
-     *         is not supported by this map ({@linkplain Collection##optional-restrictions optional})
+     * @throws UnsupportedOperationException if the {@code replace} operation
+     *         is not supported by this map
+     *         ({@linkplain Collection##optional-restrictions optional})
      * @throws ClassCastException if the class of a specified key or value
      *         prevents it from being stored in this map
      * @throws NullPointerException if a specified key or newValue is null,
@@ -939,7 +941,7 @@ public interface Map<K, V> {
 
     /**
      * Replaces the entry for the specified key only if it is
-     * currently mapped to some value.
+     * currently mapped to some value (optional operation).
      *
      * @implSpec
      * The default implementation is equivalent to, for this {@code map}:
@@ -963,7 +965,7 @@ public interface Map<K, V> {
      *         (A {@code null} return can also indicate that the map
      *         previously associated {@code null} with the key,
      *         if the implementation supports null values.)
-     * @throws UnsupportedOperationException if the {@code put} operation
+     * @throws UnsupportedOperationException if the {@code replace} operation
      *         is not supported by this map
      *         ({@linkplain Collection##optional-restrictions optional})
      * @throws ClassCastException if the class of the specified key or value
@@ -986,7 +988,7 @@ public interface Map<K, V> {
     /**
      * If the specified key is not already associated with a value (or is mapped
      * to {@code null}), attempts to compute its value using the given mapping
-     * function and enters it into this map unless {@code null}.
+     * function and enters it into this map unless {@code null} (optional operation).
      *
      * <p>If the mapping function returns {@code null}, no mapping is recorded.
      * If the mapping function itself throws an (unchecked) exception, the
@@ -1046,9 +1048,8 @@ public interface Map<K, V> {
      * @throws NullPointerException if the specified key is null and
      *         this map does not support null keys, or the mappingFunction
      *         is null
-     * @throws UnsupportedOperationException if the {@code put} operation
-     *         is not supported by this map
-     *         ({@linkplain Collection##optional-restrictions optional})
+     * @throws UnsupportedOperationException if the {@code computeIfAbsent} operation is not
+     *         supported by this map ({@linkplain Collection##optional-restrictions optional})
      * @throws ClassCastException if the class of the specified key or value
      *         prevents it from being stored in this map
      *         ({@linkplain Collection##optional-restrictions optional})
@@ -1074,7 +1075,8 @@ public interface Map<K, V> {
 
     /**
      * If the value for the specified key is present and non-null, attempts to
-     * compute a new mapping given the key and its current mapped value.
+     * compute a new mapping given the key and its current mapped value
+     * (optional operation).
      *
      * <p>If the remapping function returns {@code null}, the mapping is removed.
      * If the remapping function itself throws an (unchecked) exception, the
@@ -1123,9 +1125,8 @@ public interface Map<K, V> {
      * @throws NullPointerException if the specified key is null and
      *         this map does not support null keys, or the
      *         remappingFunction is null
-     * @throws UnsupportedOperationException if the {@code put} operation
-     *         is not supported by this map
-     *         ({@linkplain Collection##optional-restrictions optional})
+     * @throws UnsupportedOperationException if the {@code computeIfPresent} operation is not
+     *         supported by this map ({@linkplain Collection##optional-restrictions optional})
      * @throws ClassCastException if the class of the specified key or value
      *         prevents it from being stored in this map
      *         ({@linkplain Collection##optional-restrictions optional})
@@ -1154,9 +1155,9 @@ public interface Map<K, V> {
 
     /**
      * Attempts to compute a mapping for the specified key and its current
-     * mapped value (or {@code null} if there is no current mapping). For
-     * example, to either create or append a {@code String} msg to a value
-     * mapping:
+     * mapped value, or {@code null} if there is no current mapping (optional
+     * operation). For example, to either create or append a {@code String}
+     * msg to a value mapping:
      *
      * <pre> {@code
      * map.compute(key, (k, v) -> (v == null) ? msg : v.concat(msg))}</pre>
@@ -1209,9 +1210,8 @@ public interface Map<K, V> {
      * @throws NullPointerException if the specified key is null and
      *         this map does not support null keys, or the
      *         remappingFunction is null
-     * @throws UnsupportedOperationException if the {@code put} operation
-     *         is not supported by this map
-               ({@linkplain Collection##optional-restrictions optional})
+     * @throws UnsupportedOperationException if the {@code compute} operation is not
+     *         supported by this map ({@linkplain Collection##optional-restrictions optional})
      * @throws ClassCastException if the class of the specified key or value
      *         prevents it from being stored in this map
      *         ({@linkplain Collection##optional-restrictions optional})
@@ -1245,9 +1245,9 @@ public interface Map<K, V> {
 
     /**
      * If the specified key is not already associated with a value or is
-     * associated with null, associates it with the given non-null value.
-     * Otherwise, replaces the associated value with the results of the given
-     * remapping function, or removes if the result is {@code null}. This
+     * associated with null, associates it with the given non-null value (optional
+     * operation). Otherwise, replaces the associated value with the results of
+     * the given remapping function, or removes if the result is {@code null}. This
      * method may be of use when combining multiple mapped values for a key.
      * For example, to either create or append a {@code String msg} to a
      * value mapping:
@@ -1304,9 +1304,8 @@ public interface Map<K, V> {
      *        present
      * @return the new value associated with the specified key, or null if no
      *         value is associated with the key
-     * @throws UnsupportedOperationException if the {@code put} operation
-     *         is not supported by this map
-     *         ({@linkplain Collection##optional-restrictions optional})
+     * @throws UnsupportedOperationException if the {@code merge} operation is not
+     *         supported by this map ({@linkplain Collection##optional-restrictions optional})
      * @throws ClassCastException if the class of the specified key or value
      *         prevents it from being stored in this map
      *         ({@linkplain Collection##optional-restrictions optional})

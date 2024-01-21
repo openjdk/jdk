@@ -84,16 +84,11 @@ public class ZCollectedHeap extends CollectedHeap {
 
     @Override
     public boolean isInReserved(Address a) {
-        return heap().isIn(a);
+        throw new RuntimeException("ZCollectedHeap.isInReserved not implemented");
     }
 
     private OopHandle oop_load_barrier(Address oopAddress) {
-        oopAddress = ZBarrier.weak_barrier(oopAddress);
-        if (oopAddress == null) {
-            return null;
-        }
-
-        return oopAddress.addOffsetToAsOopHandle(0);
+        throw new RuntimeException("ZCollectedHeap.oop_load_barrier not implemented");
     }
 
     @Override
@@ -113,27 +108,16 @@ public class ZCollectedHeap extends CollectedHeap {
     }
 
     public String oopAddressDescription(OopHandle handle) {
-        Address origOop = ZOop.to_address(handle);
-        Address loadBarrieredOop = ZBarrier.weak_barrier(origOop);
-        if (!origOop.equals(loadBarrieredOop)) {
-            return origOop + " (" + loadBarrieredOop.toString() + ")";
-        } else {
-            return handle.toString();
-        }
+        return handle.toString();
     }
 
     @Override
     public void liveRegionsIterate(LiveRegionsClosure closure) {
-        Iterator<ZPage> iter = heap().pageTable().activePagesIterator();
-        while (iter.hasNext()) {
-            ZPage page = iter.next();
-            closure.doLiveRegions(page);
-        }
+        throw new RuntimeException("ZCollectedHeap.liveRegionsIterate not implemented");
     }
 
     @Override
     public BitMapInterface createBitMap(long size) {
-        // Ignores the size
-        return new ZExternalBitMap(this);
+        throw new RuntimeException("ZCollectedHeap.createBitMap not implemented");
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,6 +57,8 @@ class methodHandle;
   option(Break, "break", Bool) \
   option(BreakAtExecute, "BreakAtExecute", Bool) \
   option(BreakAtCompile, "BreakAtCompile", Bool) \
+  option(MemLimit, "MemLimit", Intx) \
+  option(MemStat, "MemStat", Uintx) \
   option(PrintAssembly, "PrintAssembly", Bool) \
   option(PrintCompilation, "PrintCompilation", Bool) \
   option(PrintInlining, "PrintInlining", Bool) \
@@ -113,6 +115,10 @@ enum class OptionType {
     Unknown
 };
 
+enum class MemStatAction {
+  collect = 1, print = 2
+};
+
 class CompilerOracle : AllStatic {
  private:
   static bool _quiet;
@@ -124,7 +130,7 @@ class CompilerOracle : AllStatic {
   static bool has_command_file();
 
   // Reads from file and adds to lists
-  static void parse_from_file();
+  static bool parse_from_file();
 
   // Tells whether we to exclude compilation of method
   static bool should_exclude(const methodHandle& method);
@@ -151,6 +157,10 @@ class CompilerOracle : AllStatic {
   // Tells whether there are any methods to print for print_method_statistics()
   static bool should_print_methods();
 
+  // Tells whether there are any methods to (collect|collect+print) memory statistics for
+  static bool should_collect_memstat();
+  static bool should_print_final_memstat_report();
+
   // Tags the method as blackhole candidate, if possible.
   static void tag_blackhole_if_possible(const methodHandle& method);
 
@@ -167,9 +177,9 @@ class CompilerOracle : AllStatic {
   static bool option_matches_type(enum CompileCommand option, T& value);
 
   // Reads from string instead of file
-  static void parse_from_string(const char* option_string, void (*parser)(char*));
-  static void parse_from_line(char* line);
-  static void parse_compile_only(char* line);
+  static bool parse_from_string(const char* option_string, bool (*parser)(char*));
+  static bool parse_from_line(char* line);
+  static bool parse_compile_only(char* line);
 
   // Fast check if there is any option set that compile control needs to know about
   static bool has_any_command_set();

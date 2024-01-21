@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -100,7 +100,7 @@ public abstract class LocaleObjectCache<K, V> {
     }
 
     private static class CacheEntry<K, V> extends SoftReference<V> {
-        private K key;
+        private final K key;
 
         CacheEntry(K key, V value, ReferenceQueue<V> queue) {
             super(value, queue);

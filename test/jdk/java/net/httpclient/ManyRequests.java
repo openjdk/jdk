@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,10 +32,14 @@
  * @compile ../../../com/sun/net/httpserver/LogFilter.java
  * @compile ../../../com/sun/net/httpserver/EchoHandler.java
  * @compile ../../../com/sun/net/httpserver/FileServerHandler.java
- * @run main/othervm/timeout=40 -Djdk.httpclient.HttpClient.log=ssl,channel ManyRequests
- * @run main/othervm/timeout=40 -Djdk.httpclient.HttpClient.log=channel -Dtest.insertDelay=true ManyRequests
- * @run main/othervm/timeout=40 -Djdk.httpclient.HttpClient.log=channel -Dtest.chunkSize=64 ManyRequests
- * @run main/othervm/timeout=40 -Djdk.httpclient.HttpClient.log=channel -Dtest.insertDelay=true -Dtest.chunkSize=64 ManyRequests
+ * @run main/othervm/timeout=40 -Djdk.tracePinnedThreads=full
+ *                              -Djdk.httpclient.HttpClient.log=ssl,channel ManyRequests
+ * @run main/othervm/timeout=40 -Djdk.tracePinnedThreads=full
+ *                              -Djdk.httpclient.HttpClient.log=channel -Dtest.insertDelay=true ManyRequests
+ * @run main/othervm/timeout=40 -Djdk.tracePinnedThreads=full
+ *                              -Djdk.httpclient.HttpClient.log=channel -Dtest.chunkSize=64 ManyRequests
+ * @run main/othervm/timeout=40 -Djdk.tracePinnedThreads=full
+ *                              -Djdk.httpclient.HttpClient.log=channel -Dtest.insertDelay=true -Dtest.chunkSize=64 ManyRequests
  * @summary Send a large number of requests asynchronously
  */
  // * @run main/othervm/timeout=40 -Djdk.httpclient.HttpClient.log=ssl,channel ManyRequests
@@ -84,7 +88,7 @@ import jdk.test.lib.net.URIBuilder;
 
 public class ManyRequests {
 
-    static final int MAX_COUNT = 20;
+    static final int MAX_COUNT = 50;
     static final int MAX_LIMIT = 40;
     static final AtomicInteger COUNT = new AtomicInteger();
     static final AtomicInteger LIMIT = new AtomicInteger(MAX_LIMIT);
@@ -95,6 +99,8 @@ public class ManyRequests {
         logger.setLevel(Level.ALL);
         logger.info("TEST");
         Stream.of(Logger.getLogger("").getHandlers()).forEach((h) -> h.setLevel(Level.ALL));
+        String osName = System.getProperty("os.name", "");
+        System.out.println("Running on: " + osName);
         System.out.println("Sending " + REQUESTS
                          + " requests; delay=" + INSERT_DELAY
                          + ", chunks=" + CHUNK_SIZE
@@ -106,17 +112,22 @@ public class ManyRequests {
         ExecutorService executor = executorFor("HTTPS/1.1 Server Thread");
         server.setHttpsConfigurator(new Configurator(ctx));
         server.setExecutor(executor);
+        ExecutorService virtualExecutor = Executors.newThreadPerTaskExecutor(Thread.ofVirtual()
+                .name("HttpClient-Worker", 0).factory());
 
         HttpClient client = HttpClient.newBuilder()
                                       .proxy(Builder.NO_PROXY)
                                       .sslContext(ctx)
+                                      .executor(virtualExecutor)
                                       .connectTimeout(Duration.ofMillis(120_000)) // 2mins
                                       .build();
         try {
             test(server, client);
             System.out.println("OK");
         } finally {
+            client.close();
             server.stop(0);
+            virtualExecutor.close();
             executor.shutdownNow();
         }
     }
@@ -260,13 +271,13 @@ public class ManyRequests {
                 done = true;
             } catch (CompletionException e) {
                 if (!Platform.isWindows()) throw e;
-                if (LIMIT.get() < REQUESTS) throw e;
+                if (LIMIT.get() < MAX_LIMIT) throw e;
                 Throwable cause = e;
                 while ((cause = cause.getCause()) != null) {
                     if (cause instanceof ConnectException) {
                         // try again, limit concurrency by half
                         COUNT.set(0);
-                        LIMIT.set(REQUESTS/2);
+                        LIMIT.set(LIMIT.get()/2);
                         System.out.println("*** Retrying due to " + cause);
                         continue LOOP;
                     }
@@ -326,7 +337,7 @@ public class ManyRequests {
             if ((blocked && number <= maxnumber / 2) ||
                         (!blocked && waiters.size() > 0)) {
                 int toRelease = Math.min(maxnumber - number, waiters.size());
-                for (int i=0; i<toRelease; i++) {
+                for (int i=0; i<toRelease && !waiters.isEmpty(); i++) {
                     CompletableFuture<Void> f = waiters.remove();
                     number ++;
                     f.complete(null);

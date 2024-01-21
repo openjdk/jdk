@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,7 @@ import javax.crypto.ShortBufferException;
  */
 final class ISO10126Padding implements Padding {
 
-    private int blockSize;
+    private final int blockSize;
 
     ISO10126Padding(int blockSize) {
         this.blockSize = blockSize;
@@ -74,7 +74,6 @@ final class ISO10126Padding implements Padding {
         SunJCE.getRandom().nextBytes(padding);
         System.arraycopy(padding, 0, in, off, len - 1);
         in[idx - 1] = paddingOctet;
-        return;
     }
 
     /**

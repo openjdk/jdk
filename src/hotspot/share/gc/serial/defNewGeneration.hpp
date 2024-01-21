@@ -26,10 +26,11 @@
 #define SHARE_GC_SERIAL_DEFNEWGENERATION_HPP
 
 #include "gc/serial/cSpaceCounters.hpp"
+#include "gc/serial/generation.hpp"
+#include "gc/serial/tenuredGeneration.hpp"
 #include "gc/shared/ageTable.hpp"
 #include "gc/shared/copyFailedInfo.hpp"
 #include "gc/shared/gc_globals.hpp"
-#include "gc/shared/generation.hpp"
 #include "gc/shared/generationCounters.hpp"
 #include "gc/shared/preservedMarks.hpp"
 #include "gc/shared/stringdedup/stringDedup.hpp"
@@ -52,7 +53,8 @@ class STWGCTimer;
 class DefNewGeneration: public Generation {
   friend class VMStructs;
 
-  Generation* _old_gen;
+  TenuredGeneration* _old_gen;
+
   uint        _tenuring_threshold;   // Tenuring threshold for next collection.
   AgeTable    _age_table;
   // Size of object to pretenure in words; command line provides bytes
@@ -143,12 +145,6 @@ class DefNewGeneration: public Generation {
 
   StringDedup::Requests _string_dedup_requests;
 
-  enum SomeProtectedConstants {
-    // Generations are GenGrain-aligned and have size that are multiples of
-    // GenGrain.
-    MinFreeScratchWords = 100
-  };
-
   // Return the size of a survivor space if this generation were of size
   // gen_size.
   size_t compute_survivor_size(size_t gen_size, size_t alignment) const {
@@ -167,14 +163,12 @@ class DefNewGeneration: public Generation {
 
   // allocate and initialize ("weak") refs processing support
   void ref_processor_init();
-  ReferenceProcessor* const ref_processor() { return _ref_processor; }
+  ReferenceProcessor* ref_processor() { return _ref_processor; }
 
   // Accessing spaces
   ContiguousSpace* eden() const           { return _eden_space; }
   ContiguousSpace* from() const           { return _from_space; }
   ContiguousSpace* to()   const           { return _to_space;   }
-
-  virtual ContiguousSpace* first_compaction_space() const;
 
   // Space enquiries
   size_t capacity() const;
@@ -232,7 +226,7 @@ class DefNewGeneration: public Generation {
 
   HeapWord* par_allocate(size_t word_size, bool is_tlab);
 
-  virtual void gc_epilogue(bool full);
+  void gc_epilogue(bool full);
 
   // Save the tops for eden, from, and to
   virtual void record_spaces_top();
@@ -248,23 +242,22 @@ class DefNewGeneration: public Generation {
   template <typename OopClosureType>
   void oop_since_save_marks_iterate(OopClosureType* cl);
 
-  // For non-youngest collection, the DefNewGeneration can contribute
-  // "to-space".
-  virtual void contribute_scratch(ScratchBlock*& list, Generation* requestor,
-                          size_t max_alloc_words);
+  // For Old collection (part of running Full GC), the DefNewGeneration can
+  // contribute the free part of "to-space" as the scratch space.
+  void contribute_scratch(void*& scratch, size_t& num_words);
 
   // Reset for contribution of "to-space".
-  virtual void reset_scratch();
+  void reset_scratch();
 
   // GC support
-  virtual void compute_new_size();
+  void compute_new_size();
 
   // Returns true if the collection is likely to be safely
   // completed. Even if this method returns true, a collection
   // may not be guaranteed to succeed, and the system should be
   // able to safely unwind and recover from that failure, albeit
-  // at some additional cost. Override superclass's implementation.
-  virtual bool collection_attempt_is_safe();
+  // at some additional cost.
+  bool collection_attempt_is_safe();
 
   virtual void collect(bool   full,
                        bool   clear_all_soft_refs,

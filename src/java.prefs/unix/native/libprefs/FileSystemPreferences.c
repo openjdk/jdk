@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,7 +71,7 @@ Java_java_util_prefs_FileSystemPreferences_lockFile0(JNIEnv *env,
     jclass thisclass, jstring java_fname, jint permission, jboolean shared) {
     const char *fname = JNU_GetStringPlatformChars(env, java_fname, NULL);
     int fd, rc;
-    int result[2];
+    int result[2] = {0, 0};
     jintArray javaResult = NULL;
     int old_umask;
     FLOCK fl;
@@ -90,6 +90,7 @@ Java_java_util_prefs_FileSystemPreferences_lockFile0(JNIEnv *env,
 
     if (shared == JNI_TRUE) {
         fd = open(fname, O_RDONLY, 0);
+        result[1] = errno;
     } else {
         old_umask = umask(0);
         fd = open(fname, O_WRONLY|O_CREAT, permission);

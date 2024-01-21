@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@ package java.util;
 
 import static java.lang.StackWalker.Option.*;
 import java.lang.StackWalker.StackFrame;
+import java.lang.reflect.Method;
 import java.util.stream.Collectors;
 
 import jdk.internal.reflect.CallerSensitive;
@@ -33,6 +34,7 @@ import jdk.internal.reflect.Reflection;
 public class CSM {
     private static StackWalker walker =
         StackWalker.getInstance(EnumSet.of(RETAIN_CLASS_REFERENCE,
+                                           DROP_METHOD_INFO,
                                            SHOW_HIDDEN_FRAMES,
                                            SHOW_REFLECT_FRAMES));
 
@@ -58,16 +60,37 @@ public class CSM {
 
         try {
             Class<?> c2 = walker.getCallerClass();
-            throw new RuntimeException("Exception not thrown by StackWalker::getCallerClass");
+            throw new RuntimeException("Exception not thrown by StackWalker::getCallerClass. Returned " + c2.getName());
         } catch (UnsupportedOperationException e) {}
         return c1;
     }
 
     /**
-     * Returns the caller of this non-caller-sensitive method.
+     * Returns the caller of this non-caller-sensitive method returned
+     * by StackWalker::getCallerClass
      */
     public static Result getCallerClass() {
         Class<?> caller = walker.getCallerClass();
+        return new Result(List.of(caller), dump());
+    }
+
+    private static final Method GET_CALLER_CLASS;
+    static {
+        Method m = null;
+        try {
+            m = StackWalker.class.getMethod("getCallerClass");
+        } catch (ReflectiveOperationException e) {
+            throw new RuntimeException(e);
+        }
+        GET_CALLER_CLASS = m;
+    }
+
+    /**
+     * Returns the caller of this non-caller-sensitive method returned
+     * by StackWalker::getCallerClass invoked via core reflection
+     */
+    public static Result getCallerClassReflectively() throws ReflectiveOperationException {
+        Class<?> caller = (Class<?>)GET_CALLER_CLASS.invoke(walker);
         return new Result(List.of(caller), dump());
     }
 

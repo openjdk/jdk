@@ -38,8 +38,8 @@ enum platform_dependent_constants {
   // simply increase sizes if too small (assembler will crash if too small)
   _initial_stubs_code_size      = 10000,
   _continuation_stubs_code_size =  2000,
-  _compiler_stubs_code_size     = 30000,
-  _final_stubs_code_size        = 20000
+  _compiler_stubs_code_size     = 30000 ZGC_ONLY(+10000),
+  _final_stubs_code_size        = 20000 ZGC_ONLY(+100000)
 };
 
 class aarch64 {
@@ -70,8 +70,6 @@ class aarch64 {
   static address _string_indexof_linear_uu;
   static address _string_indexof_linear_ul;
   static address _large_byte_array_inflate;
-
-  static address _method_entry_barrier;
 
   static address _spin_wait;
 
@@ -177,10 +175,6 @@ class aarch64 {
 
   static address large_byte_array_inflate() {
       return _large_byte_array_inflate;
-  }
-
-  static address method_entry_barrier() {
-    return _method_entry_barrier;
   }
 
   static address spin_wait() {

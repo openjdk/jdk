@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
 #include "oops/markWord.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/handles.hpp"
+#include "utilities/sizes.hpp"
 
 class BasicLock {
   friend class VMStructs;
@@ -48,7 +49,7 @@ class BasicLock {
   // move a basic lock (used during deoptimization
   void move_to(oop obj, BasicLock* dest);
 
-  static int displaced_header_offset_in_bytes()       { return offset_of(BasicLock, _displaced_header); }
+  static int displaced_header_offset_in_bytes() { return (int)offset_of(BasicLock, _displaced_header); }
 };
 
 // A BasicObjectLock associates a specific Java object with a BasicLock.
@@ -79,8 +80,8 @@ class BasicObjectLock {
   // GC support
   void oops_do(OopClosure* f) { f->do_oop(&_obj); }
 
-  static int obj_offset_in_bytes()                    { return offset_of(BasicObjectLock, _obj);  }
-  static int lock_offset_in_bytes()                   { return offset_of(BasicObjectLock, _lock); }
+  static ByteSize obj_offset()                { return byte_offset_of(BasicObjectLock, _obj);  }
+  static ByteSize lock_offset()               { return byte_offset_of(BasicObjectLock, _lock); }
 };
 
 

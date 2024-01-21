@@ -789,7 +789,7 @@ bool Disassembler::load_library(outputStream* st) {
   char* p = strrchr(buf, '/');
   *p = '\0';
   strcat(p, "/lib/");
-  lib_offset = jvm_offset = strlen(buf);
+  lib_offset = jvm_offset = (int)strlen(buf);
 #else
   {
     // Match "libjvm" instead of "jvm" on *nix platforms. Creates better matches.

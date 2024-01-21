@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package sun.net.www.protocol.http.spnego;
 
 import java.io.IOException;
+import java.util.Locale;
 
 import org.ietf.jgss.GSSContext;
 import org.ietf.jgss.GSSException;
@@ -90,7 +91,7 @@ public class NegotiatorImpl extends Negotiator {
 
         // RFC 4559 4.1 uses uppercase service name "HTTP".
         // RFC 4120 6.2.1 demands the host be lowercase
-        String peerName = "HTTP@" + hci.host.toLowerCase();
+        String peerName = "HTTP@" + hci.host.toLowerCase(Locale.ROOT);
 
         GSSName serverName = manager.createName(peerName,
                 GSSName.NT_HOSTBASED_SERVICE);

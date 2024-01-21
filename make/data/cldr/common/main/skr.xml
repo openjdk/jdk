@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
+<!-- Copyright © 1991-2023 Unicode, Inc.
+For terms of use, see http://www.unicode.org/copyright.html
+SPDX-License-Identifier: Unicode-DFS-2016
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+-->
+<ldml>
+	<identity>
+		<version number="$Revision$"/>
+		<language type="skr"/>
+	</identity>
+	<localeDisplayNames>
+		<languages>
+			<language type="en" draft="unconfirmed">سرائیکی ► skr</language>
+			<language type="skr">سرائیکی</language>
+		</languages>
+		<territories>
+			<territory type="PK" draft="unconfirmed">پاکستان</territory>
+		</territories>
+		<measurementSystemNames>
+			<measurementSystemName type="metric" draft="unconfirmed">مِیٹرک</measurementSystemName>
+			<measurementSystemName type="UK" draft="unconfirmed">یو کے</measurementSystemName>
+			<measurementSystemName type="US" draft="unconfirmed">یو ایس</measurementSystemName>
+		</measurementSystemNames>
+	</localeDisplayNames>
+	<layout>
+		<orientation>
+			<characterOrder>right-to-left</characterOrder>
+		</orientation>
+	</layout>
+	<characters>
+		<exemplarCharacters>[ء آ ؤ ئ ا ب ٻ پ ت ث ٹ ج ڄ چ ح خ د ذ ڈ ڊ ݙ ر ز ڑ ژ س ش ص ض ط ظ ع غ ف ق ک گ ڳ ل م ن ں ݨ ھ ہ ۃ و ی ے]</exemplarCharacters>
+		<exemplarCharacters type="numbers">[\- ‑ , ٫ ٬ . % ٪ ‰ ؉ + 0٠ 1١ 2٢ 3٣ 4٤ 5٥ 6٦ 7٧ 8٨ 9٩]</exemplarCharacters>
+		<exemplarCharacters type="punctuation">[\- ‐‑ – — ، ؛ \: ! ؟ . … ' &quot; « » ( ) \[ \] / ؎ ؏]</exemplarCharacters>
+	</characters>
+	<dates>
+		<calendars>
+			<calendar type="gregorian">
+				<months>
+					<monthContext type="format">
+						<monthWidth type="wide">
+							<month type="1" draft="unconfirmed">جنوری</month>
+							<month type="2" draft="unconfirmed">فروری</month>
+							<month type="3" draft="unconfirmed">مارچ</month>
+							<month type="4" draft="unconfirmed">اپریل</month>
+							<month type="5" draft="unconfirmed">مئی</month>
+							<month type="6" draft="unconfirmed">جون</month>
+							<month type="7" draft="unconfirmed">جولائی</month>
+							<month type="8" draft="unconfirmed">اگست</month>
+							<month type="9" draft="unconfirmed">ستمبر</month>
+							<month type="10" draft="unconfirmed">اکتوبر</month>
+							<month type="11" draft="unconfirmed">نومبر</month>
+							<month type="12" draft="unconfirmed">دسمبر</month>
+						</monthWidth>
+					</monthContext>
+				</months>
+				<days>
+					<dayContext type="format">
+						<dayWidth type="wide">
+							<day type="sun" draft="unconfirmed">اتوار</day>
+							<day type="mon" draft="unconfirmed">سوموار</day>
+							<day type="tue" draft="unconfirmed">منگل</day>
+							<day type="wed" draft="unconfirmed">ٻدھ</day>
+							<day type="thu" draft="unconfirmed">خمیس</day>
+							<day type="fri" draft="unconfirmed">جمعہ</day>
+							<day type="sat" draft="unconfirmed">چھݨ چھݨ</day>
+						</dayWidth>
+					</dayContext>
+				</days>
+				<dayPeriods>
+					<dayPeriodContext type="format">
+						<dayPeriodWidth type="wide">
+							<dayPeriod type="am" draft="unconfirmed">اے ایم</dayPeriod>
+							<dayPeriod type="pm" draft="unconfirmed">پی ایم</dayPeriod>
+						</dayPeriodWidth>
+					</dayPeriodContext>
+				</dayPeriods>
+			</calendar>
+		</calendars>
+		<timeZoneNames>
+			<gmtFormat draft="unconfirmed">جی ایم ٹی {0}</gmtFormat>
+			<gmtZeroFormat draft="unconfirmed">جی ایم ٹی</gmtZeroFormat>
+			<regionFormat draft="unconfirmed">{0} وقت</regionFormat>
+			<regionFormat type="daylight" draft="unconfirmed">{0} ݙین٘ہ موسمی وقت</regionFormat>
+			<metazone type="GMT">
+				<long>
+					<standard draft="unconfirmed">جی ایم ٹی</standard>
+				</long>
+			</metazone>
+		</timeZoneNames>
+	</dates>
+</ldml>

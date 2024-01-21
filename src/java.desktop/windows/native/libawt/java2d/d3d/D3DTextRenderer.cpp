@@ -23,8 +23,8 @@
  * questions.
  */
 
+#include <cmath>
 #include <malloc.h>
-#include <math.h>
 #include <jlong.h>
 
 #include "sun_java2d_d3d_D3DTextRenderer.h"

@@ -402,7 +402,7 @@ void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm, Label* slo
   } else {
     Label done;
     __ jccb(Assembler::equal, done);
-    __ call(RuntimeAddress(StubRoutines::x86::method_entry_barrier()));
+    __ call(RuntimeAddress(StubRoutines::method_entry_barrier()));
     __ bind(done);
   }
 }
@@ -423,7 +423,7 @@ void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm, Label*, La
   __ cmpl_imm32(disarmed_addr, 0);
   __ pop(tmp);
   __ jcc(Assembler::equal, continuation);
-  __ call(RuntimeAddress(StubRoutines::x86::method_entry_barrier()));
+  __ call(RuntimeAddress(StubRoutines::method_entry_barrier()));
   __ bind(continuation);
 }
 #endif
@@ -486,5 +486,5 @@ void BarrierSetAssembler::check_oop(MacroAssembler* masm, Register obj, Register
   // make sure klass is 'reasonable', which is not zero.
   __ load_klass(obj, obj, tmp1);  // get klass
   __ testptr(obj, obj);
-  __ jcc(Assembler::zero, error); // if klass is NULL it is broken
+  __ jcc(Assembler::zero, error); // if klass is null it is broken
 }
