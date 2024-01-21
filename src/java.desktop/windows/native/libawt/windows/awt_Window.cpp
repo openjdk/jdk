@@ -1014,8 +1014,9 @@ void AwtWindow::FocusedWindowChanged(HWND from, HWND to)
     }
 }
 
-void AwtWindow::_RepositionSecurityWarning(void* param) {
-    JNIEnv *env = (JNIEnv *) JNU_GetEnv(jvm, JNI_VERSION_1_2);
+void AwtWindow::_RepositionSecurityWarning(void* param)
+{
+    JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
 
     RepositionSecurityWarningStruct *rsws =
         static_cast<RepositionSecurityWarningStruct *>(param);
@@ -3123,8 +3124,9 @@ void AwtWindow::_SetFocusableWindow(void *param)
     delete sfws;
 }
 
-void AwtWindow::_ModalDisable(void *param) {
-    JNIEnv *env = (JNIEnv *) JNU_GetEnv(jvm, JNI_VERSION_1_2);
+void AwtWindow::_ModalDisable(void *param)
+{
+    JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
 
     ModalDisableStruct *mds = static_cast<ModalDisableStruct *>(param);
     jobject self = mds->window;
@@ -3159,8 +3161,9 @@ void AwtWindow::_ModalDisable(void *param) {
     delete mds;
 }
 
-void AwtWindow::_ModalEnable(void *param) {
-    JNIEnv *env = (JNIEnv *) JNU_GetEnv(jvm, JNI_VERSION_1_2);
+void AwtWindow::_ModalEnable(void *param)
+{
+    JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
 
     jobject self = static_cast<jobject>(param);
 
@@ -3219,8 +3222,9 @@ void AwtWindow::_SetOpacity(void* param) {
     delete os;
 }
 
-void AwtWindow::_SetOpaque(void* param) {
-    JNIEnv *env = (JNIEnv *) JNU_GetEnv(jvm, JNI_VERSION_1_2);
+void AwtWindow::_SetOpaque(void* param)
+{
+    JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
 
     OpaqueStruct *os = static_cast<OpaqueStruct *>(param);
     jobject self = os->window;
@@ -3249,8 +3253,9 @@ void AwtWindow::_SetOpaque(void* param) {
     delete os;
 }
 
-void AwtWindow::_UpdateWindow(void* param) {
-    JNIEnv *env = (JNIEnv *) JNU_GetEnv(jvm, JNI_VERSION_1_2);
+void AwtWindow::_UpdateWindow(void* param)
+{
+    JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
 
     UpdateWindowStruct *uws = static_cast<UpdateWindowStruct *>(param);
     jobject self = uws->window;
