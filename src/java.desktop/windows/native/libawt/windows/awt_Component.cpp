@@ -6356,9 +6356,10 @@ ret:
     return result;
 }
 
-void AwtComponent::_SetParent(void * param) {
+void AwtComponent::_SetParent(void * param)
+{
     if (AwtToolkit::IsMainThread()) {
-        JNIEnv *env = (JNIEnv *) JNU_GetEnv(jvm, JNI_VERSION_1_2);
+        JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
         SetParentStruct *data = static_cast<SetParentStruct*>(param);
         jobject self = data->component;
         jobject parent = data->parentComp;
