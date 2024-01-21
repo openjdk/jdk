@@ -101,7 +101,7 @@ public class Executor {
                     vmInputArgs.length + vmOptions.size());
             System.arraycopy(vmOptions.toArray(), 0, cmds, vmInputArgs.length,
                     vmOptions.size());
-            output = ProcessTools.executeTestJvm(cmds);
+            output = ProcessTools.executeTestJava(cmds);
         } catch (Throwable thr) {
             throw new Error("Execution failed: " + thr.getMessage(), thr);
         }

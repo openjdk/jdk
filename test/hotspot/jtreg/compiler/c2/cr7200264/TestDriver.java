@@ -44,7 +44,7 @@ public class TestDriver {
     }
 
     private List<String> executeApplication() throws Throwable {
-        OutputAnalyzer outputAnalyzer = ProcessTools.executeTestJvm(
+        OutputAnalyzer outputAnalyzer = ProcessTools.executeTestJava(
             "-Xbatch",
             "-XX:-TieredCompilation",
             "-XX:+PrintCompilation",

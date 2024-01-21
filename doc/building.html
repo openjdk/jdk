@@ -753,6 +753,8 @@ macOS.</p>
 <code>sudo apt-get install libfontconfig-dev</code>.</li>
 <li>To install on an rpm-based Linux, try running
 <code>sudo yum install fontconfig-devel</code>.</li>
+<li>To install on Alpine Linux, try running
+<code>sudo apk add fontconfig-dev</code>.</li>
 </ul>
 <p>Use <code>--with-fontconfig-include=&lt;path&gt;</code> and
 <code>--with-fontconfig=&lt;path&gt;</code> if <code>configure</code>
@@ -1499,9 +1501,7 @@ like this:</p>
   --resolve-deps \
   buster \
   ~/sysroot-arm64 \
-  https://httpredir.debian.org/debian/</code></pre>
-<p>If the target architecture is <code>riscv64</code>, the path should
-be <code>debian-ports</code> instead of <code>debian</code>.</p></li>
+  https://httpredir.debian.org/debian/</code></pre></li>
 <li><p>To create an Ubuntu-based chroot:</p>
 <pre><code>sudo debootstrap \
   --arch=arm64 \

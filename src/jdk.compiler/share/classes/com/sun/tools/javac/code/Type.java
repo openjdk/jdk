@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -463,20 +463,6 @@ public abstract class Type extends AnnoConstruct implements TypeMirror, PoolCons
     @Override @DefinedBy(Api.LANGUAGE_MODEL)
     public List<Attribute.TypeCompound> getAnnotationMirrors() {
         return getMetadata(TypeMetadata.Annotations.class, Annotations::annotations, List.nil());
-    }
-
-
-    @Override @DefinedBy(Api.LANGUAGE_MODEL)
-    public <A extends Annotation> A getAnnotation(Class<A> annotationType) {
-        return null;
-    }
-
-
-    @Override @DefinedBy(Api.LANGUAGE_MODEL)
-    public <A extends Annotation> A[] getAnnotationsByType(Class<A> annotationType) {
-        @SuppressWarnings("unchecked")
-        A[] tmp = (A[]) java.lang.reflect.Array.newInstance(annotationType, 0);
-        return tmp;
     }
 
     /** Return the base types of a list of types.

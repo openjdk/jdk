@@ -139,11 +139,6 @@ ifeq ($(IS_DRAFT), true)
   endif
   DRAFT_TEXT := This specification is not final and is subject to change. \
       Use is subject to <a href="$(LICENSE_URL)">license terms</a>.
-
-  # Workaround stylesheet bug
-  HEADER_STYLE := style="margin-top: 9px;"
-else
-  HEADER_STYLE := style="margin-top: 14px;"
 endif
 
 # $1 - Relative prefix to COPYRIGHT_URL
@@ -339,7 +334,7 @@ define SetupApiDocsGenerationBody
   $1_DOC_TITLE := $$($1_LONG_NAME)<br>Version $$(VERSION_SPECIFICATION) API \
       Specification
   $1_WINDOW_TITLE := $$(subst &amp;,&,$$($1_SHORT_NAME))$$(DRAFT_MARKER_TITLE)
-  $1_HEADER_TITLE := <div $$(HEADER_STYLE)><strong>$$($1_SHORT_NAME)</strong> \
+  $1_HEADER_TITLE := <div><strong>$$($1_SHORT_NAME)</strong> \
       $$(DRAFT_MARKER_STR)</div>
   ifneq ($$($1_OTHER_VERSIONS), )
       $1_JAVADOC_BOTTOM := $$(call JAVADOC_BOTTOM, <a href="$$($1_OTHER_VERSIONS)">Other versions.</a>)
@@ -647,7 +642,7 @@ ifeq ($(ENABLE_PANDOC), true)
   GLOBAL_SPECS_DEFAULT_CSS_FILE := $(DOCS_OUTPUTDIR)/resources/jdk-default.css
   # Unset the following to suppress the link to the tool guides
   NAV_LINK_GUIDES := --nav-link-guides
-  HEADER_RIGHT_SIDE_INFO := <strong>$(subst &amp;,&,$(JDK_SHORT_NAME))$(DRAFT_MARKER_STR)</strong>
+  HEADER_RIGHT_SIDE_INFO := <strong>$(subst &amp;,&,$(JDK_SHORT_NAME))</strong>$(DRAFT_MARKER_STR)
 
   $(foreach m, $(ALL_MODULES), \
     $(eval SPECS_$m := $(call FindModuleSpecsDirs, $m)) \

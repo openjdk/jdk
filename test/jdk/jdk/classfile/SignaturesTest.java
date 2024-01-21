@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 /*
  * @test
  * @summary Testing Signatures.
+ * @bug 8321540
  * @run junit SignaturesTest
  */
 import java.io.IOException;
@@ -46,8 +47,11 @@ import java.lang.classfile.Signature.*;
 import java.lang.classfile.Attributes;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import org.junit.jupiter.api.Assertions;
 import static helpers.ClassRecord.assertEqualsDeep;
 import static java.lang.constant.ConstantDescs.*;
+import java.util.function.Consumer;
+import java.util.function.Function;
 
 class SignaturesTest {
 
@@ -185,5 +189,80 @@ class SignaturesTest {
         assertEquals("Inner", innerSig.className(), "simple name in signature");
         assertEquals(Outer.Inner.class.describeConstable().orElseThrow(), innerSig.classDesc(),
                 "ClassDesc derived from signature");
+    }
+
+    @Test
+    void testBadTypeSignatures() {
+        """
+        LObject
+        LObject;B
+        LIterable<LFoo>
+        LIterable<<
+        TBar
+        TBar<LFoo;>
+        B<LFoo;>
+        B<LFoo;>;V
+        X
+        [LObject
+        [LIterable<LFoo>
+        [LIterable<<
+        [TBar
+        [TBar<LFoo;>
+        [B<LFoo;>
+        [X
+        LSet<+Kind<**>;>;
+        LSet<?Kind<*>;>;
+        ()V
+        """.lines().forEach(assertThrows(Signature::parseFrom));
+    }
+
+    @Test
+    void testBadClassSignatures() {
+        """
+        Ljava/lang/Object;Ljava/lang/Iterable<LFoo;>
+        LObject
+        LObject;B
+        LIterable<LFoo>
+        LIterable<<
+        TBar
+        TBar<LFoo;>
+        B<LFoo;>
+        B<LFoo;>;V
+        X
+        LFoo<TK;>.It;L
+        <K+LObject;>LFoo<TK;;>;LFoo<TK;>;LBar;
+        <K:LObject;>>LFoo<TK;>;
+        <K:LObject;>LFoo<+>;
+        ()V
+        """.lines().forEach(assertThrows(ClassSignature::parseFrom));
+    }
+
+    @Test
+    void testBadMethodSignatures() {
+        """
+        LObject;
+        B
+        ()V^
+        ()V^B
+        ()V^X
+        (LObject;)
+        (LObject)V
+        ()LIterable<LFoo>
+        ()LIterable<<
+        ()TBar
+        ()TBar;B
+        (TBar<LFoo;>)V
+        (B<LFoo;>)V
+        (X)
+        ()X
+        ()VB
+        ()LSet<+Kind<**>;>;
+        (LSet<?Kind<*>;>;)V
+        <T::LA>()V
+        """.lines().forEach(assertThrows(MethodSignature::parseFrom));
+    }
+
+    private Consumer<String> assertThrows(Function<String, ?> parser) {
+        return s -> Assertions.assertThrows(IllegalArgumentException.class, () -> parser.apply(s), s);
     }
 }
