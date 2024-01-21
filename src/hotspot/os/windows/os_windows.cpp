@@ -4235,7 +4235,7 @@ static void exit_process_or_thread(Ept what, int exit_code) {
   } else if (what == EPT_PROCESS) {
     ALLOW_C_FUNCTION(::exit, ::exit(exit_code);)
   } else { // EPT_PROCESS_DIE
-    ::_Exit(exit_code);
+    ALLOW_C_FUNCTION(::_exit, ::_exit(exit_code);)
   }
 
   // Should not reach here
