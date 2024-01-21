@@ -1201,127 +1201,136 @@ public class ForkJoinPool extends AbstractExecutorService {
         if (w != null) {
             int p = w.phase, r = w.stackPred; // seed from registerWorker
             int cfg = w.config & (FIFO|CLEAR_TLS);
-            while ((r = scan(w, p, r, cfg)) != 0 && (p = awaitWork(w)) != 0);
+            while ((r = scan(w, p, r, cfg)) != 0 &&
+                   ((p = awaitWork(w)) & IDLE) == 0);
         }
     }
 
     /**
-     * Scans for and if found executes top-level tasks.
+     * Scans for and executes top-level tasks until none found.
      *
      * @param w caller's WorkQueue
      * @param p w's phase
      * @param r random seed
      * @param cfg config bits
-     * @param running true if ran task since last signal
-     * @return zero for exit, else random seed
+     * @return zero for exit, else random seed, for next use
      */
     private int scan(WorkQueue w, int p, int r, int cfg) {
-        int active = p;                         // w's phase value when active
-        int src = r;                            // scan origin
-        boolean deactivated = false;            // after empty scan
-        boolean reactivating = false;           // when self-signal enabled
-        boolean running = false;                // ran task since activating
-        for (;;) {
+        int active = p;                            // w.phase value when active
+        int src = r;                               // scan index/id origin
+        int step = (r >>> 16) | 1;                 // for random permutation
+        boolean running = false;                   // ran task since activating
+        boolean reactivatable = false;             // self-signal enabled
+        WorkQueue[] qs; int n;
+        outer: while ((runState & STOP) == 0 && (qs = queues) != null &&
+                      w != null && (n = qs.length) > 0) {
             boolean rescan = false;
-            int e = runState, stop = e & STOP, n;
-            WorkQueue[] qs = queues;
-            if (stop != 0 || qs == null || w == null || (n = qs.length) <= 0)
-                return 0;
-            r ^= r << 13; r ^= r >>> 17; r ^= r << 5; // xorshift
-            int step = (r >>> 16) | 1;
-            scan: for (int i = src, l = n; l > 0; --l, i += step) {
-                WorkQueue q; int j;
+            int deactivated = p - active;
+            for (int l = n, i = src; l > 0; --l, i += step) {
+                int j; WorkQueue q;
                 if ((q = qs[j = i & (n - 1)]) != null) {
-                    for (int b = q.base, miss = b - 1;;) {
-                        ForkJoinTask<?>[] a; int cap, k;
-                        if ((a = q.array) == null || (cap = a.length) <= 0)
-                            break;
+                    ForkJoinTask<?>[] a;
+                    int b = q.base, miss = b - 1, cap, k;
+                    while ((a = q.array) != null && (cap = a.length) > 0) {
                         ForkJoinTask<?> t = a[k = b & (cap - 1)];
                         long kp = slotOffset(k);
                         int nb = b + 1, nk = nb & (cap - 1);
-                        U.loadFence();          // re-read
+                        U.loadFence();             // re-read
                         if (b != (b = q.base))
-                            ;                   // inconsistent
+                            ;                      // inconsistent
                         else if (t == null) {
                             if (q.array == a && a[k] == null) {
-                                if (a[nk] != null && (miss != b || deactivated))
-                                    rescan = true;
-                                break;          // stalled or contended
+                                if (a[nk] != null &&
+                                    (miss != b || deactivated != 0))
+                                    rescan = true; // stalled or contended
+                                break;
                             }
                         }
-                        else if (p != active) {
+                        else if (p != active) {    // recheck or reactivate
                             long sp = w.stackPred & LMASK, c;
-                            if ((p = w.phase) == active)
-                                rescan = true;
-                            else if (!reactivating)
-                                break;          // prescanning
-                            else if ((int)(c = ctl) != active)
-                                break;          // ineligible
-                            else if (a[k] == null)
-                                break;          // already taken
-                            else if (compareAndSetCtl(
-                                         c, sp | ((c + RC_UNIT) & UMASK))) {
-                                rescan = true;  // self-signal
-                                w.phase = p = active;
+                            if ((p = w.phase) != active) {
+                                if (!reactivatable) {
+                                    rescan = true;
+                                    break;         // not yet enabled
+                                }
+                                else if ((int)(c = ctl) != active)
+                                    break;         // ineligible
+                                else if (q.base != b)
+                                    break;         // already taken
+                                else if (!compareAndSetCtl(
+                                             c, sp | ((c + RC_UNIT) & UMASK)))
+                                    break;         // lost race
+                                else               // self-signalled
+                                    w.phase = p = active;
                             }
                         }
-                        else if (!U.compareAndSetReference(a, kp, t, null))
-                            b = miss = q.base;  // for next rescan check
+                        else if (!U.compareAndSetReference(a, kp, t, null)) {
+                            if (a[k] == null)
+                                miss = b = q.base; // for next rescan check
+                        }
                         else {
-                            q.base = nb;
-                            w.source = src = j; // volatile write
-                            boolean propagate = !running;
-                            running = rescan = true;
-                            if (propagate)
+                            q.base = nb;           // taken
+                            w.source = src = j;    // volatile write
+                            reactivatable = false;
+                            if (!running) {        // propagate signal
+                                running = true;
                                 signalWork(a, nk);
+                            }
                             w.topLevelExec(t, cfg);
-                            break scan;
+                            continue outer;        // restart at queue j
                         }
                     }
                 }
             }
+            r ^= r << 13; r ^= r >>> 17; src = r ^= r << 5;
+            step = (r >>> 16) | 1;                 // xorshift
             if (p != active && (p = w.phase) != active) {
-                if (!rescan && (reactivating || (e & SHUTDOWN) != 0))
-                    return r;               // possibly block in awaitWork
-                int spins = n | ((n - 1) & (r ^ (r >>> 16)) & SMASK);
-                do {
-                    Thread.onSpinWait();    // reduce flailing
+                if (reactivatable & !rescan)
+                    return r;                      // block or terminate
+                int spins = ((r ^ step) & (n - 1)) | (n >>> 1);
+                do {                               // n/2 <= spins < 3n/2
+                    Thread.onSpinWait();           // reduce flailing
                 } while ((p = w.phase) != active && --spins > 0);
             }
-            if (!(reactivating = (p != active))) {
-                if (deactivated)           // rescan after reactivating
-                    deactivated = false;
-                else if (!rescan && runState == e) {
-                    long pc = ctl;         // try to deactivate
-                    int backout = p;
-                    active = (w.phase = p |= IDLE) + IDLE;
-                    w.stackPred = (int)pc; // set ctl stack link
-                    long qc = (active & LMASK) | ((pc - RC_UNIT) & UMASK);
-                    if (deactivated = compareAndSetCtl(pc, qc))
-                        running = false;
-                    else                   // contended
-                        w.phase = p = active = backout;
-                }
+            if (!((reactivatable = (p != active)) | rescan)) {
+                long pc = ctl;                     // try to deactivate
+                int backout = p;                   // revert if contended
+                active = (w.phase = p |= IDLE) + IDLE;
+                w.stackPred = (int)pc;             // set ctl stack link
+                if (!compareAndSetCtl(             // contention
+                        pc, (active & LMASK) | ((pc - RC_UNIT) & UMASK)))
+                    w.phase = p = active = backout;
+                else
+                    running = false;
             }
         }
+        return 0;
     }
 
     /**
      * Awaits signal or termination.
      *
      * @param w the WorkQueue (may be null if already terminated)
-     * @return w's current phase or 0 for exit
+     * @return current phase with IDLE set for exit
      */
     private int awaitWork(WorkQueue w) {
-        int p = IDLE, active, e;
-        if (((e = runState) & STOP) == 0 &&      // check quiescent shutdown
+        int p = IDLE, e;
+        if (((e = runState) & STOP) == 0 && // check for quiescent shutdown
             ((e & SHUTDOWN) == 0 || (ctl & RC_MASK) > 0L || !quiescent()) &&
-            w == null || ((p = w.phase) & IDLE) != 0) {
-            w.forgetSource();
-            long deadline = trimDeadline(active = p + IDLE);
-            LockSupport.setCurrentBlocker(this); // emulate LockSupport.park
-            if ((p = w.phase) != active) {
-                w.parking = 1;                   // enable unpark
+            w != null && ((p = w.phase) & IDLE) != 0) {
+            int active = p + IDLE;         // next w.phase
+            long c, deadline = 0L;         // set if all idle and w is ctl top
+            if (((c = ctl) & RC_MASK) <= 0L && (int)c == active) {
+                int np = parallelism, nt = (short)(c >>> TC_SHIFT);
+                long delay = keepAlive;    // scale if not fully populated
+                if (nt != (nt = Math.max(nt, np)) && nt > 0)
+                    delay = Math.max(TIMEOUT_SLOP, delay / nt);
+                long d = delay + System.currentTimeMillis();
+                deadline = (d == 0L) ? 1L : d;
+            }
+            LockSupport.setCurrentBlocker(this);
+            if ((p = w.phase) != active) { // emulate LockSupport.park
+                w.parking = 1;             // enable unpark
                 for (;;) {
                     if ((p = w.phase) == active)
                         break;
@@ -1330,64 +1339,34 @@ public class ForkJoinPool extends AbstractExecutorService {
                         break;
                     if ((runState & STOP) != 0)
                         break;
-                    Thread.interrupted();        // clear for next park
-                    if (deadline != 0L &&
+                    Thread.interrupted();  // clear for next park
+                    if (deadline != 0L &&  // try to trim
                         deadline - System.currentTimeMillis() < TIMEOUT_SLOP) {
-                        if (tryTrim(w, active))
+                        long sp = w.stackPred & LMASK, dc = ctl;
+                        long nc = sp | (UMASK & (dc - TC_UNIT));
+                        if ((int)dc == active && compareAndSetCtl(dc, nc)) {
+                            WorkQueue[] qs; WorkQueue v; int vp, i;
+                            w.source = DEREGISTERED;
+                            w.phase = active; // try to wake up next waiter
+                            if ((vp = (int)nc) != 0 && (qs = queues) != null &&
+                                qs.length > (i = vp & SMASK) &&
+                                (v = qs[i]) != null &&
+                                compareAndSetCtl(nc, ((UMASK & (nc + RC_UNIT)) |
+                                                      (nc & TC_MASK) |
+                                                      (v.stackPred & LMASK)))) {
+                                v.phase = vp;
+                                U.unpark(v.owner);
+                            }
                             break;
-                        deadline = 0L;           // no longer trimmable
+                        }
+                        deadline = 0L;     // no longer trimmable
                     }
                 }
-                w.parking = 0;                   // disable unpark
+                w.parking = 0;             // disable unpark
             }
             LockSupport.setCurrentBlocker(null);
         }
-        return (p & IDLE) != 0 ? 0 : p;
-    }
-
-    /**
-     * Returns the timeout deadline for quiescent trimming if all workers
-     * are idle and caller is at ctl top, else 0
-     *
-     * @param queuedPhase the phase value of caller while idle
-     */
-    private long trimDeadline(int queuedPhase) {
-        long deadline = 0L, c;
-        if (((c = ctl) & RC_MASK) <= 0L && (int)c == queuedPhase) {
-            int np = parallelism, nt = (short)(c >>> TC_SHIFT);
-            long delay = keepAlive;      // scale if not fully populated
-            if (nt != (nt = Math.max(nt, np)) && nt > 0)
-                delay = Math.max(TIMEOUT_SLOP, delay / nt);
-            long d = delay + System.currentTimeMillis();
-            deadline = (d == 0L) ? 1L : d;
-        }
-        return deadline;
-    }
-
-    /**
-     * Tries to deregister waiting thread on timeout, and signals
-     * successor to start timing out as well.
-     */
-    private boolean tryTrim(WorkQueue w, int queuedPhase) {
-        if (w != null) {
-            long sp = w.stackPred & LMASK, dc = ctl;
-            long nc = sp | (UMASK & (dc - TC_UNIT));
-            if ((int)dc == queuedPhase && compareAndSetCtl(dc, nc)) {
-                WorkQueue[] qs; WorkQueue v; int vp, i;
-                w.source = DEREGISTERED;
-                w.phase = queuedPhase;
-                if ((vp = (int)nc) != 0 && (qs = queues) != null &&
-                    qs.length > (i = vp & SMASK) && (v = qs[i]) != null &&
-                    compareAndSetCtl(nc, ((UMASK & (nc + RC_UNIT)) |
-                                          (nc & TC_MASK) |
-                                          (v.stackPred & LMASK)))) {
-                    v.phase = vp;
-                    U.unpark(v.owner);
-                }
-                return true;
-            }
-        }
-        return false;
+        return p;
     }
 
     /**
