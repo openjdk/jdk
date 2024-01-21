@@ -81,7 +81,7 @@ class TenuredGeneration: public Generation {
 
   void compute_new_size_inner();
  public:
-  virtual void compute_new_size();
+  void compute_new_size();
 
   TenuredSpace* space() const { return _the_space; }
 
@@ -140,8 +140,8 @@ class TenuredGeneration: public Generation {
 
   HeapWord* expand_and_allocate(size_t size, bool is_tlab);
 
-  virtual void gc_prologue(bool full);
-  virtual void gc_epilogue(bool full);
+  void gc_prologue();
+  void gc_epilogue();
 
   bool should_collect(bool   full,
                       size_t word_size,
