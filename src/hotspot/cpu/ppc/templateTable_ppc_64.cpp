@@ -3803,8 +3803,11 @@ void TemplateTable::_new() {
     __ sldi(Roffset, Rindex, LogBytesPerWord);
     __ load_resolved_klass_at_offset(Rcpool, Roffset, RinstanceKlass);
 
-    // Make sure klass is fully initialized and get instance_size.
-    __ lbz(Rscratch, in_bytes(InstanceKlass::init_state_offset()), RinstanceKlass);
+    // Make sure klass is initialized.
+    assert(VM_Version::supports_fast_class_init_checks(), "Optimization requires support for fast class initialization checks");
+    __ clinit_barrier(Rcpool,R16_thread, nullptr /*L_fast_path*/, &Lslow_case);
+
+    // get instance_size.
     __ lwz(Rinstance_size, in_bytes(Klass::layout_helper_offset()), RinstanceKlass);
 
     __ cmpdi(CCR1, Rscratch, InstanceKlass::fully_initialized);
