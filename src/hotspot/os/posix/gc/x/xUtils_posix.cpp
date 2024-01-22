@@ -32,7 +32,7 @@ uintptr_t XUtils::alloc_aligned(size_t alignment, size_t size) {
   void* res = nullptr;
 
   // Use raw posix_memalign as long as we have no wrapper for it
-  int rc = ALLOW_C_FUNCTION(posix_memalign, &res, alignment, size);
+  int rc = ALLOW_C_FUNCTION(::posix_memalign, (&res, alignment, size);)
   if (rc != 0) {
     fatal("posix_memalign() failed");
   }
