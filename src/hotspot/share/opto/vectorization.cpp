@@ -1435,9 +1435,6 @@ const char* VLoop::check_preconditions_helper() {
 }
 
 bool VLoopAnalyzer::analyze() {
-  bool success = _vloop.check_preconditions();
-  if (!success) { return false; }
-
 #ifndef PRODUCT
   if (vloop().is_trace_loop_analyzer()) {
     tty->print_cr("VLoopAnalyzer::analyze");

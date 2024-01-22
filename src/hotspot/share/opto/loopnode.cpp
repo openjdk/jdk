@@ -45,7 +45,6 @@
 #include "opto/predicates.hpp"
 #include "opto/rootnode.hpp"
 #include "opto/runtime.hpp"
-#include "opto/superword.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "utilities/checkedCast.hpp"
 #include "utilities/powerOfTwo.hpp"
@@ -4667,23 +4666,7 @@ void PhaseIdealLoop::build_and_optimize() {
     ResourceArea autovectorization_arena;
     for (LoopTreeIterator iter(_ltree_root); !iter.done(); iter.next()) {
       IdealLoopTree* lpt = iter.current();
-      CountedLoopNode* cl = lpt->_head->isa_CountedLoop();
-      if (lpt->is_counted() && cl->is_main_loop()) {
-        ResourceMark rm(&autovectorization_arena);
-        // TODO only start analyzer once VLoop passes preconditions?
-        VLoopAnalyzer vloop_analyzer(&autovectorization_arena, lpt);
-        // TODO can we have it only after analyzer succeeds?
-        SuperWord sw(&autovectorization_arena, vloop_analyzer);
-        if (!vloop_analyzer.analyze() ||
-            !sw.transform_loop()) {
-          // Analyzer or Vectorization failed. From now on only unroll the loop.
-          if (cl->has_passed_slp()) {
-            C->set_major_progress();
-            cl->set_notpassed_slp();
-            cl->mark_do_unroll_only();
-          }
-        }
-      }
+      autovectorize(lpt, &autovectorization_arena);
     }
   }
 

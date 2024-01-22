@@ -41,6 +41,7 @@
 #include "opto/rootnode.hpp"
 #include "opto/subnode.hpp"
 #include "opto/subtypenode.hpp"
+#include "opto/superword.hpp"
 #include "opto/vectornode.hpp"
 #include "utilities/macros.hpp"
 
@@ -4204,6 +4205,37 @@ bool PhaseIdealLoop::duplicate_loop_backedge(IdealLoopTree *loop, Node_List &old
   C->set_major_progress();
 
   return true;
+}
+
+bool PhaseIdealLoop::autovectorize(IdealLoopTree* lpt, ResourceArea* arena) {
+  // Counted loop only
+  if (!lpt->is_counted()) { return false; }
+  CountedLoopNode* cl = lpt->_head->as_CountedLoop();
+
+  // Main-loop only
+  if (!cl->is_main_loop()) { return false; }
+
+  VLoop vloop(lpt, false);
+  if (vloop.check_preconditions()) {
+    // Ensure that all data structures from autovectorization are deallocated.
+    ResourceMark rm(arena);
+    VLoopAnalyzer vloop_analyzer(arena, vloop);
+    if (vloop_analyzer.analyze()) {
+      SuperWord sw(arena, vloop_analyzer);
+      if (sw.transform_loop()) {
+        return true;
+      }
+    }
+  }
+
+  // This counted main-loop either failed preconditions, the analyzer
+  // or in SuperWord. From now on only unroll the loop.
+  if (cl->has_passed_slp()) {
+    C->set_major_progress();
+    cl->set_notpassed_slp();
+    cl->mark_do_unroll_only();
+  }
+  return false;
 }
 
 // Having ReductionNodes in the loop is expensive. They need to recursively

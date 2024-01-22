@@ -556,7 +556,7 @@ private:
   static constexpr char const* FAILURE_NO_REDUCTION_OR_STORE = "no reduction and no store in loop";
 
   // Check basic structure of the loop
-  VLoop                _vloop;
+  const VLoop&         _vloop;
 
   // Submodules that analyze different aspects of the loop
   VLoopReductions      _reductions;
@@ -566,13 +566,13 @@ private:
   VLoopDependenceGraph _dependence_graph;
 
 public:
-  VLoopAnalyzer(Arena* arena, IdealLoopTree* lpt) :
-    _vloop           (lpt, false),
-    _reductions      (arena, vloop()),
-    _memory_slices   (arena, vloop()),
-    _body            (arena, vloop()),
-    _types           (arena, vloop(), body()),
-    _dependence_graph(arena, vloop(), memory_slices(), body())
+  VLoopAnalyzer(Arena* arena, const VLoop& vloop) :
+    _vloop           (vloop),
+    _reductions      (arena, vloop),
+    _memory_slices   (arena, vloop),
+    _body            (arena, vloop),
+    _types           (arena, vloop, body()),
+    _dependence_graph(arena, vloop, memory_slices(), body())
   {
   };
 
