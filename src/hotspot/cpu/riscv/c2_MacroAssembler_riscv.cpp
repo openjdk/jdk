@@ -1860,10 +1860,10 @@ void C2_MacroAssembler::float_to_float16(Register dst, FloatRegister src, FloatR
   // in riscv, NaN needs a special process as fcvt does not work in that case.
 
   // check whether it's a NaN.
-  fclass_s(t0, src);
-  andi(t0, t0, fclass_mask::nan);
+  // replace fclass with feq as performance optimization.
+  feq_s(t0, src, src);
   // jump to stub processing NaN cases.
-  bnez(t0, stub->entry());
+  beqz(t0, stub->entry());
 
   // non-NaN cases, just use built-in instructions.
   fcvt_h_s(ftmp, src);
