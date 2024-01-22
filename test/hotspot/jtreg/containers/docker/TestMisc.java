@@ -132,11 +132,11 @@ public class TestMisc {
             if (str.contains("cgroupv2")) {
                 out.shouldContain("memory_swap_current_in_bytes");
                 out.shouldContain("memory_swap_max_limit_in_bytes");
-	              for (String s : str.split(System.lineSeparator())) {
-	                if (s.contains("memory_swap_current_in_bytes")) {
-	                  s.shouldNotContain("unlimited");
-	                }
-	              }
+                for (String s : str.split(System.lineSeparator())) {
+                  if (s.contains("memory_swap_current_in_bytes")) {
+                    s.shouldNotContain("unlimited");
+                  }
+                }
             } else {
                 throw new RuntimeException("Output has to contain information about cgroupv1 or cgroupv2");
             }
