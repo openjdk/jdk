@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -260,8 +260,8 @@ address NativeLookup::lookup_style(const methodHandle& method, char* pure_name, 
   // Note: It is critical for bootstrapping that Java_java_lang_ClassLoader_findNative
   // gets found the first time around - otherwise an infinite loop can occur. This is
   // another VM/library dependency
-  Handle loader(THREAD, method->method_holder()->class_loader());
-  if (loader.is_null()) {
+  ClassLoaderData* cld = method->method_holder()->class_loader_data();
+  if (cld->is_boot_class_loader_data()) {
     entry = lookup_special_native(jni_name);
     if (entry == nullptr) {
        entry = (address) os::dll_lookup(os::native_java_library(), jni_name);
@@ -271,10 +271,23 @@ address NativeLookup::lookup_style(const methodHandle& method, char* pure_name, 
     }
   }
 
+#if INCLUDE_JVMCI
+  // Look for JVMCI natives if the method is loaded by the platform class loader
+  // and the JNI name denotes a JVMCI class. JVMCI native methods loaded
+  // by any other class loader will fail to link.
+  if (cld->is_platform_class_loader_data() && strncmp("Java_jdk_vm_ci_", jni_name, strlen("Java_jdk_vm_ci_")) == 0) {
+    entry = lookup_special_native(jni_name);
+    if (entry != nullptr) {
+      return entry;
+    }
+  }
+#endif
+
   // Otherwise call static method findNative in ClassLoader
   Klass*   klass = vmClasses::ClassLoader_klass();
   Handle name_arg = java_lang_String::create_from_str(jni_name, CHECK_NULL);
 
+  Handle loader(THREAD, cld->class_loader());
   JavaValue result(T_LONG);
   JavaCalls::call_static(&result,
                          klass,

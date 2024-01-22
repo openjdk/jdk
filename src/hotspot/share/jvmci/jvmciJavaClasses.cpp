@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -126,7 +126,8 @@ jmethodID JNIJVMCI::_HotSpotResolvedObjectTypeImpl_fromMetaspace_method;
 jmethodID JNIJVMCI::_HotSpotResolvedPrimitiveType_fromMetaspace_method;
 
 #define START_CLASS(className, fullClassName)                          {                 \
-  Klass* k = SystemDictionary::resolve_or_fail(vmSymbols::fullClassName(), true, CHECK); \
+  Handle cl = Handle(THREAD, SystemDictionary::java_platform_loader());                  \
+  Klass* k = SystemDictionary::resolve_or_fail(vmSymbols::fullClassName(), cl, Handle(), true, CHECK); \
   InstanceKlass* current = className::_klass;                                            \
   if (current != InstanceKlass::cast(k)) {                                               \
     if (current != nullptr) {                                                            \
@@ -515,7 +516,8 @@ void JNIJVMCI::initialize_ids(JNIEnv* env) {
 
 #define DUMP_ALL_NATIVE_METHODS(class_symbol) do {                                                                  \
   current_class_name = class_symbol->as_C_string();                                                                 \
-  Klass* k = SystemDictionary::resolve_or_fail(class_symbol, true, CHECK_EXIT);                                     \
+  Handle cl = Handle(THREAD, SystemDictionary::java_platform_loader());                                             \
+  Klass* k = SystemDictionary::resolve_or_fail(class_symbol, cl, Handle(), true, CHECK_EXIT);                       \
   InstanceKlass* iklass = InstanceKlass::cast(k);                                                                   \
   Array<Method*>* methods = iklass->methods();                                                                      \
   for (int i = 0; i < methods->length(); i++) {                                                                     \
