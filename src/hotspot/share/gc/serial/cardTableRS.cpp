@@ -94,8 +94,8 @@ class CheckForUnmarkedOops : public BasicOopIterateClosure {
     _card_table(card_table),
     _unmarked_addr(nullptr) {}
 
-  void do_oop(oop* p)       override { CheckForUnmarkedOops::do_oop_work(p); }
-  void do_oop(narrowOop* p) override { CheckForUnmarkedOops::do_oop_work(p); }
+  void do_oop(oop* p)       override { do_oop_work(p); }
+  void do_oop(narrowOop* p) override { do_oop_work(p); }
 
   bool has_unmarked_oop() {
     return _unmarked_addr != nullptr;
@@ -117,6 +117,7 @@ void CardTableRS::verify() {
     void do_object(oop obj) override {
       CheckForUnmarkedOops object_check(_young_gen, _card_table);
       obj->oop_iterate(&object_check);
+      // If this obj is imprecisely-marked, the card for obj-start must be dirty.
       if (object_check.has_unmarked_oop()) {
         guarantee(_card_table->is_dirty_for_addr(obj), "Found unmarked old-to-young pointer");
       }
