@@ -56,7 +56,7 @@ class AgeTable: public CHeapObj<mtGC> {
 
 #ifndef PRODUCT
   // check whether it's clear
-  bool is_clear();
+  bool is_clear() const;
 #endif // !PRODUCT
 
   // add entry

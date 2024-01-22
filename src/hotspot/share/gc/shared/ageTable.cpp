@@ -72,8 +72,8 @@ void AgeTable::clear() {
 }
 
 #ifndef PRODUCT
-bool AgeTable::is_clear() {
-  for (size_t* p = sizes; p < sizes + table_size; ++p) {
+bool AgeTable::is_clear() const {
+  for (const size_t* p = sizes; p < sizes + table_size; ++p) {
     if (*p != 0) return false;
   }
   return true;
