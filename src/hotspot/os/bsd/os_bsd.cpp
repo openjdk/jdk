@@ -1994,7 +1994,7 @@ void os::init(void) {
 
   Bsd::initialize_system_info();
 
-  // _main_thread points to the thread that created/loaded the JVM.
+  // _main_thread points to the thread that created/loaded the JVM
   Bsd::_main_thread = pthread_self();
 
   Bsd::clock_init();
@@ -2002,14 +2002,14 @@ void os::init(void) {
   os::Posix::init();
 }
 
-// To install functions for atexit system call
+// to install functions for atexit system call
 extern "C" {
   static void perfMemory_exit_helper() {
     perfMemory_exit();
   }
 }
 
-// This is called _after_ the global arguments have been parsed
+// this is called _after_ the global arguments have been parsed
 jint os::init_2(void) {
 
   // This could be set after os::Posix::init() but all platforms
@@ -2022,12 +2022,12 @@ jint os::init_2(void) {
     return JNI_ERR;
   }
 
-  // Check and sets minimum stack sizes against command line options
+  // check and sets minimum stack sizes against command line options
   if (set_minimum_stack_sizes() == JNI_ERR) {
     return JNI_ERR;
   }
 
-  // Not supported.
+  // not supported
   FLAG_SET_ERGO(UseNUMA, false);
   FLAG_SET_ERGO(UseNUMAInterleaving, false);
 
@@ -2083,11 +2083,11 @@ jint os::init_2(void) {
     }
   }
 
-  // Initialize thread priority policy
+  // initialize thread priority policy
   prio_init();
 
 #ifdef __APPLE__
-  // Dynamically link to objective c gc registration
+  // dynamically link to objective c gc registration
   void *handleLibObjc = dlopen(OBJC_LIB, RTLD_LAZY);
   if (handleLibObjc != nullptr) {
     objc_registerThreadWithCollectorFunction = (objc_registerThreadWithCollector_t) dlsym(handleLibObjc, OBJC_GCREGISTER);
@@ -2098,7 +2098,7 @@ jint os::init_2(void) {
 }
 
 int os::active_processor_count() {
-  // User has overridden the number of active processors
+  // user has overridden the number of active processors
   if (ActiveProcessorCount > 0) {
     log_trace(os)("active_processor_count: "
                   "active processor count set by user : %d",
@@ -2151,9 +2151,9 @@ uint os::processor_id() {
 
 void os::set_native_thread_name(const char *name) {
 #if defined(__APPLE__) && MAC_OS_X_VERSION_MIN_REQUIRED > MAC_OS_X_VERSION_10_5
-  // This is only supported in Snow Leopard and beyond
+  // this is only supported in Snow Leopard and beyond
   if (name != nullptr) {
-    // Add a "Java: " prefix to the name
+    // add a "Java: " prefix to the name
     char buf[MAXTHREADNAMESIZE];
     snprintf(buf, sizeof(buf), "Java: %s", name);
     pthread_setname_np(buf);
