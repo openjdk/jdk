@@ -35,6 +35,7 @@
 #include "gc/shenandoah/shenandoahLock.hpp"
 #include "gc/shenandoah/shenandoahEvacOOMHandler.hpp"
 #include "gc/shenandoah/shenandoahPadding.hpp"
+#include "gc/shenandoah/shenandoahPeriodicTasks.hpp"
 #include "gc/shenandoah/shenandoahSharedVariables.hpp"
 #include "gc/shenandoah/shenandoahUnload.hpp"
 #include "memory/metaspace.hpp"
@@ -206,6 +207,19 @@ public:
   size_t available()         const override;
 
   void set_soft_max_capacity(size_t v);
+
+// ---------- Periodic Tasks
+//
+private:
+  ShenandoahPeriodicTask _periodic_task;
+  ShenandoahPeriodicPacerNotify _periodic_pacer_notify_task;
+
+  void notify_heap_changed();
+
+public:
+
+  void set_forced_counters_update(bool value) { _periodic_task.set_forced_counters_update(value); }
+  void handle_force_counters_update() { _periodic_task.handle_force_counters_update(); }
 
 // ---------- Workers handling
 //
