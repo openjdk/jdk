@@ -53,8 +53,11 @@ class AgeTable: public CHeapObj<mtGC> {
 
   // clear table
   void clear();
+
+#ifndef PRODUCT
   // check whether it's clear
-  bool is_clear() PRODUCT_RETURN0;
+  bool is_clear() const;
+#endif // !PRODUCT
 
   // add entry
   inline void add(oop p, size_t oop_size);

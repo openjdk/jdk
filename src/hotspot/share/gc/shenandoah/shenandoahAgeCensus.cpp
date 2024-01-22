@@ -183,6 +183,7 @@ void ShenandoahAgeCensus::reset_local() {
   }
 }
 
+#ifndef PRODUCT
 // Is global census information clear?
 bool ShenandoahAgeCensus::is_clear_global() {
   assert(_epoch < MAX_SNAPSHOTS, "Out of bounds");
@@ -212,6 +213,7 @@ bool ShenandoahAgeCensus::is_clear_local() {
   }
   return true;
 }
+#endif // !PRODUCT
 
 void ShenandoahAgeCensus::update_tenuring_threshold() {
   if (!ShenandoahGenerationalAdaptiveTenuring) {

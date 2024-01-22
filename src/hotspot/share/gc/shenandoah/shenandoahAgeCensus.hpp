@@ -178,9 +178,11 @@ class ShenandoahAgeCensus: public CHeapObj<mtGC> {
   // Reset any partial census information
   void reset_local();
 
+#ifndef PRODUCT
   // Check whether census information is clear
   bool is_clear_global();
   bool is_clear_local();
+#endif // !PRODUCT
 
   // Print the age census information
   void print();
