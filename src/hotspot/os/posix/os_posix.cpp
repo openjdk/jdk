@@ -415,7 +415,7 @@ char* os::map_memory_to_file_aligned(size_t size, size_t alignment, int file_des
 
 int os::vsnprintf(char* buf, size_t len, const char* fmt, va_list args) {
   // All supported POSIX platforms provide C99 semantics.
-  int result = ALLOW_C_FUNCTION(vsnprintf, buf, len, fmt, args);
+  int result = ALLOW_C_FUNCTION(::vsnprintf, (buf, len, fmt, args);)
   // If an encoding error occurred (result < 0) then it's not clear
   // whether the buffer is NUL terminated, so ensure it is.
   if ((result < 0) && (len > 0)) {
@@ -821,11 +821,11 @@ ssize_t os::connect(int fd, struct sockaddr* him, socklen_t len) {
 }
 
 void os::exit(int num) {
-  ALLOW_C_FUNCTION(exit, num);
+  ALLOW_C_FUNCTION(::exit, (num);)
 }
 
 void os::_exit(int num) {
-  ALLOW_C_FUNCTION(_exit, num);
+  ALLOW_C_FUNCTION(::_exit, (num);)
 }
 
 // Builds a platform dependent Agent_OnLoad_<lib_name> function name
@@ -923,7 +923,7 @@ char* os::Posix::realpath(const char* filename, char* outbuf, size_t outbuflen) 
   // This assumes platform realpath() is implemented according to POSIX.1-2008.
   // POSIX.1-2008 allows to specify null for the output buffer, in which case
   // output buffer is dynamically allocated and must be ::free()'d by the caller.
-  char* p = ALLOW_C_FUNCTION(realpath, filename, nullptr);
+  char* p = ALLOW_C_FUNCTION(::realpath, (filename, nullptr);)
   if (p != nullptr) {
     if (strlen(p) < outbuflen) {
       strcpy(outbuf, p);
@@ -931,7 +931,7 @@ char* os::Posix::realpath(const char* filename, char* outbuf, size_t outbuflen) 
     } else {
       errno = ENAMETOOLONG;
     }
-    ALLOW_C_FUNCTION(free, p); // *not* os::free
+    ALLOW_C_FUNCTION(::free, (p);) // *not* os::free
   } else {
     // Fallback for platforms struggling with modern Posix standards (AIX 5.3, 6.1). If realpath
     // returns EINVAL, this may indicate that realpath is not POSIX.1-2008 compatible and
@@ -940,7 +940,7 @@ char* os::Posix::realpath(const char* filename, char* outbuf, size_t outbuflen) 
     // a memory overwrite.
     if (errno == EINVAL) {
       outbuf[outbuflen - 1] = '\0';
-      p = ALLOW_C_FUNCTION(realpath, filename, outbuf);
+      p = ALLOW_C_FUNCTION(::realpath, (filename, outbuf);)
       if (p != nullptr) {
         guarantee(outbuf[outbuflen - 1] == '\0', "realpath buffer overwrite detected.");
         result = p;
