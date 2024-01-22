@@ -357,6 +357,15 @@ class StubGenerator: public StubCodeGenerator {
                                   XMMRegister aad_hashx, Register in, Register out, Register data, Register pos, bool reduction,
                                   XMMRegister addmask, bool no_ghash_input, Register rounds, Register ghash_pos,
                                   bool final_reduction, int index, XMMRegister counter_inc_mask);
+  void ghash16_encrypt_parallel16_avx512(Register data, Register ghash_pos, Register CTR_CHECK, Register NROUNDS, Register key, bool ENC, bool hk_broadcast, bool is_hash_start, 
+                                         bool do_hash_reduction, bool do_hash_xor, bool no_ghash_in, Register subkeyH, Register in, Register pos, Register out);
+  void generateHtbl_32_blocks_avx512(Register htbl, Register avx512_htbl);
+  void initial_blocks_16_avx512(Register in, Register out, Register pos, Register key, bool no_ghash, XMMRegister CTR, XMMRegister GHASH, Register CTR_CHECK, XMMRegister ADDBE_4x4,
+                                XMMRegister ADDBE_1234, XMMRegister SHUF_MASK, Register ct);
+  void gcm_enc_dec_last_avx512(Register len, Register in, Register pos, XMMRegister HASH, Register subkeyHtbl);
+  void ghash16_avx512(Register in, Register pos, Register subkeyHtbl, XMMRegister HASH);
+  void aesgcm_avx512(Register in, Register len, Register ct, Register out, Register key,
+      Register state, Register subkeyHtbl, Register avx512_subkeyHtbl, Register counter);
   // AVX2 AES-GCM related functions
   void initial_blocks_avx2(XMMRegister ctr, Register rounds, Register key, Register len,
                            Register in, Register out, Register ct, XMMRegister aad_hashx, Register pos);
