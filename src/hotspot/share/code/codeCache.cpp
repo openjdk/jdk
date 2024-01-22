@@ -1790,16 +1790,15 @@ void CodeCache::print_summary(outputStream* st, bool detailed) {
                   total_size, total_used, total_max_used, total_free);
     }
     st->print_cr(" total_blobs=" UINT32_FORMAT ", nmethods=" UINT32_FORMAT
-                       ", adapters=" UINT32_FORMAT,
-                       blob_count(), nmethod_count(), adapter_count());
-    st->print_cr(" stopped_count=%d, restarted_count=%d, full_count=%d",
-                 CompileBroker::get_total_compiler_stopped_count(),
-                 CompileBroker::get_total_compiler_restarted_count(),
-                 full_count);
-    st->print_cr(" compilation=%s", CompileBroker::should_compile_new_jobs() ?
-              "enabled" : Arguments::mode() == Arguments::_int ?
-              "disabled (interpreter mode)" :
-              "disabled (not enough contiguous free space left)");
+                 ", adapters=" UINT32_FORMAT ", full_count=" UINT32_FORMAT,
+                 blob_count(), nmethod_count(), adapter_count(), full_count);
+    st->print_cr("Compilation:%s, stopped_count=%d, restarted_count=%d",
+                CompileBroker::should_compile_new_jobs() ?
+                "enabled" : Arguments::mode() == Arguments::_int ?
+                "disabled (interpreter mode)" :
+                "disabled (not enough contiguous free space left)",
+                CompileBroker::get_total_compiler_stopped_count(),
+                CompileBroker::get_total_compiler_restarted_count());
   }
 }
 

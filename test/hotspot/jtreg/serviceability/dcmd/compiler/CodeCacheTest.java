@@ -55,31 +55,28 @@ public class CodeCacheTest {
      *
      * Expected output without code cache segmentation:
      *
-     * CodeCache: size=245760Kb used=1366Kb max_used=1943Kb free=244393Kb
-     *  bounds [0x00007fe8bc9f2000, 0x00007fe8bcc62000, 0x00007fe8cb9f2000]
-     *  total_blobs=474, nmethods=87, adapters=293
-     *  stopped_count=0, restarted_count=0, full_count=0
-     *  compilation=enabled
+     * CodeCache: size=245760Kb used=1366Kb max_used=1935Kb free=244393Kb
+     *  bounds [0x00007ff4d89f2000, 0x00007ff4d8c62000, 0x00007ff4e79f2000]
+     *  total_blobs=474, nmethods=87, adapters=293, full_count=0
+     * Compilation:enabled, stopped_count=0, restarted_count=0
      *
      * Expected output with code cache segmentation (number of segments may change):
      *
      * CodeHeap 'non-profiled nmethods': size=118592Kb used=29Kb max_used=29Kb free=118562Kb
-     *  bounds [0x00007f89c8622000, 0x00007f89c8892000, 0x00007f89cf9f2000]
+     *  bounds [0x00007f09f8622000, 0x00007f09f8892000, 0x00007f09ff9f2000]
      * CodeHeap 'profiled nmethods': size=118588Kb used=80Kb max_used=80Kb free=118507Kb
-     *  bounds [0x00007f89c09f2000, 0x00007f89c0c62000, 0x00007f89c7dc1000]
-     * CodeHeap 'non-nmethods': size=8580Kb used=1258Kb max_used=1834Kb free=7321Kb
-     *  bounds [0x00007f89c7dc1000, 0x00007f89c8031000, 0x00007f89c8622000]
-     * CodeCache: size=245760Kb, used=1367Kb, max_used=1943Kb, free=244390Kb
-     *  total_blobs=474, nmethods=87, adapters=293
-     *  stopped_count=0, restarted_count=0, full_count=0
-     *  compilation=enabled
+     *  bounds [0x00007f09f09f2000, 0x00007f09f0c62000, 0x00007f09f7dc1000]
+     * CodeHeap 'non-nmethods': size=8580Kb used=1257Kb max_used=1833Kb free=7323Kb
+     *  bounds [0x00007f09f7dc1000, 0x00007f09f8031000, 0x00007f09f8622000]
+     * CodeCache: size=245760Kb, used=1366Kb, max_used=1942Kb, free=244392Kb
+     *  total_blobs=474, nmethods=87, adapters=293, full_count=0
+     * Compilation:enabled, stopped_count=0, restarted_count=0
      */
 
     static Pattern line1 = Pattern.compile("(CodeCache|CodeHeap.*): size=(\\p{Digit}*)Kb used=(\\p{Digit}*)Kb max_used=(\\p{Digit}*)Kb free=(\\p{Digit}*)Kb");
     static Pattern line2 = Pattern.compile(" bounds \\[0x(\\p{XDigit}*), 0x(\\p{XDigit}*), 0x(\\p{XDigit}*)\\]");
-    static Pattern line3 = Pattern.compile(" total_blobs=(\\p{Digit}*), nmethods=(\\p{Digit}*), adapters=(\\p{Digit}*)");
-    static Pattern line4 = Pattern.compile(" stopped_count=(\\p{Digit}*), restarted_count=(\\p{Digit}*), full_count=(\\p{Digit}*)");
-    static Pattern line5 = Pattern.compile(" compilation=(.*)");
+    static Pattern line3 = Pattern.compile(" total_blobs=(\\p{Digit}*), nmethods=(\\p{Digit}*), adapters=(\\p{Digit}*), full_count=(\\p{Digit}*)");
+    static Pattern line4 = Pattern.compile("Compilation:(.*?), stopped_count=(\\p{Digit}*), restarted_count=(\\p{Digit}*)");
 
     private static boolean getFlagBool(String flag, String where) {
       Matcher m = Pattern.compile(flag + "\\s+:?= (true|false)").matcher(where);
@@ -191,15 +188,18 @@ public class CodeCacheTest {
         line = lines.next();
         m = line4.matcher(line);
         if (m.matches()) {
-            System.out.println("stopped_count=" + m.group(1));
+            if (!m.group(1).contains("enabled") && !m.group(1).contains("disabled")) {
+                Assert.fail("Failed parsing dcmd codecache output");
+            }
+            int stopped = Integer.parseInt(m.group(2));
+            if (stopped < 0) {
+                Assert.fail("Failed parsing dcmd codecache output");
+            }
+            int restarted = Integer.parseInt(m.group(3));
+            if (restarted < 0) {
+                Assert.fail("Failed parsing dcmd codecache output");
+            }
         } else {
-            Assert.fail("Regexp 3 failed to match line: " + line);
-        }
-
-        // Validate fifth line
-        line = lines.next();
-        m = line5.matcher(line);
-        if (!m.matches()) {
             Assert.fail("Regexp 4 failed to match line: " + line);
         }
     }
