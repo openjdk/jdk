@@ -46,16 +46,18 @@
 SuperWord::SuperWord(Arena* arena, const VLoopAnalyzer &vla) :
   _vla(vla),
   _arena(arena),
-  // TODO reserve?
-  _packset(arena, 8,  0, nullptr),                          // packs for the current block
-  _node_info(arena, 8,  0, SWNodeInfo::initial),            // info needed per node
-  _clone_map(phase()->C->clone_map()),                      // map of nodes created in cloning
-  _align_to_ref(nullptr),                                   // memory reference to align vectors to
-  _n_idx_list(arena, 8),                                    // scratch list of (node,index) pairs
-  _race_possible(false),                                    // cases where SDMU is true
-  _do_vector_loop(phase()->C->do_vector_loop()),            // whether to do vectorization/simd style
-  _num_work_vecs(0),                                        // amount of vector work we have
-  _num_reductions(0)                                        // amount of reduction work we have
+  _packset(arena, 8,  0, nullptr),                 // packs for the current block
+  _node_info(arena,                                // info needed per node
+             body().length(),
+             body().length(),
+             SWNodeInfo::initial),
+  _clone_map(phase()->C->clone_map()),             // map of nodes created in cloning
+  _align_to_ref(nullptr),                          // memory reference to align vectors to
+  _n_idx_list(arena, 8),                           // scratch list of (node,index) pairs
+  _race_possible(false),                           // cases where SDMU is true
+  _do_vector_loop(phase()->C->do_vector_loop()),   // whether to do vectorization/simd style
+  _num_work_vecs(0),                               // amount of vector work we have
+  _num_reductions(0)                               // amount of reduction work we have
 {
 }
 
@@ -289,9 +291,6 @@ bool SuperWord::transform_loop() {
 const char* SuperWord::transform_loop_helper() {
   assert(phase()->C->do_superword(), "SuperWord option should be enabled");
   assert(cl()->is_main_loop(), "SLP should only work on main loops");
-
-  // Initialize data structures.
-  init();
 
   // Find adjacent loads and stores pairs.
   BAILOUT_ON_FAILURE(find_adjacent_refs);
@@ -3022,18 +3021,6 @@ void SuperWord::adjust_pre_loop_limit_to_align_main_loop_vectors() {
 
   // 6: Hack the pre-loop limit
   igvn().replace_input_of(pre_opaq, 1, constrained_limit);
-}
-
-//------------------------------init---------------------------
-void SuperWord::init() {
-  _packset.clear();
-  _node_info.clear();
-  _align_to_ref = nullptr;
-  _race_possible = 0;
-  _num_work_vecs = 0;
-  _num_reductions = 0;
-  Node* last = body().at(body().length() - 1);
-  grow_node_info(body_idx(last));
 }
 
 //------------------------------print_packset---------------------------

@@ -58,23 +58,24 @@ private:
 
 public:
   VLoop(IdealLoopTree* lpt, bool allow_cfg) :
-    _phase(lpt->_phase),
-    _lpt(lpt),
-    _allow_cfg(allow_cfg),
-    _cl(nullptr),
-    _cl_exit(nullptr),
-    _iv(nullptr),
+    _phase     (lpt->_phase),
+    _lpt       (lpt),
+    _allow_cfg (allow_cfg),
+    _cl        (nullptr),
+    _cl_exit   (nullptr),
+    _iv        (nullptr),
     _trace_tags(phase()->C->directive()->traceautovectorization_tags()) {}
+
   NONCOPYABLE(VLoop);
 
 public:
-  IdealLoopTree* lpt()    const { return _lpt; };
-  PhaseIdealLoop* phase() const { return _phase; }
-  CountedLoopNode* cl()   const { return _cl; };
-  Node* cl_exit()         const { return _cl_exit; };
-  PhiNode* iv()           const { return _iv; };
-  int iv_stride()         const { return cl()->stride_con(); };
-  bool is_allow_cfg()     const { return _allow_cfg; }
+  IdealLoopTree* lpt()        const { return _lpt; };
+  PhaseIdealLoop* phase()     const { return _phase; }
+  CountedLoopNode* cl()       const { return _cl; };
+  Node* cl_exit()             const { return _cl_exit; };
+  PhiNode* iv()               const { return _iv; };
+  int iv_stride()             const { return cl()->stride_con(); };
+  bool is_allow_cfg()         const { return _allow_cfg; }
 
   CountedLoopEndNode* pre_loop_end() const {
     assert(cl()->is_main_loop(), "only main loop can reference pre-loop");
@@ -87,6 +88,9 @@ public:
     assert(head != nullptr, "must find head");
     return head;
   };
+
+  int estimated_body_length() const { return lpt()->_body.size(); };
+  int estimated_node_count()  const { return (int)(1.10 * phase()->C->unique()); };
 
   bool in_body(const Node* n) const {
     // We only accept any nodes which have the loop head as their ctrl.
@@ -149,7 +153,7 @@ private:
 public:
   VLoopReductions(Arena* arena, const VLoop& vloop) :
     _vloop(vloop),
-    _loop_reductions(arena){}; // TODO reserve?
+    _loop_reductions(arena){};
 
   NONCOPYABLE(VLoopReductions);
 
@@ -224,8 +228,8 @@ private:
 public:
   VLoopMemorySlices(Arena* arena, const VLoop& vloop) :
     _vloop(vloop),
-    _heads(arena, 8,  0, nullptr),
-    _tails(arena, 8,  0, nullptr) {};
+    _heads(arena, 8, 0, nullptr),
+    _tails(arena, 8, 0, nullptr) {};
 
   NONCOPYABLE(VLoopMemorySlices);
 
@@ -259,9 +263,9 @@ private:
 
 public:
   VLoopBody(Arena* arena, const VLoop& vloop) :
-    _vloop(vloop),
-    _body(arena, 8, 0, nullptr),
-    _body_idx(arena, (int)(1.10 * _vloop.phase()->C->unique()), 0, 0) {}
+    _vloop   (vloop),
+    _body    (arena, vloop.estimated_body_length(), 0, nullptr),
+    _body_idx(arena, vloop.estimated_node_count(),  0, 0) {}
 
   NONCOPYABLE(VLoopBody);
 
@@ -318,23 +322,23 @@ private:
 
   // node->_idx -> DependenceNode* (or nullptr)
   GrowableArray<DependenceNode*> _map;
+  GrowableArray<int> _depth; // body_idx -> depth in graph (DAG)
   DependenceNode* _root;
   DependenceNode* _sink;
-  GrowableArray<int> _depth; // body_idx -> depth in graph (DAG)
 
 public:
   VLoopDependenceGraph(Arena* arena,
                        const VLoop& vloop,
                        const VLoopMemorySlices& memory_slices,
                        const VLoopBody& body) :
-    _vloop(vloop),
-    _memory_slices(memory_slices),
-    _body(body),
-    _arena(arena),
-    _map(arena, 8,  0, nullptr),
-    _root(new (arena) DependenceNode(nullptr)),
-    _sink(new (arena) DependenceNode(nullptr)),
-    _depth(arena, 8,  0, 0) {}
+    _vloop          (vloop),
+    _memory_slices  (memory_slices),
+    _body           (body),
+    _arena          (arena),
+    _map            (arena, vloop.estimated_node_count(),  0, nullptr),
+    _depth          (arena, vloop.estimated_body_length(), 0, 0),
+    _root           (new (arena) DependenceNode(nullptr)),
+    _sink           (new (arena) DependenceNode(nullptr)) {}
 
   NONCOPYABLE(VLoopDependenceGraph);
 
@@ -489,7 +493,7 @@ public:
              const VLoopBody& body) :
     _vloop(vloop),
     _body(body),
-    _velt_type(arena, 8,  0, nullptr) {}
+    _velt_type(arena, vloop.estimated_body_length(), 0, nullptr) {}
 
   NONCOPYABLE(VLoopTypes);
 
@@ -555,7 +559,6 @@ private:
   static constexpr char const* FAILURE_NO_MAX_UNROLL = "slp max unroll analysis required";
   static constexpr char const* FAILURE_NO_REDUCTION_OR_STORE = "no reduction and no store in loop";
 
-  // Check basic structure of the loop
   const VLoop&         _vloop;
 
   // Submodules that analyze different aspects of the loop

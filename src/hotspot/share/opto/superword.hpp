@@ -438,7 +438,6 @@ class SuperWord : public ResourceObj {
   void adjust_pre_loop_limit_to_align_main_loop_vectors();
   // Is the use of d1 in u1 at the same operand position as d2 in u2?
   bool opnd_positions_match(Node* d1, Node* u1, Node* d2, Node* u2);
-  void init();
 
   // print methods
   void print_packset() const;
