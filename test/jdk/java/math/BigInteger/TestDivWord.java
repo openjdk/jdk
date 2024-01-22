@@ -4,6 +4,15 @@ import java.util.Random;
 
 public class TestDivWord {
 
+    private static void checkResult(long n, int d, long res) {
+        final long LONG_MASK = 0xffffffffL;
+        final long dLong = d & LONG_MASK;
+        final long q = res & LONG_MASK, r = res >>> 32;
+
+        if (!(0 <= r && r < dLong && n == q * dLong + r))
+            System.err.println("Incorrect result with n = " + Long.toUnsignedString(n) + ", d = " + dLong + ": q = " + q + ", r = " + r);
+    }
+
     private static void randomCaseTests() {
         final int MAX_DIVISIONS = 1 << 30;
         Random rnd = new Random();
@@ -20,9 +29,10 @@ public class TestDivWord {
                     d = 1;
 
                 long t0 = System.nanoTime();
-                Accessor.divWord(n, d);
+                long res = Accessor.divWord(n, d);
                 long t1 = System.nanoTime();
 
+                checkResult(n, d, res);
                 elapsed = elapsed.plusNanos(t1 - t0);
             }
 
@@ -35,7 +45,8 @@ public class TestDivWord {
         long n = 0xfffffffffffffffeL;
         int d = 3;
         System.out.println(Long.toUnsignedString(n) + " / " + d + " = " + Long.divideUnsigned(n, d));
-        Accessor.divWord(n, d);
+        long res = Accessor.divWord(n, d);
+        checkResult(n, d, res);
     }
 
     public static void main(String[] args) {
