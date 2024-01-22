@@ -25,6 +25,7 @@ import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
+import javax.swing.Icon;
 import javax.swing.UIManager;
 import javax.swing.filechooser.FileSystemView;
 
@@ -261,7 +262,10 @@ public class NoIconExeNPE {
 
             FileSystemView fsv = FileSystemView.getFileSystemView();
             // No NullPointerException is expected
-            fsv.getSystemIcon(hello.toFile());
+            Icon icon = fsv.getSystemIcon(hello.toFile());
+            if (icon == null) {
+                throw new RuntimeException("Null icon returned by FileSystemView.getSystemIcon()");
+            }
         } finally {
             Files.deleteIfExists(hello);
             Files.delete(temp);

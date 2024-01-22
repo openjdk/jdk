@@ -1418,7 +1418,7 @@ final class Win32ShellFolder2 extends ShellFolder {
 
         public MultiResolutionIconImage(int baseSize, Map<Integer, Image> resolutionVariants) {
             assert !resolutionVariants.containsValue(null)
-                    : "There are null icons in the MRI variants map";
+                   : "There are null icons in the MRI variants map";
             this.baseSize = baseSize;
             this.resolutionVariants.putAll(resolutionVariants);
         }
