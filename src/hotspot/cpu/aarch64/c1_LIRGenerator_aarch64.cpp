@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -831,11 +831,11 @@ void LIRGenerator::do_LibmIntrinsic(Intrinsic* x) {
       }
       break;
     case vmIntrinsics::_dlog:
-      assert(StubRoutines::dlog() == nullptr, "no Math.log intrinsic on AArch64");
+      // Math.log intrinsic is not implemented on AArch64 (see JDK-8210858),
+      // but we can still call the shared runtime.
       __ call_runtime_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::dlog), getThreadTemp(), result_reg, cc->args());
       break;
     case vmIntrinsics::_dlog10:
-      assert(StubRoutines::dlog10() == nullptr, "no Math.log10 intrinsic on AArch64");
       __ call_runtime_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::dlog10), getThreadTemp(), result_reg, cc->args());
       break;
     case vmIntrinsics::_dpow:
