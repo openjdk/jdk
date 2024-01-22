@@ -119,7 +119,7 @@ public class Maps {
 
     @Benchmark
     public ConcurrentHashMap<Integer, Integer> testConcurrentHashMapPutAll() {
-        ConcurrentHashMap<Integer, Integer> map = new ConcurrentHashMap<>();
+        ConcurrentHashMap<Integer, Integer> map = new ConcurrentHashMap<>(nkeys);
         for (int i = 0; i < nkeys; ++i) {
             map.put(rng.next(), rng.next());
         }
