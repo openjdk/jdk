@@ -34,6 +34,16 @@ import javax.lang.model.type.*;
 
 /**
  * Utility methods for operating on types.
+
+ * Most methods operate on {@linkplain PrimitiveType primitive types},
+ * {@linkplain ReferenceType reference types} (including {@linkplain
+ * ArrayType array types} and the {@linkplain NullType null type}),
+ * {@linkplain IntersectionType intersection types}, and the
+ * pseudo-type '{@link TypeKind#VOID void}'. {@linkplain
+ * ExecutableType Executable types} and the pseudo-types for
+ * {@linkplain TypeKind#PACKAGE packages} and {@linkplain
+ * TypeKind#MODULE modules} are generally out of scope for these
+ * methods.
  *
  * <p><b>Compatibility Note:</b> Methods may be added to this interface
  * in future releases of the platform.
@@ -205,11 +215,13 @@ public interface Types {
      *
      * @param kind  the kind of primitive type to return
      * @throws IllegalArgumentException if {@code kind} is not a primitive kind
+     * @jls 4.2 Primitive Types and Values
      */
     PrimitiveType getPrimitiveType(TypeKind kind);
 
     /**
      * {@return the null type}  This is the type of {@code null}.
+     * @jls 4.1 The Kinds of Types and Values
      */
     NullType getNullType();
 
@@ -237,7 +249,8 @@ public interface Types {
      *
      * @param componentType  the component type
      * @throws IllegalArgumentException if the component type is not valid for
-     *          an array
+     *          an array, including executable, package, module, executable, and wildcard types
+     * @jls 10.1 Array Types
      */
     ArrayType getArrayType(TypeMirror componentType);
 
@@ -248,6 +261,7 @@ public interface Types {
      * @param extendsBound  the extends (upper) bound, or {@code null} if none
      * @param superBound    the super (lower) bound, or {@code null} if none
      * @throws IllegalArgumentException if bounds are not valid
+     * @jls 4.5.1 Type Arguments of Parameterized Types
      */
     WildcardType getWildcardType(TypeMirror extendsBound,
                                  TypeMirror superBound);
