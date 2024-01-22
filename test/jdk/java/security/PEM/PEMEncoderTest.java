@@ -25,7 +25,7 @@
 
 /*
  * @test
- * @summary Testing PEM decodings
+ * @summary Testing PEM decoding
  */
 
 import java.io.IOException;

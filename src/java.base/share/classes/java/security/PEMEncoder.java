@@ -235,7 +235,7 @@ final public class PEMEncoder implements Encoder<SecurityObject> {
     public PEMEncoder withEncryption(char[] password) throws IOException {
         Objects.requireNonNull(password);
 
-        // PBEKeySpec clones password
+        // PBEKeySpec clones the password array
         PBEKeySpec spec = new PBEKeySpec(password);
 
         try {

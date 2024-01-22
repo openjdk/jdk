@@ -2,6 +2,8 @@ grant {
     permission java.lang.RuntimePermission "setSecurityManager";
     permission java.security.SecurityPermission "insertProvider.*";   
     permission java.security.SecurityPermission "removeProvider.*";
+    permission java.security.SecurityPermission
+                       "getProperty.jdk.epkcs8.defaultAlgorithm";
     permission java.io.FilePermission "${test.src}/-", "read";
     permission java.io.FilePermission "${closed.base}/-", "read";
 };

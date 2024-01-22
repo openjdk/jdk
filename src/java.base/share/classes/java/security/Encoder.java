@@ -36,8 +36,8 @@ import java.io.IOException;
  */
 public interface Encoder<T> {
     /**
-     * Encode a cryptographic object of type T, and that result returned as
-     * a byte array.
+     * Encode a cryptographic object of type T and return the result in a
+     * byte array.
      *
      * @param tClass the cryptographic object to be encoded
      * @return the byte array
