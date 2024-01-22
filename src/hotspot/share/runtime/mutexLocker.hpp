@@ -28,7 +28,6 @@
 #include "memory/allocation.hpp"
 #include "runtime/flags/flagSetting.hpp"
 #include "runtime/mutex.hpp"
-#include "runtime/safepointVerifiers.hpp"
 
 // Mutexes used in the VM.
 
