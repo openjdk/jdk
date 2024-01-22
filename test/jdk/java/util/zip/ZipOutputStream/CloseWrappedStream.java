@@ -87,13 +87,43 @@ public class CloseWrappedStream {
     }
 
     /**
-     * Check that the exception handling is correct when the
-     * wrapped stream throws while being closed
+     * Check that an exception thrown while closing the wrapped
+     * stream is propagated to the caller without any suppressed exceptions
      *
      * @throws IOException if an unexpected IOException occurs
      */
     @Test
     public void exceptionDuringClose() throws IOException {
+
+        WrappedOutputStream wrappedStream = new WrappedOutputStream();
+
+        IOException exception = assertThrows(IOException.class, () -> {
+            try (ZipOutputStream zo = new ZipOutputStream(wrappedStream)) {
+                zo.putNextEntry(new ZipEntry("file.txt"));
+                zo.write("hello".getBytes(StandardCharsets.UTF_8));
+                wrappedStream.failOnClose = true;
+            }
+        });
+
+        // Check that we failed with the expected message
+        assertEquals(WrappedOutputStream.CLOSE_MSG, exception.getMessage());
+
+        // There should be no suppressed exceptions
+        assertEquals(0, exception.getSuppressed().length);
+
+        // Verify that the wrapped stream was closed once
+        assertEquals(1, wrappedStream.timesClosed,
+                "Expected wrapped output stream to be closed once");
+    }
+
+    /**
+     * Check that if an exception is thrown while closing the wrapped stream,
+     * then later close attempts will not close the wrapped stream again
+     *
+     * @throws IOException if an unexpected IOException occurs
+     */
+    @Test
+    public void doubleCloseShouldCloseWrappedStreamOnce() throws IOException {
 
         WrappedOutputStream wrappedStream = new WrappedOutputStream();
 
@@ -124,8 +154,10 @@ public class CloseWrappedStream {
     }
 
     /**
-     * Check that the exception handling is correct when the wrapped
-     * stream throws while calling finish AND while being closed
+     * Check that when the wrapped stream throws while calling finish
+     * AND while being closed, then the propagated exception is the one
+     * from the close operation, with the exception thrown during finish
+     * added as a suppressed exception.
      *
      * @throws IOException if an unexpected IOException occurs
      */
@@ -133,7 +165,6 @@ public class CloseWrappedStream {
     public void exceptionDuringFinishAndClose() throws IOException {
 
         WrappedOutputStream wrappedStream = new WrappedOutputStream();
-
 
         IOException exception = assertThrows(IOException.class, () -> {
             try (ZipOutputStream zo = new ZipOutputStream(wrappedStream)) {
@@ -160,8 +191,9 @@ public class CloseWrappedStream {
     }
 
     /**
-     * Check that the exception handling is correct when the wrapped stream throws
-     * the same IOException (identical instance) for write and close operations.
+     * Check that when the wrapped stream throws the same IOException
+     * (identical instance) for write and close operations, then no attempt
+     * is made to add the exception instance to itself as a suppressed exception.
      *
      * @throws IOException if an unexpected IOException occurs
      */
