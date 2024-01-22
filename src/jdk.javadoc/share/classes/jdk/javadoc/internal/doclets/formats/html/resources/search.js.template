@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,8 +31,6 @@ const messages = {
     loading: "##REPLACE:doclet.search.loading##",
     searching: "##REPLACE:doclet.search.searching##",
     redirecting: "##REPLACE:doclet.search.redirecting##",
-    linkIcon: "##REPLACE:doclet.Link_icon##",
-    linkToSection: "##REPLACE:doclet.Link_to_section##"
 }
 const categories = {
     modules: "##REPLACE:doclet.search.modules##",
@@ -255,9 +253,6 @@ function rateNoise(str) {
 function doSearch(request, response) {
     var term = request.term.trim();
     var maxResults = request.maxResults || MAX_RESULTS;
-    if (term.length === 0) {
-        return this.close();
-    }
     var matcher = {
         plainMatcher: createMatcher(term, false),
         camelCaseMatcher: createMatcher(term, true)
@@ -407,58 +402,30 @@ $.widget("custom.catcomplete", $.ui.autocomplete, {
     }
 });
 $(function() {
-    var expanded = false;
-    var windowWidth;
-    function collapse() {
-        if (expanded) {
-            $("div#navbar-top").removeAttr("style");
-            $("button#navbar-toggle-button")
-                .removeClass("expanded")
-                .attr("aria-expanded", "false");
-            expanded = false;
-        }
-    }
-    $("button#navbar-toggle-button").click(function (e) {
-        if (expanded) {
-            collapse();
-        } else {
-            var navbar = $("div#navbar-top");
-            navbar.height(navbar.prop("scrollHeight"));
-            $("button#navbar-toggle-button")
-                .addClass("expanded")
-                .attr("aria-expanded", "true");
-            expanded = true;
-            windowWidth = window.innerWidth;
-        }
-    });
-    $("ul.sub-nav-list-small li a").click(collapse);
-    $("input#search-input").focus(collapse);
-    $("main").click(collapse);
-    $("section[id] > :header, :header[id], :header:has(a[id])").each(function(idx, el) {
-        // Create anchor links for headers with an associated id attribute
-        var hdr = $(el);
-        var id = hdr.attr("id") || hdr.parent("section").attr("id") || hdr.children("a").attr("id");
-        if (id) {
-            hdr.append(" <a href='#" + id + "' class='anchor-link' aria-label='" + messages.linkToSection
-                + "'><img src='" + pathtoroot + "resource-files/link.svg' alt='" + messages.linkIcon +"' tabindex='0'"
-                + " width='16' height='16'></a>");
-        }
-    });
-    $(window).on("orientationchange", collapse).on("resize", function(e) {
-        if (expanded && windowWidth !== window.innerWidth) collapse();
-    });
     var search = $("#search-input");
-    var reset = $("#reset-button");
+    var reset = $("#reset-search");
     search.catcomplete({
         minLength: 1,
         delay: 200,
-        source: doSearch,
+        source: function(request, response) {
+            reset.css("display", "inline");
+            if (request.term.trim() === "") {
+                return this.close();
+            }
+            return doSearch(request, response);
+        },
         response: function(event, ui) {
             if (!ui.content.length) {
                 ui.content.push({ l: messages.noResult });
             } else {
                 $("#search-input").empty();
             }
+        },
+        close: function(event, ui) {
+            reset.css("display", search.val() ? "inline" : "none");
+        },
+        change: function(event, ui) {
+            reset.css("display", search.val() ? "inline" : "none");
         },
         autoFocus: true,
         focus: function(event, ui) {
@@ -480,6 +447,7 @@ $(function() {
     reset.prop("disabled", false);
     reset.click(function() {
         search.val('').focus();
+        reset.css("display", "none");
     });
     search.focus();
 });

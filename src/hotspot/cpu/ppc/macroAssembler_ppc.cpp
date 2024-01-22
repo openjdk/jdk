@@ -1187,8 +1187,12 @@ void MacroAssembler::post_call_nop() {
   if (!Continuations::enabled()) {
     return;
   }
+  // We use CMPI/CMPLI instructions to encode post call nops.
+  // Refer to NativePostCallNop for details.
+  relocate(post_call_nop_Relocation::spec());
   InlineSkippedInstructionsCounter skipCounter(this);
-  nop();
+  Assembler::emit_int32(Assembler::CMPLI_OPCODE | Assembler::opp_u_field(1, 9, 9));
+  assert(is_post_call_nop(*(int*)(pc() - 4)), "post call not not found");
 }
 
 void MacroAssembler::call_VM_base(Register oop_result,
