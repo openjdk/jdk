@@ -43,13 +43,11 @@ ShenandoahCollectorPolicy::ShenandoahCollectorPolicy() :
   _explicit_concurrent(0),
   _explicit_full(0),
   _implicit_concurrent(0),
-  _implicit_full(0),
-  _cycle_counter(0) {
+  _implicit_full(0) {
 
   Copy::zero_to_bytes(_degen_points, sizeof(size_t) * ShenandoahGC::_DEGENERATED_LIMIT);
 
   _tracer = new ShenandoahTracer();
-
 }
 
 void ShenandoahCollectorPolicy::record_explicit_to_concurrent() {
@@ -102,14 +100,6 @@ void ShenandoahCollectorPolicy::record_success_degenerated(bool is_abbreviated) 
 void ShenandoahCollectorPolicy::record_success_full() {
   _consecutive_degenerated_gcs = 0;
   _success_full_gcs++;
-}
-
-size_t ShenandoahCollectorPolicy::cycle_counter() const {
-  return _cycle_counter;
-}
-
-void ShenandoahCollectorPolicy::record_cycle_start() {
-  _cycle_counter++;
 }
 
 void ShenandoahCollectorPolicy::record_shutdown() {
