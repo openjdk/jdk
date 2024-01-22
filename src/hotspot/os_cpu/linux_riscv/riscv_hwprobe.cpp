@@ -49,7 +49,11 @@
 #define   RISCV_HWPROBE_EXT_ZBA                 (1 << 3)
 #define   RISCV_HWPROBE_EXT_ZBB                 (1 << 4)
 #define   RISCV_HWPROBE_EXT_ZBS                 (1 << 5)
+#define   RISCV_HWPROBE_EXT_ZICBOZ              (1 << 6)
+#define   RISCV_HWPROBE_EXT_ZBC                 (1 << 7)
 #define   RISCV_HWPROBE_EXT_ZFH                 (1 << 27)
+#define   RISCV_HWPROBE_EXT_ZTSO                (1ULL << 33)
+#define   RISCV_HWPROBE_EXT_ZACAS               (1ULL << 34)
 
 #define RISCV_HWPROBE_KEY_CPUPERF_0     5
 #define   RISCV_HWPROBE_MISALIGNED_UNKNOWN      (0 << 0)
@@ -146,8 +150,20 @@ void RiscvHwprobe::add_features_from_query_result() {
   if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZBS)) {
     VM_Version::ext_Zbs.enable_feature();
   }
+  if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZICBOZ)) {
+    VM_Version::ext_Zicboz.enable_feature();
+  }
+  if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZBC)) {
+    VM_Version::ext_Zbc.enable_feature();
+  }
   if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZFH)) {
     VM_Version::ext_Zfh.enable_feature();
+  }
+  if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZTSO)) {
+    VM_Version::ext_Ztso.enable_feature();
+  }
+  if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZACAS)) {
+    VM_Version::ext_Zacas.enable_feature();
   }
   if (is_valid(RISCV_HWPROBE_KEY_CPUPERF_0)) {
     VM_Version::unaligned_access.enable_feature(
