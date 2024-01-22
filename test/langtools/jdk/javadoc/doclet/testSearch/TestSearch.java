@@ -808,7 +808,7 @@ public class TestSearch extends JavadocTester {
                     ck="show('all-classes-table', 'all-classes-table-tab6', 2)" class="table-tab">An\
                     notation Interfaces</button>\
                     </div>
-                    <div id="all-classes-table.tabpanel" role="tabpanel">
+                    <div id="all-classes-table.tabpanel" role="tabpanel" aria-labelledby="all-classes-table-tab0">
                     <div class="summary-table two-column-summary">
                     <div class="table-header col-first">Class</div>
                     <div class="table-header col-last">Description</div>""");

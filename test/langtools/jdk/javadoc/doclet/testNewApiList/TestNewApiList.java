@@ -205,7 +205,7 @@ public class TestNewApiList extends JavadocTester {
                 <div class="table-tabs" role="tablist" aria-orientation="horizontal">
                 <div class="caption"><span>New Enum Classes</span></div>
                 </div>
-                <div id="enum-class.tabpanel" role="tabpanel" aria-labelledby="enum-tab0">
+                <div id="enum-class.tabpanel" role="tabpanel" aria-labelledby="enum-class-tab0">
                 <div class="summary-table three-column-release-summary">
                 <div class="table-header col-first sort-asc" onclick="sortTable(this, 0, 3)">Enum Class</div>
                 <div class="table-header col-second" onclick="sortTable(this, 1, 3)">Added in</div>

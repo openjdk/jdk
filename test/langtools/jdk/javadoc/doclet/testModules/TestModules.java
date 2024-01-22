@@ -1183,7 +1183,7 @@ public class TestModules extends JavadocTester {
                     ck="show('all-modules-table', 'all-modules-table-tab3', 2)" class="table-tab">Ot\
                     her Modules</button>\
                     </div>
-                    <div id="all-modules-table.tabpanel" role="tabpanel">
+                    <div id="all-modules-table.tabpanel" role="tabpanel" aria-labelledby="all-modules-table-tab0">
                     <div class="summary-table two-column-summary">""");
         checkOutput("index.html", false,
                 """
