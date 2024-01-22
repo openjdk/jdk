@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2020, Arm Limited. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Arm Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,6 +46,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -58,14 +59,11 @@ public class PerfMapTest {
     static final Pattern LINE_PATTERN =
         Pattern.compile("^((?:0x)?\\p{XDigit}+)\\s+((?:0x)?\\p{XDigit}+)\\s+(.*)$");
 
-    public void run(CommandExecutor executor) {
-        OutputAnalyzer output = executor.execute("Compiler.perfmap");
+    public void run(CommandExecutor executor, String cmd, Path path) {
+        OutputAnalyzer output = executor.execute(cmd);
 
         output.stderrShouldBeEmpty();
         output.stdoutShouldBeEmpty();
-
-        final long pid = ProcessHandle.current().pid();
-        final Path path = Paths.get(String.format("/tmp/perf-%d.map", pid));
 
         Assert.assertTrue(Files.exists(path));
 
@@ -81,7 +79,19 @@ public class PerfMapTest {
     }
 
     @Test
-    public void jmx() {
-        run(new JMXExecutor());
+    public void defaultMapFile() {
+        final long pid = ProcessHandle.current().pid();
+        final Path path = Paths.get(String.format("/tmp/perf-%d.map", pid));
+        run(new JMXExecutor(), "Compiler.perfmap", path);
+    }
+
+    @Test
+    public void specifiedMapFile() {
+        String test_dir = System.getProperty("test.dir", ".");
+        Path path = null;
+        do {
+            path = Paths.get(String.format("%s/%s.map", test_dir, UUID.randomUUID().toString()));
+        } while(Files.exists(path));
+        run(new JMXExecutor(), "Compiler.perfmap " + path.toString(), path);
     }
 }

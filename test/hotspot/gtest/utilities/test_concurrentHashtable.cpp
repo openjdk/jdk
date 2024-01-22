@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -322,7 +322,7 @@ static void cht_reset_shrink(Thread* thr) {
 
   Allocator mem_allocator;
   const uint initial_log_table_size = 4;
-  CustomTestTable* cht = new CustomTestTable(&mem_allocator);
+  CustomTestTable* cht = new CustomTestTable(Mutex::nosafepoint-2, &mem_allocator);
 
   cht_insert_and_find(thr, cht, val1);
   cht_insert_and_find(thr, cht, val2);
