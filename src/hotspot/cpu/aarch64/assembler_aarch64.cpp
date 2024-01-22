@@ -187,6 +187,18 @@ void Address::lea(MacroAssembler *as, Register r) const {
     zrf(Rd, 0);
   }
 
+void Assembler::prfm(const Address &adr, prfop pfop) {
+  if (adr.getMode() == Address::literal) {
+    starti;
+    f(0b11, 31, 30), f(0b011, 29, 27), f(0b000, 26, 24);
+    f(pfop, 4, 0);
+    int64_t offset = (adr.target() - pc()) >> 2;
+    sf(offset, 23, 5);
+  } else {
+    ld_st2(as_Register(pfop), adr, 0b11, 0b10);
+  }
+}
+
 // An "all-purpose" add/subtract immediate, per ARM documentation:
 // A "programmer-friendly" assembler may accept a negative immediate
 // between -(2^24 -1) and -1 inclusive, causing it to convert a

@@ -797,6 +797,8 @@ public:
 
   void adrp(Register Rd, const Address &dest, uint64_t &offset) = delete;
 
+  void prfm(const Address &adr, prfop pfop = PLDL1KEEP);
+
 #undef INSN
 
   void add_sub_immediate(Instruction_aarch64 &current_insn, Register Rd, Register Rn,
@@ -1571,25 +1573,6 @@ public:
   INSN(ldrsh,  0b01, 0b10);
   INSN(ldrshw, 0b01, 0b11);
   INSN(ldrsw,  0b10, 0b10);
-
-#undef INSN
-
-#define INSN(NAME, size, op)                                    \
-  void NAME(const Address &adr, prfop pfop = PLDL1KEEP) {       \
-    if (adr.getMode() == Address::literal) {                    \
-      starti;                                                   \
-      f(0b11, 31, 30), f(0b011, 29, 27), f(0b000, 26, 24);      \
-      f(pfop, 4, 0);                                            \
-      int64_t offset = (adr.target() - pc()) >> 2;              \
-      sf(offset, 23, 5);                                        \
-    } else {                                                    \
-      ld_st2(as_Register(pfop), adr, size, op);                 \
-    }                                                           \
-  }
-
-  INSN(prfm, 0b11, 0b10); // FIXME: PRFM should not be used with
-                          // writeback modes, but the assembler
-                          // doesn't enfore that.
 
 #undef INSN
 
