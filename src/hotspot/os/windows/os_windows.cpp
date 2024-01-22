@@ -1720,7 +1720,7 @@ void os::get_summary_os_info(char* buf, size_t buflen) {
 
 int os::vsnprintf(char* buf, size_t len, const char* fmt, va_list args) {
   // Starting with Visual Studio 2015, vsnprint is C99 compliant.
-  int result = ALLOW_C_FUNCTION(vsnprintf, buf, len, fmt, args);
+  int result = ALLOW_C_FUNCTION(::vsnprintf, (buf, len, fmt, args);)
   // If an encoding error occurred (result < 0) then it's not clear
   // whether the buffer is NUL terminated, so ensure it is.
   if ((result < 0) && (len > 0)) {
@@ -4233,9 +4233,9 @@ static void exit_process_or_thread(Ept what, int exit_code) {
   if (what == EPT_THREAD) {
     _endthreadex((unsigned)exit_code);
   } else if (what == EPT_PROCESS) {
-    ALLOW_C_FUNCTION(exit, exit_code);
+    ALLOW_C_FUNCTION(::exit, (exit_code);)
   } else { // EPT_PROCESS_DIE
-    ALLOW_C_FUNCTION(_exit, exit_code);
+    ALLOW_C_FUNCTION(::_exit, (exit_code);)
   }
 
   // Should not reach here
