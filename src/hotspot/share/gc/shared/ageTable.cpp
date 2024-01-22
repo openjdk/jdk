@@ -71,6 +71,15 @@ void AgeTable::clear() {
   }
 }
 
+#ifndef PRODUCT
+bool AgeTable::is_clear() const {
+  for (const size_t* p = sizes; p < sizes + table_size; ++p) {
+    if (*p != 0) return false;
+  }
+  return true;
+}
+#endif // !PRODUCT
+
 void AgeTable::merge(const AgeTable* subTable) {
   for (int i = 0; i < table_size; i++) {
     sizes[i]+= subTable->sizes[i];
