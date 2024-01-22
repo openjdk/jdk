@@ -222,13 +222,14 @@ class SuperWord : public ResourceObj {
 
   // VLoopAnalyzer
   const VLoopAnalyzer& vla()  const { return _vla; }
-  IdealLoopTree* lpt()        const { return vla().lpt(); }
-  PhaseIdealLoop* phase()     const { return vla().phase(); }
-  PhaseIterGVN& igvn()        const { return vla().phase()->igvn(); }
-  CountedLoopNode* cl()       const { return vla().cl(); }
-  PhiNode* iv()               const { return vla().iv(); }
-  int iv_stride()             const { return vla().iv_stride(); }
-  bool in_body(const Node* n) const { return vla().in_body(n); }
+  const VLoop& vloop()        const { return vla().vloop(); }
+  IdealLoopTree* lpt()        const { return vloop().lpt(); }
+  PhaseIdealLoop* phase()     const { return vloop().phase(); }
+  PhaseIterGVN& igvn()        const { return vloop().phase()->igvn(); }
+  CountedLoopNode* cl()       const { return vloop().cl(); }
+  PhiNode* iv()               const { return vloop().iv(); }
+  int iv_stride()             const { return vloop().iv_stride(); }
+  bool in_body(const Node* n) const { return vloop().in_body(n); }
 
   // VLoopAnalyzer reductions
   bool is_marked_reduction(const Node* n) const {
@@ -280,40 +281,40 @@ class SuperWord : public ResourceObj {
   // TraceAutoVectorization
   bool is_trace_superword_adjacent_memops() const {
     return TraceSuperWord ||
-           vla().is_trace(TraceAutovectorizationTag::SW_ADJACENT_MEMOPS);
+           vloop().is_trace(TraceAutovectorizationTag::SW_ADJACENT_MEMOPS);
   }
   bool is_trace_superword_alignment() const {
     // Too verbose for TraceSuperWord
-    return vla().is_trace(TraceAutovectorizationTag::SW_ALIGNMENT);
+    return vloop().is_trace(TraceAutovectorizationTag::SW_ALIGNMENT);
   }
   bool is_trace_superword_rejections() const {
     return TraceSuperWord ||
-           vla().is_trace(TraceAutovectorizationTag::SW_REJECTIONS);
+           vloop().is_trace(TraceAutovectorizationTag::SW_REJECTIONS);
   }
   bool is_trace_superword_packset() const {
     return TraceSuperWord ||
-           vla().is_trace(TraceAutovectorizationTag::SW_PACKSET);
+           vloop().is_trace(TraceAutovectorizationTag::SW_PACKSET);
   }
   bool is_trace_superword_verbose() const {
     // Too verbose for TraceSuperWord
-    return vla().is_trace(TraceAutovectorizationTag::SW_VERBOSE);
+    return vloop().is_trace(TraceAutovectorizationTag::SW_VERBOSE);
   }
   bool is_trace_superword_info() const {
     return TraceSuperWord ||
-           vla().is_trace(TraceAutovectorizationTag::SW_INFO);
+           vloop().is_trace(TraceAutovectorizationTag::SW_INFO);
   }
   bool is_trace_superword_any() const {
     return TraceSuperWord ||
            is_trace_align_vector() ||
-           vla().is_trace(TraceAutovectorizationTag::SW_ADJACENT_MEMOPS) ||
-           vla().is_trace(TraceAutovectorizationTag::SW_ALIGNMENT) ||
-           vla().is_trace(TraceAutovectorizationTag::SW_REJECTIONS) ||
-           vla().is_trace(TraceAutovectorizationTag::SW_PACKSET) ||
-           vla().is_trace(TraceAutovectorizationTag::SW_INFO) ||
-           vla().is_trace(TraceAutovectorizationTag::SW_VERBOSE);
+           vloop().is_trace(TraceAutovectorizationTag::SW_ADJACENT_MEMOPS) ||
+           vloop().is_trace(TraceAutovectorizationTag::SW_ALIGNMENT) ||
+           vloop().is_trace(TraceAutovectorizationTag::SW_REJECTIONS) ||
+           vloop().is_trace(TraceAutovectorizationTag::SW_PACKSET) ||
+           vloop().is_trace(TraceAutovectorizationTag::SW_INFO) ||
+           vloop().is_trace(TraceAutovectorizationTag::SW_VERBOSE);
   }
   bool is_trace_align_vector() const {
-    return vla().is_trace_align_vector() ||
+    return vloop().is_trace_align_vector() ||
            is_trace_superword_verbose();
   }
 #endif
@@ -344,7 +345,7 @@ class SuperWord : public ResourceObj {
   // my_pack
  public:
   Node_List* my_pack(Node* n) const {
-    return !vla().in_body(n) ? nullptr : _node_info.adr_at(body_idx(n))->_my_pack;
+    return !in_body(n) ? nullptr : _node_info.adr_at(body_idx(n))->_my_pack;
   }
  private:
   void set_my_pack(Node* n, Node_List* p)     { int i = body_idx(n); grow_node_info(i); _node_info.adr_at(i)->_my_pack = p; }

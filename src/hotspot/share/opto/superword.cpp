@@ -364,13 +364,13 @@ const char* SuperWord::find_adjacent_refs() {
       set_align_to_ref(align_to_mem_ref);
     }
 
-    VPointer align_to_ref_p(mem_ref, vla());
+    VPointer align_to_ref_p(mem_ref, vloop());
     // Set alignment relative to "align_to_ref" for all related memory operations.
     for (int i = memops.size() - 1; i >= 0; i--) {
       MemNode* s = memops.at(i)->as_Mem();
       if (isomorphic(s, mem_ref) &&
            (!_do_vector_loop || same_origin_idx(s, mem_ref))) {
-        VPointer p2(s, vla());
+        VPointer p2(s, vloop());
         if (p2.comparable(align_to_ref_p)) {
           int align = memory_alignment(s, iv_adjustment);
           set_alignment(s, align);
@@ -435,11 +435,11 @@ MemNode* SuperWord::find_align_to_ref(Node_List &memops, int &idx) {
   // Count number of comparable memory ops
   for (uint i = 0; i < memops.size(); i++) {
     MemNode* s1 = memops.at(i)->as_Mem();
-    VPointer p1(s1, vla());
+    VPointer p1(s1, vloop());
     for (uint j = i+1; j < memops.size(); j++) {
       MemNode* s2 = memops.at(j)->as_Mem();
       if (isomorphic(s1, s2)) {
-        VPointer p2(s2, vla());
+        VPointer p2(s2, vloop());
         if (p1.comparable(p2)) {
           (*cmp_ct.adr_at(i))++;
           (*cmp_ct.adr_at(j))++;
@@ -460,7 +460,7 @@ MemNode* SuperWord::find_align_to_ref(Node_List &memops, int &idx) {
     if (s->is_Store()) {
       int vw = vector_width_in_bytes(s);
       assert(vw > 1, "sanity");
-      VPointer p(s, vla());
+      VPointer p(s, vloop());
       if ( cmp_ct.at(j) >  max_ct ||
           (cmp_ct.at(j) == max_ct &&
             ( vw >  max_vw ||
@@ -483,7 +483,7 @@ MemNode* SuperWord::find_align_to_ref(Node_List &memops, int &idx) {
       if (s->is_Load()) {
         int vw = vector_width_in_bytes(s);
         assert(vw > 1, "sanity");
-        VPointer p(s, vla());
+        VPointer p(s, vloop());
         if ( cmp_ct.at(j) >  max_ct ||
             (cmp_ct.at(j) == max_ct &&
               ( vw >  max_vw ||
@@ -556,7 +556,7 @@ int SuperWord::get_vw_bytes_special(MemNode* s) {
 //---------------------------get_iv_adjustment---------------------------
 // Calculate loop's iv adjustment for this memory ops.
 int SuperWord::get_iv_adjustment(MemNode* mem_ref) {
-  VPointer align_to_ref_p(mem_ref, vla());
+  VPointer align_to_ref_p(mem_ref, vloop());
   int offset = align_to_ref_p.offset_in_bytes();
   int scale  = align_to_ref_p.scale_in_bytes();
   int elt_size = align_to_ref_p.memory_size();
@@ -654,8 +654,8 @@ bool SuperWord::are_adjacent_refs(Node* s1, Node* s2) {
 
   // Adjacent memory references must have the same base, be comparable
   // and have the correct distance between them.
-  VPointer p1(s1->as_Mem(), vla());
-  VPointer p2(s2->as_Mem(), vla());
+  VPointer p1(s1->as_Mem(), vloop());
+  VPointer p2(s2->as_Mem(), vloop());
   if (p1.base() != p2.base() || !p1.comparable(p2)) return false;
   int diff = p2.offset_in_bytes() - p1.offset_in_bytes();
   return diff == data_size(s1);
@@ -1157,8 +1157,8 @@ const AlignmentSolution* SuperWord::pack_alignment_solution(Node_List* pack) {
   assert(pack != nullptr && (pack->at(0)->is_Load() || pack->at(0)->is_Store()), "only load/store packs");
 
   const MemNode* mem_ref = pack->at(0)->as_Mem();
-  VPointer mem_ref_p(mem_ref, vla());
-  const CountedLoopEndNode* pre_end = vla().pre_loop_end();
+  VPointer mem_ref_p(mem_ref, vloop());
+  const CountedLoopEndNode* pre_end = vloop().pre_loop_end();
   assert(pre_end->stride_is_con(), "pre loop stride is constant");
 
   AlignmentSolver solver(pack->at(0)->as_Mem(),
@@ -1994,7 +1994,7 @@ const char* SuperWord::output() {
         // Walk up the memory chain, and ignore any StoreVector that provably
         // does not have any memory dependency.
         while (mem->is_StoreVector()) {
-          VPointer p_store(mem->as_Mem(), vla());
+          VPointer p_store(mem->as_Mem(), vloop());
           if (p_store.overlap_possible_with_any_in(p)) {
             break;
           } else {
@@ -2604,7 +2604,7 @@ int SuperWord::memory_alignment(MemNode* s, int iv_adjust) {
     tty->print("SuperWord::memory_alignment within a vector memory reference for %d:  ", s->_idx); s->dump();
   }
 #endif
-  VPointer p(s, vla());
+  VPointer p(s, vloop());
   if (!p.valid()) {
     NOT_PRODUCT(if(is_trace_superword_alignment()) tty->print_cr("SuperWord::memory_alignment: VPointer p invalid, return bottom_align");)
     return bottom_align;
@@ -2708,19 +2708,19 @@ void SuperWord::adjust_pre_loop_limit_to_align_main_loop_vectors() {
   assert(cl()->is_main_loop(), "can only do alignment for main loop");
 
   // The opaque node for the limit, where we adjust the input
-  Opaque1Node* pre_opaq = vla().pre_loop_end()->limit()->as_Opaque1();
+  Opaque1Node* pre_opaq = vloop().pre_loop_end()->limit()->as_Opaque1();
 
   // Current pre-loop limit.
   Node* old_limit = pre_opaq->in(1);
 
   // Where we put new limit calculations.
-  Node* pre_ctrl = vla().pre_loop_head()->in(LoopNode::EntryControl);
+  Node* pre_ctrl = vloop().pre_loop_head()->in(LoopNode::EntryControl);
 
   // Ensure the original loop limit is available from the pre-loop Opaque1 node.
   Node* orig_limit = pre_opaq->original_loop_limit();
   assert(orig_limit != nullptr && igvn().type(orig_limit) != Type::TOP, "");
 
-  VPointer align_to_ref_p(align_to_ref, vla());
+  VPointer align_to_ref_p(align_to_ref, vloop());
   assert(align_to_ref_p.valid(), "sanity");
 
   // For the main-loop, we want the address of align_to_ref to be memory aligned

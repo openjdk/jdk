@@ -1436,15 +1436,16 @@ const char* VLoop::check_preconditions_helper() {
   return VLoop::SUCCESS;
 }
 
-bool VLoopAnalyzer::analyze(IdealLoopTree* lpt, bool allow_cfg) {
-  bool success = check_preconditions(lpt, allow_cfg);
+bool VLoopAnalyzer::analyze(IdealLoopTree* lpt) {
+  reset(lpt);
+  bool success = _vloop.check_preconditions(lpt, false);
   if (!success) { return false; }
 
 #ifndef PRODUCT
-  if (is_trace_loop_analyzer()) {
+  if (vloop().is_trace_loop_analyzer()) {
     tty->print_cr("VLoopAnalyzer::analyze");
     lpt->dump_head();
-    cl()->dump();
+    vloop().cl()->dump();
   }
 #endif
 
@@ -1455,7 +1456,7 @@ bool VLoopAnalyzer::analyze(IdealLoopTree* lpt, bool allow_cfg) {
   }
 
 #ifndef PRODUCT
-  if (is_trace_loop_analyzer()) {
+  if (vloop().is_trace_loop_analyzer()) {
     tty->print_cr("VLoopAnalyze::analyze: failed: %s", return_state);
   }
 #endif
@@ -1464,7 +1465,7 @@ bool VLoopAnalyzer::analyze(IdealLoopTree* lpt, bool allow_cfg) {
 
 const char* VLoopAnalyzer::analyze_helper() {
   // skip any loop that has not been assigned max unroll by analysis
-  if (SuperWordLoopUnrollAnalysis && _cl->slp_max_unroll() == 0) {
+  if (SuperWordLoopUnrollAnalysis && vloop().cl()->slp_max_unroll() == 0) {
     return VLoopAnalyzer::FAILURE_NO_MAX_UNROLL;
   }
 

@@ -33,11 +33,10 @@
 // Code in this file and the vectorization.cpp contains shared logics and
 // utilities for C2's loop auto-vectorization.
 
-// Base class, used to check basic structure in preparation for auto-vectorization.
-// The subclass VLoopAnalyzer is used to analyze the loop and feed that information
-// to the auto-vectorization.
+// VLoop: check preconditions for auto-vectorination, and provide basic
+//        loop structure accessors.
 class VLoop : public StackObj {
-protected:
+private:
   PhaseIdealLoop* _phase = nullptr;
   Arena* _arena = nullptr;
   IdealLoopTree* _lpt = nullptr;
@@ -65,8 +64,7 @@ public:
     _trace_tags(phase->C->directive()->traceautovectorization_tags()) {}
   NONCOPYABLE(VLoop);
 
-protected:
-  virtual void reset(IdealLoopTree* lpt, bool allow_cfg) {
+  void reset(IdealLoopTree* lpt, bool allow_cfg) {
     assert(_phase == lpt->_phase, "must be the same phase");
     _lpt       = lpt;
     _cl        = nullptr;
@@ -140,7 +138,7 @@ public:
   // Overwrite previous data. Return indicates if analysis succeeded.
   bool check_preconditions(IdealLoopTree* lpt, bool allow_cfg);
 
-protected:
+private:
   const char* check_preconditions_helper();
 };
 
@@ -572,10 +570,14 @@ private:
 // Analyze the loop in preparation for auto-vectorization. This class is
 // deliberately structured into many submodules, which are as independent
 // as possible, though some submodules do require other submodules.
-class VLoopAnalyzer : public VLoop {
-protected:
+class VLoopAnalyzer : public StackObj {
+private:
+  static constexpr char const* SUCCESS               = "success";
   static constexpr char const* FAILURE_NO_MAX_UNROLL = "slp max unroll analysis required";
   static constexpr char const* FAILURE_NO_REDUCTION_OR_STORE = "no reduction and no store in loop";
+
+  // Check basic structure of the loop
+  VLoop                _vloop;
 
   // Submodules that analyze different aspects of the loop
   VLoopReductions      _reductions;
@@ -586,31 +588,30 @@ protected:
 
 public:
   VLoopAnalyzer(PhaseIdealLoop* phase) :
-    VLoop(phase),
-    _reductions(*this),
-    _memory_slices(*this),
-    _body(*this),
-    _types(*this, _body), // types requires: body
-    _dependence_graph(*this, _memory_slices, _body) // dependence_graph requires: memory_slices and body
+    _vloop(phase),
+    _reductions(vloop()),
+    _memory_slices(vloop()),
+    _body(vloop()),
+    _types(vloop(), body()), // types requires: body
+    _dependence_graph(vloop(), memory_slices(), body()) // dependence_graph requires: memory_slices and body
   {
   };
   NONCOPYABLE(VLoopAnalyzer);
 
   // Analyze the loop in preparation for vectorization.
   // Overwrite previous data. Return indicates if analysis succeeded.
-  bool analyze(IdealLoopTree* lpt,
-               bool allow_cfg);
+  bool analyze(IdealLoopTree* lpt);
 
   // Read-only accessors for submodules
-  const VLoopReductions& reductions() const            { return _reductions; }
-  const VLoopMemorySlices& memory_slices() const       { return _memory_slices; }
-  const VLoopBody& body() const                        { return _body; }
-  const VLoopTypes& types() const                      { return _types; }
+  const VLoop& vloop()                           const { return _vloop; }
+  const VLoopReductions& reductions()            const { return _reductions; }
+  const VLoopMemorySlices& memory_slices()       const { return _memory_slices; }
+  const VLoopBody& body()                        const { return _body; }
+  const VLoopTypes& types()                      const { return _types; }
   const VLoopDependenceGraph& dependence_graph() const { return _dependence_graph; }
 
 private:
-  virtual void reset(IdealLoopTree* lpt, bool allow_cfg) override {
-    VLoop::reset(lpt, allow_cfg);
+  void reset(IdealLoopTree* lpt) {
     _reductions.reset();
     _memory_slices.reset();
     _body.reset();
