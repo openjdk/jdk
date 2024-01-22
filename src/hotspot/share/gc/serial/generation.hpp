@@ -87,7 +87,6 @@ class Generation: public CHeapObj<mtGC> {
   enum Name {
     DefNew,
     MarkSweepCompact,
-    Other
   };
 
   enum SomePublicConstants {
