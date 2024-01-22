@@ -3805,7 +3805,7 @@ void TemplateTable::_new() {
 
     // Make sure klass is initialized.
     assert(VM_Version::supports_fast_class_init_checks(), "Optimization requires support for fast class initialization checks");
-    __ clinit_barrier(Rcpool,R16_thread, nullptr /*L_fast_path*/, &Lslow_case);
+    __ clinit_barrier(Rcpool, R16_thread, nullptr /*L_fast_path*/, &Lslow_case);
 
     // get instance_size.
     __ lwz(Rinstance_size, in_bytes(Klass::layout_helper_offset()), RinstanceKlass);
