@@ -979,12 +979,19 @@ bool os::dll_address_to_library_name(address addr, char* buf,
 // in case of error it checks if .dll/.so was built for the
 // same architecture as Hotspot is running on
 
-void *os::Bsd::dlopen_helper(const char *filename, int mode) {
+void *os::Bsd::dlopen_helper(const char *filename, int mode, char *ebuf, int ebuflen) {
 #ifndef IA32
   bool ieee_handling = IEEE_subnormal_handling_OK();
   if (!ieee_handling) {
     Events::log_dll_message(nullptr, "IEEE subnormal handling check failed before loading %s", filename);
     log_info(os)("IEEE subnormal handling check failed before loading %s", filename);
+    if (CheckJNICalls) {
+      tty->print_cr("WARNING: IEEE subnormal handling check failed before loading %s", filename);
+      Thread* current = Thread::current();
+      if (current->is_Java_thread()) {
+        JavaThread::cast(current)->print_jni_stack();
+      }
+    }
   }
 
   // Save and restore the floating-point environment around dlopen().
@@ -1005,27 +1012,51 @@ void *os::Bsd::dlopen_helper(const char *filename, int mode) {
   assert(rtn == 0, "fegetenv must succeed");
 #endif // IA32
 
-  void * result= ::dlopen(filename, RTLD_LAZY);
-
-#ifndef IA32
-  if (result  != nullptr && ! IEEE_subnormal_handling_OK()) {
-    // We just dlopen()ed a library that mangled the floating-point
-    // flags. Silently fix things now.
-    int rtn = fesetenv(&default_fenv);
-    assert(rtn == 0, "fesetenv must succeed");
-    bool ieee_handling_after_issue = IEEE_subnormal_handling_OK();
-
-    if (ieee_handling_after_issue) {
-      Events::log_dll_message(nullptr, "IEEE subnormal handling had to be corrected after loading %s", filename);
-      log_info(os)("IEEE subnormal handling had to be corrected after loading %s", filename);
-    } else {
-      Events::log_dll_message(nullptr, "IEEE subnormal handling could not be corrected after loading %s", filename);
-      log_info(os)("IEEE subnormal handling could not be corrected after loading %s", filename);
+  void* result;
+  JFR_ONLY(NativeLibraryLoadEvent load_event(filename, &result);)
+  result = ::dlopen(filename, RTLD_LAZY);
+  if (result == nullptr) {
+    const char* error_report = ::dlerror();
+    if (error_report == nullptr) {
+      error_report = "dlerror returned no error description";
     }
+    if (ebuf != nullptr && ebuflen > 0) {
+      ::strncpy(ebuf, error_report, ebuflen-1);
+      ebuf[ebuflen-1]='\0';
+    }
+    Events::log_dll_message(nullptr, "Loading shared library %s failed, %s", filename, error_report);
+    log_info(os)("shared library load of %s failed, %s", filename, error_report);
+    JFR_ONLY(load_event.set_error_msg(error_report);)
+  } else {
+    Events::log_dll_message(nullptr, "Loaded shared library %s", filename);
+    log_info(os)("shared library load of %s was successful", filename);
+#ifndef IA32
+    if (! IEEE_subnormal_handling_OK()) {
+      // We just dlopen()ed a library that mangled the floating-point
+      // flags. Silently fix things now.
+      JFR_ONLY(load_event.set_fp_env_correction_attempt(true);)
+      int rtn = fesetenv(&default_fenv);
+      assert(rtn == 0, "fesetenv must succeed");
 
-    assert(ieee_handling_after_issue, "fesetenv didn't work");
-  }
+      if (IEEE_subnormal_handling_OK()) {
+        Events::log_dll_message(nullptr, "IEEE subnormal handling had to be corrected after loading %s", filename);
+        log_info(os)("IEEE subnormal handling had to be corrected after loading %s", filename);
+        JFR_ONLY(load_event.set_fp_env_correction_success(true);)
+      } else {
+        Events::log_dll_message(nullptr, "IEEE subnormal handling could not be corrected after loading %s", filename);
+        log_info(os)("IEEE subnormal handling could not be corrected after loading %s", filename);
+        if (CheckJNICalls) {
+          tty->print_cr("WARNING: IEEE subnormal handling could not be corrected after loading %s", filename);
+          Thread* current = Thread::current();
+          if (current->is_Java_thread()) {
+            JavaThread::cast(current)->print_jni_stack();
+          }
+        }
+        assert(false, "fesetenv didn't work");
+      }
+    }
 #endif // IA32
+  }
 
   return result;
 }
@@ -1037,30 +1068,7 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
 #else
   log_info(os)("attempting shared library load of %s", filename);
 
-  void* result;
-  JFR_ONLY(NativeLibraryLoadEvent load_event(filename, &result);)
-  result = os::Bsd::dlopen_helper(filename, RTLD_LAZY);
-  if (result != nullptr) {
-    Events::log_dll_message(nullptr, "Loaded shared library %s", filename);
-    // Successful loading
-    log_info(os)("shared library load of %s was successful", filename);
-    return result;
-  }
-
-  const char* error_report = ::dlerror();
-  if (error_report == nullptr) {
-    error_report = "dlerror returned no error description";
-  }
-  if (ebuf != nullptr && ebuflen > 0) {
-    // Read system error message into ebuf
-    ::strncpy(ebuf, error_report, ebuflen-1);
-    ebuf[ebuflen-1]='\0';
-  }
-  Events::log_dll_message(nullptr, "Loading shared library %s failed, %s", filename, error_report);
-  log_info(os)("shared library load of %s failed, %s", filename, error_report);
-  JFR_ONLY(load_event.set_error_msg(error_report);)
-
-  return nullptr;
+  return os::Bsd::dlopen_helper(filename, RTLD_LAZY, ebuf, ebuflen);
 #endif // STATIC_BUILD
 }
 #else
@@ -1071,29 +1079,13 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
   log_info(os)("attempting shared library load of %s", filename);
 
   void* result;
-  JFR_ONLY(NativeLibraryLoadEvent load_event(filename, &result);)
-  result = os::Bsd::dlopen_helper(filename, RTLD_LAZY);
+  result = os::Bsd::dlopen_helper(filename, RTLD_LAZY, ebuf, ebuflen);
   if (result != nullptr) {
-    Events::log_dll_message(nullptr, "Loaded shared library %s", filename);
-    // Successful loading
-    log_info(os)("shared library load of %s was successful", filename);
     return result;
   }
 
-  Elf32_Ehdr elf_head;
-
-  const char* const error_report = ::dlerror();
-  if (error_report == nullptr) {
-    error_report = "dlerror returned no error description";
-  }
-  if (ebuf != nullptr && ebuflen > 0) {
-    // Read system error message into ebuf
-    ::strncpy(ebuf, error_report, ebuflen-1);
-    ebuf[ebuflen-1]='\0';
-  }
   Events::log_dll_message(nullptr, "Loading shared library %s failed, %s", filename, error_report);
   log_info(os)("shared library load of %s failed, %s", filename, error_report);
-  JFR_ONLY(load_event.set_error_msg(error_report);)
   int diag_msg_max_length=ebuflen-strlen(ebuf);
   char* diag_msg_buf=ebuf+strlen(ebuf);
 
@@ -1102,7 +1094,6 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
     return nullptr;
   }
 
-
   int file_descriptor= ::open(filename, O_RDONLY | O_NONBLOCK);
 
   if (file_descriptor < 0) {
@@ -1110,6 +1101,7 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
     return nullptr;
   }
 
+  Elf32_Ehdr elf_head;
   bool failed_to_read_elf_head=
     (sizeof(elf_head)!=
      (::read(file_descriptor, &elf_head,sizeof(elf_head))));
@@ -1805,11 +1797,6 @@ size_t os::large_page_size() {
 }
 
 bool os::can_commit_large_page_memory() {
-  // Does not matter, we do not support huge pages.
-  return false;
-}
-
-bool os::can_execute_large_page_memory() {
   // Does not matter, we do not support huge pages.
   return false;
 }
@@ -2557,3 +2544,25 @@ void os::jfr_report_memory_info() {
 }
 
 #endif // INCLUDE_JFR
+
+bool os::pd_dll_unload(void* libhandle, char* ebuf, int ebuflen) {
+
+  if (ebuf && ebuflen > 0) {
+    ebuf[0] = '\0';
+    ebuf[ebuflen - 1] = '\0';
+  }
+
+  bool res = (0 == ::dlclose(libhandle));
+  if (!res) {
+    // error analysis when dlopen fails
+    const char* error_report = ::dlerror();
+    if (error_report == nullptr) {
+      error_report = "dlerror returned no error description";
+    }
+    if (ebuf != nullptr && ebuflen > 0) {
+      snprintf(ebuf, ebuflen - 1, "%s", error_report);
+    }
+  }
+
+  return res;
+} // end: os::pd_dll_unload()

@@ -42,7 +42,11 @@ const bool CCallingConventionRequiresIntsAsLongs = false;
 // and Operational Models for ARMv8"
 #define CPU_MULTI_COPY_ATOMIC
 
+// The expected size in bytes of a cache line.
 #define DEFAULT_CACHE_LINE_SIZE 64
+
+// The default padding size for data structures to avoid false sharing.
+#define DEFAULT_PADDING_SIZE DEFAULT_CACHE_LINE_SIZE
 
 // According to the ARMv8 ARM, "Concurrent modification and execution
 // of instructions can lead to the resulting instruction performing

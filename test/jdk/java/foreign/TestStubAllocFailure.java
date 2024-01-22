@@ -31,12 +31,15 @@
  */
 
 import java.lang.foreign.*;
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
 import java.io.IOException;
 import java.util.List;
+import java.util.function.Consumer;
+import java.util.stream.Stream;
 
 import org.testng.annotations.Test;
 
-import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.fail;
 
 public class TestStubAllocFailure extends UpcallTestHelper {
@@ -44,23 +47,49 @@ public class TestStubAllocFailure extends UpcallTestHelper {
     @Test
     public void testUpcallAllocFailure() throws IOException, InterruptedException {
         runInNewProcess(UpcallRunner.class, true, List.of("-XX:ReservedCodeCacheSize=3M"), List.of())
-                .assertSuccess();
+                .shouldNotHaveExitValue(0)
+                .shouldNotHaveFatalError();
+    }
+
+    @Test
+    public void testUDowncallAllocFailure() throws IOException, InterruptedException {
+        runInNewProcess(DowncallRunner.class, true, List.of("-XX:ReservedCodeCacheSize=3M"), List.of())
+                .shouldNotHaveExitValue(0)
+                .shouldNotHaveFatalError();
     }
 
     public static class UpcallRunner extends NativeTestHelper {
         public static void main(String[] args) throws Throwable {
-            try (Arena arena = Arena.ofConfined()) {
-                while (true) {
-                    // allocate stubs until we crash
-                    upcallStub(UpcallRunner.class, "target", FunctionDescriptor.ofVoid(), arena);
-                }
-            } catch (OutOfMemoryError e) {
-                assertTrue(e.getMessage().contains("Failed to allocate upcall stub"));
+            FunctionDescriptor descriptor = FunctionDescriptor.ofVoid();
+            MethodHandle target = MethodHandles.lookup().findStatic(UpcallRunner.class, "target", descriptor.toMethodType());
+            while (true) {
+                LINKER.upcallStub(target, descriptor, Arena.ofAuto());
             }
         }
 
         public static void target() {
             fail("Should not get here");
+        }
+    }
+
+    public static class DowncallRunner extends NativeTestHelper {
+
+        private static final int MAX_ARITY = 5;
+
+        private static void mapper(FunctionDescriptor fd, Consumer<FunctionDescriptor> sink) {
+            for (MemoryLayout l : List.of(C_INT, C_LONG_LONG, C_DOUBLE, C_FLOAT, C_SHORT)) {
+                sink.accept(fd.appendArgumentLayouts(l));
+            }
+        }
+
+        public static void main(String[] args) throws Throwable {
+            Linker linker = Linker.nativeLinker();
+            Stream<FunctionDescriptor> stream = Stream.of(FunctionDescriptor.ofVoid());
+            for (int i = 0; i < MAX_ARITY; i++) {
+                stream = stream.mapMulti(DowncallRunner::mapper);
+            }
+
+            stream.forEach(linker::downcallHandle);
         }
     }
 }

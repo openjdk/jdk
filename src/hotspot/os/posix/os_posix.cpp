@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,6 +56,7 @@
 
 #ifdef AIX
 #include "loadlib_aix.hpp"
+#include "os_aix.hpp"
 #endif
 #ifdef LINUX
 #include "os_linux.hpp"
@@ -286,6 +287,7 @@ static char* reserve_mmapped_memory(size_t bytes, char* requested_addr) {
 }
 
 static int util_posix_fallocate(int fd, off_t offset, off_t len) {
+  static_assert(sizeof(off_t) == 8, "Expected Large File Support in this file");
 #ifdef __APPLE__
   fstore_t store = { F_ALLOCATECONTIG, F_PEOFPOSMODE, 0, len };
   // First we try to get a continuous chunk of disk space
@@ -731,36 +733,31 @@ void os::dll_unload(void *lib) {
   if (l_path == nullptr) {
     l_path = "<not available>";
   }
-  int res = ::dlclose(lib);
 
-  if (res == 0) {
+  char ebuf[1024];
+  bool res = os::pd_dll_unload(lib, ebuf, sizeof(ebuf));
+
+  if (res) {
     Events::log_dll_message(nullptr, "Unloaded shared library \"%s\" [" INTPTR_FORMAT "]",
                             l_path, p2i(lib));
     log_info(os)("Unloaded shared library \"%s\" [" INTPTR_FORMAT "]", l_path, p2i(lib));
     JFR_ONLY(unload_event.set_result(true);)
   } else {
-    const char* error_report = ::dlerror();
-    if (error_report == nullptr) {
-      error_report = "dlerror returned no error description";
-    }
-
     Events::log_dll_message(nullptr, "Attempt to unload shared library \"%s\" [" INTPTR_FORMAT "] failed, %s",
-                            l_path, p2i(lib), error_report);
+                            l_path, p2i(lib), ebuf);
     log_info(os)("Attempt to unload shared library \"%s\" [" INTPTR_FORMAT "] failed, %s",
-                  l_path, p2i(lib), error_report);
-    JFR_ONLY(unload_event.set_error_msg(error_report);)
+                  l_path, p2i(lib), ebuf);
+    JFR_ONLY(unload_event.set_error_msg(ebuf);)
   }
-  // Update the dll cache
-  AIX_ONLY(LoadedLibraries::reload());
   LINUX_ONLY(os::free(l_pathdup));
 }
 
 jlong os::lseek(int fd, jlong offset, int whence) {
-  return (jlong) BSD_ONLY(::lseek) NOT_BSD(::lseek64)(fd, offset, whence);
+  return (jlong) ::lseek(fd, offset, whence);
 }
 
 int os::ftruncate(int fd, jlong length) {
-   return BSD_ONLY(::ftruncate) NOT_BSD(::ftruncate64)(fd, length);
+   return ::ftruncate(fd, length);
 }
 
 const char* os::get_current_directory(char *buf, size_t buflen) {

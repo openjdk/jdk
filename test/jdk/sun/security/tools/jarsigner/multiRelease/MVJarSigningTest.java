@@ -120,7 +120,7 @@ public class MVJarSigningTest {
                 "-Djava.security.policy=" +
                 TEST_SRC + File.separator + POLICY_FILE,
                 "version.Main"};
-        ProcessTools.executeTestJvm(cmd)
+        ProcessTools.executeTestJava(cmd)
             .shouldHaveExitValue(0)
             .shouldContain(VERSION_MESSAGE);
     }

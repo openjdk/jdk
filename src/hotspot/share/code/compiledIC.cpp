@@ -128,11 +128,13 @@ void CompiledIC::internal_set_ic_destination(address entry_point, bool is_icstub
     tty->cr();
   }
 
+#ifdef ASSERT
   {
     CodeBlob* cb = CodeCache::find_blob(_call->instruction_address());
     assert(cb != nullptr && cb->is_compiled(), "must be compiled");
-    _call->set_destination_mt_safe(entry_point);
   }
+#endif
+  _call->set_destination_mt_safe(entry_point);
 
   if (is_optimized() || is_icstub) {
     // Optimized call sites don't have a cache value and ICStub call
@@ -185,7 +187,7 @@ address CompiledIC::stub_address() const {
 // Clears the IC stub if the compiled IC is in transition state
 void CompiledIC::clear_ic_stub() {
   if (is_in_transition_state()) {
-    ICStub* stub = ICStub_from_destination_address(stub_address());
+    ICStub* stub = ICStub::from_destination_address(stub_address());
     stub->clear();
   }
 }
@@ -291,10 +293,10 @@ bool CompiledIC::set_to_megamorphic(CallInfo* call_info, Bytecodes::Code bytecod
     }
   }
 
-  if (TraceICs) {
+  {
     ResourceMark rm;
     assert(call_info->selected_method() != nullptr, "Unexpected null selected method");
-    tty->print_cr ("IC@" INTPTR_FORMAT ": to megamorphic %s entry: " INTPTR_FORMAT,
+    log_trace(inlinecache)("IC@" INTPTR_FORMAT ": to megamorphic %s entry: " INTPTR_FORMAT,
                    p2i(instruction_address()), call_info->selected_method()->print_value_string(), p2i(entry));
   }
 
@@ -364,10 +366,11 @@ bool CompiledIC::is_call_to_interpreted() const {
 
 bool CompiledIC::set_to_clean(bool in_use) {
   assert(CompiledICLocker::is_safe(_method), "mt unsafe call");
-  if (TraceInlineCacheClearing || TraceICs) {
+  if (TraceInlineCacheClearing) {
     tty->print_cr("IC@" INTPTR_FORMAT ": set to clean", p2i(instruction_address()));
     print();
   }
+  log_trace(inlinecache)("IC@" INTPTR_FORMAT ": set to clean", p2i(instruction_address()));
 
   address entry = _call->get_resolve_call_stub(is_optimized());
 
@@ -433,9 +436,9 @@ bool CompiledIC::set_to_monomorphic(CompiledICInfo& info) {
       methodHandle method (thread, (Method*)info.cached_metadata());
       _call->set_to_interpreted(method, info);
 
-      if (TraceICs) {
-         ResourceMark rm(thread);
-         tty->print_cr ("IC@" INTPTR_FORMAT ": monomorphic to interpreter: %s",
+      {
+        ResourceMark rm(thread);
+        log_trace(inlinecache)("IC@" INTPTR_FORMAT ": monomorphic to interpreter: %s",
            p2i(instruction_address()),
            method->print_value_string());
       }
@@ -449,9 +452,9 @@ bool CompiledIC::set_to_monomorphic(CompiledICInfo& info) {
       // LSan appears unable to follow malloc-based memory consistently when embedded as an
       // immediate in generated machine code. So we have to ignore it.
       LSAN_IGNORE_OBJECT(holder);
-      if (TraceICs) {
+      {
          ResourceMark rm(thread);
-         tty->print_cr ("IC@" INTPTR_FORMAT ": monomorphic to interpreter via icholder ", p2i(instruction_address()));
+         log_trace(inlinecache)("IC@" INTPTR_FORMAT ": monomorphic to interpreter via icholder ", p2i(instruction_address()));
       }
     }
   } else {
@@ -479,10 +482,10 @@ bool CompiledIC::set_to_monomorphic(CompiledICInfo& info) {
       }
     }
 
-    if (TraceICs) {
+    {
       ResourceMark rm(thread);
       assert(info.cached_metadata() == nullptr || info.cached_metadata()->is_klass(), "must be");
-      tty->print_cr ("IC@" INTPTR_FORMAT ": monomorphic to compiled (rcvr klass = %s) %s",
+      log_trace(inlinecache)("IC@" INTPTR_FORMAT ": monomorphic to compiled (rcvr klass = %s) %s",
         p2i(instruction_address()),
         (info.cached_metadata() != nullptr) ? ((Klass*)info.cached_metadata())->print_value_string() : "nullptr",
         (safe) ? "" : " via stub");
@@ -606,9 +609,9 @@ bool CompiledDirectStaticCall::is_call_to_interpreted() const {
 }
 
 void CompiledStaticCall::set_to_compiled(address entry) {
-  if (TraceICs) {
+  {
     ResourceMark rm;
-    tty->print_cr("%s@" INTPTR_FORMAT ": set_to_compiled " INTPTR_FORMAT,
+    log_trace(inlinecache)("%s@" INTPTR_FORMAT ": set_to_compiled " INTPTR_FORMAT,
         name(),
         p2i(instruction_address()),
         p2i(entry));

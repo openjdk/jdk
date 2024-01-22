@@ -531,7 +531,6 @@ class os: AllStatic {
   static void   large_page_init();
   static size_t large_page_size();
   static bool   can_commit_large_page_memory();
-  static bool   can_execute_large_page_memory();
 
   // Check if pointer points to readable memory (by 4-byte read access)
   static bool    is_readable_pointer(const void* p);
@@ -790,6 +789,7 @@ class os: AllStatic {
   static void print_siginfo(outputStream* st, const void* siginfo);
   static void print_signal_handlers(outputStream* st, char* buf, size_t buflen);
   static void print_date_and_time(outputStream* st, char* buf, size_t buflen);
+  static void print_elapsed_time(outputStream* st, double time);
 
   static void print_user_info(outputStream* st);
   static void print_active_locale(outputStream* st);
@@ -1063,6 +1063,7 @@ class os: AllStatic {
                                 char pathSep);
   static bool set_boot_path(char fileSep, char pathSep);
 
+  static bool pd_dll_unload(void* libhandle, char* ebuf, int ebuflen);
 };
 
 // Note that "PAUSE" is almost always used with synchronization

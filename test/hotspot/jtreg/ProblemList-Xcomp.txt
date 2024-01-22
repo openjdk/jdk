@@ -48,4 +48,3 @@ vmTestbase/nsk/jdi/StepRequest/addClassFilter_rt/filter_rt003/TestDescription.ja
 vmTestbase/nsk/jvmti/scenarios/capability/CM03/cm03t001/TestDescription.java 8299493 macosx-x64
 
 gc/arguments/TestNewSizeFlags.java 8299116 macosx-aarch64
-gc/cslocker/TestCSLocker.java 8310480 linux-x64

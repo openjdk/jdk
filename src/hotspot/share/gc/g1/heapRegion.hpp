@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -257,7 +257,7 @@ private:
   uint _node_index;
 
   // Number of objects in this region that are currently pinned.
-  volatile uint _pinned_object_count;
+  volatile size_t _pinned_object_count;
 
   void report_region_type_change(G1HeapRegionTraceType::Type to);
 
@@ -408,7 +408,7 @@ public:
 
   bool is_old_or_humongous() const { return _type.is_old_or_humongous(); }
 
-  uint pinned_count() const { return Atomic::load(&_pinned_object_count); }
+  size_t pinned_count() const { return Atomic::load(&_pinned_object_count); }
   bool has_pinned_objects() const { return pinned_count() > 0; }
 
   void set_free();
