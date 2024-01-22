@@ -30,32 +30,40 @@ package java.lang.runtime;
  * methods in this class provide the run-time support for the exactness checks
  * of testing conversions from a primitive type to primitive type. These methods
  * may be used, for example, by Java compiler implementations to implement
- * checks for `instanceof` and pattern matching runtime implementations.
+ * checks for {@code instanceof} and pattern matching runtime implementations.
  * Unconditionally exact testing conversions do not require a corresponding
  * action at run time.
- *
+ * <p>
  * The run time conversion checks examine whether loss of information would
  * occur if a testing conversion would be to be applied. In those cases where a
  * floating-point primitive type is involved, and the value of the testing
- * conversion is either signed zero, signed infinity or NaN, these methods
- * comply with the following:
+ * conversion is either signed zero, signed infinity or {@code NaN}, these
+ * methods comply with the following:
  *
- * - Converting a floating-point negative zero to an integer type is considered
- *   inexact.
- * - Converting a floating-point NaN or infinity to an integer type is
- *   considered inexact.
- * - Converting a floating-point NaN or infinity or signed zero to another
- *   floating-point type is considered exact.
+ * <ul>
+ * <li>Converting a floating-point negative zero to an integer type is considered
+ *   inexact.</li>
+ * <li>Converting a floating-point {@code NaN} or infinity to an integer type is
+ *   considered inexact.</li>
+ * <li>Converting a floating-point {@code NaN} or infinity or signed zero to another
+ *   floating-point type is considered exact.</li>
+ * </ul>
  *
  * @jls 5.7.1 Exact Testing Conversions
  * @jls 5.7.2 Unconditionally Exact Testing Conversions
  * @jls 15.20.2 The instanceof Operator
  *
- * @implNote Methods that describe a testing conversion exactness check which
- * can be redirected through one of the methods in this class are omitted too
- * (i.e., byte to char can be redirected safely to `isIntToCharExact`, similarly
- * `short` to `byte`, `short` to `char`, `char` to `byte` and `char` to
- * `short`).
+ * @implNote Some exactness checks describe a test which
+ * can be redirected safely through one of the existing methods.
+ * Those are omitted too
+ * (i.e., {@code byte} to {@code char} can be redirected  to
+ * {@link ExactConversionsSupport#isIntToCharExact(int)},
+ * {@code short} to {@code byte} can be redirected to
+ * {@link ExactConversionsSupport#isIntToByteExact(int)}
+ * and similarly for
+ * {@code short} to {@code char},
+ * {@code char} to {@code byte} and
+ * {@code char} to {@code short} to the corresponding methods that take an {@code int}).
  *
  * @since 23
  */
