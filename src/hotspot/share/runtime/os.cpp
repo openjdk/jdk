@@ -655,7 +655,7 @@ void* os::malloc(size_t size, MEMFLAGS memflags, const NativeCallStack& stack) {
     return nullptr;
   }
 
-  void* const outer_ptr = ALLOW_C_FUNCTION(malloc, outer_size);
+  void* const outer_ptr = ALLOW_C_FUNCTION(::malloc, (outer_size);)
   if (outer_ptr == nullptr) {
     return nullptr;
   }
@@ -722,7 +722,7 @@ void* os::realloc(void *memblock, size_t size, MEMFLAGS memflags, const NativeCa
     header->mark_block_as_dead();
 
     // the real realloc
-    void* const new_outer_ptr = ALLOW_C_FUNCTION(realloc, header, new_outer_size);
+    void* const new_outer_ptr = ALLOW_C_FUNCTION(::realloc, (header, new_outer_size);)
 
     if (new_outer_ptr == nullptr) {
       // realloc(3) failed and the block still exists.
@@ -750,7 +750,7 @@ void* os::realloc(void *memblock, size_t size, MEMFLAGS memflags, const NativeCa
   } else {
 
     // NMT disabled.
-    rc = ALLOW_C_FUNCTION(realloc, memblock, size);
+    rc = ALLOW_C_FUNCTION(::realloc, (memblock, size);)
     if (rc == nullptr) {
       return nullptr;
     }
@@ -778,7 +778,7 @@ void  os::free(void *memblock) {
   // When NMT is enabled this checks for heap overwrites, then deaccounts the old block.
   void* const old_outer_ptr = MemTracker::record_free(memblock);
 
-  ALLOW_C_FUNCTION(free, old_outer_ptr);
+  ALLOW_C_FUNCTION(::free, (old_outer_ptr);)
 }
 
 void os::init_random(unsigned int initval) {
