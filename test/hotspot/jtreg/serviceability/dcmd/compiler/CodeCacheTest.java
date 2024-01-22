@@ -76,7 +76,7 @@ public class CodeCacheTest {
     static Pattern line1 = Pattern.compile("(CodeCache|CodeHeap.*): size=(\\p{Digit}*)Kb used=(\\p{Digit}*)Kb max_used=(\\p{Digit}*)Kb free=(\\p{Digit}*)Kb");
     static Pattern line2 = Pattern.compile(" bounds \\[0x(\\p{XDigit}*), 0x(\\p{XDigit}*), 0x(\\p{XDigit}*)\\]");
     static Pattern line3 = Pattern.compile(" total_blobs=(\\p{Digit}*), nmethods=(\\p{Digit}*), adapters=(\\p{Digit}*), full_count=(\\p{Digit}*)");
-    static Pattern line4 = Pattern.compile("Compilation:(.*?), stopped_count=(\\p{Digit}*), restarted_count=(\\p{Digit}*)");
+    static Pattern line4 = Pattern.compile("Compilation: (.*?), stopped_count=(\\p{Digit}*), restarted_count=(\\p{Digit}*)");
 
     private static boolean getFlagBool(String flag, String where) {
       Matcher m = Pattern.compile(flag + "\\s+:?= (true|false)").matcher(where);

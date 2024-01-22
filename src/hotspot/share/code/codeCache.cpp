@@ -1792,7 +1792,7 @@ void CodeCache::print_summary(outputStream* st, bool detailed) {
     st->print_cr(" total_blobs=" UINT32_FORMAT ", nmethods=" UINT32_FORMAT
                  ", adapters=" UINT32_FORMAT ", full_count=" UINT32_FORMAT,
                  blob_count(), nmethod_count(), adapter_count(), full_count);
-    st->print_cr("Compilation:%s, stopped_count=%d, restarted_count=%d",
+    st->print_cr("Compilation: %s, stopped_count=%d, restarted_count=%d",
                 CompileBroker::should_compile_new_jobs() ?
                 "enabled" : Arguments::mode() == Arguments::_int ?
                 "disabled (interpreter mode)" :
