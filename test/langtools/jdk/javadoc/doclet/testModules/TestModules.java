@@ -1264,7 +1264,7 @@ public class TestModules extends JavadocTester {
                     ck="show('all-packages-table', 'all-packages-table-tab2', 2)" class="table-tab">P\
                     ackage Group 1</button>\
                     </div>
-                    <div id="all-packages-table.tabpanel" role="tabpanel">
+                    <div id="all-packages-table.tabpanel" role="tabpanel" aria-labelledby="all-packages-table-tab0">
                     <div class="summary-table two-column-summary">""");
     }
 
