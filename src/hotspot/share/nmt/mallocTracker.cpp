@@ -190,7 +190,6 @@ void* MallocTracker::record_free_block(void* memblock) {
   assert(memblock != nullptr, "precondition");
 
   MallocHeader* header = MallocHeader::resolve_checked(memblock);
-  MEMFLAGS flags = header->flags();
 
   deaccount(header->free_info());
 
