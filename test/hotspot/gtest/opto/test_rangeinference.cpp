@@ -29,6 +29,8 @@
 
 #include <limits>
 
+#ifdef ASSERT
+
 template <class U>
 static U uniform_random();
 
@@ -108,7 +110,6 @@ template <class T, class U>
 static void test_normalize_constraints_random() {
   constexpr int samples = 1000;
   constexpr int parameters = 1000;
-  int non_empty = 0;
   for (int i = 0; i < parameters; i++) {
     T s1 = uniform_random<U>();
     T s2 = uniform_random<U>();
@@ -125,7 +126,6 @@ static void test_normalize_constraints_random() {
     U ones = b2 ^ intersection;
     TypeIntPrototype<T, U> t{{lo, hi}, {ulo, uhi}, {zeros, ones}};
     auto new_t = t.normalize_constraints();
-#ifdef ASSERT
     if (new_t.first) {
       new_t.second.verify_constraints();
     }
@@ -138,7 +138,6 @@ static void test_normalize_constraints_random() {
       }
     }
   }
-#endif // ASSERT
 }
 
 TEST_VM(opto, normalize_constraints) {
@@ -147,3 +146,5 @@ TEST_VM(opto, normalize_constraints) {
   test_normalize_constraints_random<jint, juint>();
   test_normalize_constraints_random<jlong, julong>();
 }
+
+#endif // ASSERT
