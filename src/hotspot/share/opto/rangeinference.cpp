@@ -24,18 +24,40 @@
 
 #include "precompiled.hpp"
 #include "opto/rangeinference.hpp"
+#include "opto/type.hpp"
+#include "utilities/tuple.hpp"
 
-constexpr juint SMALLINT = 3;  // a value too insignificant to consider widening
+constexpr juint SMALLINT = 3; // a value too insignificant to consider widening
 
 template <class T>
-static bool adjust_bounds_from_bits(bool& empty, T& lo, T& hi, T zeros, T ones) {
+class AdjustResult {
+public:
+  bool _progress;
+  bool _present;
+  T _data;
+};
+
+template <class T>
+class NormalizeSimpleResult {
+public:
+  bool _present;
+  RangeInt<T> _bounds;
+  KnownBits<T> _bits;
+};
+
+// Try to tighten the bound constraints from the known bit information
+// E.g: if lo = 0 but the lowest bit is always 1 then we can tighten
+// lo = 1
+template <class T>
+static AdjustResult<RangeInt<T>>
+adjust_bounds_from_bits(const RangeInt<T>& bounds, const KnownBits<T>& bits) {
   static_assert(std::is_unsigned<T>::value, "");
 
-  auto adjust_lo = [](T lo, T zeros, T ones) {
+  auto adjust_lo = [](T lo, const KnownBits<T>& bits) {
     constexpr size_t W = sizeof(T) * 8;
-    T zero_violation = lo & zeros;
-    T one_violation = ~lo & ones;
-    if (zero_violation == 0 && one_violation == 0) {
+    T zero_violation = lo & bits._zeros;
+    T one_violation = ~lo & bits._ones;
+    if (zero_violation == one_violation) {
       return lo;
     }
 
@@ -45,7 +67,7 @@ static bool adjust_bounds_from_bits(bool& empty, T& lo, T& hi, T zeros, T ones) 
       juint last_violation = W - 1 - count_leading_zeros(one_violation);
       T alignment = T(1) << last_violation;
       lo = (lo & -alignment) + alignment;
-      return lo | ones;
+      return lo | bits._ones;
     }
 
     // Suppose lo = 00110010, zeros = 01010010, ones = 10001000
@@ -58,200 +80,190 @@ static bool adjust_bounds_from_bits(bool& empty, T& lo, T& hi, T zeros, T ones) 
     // align for the violations of ones anymore.
     juint last_violation = W - 1 - count_leading_zeros(zero_violation);
     T find_mask = std::numeric_limits<T>::max() << last_violation;
-    T either = lo | zeros;
+    T either = lo | bits._zeros;
     T tmp = ~either & find_mask;
     T alignment = tmp & (-tmp);
     lo = (lo & -alignment) + alignment;
-    return lo | ones;
+    return lo | bits._ones;
   };
 
-  T new_lo = adjust_lo(lo, zeros, ones);
-  if (new_lo < lo) {
-    empty = true;
-    return true;
+  T new_lo = adjust_lo(bounds._lo, bits);
+  if (new_lo < bounds._lo) {
+    return {true, false, {}};
+  }
+  T new_hi = ~adjust_lo(~bounds._hi, {bits._ones, bits._zeros});
+  if (new_hi > bounds._hi) {
+    return {true, false, {}};
   }
 
-  T new_hi = ~adjust_lo(~hi, ones, zeros);
-  if (new_hi > hi) {
-    empty = true;
-    return true;
-  }
-  bool progress = (new_lo != lo) || (new_hi != hi);
-  lo = new_lo;
-  hi = new_hi;
-  empty = lo > hi;
-  return progress;
+  bool progress = (new_lo != bounds._lo) || (new_hi != bounds._hi);
+  bool present = new_lo <= new_hi;
+  return {progress, present, {new_lo, new_hi}};
 }
 
+// Try to tighten the known bit constraints from the bound information
+// E.g: if lo = 0 and hi = 10, then all but the lowest 4 bits must be 0
 template <class T>
-static bool adjust_bits_from_bounds(bool& empty, T& zeros, T& ones, T lo, T hi) {
+static AdjustResult<KnownBits<T>>
+adjust_bits_from_bounds(const KnownBits<T>& bits, const RangeInt<T>& bounds) {
   static_assert(std::is_unsigned<T>::value, "");
-  T mismatch = lo ^ hi;
+  T mismatch = bounds._lo ^ bounds._hi;
   T match_mask = mismatch == 0 ? std::numeric_limits<T>::max()
                                : ~(std::numeric_limits<T>::max() >> count_leading_zeros(mismatch));
-  T new_zeros = zeros | (match_mask &~ lo);
-  T new_ones = ones | (match_mask & lo);
-  bool progress = (new_zeros != zeros) || (new_ones != ones);
-  zeros = new_zeros;
-  ones = new_ones;
-  empty = ((zeros & ones) != 0);
-  return progress;
+  T new_zeros = bits._zeros | (match_mask &~ bounds._lo);
+  T new_ones = bits._ones | (match_mask & bounds._lo);
+  bool progress = (new_zeros != bits._zeros) || (new_ones != bits._ones);
+  bool present = ((new_zeros & new_ones) == 0);
+  return {progress, present, {new_zeros, new_ones}};
 }
 
+// Try to tighten both the bounds and the bits at the same time
+// Iteratively tighten 1 using the other until no progress is made.
+// This function converges because bit constraints converge fast.
 template <class T>
-static void normalize_constraints_simple(bool& empty, T& lo, T& hi, T& zeros, T& ones) {
-  adjust_bits_from_bounds(empty, zeros, ones, lo, hi);
-  if (empty) {
-    return;
+static NormalizeSimpleResult<T>
+normalize_constraints_simple(const RangeInt<T>& bounds, const KnownBits<T>& bits) {
+  AdjustResult<KnownBits<T>> nbits = adjust_bits_from_bounds(bits, bounds);
+  if (!nbits._present) {
+    return {false, {}, {}};
   }
+  AdjustResult<RangeInt<T>> nbounds{true, true, bounds};
   while (true) {
-    bool progress = adjust_bounds_from_bits(empty, lo, hi, zeros, ones);
-    if (!progress || empty) {
-      return;
+    nbounds = adjust_bounds_from_bits(nbounds._data, nbits._data);
+    if (!nbounds._progress || !nbounds._present) {
+      return {nbounds._present, nbounds._data, nbits._data};
     }
-    progress = adjust_bits_from_bounds(empty, zeros, ones, lo, hi);
-    if (!progress || empty) {
-      return;
+    nbits = adjust_bits_from_bounds(nbits._data, nbounds._data);
+    if (!nbits._progress || !nbits._present) {
+      return {nbits._present, nbounds._data, nbits._data};
     }
   }
 }
 
+// Tighten all constraints of a TypeIntPrototype to its canonical form.
+// i.e the result represents the same set as the input, each bound belongs to
+// the set and for each bit position that is not constrained, there exists 2
+// values with the bit value at that position being set and unset, respectively,
+// such that both belong to the set represented by the constraints.
 template <class T, class U>
-void normalize_constraints(bool& empty, T& lo, T& hi, U& ulo, U& uhi, U& zeros, U& ones) {
+Pair<bool, TypeIntPrototype<T, U>>
+TypeIntPrototype<T, U>::normalize_constraints() const {
   static_assert(std::is_signed<T>::value, "");
   static_assert(std::is_unsigned<U>::value, "");
   static_assert(sizeof(T) == sizeof(U), "");
 
-  if (lo > hi || ulo > uhi || (zeros & ones) != 0) {
-    empty = true;
-    return;
+  RangeInt<T> srange = _srange;
+  RangeInt<U> urange = _urange;
+  if (srange._lo > srange._hi ||
+      urange._lo > urange._hi ||
+      (_bits._zeros & _bits._ones) != 0) {
+    return {false, {}};
   }
 
-  if (T(ulo) > T(uhi)) {
-    if (T(uhi) < lo) {
-      uhi = std::numeric_limits<T>::max();
-    } else if (T(ulo) > hi) {
-      ulo = std::numeric_limits<T>::min();
+  if (T(urange._lo) > T(urange._hi)) {
+    if (T(urange._hi) < srange._lo) {
+      urange._hi = std::numeric_limits<T>::max();
+    } else if (T(urange._lo) > srange._hi) {
+      urange._lo = std::numeric_limits<T>::min();
     }
   }
 
-  if (T(ulo) <= T(uhi)) {
-    ulo = MAX2<T>(ulo, lo);
-    uhi = MIN2<T>(uhi, hi);
-    if (ulo > uhi) {
-      empty = true;
-      return;
+  if (T(urange._lo) <= T(urange._hi)) {
+    // [lo, hi] and [ulo, uhi] represent the same range
+    urange._lo = MAX2<T>(urange._lo, srange._lo);
+    urange._hi = MIN2<T>(urange._hi, srange._hi);
+    if (urange._lo > urange._hi) {
+      return {false, {}};
     }
 
-    normalize_constraints_simple(empty, ulo, uhi, zeros, ones);
-    lo = ulo;
-    hi = uhi;
-    return;
+    auto type = normalize_constraints_simple(urange, _bits);
+    return {type._present, {{T(type._bounds._lo), T(type._bounds._hi)},
+                            type._bounds, type._bits}};
   }
 
-  bool empty1 = false;
-  U lo1 = lo;
-  U hi1 = uhi;
-  U zeros1 = zeros;
-  U ones1 = ones;
-  normalize_constraints_simple(empty1, lo1, hi1, zeros1, ones1);
+  // [lo, hi] intersects with [ulo, uhi] in 2 ranges:
+  // [lo, uhi], which consists of negative values
+  // [ulo, hi] which consists of non-negative values
+  // We process these 2 separately and combine the results
+  auto neg_type = normalize_constraints_simple({U(srange._lo), urange._hi}, _bits);
+  auto pos_type = normalize_constraints_simple({urange._lo, U(srange._hi)}, _bits);
 
-  bool empty2 = false;
-  U lo2 = ulo;
-  U hi2 = hi;
-  U zeros2 = zeros;
-  U ones2 = ones;
-  normalize_constraints_simple(empty2, lo2, hi2, zeros2, ones2);
-
-  if (empty1 && empty2) {
-    empty = true;
-  } else if (empty1) {
-    lo = lo2;
-    hi = hi2;
-    ulo = lo2;
-    uhi = hi2;
-    zeros = zeros2;
-    ones = ones2;
-  } else if (empty2) {
-    lo = lo1;
-    hi = hi1;
-    ulo = lo1;
-    uhi = hi1;
-    zeros = zeros1;
-    ones = ones1;
+  if (!neg_type._present && !pos_type._present) {
+    return {false, {}};
+  } else if (!neg_type._present) {
+    return {true, {{T(pos_type._bounds._lo), T(pos_type._bounds._hi)},
+                   pos_type._bounds, pos_type._bits}};
+  } else if (!pos_type._present) {
+    return {true, {{T(neg_type._bounds._lo), T(neg_type._bounds._hi)},
+                   neg_type._bounds, neg_type._bits}};
   } else {
-    lo = lo1;
-    hi = hi2;
-    ulo = lo2;
-    uhi = hi1;
-    zeros = zeros1 & zeros2;
-    ones = ones1 & ones2;
+    return {true, {{T(neg_type._bounds._lo), T(pos_type._bounds._hi)},
+                   {pos_type._bounds._lo, neg_type._bounds._hi},
+                   {neg_type._bits._zeros & pos_type._bits._zeros, neg_type._bits._ones & pos_type._bits._ones}}};
   }
 }
-template void normalize_constraints(bool& empty, jint& lo, jint& hi, juint& ulo, juint& uhi, juint& zeros, juint& ones);
-template void normalize_constraints(bool& empty, jlong& lo, jlong& hi, julong& ulo, julong& uhi, julong& zeros, julong& ones);
 
 template <class T, class U>
-void verify_constraints(T lo, T hi, U ulo, U uhi, U zeros, U ones) {
-  static_assert(std::is_signed<T>::value, "");
-  static_assert(std::is_unsigned<U>::value, "");
-  static_assert(sizeof(T) == sizeof(U), "");
-
-  // Assert that the bounds cannot be further tightened
-  assert(lo <= hi && U(lo) >= ulo && U(lo) <= uhi && (lo & zeros) == 0 && (~lo & ones) == 0, "");
-  assert(hi >= lo && U(hi) >= ulo && U(hi) <= uhi && (hi & zeros) == 0 && (~hi & ones) == 0, "");
-  assert(T(ulo) >= lo && T(ulo) <= hi && ulo <= uhi && (ulo & zeros) == 0 && (~ulo & ones) == 0, "");
-  assert(T(uhi) >= lo && T(uhi) <= hi && uhi >= ulo && (uhi & zeros) == 0 && (~uhi & ones) == 0, "");
-
-  // Assert that the bits cannot be further tightened
-  if (U(lo) == ulo) {
-    bool empty = false;
-    assert(!adjust_bits_from_bounds(empty, zeros, ones, ulo, uhi), "");
-  } else {
-    bool empty1 = false;
-    U lo1 = lo;
-    U hi1 = uhi;
-    U zeros1 = zeros;
-    U ones1 = ones;
-    adjust_bits_from_bounds(empty1, zeros1, ones1, lo1, hi1);
-    assert(!empty1, "");
-    assert(!adjust_bounds_from_bits(empty1, lo1, hi1, zeros1, ones1), "");
-
-    bool empty2 = false;
-    U lo2 = ulo;
-    U hi2 = hi;
-    U zeros2 = zeros;
-    U ones2 = ones;
-    adjust_bits_from_bounds(empty2, zeros2, ones2, lo2, hi2);
-    assert(!empty2, "");
-    assert(!adjust_bounds_from_bits(empty2, lo2, hi2, zeros2, ones2), "");
-
-    assert((zeros1 & zeros2) == zeros && (ones1 & ones2) == ones, "");
-  }
-}
-template void verify_constraints(jint lo, jint hi, juint ulo, juint uhi, juint zeros, juint ones);
-template void verify_constraints(jlong lo, jlong hi, julong ulo, julong uhi, julong zeros, julong ones);
-
-template <class T, class U>
-int normalize_widen(T lo, T hi, U ulo, U uhi, U zeros, U ones, int w) {
+int TypeIntPrototype<T, U>::normalize_widen(int w) const {
   // Certain normalizations keep us sane when comparing types.
   // The 'SMALLINT' covers constants and also CC and its relatives.
-  if (cardinality_from_bounds(lo, hi, ulo, uhi) <= SMALLINT) {
+  if (cardinality_from_bounds(_srange, _urange) <= SMALLINT) {
     return Type::WidenMin;
   }
-  if (lo == std::numeric_limits<T>::min() && hi == std::numeric_limits<T>::max() &&
-      ulo == std::numeric_limits<U>::min() && uhi == std::numeric_limits<U>::max() &&
-      zeros == 0 && ones == 0) {
+  if (_srange._lo == std::numeric_limits<T>::min() && _srange._hi == std::numeric_limits<T>::max() &&
+      _urange._lo == std::numeric_limits<U>::min() && _urange._hi == std::numeric_limits<U>::max() &&
+      _bits._zeros == 0 && _bits._ones == 0) {
     // bottom type
     return Type::WidenMax;
   }
   return w;
 }
-template int normalize_widen(jint lo, jint hi, juint ulo, juint uhi, juint zeros, juint ones, int w);
-template int normalize_widen(jlong lo, jlong hi, julong ulo, julong uhi, julong zeros, julong ones, int w);
 
+#ifdef ASSERT
+template <class T, class U>
+bool TypeIntPrototype<T, U>::contains(T v) const {
+  return v >= _srange._lo && v <= _srange._hi && U(v) >= _urange._lo && U(v) <= _urange._hi &&
+         (v & _bits._zeros) == 0 && (~v & _bits._ones) == 0;
+}
+
+// Verify that this set representation is canonical
+template <class T, class U>
+void TypeIntPrototype<T, U>::verify_constraints() const {
+  static_assert(std::is_signed<T>::value, "");
+  static_assert(std::is_unsigned<U>::value, "");
+  static_assert(sizeof(T) == sizeof(U), "");
+
+  // Assert that the bounds cannot be further tightened
+  assert(contains(_srange._lo) && contains(_srange._hi) &&
+         contains(_urange._lo) && contains(_urange._hi), "");
+
+  // Assert that the bits cannot be further tightened
+  if (U(_srange._lo) == _urange._lo) {
+    assert(!adjust_bits_from_bounds(_bits, _urange)._progress, "");
+  } else {
+    RangeInt<U> neg_range{U(_srange._lo), _urange._hi};
+    auto neg_bits = adjust_bits_from_bounds(_bits, neg_range);
+    assert(neg_bits._present, "");
+    assert(!adjust_bounds_from_bits(neg_range, neg_bits._data)._progress, "");
+
+    RangeInt<U> pos_range{_urange._lo, U(_srange._hi)};
+    auto pos_bits = adjust_bits_from_bounds(_bits, pos_range);
+    assert(pos_bits._present, "");
+    assert(!adjust_bounds_from_bits(pos_range, pos_bits._data)._progress, "");
+
+    assert((neg_bits._data._zeros & pos_bits._data._zeros) == _bits._zeros &&
+           (neg_bits._data._ones & pos_bits._data._ones) == _bits._ones, "");
+  }
+}
+#endif // ASSERT
+
+template class TypeIntPrototype<jint, juint>;
+template class TypeIntPrototype<jlong, julong>;
+
+// Compute the meet of 2 types, when dual is true, we are actually computing the
+// join.
 template <class CT, class T, class UT>
-const Type* int_type_xmeet(const CT* i1, const Type* t2, const Type* (*make)(T, T, UT, UT, UT, UT, int, bool), bool dual) {
+const Type* int_type_xmeet(const CT* i1, const Type* t2, const Type* (*make)(const TypeIntPrototype<T, UT>&, int, bool), bool dual) {
   // Perform a fast test for common case; meeting the same types together.
   if (i1 == t2 || t2 == Type::TOP) {
     return i1;
@@ -260,12 +272,16 @@ const Type* int_type_xmeet(const CT* i1, const Type* t2, const Type* (*make)(T, 
   if (i2 != nullptr) {
     if (!dual) {
     // meet
-      return make(MIN2(i1->_lo, i2->_lo), MAX2(i1->_hi, i2->_hi), MIN2(i1->_ulo, i2->_ulo), MAX2(i1->_uhi, i2->_uhi),
-                  i1->_zeros & i2->_zeros, i1->_ones & i2->_ones, MAX2(i1->_widen, i2->_widen), false);
+      return make(TypeIntPrototype<T, UT>{{MIN2(i1->_lo, i2->_lo), MAX2(i1->_hi, i2->_hi)},
+                                          {MIN2(i1->_ulo, i2->_ulo), MAX2(i1->_uhi, i2->_uhi)},
+                                          {i1->_zeros & i2->_zeros, i1->_ones & i2->_ones}},
+                  MAX2(i1->_widen, i2->_widen), false);
     }
     // join
-    return make(MAX2(i1->_lo, i2->_lo), MIN2(i1->_hi, i2->_hi), MAX2(i1->_ulo, i2->_ulo), MIN2(i1->_uhi, i2->_uhi),
-                i1->_zeros | i2->_zeros, i1->_ones | i2->_ones, MIN2(i1->_widen, i2->_widen), true);
+    return make(TypeIntPrototype<T, UT>{{MAX2(i1->_lo, i2->_lo), MIN2(i1->_hi, i2->_hi)},
+                                        {MAX2(i1->_ulo, i2->_ulo), MIN2(i1->_uhi, i2->_uhi)},
+                                        {i1->_zeros | i2->_zeros, i1->_ones | i2->_ones}},
+                MIN2(i1->_widen, i2->_widen), true);
   }
 
   assert(t2->base() != i1->base(), "");
@@ -297,9 +313,9 @@ const Type* int_type_xmeet(const CT* i1, const Type* t2, const Type* (*make)(T, 
   }
 }
 template const Type* int_type_xmeet(const TypeInt* i1, const Type* t2,
-                                    const Type* (*make)(jint, jint, juint, juint, juint, juint, int, bool), bool dual);
+                                    const Type* (*make)(const TypeIntPrototype<jint, juint>&, int, bool), bool dual);
 template const Type* int_type_xmeet(const TypeLong* i1, const Type* t2,
-                                    const Type* (*make)(jlong, jlong, julong, julong, julong, julong, int, bool), bool dual);
+                                    const Type* (*make)(const TypeIntPrototype<jlong, julong>&, int, bool), bool dual);
 
 // Called in PhiNode::Value during CCP, monotically widen the value set, do so rigorously
 // first, after WidenMax attempts, if the type has still not converged we speed up the
@@ -344,7 +360,8 @@ const Type* int_type_widen(const CT* nt, const CT* ot, const CT* lt) {
 
   if (nt->_widen < Type::WidenMax) {
     // Returned widened new guy
-    return CT::make(nt->_lo, nt->_hi, nt->_ulo, nt->_uhi, nt->_zeros, nt->_ones, nt->_widen + 1);
+    TypeIntPrototype<T, U> prototype{{nt->_lo, nt->_hi}, {nt->_ulo, nt->_uhi}, {nt->_zeros, nt->_ones}};
+    return CT::make(prototype, nt->_widen + 1);
   }
 
   // Speed up the convergence by abandoning the bounds, there are only a couple of bits so
@@ -363,7 +380,8 @@ const Type* int_type_widen(const CT* nt, const CT* ot, const CT* lt) {
     zeros |= lt->_zeros;
     ones |= lt->_ones;
   }
-  return CT::make(min, max, umin, umax, zeros, ones, Type::WidenMax);
+  TypeIntPrototype<T, U> prototype{{min, max}, {umin, umax}, {zeros, ones}};
+  return CT::make(prototype, Type::WidenMax);
 }
 template const Type* int_type_widen(const TypeInt* nt, const TypeInt* ot, const TypeInt* lt);
 template const Type* int_type_widen(const TypeLong* nt, const TypeLong* ot, const TypeLong* lt);
@@ -401,13 +419,17 @@ const Type* int_type_narrow(const CT* nt, const CT* ot) {
   }
 
   // Only narrow if the range shrinks a lot
-  U oc = cardinality_from_bounds(ot->_lo, ot->_hi, ot->_ulo, ot->_uhi);
-  U nc = cardinality_from_bounds(nt->_lo, nt->_hi, nt->_ulo, nt->_uhi);
+  U oc = cardinality_from_bounds(RangeInt<T>{ot->_lo, ot->_hi},
+                                 RangeInt<U>{ot->_ulo, ot->_uhi});
+  U nc = cardinality_from_bounds(RangeInt<T>{nt->_lo, nt->_hi},
+                                 RangeInt<U>{nt->_ulo, nt->_uhi});
   return (nc > (oc >> 1) + (SMALLINT * 2)) ? ot : nt;
 }
 template const Type* int_type_narrow(const TypeInt* nt, const TypeInt* ot);
 template const Type* int_type_narrow(const TypeLong* nt, const TypeLong* ot);
 
+
+#ifndef PRODUCT
 template <class T>
 static const char* intnamenear(T origin, const char* xname, char* buf, size_t buf_size, T n) {
   if (n < origin) {
@@ -534,3 +556,4 @@ const char* bitname(char* buf, size_t buf_size, U zeros, U ones) {
 }
 template const char* bitname(char* buf, size_t buf_size, juint zeros, juint ones);
 template const char* bitname(char* buf, size_t buf_size, julong zeros, julong ones);
+#endif // PRODUCT

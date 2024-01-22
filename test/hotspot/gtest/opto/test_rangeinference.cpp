@@ -52,48 +52,38 @@ static void test_normalize_constraints_simple() {
     {
       T lo = MIN2<T>(a, b);
       T hi = MAX2<T>(a, b);
-      T nlo = lo;
-      T nhi = hi;
-      U nulo = std::numeric_limits<U>::min();
-      U nuhi = std::numeric_limits<U>::max();
-      U nzeros = 0;
-      U nones = 0;
-      bool empty = false;
-      normalize_constraints(empty, nlo, nhi, nulo, nuhi, nzeros, nones);
-      DEBUG_ONLY(verify_constraints(nlo, nhi, nulo, nuhi, nzeros, nones));
-      ASSERT_FALSE(empty);
-      ASSERT_EQ(lo, nlo);
-      ASSERT_EQ(hi, nhi);
+      TypeIntPrototype<T, U> t{{lo, hi}, {std::numeric_limits<U>::min(), std::numeric_limits<U>::max()},
+                               {0, 0}};
+      auto new_t = t.normalize_constraints();
+      ASSERT_TRUE(new_t.first);
+      DEBUG_ONLY(new_t.second.verify_constraints());
+      ASSERT_EQ(lo, new_t.second._srange._lo);
+      ASSERT_EQ(hi, new_t.second._srange._hi);
       if (U(lo) <= U(hi)) {
-        ASSERT_EQ(U(lo), nulo);
-        ASSERT_EQ(U(hi), nuhi);
+        ASSERT_EQ(U(lo), new_t.second._urange._lo);
+        ASSERT_EQ(U(hi), new_t.second._urange._hi);
       } else {
-        ASSERT_EQ(std::numeric_limits<U>::min(), nulo);
-        ASSERT_EQ(std::numeric_limits<U>::max(), nuhi);
+        ASSERT_EQ(std::numeric_limits<U>::min(), new_t.second._urange._lo);
+        ASSERT_EQ(std::numeric_limits<U>::max(), new_t.second._urange._hi);
       }
     }
 
     {
       U ulo = MIN2<U>(a, b);
       U uhi = MAX2<U>(a, b);
-      T nlo = std::numeric_limits<T>::min();
-      T nhi = std::numeric_limits<T>::max();
-      U nulo = ulo;
-      U nuhi = uhi;
-      U nzeros = 0;
-      U nones = 0;
-      bool empty = false;
-      normalize_constraints(empty, nlo, nhi, nulo, nuhi, nzeros, nones);
-      DEBUG_ONLY(verify_constraints(nlo, nhi, nulo, nuhi, nzeros, nones));
-      ASSERT_FALSE(empty);
-      ASSERT_EQ(ulo, nulo);
-      ASSERT_EQ(uhi, nuhi);
+      TypeIntPrototype<T, U> t{{std::numeric_limits<T>::min(), std::numeric_limits<T>::max()},
+                               {ulo, uhi}, {0, 0}};
+      auto new_t = t.normalize_constraints();
+      ASSERT_TRUE(new_t.first);
+      DEBUG_ONLY(new_t.second.verify_constraints());
+      ASSERT_EQ(ulo, new_t.second._urange._lo);
+      ASSERT_EQ(uhi, new_t.second._urange._hi);
       if (T(ulo) <= T(uhi)) {
-        ASSERT_EQ(T(ulo), nlo);
-        ASSERT_EQ(T(uhi), nhi);
+        ASSERT_EQ(T(ulo), new_t.second._srange._lo);
+        ASSERT_EQ(T(uhi), new_t.second._srange._hi);
       } else {
-        ASSERT_EQ(std::numeric_limits<T>::min(), nlo);
-        ASSERT_EQ(std::numeric_limits<T>::max(), nhi);
+        ASSERT_EQ(std::numeric_limits<T>::min(), new_t.second._srange._lo);
+        ASSERT_EQ(std::numeric_limits<T>::max(), new_t.second._srange._hi);
       }
     }
 
@@ -101,20 +91,15 @@ static void test_normalize_constraints_simple() {
       U intersection = a & b;
       U zeros = a ^ intersection;
       U ones = b ^ intersection;
-      T nlo = std::numeric_limits<T>::min();
-      T nhi = std::numeric_limits<T>::max();
-      U nulo = std::numeric_limits<U>::min();
-      U nuhi = std::numeric_limits<U>::max();
-      U nzeros = zeros;
-      U nones = ones;
-      bool empty = false;
-      normalize_constraints(empty, nlo, nhi, nulo, nuhi, nzeros, nones);
-      DEBUG_ONLY(verify_constraints(nlo, nhi, nulo, nuhi, nzeros, nones));
-      ASSERT_FALSE(empty);
-      ASSERT_EQ(zeros, nzeros);
-      ASSERT_EQ(ones, nones);
-      ASSERT_EQ(ones, nulo);
-      ASSERT_EQ(~zeros, nuhi);
+      TypeIntPrototype<T, U> t{{std::numeric_limits<T>::min(), std::numeric_limits<T>::max()},
+                               {std::numeric_limits<U>::min(), std::numeric_limits<U>::max()}, {zeros, ones}};
+      auto new_t = t.normalize_constraints();
+      ASSERT_TRUE(new_t.first);
+      DEBUG_ONLY(new_t.second.verify_constraints());
+      ASSERT_EQ(zeros, new_t.second._bits._zeros);
+      ASSERT_EQ(ones, new_t.second._bits._ones);
+      ASSERT_EQ(ones, new_t.second._urange._lo);
+      ASSERT_EQ(~zeros, new_t.second._urange._hi);
     }
   }
 }
@@ -138,33 +123,22 @@ static void test_normalize_constraints_random() {
     U intersection = b1 & b2;
     U zeros = b1 ^ intersection;
     U ones = b2 ^ intersection;
-    T nlo = lo;
-    T nhi = hi;
-    U nulo = ulo;
-    U nuhi = uhi;
-    U nzeros = zeros;
-    U nones = ones;
-    bool empty = false;
-    normalize_constraints(empty, nlo, nhi, nulo, nuhi, nzeros, nones);
-    auto contains = [](T lo, T hi, U ulo, U uhi, U zeros, U ones, T value) {
-      U u = value;
-      return value >= lo && value <= hi && u >= ulo && u <= uhi &&
-             (u & zeros) == 0 && (~u & ones) == 0;
-    };
+    TypeIntPrototype<T, U> t{{lo, hi}, {ulo, uhi}, {zeros, ones}};
+    auto new_t = t.normalize_constraints();
 #ifdef ASSERT
-    if (!empty) {
-      verify_constraints(nlo, nhi, nulo, nuhi, nzeros, nones);
+    if (new_t.first) {
+      new_t.second.verify_constraints();
     }
-#endif // ASSERT
     for (int j = 0; j < samples; j++) {
       T v = uniform_random<U>();
-      if (empty) {
-        ASSERT_FALSE(contains(lo, hi, ulo, uhi, zeros, ones, v));
+      if (!new_t.first) {
+        ASSERT_FALSE(t.contains(v));
       } else {
-        ASSERT_EQ(contains(lo, hi, ulo, uhi, zeros, ones, v), contains(nlo, nhi, nulo, nuhi, nzeros, nones, v));
+        ASSERT_EQ(t.contains(v), new_t.second.contains(v));
       }
     }
   }
+#endif // ASSERT
 }
 
 TEST_VM(opto, normalize_constraints) {

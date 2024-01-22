@@ -73,6 +73,9 @@ class       TypeAryKlassPtr;
 class     TypeMetadataPtr;
 class VerifyMeet;
 
+template <class T, class U>
+class TypeIntPrototype;
+
 //------------------------------Type-------------------------------------------
 // Basic Type object, represents a set of primitive Values.
 // Types are hash-cons'd into a private class dictionary, so only one of each
@@ -554,7 +557,12 @@ class TypeInteger : public Type {
 protected:
   TypeInteger(TYPES t, int w, bool dual) : Type(t), _dual(dual), _widen(w) {}
 
-  // Use to compute join of 2 sets
+  // Previously, we signify that a set is in the dual space if _lo > _hi.
+  // However, with the addition of unsigned range and known bits, this becomes
+  // ambiguous whether the set is empty or a dual of a non-empty set.
+  // As a result, we use this field to denote that a set is a dual set.
+  // Dual sets are only used to compute the join of 2 sets, and not used
+  // outside.
   const bool _dual;
 
 public:
@@ -580,8 +588,8 @@ public:
 // Class of integer ranges, the set of integers between a lower bound and an
 // upper bound, inclusive.
 class TypeInt : public TypeInteger {
-  TypeInt(jint lo, jint hi, juint ulo, juint uhi, juint zeros, juint ones, int w, bool dual);
-  static const Type* make(jint lo, jint hi, juint ulo, juint uhi, juint zeros, juint ones, int w, bool dual);
+  TypeInt(const TypeIntPrototype<jint, juint>& t, int w, bool dual);
+  static const Type* make(const TypeIntPrototype<jint, juint>& t, int w, bool dual);
 protected:
   virtual const Type* filter_helper(const Type* kills, bool include_speculative) const;
 
@@ -591,17 +599,16 @@ public:
   virtual uint hash() const;             // Type specific hashing
   virtual bool singleton(void) const;    // TRUE if type is a singleton
   virtual bool empty(void) const;        // TRUE if type is vacuous
-  const jint _lo, _hi;          // Lower bound, upper bound
-  const juint _ulo, _uhi;
-  const juint _zeros, _ones;
+  const jint _lo, _hi;       // Lower bound, upper bound in the signed domain
+  const juint _ulo, _uhi;    // Lower bound, upper bound in the unsigned domain
+  const juint _zeros, _ones; // Bits that are known to be 0 or 1
 
   static const TypeInt* cast(const Type* t) { return t->is_int(); }
   static const TypeInt* try_cast(const Type* t) { return t->isa_int(); }
   static const TypeInt* make(jint lo);
   // must always specify w
   static const Type* make(jint lo, jint hi, int w);
-  static const Type* make_bits(juint zeros, juint ones, int w);
-  static const Type* make(jint lo, jint hi, juint ulo, juint uhi, juint zeros, juint ones, int w);
+  static const Type* make(const TypeIntPrototype<jint, juint>& t, int w);
 
   // Check for single integer
   bool is_con() const { return _lo == _hi; }
@@ -658,8 +665,8 @@ public:
 // Class of long integer ranges, the set of integers between a lower bound and
 // an upper bound, inclusive.
 class TypeLong : public TypeInteger {
-  TypeLong(jlong lo, jlong hi, julong ulo, julong uhi, julong zeros, julong ones, int w, bool dual);
-  static const Type* make(jlong lo, jlong hi, julong ulo, julong uhi, julong zeros, julong ones, int w, bool dual);
+  TypeLong(const TypeIntPrototype<jlong, julong>& t, int w, bool dual);
+  static const Type* make(const TypeIntPrototype<jlong, julong>& t, int w, bool dual);
 protected:
   // Do not kill _widen bits.
   virtual const Type* filter_helper(const Type* kills, bool include_speculative) const;
@@ -670,17 +677,16 @@ public:
   virtual bool singleton(void) const;    // TRUE if type is a singleton
   virtual bool empty(void) const;        // TRUE if type is vacuous
 public:
-  const jlong _lo, _hi;         // Lower bound, upper bound
-  const julong _ulo, _uhi;
-  const julong _zeros, _ones;
+  const jlong _lo, _hi;       // Lower bound, upper bound in the signed domain
+  const julong _ulo, _uhi;    // Lower bound, upper bound in the unsigned domain
+  const julong _zeros, _ones; // Bits that are known to be 0 or 1
 
   static const TypeLong* cast(const Type* t) { return t->is_long(); }
   static const TypeLong* try_cast(const Type* t) { return t->isa_long(); }
   static const TypeLong* make(jlong lo);
   // must always specify w
   static const Type* make(jlong lo, jlong hi, int w);
-  static const Type* make_bits(julong zeros, julong ones, int w);
-  static const Type* make(jlong lo, jlong hi, julong ulo, julong uhi, julong zeros, julong ones, int w);
+  static const Type* make(const TypeIntPrototype<jlong, julong>& t, int w);
 
   // Check for single integer
   bool is_con() const { return _lo == _hi; }

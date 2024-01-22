@@ -25,33 +25,52 @@
 #ifndef SHARE_OPTO_RANGEINFERENCE_HPP
 #define SHARE_OPTO_RANGEINFERENCE_HPP
 
-#include "opto/type.hpp"
-#include "runtime/os.hpp"
+#include "utilities/pair.hpp"
+
+class Type;
+
+template <class T>
+class RangeInt {
+public:
+  T _lo;
+  T _hi;
+};
+
+template <class T>
+class KnownBits {
+public:
+  T _zeros;
+  T _ones;
+};
 
 template <class T, class U>
-void normalize_constraints(bool& empty, T& lo, T& hi, U& ulo, U& uhi, U& zeros, U& ones);
+class TypeIntPrototype {
+public:
+  RangeInt<T> _srange;
+  RangeInt<U> _urange;
+  KnownBits<U> _bits;
 
+  Pair<bool, TypeIntPrototype<T, U>> normalize_constraints() const;
+  int normalize_widen(int w) const;
 #ifdef ASSERT
-template <class T, class U>
-void verify_constraints(T lo, T hi, U ulo, U uhi, U zeros, U ones);
-#endif
+  bool contains(T v) const;
+  void verify_constraints() const;
+#endif // ASSERT
+};
 
 // The result is tuned down by one since we do not have empty type
 // and this is not required to be accurate
 template <class T, class U>
-U cardinality_from_bounds(T lo, T hi, U ulo, U uhi) {
-  if (U(lo) == ulo) {
-    return uhi - ulo;
+U cardinality_from_bounds(const RangeInt<T>& srange, const RangeInt<U>& urange) {
+  if (U(srange._lo) == urange._lo) {
+    return urange._hi - urange._lo;
   }
 
-  return uhi - U(lo) + U(hi) - ulo + 1;
+  return urange._hi - U(srange._lo) + U(srange._hi) - urange._lo + 1;
 }
 
-template <class T, class U>
-int normalize_widen(T lo, T hi, U ulo, U uhi, U zeros, U ones, int w);
-
 template <class CT, class T, class UT>
-const Type* int_type_xmeet(const CT* i1, const Type* t2, const Type* (*make)(T, T, UT, UT, UT, UT, int, bool), bool dual);
+const Type* int_type_xmeet(const CT* i1, const Type* t2, const Type* (*make)(const TypeIntPrototype<T, UT>&, int, bool), bool dual);
 
 template <class CT>
 bool int_type_equal(const CT* t1, const CT* t2) {
