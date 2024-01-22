@@ -350,67 +350,37 @@ TEST_VM(os_linux, reserve_memory_special_concurrent) {
   }
 }
 
-class PretouchMemoryRunnable : public TestRunnable {
-  char* addr;
-  size_t byte;
-public:
-  PretouchMemoryRunnable(char* addr, size_t byte): addr(addr), byte(byte) {}
-
-  void runUnitTest() const {
-    os::pretouch_memory(addr, addr + byte, os::vm_page_size());
-  }
-};
-
-class UseMemoryRunnable : public TestRunnable {
-  char* addr;
-  size_t byte;
-public:
-  UseMemoryRunnable(char* addr, size_t byte): addr(addr), byte(byte) {}
-
-  void runUnitTest() const {
-    int* iptr = reinterpret_cast<int*>(addr);
-    for (int i = 0; i < 1000 && (size_t)i < (byte / (sizeof(int))); i++)
-      *iptr++ = i;
-  }
-};
-
-static void *pthread_test_runnable(void *runnable) {
-  TestRunnable* r = reinterpret_cast<TestRunnable*>(runnable);
-  r->runUnitTest();
-  return nullptr;
-}
-
 TEST_VM(os_linux, pretouch_thp_and_use_concurrent) {
   // Explicitly enable thp to test cocurrent system calls.
-  bool useThp = UseTransparentHugePages;
+  const size_t size = 1 * G;
+  const bool useThp = UseTransparentHugePages;
   UseTransparentHugePages = true;
-  char* heap = os::reserve_memory(1 * G, false, mtInternal);
+  char* const heap = os::reserve_memory(size, false, mtInternal);
   EXPECT_NE(heap, (char*)NULL);
-  EXPECT_TRUE(os::commit_memory(heap, 1 * G, false));
+  EXPECT_TRUE(os::commit_memory(heap, size, false));
 
   {
-    UseMemoryRunnable use(heap, 1 * G);
-    PretouchMemoryRunnable pretouch(heap, 1 * G);
-    pthread_t threads[8];
-    pthread_attr_t attributes[8];
-    for (int i = 0; i < 8; i++) {
-      pthread_attr_init(attributes + i);
-      TestRunnable *runnable = &pretouch;
-      if (i == 0) runnable = &use;
-      pthread_create(threads + i, attributes + i, pthread_test_runnable, runnable);
-      pthread_attr_destroy(attributes + i);
-    }
-    for (int i = 0; i < 8; i++) {
-      pthread_join(threads[i], 0);
-    }
+    auto pretouch = [heap, size](Thread*, int) {
+      os::pretouch_memory(heap, heap + size, os::vm_page_size());
+    };
+    auto useMemory = [heap, size](Thread*, int) {
+      int* iptr = reinterpret_cast<int*>(heap);
+      for (int i = 0; i < 1000; i++) *iptr++ = i;
+    };
+    TestThreadGroup<decltype(pretouch)> pretouchThreads{pretouch, 4};
+    TestThreadGroup<decltype(useMemory)> useMemoryThreads{useMemory, 4};
+    useMemoryThreads.doit();
+    pretouchThreads.doit();
+    useMemoryThreads.join();
+    pretouchThreads.join();
   }
 
   int* iptr = reinterpret_cast<int*>(heap);
   for (int i = 0; i < 1000; i++)
     EXPECT_EQ(*iptr++, i);
 
-  EXPECT_TRUE(os::uncommit_memory(heap, 1 * G, false));
-  EXPECT_TRUE(os::release_memory(heap, 1 * G));
+  EXPECT_TRUE(os::uncommit_memory(heap, size, false));
+  EXPECT_TRUE(os::release_memory(heap, size));
   UseTransparentHugePages = useThp;
 }
 
