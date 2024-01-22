@@ -128,11 +128,13 @@ void CompiledIC::internal_set_ic_destination(address entry_point, bool is_icstub
     tty->cr();
   }
 
+#ifdef ASSERT
   {
     CodeBlob* cb = CodeCache::find_blob(_call->instruction_address());
     assert(cb != nullptr && cb->is_compiled(), "must be compiled");
-    _call->set_destination_mt_safe(entry_point);
   }
+#endif
+  _call->set_destination_mt_safe(entry_point);
 
   if (is_optimized() || is_icstub) {
     // Optimized call sites don't have a cache value and ICStub call
@@ -185,7 +187,7 @@ address CompiledIC::stub_address() const {
 // Clears the IC stub if the compiled IC is in transition state
 void CompiledIC::clear_ic_stub() {
   if (is_in_transition_state()) {
-    ICStub* stub = ICStub_from_destination_address(stub_address());
+    ICStub* stub = ICStub::from_destination_address(stub_address());
     stub->clear();
   }
 }

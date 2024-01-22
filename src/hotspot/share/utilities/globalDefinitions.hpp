@@ -602,9 +602,14 @@ const bool support_IRIW_for_not_multiple_copy_atomic_cpu = false;
 const bool support_IRIW_for_not_multiple_copy_atomic_cpu = PPC64_ONLY(true) NOT_PPC64(false);
 #endif
 
-// The expected size in bytes of a cache line, used to pad data structures.
+// The expected size in bytes of a cache line.
 #ifndef DEFAULT_CACHE_LINE_SIZE
 #error "Platform should define DEFAULT_CACHE_LINE_SIZE"
+#endif
+
+// The default padding size for data structures to avoid false sharing.
+#ifndef DEFAULT_PADDING_SIZE
+#error "Platform should define DEFAULT_PADDING_SIZE"
 #endif
 
 

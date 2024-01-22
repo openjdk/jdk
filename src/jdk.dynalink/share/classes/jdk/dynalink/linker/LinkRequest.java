@@ -69,6 +69,7 @@ import jdk.dynalink.DynamicLinkerFactory;
  * site. Instances of these requests will be constructed and passed to all
  * {@link GuardingDynamicLinker} objects managed by the {@link DynamicLinker}
  * that is trying to link the call site.
+ * @since 9
  */
 public interface LinkRequest {
     /**
