@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,39 +25,24 @@
 package java.lang.runtime;
 
 /**
- * A testing conversion of a value is exact if it yields a result without loss
- * of information or throwing an exception. Otherwise, it is inexact. The
- * methods in this class provide the run-time support for the exactness checks
- * of testing conversions from a primitive type to primitive type. These methods
- * may be used, for example, by Java compiler implementations to implement
- * checks for `instanceof` and pattern matching runtime implementations.
- * Unconditionally exact testing conversions do not require a corresponding
- * action at run time.
+ * A casting conversion is considered to be exact if, after applying the conversion
+ * to the value, no exception was raised or loss of information has occured;
+ * otherwise it is considered inexact.
+ * The methods in this class provide the run-time support for primitive conversions exactness checks.
+ * These methods may be used, for example, by Java compiler implementations to implement checks
+ * for `instanceof` and pattern matching runtime implementations.
+ * See JLS section 5.5.1 for more information on exact casting conversions.
  *
- * The run time conversion checks examine whether loss of information would
- * occur if a testing conversion would be to be applied. In those cases where a
- * floating-point primitive type is involved, and the value of the testing
- * conversion is either signed zero, signed infinity or NaN, these methods
- * comply with the following:
- *
- * - Converting a floating-point negative zero to an integer type is considered
- *   inexact.
- * - Converting a floating-point NaN or infinity to an integer type is
- *   considered inexact.
- * - Converting a floating-point NaN or infinity or signed zero to another
- *   floating-point type is considered exact.
- *
- * @jls 5.7.1 Exact Testing Conversions
- * @jls 5.7.2 Unconditionally Exact Testing Conversions
+ * @jls 5.5.1 Exact Casting Conversions
  * @jls 15.20.2 The instanceof Operator
  *
- * @implNote Methods that describe a testing conversion exactness check which
- * can be redirected through one of the methods in this class are omitted too
- * (i.e., byte to char can be redirected safely to `isIntToCharExact`, similarly
- * `short` to `byte`, `short` to `char`, `char` to `byte` and `char` to
- * `short`).
+ * @implNote Methods that describe a conversion check among unconditionally exact types
+ * (they would return true) are omitted. Similarly, methods that describe a conversion check
+ * which can be redirected through one of the methods in this class are omitted too (i.e.,
+ * byte to char can be redirected safely to `isIntToCharExact`, similarly `short` to `byte`,
+ * `short` to `char`, `char` to `byte` and `char` to `short`).
  *
- * @since 23
+ * @since 22
  */
 public final class ExactConversionsSupport {
 
