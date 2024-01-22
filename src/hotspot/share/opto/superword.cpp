@@ -43,14 +43,15 @@
 //=============================================================================
 
 //------------------------------SuperWord---------------------------
-SuperWord::SuperWord(const VLoopAnalyzer &vla) :
+SuperWord::SuperWord(Arena* arena, const VLoopAnalyzer &vla) :
   _vla(vla),
-  _arena(phase()->C->comp_arena()),
-  _packset(arena(), 8,  0, nullptr),                        // packs for the current block
-  _node_info(arena(), 8,  0, SWNodeInfo::initial),          // info needed per node
+  _arena(arena),
+  // TODO reserve?
+  _packset(arena, 8,  0, nullptr),                          // packs for the current block
+  _node_info(arena, 8,  0, SWNodeInfo::initial),            // info needed per node
   _clone_map(phase()->C->clone_map()),                      // map of nodes created in cloning
   _align_to_ref(nullptr),                                   // memory reference to align vectors to
-  _n_idx_list(arena(), 8),                                  // scratch list of (node,index) pairs
+  _n_idx_list(arena, 8),                                    // scratch list of (node,index) pairs
   _race_possible(false),                                    // cases where SDMU is true
   _do_vector_loop(phase()->C->do_vector_loop()),            // whether to do vectorization/simd style
   _num_work_vecs(0),                                        // amount of vector work we have

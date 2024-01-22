@@ -212,7 +212,7 @@ class SuperWord : public ResourceObj {
   static constexpr char const* FAILURE_OUTPUT_BAILOUT  = "unexpected bailout in output";
 
  public:
-  SuperWord(const VLoopAnalyzer &vla);
+  SuperWord(Arena* arena, const VLoopAnalyzer &vla);
 
   // Decide if loop can eventually be vectorized, and what unrolling factor is required.
   static void unrolling_analysis(const VLoop &vloop, int &local_loop_unroll_factor);

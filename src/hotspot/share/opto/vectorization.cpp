@@ -1351,14 +1351,12 @@ void AlignmentSolver::trace_constrained_solution(const int C_const,
 }
 #endif
 
-bool VLoop::check_preconditions(IdealLoopTree* lpt, bool allow_cfg) {
-  reset(lpt, allow_cfg);
-
+bool VLoop::check_preconditions() {
 #ifndef PRODUCT
   if (is_trace_precondition()) {
     tty->print_cr("\nVLoop::check_precondition");
-    lpt->dump_head();
-    lpt->head()->dump();
+    lpt()->dump_head();
+    lpt()->head()->dump();
   }
 #endif
 
@@ -1436,15 +1434,14 @@ const char* VLoop::check_preconditions_helper() {
   return VLoop::SUCCESS;
 }
 
-bool VLoopAnalyzer::analyze(IdealLoopTree* lpt) {
-  reset(lpt);
-  bool success = _vloop.check_preconditions(lpt, false);
+bool VLoopAnalyzer::analyze() {
+  bool success = _vloop.check_preconditions();
   if (!success) { return false; }
 
 #ifndef PRODUCT
   if (vloop().is_trace_loop_analyzer()) {
     tty->print_cr("VLoopAnalyzer::analyze");
-    lpt->dump_head();
+    vloop().lpt()->dump_head();
     vloop().cl()->dump();
   }
 #endif
@@ -2065,7 +2062,7 @@ void VLoopDependenceGraph::print() const {
 
 VLoopDependenceGraph::DependenceNode*
 VLoopDependenceGraph::make_node(Node* node) {
-  DependenceNode* m = new (_vloop.arena()) DependenceNode(node);
+  DependenceNode* m = new (arena()) DependenceNode(node);
   if (node != nullptr) {
     assert(_map.at_grow(node->_idx) == nullptr, "one init only");
     _map.at_put_grow(node->_idx, m);
@@ -2075,10 +2072,10 @@ VLoopDependenceGraph::make_node(Node* node) {
 
 VLoopDependenceGraph::DependenceEdge*
 VLoopDependenceGraph::make_edge(DependenceNode* dpred, DependenceNode* dsucc) {
-  DependenceEdge* e = new (_vloop.arena()) DependenceEdge(dpred,
-                                                           dsucc,
-                                                           dsucc->in_head(),
-                                                           dpred->out_head());
+  DependenceEdge* e = new (arena()) DependenceEdge(dpred,
+                                                   dsucc,
+                                                   dsucc->in_head(),
+                                                   dpred->out_head());
   dpred->set_out_head(e);
   dsucc->set_in_head(e);
   return e;

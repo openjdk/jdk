@@ -37,13 +37,12 @@
 //        loop structure accessors.
 class VLoop : public StackObj {
 private:
-  PhaseIdealLoop* _phase = nullptr;
-  Arena* _arena = nullptr;
-  IdealLoopTree* _lpt = nullptr;
+  PhaseIdealLoop* const _phase = nullptr;
+  IdealLoopTree* const _lpt = nullptr;
+  const bool _allow_cfg = false;
   CountedLoopNode* _cl = nullptr;
   Node* _cl_exit = nullptr;
   PhiNode* _iv = nullptr;
-  bool _allow_cfg = false;
   CountedLoopEndNode* _pre_loop_end; // only for main loops
 
   const CHeapBitMap &_trace_tags;
@@ -58,35 +57,31 @@ private:
   static constexpr char const* FAILURE_PRE_LOOP_LIMIT     = "main-loop must be able to adjust pre-loop-limit (not found)";
 
 public:
-  VLoop(PhaseIdealLoop* phase) :
-    _phase(phase),
-    _arena(phase->C->comp_arena()),
-    _trace_tags(phase->C->directive()->traceautovectorization_tags()) {}
+  VLoop(IdealLoopTree* lpt, bool allow_cfg) :
+    _phase(lpt->_phase),
+    _lpt(lpt),
+    _allow_cfg(allow_cfg),
+    _cl(nullptr),
+    _cl_exit(nullptr),
+    _iv(nullptr),
+    _trace_tags(phase()->C->directive()->traceautovectorization_tags()) {}
   NONCOPYABLE(VLoop);
 
-  void reset(IdealLoopTree* lpt, bool allow_cfg) {
-    assert(_phase == lpt->_phase, "must be the same phase");
-    _lpt       = lpt;
-    _cl        = nullptr;
-    _cl_exit   = nullptr;
-    _iv        = nullptr;
-    _allow_cfg = allow_cfg;
-  }
-
 public:
-  Arena* arena()          const { return _arena; }
-  IdealLoopTree* lpt()    const { assert(_lpt     != nullptr, ""); return _lpt; };
-  PhaseIdealLoop* phase() const { assert(_phase   != nullptr, ""); return _phase; }
-  CountedLoopNode* cl()   const { assert(_cl      != nullptr, ""); return _cl; };
-  Node* cl_exit()         const { assert(_cl_exit != nullptr, ""); return _cl_exit; };
-  PhiNode* iv()           const { assert(_iv      != nullptr, ""); return _iv; };
+  IdealLoopTree* lpt()    const { return _lpt; };
+  PhaseIdealLoop* phase() const { return _phase; }
+  CountedLoopNode* cl()   const { return _cl; };
+  Node* cl_exit()         const { return _cl_exit; };
+  PhiNode* iv()           const { return _iv; };
   int iv_stride()         const { return cl()->stride_con(); };
   bool is_allow_cfg()     const { return _allow_cfg; }
+
   CountedLoopEndNode* pre_loop_end() const {
     assert(cl()->is_main_loop(), "only main loop can reference pre-loop");
     assert(_pre_loop_end != nullptr, "must have found it");
     return _pre_loop_end;
   };
+
   CountedLoopNode* pre_loop_head() const {
     CountedLoopNode* head = pre_loop_end()->loopnode();
     assert(head != nullptr, "must find head");
@@ -136,7 +131,7 @@ public:
 
   // Check if the loop passes some basic preconditions for vectorization.
   // Overwrite previous data. Return indicates if analysis succeeded.
-  bool check_preconditions(IdealLoopTree* lpt, bool allow_cfg);
+  bool check_preconditions();
 
 private:
   const char* check_preconditions_helper();
@@ -152,13 +147,11 @@ private:
   VectorSet _loop_reductions;
 
 public:
-  VLoopReductions(const VLoop& vloop) :
+  VLoopReductions(Arena* arena, const VLoop& vloop) :
     _vloop(vloop),
-    _loop_reductions(_vloop.arena()){};
+    _loop_reductions(arena){}; // TODO reserve?
+
   NONCOPYABLE(VLoopReductions);
-  void reset() {
-    _loop_reductions.clear();
-  }
 
 private:
   // Search for a path P = (n_1, n_2, ..., n_k) such that:
@@ -229,17 +222,12 @@ private:
   GrowableArray<MemNode*> _tails;
 
 public:
-  VLoopMemorySlices(const VLoop& vloop) :
+  VLoopMemorySlices(Arena* arena, const VLoop& vloop) :
     _vloop(vloop),
-    _heads(_vloop.arena(), 8,  0, nullptr),
-    _tails(_vloop.arena(), 8,  0, nullptr) {};
+    _heads(arena, 8,  0, nullptr),
+    _tails(arena, 8,  0, nullptr) {};
 
   NONCOPYABLE(VLoopMemorySlices);
-
-  void reset() {
-    _heads.clear();
-    _tails.clear();
-  }
 
   void analyze();
 
@@ -270,17 +258,12 @@ private:
   static constexpr char const* FAILURE_NODE_NOT_ALLOWED  = "encontered unhandled node";
 
 public:
-  VLoopBody(const VLoop& vloop) :
+  VLoopBody(Arena* arena, const VLoop& vloop) :
     _vloop(vloop),
-    _body(_vloop.arena(), 8, 0, nullptr),
-    _body_idx(_vloop.arena(), (int)(1.10 * _vloop.phase()->C->unique()), 0, 0) {}
+    _body(arena, 8, 0, nullptr),
+    _body_idx(arena, (int)(1.10 * _vloop.phase()->C->unique()), 0, 0) {}
 
   NONCOPYABLE(VLoopBody);
-
-  void reset() {
-    _body.clear();
-    _body_idx.clear();
-  }
 
   const char* construct();
 
@@ -331,6 +314,8 @@ private:
   const VLoopMemorySlices& _memory_slices;
   const VLoopBody& _body;
 
+  Arena* _arena;
+
   // node->_idx -> DependenceNode* (or nullptr)
   GrowableArray<DependenceNode*> _map;
   DependenceNode* _root;
@@ -338,25 +323,20 @@ private:
   GrowableArray<int> _depth; // body_idx -> depth in graph (DAG)
 
 public:
-  VLoopDependenceGraph(const VLoop& vloop,
+  VLoopDependenceGraph(Arena* arena,
+                       const VLoop& vloop,
                        const VLoopMemorySlices& memory_slices,
                        const VLoopBody& body) :
     _vloop(vloop),
     _memory_slices(memory_slices),
     _body(body),
-    _map(vloop.arena(), 8,  0, nullptr),
-    _root(nullptr),
-    _sink(nullptr),
-    _depth(vloop.arena(), 8,  0, 0) {}
+    _arena(arena),
+    _map(arena, 8,  0, nullptr),
+    _root(new (arena) DependenceNode(nullptr)),
+    _sink(new (arena) DependenceNode(nullptr)),
+    _depth(arena, 8,  0, 0) {}
 
   NONCOPYABLE(VLoopDependenceGraph);
-
-  void reset() {
-    _map.clear();
-    _root = new (_vloop.arena()) DependenceNode(nullptr);
-    _sink = new (_vloop.arena()) DependenceNode(nullptr);
-    _depth.clear();
-  }
 
   void build();
 
@@ -365,6 +345,8 @@ public:
 #endif
 
 private:
+  Arena* arena() { return _arena; }
+
   DependenceNode* root() const { return _root; }
   DependenceNode* sink() const { return _sink; }
 
@@ -502,17 +484,14 @@ private:
   GrowableArray<const Type*> _velt_type;
 
 public:
-  VLoopTypes(const VLoop& vloop,
+  VLoopTypes(Arena* arena,
+             const VLoop& vloop,
              const VLoopBody& body) :
     _vloop(vloop),
     _body(body),
-    _velt_type(vloop.arena(), 8,  0, nullptr) {}
+    _velt_type(arena, 8,  0, nullptr) {}
 
   NONCOPYABLE(VLoopTypes);
-
-  void reset() {
-    _velt_type.clear();
-  }
 
   void compute_vector_element_type();
 
@@ -587,20 +566,21 @@ private:
   VLoopDependenceGraph _dependence_graph;
 
 public:
-  VLoopAnalyzer(PhaseIdealLoop* phase) :
-    _vloop(phase),
-    _reductions(vloop()),
-    _memory_slices(vloop()),
-    _body(vloop()),
-    _types(vloop(), body()), // types requires: body
-    _dependence_graph(vloop(), memory_slices(), body()) // dependence_graph requires: memory_slices and body
+  VLoopAnalyzer(Arena* arena, IdealLoopTree* lpt) :
+    _vloop           (lpt, false),
+    _reductions      (arena, vloop()),
+    _memory_slices   (arena, vloop()),
+    _body            (arena, vloop()),
+    _types           (arena, vloop(), body()),
+    _dependence_graph(arena, vloop(), memory_slices(), body())
   {
   };
+
   NONCOPYABLE(VLoopAnalyzer);
 
   // Analyze the loop in preparation for vectorization.
   // Overwrite previous data. Return indicates if analysis succeeded.
-  bool analyze(IdealLoopTree* lpt);
+  bool analyze();
 
   // Read-only accessors for submodules
   const VLoop& vloop()                           const { return _vloop; }
@@ -611,13 +591,6 @@ public:
   const VLoopDependenceGraph& dependence_graph() const { return _dependence_graph; }
 
 private:
-  void reset(IdealLoopTree* lpt) {
-    _reductions.reset();
-    _memory_slices.reset();
-    _body.reset();
-    _types.reset();
-    _dependence_graph.reset();
-  }
   const char* analyze_helper();
 };
 
