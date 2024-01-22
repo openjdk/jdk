@@ -57,7 +57,7 @@ public class InvariantCodeMotionReassociateCmp {
     @Test
     @Arguments({Argument.RANDOM_EACH, Argument.RANDOM_EACH})
     @IR(counts = {IRNode.SUB_L, "1"})
-    public void equalsAdtLong(long inv1, long inv2) {
+    public void equalsAddLong(long inv1, long inv2) {
         for (int i = 0; i < 500; ++i) {
             // Reassociate to `inv2 - inv1 == i`
             if (inv1 + i == inv2) {
@@ -129,7 +129,7 @@ public class InvariantCodeMotionReassociateCmp {
     @Test
     @Arguments({Argument.RANDOM_EACH, Argument.RANDOM_EACH})
     @IR(counts = {IRNode.SUB_L, "1"})
-    public void notEqualsAdtLong(long inv1, long inv2) {
+    public void notEqualsAddLong(long inv1, long inv2) {
         for (int i = 0; i < 500; ++i) {
             // Reassociate to `inv1 - inv2 != i`
             if (inv1 + i != inv2) {

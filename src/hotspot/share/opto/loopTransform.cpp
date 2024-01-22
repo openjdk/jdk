@@ -330,7 +330,7 @@ bool IdealLoopTree::is_associative(Node* n, Node* base) {
 // inv1 == (x - inv2) => ( inv1 + inv2 ) == x
 // inv1 == (inv2 - x) => (-inv1 + inv2 ) == x
 //
-Node* IdealLoopTree::reassociate_add_sub_cmp(Node* n1, int inv1_idx, int inv2_idx, PhaseIdealLoop *phase) {
+Node* IdealLoopTree::reassociate_add_sub_cmp(Node* n1, int inv1_idx, int inv2_idx, PhaseIdealLoop* phase) {
   Node* n2   = n1->in(3 - inv1_idx);
   bool n1_is_sub = n1->is_Sub() && !n1->is_Cmp();
   bool n1_is_cmp = n1->is_Cmp();
