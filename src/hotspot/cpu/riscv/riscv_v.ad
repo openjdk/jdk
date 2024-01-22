@@ -3660,6 +3660,23 @@ instruct vexpand(vReg dst, vReg src, vRegMask_V0 v0, vReg tmp) %{
   ins_pipe(pipe_slow);
 %}
 
+// ------------------------------ Vector signum --------------------------------
+
+// Vector Math.signum
+
+instruct vsignum_reg(vReg dst, vReg zero, vReg one, vRegMask_V0 v0) %{
+  match(Set dst (SignumVF dst (Binary zero one)));
+  match(Set dst (SignumVD dst (Binary zero one)));
+  effect(TEMP_DEF dst, TEMP v0);
+  format %{ "vsignum $dst, $dst\t" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    __ signum_fp_v(as_VectorRegister($dst$$reg), as_VectorRegister($one$$reg),
+                   bt, Matcher::vector_length(this));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
 // ------------------------------ Vector Load Gather ---------------------------
 
 instruct gather_load(vReg dst, indirect mem, vReg idx) %{

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -89,6 +89,9 @@ public abstract class AbstractSelector
     // cancelled-key, not used by the JDK Selector implementations
     private final Set<SelectionKey> cancelledKeys;
 
+    // invoked if a Thread is interrupted when blocked on a selection op
+    private final Interruptible interruptor;
+
     /**
      * Initializes a new instance of this class.
      *
@@ -103,6 +106,15 @@ public abstract class AbstractSelector
         } else {
             this.cancelledKeys = new HashSet<>();
         }
+        this.interruptor = new Interruptible() {
+            @Override
+            public void interrupt(Thread ignore) {
+            }
+            @Override
+            public void postInterrupt() {
+                AbstractSelector.this.wakeup();
+            }
+        };
     }
 
     void cancel(SelectionKey k) {                       // package-private
@@ -209,8 +221,6 @@ public abstract class AbstractSelector
 
     // -- Interruption machinery --
 
-    private Interruptible interruptor = null;
-
     /**
      * Marks the beginning of an I/O operation that might block indefinitely.
      *
@@ -225,16 +235,11 @@ public abstract class AbstractSelector
      * blocked in an I/O operation upon the selector.  </p>
      */
     protected final void begin() {
-        if (interruptor == null) {
-            interruptor = new Interruptible() {
-                    public void interrupt(Thread ignore) {
-                        AbstractSelector.this.wakeup();
-                    }};
-        }
         AbstractInterruptibleChannel.blockedOn(interruptor);
         Thread me = Thread.currentThread();
-        if (me.isInterrupted())
-            interruptor.interrupt(me);
+        if (me.isInterrupted()) {
+            interruptor.postInterrupt();
+        }
     }
 
     /**
@@ -248,5 +253,4 @@ public abstract class AbstractSelector
     protected final void end() {
         AbstractInterruptibleChannel.blockedOn(null);
     }
-
 }

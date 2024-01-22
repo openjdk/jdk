@@ -33,6 +33,7 @@
 #include "jfr/recorder/checkpoint/types/traceid/jfrTraceIdBits.inline.hpp"
 #include "jfr/recorder/checkpoint/types/traceid/jfrTraceIdEpoch.hpp"
 #include "jfr/recorder/checkpoint/types/traceid/jfrTraceIdMacros.hpp"
+#include "jfr/support/jfrKlassExtension.hpp"
 #include "oops/klass.hpp"
 #include "oops/method.hpp"
 #include "runtime/javaThread.hpp"
@@ -66,10 +67,14 @@ inline traceid set_used_and_get(const T* type) {
   return TRACE_ID(type);
 }
 
+// We set the 'method_and_class' bits to have a consistent
+// bit pattern set always. This is because the tag is non-atomic,
+// hence, we always need the same bit pattern in an epoch to avoid losing information.
 inline void JfrTraceIdLoadBarrier::load_barrier(const Klass* klass) {
-    SET_USED_THIS_EPOCH(klass);
-    enqueue(klass);
-    JfrTraceIdEpoch::set_changed_tag_state();
+  SET_METHOD_AND_CLASS_USED_THIS_EPOCH(klass);
+  assert(METHOD_AND_CLASS_USED_THIS_EPOCH(klass), "invariant");
+  enqueue(klass);
+  JfrTraceIdEpoch::set_changed_tag_state();
 }
 
 inline traceid JfrTraceIdLoadBarrier::load(const Klass* klass) {
@@ -99,12 +104,18 @@ inline traceid JfrTraceIdLoadBarrier::load(const Klass* klass, const Method* met
    return (METHOD_ID(klass, method));
 }
 
-inline traceid JfrTraceIdLoadBarrier::load(const ModuleEntry* module) {
-  return set_used_and_get(module);
+inline traceid JfrTraceIdLoadBarrier::load_no_enqueue(const Method* method) {
+  return load_no_enqueue(method->method_holder(), method);
 }
 
-inline traceid JfrTraceIdLoadBarrier::load(const PackageEntry* package) {
-  return set_used_and_get(package);
+inline traceid JfrTraceIdLoadBarrier::load_no_enqueue(const Klass* klass, const Method* method) {
+  assert(klass != nullptr, "invariant");
+  assert(method != nullptr, "invariant");
+  SET_METHOD_AND_CLASS_USED_THIS_EPOCH(klass);
+  SET_METHOD_FLAG_USED_THIS_EPOCH(method);
+  assert(METHOD_AND_CLASS_USED_THIS_EPOCH(klass), "invariant");
+  assert(METHOD_FLAG_USED_THIS_EPOCH(method), "invariant");
+  return (METHOD_ID(klass, method));
 }
 
 inline traceid JfrTraceIdLoadBarrier::load(const ClassLoaderData* cld) {
@@ -113,10 +124,28 @@ inline traceid JfrTraceIdLoadBarrier::load(const ClassLoaderData* cld) {
     return 0;
   }
   const Klass* const class_loader_klass = cld->class_loader_klass();
-  if (class_loader_klass != nullptr && should_tag(class_loader_klass)) {
-    load_barrier(class_loader_klass);
+  if (class_loader_klass != nullptr) {
+    load(class_loader_klass);
   }
   return set_used_and_get(cld);
+}
+
+inline traceid JfrTraceIdLoadBarrier::load(const ModuleEntry* module) {
+  assert(module != nullptr, "invariant");
+  const ClassLoaderData* cld = module->loader_data();
+  if (cld != nullptr) {
+    load(cld);
+  }
+  return set_used_and_get(module);
+}
+
+inline traceid JfrTraceIdLoadBarrier::load(const PackageEntry* package) {
+  assert(package != nullptr, "invariant");
+  const ModuleEntry* const module_entry = package->module();
+  if (module_entry != nullptr) {
+    load(module_entry);
+  }
+  return set_used_and_get(package);
 }
 
 inline traceid JfrTraceIdLoadBarrier::load_leakp(const Klass* klass, const Method* method) {
@@ -130,6 +159,23 @@ inline traceid JfrTraceIdLoadBarrier::load_leakp(const Klass* klass, const Metho
     // representation might not have a reified tag.
     SET_METHOD_FLAG_USED_THIS_EPOCH(method);
     assert(METHOD_FLAG_USED_THIS_EPOCH(method), "invariant");
+  }
+  SET_LEAKP(klass);
+  SET_METHOD_LEAKP(method);
+  return (METHOD_ID(klass, method));
+}
+
+inline traceid JfrTraceIdLoadBarrier::load_leakp_previuos_epoch(const Klass* klass, const Method* method) {
+  assert(klass != nullptr, "invariant");
+  assert(METHOD_AND_CLASS_USED_PREVIOUS_EPOCH(klass), "invariant");
+  assert(method != nullptr, "invariant");
+  assert(klass == method->method_holder(), "invariant");
+  if (METHOD_FLAG_NOT_USED_PREVIOUS_EPOCH(method)) {
+    // the method is already logically tagged, just like the klass,
+    // but because of redefinition, the latest Method*
+    // representation might not have a reified tag.
+    SET_TRANSIENT(method);
+    assert(METHOD_FLAG_USED_PREVIOUS_EPOCH(method), "invariant");
   }
   SET_LEAKP(klass);
   SET_METHOD_LEAKP(method);

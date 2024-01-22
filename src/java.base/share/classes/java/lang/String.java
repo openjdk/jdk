@@ -592,7 +592,7 @@ public final class String
                     this.coder = LATIN1;
                     return;
                 }
-                byte[] utf16 = new byte[length << 1];
+                byte[] utf16 = StringUTF16.newBytesFor(length);
                 StringLatin1.inflate(latin1, 0, utf16, 0, dp);
                 dp = decodeUTF8_UTF16(latin1, sp, length, utf16, dp, true);
                 if (dp != length) {
@@ -601,7 +601,7 @@ public final class String
                 this.value = utf16;
                 this.coder = UTF16;
             } else { // !COMPACT_STRINGS
-                byte[] dst = new byte[length << 1];
+                byte[] dst = StringUTF16.newBytesFor(length);
                 int dp = decodeUTF8_UTF16(bytes, offset, offset + length, dst, 0, true);
                 if (dp != length) {
                     dst = Arrays.copyOf(dst, dp << 1);
@@ -622,7 +622,7 @@ public final class String
                 this.value = Arrays.copyOfRange(bytes, offset, offset + length);
                 this.coder = LATIN1;
             } else {
-                byte[] dst = new byte[length << 1];
+                byte[] dst = StringUTF16.newBytesFor(length);
                 int dp = 0;
                 while (dp < length) {
                     int b = bytes[offset++];
@@ -763,15 +763,15 @@ public final class String
                 return new String(dst, LATIN1);
             }
             if (dp == 0) {
-                dst = new byte[length << 1];
+                dst = StringUTF16.newBytesFor(length);
             } else {
-                byte[] buf = new byte[length << 1];
+                byte[] buf = StringUTF16.newBytesFor(length);
                 StringLatin1.inflate(dst, 0, buf, 0, dp);
                 dst = buf;
             }
             dp = decodeUTF8_UTF16(bytes, offset, sl, dst, dp, false);
         } else { // !COMPACT_STRINGS
-            dst = new byte[length << 1];
+            dst = StringUTF16.newBytesFor(length);
             dp = decodeUTF8_UTF16(bytes, offset, offset + length, dst, 0, false);
         }
         if (dp != length) {
@@ -1316,7 +1316,7 @@ public final class String
         }
 
         int dp = 0;
-        byte[] dst = new byte[val.length << 1];
+        byte[] dst = StringUTF16.newBytesFor(val.length);
         for (byte c : val) {
             if (c < 0) {
                 dst[dp++] = (byte) (0xc0 | ((c & 0xff) >> 6));

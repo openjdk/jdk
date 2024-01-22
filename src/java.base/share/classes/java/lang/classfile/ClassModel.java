@@ -78,29 +78,4 @@ public sealed interface ClassModel
 
     /** {@return whether this class is a module descriptor} */
     boolean isModuleInfo();
-
-    /**
-     * Verify this classfile.  Any verification errors found will be returned.
-     *
-     * @param debugOutput handler to receive debug information
-     * @return a list of verification errors, or an empty list if no errors are
-     * found
-     */
-    default List<VerifyError> verify(Consumer<String> debugOutput) {
-        return VerifierImpl.verify(this, debugOutput);
-    }
-
-    /**
-     * Verify this classfile.  Any verification errors found will be returned.
-     *
-     * @param debugOutput handler to receive debug information
-     * @param classHierarchyResolver class hierarchy resolver to provide
-     *                               additional information about the class hierarchy
-     * @return a list of verification errors, or an empty list if no errors are
-     * found
-     */
-    default List<VerifyError> verify(ClassHierarchyResolver classHierarchyResolver,
-                                     Consumer<String> debugOutput) {
-        return VerifierImpl.verify(this, classHierarchyResolver, debugOutput);
-    }
 }

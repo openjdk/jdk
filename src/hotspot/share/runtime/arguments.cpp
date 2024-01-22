@@ -315,7 +315,6 @@ static bool matches_property_suffix(const char* option, const char* property, si
 // any of the reserved module properties.
 // property should be passed without the leading "-D".
 bool Arguments::is_internal_module_property(const char* property) {
-  assert((strncmp(property, "-D", 2) != 0), "Unexpected leading -D");
   if  (strncmp(property, MODULE_PROPERTY_PREFIX, MODULE_PROPERTY_PREFIX_LEN) == 0) {
     const char* property_suffix = property + MODULE_PROPERTY_PREFIX_LEN;
     if (matches_property_suffix(property_suffix, ADDEXPORTS, ADDEXPORTS_LEN) ||
@@ -525,14 +524,8 @@ static SpecialFlag const special_jvm_flags[] = {
   { "G1ConcRSHotCardLimit",         JDK_Version::undefined(), JDK_Version::jdk(21), JDK_Version::undefined() },
   { "RefDiscoveryPolicy",           JDK_Version::undefined(), JDK_Version::jdk(21), JDK_Version::undefined() },
   { "MetaspaceReclaimPolicy",       JDK_Version::undefined(), JDK_Version::jdk(21), JDK_Version::undefined() },
-  { "DoReserveCopyInSuperWord",     JDK_Version::undefined(), JDK_Version::jdk(22), JDK_Version::jdk(23) },
-  { "UseCounterDecay",              JDK_Version::undefined(), JDK_Version::jdk(22), JDK_Version::jdk(23) },
 
-#ifdef LINUX
-  { "UseHugeTLBFS",                 JDK_Version::undefined(), JDK_Version::jdk(22), JDK_Version::jdk(23) },
-  { "UseSHM",                       JDK_Version::undefined(), JDK_Version::jdk(22), JDK_Version::jdk(23) },
-#endif
-
+  { "AdaptiveSizePolicyCollectionCostMargin",   JDK_Version::undefined(), JDK_Version::jdk(23), JDK_Version::jdk(24) },
 #ifdef ASSERT
   { "DummyObsoleteTestFlag",        JDK_Version::undefined(), JDK_Version::jdk(18), JDK_Version::undefined() },
 #endif
@@ -2222,10 +2215,6 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
     // -bootclasspath/a:
     } else if (match_option(option, "-Xbootclasspath/a:", &tail)) {
       Arguments::append_sysclasspath(tail);
-#if INCLUDE_CDS
-      MetaspaceShared::disable_optimized_module_handling();
-      log_info(cds)("optimized module handling: disabled because bootclasspath was appended");
-#endif
     // -bootclasspath/p:
     } else if (match_option(option, "-Xbootclasspath/p:", &tail)) {
         jio_fprintf(defaultStream::output_stream(),
@@ -2591,9 +2580,6 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
     // -Xdebug
     } else if (match_option(option, "-Xdebug")) {
       warning("Option -Xdebug was deprecated in JDK 22 and will likely be removed in a future release.");
-    // -Xnoagent
-    } else if (match_option(option, "-Xnoagent")) {
-      warning("Option -Xnoagent was deprecated in JDK 22 and will likely be removed in a future release.");
     } else if (match_option(option, "-Xloggc:", &tail)) {
       // Deprecated flag to redirect GC output to a file. -Xloggc:<filename>
       log_warning(gc)("-Xloggc is deprecated. Will use -Xlog:gc:%s instead.", tail);

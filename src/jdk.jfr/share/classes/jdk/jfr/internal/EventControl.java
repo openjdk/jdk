@@ -49,6 +49,7 @@ import jdk.jfr.events.StackFilter;
 import jdk.jfr.internal.JVM;
 import jdk.jfr.internal.settings.CutoffSetting;
 import jdk.jfr.internal.settings.EnabledSetting;
+import jdk.jfr.internal.settings.LevelSetting;
 import jdk.jfr.internal.settings.PeriodSetting;
 import jdk.jfr.internal.settings.StackTraceSetting;
 import jdk.jfr.internal.settings.ThresholdSetting;
@@ -69,6 +70,7 @@ public final class EventControl {
     private static final Type TYPE_CUTOFF = TypeLibrary.createType(CutoffSetting.class);
     private static final Type TYPE_THROTTLE = TypeLibrary.createType(ThrottleSetting.class);
     private static final long STACK_FILTER_ID = Type.getTypeId(StackFilter.class);
+    private static final Type TYPE_LEVEL = TypeLibrary.createType(LevelSetting.class);
 
     private final ArrayList<SettingControl> settingControls = new ArrayList<>();
     private final ArrayList<NamedControl> namedControls = new ArrayList<>(5);
@@ -90,6 +92,9 @@ public final class EventControl {
         }
         if (eventType.hasThrottle()) {
             addControl(Throttle.NAME, defineThrottle(eventType));
+        }
+        if (eventType.hasLevel()) {
+            addControl(Level.NAME, defineLevel(eventType));
         }
         addControl(Enabled.NAME, defineEnabled(eventType));
 
@@ -335,6 +340,14 @@ public final class EventControl {
         }
         type.add(PrivateAccess.getInstance().newSettingDescriptor(TYPE_THROTTLE, Throttle.NAME, def, Collections.emptyList()));
         return new Control(new ThrottleSetting(type), def);
+    }
+
+    private static Control defineLevel(PlatformEventType type) {
+        Level level = type.getAnnotation(Level.class);
+        String[] values = level.value();
+        String def = values[0];
+        type.add(PrivateAccess.getInstance().newSettingDescriptor(TYPE_LEVEL, Level.NAME, def, Collections.emptyList()));
+        return new Control(new LevelSetting(type, values), def);
     }
 
     private static Control definePeriod(PlatformEventType type) {

@@ -57,6 +57,10 @@ enum Aggregator {
      */
     LIST("LIST"),
     /**
+     * Aggregate unique values into a comma-separated list, including {@code null}.
+     */
+    SET("SET"),
+    /**
      * The highest numeric value.
      */
     MAXIMUM("MAX"),
