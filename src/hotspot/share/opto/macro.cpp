@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -167,7 +167,7 @@ void PhaseMacroExpand::eliminate_gc_barrier(Node* p2x) {
 // Search for a memory operation for the specified memory slice.
 static Node *scan_mem_chain(Node *mem, int alias_idx, int offset, Node *start_mem, Node *alloc, PhaseGVN *phase) {
   Node *orig_mem = mem;
-  Node *alloc_mem = alloc->in(TypeFunc::Memory);
+  Node *alloc_mem = alloc->as_Allocate()->proj_out_or_null(TypeFunc::Memory);
   const TypeOopPtr *tinst = phase->C->get_adr_type(alias_idx)->isa_oopptr();
   while (true) {
     if (mem == alloc_mem || mem == start_mem ) {
@@ -371,7 +371,7 @@ Node *PhaseMacroExpand::value_from_mem_phi(Node *mem, BasicType ft, const Type *
     return nullptr; // Give up: phi tree too deep
   }
   Node *start_mem = C->start()->proj_out_or_null(TypeFunc::Memory);
-  Node *alloc_mem = alloc->in(TypeFunc::Memory);
+  Node *alloc_mem = alloc->proj_out_or_null(TypeFunc::Memory);
 
   uint length = mem->req();
   GrowableArray <Node *> values(length, length, nullptr);
@@ -456,7 +456,7 @@ Node *PhaseMacroExpand::value_from_mem(Node *sfpt_mem, Node *sfpt_ctl, BasicType
   int offset = adr_t->offset();
   Node *start_mem = C->start()->proj_out_or_null(TypeFunc::Memory);
   Node *alloc_ctrl = alloc->in(TypeFunc::Control);
-  Node *alloc_mem = alloc->in(TypeFunc::Memory);
+  Node *alloc_mem = alloc->proj_out_or_null(TypeFunc::Memory);
   VectorSet visited;
 
   bool done = sfpt_mem == alloc_mem;
