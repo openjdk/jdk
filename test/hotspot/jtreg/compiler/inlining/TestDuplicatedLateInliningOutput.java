@@ -61,6 +61,7 @@ public class TestDuplicatedLateInliningOutput {
                 "-XX:+PrintInlining",
                 "-XX:CICompilerCount=1",
                 "-XX:-TieredCompilation",
+                "-XX:-BackgroundCompilation",
                 launcher.getName());
 
         OutputAnalyzer analyzer = new OutputAnalyzer(pb.start());
