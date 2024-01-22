@@ -508,8 +508,7 @@ public:
 class SafePointScalarObjectNode: public TypeNode {
   uint _first_index;              // First input edge relative index of a SafePoint node where
                                   // states of the scalarized object fields are collected.
-                                  // It is relative to the last (youngest) jvms->_scloff.
-  uint _depth;
+  uint _depth;                    // Depth of the JVM state the first index field refers to
   uint _n_fields;                 // Number of non-static fields of the scalarized object.
 
   Node* _alloc;                   // Just for debugging purposes.
