@@ -958,7 +958,7 @@ address StubGenerator::generate_compress_perm_table(const char *stub_name, int32
   if (esize == 32) {
     // Loop to generate 256 x 8 int compression permute index table. A row is
     // accessed using 8 bit index computed using vector mask. An entry in
-    // the row holds either a valid permute index corresponding to set bit position
+    // a row holds either a valid permute index corresponding to set bit position
     // or a -1 (default) value.
     for (int mask = 0; mask < 256; mask++) {
       int ctr = 0;
@@ -976,8 +976,8 @@ address StubGenerator::generate_compress_perm_table(const char *stub_name, int32
     assert(esize == 64, "");
     // Loop to generate 16 x 4 long compression permute index table. A row is
     // accessed using 4 bit index computed using vector mask. An entry in
-    // the row holds either a valid permute index corresponding to set bit position
-    // or a -1 (default) value.
+    // a row holds either a valid permute index pair for a quadword corresponding
+    // to set bit position or a -1 (default) value.
     for (int mask = 0; mask < 16; mask++) {
       int ctr = 0;
       for (int j = 0; j < 4; j++) {
@@ -1001,7 +1001,7 @@ address StubGenerator::generate_expand_perm_table(const char *stub_name, int32_t
   address start = __ pc();
   if (esize == 32) {
     // Loop to generate 256 x 8 int expand permute index table. A row is accessed
-    // using 8 bit index computed using vector mask. An entry in the row holds either
+    // using 8 bit index computed using vector mask. An entry in a row holds either
     // a valid permute index (starting from least significant lane) placed at poisition
     // corresponding to set bit position or a -1 (default) value.
     for (int mask = 0; mask < 256; mask++) {
@@ -1017,7 +1017,7 @@ address StubGenerator::generate_expand_perm_table(const char *stub_name, int32_t
   } else {
     assert(esize == 64, "");
     // Loop to generate 16 x 4 long expand permute index table. A row is accessed
-    // using 4 bit index computed using vector mask. An entry in the row holds either
+    // using 4 bit index computed using vector mask. An entry in a row holds either
     // a valid doubleword permute index pair representing a quadword index (starting
     // from least significant lane) placed at poisition corresponding to set bit
     // position or a -1 (default) value.

@@ -5298,7 +5298,7 @@ void C2_MacroAssembler::vector_compress_expand_avx2(int opcode, XMMRegister dst,
     expand_perm_table = StubRoutines::x86::expand_perm_table32();
     vmovmskps(rtmp, mask, vec_enc);
   }
-  shlq(rtmp, 5); // for 32 byte permute row of 8 x 32 bits.
+  shlq(rtmp, 5); // for 32 byte permute row.
   if (opcode == Op_CompressV) {
     lea(rscratch, ExternalAddress(compress_perm_table));
   } else {
