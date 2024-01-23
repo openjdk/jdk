@@ -94,6 +94,7 @@ public class TranslateEscapes {
         verifyEscape("\\u0000", "\u0000");
         verifyEscape("\\u2022", "\u2022");
         verifyEscape("\\ud83c\\udf09", "\ud83c\udf09");
+        verifyEscape("\\uuuuu2022", "\uuuuu2022");
 
         verifyUnicodeEscape("\\u000x");
         verifyUnicodeEscape("\\u000");

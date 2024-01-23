@@ -4155,9 +4155,9 @@ public final class String
 
     /**
      * Returns a string whose value is this string, with escape sequences
-     * and unicode escape sequences translated as if in a string literal.
+     * and unicode escapes translated as if in a string literal.
      * <p>
-     * Escape sequences are translated as follows;
+     * Escapes are translated as follows;
      * <table class="striped">
      *   <caption style="display:none">Translation</caption>
      *   <thead>
@@ -4224,17 +4224,23 @@ public final class String
      *     <td>discard</td>
      *   </tr>
      *   <tr>
-     *     <th scope="row">{@code \u005CuXXXX}</th>
+     *     <th scope="row">{@code \u005Cu...uXXXX}</th>
      *     <td>unicode escape</td>
-     *     <td>unicode equivalent</td>
+     *     <td>single character UTF-16 equivalent</td>
      *   </tr>
      *   </tbody>
      * </table>
      *
      * @throws IllegalArgumentException when an escape sequence is malformed.
      *
-     * @return String with escape sequences translated.
+     * @return String with escape sequences and unicode escapes translated.
      *
+     * @implNote Normally, unicode escapes are translated by the compiler before string
+     * literals are translated. However, as a convenience for use with constructed
+     * strings, this method also translates unicode escapes. For example, this
+     * method could be used when ASCII encoded text files need to maintain unicode
+     * content.
+     * 
      * @jls 3.10.7 Escape Sequences
      * @jls 3.3 Unicode Escapes
      *
@@ -4272,6 +4278,9 @@ public final class String
                     ch = '\t';
                     break;
                 case 'u':
+                    while (from < length && chars[from] == 'u') {
+                        from++;
+                    }
                     if (from <= length - 4) {
                         from += 4;
                         try {
