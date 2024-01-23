@@ -86,6 +86,9 @@ inline bool LockStack::is_recursive(oop o) const {
     return false;
   }
 
+  // This will succeed iff there is a consecutive run of oops on the
+  // lock-stack with a length of at least 2.
+
   assert(contains(o), "entries must exist");
   int end = to_index(_top);
   for (int i = 1; i < end; i++) {
