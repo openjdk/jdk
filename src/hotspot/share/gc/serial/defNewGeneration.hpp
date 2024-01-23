@@ -226,7 +226,7 @@ class DefNewGeneration: public Generation {
 
   HeapWord* par_allocate(size_t word_size, bool is_tlab);
 
-  virtual void gc_epilogue(bool full);
+  void gc_epilogue(bool full);
 
   // Save the tops for eden, from, and to
   virtual void record_spaces_top();
@@ -250,7 +250,7 @@ class DefNewGeneration: public Generation {
   void reset_scratch();
 
   // GC support
-  virtual void compute_new_size();
+  void compute_new_size();
 
   // Returns true if the collection is likely to be safely
   // completed. Even if this method returns true, a collection

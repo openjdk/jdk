@@ -1175,10 +1175,10 @@ final class VirtualThread extends BaseVirtualThread {
 
     @IntrinsicCandidate
     @JvmtiMountTransition
-    private native void notifyJvmtiHideFrames(boolean hide);
+    private static native void notifyJvmtiHideFrames(boolean hide);
 
     @IntrinsicCandidate
-    private native void notifyJvmtiDisableSuspend(boolean enter);
+    private static native void notifyJvmtiDisableSuspend(boolean enter);
 
     private static native void registerNatives();
     static {
