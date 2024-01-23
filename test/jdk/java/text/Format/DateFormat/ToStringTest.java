@@ -56,7 +56,7 @@ public class ToStringTest {
     @Test
     public void oddValueTest() {
         String expectedStr =
-                "SimpleDateFormat [locale: \""+Locale.getDefault().getDisplayName()+"\", pattern: \"MMM d, y\"]\n";
+                "SimpleDateFormat [locale: \"" + Locale.getDefault().getDisplayName() + "\", pattern: \"MMM d, y\"]\n";
         var s = new SimpleDateFormat("MMM d, y", new DateFormatSymbols(Locale.JAPAN));
         assertEquals(expectedStr, s.toString());
     }
