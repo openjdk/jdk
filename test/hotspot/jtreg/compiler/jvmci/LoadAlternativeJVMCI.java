@@ -37,9 +37,6 @@ import java.io.File;
 import java.net.URL;
 import java.net.URI;
 import java.net.URLClassLoader;
-import java.lang.reflect.*;
-
-import jdk.internal.loader.ClassLoaders;
 
 public class LoadAlternativeJVMCI {
     public static void main(String[] args) throws Exception {
@@ -53,11 +50,8 @@ public class LoadAlternativeJVMCI {
             cp[i] = new URI("file:" + e).toURL();
         }
 
-        Field blField = ClassLoaders.class.getDeclaredField("BOOT_LOADER");
-        blField.setAccessible(true);
-        ClassLoader boot = (ClassLoader) blField.get(null);
-        URLClassLoader ucl = new URLClassLoader(cp, boot);
         ClassLoader pcl = ClassLoader.getPlatformClassLoader();
+        URLClassLoader ucl = new URLClassLoader(cp, null);
 
         String[] names = {
             "jdk.vm.ci.meta.ResolvedJavaType",
