@@ -46,8 +46,7 @@ public class TestIntVect {
     private static final int SHIFT = 32;
 
     public static void main(String[] args) {
-        TestFramework.runWithFlags("-XX:+IgnoreUnrecognizedVMOptions",
-                                   "-XX:StressLongCountedLoop=0");
+        TestFramework.run();
     }
 
     @Run(test = {
@@ -55,8 +54,10 @@ public class TestIntVect {
            "test_suba", "test_mulc", "test_mulc_n", "test_mulv", "test_mula",
            "test_andc", "test_andv", "test_anda", "test_orc", "test_orv",
            "test_ora", "test_xorc", "test_xorv", "test_xora", "test_sllc",
-           "test_sllc_n", "test_sllv", "test_srlc", "test_srlc_n", "test_srlv",
-           "test_srac", "test_srac_n", "test_srav"
+           "test_sllc_n", "test_sllc_o", "test_sllc_on", "test_sllv",
+           "test_srlc", "test_srlc_n", "test_srlc_o", "test_srlc_on",
+           "test_srlv", "test_srac", "test_srac_n", "test_srac_o",
+           "test_srac_on", "test_srav"
          },
          mode = RunMode.STANDALONE)
     public void run() {
@@ -401,14 +402,13 @@ public class TestIntVect {
         }
 
         if (errn > 0) {
-            System.err.println("FAILED: " + errn + " errors");
-            System.exit(97);
+            throw new Error("FAILED: " + errn + " errors");
         }
         System.out.println("PASSED");
 
     }
 
-    // Not vectorized: simple addition not profitalbe, see JDK-8307516.
+    // Not vectorized: simple addition not profitable, see JDK-8307516.
     int test_sum(int[] a1) {
         int sum = 0;
         for (int i = 0; i < a1.length; i+=1) {
@@ -418,8 +418,8 @@ public class TestIntVect {
     }
 
     @Test
-    @IR(counts = { IRNode.ADD_VI, ">= 1" },
-        applyIfCPUFeature = {"sse2", "true"})
+    @IR(counts = { IRNode.ADD_VI, "> 0" },
+        applyIfCPUFeatureOr = {"sse2", "true", "asimd", "true"})
     void test_addc(int[] a0, int[] a1) {
         for (int i = 0; i < a0.length; i+=1) {
             a0[i] = (int)(a1[i]+VALUE);
@@ -427,8 +427,8 @@ public class TestIntVect {
     }
 
     @Test
-    @IR(counts = { IRNode.ADD_VI, ">= 1" },
-        applyIfCPUFeature = {"sse2", "true"})
+    @IR(counts = { IRNode.ADD_VI, "> 0" },
+        applyIfCPUFeatureOr = {"sse2", "true", "asimd", "true"})
     void test_addv(int[] a0, int[] a1, int b) {
         for (int i = 0; i < a0.length; i+=1) {
             a0[i] = (int)(a1[i]+b);
@@ -436,8 +436,8 @@ public class TestIntVect {
     }
 
     @Test
-    @IR(counts = { IRNode.ADD_VI, ">= 1" },
-        applyIfCPUFeature = {"sse2", "true"})
+    @IR(counts = { IRNode.ADD_VI, "> 0" },
+        applyIfCPUFeatureOr = {"sse2", "true", "asimd", "true"})
     void test_adda(int[] a0, int[] a1, int[] a2) {
         for (int i = 0; i < a0.length; i+=1) {
             a0[i] = (int)(a1[i]+a2[i]);
@@ -445,8 +445,8 @@ public class TestIntVect {
     }
 
     @Test
-    @IR(counts = { IRNode.ADD_VI, ">= 1" },
-        applyIfCPUFeature = {"sse2", "true"})
+    @IR(counts = { IRNode.ADD_VI, "> 0" },
+        applyIfCPUFeatureOr = {"sse2", "true", "asimd", "true"})
     void test_subc(int[] a0, int[] a1) {
         for (int i = 0; i < a0.length; i+=1) {
             a0[i] = (int)(a1[i]-VALUE);
@@ -454,8 +454,8 @@ public class TestIntVect {
     }
 
     @Test
-    @IR(counts = { IRNode.SUB_VI, ">= 1" },
-        applyIfCPUFeature = {"sse2", "true"})
+    @IR(counts = { IRNode.SUB_VI, "> 0" },
+        applyIfCPUFeatureOr = {"sse2", "true", "asimd", "true"})
     void test_subv(int[] a0, int[] a1, int b) {
         for (int i = 0; i < a0.length; i+=1) {
             a0[i] = (int)(a1[i]-b);
@@ -463,8 +463,8 @@ public class TestIntVect {
     }
 
     @Test
-    @IR(counts = { IRNode.SUB_VI, ">= 1", },
-        applyIfCPUFeature = {"sse2", "true"})
+    @IR(counts = { IRNode.SUB_VI, "> 0", },
+        applyIfCPUFeatureOr = {"sse2", "true", "asimd", "true"})
     void test_suba(int[] a0, int[] a1, int[] a2) {
         for (int i = 0; i < a0.length; i+=1) {
             a0[i] = (int)(a1[i]-a2[i]);
@@ -472,8 +472,8 @@ public class TestIntVect {
     }
 
     @Test
-    @IR(counts = { IRNode.SUB_VI, ">= 1", IRNode.LSHIFT_VI, ">= 1" },
-        applyIfCPUFeature = {"sse2", "true"})
+    @IR(counts = { IRNode.SUB_VI, "> 0", IRNode.LSHIFT_VI, "> 0" },
+        applyIfCPUFeatureOr = {"sse2", "true", "asimd", "true"})
     void test_mulc(int[] a0, int[] a1) {
         for (int i = 0; i < a0.length; i+=1) {
             a0[i] = (int)(a1[i]*VALUE);
@@ -481,8 +481,8 @@ public class TestIntVect {
     }
 
     @Test
-    @IR(counts = { IRNode.SUB_VI, ">= 1", IRNode.LSHIFT_VI, ">= 1" },
-        applyIfCPUFeature = {"sse2", "true"})
+    @IR(counts = { IRNode.SUB_VI, "> 0", IRNode.LSHIFT_VI, "> 0" },
+        applyIfCPUFeatureOr = {"sse2", "true", "asimd", "true"})
     void test_mulc_n(int[] a0, int[] a1) {
         for (int i = 0; i < a0.length; i+=1) {
             a0[i] = (int)(a1[i]*(-VALUE));
@@ -490,8 +490,8 @@ public class TestIntVect {
     }
 
     @Test
-    @IR(counts = { IRNode.MUL_VI, ">= 1" },
-        applyIfCPUFeature = {"sse4.1", "true"})
+    @IR(counts = { IRNode.MUL_VI, "> 0" },
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     void test_mulv(int[] a0, int[] a1, int b) {
         for (int i = 0; i < a0.length; i+=1) {
             a0[i] = (int)(a1[i]*b);
@@ -499,22 +499,24 @@ public class TestIntVect {
     }
 
     @Test
-    @IR(counts = { IRNode.MUL_VI, ">= 1" },
-        applyIfCPUFeature = {"sse4.1", "true"})
+    @IR(counts = { IRNode.MUL_VI, "> 0" },
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     void test_mula(int[] a0, int[] a1, int[] a2) {
         for (int i = 0; i < a0.length; i+=1) {
             a0[i] = (int)(a1[i]*a2[i]);
         }
     }
 
-    // Not vectorized: no vector div. Might vectorize after JDK-8282365 (transform div to mul/add/shift).
+    // Not vectorized: no vector div. Might vectorize after JDK-8282365
+    // (transform div to mul/add/shift).
     void test_divc(int[] a0, int[] a1) {
         for (int i = 0; i < a0.length; i+=1) {
             a0[i] = (int)(a1[i]/VALUE);
         }
     }
 
-    // Not vectorized: no vector div. Might vectorize after JDK-8282365 (transform div to mul/add/shift).
+    // Not vectorized: no vector div. Might vectorize after JDK-8282365
+    // (transform div to mul/add/shift).
     void test_divc_n(int[] a0, int[] a1) {
         for (int i = 0; i < a0.length; i+=1) {
             a0[i] = (int)(a1[i]/(-VALUE));
@@ -536,8 +538,8 @@ public class TestIntVect {
     }
 
     @Test
-    @IR(counts = { IRNode.AND_VI, ">= 1" },
-        applyIfCPUFeature = {"sse2", "true"})
+    @IR(counts = { IRNode.AND_VI, "> 0" },
+        applyIfCPUFeatureOr = {"sse2", "true", "asimd", "true"})
     void test_andc(int[] a0, int[] a1) {
         for (int i = 0; i < a0.length; i+=1) {
             a0[i] = (int)(a1[i]&BIT_MASK);
@@ -545,8 +547,8 @@ public class TestIntVect {
     }
 
     @Test
-    @IR(counts = { IRNode.AND_VI, ">= 1" },
-        applyIfCPUFeature = {"sse2", "true"})
+    @IR(counts = { IRNode.AND_VI, "> 0" },
+        applyIfCPUFeatureOr = {"sse2", "true", "asimd", "true"})
     void test_andv(int[] a0, int[] a1, int b) {
         for (int i = 0; i < a0.length; i+=1) {
             a0[i] = (int)(a1[i]&b);
@@ -554,8 +556,8 @@ public class TestIntVect {
     }
 
     @Test
-    @IR(counts = { IRNode.AND_VI, ">= 1" },
-        applyIfCPUFeature = {"sse2", "true"})
+    @IR(counts = { IRNode.AND_VI, "> 0" },
+        applyIfCPUFeatureOr = {"sse2", "true", "asimd", "true"})
     void test_anda(int[] a0, int[] a1, int[] a2) {
         for (int i = 0; i < a0.length; i+=1) {
             a0[i] = (int)(a1[i]&a2[i]);
@@ -563,8 +565,8 @@ public class TestIntVect {
     }
 
     @Test
-    @IR(counts = { IRNode.OR_VI, ">= 1" },
-        applyIfCPUFeature = {"sse2", "true"})
+    @IR(counts = { IRNode.OR_VI, "> 0" },
+        applyIfCPUFeatureOr = {"sse2", "true", "asimd", "true"})
     void test_orc(int[] a0, int[] a1) {
         for (int i = 0; i < a0.length; i+=1) {
             a0[i] = (int)(a1[i]|BIT_MASK);
@@ -572,8 +574,8 @@ public class TestIntVect {
     }
 
     @Test
-    @IR(counts = { IRNode.OR_VI, ">= 1" },
-        applyIfCPUFeature = {"sse2", "true"})
+    @IR(counts = { IRNode.OR_VI, "> 0" },
+        applyIfCPUFeatureOr = {"sse2", "true", "asimd", "true"})
     void test_orv(int[] a0, int[] a1, int b) {
         for (int i = 0; i < a0.length; i+=1) {
             a0[i] = (int)(a1[i]|b);
@@ -581,8 +583,8 @@ public class TestIntVect {
     }
 
     @Test
-    @IR(counts = { IRNode.OR_VI, ">= 1" },
-        applyIfCPUFeature = {"sse2", "true"})
+    @IR(counts = { IRNode.OR_VI, "> 0" },
+        applyIfCPUFeatureOr = {"sse2", "true", "asimd", "true"})
     void test_ora(int[] a0, int[] a1, int[] a2) {
         for (int i = 0; i < a0.length; i+=1) {
             a0[i] = (int)(a1[i]|a2[i]);
@@ -590,8 +592,8 @@ public class TestIntVect {
     }
 
     @Test
-    @IR(counts = { IRNode.XOR_VI, ">= 1" },
-        applyIfCPUFeature = {"sse2", "true"})
+    @IR(counts = { IRNode.XOR_VI, "> 0" },
+        applyIfCPUFeatureOr = {"sse2", "true", "asimd", "true"})
     void test_xorc(int[] a0, int[] a1) {
         for (int i = 0; i < a0.length; i+=1) {
             a0[i] = (int)(a1[i]^BIT_MASK);
@@ -599,8 +601,8 @@ public class TestIntVect {
     }
 
     @Test
-    @IR(counts = { IRNode.XOR_VI, ">= 1" },
-        applyIfCPUFeature = {"sse2", "true"})
+    @IR(counts = { IRNode.XOR_VI, "> 0" },
+        applyIfCPUFeatureOr = {"sse2", "true", "asimd", "true"})
     void test_xorv(int[] a0, int[] a1, int b) {
         for (int i = 0; i < a0.length; i+=1) {
             a0[i] = (int)(a1[i]^b);
@@ -608,8 +610,8 @@ public class TestIntVect {
     }
 
     @Test
-    @IR(counts = { IRNode.XOR_VI, ">= 1" },
-        applyIfCPUFeature = {"sse2", "true"})
+    @IR(counts = { IRNode.XOR_VI, "> 0" },
+        applyIfCPUFeatureOr = {"sse2", "true", "asimd", "true"})
     void test_xora(int[] a0, int[] a1, int[] a2) {
         for (int i = 0; i < a0.length; i+=1) {
             a0[i] = (int)(a1[i]^a2[i]);
@@ -617,8 +619,8 @@ public class TestIntVect {
     }
 
     @Test
-    @IR(counts = { IRNode.LSHIFT_VI, ">= 1" },
-        applyIfCPUFeature = {"sse2", "true"})
+    @IR(counts = { IRNode.LSHIFT_VI, "> 0" },
+        applyIfCPUFeatureOr = {"sse2", "true", "asimd", "true"})
     void test_sllc(int[] a0, int[] a1) {
         for (int i = 0; i < a0.length; i+=1) {
             a0[i] = (int)(a1[i]<<VALUE);
@@ -626,20 +628,30 @@ public class TestIntVect {
     }
 
     @Test
-    @IR(counts = { IRNode.LSHIFT_VI, ">= 1" },
-        applyIfCPUFeature = {"sse2", "true"})
+    @IR(counts = { IRNode.LSHIFT_VI, "> 0" },
+        applyIfCPUFeatureOr = {"sse2", "true", "asimd", "true"})
     void test_sllc_n(int[] a0, int[] a1) {
         for (int i = 0; i < a0.length; i+=1) {
             a0[i] = (int)(a1[i]<<(-VALUE));
         }
     }
 
+    @Test
+    @IR(counts = { IRNode.LSHIFT_VI,     "= 0",
+                   IRNode.LOAD_VECTOR_I, "> 0",
+                   IRNode.STORE_VECTOR,  "> 0" },
+        applyIfCPUFeatureOr = {"sse2", "true", "asimd", "true"})
     void test_sllc_o(int[] a0, int[] a1) {
         for (int i = 0; i < a0.length; i+=1) {
             a0[i] = (int)(a1[i]<<SHIFT);
         }
     }
 
+    @Test
+    @IR(counts = { IRNode.LSHIFT_VI,     "= 0",
+                   IRNode.LOAD_VECTOR_I, "> 0",
+                   IRNode.STORE_VECTOR,  "> 0" },
+        applyIfCPUFeatureOr = {"sse2", "true", "asimd", "true"})
     void test_sllc_on(int[] a0, int[] a1) {
         for (int i = 0; i < a0.length; i+=1) {
             a0[i] = (int)(a1[i]<<(-SHIFT));
@@ -647,8 +659,8 @@ public class TestIntVect {
     }
 
     @Test
-    @IR(counts = { IRNode.LSHIFT_VI, ">= 1" },
-        applyIfCPUFeature = {"sse2", "true"})
+    @IR(counts = { IRNode.LSHIFT_VI, "> 0" },
+        applyIfCPUFeatureOr = {"sse2", "true", "asimd", "true"})
     void test_sllv(int[] a0, int[] a1, int b) {
         for (int i = 0; i < a0.length; i+=1) {
             a0[i] = (int)(a1[i]<<b);
@@ -656,8 +668,8 @@ public class TestIntVect {
     }
 
     @Test
-    @IR(counts = { IRNode.URSHIFT_VI, ">= 1" },
-        applyIfCPUFeature = {"sse2", "true"})
+    @IR(counts = { IRNode.URSHIFT_VI, "> 0" },
+        applyIfCPUFeatureOr = {"sse2", "true", "asimd", "true"})
     void test_srlc(int[] a0, int[] a1) {
         for (int i = 0; i < a0.length; i+=1) {
             a0[i] = (int)(a1[i]>>>VALUE);
@@ -665,20 +677,30 @@ public class TestIntVect {
     }
 
     @Test
-    @IR(counts = { IRNode.URSHIFT_VI, ">= 1" },
-        applyIfCPUFeature = {"sse2", "true"})
+    @IR(counts = { IRNode.URSHIFT_VI, "> 0" },
+        applyIfCPUFeatureOr = {"sse2", "true", "asimd", "true"})
     void test_srlc_n(int[] a0, int[] a1) {
         for (int i = 0; i < a0.length; i+=1) {
             a0[i] = (int)(a1[i]>>>(-VALUE));
         }
     }
 
+    @Test
+    @IR(counts = { IRNode.URSHIFT_VI,    "= 0",
+                   IRNode.LOAD_VECTOR_I, "> 0",
+                   IRNode.STORE_VECTOR,  "> 0" },
+        applyIfCPUFeatureOr = {"sse2", "true", "asimd", "true"})
     void test_srlc_o(int[] a0, int[] a1) {
         for (int i = 0; i < a0.length; i+=1) {
             a0[i] = (int)(a1[i]>>>SHIFT);
         }
     }
 
+    @Test
+    @IR(counts = { IRNode.URSHIFT_VI,    "= 0",
+                   IRNode.LOAD_VECTOR_I, "> 0",
+                   IRNode.STORE_VECTOR,  "> 0" },
+        applyIfCPUFeatureOr = {"sse2", "true", "asimd", "true"})
     void test_srlc_on(int[] a0, int[] a1) {
         for (int i = 0; i < a0.length; i+=1) {
             a0[i] = (int)(a1[i]>>>(-SHIFT));
@@ -686,8 +708,8 @@ public class TestIntVect {
     }
 
     @Test
-    @IR(counts = { IRNode.URSHIFT_VI, ">= 1" },
-        applyIfCPUFeature = {"sse2", "true"})
+    @IR(counts = { IRNode.URSHIFT_VI, "> 0" },
+        applyIfCPUFeatureOr = {"sse2", "true", "asimd", "true"})
     void test_srlv(int[] a0, int[] a1, int b) {
         for (int i = 0; i < a0.length; i+=1) {
             a0[i] = (int)(a1[i]>>>b);
@@ -695,8 +717,8 @@ public class TestIntVect {
     }
 
     @Test
-    @IR(counts = { IRNode.RSHIFT_VI, ">= 1" },
-        applyIfCPUFeature = {"sse2", "true"})
+    @IR(counts = { IRNode.RSHIFT_VI, "> 0" },
+        applyIfCPUFeatureOr = {"sse2", "true", "asimd", "true"})
     void test_srac(int[] a0, int[] a1) {
         for (int i = 0; i < a0.length; i+=1) {
             a0[i] = (int)(a1[i]>>VALUE);
@@ -704,20 +726,30 @@ public class TestIntVect {
     }
 
     @Test
-    @IR(counts = { IRNode.RSHIFT_VI, ">= 1" },
-        applyIfCPUFeature = {"sse2", "true"})
+    @IR(counts = { IRNode.RSHIFT_VI, "> 0" },
+        applyIfCPUFeatureOr = {"sse2", "true", "asimd", "true"})
     void test_srac_n(int[] a0, int[] a1) {
         for (int i = 0; i < a0.length; i+=1) {
             a0[i] = (int)(a1[i]>>(-VALUE));
         }
     }
 
+    @Test
+    @IR(counts = { IRNode.RSHIFT_VI,     "= 0",
+                   IRNode.LOAD_VECTOR_I, "> 0",
+                   IRNode.STORE_VECTOR,  "> 0" },
+        applyIfCPUFeatureOr = {"sse2", "true", "asimd", "true"})
     void test_srac_o(int[] a0, int[] a1) {
         for (int i = 0; i < a0.length; i+=1) {
             a0[i] = (int)(a1[i]>>SHIFT);
         }
     }
 
+    @Test
+    @IR(counts = { IRNode.RSHIFT_VI,     "= 0",
+                   IRNode.LOAD_VECTOR_I, "> 0",
+                   IRNode.STORE_VECTOR,  "> 0" },
+        applyIfCPUFeatureOr = {"sse2", "true", "asimd", "true"})
     void test_srac_on(int[] a0, int[] a1) {
         for (int i = 0; i < a0.length; i+=1) {
             a0[i] = (int)(a1[i]>>(-SHIFT));
@@ -725,14 +757,15 @@ public class TestIntVect {
     }
 
     @Test
-    @IR(counts = { IRNode.RSHIFT_VI, ">= 1" },
-        applyIfCPUFeature = {"sse2", "true"})
+    @IR(counts = { IRNode.RSHIFT_VI, "> 0" },
+        applyIfCPUFeatureOr = {"sse2", "true", "asimd", "true"})
     void test_srav(int[] a0, int[] a1, int b) {
         for (int i = 0; i < a0.length; i+=1) {
             a0[i] = (int)(a1[i]>>b);
         }
     }
 
+    // Not vectorized currently
     void test_pack2(long[] p2, int[] a1) {
         if (p2.length*2 > a1.length) return;
         for (int i = 0; i < p2.length; i+=1) {
@@ -742,6 +775,7 @@ public class TestIntVect {
         }
     }
 
+    // Not vectorized currently
     void test_unpack2(int[] a0, long[] p2) {
         if (p2.length*2 > a0.length) return;
         for (int i = 0; i < p2.length; i+=1) {
@@ -751,6 +785,7 @@ public class TestIntVect {
         }
     }
 
+    // Not vectorized currently
     void test_pack2_swap(long[] p2, int[] a1) {
         if (p2.length*2 > a1.length) return;
         for (int i = 0; i < p2.length; i+=1) {
@@ -760,6 +795,7 @@ public class TestIntVect {
         }
     }
 
+    // Not vectorized currently
     void test_unpack2_swap(int[] a0, long[] p2) {
         if (p2.length*2 > a0.length) return;
         for (int i = 0; i < p2.length; i+=1) {
