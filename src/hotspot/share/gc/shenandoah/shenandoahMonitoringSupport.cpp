@@ -58,7 +58,8 @@ public:
 
 ShenandoahMonitoringSupport::ShenandoahMonitoringSupport(ShenandoahHeap* heap) :
         _partial_counters(nullptr),
-        _full_counters(nullptr)
+        _full_counters(nullptr),
+        _update_monitors(this)
 {
   // Collection counters do not fit Shenandoah very well.
   // We record partial cycles as "young", and full cycles (including full STW GC) as "old".
@@ -71,6 +72,8 @@ ShenandoahMonitoringSupport::ShenandoahMonitoringSupport(ShenandoahHeap* heap) :
   _space_counters = new HSpaceCounters(_heap_counters->name_space(), "Heap", 0, heap->max_capacity(), heap->initial_capacity());
 
   _heap_region_counters = new ShenandoahHeapRegionCounters();
+
+  _update_monitors.enroll();
 }
 
 CollectorCounters* ShenandoahMonitoringSupport::stw_collection_counters() {
@@ -102,4 +105,45 @@ void ShenandoahMonitoringSupport::update_counters() {
 
     MetaspaceCounters::update_performance_counters();
   }
+}
+
+void ShenandoahMonitoringSupport::notify_heap_changed() {
+  _update_monitors.notify_heap_changed();
+}
+
+void ShenandoahMonitoringSupport::set_forced_counters_update(bool value) {
+  _update_monitors.set_forced_counters_update(value);
+}
+
+void ShenandoahMonitoringSupport::handle_force_counters_update() {
+  _update_monitors.handle_force_counters_update();
+}
+
+void ShenandoahPeriodicTask::task() {
+  handle_force_counters_update();
+  handle_counters_update();
+}
+
+void ShenandoahPeriodicTask::handle_counters_update() {
+  if (_do_counters_update.is_set()) {
+    _do_counters_update.unset();
+    _monitoring_support->update_counters();
+  }
+}
+
+void ShenandoahPeriodicTask::handle_force_counters_update() {
+  if (_force_counters_update.is_set()) {
+    _do_counters_update.unset(); // reset these too, we do update now!
+    _monitoring_support->update_counters();
+  }
+}
+
+void ShenandoahPeriodicTask::notify_heap_changed() {
+  if (_do_counters_update.is_unset()) {
+    _do_counters_update.set();
+  }
+}
+
+void ShenandoahPeriodicTask::set_forced_counters_update(bool value) {
+  _force_counters_update.set_cond(value);
 }

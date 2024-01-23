@@ -29,8 +29,24 @@
 #include "gc/shenandoah/shenandoahPadding.hpp"
 #include "gc/shenandoah/shenandoahSharedVariables.hpp"
 #include "memory/allocation.hpp"
+#include "runtime/task.hpp"
 
 class ShenandoahHeap;
+class ShenandoahPacer;
+
+
+// Periodic task to notify blocked paced waiters.
+class ShenandoahPeriodicPacerNotify : public PeriodicTask {
+public:
+  explicit ShenandoahPeriodicPacerNotify(ShenandoahPacer* pacer) :
+    PeriodicTask(PeriodicTask::min_interval),
+    _pacer(pacer) { }
+
+  void task() override;
+private:
+  ShenandoahPacer* _pacer;
+};
+
 
 #define PACING_PROGRESS_UNINIT (-1)
 #define PACING_PROGRESS_ZERO   ( 0)
@@ -48,6 +64,7 @@ private:
   TruncatedSeq* _progress_history;
   Monitor* _wait_monitor;
   ShenandoahSharedFlag _need_notify_waiters;
+  ShenandoahPeriodicPacerNotify _notify_waiters;
 
   // Set once per phase
   volatile intptr_t _epoch;
@@ -69,10 +86,13 @@ public:
           _last_time(os::elapsedTime()),
           _progress_history(new TruncatedSeq(5)),
           _wait_monitor(new Monitor(Mutex::safepoint-1, "ShenandoahWaitMonitor_lock", true)),
+          _notify_waiters(this),
           _epoch(0),
           _tax_rate(1),
           _budget(0),
-          _progress(PACING_PROGRESS_UNINIT) {}
+          _progress(PACING_PROGRESS_UNINIT) {
+    _notify_waiters.enroll();
+  }
 
   void setup_for_idle();
   void setup_for_mark();

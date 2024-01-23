@@ -432,10 +432,7 @@ jint ShenandoahHeap::initialize() {
   if (ShenandoahPacing) {
     _pacer = new ShenandoahPacer(this);
     _pacer->setup_for_idle();
-    _periodic_pacer_notify_task.enroll();
   }
-
-  _periodic_task.enroll();
 
   _control_thread = new ShenandoahControlThread();
 
@@ -790,9 +787,17 @@ void ShenandoahHeap::op_uncommit(double shrink_before, size_t shrink_until) {
 void ShenandoahHeap::notify_heap_changed() {
   // Update monitoring counters when we took a new region. This amortizes the
   // update costs on slow path.
-  _periodic_task.notify_heap_changed();
+  monitoring_support()->notify_heap_changed();
 
-  _control_thread->notify_heap_changed();
+  control_thread()->notify_heap_changed();
+}
+
+void ShenandoahHeap::set_forced_counters_update(bool value) {
+  monitoring_support()->set_forced_counters_update(value);
+}
+
+void ShenandoahHeap::handle_force_counters_update() {
+  monitoring_support()->handle_force_counters_update();
 }
 
 HeapWord* ShenandoahHeap::allocate_from_gclab_slow(Thread* thread, size_t size) {
