@@ -91,9 +91,19 @@ inline bool LockStack::is_recursive(oop o) const {
 
   assert(contains(o), "entries must exist");
   int end = to_index(_top);
-  for (int i = 1; i < end; i++) {
+  // Start iterating from the top because the runtime code is more
+  // interested in the balanced locking case when the top oop on the
+  // lock-stack matches o. This will cause the for loop to break out
+  // in the first loop iteration if it is non-recursive.
+  for (int i = end - 1; i > 0; i++) {
     if (_base[i - 1] == o && _base[i] == o) {
       return true;
+    }
+    if (_base[i] == o) {
+      // o can only occur in one consecutive run on the lock-stack.
+      // Only one of the two oops checked matched o, so this run
+      // must be of length 1 and thus not be recursive. Stop the search.
+      break;
     }
   }
 
