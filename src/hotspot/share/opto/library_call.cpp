@@ -482,7 +482,7 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_isCompileConstantJ:
   case vmIntrinsics::_isCompileConstantF:
   case vmIntrinsics::_isCompileConstantD:
-  case vmIntrinsics::_isCompileConstantL:    return inline_isCompileConstant();
+  case vmIntrinsics::_isCompileConstantL:       return inline_isCompileConstant();
 
   case vmIntrinsics::_onSpinWait:               return inline_onspinwait();
 
