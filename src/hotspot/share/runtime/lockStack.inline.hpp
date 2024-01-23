@@ -125,6 +125,11 @@ inline bool LockStack::try_recursive_exit(oop o) {
     return false;
   }
 
+  // This will succeed iff the top two oops on the stack matches o.
+  // When successful the top oop will be popped of the lock-stack.
+  // When unsuccessful the lock may still be recursive, in which
+  // case the locking is unbalanced. This case is handled externally.
+
   assert(contains(o), "entries must exist");
 
   int end = to_index(_top);
