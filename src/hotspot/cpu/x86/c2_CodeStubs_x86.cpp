@@ -111,15 +111,8 @@ void C2FastUnlockLightweightStub::emit(C2_MacroAssembler& masm) {
     const Register monitor = _mark;
 
 #ifndef _LP64
-    // The owner may be anonymous, see comment in x86_64 section.
-    __ movptr(Address(monitor, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)), _thread);
     __ jmpb(restore_held_monitor_count_and_slow_path);
 #else // _LP64
-    // The owner may be anonymous and we removed the last obj entry in
-    // the lock-stack. This loses the information about the owner.
-    // Write the thread to the owner field so the runtime knows the owner.
-    __ movptr(Address(monitor, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)), _thread);
-
     // successor null check.
     __ cmpptr(Address(monitor, OM_OFFSET_NO_MONITOR_VALUE_TAG(succ)), NULL_WORD);
     __ jccb(Assembler::equal, restore_held_monitor_count_and_slow_path);
