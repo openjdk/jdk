@@ -43,6 +43,8 @@ import tests.Helper;
  */
 public class ModifiedFilesWarningTest extends ModifiedFilesTest {
 
+    protected static final String IGNORE_MODIFIED_RUNTIME_OPT = "--ignore-modified-runtime";
+
     public static void main(String[] args) throws Exception {
         ModifiedFilesWarningTest test = new ModifiedFilesWarningTest();
         test.run();

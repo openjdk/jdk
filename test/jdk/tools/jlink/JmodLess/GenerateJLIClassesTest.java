@@ -70,7 +70,8 @@ public class GenerateJLIClassesTest extends AbstractJmodLessTest {
                                                             .name("jlink.jli-jmodless")
                                                             .addModule("jdk.jlink")
                                                             .validatingModule("java.base")
-                                                            .addExtraOption(IGNORE_MODIFIED_RUNTIME_OPT)
+                                                            .addExtraOption("--exclude-resources")
+                                                            .addExtraOption(EXCLUDE_RESOURCE_GLOB_STAMP)
                                                             .build());
         // Finally attempt another jmodless link reducing modules to java.base only,
         // and asking for specific jli classes.

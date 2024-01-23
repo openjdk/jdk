@@ -574,13 +574,12 @@ public class JlinkTask {
 
         // Perform some setup for run-time image based links
         if (config.linkFromRuntimeImage()) {
-            // if only allow single-hop, check if the current run-time image is created from packaged modules
-            if (config.singleHop()) {
-                try (InputStream in = JlinkTask.class.getModule().getResourceAsStream(RUNIMAGE_LINK_STAMP)) {
-                    if (in != null) {
-                        String msg = taskHelper.getMessage("err.runtime.link.recursive");
-                        throw new IllegalArgumentException(msg);
-                    }
+            // Check if the current run-time image is created from packaged modules.
+            // If it isn't, fail the link as recursive links are not allowed.
+            try (InputStream in = JlinkTask.class.getModule().getResourceAsStream(RUNIMAGE_LINK_STAMP)) {
+                if (in != null) {
+                    String msg = taskHelper.getMessage("err.runtime.link.recursive");
+                    throw new IllegalArgumentException(msg);
                 }
             }
 

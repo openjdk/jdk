@@ -40,7 +40,8 @@ import tests.JImageValidator;
 
 public abstract class AbstractJmodLessTest {
 
-    protected static final String IGNORE_MODIFIED_RUNTIME_OPT = "--ignore-modified-runtime";
+    protected static final String EXCLUDE_RESOURCE_GLOB_STAMP = "/" + jdk.tools.jlink.internal.JlinkTask.class.getModule().getName() +
+                                                                "/" + jdk.tools.jlink.internal.JlinkTask.RUNIMAGE_LINK_STAMP;
     protected static final boolean DEBUG = true;
 
     public void run() throws Exception {

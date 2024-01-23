@@ -66,7 +66,8 @@ public class PackagedModulesVsJmodLessTest extends AbstractJmodLessTest {
                                                             .name("java-se-jmodless")
                                                             .addModule("java.se")
                                                             .validatingModule("java.se")
-                                                            .addExtraOption(IGNORE_MODIFIED_RUNTIME_OPT)
+                                                            .addExtraOption("--exclude-resources")
+                                                            .addExtraOption(EXCLUDE_RESOURCE_GLOB_STAMP)
                                                             .build());
 
         // create a java.se using packaged modules (jmod-full)

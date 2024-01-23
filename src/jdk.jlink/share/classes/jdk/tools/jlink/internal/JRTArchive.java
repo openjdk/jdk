@@ -142,11 +142,7 @@ public class JRTArchive implements Archive {
                                           EntryType.CLASS_OR_RESOURCE, null /* hashOrTarget */, false /* symlink */);
             }).collect(Collectors.toList()));
 
-            // FIXME: Note that if --ignore-modified-runtime is used, the image can be
-            // free to use multi-hop. However, avoiding to add a stamp file adds
-            // the possibility to verify that that packaged-modules based links
-            // and runtime image based links are equivalent (for Java SE).
-            if (module.equals("jdk.jlink") && errorOnModifiedFile) {
+            if (module.equals("jdk.jlink")) {
                 // this entry represents that the image being created is based on the
                 // run-time image (not the packaged modules).
                 files.add(createRuntimeImageLinkStamp());

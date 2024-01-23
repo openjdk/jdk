@@ -43,7 +43,9 @@ public abstract class ModifiedFilesTest extends AbstractJmodLessTest {
                 .addModule("java.base")
                 .addModule("jdk.jlink")
                 .validatingModule("java.base")
-                .addExtraOption(IGNORE_MODIFIED_RUNTIME_OPT)
+                // avoid producing the runtime image stamp file
+                .addExtraOption("--exclude-resources")
+                .addExtraOption(EXCLUDE_RESOURCE_GLOB_STAMP)
                 .helper(helper)
                 .build());
 

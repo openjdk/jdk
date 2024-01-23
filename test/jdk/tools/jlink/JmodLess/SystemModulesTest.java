@@ -67,7 +67,8 @@ public class SystemModulesTest extends AbstractJmodLessTest {
                                                             .addModule("jdk.jdwp.agent")
                                                             .addModule("jdk.jlink")
                                                             .validatingModule("java.base")
-                                                            .addExtraOption(IGNORE_MODIFIED_RUNTIME_OPT)
+                                                            .addExtraOption("--exclude-resources")
+                                                            .addExtraOption(EXCLUDE_RESOURCE_GLOB_STAMP)
                                                             .build());
         // Verify that SystemModules$0.class etc. are there
         JImageValidator.validate(javaseJmodless.resolve("lib").resolve("modules"),
