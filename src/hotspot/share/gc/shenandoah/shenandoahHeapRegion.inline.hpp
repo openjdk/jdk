@@ -41,6 +41,11 @@ HeapWord* ShenandoahHeapRegion::allocate(size_t size, ShenandoahAllocRequest::Ty
     adjust_alloc_metadata(type, size);
 
     HeapWord* new_top = obj + size;
+#undef KELVIN_ALLOCATE
+#ifdef KELVIN_ALLOCATE
+    log_info(gc)("ShenHeapRegion::allocate(" SIZE_FORMAT ") sets top of region " SIZE_FORMAT " to " PTR_FORMAT " from " PTR_FORMAT,
+                 size, index(), p2i(new_top), p2i(top()));
+#endif
     set_top(new_top);
 
     assert(is_object_aligned(new_top), "new top breaks alignment: " PTR_FORMAT, p2i(new_top));

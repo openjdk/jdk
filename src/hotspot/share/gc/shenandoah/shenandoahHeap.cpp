@@ -375,7 +375,14 @@ jint ShenandoahHeap::initialize() {
     // Initialize to complete
     _marking_context->mark_complete();
 
+#undef KELVIN_REBUILD
+#ifdef KELVIN_REBUILD
+    log_info(gc)("Heap initialize invokes heap->rebuild()");
+#endif
     _free_set->rebuild();
+#ifdef KELVIN_REBUILD
+    log_info(gc)("Heap initialize done with heap->rebuild()");
+#endif
   }
 
   if (AlwaysPreTouch) {
@@ -410,6 +417,9 @@ jint ShenandoahHeap::initialize() {
   //
   // Initialize the rest of GC subsystems
   //
+#ifdef KELVIN_REBUILD
+  log_info(gc)("Heap initialize the rest of GC subsystems)");
+#endif
 
   _liveness_cache = NEW_C_HEAP_ARRAY(ShenandoahLiveData*, _max_workers, mtGC);
   for (uint worker = 0; worker < _max_workers; worker++) {
@@ -1709,6 +1719,10 @@ void ShenandoahHeap::prepare_regions_and_collection_set(bool concurrent) {
     ShenandoahGCPhase phase(concurrent ? ShenandoahPhaseTimings::final_rebuild_freeset :
                                          ShenandoahPhaseTimings::degen_gc_final_rebuild_freeset);
     ShenandoahHeapLocker locker(lock());
+#undef KELVIN_REBUILD
+#ifdef KELVIN_REBUILD
+    log_info(gc)("Heap::prepare_regions_and_collection_set invokes heap->rebuild()");
+#endif
     _free_set->rebuild();
   }
 }
@@ -2158,6 +2172,10 @@ void ShenandoahHeap::rebuild_free_set(bool concurrent) {
                             ShenandoahPhaseTimings::final_update_refs_rebuild_freeset :
                             ShenandoahPhaseTimings::degen_gc_final_update_refs_rebuild_freeset);
     ShenandoahHeapLocker locker(lock());
+#undef KELVIN_REBUILD
+#ifdef KELVIN_REBUILD
+  log_info(gc)("Heap::rebuild_free_set invokes heap->rebuild()");
+#endif
     _free_set->rebuild();
   }
 }

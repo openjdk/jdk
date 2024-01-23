@@ -998,7 +998,10 @@ void ShenandoahConcurrentGC::op_final_updaterefs() {
   if (VerifyAfterGC) {
     Universe::verify();
   }
-
+#undef KELVIN_REBUILD
+#ifdef KELVIN_REBUILD
+  log_info(gc)("op_final_updaterefs invokes heap->rebuild()");
+#endif
   heap->rebuild_free_set(true /*concurrent*/);
 }
 

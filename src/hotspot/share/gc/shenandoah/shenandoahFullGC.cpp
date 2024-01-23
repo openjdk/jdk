@@ -877,6 +877,11 @@ public:
       if (r->has_live()) {
         _heap->marked_object_iterate(r, &cl);
       }
+#undef KELVIN_FULL
+#ifdef KELVIN_FULL
+      log_info(gc)("Full GC ShenCompactObjectsTask is setting top of region " SIZE_FORMAT " to " PTR_FORMAT ", was: " PTR_FORMAT,
+                   r->index(), p2i(r->new_top()), p2i(r->top()));
+#endif
       r->set_top(r->new_top());
       r = slice.next();
     }
@@ -973,6 +978,10 @@ void ShenandoahFullGC::compact_humongous_objects() {
         for (size_t c = old_start; c <= old_end; c++) {
           ShenandoahHeapRegion* r = heap->get_region(c);
           r->make_regular_bypass();
+#ifdef KELVIN_FULL
+          log_info(gc)("Full GC CompactHumongous is setting top of region " SIZE_FORMAT " to " PTR_FORMAT ", was: " PTR_FORMAT,
+                       r->index(), p2i(r->bottom()), p2i(r->top()));
+#endif
           r->set_top(r->bottom());
         }
 
@@ -987,8 +996,16 @@ void ShenandoahFullGC::compact_humongous_objects() {
           // Trailing region may be non-full, record the remainder there
           size_t remainder = words_size & ShenandoahHeapRegion::region_size_words_mask();
           if ((c == new_end) && (remainder != 0)) {
+#ifdef KELVIN_FULL
+          log_info(gc)("Full GC CompactHumongous remnant is setting top of region " SIZE_FORMAT " to " PTR_FORMAT ", was: " PTR_FORMAT,
+                       r->index(), p2i(r->bottom() + remainder), p2i(r->top()));
+#endif
             r->set_top(r->bottom() + remainder);
           } else {
+#ifdef KELVIN_FULL
+            log_info(gc)("Full GC CompactHumongous body is setting top of region " SIZE_FORMAT " to " PTR_FORMAT ", was: " PTR_FORMAT,
+                         r->index(), p2i(r->end()), p2i(r->top()));
+#endif
             r->set_top(r->end());
           }
 
@@ -1065,7 +1082,13 @@ void ShenandoahFullGC::phase4_compact_objects(ShenandoahHeapRegionSet** worker_s
     heap->set_used(post_compact.get_live());
 
     heap->collection_set()->clear();
-    heap->free_set()->rebuild();
+
+    // Since Full GC directly manipulates top of certain regions, certain ShenandoahFreeSet abstractions may have been corrupted.
+#undef KELVIN_REBUILD
+#ifdef KELVIN_REBUILD
+  log_info(gc)("Full GC copy objects invokes heap->rebuild()");
+#endif
+    heap->free_set()->rebuild(true);
   }
 
   heap->clear_cancelled_gc();
