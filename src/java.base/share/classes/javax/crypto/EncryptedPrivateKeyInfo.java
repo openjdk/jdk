@@ -607,34 +607,4 @@ public class EncryptedPrivateKeyInfo implements SecurityObject {
             throw new IOException("invalid key encoding");
         }
     }
-
-    private static final String PBES2Header = "PBEWithHmacSHA";
-
-    /**
-     * Gets pbes 2.
-     *
-     * @param algo the algo
-     * @return the pbes 2
-     *//*
-    List<KnownOIDs> getPBES2(String algo) {
-        List<KnownOIDs> list = null;
-        if (!algo.startsWith(PBES2Header)) {
-            return list;
-        }
-
-        list =  new ArrayList<>(2);
-        if (algo.charAt(PBES2Header.length()) == '1') {
-            list.add(KnownOIDs.HmacSHA1);
-        } else {
-            list.add(KnownOIDs.findMatch(algo.substring(7, 17)));
-        }
-
-        if (algo.endsWith("AES_128")) {
-            list.add(KnownOIDs.findMatch("AES_128/CBC/NoPadding"));
-        } else if (algo.endsWith("AES_256")) {
-            list.add(KnownOIDs.findMatch("AES_258/CBC/NoPadding"));
-        }
-        return list;
-    }
-*/
 }

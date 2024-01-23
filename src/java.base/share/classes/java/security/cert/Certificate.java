@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,15 @@
 
 package java.security.cert;
 
-import java.security.*;
 import java.util.Arrays;
+
+import java.security.Provider;
+import java.security.PublicKey;
+import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
+import java.security.InvalidKeyException;
+import java.security.SignatureException;
+import java.security.SecurityObject;
 
 import sun.security.x509.X509CertImpl;
 
@@ -54,7 +61,8 @@ import sun.security.x509.X509CertImpl;
  * @since 1.2
  */
 
-public abstract class Certificate implements java.io.Serializable, SecurityObject {
+public abstract class Certificate implements java.io.Serializable,
+    SecurityObject {
 
     @java.io.Serial
     private static final long serialVersionUID = -3585440601605666277L;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,18 +25,15 @@
 
 package java.security;
 
-import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
-import java.security.spec.*;
 import java.util.*;
 
 import java.security.Provider.Service;
+import java.security.spec.KeySpec;
+import java.security.spec.InvalidKeySpecException;
 
-import sun.nio.cs.ISO_8859_1;
-import sun.security.util.*;
+import sun.security.util.Debug;
 import sun.security.jca.*;
 import sun.security.jca.GetInstance.Instance;
-import sun.security.x509.AlgorithmId;
 
 /**
  * Key factories are used to convert <I>keys</I> (opaque
@@ -492,4 +489,5 @@ public class KeyFactory {
         throw new InvalidKeyException
                 ("Could not translate key", failure);
     }
+
 }
