@@ -82,8 +82,6 @@ class Space: public CHeapObj<mtGC> {
 
   HeapWord* saved_mark_word() const  { return _saved_mark_word; }
 
-  void set_saved_mark_word(HeapWord* p) { _saved_mark_word = p; }
-
   // Returns a subregion of the space containing only the allocated objects in
   // the space.
   virtual MemRegion used_region() const = 0;
