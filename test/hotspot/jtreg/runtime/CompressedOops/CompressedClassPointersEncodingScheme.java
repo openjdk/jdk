@@ -42,7 +42,7 @@ import java.io.IOException;
 
 public class CompressedClassPointersEncodingScheme {
 
-    private static void test(long forceAddress, boolean tinyClassPointers, long classSpaceSize, long expectedEncodingBase, int expectedEncodingShift) throws IOException {
+    private static void test(long forceAddress, boolean COH, long classSpaceSize, long expectedEncodingBase, int expectedEncodingShift) throws IOException {
         String forceAddressString = String.format("0x%016X", forceAddress).toLowerCase();
         String expectedEncodingBaseString = String.format("0x%016X", expectedEncodingBase).toLowerCase();
         ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
@@ -50,7 +50,7 @@ public class CompressedClassPointersEncodingScheme {
                 "-XX:+UnlockDiagnosticVMOptions",
                 "-XX:-UseCompressedOops", // keep VM from optimizing heap location
                 "-XX:+UnlockExperimentalVMOptions",
-                "-XX:" + (tinyClassPointers ? "+" : "-") + "UseTinyClassPointers",
+                "-XX:" + (COH ? "+" : "-") + "UseCompactObjectHeaders",
                 "-XX:CompressedClassSpaceBaseAddress=" + forceAddress,
                 "-XX:CompressedClassSpaceSize=" + classSpaceSize,
                 "-Xmx128m",
@@ -99,7 +99,7 @@ public class CompressedClassPointersEncodingScheme {
         }
         // add more...
 
-        // Tiny Classpointer mode
+        // Compact Object Header Mode with tiny classpointers
         // On all platforms we expect the VM to chose the smallest possible shift value needed to cover the encoding range
         long forceAddress = 30 * G;
 

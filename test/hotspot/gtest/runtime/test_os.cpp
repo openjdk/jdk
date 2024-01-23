@@ -975,4 +975,3 @@ TEST_VM(os, vm_min_address) {
   ASSERT_LE(s, NOT_LINUX(G * 4) LINUX_ONLY(G * 1024));
 #endif
 }
-

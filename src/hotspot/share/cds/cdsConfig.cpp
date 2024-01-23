@@ -76,8 +76,10 @@ char* CDSConfig::default_archive_path() {
     if (!UseCompressedOops) {
       tmp.print_raw("_nocoops");
     }
-    if (UseTinyClassPointers) {
-      tmp.print_raw("_tinycp");
+    if (UseCompactObjectHeaders) {
+      // Note that generation of xxx_coh.jsa variants require
+      // --enable-cds-archive-coh at build time
+      tmp.print_raw("_coh");
     }
 #endif
     tmp.print_raw(".jsa");

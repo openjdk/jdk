@@ -130,11 +130,10 @@ const size_t minimumSymbolTableSize = 1024;
           "Use 32-bit class pointers in 64-bit VM. "                        \
           "lp64_product means flag is always constant in 32 bit VM")        \
                                                                             \
-  product(bool, UseTinyClassPointers, false, EXPERIMENTAL,                  \
-          "If UseCompressedClassPointers is set: use smaller-than-32bit "   \
-          "compressed class pointers")                                      \
+  develop(bool, UseCompactObjectHeaders, false,                             \
+	        "Use compact 64-bit object headers in 64-bit VM")                 \
                                                                             \
-  product(int, TinyClassPointerShift, 0, EXPERIMENTAL, "")                  \
+  develop(int, TinyClassPointerShift, 0, "")                                \
                                                                             \
   product(int, ObjectAlignmentInBytes, 8,                                   \
           "Default object alignment in bytes, 8 is minimum")                \
@@ -153,7 +152,7 @@ const size_t minimumSymbolTableSize = 1024;
                            constraint)
 const bool UseCompressedOops = false;
 const bool UseCompressedClassPointers = false;
-const bool UseTinyClassPointers = false;
+const bool UseCompactObjectHeaders = false;
 const int ObjectAlignmentInBytes = 8;
 
 #endif // _LP64

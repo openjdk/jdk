@@ -60,7 +60,7 @@ static constexpr size_t max_klass_range_size = 4 * G;
 #ifdef _LP64
 
 void CompressedKlassPointers::pre_initialize() {
-  if (UseTinyClassPointers) {
+  if (UseCompactObjectHeaders) {
     _tiny_cp = 1;
     _narrow_klass_pointer_bits = narrow_klass_pointer_bits_tinycp;
     _max_shift = max_shift_tinycp;
@@ -284,9 +284,9 @@ void CompressedKlassPointers::initialize(address addr, size_t len) {
 }
 
 void CompressedKlassPointers::print_mode(outputStream* st) {
-  st->print_cr("UseCompressedClassPointers %d, UseTinyClassPointers %d, "
+  st->print_cr("UseCompressedClassPointers %d, UseCompactObjectHeaders %d, "
                "narrow klass pointer bits %d, max shift %d",
-               UseCompressedClassPointers, UseTinyClassPointers,
+               UseCompressedClassPointers, UseCompactObjectHeaders,
                _narrow_klass_pointer_bits, _max_shift);
   if (_base == (address)-1) {
     st->print_cr("Narrow klass encoding not initialized");

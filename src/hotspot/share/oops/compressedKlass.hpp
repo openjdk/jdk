@@ -42,7 +42,8 @@ class CompressedKlassPointers : public AllStatic {
   static int _tiny_cp; // -1, 0=true, 1=false
 
   // We use a different narrow Klass pointer geometry depending on
-  // whether we run in standard mode or in tiny-classpointer mode (+UseTinyClassPointers).
+  // whether we run in standard mode or in compact-object-header-mode (Lilliput):
+  // In Lilliput, we use smaller-than-32-bit class pointers ("tiny classpointer mode")
 
   // Narrow klass pointer bits for an unshifted narrow Klass pointer.
   static constexpr int narrow_klass_pointer_bits_legacy = 32;
@@ -98,10 +99,10 @@ public:
   // Initialization sequence:
   // 1) Parse arguments. The following arguments take a role:
   //      - UseCompressedClassPointers
-  //      - UseTinyClassPointers
+  //      - UseCompactObjectHeaders
   //      - Xshare on off dump
   //      - CompressedClassSpaceSize
-  // 2) call pre_initialize(): depending on UseTinyClassPointers, defines the limits of narrow Klass pointer
+  // 2) call pre_initialize(): depending on UseCompactObjectHeaders, defines the limits of narrow Klass pointer
   //    geometry (how many bits, the max. possible shift)
   // 3) .. from here on, narrow_klass_pointer_bits() and max_shift() can be used
   // 4) call reserve_address_space_for_compressed_classes() either from CDS initialization or, if CDS is off,

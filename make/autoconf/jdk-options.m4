@@ -669,6 +669,34 @@ AC_DEFUN([JDKOPT_ENABLE_DISABLE_CDS_ARCHIVE],
 
 ################################################################################
 #
+# Disable the default CDS archive generation for Compact Object Headers (Lilliput)
+#
+AC_DEFUN([JDKOPT_ENABLE_DISABLE_CDS_ARCHIVE_COH],
+[
+  UTIL_ARG_ENABLE(NAME: cds-archive-coh, DEFAULT: false, RESULT: BUILD_CDS_ARCHIVE_COH,
+      DESC: [enable generation of default CDS archives for compact object headers (Lilliput) in the product image (requires --enable-cds-archive)],
+      DEFAULT_DESC: [disabled],
+      CHECKING_MSG: [if default CDS archives supporting compact object headers (Lilliput) should be generated],
+      CHECK_AVAILABLE: [
+        AC_MSG_CHECKING([if CDS archive is available])
+        if test "x$BUILD_CDS_ARCHIVE" = "xfalse"; then
+          AC_MSG_RESULT([no (CDS is disabled or default archive generation is disabled)])
+          AVAILABLE=false
+        elif test "x$COMPILE_TYPE" = "xcross"; then
+          AC_MSG_RESULT([no (not possible with cross compilation)])
+          AVAILABLE=false
+        elif test "x$DEBUG_LEVEL" != xfastdebug && test "x$DEBUG_LEVEL" != xslowdebug; then
+          AC_MSG_RESULT([no (compact object headers only available in debug builds)])
+          AVAILABLE=false
+        else
+          AC_MSG_RESULT([yes])
+        fi
+      ])
+  AC_SUBST(BUILD_CDS_ARCHIVE_COH)
+])
+
+################################################################################
+#
 # Enable the alternative CDS core region alignment
 #
 AC_DEFUN([JDKOPT_ENABLE_DISABLE_COMPATIBLE_CDS_ALIGNMENT],

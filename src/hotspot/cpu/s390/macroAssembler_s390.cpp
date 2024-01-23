@@ -3722,7 +3722,7 @@ void MacroAssembler::compare_klass_ptr(Register Rop1, int64_t disp, Register Rba
     const int shift = CompressedKlassPointers::shift();
     address   base  = CompressedKlassPointers::base();
 
-    if (UseTinyClassPointers) {
+    if (CompressedKlassPointers::tiny_classpointer_mode()) {
       assert(shift >= 3, "cKlass encoder detected bad shift");
     } else {
       assert((shift == 0) || (shift == 3), "cKlass encoder detected bad shift");

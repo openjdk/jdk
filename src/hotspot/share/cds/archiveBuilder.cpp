@@ -1377,16 +1377,11 @@ void ArchiveBuilder::report_out_of_space(const char* name, size_t needed_bytes) 
 
 #ifdef _LP64
 int ArchiveBuilder::precomputed_narrow_klass_shift() {
-  // We assume the future Klass range will not exceed 32bit. We plan for the max. possible
-  // CompressedClassSpaceSize of 3GB and the max. possible CDS archive size of 1GB.
-  //
-  // We also will, at runtime, set the encoding base directly to the start of the Klass range,
-  // therefore using the full extend of the encoding range.
-  //
   // Legacy Mode:
-  //    We use 32 bits for narrowKlass, which should covere the full 4G Klass range. Shift can be 0.
-  // TinyClassPointer Mode:
-  //    narrowKlass is much smaller, and we need the highest possible shift value.
+  //    We use 32 bits for narrowKlass, which should cover the full 4G Klass range. Shift can be 0.
+  // CompactObjectHeader Mode:
+  //    narrowKlass is much smaller, and we use the highest possible shift value to later get the maximum
+  //    Klass encoding range.
   //
   // Note that all of this may change in the future, if we decide to correct the pre-calculated
   // narrow Klass IDs at archive load time.

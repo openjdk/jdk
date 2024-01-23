@@ -120,29 +120,30 @@ char* CompressedKlassPointers::reserve_address_space_for_compressed_classes(size
 }
 
 bool CompressedKlassPointers::pd_initialize(address addr, size_t len) {
-  bool rc = false;
-  if (!tiny_classpointer_mode()) {
-    // in legacy mode, aarch64 uses an own initialization logic that
-    // avoids zero-base shifted mode (_base=0 _shift>0), instead preferring
-    // for non-zero-based mode with shift=0
-    rc = true;
-    constexpr uintptr_t unscaled_max = nth_bit(32);
-    assert(len <= unscaled_max, "Klass range larger than 32 bits?");
 
-    _shift = 0;
-
-    address const end = addr + len;
-    _base = (end <= (address)unscaled_max) ? nullptr : addr;
-
-    _range = end - _base;
-
-#ifdef ASSERT
-    _klass_range_start = addr;
-    _klass_range_end = addr + len;
-    calc_lowest_highest_narrow_klass_id();
-    sanity_check_after_initialization();
-#endif
+  if (tiny_classpointer_mode()) {
+    // In tiny-classpointer mode, we do what all other platforms do.
+    return false;
   }
 
-  return rc;
+  // Aarch64 uses an own initialization logic that avoids zero-base shifted mode
+  // (_base=0 _shift>0), instead preferring non-zero-based mode with shift=0
+  constexpr uintptr_t unscaled_max = nth_bit(32);
+  assert(len <= unscaled_max, "Klass range larger than 32 bits?");
+
+  _shift = 0;
+
+  address const end = addr + len;
+  _base = (end <= (address)unscaled_max) ? nullptr : addr;
+
+  _range = end - _base;
+
+#ifdef ASSERT
+  _klass_range_start = addr;
+  _klass_range_end = addr + len;
+  calc_lowest_highest_narrow_klass_id();
+  sanity_check_after_initialization();
+#endif
+
+  return true;
 }

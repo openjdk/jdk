@@ -188,11 +188,11 @@ private:
   address _narrow_oop_base;                       // compressed oop encoding base
   int    _narrow_oop_shift;                       // compressed oop encoding shift
   bool   _compact_strings;                        // value of CompactStrings
+  bool   _compact_headers;                        // value of UseCompactObjectHeaders
   uintx  _max_heap_size;                          // java max heap size during dumping
   CompressedOops::Mode _narrow_oop_mode;          // compressed oop encoding mode
   bool    _compressed_oops;                       // save the flag UseCompressedOops
   bool    _compressed_class_ptrs;                 // save the flag UseCompressedClassPointers
-  bool    _tiny_class_ptrs;                       // save the flag UseTinyClassPointers
   int     _narrow_klass_pointer_bits;             // save number of bits in narrowKlass
   int     _narrow_klass_shift;                    // save shift width used to pre-compute narrowKlass IDs in archived heap objects
   size_t  _cloned_vtables_offset;                 // The address of the first cloned vtable
@@ -259,6 +259,7 @@ public:
   address narrow_oop_base()                const { return _narrow_oop_base; }
   int narrow_oop_shift()                   const { return _narrow_oop_shift; }
   bool compact_strings()                   const { return _compact_strings; }
+  bool compact_headers()                   const { return _compact_headers; }
   uintx max_heap_size()                    const { return _max_heap_size; }
   CompressedOops::Mode narrow_oop_mode()   const { return _narrow_oop_mode; }
   char* cloned_vtables()                   const { return from_mapped_offset(_cloned_vtables_offset); }
@@ -271,7 +272,6 @@ public:
   size_t ptrmap_size_in_bits()             const { return _ptrmap_size_in_bits; }
   bool compressed_oops()                   const { return _compressed_oops; }
   bool compressed_class_pointers()         const { return _compressed_class_ptrs; }
-  bool tiny_class_pointers()               const { return _tiny_class_ptrs; }
   int narrow_klass_pointer_bits()          const { return _narrow_klass_pointer_bits; }
   int narrow_klass_shift()                 const { return _narrow_klass_shift; }
   size_t heap_roots_offset()               const { return _heap_roots_offset; }
