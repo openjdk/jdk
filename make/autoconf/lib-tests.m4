@@ -233,12 +233,47 @@ AC_DEFUN_ONCE([LIB_TESTS_SETUP_JTREG],
   UTIL_FIXUP_PATH(JT_HOME)
   AC_SUBST(JT_HOME)
 
+  # Specify a JDK for running jtreg. Defaults to the BOOT_JDK.
+  AC_ARG_WITH(jtreg-jdk, [AS_HELP_STRING([--with-jdk],
+    [path to JDK for running jtreg @<:@BOOT_JDK@:>@])])
+
+  AC_MSG_CHECKING([for jtreg jdk])
+  if test "x${with_jtreg_jdk}" != x; then
+    if test "x${with_jtreg_jdk}" = xno; then
+      AC_MSG_RESULT([no, jtreg jdk not specified])
+    elif test "x${with_jtreg_jdk}" = xyes; then
+      AC_MSG_RESULT([not specified])
+      AC_MSG_ERROR([--with-jtreg-jdk needs a value])
+    else
+      JTREG_JDK="${with_jtreg_jdk}"
+      AC_MSG_RESULT([$JTREG_JDK])
+      UTIL_FIXUP_PATH(JTREG_JDK)
+      if test ! -f "$JTREG_JDK/bin/java"; then
+        AC_MSG_ERROR([Could not find jtreg java at $JTREG_JDK/bin/java])
+      fi
+    fi
+  else
+    JTREG_JDK="${BOOT_JDK}"
+    AC_MSG_RESULT([no, using BOOT_JDK])
+  fi
+
+  UTIL_FIXUP_PATH(JTREG_JDK)
+  AC_SUBST([JTREG_JDK])
+  # For use in the configure script
+  JTREG_JAVA="$FIXPATH $JTREG_JDK/bin/java"
+
   # Verify jtreg version
   if test "x$JT_HOME" != x; then
+    AC_MSG_CHECKING([jtreg jar existence])
+    if test ! -f "$JT_HOME/lib/jtreg.jar"; then
+      AC_MSG_ERROR([Could not find jtreg jar at $JT_HOME/lib/jtreg.jar])
+    fi
+
     AC_MSG_CHECKING([jtreg version number])
     # jtreg -version looks like this: "jtreg 6.1+1-19"
     # Extract actual version part ("6.1" in this case)
-    jtreg_version_full=`$JAVA -jar $JT_HOME/lib/jtreg.jar -version | $HEAD -n 1 | $CUT -d ' ' -f 2`
+    jtreg_version_full=$($JTREG_JAVA -jar $JT_HOME/lib/jtreg.jar -version | $HEAD -n 1 | $CUT -d ' ' -f 2)
+
     jtreg_version=${jtreg_version_full/%+*}
     AC_MSG_RESULT([$jtreg_version])
 
