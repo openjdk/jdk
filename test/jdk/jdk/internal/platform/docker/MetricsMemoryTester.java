@@ -72,7 +72,7 @@ public class MetricsMemoryTester {
         } else {
             long count = Metrics.systemMetrics().getMemoryFailCount();
 
-            // Allocate 512M of data
+            // Allocate 512M of data in 1M chunks per iteration
             byte[][] bytes = new byte[64 * 8][];
             boolean atLeastOneAllocationWorked = false;
             for (int i = 0; i < 64 * 8; i++) {
