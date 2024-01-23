@@ -535,6 +535,8 @@ void ObjectSynchronizer::enter(Handle obj, BasicLock* lock, JavaThread* current)
       if (lock_stack.is_full()) {
         // We unconditionally make room on the lock stack by inflating
         // the least recently locked object on the lock stack.
+
+        log_info(fastlock)("LockStack capacity exceeded, inflating.");
         ObjectMonitor* monitor = inflate(current, lock_stack.bottom(), inflate_cause_vm_internal);
         assert(monitor->owner() == current, "must be owner=" PTR_FORMAT " current=" PTR_FORMAT " mark=" PTR_FORMAT,
                p2i(monitor->owner()), p2i(current), monitor->object()->mark_acquire().value());
