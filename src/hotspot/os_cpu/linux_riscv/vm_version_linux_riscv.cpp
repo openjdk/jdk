@@ -169,13 +169,13 @@ void VM_Version::os_aux_features() {
 }
 
 VM_Version::VM_MODE VM_Version::parse_satp_mode(const char* vm_mode) {
-  if (!strcmp(vm_mode, "sv39\n")) {
+  if (!strncmp(vm_mode, "sv39", sizeof "sv39" - 1)) {
     return VM_SV39;
-  } else if (!strcmp(vm_mode, "sv48\n")) {
+  } else if (!strncmp(vm_mode, "sv48", sizeof "sv48" - 1)) {
     return VM_SV48;
-  } else if (!strcmp(vm_mode, "sv57\n")) {
+  } else if (!strncmp(vm_mode, "sv57", sizeof "sv57" - 1)) {
     return VM_SV57;
-  } else if (!strcmp(vm_mode, "sv64\n")) {
+  } else if (!strncmp(vm_mode, "sv64", sizeof "sv64" - 1)) {
     return VM_SV64;
   } else {
     return VM_MBARE;
