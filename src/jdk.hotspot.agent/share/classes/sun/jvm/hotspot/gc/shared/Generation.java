@@ -57,7 +57,6 @@ public abstract class Generation extends VMObject {
   private static int NAME_DEF_NEW;
   private static int NAME_PAR_NEW;
   private static int NAME_MARK_SWEEP_COMPACT;
-  private static int NAME_OTHER;
 
   static {
     VM.registerVMInitializedObserver(new Observer() {
@@ -80,7 +79,6 @@ public abstract class Generation extends VMObject {
     // constants from Generation::Name
     NAME_DEF_NEW = db.lookupIntConstant("Generation::DefNew").intValue();
     NAME_MARK_SWEEP_COMPACT = db.lookupIntConstant("Generation::MarkSweepCompact").intValue();
-    NAME_OTHER = db.lookupIntConstant("Generation::Other").intValue();
   }
 
   public Generation(Address addr) {
@@ -111,8 +109,6 @@ public abstract class Generation extends VMObject {
         return Name.DEF_NEW;
      } else if (value == NAME_MARK_SWEEP_COMPACT) {
         return Name.MARK_SWEEP_COMPACT;
-     } else if (value == NAME_OTHER) {
-        return Name.OTHER;
      } else {
         throw new RuntimeException("should not reach here");
      }
