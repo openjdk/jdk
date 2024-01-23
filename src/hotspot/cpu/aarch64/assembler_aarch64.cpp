@@ -187,6 +187,8 @@ void Address::lea(MacroAssembler *as, Register r) const {
     zrf(Rd, 0);
   }
 
+// This encoding is similar (but not quite identical) to the encoding used
+// by literal ld/st. see JDK-8324123.
 void Assembler::prfm(const Address &adr, prfop pfop) {
   if (adr.getMode() == Address::literal) {
     starti;
