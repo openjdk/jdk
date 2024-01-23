@@ -392,53 +392,44 @@ void SCCompacter::compact_space(uint idx) const {
   HeapWord* bottom = space->bottom();
   HeapWord* top = space->top();
   HeapWord* current = _mark_bitmap.get_next_marked_addr(bottom, top);
+
   SCUpdateRefsClosure cl(*this);
 
   TenuredSpace* tenured_space = SerialHeap::heap()->old_gen()->space();
 
-  DEBUG_ONLY(HeapWord* next_compact_addr = nullptr;)
-  DEBUG_ONLY(HeapWord* last_compact_addr = nullptr;)
+  HeapWord* last_compact_end = nullptr;
 
   // Visit all live objects in the space.
   while (current < top) {
     assert(_mark_bitmap.is_marked(current), "must be marked");
+    // Copy the whole chunk.
+    HeapWord* compact_to = forwardee(current);
     HeapWord* next_dead = _mark_bitmap.get_next_unmarked_addr(current, top);
-    HeapWord* obj_start = current;
-    HeapWord* fwd = forwardee(obj_start);
-    HeapWord* chunk_fwd = fwd;
-    // Scan all consecutive live objects in the current live chunk and update their references.
-    while (obj_start < next_dead) {
-      assert(forwardee(obj_start) == fwd, "object and forwardee must move by same amount within chunk: forwardee: " PTR_FORMAT, p2i(forwardee(obj_start)));
-      oop obj = cast_to_oop(obj_start);
-      assert(oopDesc::is_oop(obj), "must be oop");
+    size_t size = pointer_delta(next_dead, current);
+    if (compact_to != current) {
+      assert(last_compact_end == nullptr || current < get_first_dead(idx) || compact_to == last_compact_end || space_containing(last_compact_end) != space_containing(compact_to),
+             "must compact without gaps, except when switching spaces: current: " PTR_FORMAT ", first_dead: " PTR_FORMAT ", compact_to: " PTR_FORMAT ", last_compact_end: " PTR_FORMAT, p2i(current), p2i(get_first_dead(idx)), p2i(compact_to), p2i(last_compact_end));
+      Copy::aligned_conjoint_words(current, compact_to, size);
+    }
+    last_compact_end = compact_to + size;
 
+    // Scan all consecutive live objects in the current live chunk and update their references.
+    HeapWord* obj_start = compact_to;
+    while (obj_start < last_compact_end) {
+      oop obj = cast_to_oop(obj_start);
       // Update references of object.
       obj->oop_iterate(&cl);
 
       // We need to update the offset table so that the beginnings of objects can be
       // found during scavenge.  Note that we are updating the offset table based on
       // where the object will be once the compaction phase finishes.
-      size_t size_in_words = obj->size();
-      if (tenured_space->is_in_reserved(fwd)) {
-        tenured_space->update_for_block(fwd, fwd + size_in_words);
+      HeapWord* next_obj = obj_start + obj->size();
+      if (tenured_space->is_in_reserved(obj_start)) {
+        tenured_space->update_for_block(obj_start, next_obj);
       }
 
       // Advance to next object in chunk.
-      obj_start += size_in_words;
-      fwd += size_in_words;
-    }
-    assert(obj_start == next_dead, "sanity");
-
-    // Copy the whole chunk.
-    if (chunk_fwd != current) {
-      size_t size = pointer_delta(next_dead, current);
-      assert(next_compact_addr == nullptr || next_compact_addr == chunk_fwd || space_containing(last_compact_addr) != space_containing(chunk_fwd),
-             "must compact without gaps, except when switching spaces");
-
-      Copy::aligned_conjoint_words(current, chunk_fwd, size);
-
-      DEBUG_ONLY(last_compact_addr = chunk_fwd;)
-      DEBUG_ONLY(next_compact_addr = chunk_fwd + size;)
+      obj_start = next_obj;
     }
 
     // Advance to next live object.
