@@ -36,14 +36,14 @@ class CollectorCounters;
 class ShenandoahHeapRegionCounters;
 class ShenandoahMonitoringSupport;
 
-class ShenandoahPeriodicTask : public PeriodicTask {
+class ShenandoahPeriodicCountersUpdate : public PeriodicTask {
 private:
   ShenandoahSharedFlag _do_counters_update;
   ShenandoahSharedFlag _force_counters_update;
   ShenandoahMonitoringSupport* _monitoring_support;
 
 public:
-  explicit ShenandoahPeriodicTask(ShenandoahMonitoringSupport* monitoring_support) :
+  explicit ShenandoahPeriodicCountersUpdate(ShenandoahMonitoringSupport* monitoring_support) :
     PeriodicTask(100),
     _monitoring_support(monitoring_support) { }
 
@@ -66,10 +66,10 @@ private:
   HSpaceCounters* _space_counters;
 
   ShenandoahHeapRegionCounters* _heap_region_counters;
-  ShenandoahPeriodicTask _update_monitors;
+  ShenandoahPeriodicCountersUpdate _counters_update;
 
 public:
-  ShenandoahMonitoringSupport(ShenandoahHeap* heap);
+  explicit ShenandoahMonitoringSupport(ShenandoahHeap* heap);
   CollectorCounters* stw_collection_counters();
   CollectorCounters* full_stw_collection_counters();
   CollectorCounters* concurrent_collection_counters();

@@ -37,7 +37,7 @@ public:
   ShenandoahYoungGenerationCounters() :
           GenerationCounters("Young", 0, 0, 0, (size_t)0, (size_t)0) {};
 
-  virtual void update_all() {
+  void update_all() override {
     // no update
   }
 };
@@ -46,12 +46,12 @@ class ShenandoahGenerationCounters : public GenerationCounters {
 private:
   ShenandoahHeap* _heap;
 public:
-  ShenandoahGenerationCounters(ShenandoahHeap* heap) :
+  explicit ShenandoahGenerationCounters(ShenandoahHeap* heap) :
           GenerationCounters("Heap", 1, 1, heap->initial_capacity(), heap->max_capacity(), heap->capacity()),
           _heap(heap)
   {};
 
-  virtual void update_all() {
+  void update_all() override {
     _current_size->set_value(_heap->capacity());
   }
 };
@@ -59,7 +59,7 @@ public:
 ShenandoahMonitoringSupport::ShenandoahMonitoringSupport(ShenandoahHeap* heap) :
         _partial_counters(nullptr),
         _full_counters(nullptr),
-        _update_monitors(this)
+        _counters_update(this)
 {
   // Collection counters do not fit Shenandoah very well.
   // We record partial cycles as "young", and full cycles (including full STW GC) as "old".
@@ -73,7 +73,7 @@ ShenandoahMonitoringSupport::ShenandoahMonitoringSupport(ShenandoahHeap* heap) :
 
   _heap_region_counters = new ShenandoahHeapRegionCounters();
 
-  _update_monitors.enroll();
+  _counters_update.enroll();
 }
 
 CollectorCounters* ShenandoahMonitoringSupport::stw_collection_counters() {
@@ -108,42 +108,42 @@ void ShenandoahMonitoringSupport::update_counters() {
 }
 
 void ShenandoahMonitoringSupport::notify_heap_changed() {
-  _update_monitors.notify_heap_changed();
+  _counters_update.notify_heap_changed();
 }
 
 void ShenandoahMonitoringSupport::set_forced_counters_update(bool value) {
-  _update_monitors.set_forced_counters_update(value);
+  _counters_update.set_forced_counters_update(value);
 }
 
 void ShenandoahMonitoringSupport::handle_force_counters_update() {
-  _update_monitors.handle_force_counters_update();
+  _counters_update.handle_force_counters_update();
 }
 
-void ShenandoahPeriodicTask::task() {
+void ShenandoahPeriodicCountersUpdate::task() {
   handle_force_counters_update();
   handle_counters_update();
 }
 
-void ShenandoahPeriodicTask::handle_counters_update() {
+void ShenandoahPeriodicCountersUpdate::handle_counters_update() {
   if (_do_counters_update.is_set()) {
     _do_counters_update.unset();
     _monitoring_support->update_counters();
   }
 }
 
-void ShenandoahPeriodicTask::handle_force_counters_update() {
+void ShenandoahPeriodicCountersUpdate::handle_force_counters_update() {
   if (_force_counters_update.is_set()) {
     _do_counters_update.unset(); // reset these too, we do update now!
     _monitoring_support->update_counters();
   }
 }
 
-void ShenandoahPeriodicTask::notify_heap_changed() {
+void ShenandoahPeriodicCountersUpdate::notify_heap_changed() {
   if (_do_counters_update.is_unset()) {
     _do_counters_update.set();
   }
 }
 
-void ShenandoahPeriodicTask::set_forced_counters_update(bool value) {
+void ShenandoahPeriodicCountersUpdate::set_forced_counters_update(bool value) {
   _force_counters_update.set_cond(value);
 }
