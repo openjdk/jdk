@@ -84,7 +84,11 @@ public class TestMergeStores {
         test_groups.get("test1").put("test1b", () -> { return test1b(aB.clone()); });
         test_groups.get("test1").put("test1c", () -> { return test1c(aB.clone()); });
         test_groups.get("test1").put("test1d", () -> { return test1d(aB.clone()); });
-        test_groups.get("test1").put("test1e", () -> { return test1d(aB.clone()); });
+        test_groups.get("test1").put("test1e", () -> { return test1e(aB.clone()); });
+        test_groups.get("test1").put("test1f", () -> { return test1f(aB.clone()); });
+        test_groups.get("test1").put("test1g", () -> { return test1g(aB.clone()); });
+        test_groups.get("test1").put("test1h", () -> { return test1h(aB.clone()); });
+        test_groups.get("test1").put("test1i", () -> { return test1i(aB.clone()); });
 
         test_groups.put("test2", new HashMap<String,TestFunction>());
         test_groups.get("test2").put("test2R", () -> { return test2R(aB.clone(), offset1, vL1); });
@@ -140,6 +144,10 @@ public class TestMergeStores {
                  "test1c",
                  "test1d",
                  "test1e",
+                 "test1f",
+                 "test1g",
+                 "test1h",
+                 "test1i",
                  "test2a",
                  "test2b",
                  "test2c",
@@ -425,6 +433,68 @@ public class TestMergeStores {
         storeShortLE(a, 2, (short)0xbaad);
         storeShortLE(a, 4, (short)0xbeef);
         storeShortLE(a, 6, (short)0xdead);
+        return new Object[]{ a };
+    }
+
+    @Test
+    @IR(counts = {IRNode.STORE_L_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "1"})
+    static Object[] test1f(byte[] a) {
+        UNSAFE.putByte(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 0, (byte)0xbe);
+        UNSAFE.putByte(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 1, (byte)0xba);
+        UNSAFE.putByte(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 2, (byte)0xad);
+        UNSAFE.putByte(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 3, (byte)0xba);
+        UNSAFE.putByte(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 4, (byte)0xef);
+        UNSAFE.putByte(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 5, (byte)0xbe);
+        UNSAFE.putByte(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 6, (byte)0xad);
+        UNSAFE.putByte(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 7, (byte)0xde);
+        return new Object[]{ a };
+    }
+
+    @Test
+    // Do not optimize these, just to be sure we do not mess with store ordering.
+    @IR(counts = {IRNode.STORE_L_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+                  IRNode.STORE_B_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "8"})
+    static Object[] test1g(byte[] a) {
+        UNSAFE.putByteRelease(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 0, (byte)0xbe);
+        UNSAFE.putByteRelease(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 1, (byte)0xba);
+        UNSAFE.putByteRelease(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 2, (byte)0xad);
+        UNSAFE.putByteRelease(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 3, (byte)0xba);
+        UNSAFE.putByteRelease(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 4, (byte)0xef);
+        UNSAFE.putByteRelease(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 5, (byte)0xbe);
+        UNSAFE.putByteRelease(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 6, (byte)0xad);
+        UNSAFE.putByteRelease(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 7, (byte)0xde);
+        return new Object[]{ a };
+    }
+
+    @Test
+    // Do not optimize these, just to be sure we do not mess with store ordering.
+    @IR(counts = {IRNode.STORE_L_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+                  IRNode.STORE_B_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "8"})
+    static Object[] test1h(byte[] a) {
+        UNSAFE.putByteVolatile(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 0, (byte)0xbe);
+        UNSAFE.putByteVolatile(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 1, (byte)0xba);
+        UNSAFE.putByteVolatile(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 2, (byte)0xad);
+        UNSAFE.putByteVolatile(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 3, (byte)0xba);
+        UNSAFE.putByteVolatile(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 4, (byte)0xef);
+        UNSAFE.putByteVolatile(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 5, (byte)0xbe);
+        UNSAFE.putByteVolatile(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 6, (byte)0xad);
+        UNSAFE.putByteVolatile(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 7, (byte)0xde);
+        return new Object[]{ a };
+    }
+
+    @Test
+    // Do not optimize these, just to be sure we do not mess with store ordering.
+    @IR(counts = {IRNode.STORE_L_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+                  IRNode.STORE_B_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "8"})
+    static Object[] test1i(byte[] a) {
+        UNSAFE.putByteOpaque(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 0, (byte)0xbe);
+        UNSAFE.putByteOpaque(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 1, (byte)0xba);
+        UNSAFE.putByteOpaque(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 2, (byte)0xad);
+        UNSAFE.putByteOpaque(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 3, (byte)0xba);
+        UNSAFE.putByteOpaque(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 4, (byte)0xef);
+        UNSAFE.putByteOpaque(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 5, (byte)0xbe);
+        UNSAFE.putByteOpaque(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 6, (byte)0xad);
+        UNSAFE.putByteOpaque(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 7, (byte)0xde);
         return new Object[]{ a };
     }
 

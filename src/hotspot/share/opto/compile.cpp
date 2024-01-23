@@ -2476,6 +2476,7 @@ void Compile::Optimize() {
     if (failing()) return;
   }
 
+#ifdef VM_LITTLE_ENDIAN
   if (true) {
     assert(!C->merge_stores_phase(), "merge store phase not yet set");
     C->gather_nodes_for_merge_stores(igvn);
@@ -2483,6 +2484,7 @@ void Compile::Optimize() {
     igvn.optimize();
     C->set_merge_stores_phase(false);
   }
+#endif
 
   DEBUG_ONLY( _modified_nodes = nullptr; )
 
