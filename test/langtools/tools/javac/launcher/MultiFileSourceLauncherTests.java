@@ -75,7 +75,7 @@ class MultiFileSourceLauncherTests {
                     public class Hello {
                       public static void main(String... args) throws Exception {
                         System.out.println(Class.forName("World$Core"));
-                        System.out.println(Class.forName("p.q.Unit$First$Second"));
+                        System.out.println(Class.forName("p.q.Unit$123$Fir$t$$econd"));
                       }
                     }
                     """);
@@ -86,12 +86,12 @@ class MultiFileSourceLauncherTests {
                     }
                     """);
         var pq = Files.createDirectories(base.resolve("p/q"));
-        Files.writeString(pq.resolve("Unit.java"),
+        Files.writeString(pq.resolve("Unit$123.java"),
                     """
                     package p.q;
-                    record Unit() {
-                      record First() {
-                        record Second() {}
+                    record Unit$123() {
+                      record Fir$t() {
+                        record $econd() {}
                       }
                     }
                     """);
@@ -101,7 +101,7 @@ class MultiFileSourceLauncherTests {
                 () -> assertLinesMatch(
                         """
                         class World$Core
-                        class p.q.Unit$First$Second
+                        class p.q.Unit$123$Fir$t$$econd
                         """.lines(),
                         run.stdOut().lines()),
                 () -> assertTrue(run.stdErr().isEmpty()),
