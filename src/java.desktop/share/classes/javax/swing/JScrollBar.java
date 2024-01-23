@@ -782,8 +782,8 @@ public class JScrollBar extends JComponent implements Adjustable, Accessible
     /**
      * The scrollbar is flexible along its scrolling axis and
      * rigid along the other axis.
-     * As specified in {@code setMinimumSize} JScrollBar will derive the 
-     * minimum size from the preferred size in one axis and a 
+     * As specified in {@code setMinimumSize} JScrollBar will derive the
+     * minimum size from the preferred size in one axis and a
      * fixed minimum size in the other.
      *
      * @return the minimum size as specified above.
@@ -800,8 +800,8 @@ public class JScrollBar extends JComponent implements Adjustable, Accessible
     /**
      * The scrollbar is flexible along its scrolling axis and
      * rigid along the other axis.
-     * As specified in {@code setMaximumSize} JScrollBar will derive the 
-     * maximum size from the preferred size in one axis and a 
+     * As specified in {@code setMaximumSize} JScrollBar will derive the
+     * maximum size from the preferred size in one axis and a
      * fixed maximum size in the other.
      *
      * @return the maximum size as specified above.
