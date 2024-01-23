@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 4496290 4985072 7006178 7068595 8016328 8050031 8048351 8081854 8071982 8162363 8175200 8186332
- *      8182765 8196202 8202626 8261976
+ *      8182765 8196202 8202626 8261976 8323698
  * @summary A simple test to ensure class-use files are correct.
  * @library ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -224,7 +224,7 @@ public class TestUseOption extends JavadocTester {
 
         checkOrder("class-use/One.html", """
                 <div class="caption"><span>Classes in <a href="../package-summary.html">Unnamed Package</a> \
-                that extend types with arguments of type <a href="../One.html" title="class in Unnamed Package">\
+                that extend classes with type arguments of type <a href="../One.html" title="class in Unnamed Package">\
                 One</a></span></div>
                 """, """
                 <div class="summary-table three-column-summary">
@@ -238,7 +238,7 @@ public class TestUseOption extends JavadocTester {
                 </div>
                 """, """
                 <div class="caption"><span>Classes in <a href="../package-summary.html">Unnamed Package</a> \
-                that implement types with arguments of type <a href="../One.html" title="class in Unnamed \
+                that implement interfaces with type arguments of type <a href="../One.html" title="class in Unnamed \
                 Package">One</a></span></div>
                 """, """
                 <div class="summary-table three-column-summary">
