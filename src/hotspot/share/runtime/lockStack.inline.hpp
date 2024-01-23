@@ -86,11 +86,24 @@ inline bool LockStack::is_recursive(oop o) const {
     return false;
   }
 
+  // This will succeed iff there is a consecutive run of oops on the
+  // lock-stack with a length of at least 2.
+
   assert(contains(o), "entries must exist");
   int end = to_index(_top);
-  for (int i = 1; i < end; i++) {
+  // Start iterating from the top because the runtime code is more
+  // interested in the balanced locking case when the top oop on the
+  // lock-stack matches o. This will cause the for loop to break out
+  // in the first loop iteration if it is non-recursive.
+  for (int i = end - 1; i > 0; i++) {
     if (_base[i - 1] == o && _base[i] == o) {
       return true;
+    }
+    if (_base[i] == o) {
+      // o can only occur in one consecutive run on the lock-stack.
+      // Only one of the two oops checked matched o, so this run
+      // must be of length 1 and thus not be recursive. Stop the search.
+      break;
     }
   }
 
@@ -101,6 +114,11 @@ inline bool LockStack::try_recursive_enter(oop o) {
   if (!VM_Version::supports_recursive_lightweight_locking()) {
     return false;
   }
+
+  // This will succeed iff the top oop on the stack matches o.
+  // When successful o will be pushed to the lock-stack creating
+  // a consecutive run at least 2 oops that matches o on top of
+  // the lock-stack.
 
   assert(!is_full(), "precond");
 
@@ -119,6 +137,11 @@ inline bool LockStack::try_recursive_exit(oop o) {
   if (!VM_Version::supports_recursive_lightweight_locking()) {
     return false;
   }
+
+  // This will succeed iff the top two oops on the stack matches o.
+  // When successful the top oop will be popped of the lock-stack.
+  // When unsuccessful the lock may still be recursive, in which
+  // case the locking is unbalanced. This case is handled externally.
 
   assert(contains(o), "entries must exist");
 

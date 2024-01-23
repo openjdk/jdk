@@ -533,9 +533,28 @@ void ObjectSynchronizer::enter(Handle obj, BasicLock* lock, JavaThread* current)
       // Fast-locking does not use the 'lock' argument.
       LockStack& lock_stack = current->lock_stack();
       if (lock_stack.is_full()) {
-        // The emitted code always goes into the runtime in case the lock stack
-        // is full. We unconditionally make room on the lock stack by inflating
+        // We unconditionally make room on the lock stack by inflating
         // the least recently locked object on the lock stack.
+
+        // About the choice to inflate least recently locked object.
+        // First we must chose to inflate a lock, either some lock on
+        // the lock-stack or the lock that is currently being entered
+        // (which may or may not be on the lock-stack).
+        // Second the best lock to inflate is a lock which is entered
+        // in a control flow where there are only a very few locks being
+        // used, as the costly part of inflated locking is inflation,
+        // not locking. But this property is entirely program dependent.
+        // Third inflating the lock currently being entered on when it
+        // is not present on the lock-stack will result in a still full
+        // lock-stack. This creates a scenario where every deeper nested
+        // monitorenter must call into the runtime.
+        // The rational here is as follows:
+        // Because we cannot (currently) figure out the second, and want
+        // to avoid the third, we inflate a lock on the lock-stack.
+        // The least recently locked lock is chosen as it is the lock
+        // with the longest critical section.
+
+        log_info(fastlock)("LockStack capacity exceeded, inflating.");
         ObjectMonitor* monitor = inflate(current, lock_stack.bottom(), inflate_cause_vm_internal);
         assert(monitor->owner() == current, "must be owner=" PTR_FORMAT " current=" PTR_FORMAT " mark=" PTR_FORMAT,
                p2i(monitor->owner()), p2i(current), monitor->object()->mark_acquire().value());
@@ -612,9 +631,11 @@ void ObjectSynchronizer::exit(oop object, BasicLock* lock, JavaThread* current) 
       if (mark.is_fast_locked() && lock_stack.try_recursive_exit(object)) {
         // Recursively unlocked.
         return;
-      } else if (mark.is_fast_locked() && lock_stack.is_recursive(object)) {
+      }
+
+      if (mark.is_fast_locked() && lock_stack.is_recursive(object)) {
         // This lock is recursive but is not at the top of the lock stack so we're
-        // doing an unstructured exit. We have to fall thru to inflation below and
+        // doing an unbalanced exit. We have to fall thru to inflation below and
         // let ObjectMonitor::exit() do the unlock.
       } else {
         while (mark.is_fast_locked()) {
