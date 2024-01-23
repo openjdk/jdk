@@ -220,8 +220,8 @@ private:
   }
 
   // Split the range to_split by removing to_remove from it, storing the remaining parts in out.
-  // Returns true if an overlap was found and will fill the out array with at most 2 elements.
-  // The integer pointed to by len will be  set to the number of resulting TrackedRanges.
+  // Returns an OverlappingResult and will fill the out array with at most 2 elements.
+  // The integer pointed to by len will be  set to the number of resulting TrackedRanges put into the out array.
   // The physical address is managed appropriately for the out array.
   enum class OverlappingResult {
     NoOverlap,

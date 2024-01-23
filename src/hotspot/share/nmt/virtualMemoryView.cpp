@@ -39,7 +39,7 @@ VirtualMemoryView::VirtualMemory* VirtualMemoryView::_virt_mem = nullptr;
 GrowableArrayCHeap<VirtualMemoryView::Range, mtNMT>* VirtualMemoryView::thread_stacks = nullptr;
 
 void VirtualMemoryView::report(VirtualMemory& mem, outputStream* output, size_t scale) {
-  auto print_mapped_virtual_memory_region = [&](TrackedOffsetRange& mapped_range) -> void {
+  auto print_mapped_memory = [&](TrackedOffsetRange& mapped_range) -> void {
     output->print("\n\t");
     const NativeCallStack& stack = _stack_storage->get(mapped_range.stack_idx);
     const char* scale_name = NMTUtil::scale_name(scale);
@@ -92,37 +92,14 @@ void VirtualMemoryView::report(VirtualMemory& mem, outputStream* output, size_t 
     RegionStorage& reserved_ranges = mem.reserved_regions;
     OffsetRegionStorage& mapped_ranges = mem.mapped_regions.at(space_id);
     RegionStorage& committed_ranges = mem.committed_regions.at(space_id);
-    bool found_committed[committed_ranges.length()];
-    for (int i = 0; i < committed_ranges.length(); i++) {
-      found_committed[i] = false;
+    for (int i = 0; i < reserved_ranges.length(); i++) {
+      print_reserved_memory(reserved_ranges.at(i));
     }
-
-    output->print_cr("%s:", _names->at(space_id));
-    for (int reserved_range_idx = 0; reserved_range_idx < reserved_ranges.length(); reserved_range_idx++) {
-      TrackedRange& reserved_range = reserved_ranges.at(reserved_range_idx);
-      print_reserved_memory(reserved_range);
-      for (int mapped_range_idx = 0; mapped_range_idx < mapped_ranges.length(); mapped_range_idx++) {
-        TrackedOffsetRange& mapped_range = mapped_ranges.at(mapped_range_idx);
-        if (overlaps(reserved_range, mapped_range)) {
-          output->print_cr("");
-          print_mapped_virtual_memory_region(mapped_range);
-          for (int committed_range_idx = 0; committed_range_idx < committed_ranges.length();
-               committed_range_idx++) {
-            TrackedRange& committed_range = committed_ranges.at(committed_range_idx);
-            if (overlaps(Range{committed_range.start, committed_range.size},
-                         Range{mapped_range.physical_address, mapped_range.size})) {
-              print_committed_memory(committed_range);
-              found_committed[committed_range_idx] = true;
-            }
-          }
-        }
-      }
+    for (int i = 0; i < mapped_ranges.length(); i++) {
+      print_mapped_memory(mapped_ranges.at(i));
     }
     for (int i = 0; i < committed_ranges.length(); i++) {
-      if (!found_committed[i]) {
-        TrackedRange& committed_range = committed_ranges.at(i);
-        print_committed_memory(committed_range);
-      }
+      print_committed_memory(committed_ranges.at(i));
     }
   }
 }
