@@ -755,8 +755,7 @@ public class JScrollBar extends JComponent implements Adjustable, Accessible
 
     /**
      * Unlike most components, JScrollBar will derive the minimum size from
-     * the preferred size in one axis and a fixed minimum size in the other
-     * unless otherwise set by the user.
+     * the preferred size in one axis and a fixed minimum size in the other.
      * Thus, it overrides {@code JComponent.setMinimumSize} contract
      * that subsequent calls to getMinimumSize will return the
      * same value as set in {@code JComponent.setMinimumSize}
@@ -769,8 +768,7 @@ public class JScrollBar extends JComponent implements Adjustable, Accessible
 
     /**
      * Unlike most components, JScrollBar will derive the maximum size from
-     * the preferred size in one axis and a fixed maximum size in the other
-     * unless otherwise set by the user.
+     * the preferred size in one axis and a fixed maximum size in the other.
      * Thus, it overrides {@code JComponent.setMaximumSize} contract
      * that subsequent calls to getMaximumSize will return the
      * same value as set in {@code JComponent.setMaximumSize}
@@ -782,17 +780,15 @@ public class JScrollBar extends JComponent implements Adjustable, Accessible
     }
 
     /**
-     * The scrollbar is flexible along it's scrolling axis and
+     * The scrollbar is flexible along its scrolling axis and
      * rigid along the other axis.
+     * As specified in {@code setMinimumSize} JScrollBar will derive the 
+     * minimum size from the preferred size in one axis and a 
+     * fixed minimum size in the other.
      *
-     * @return the value of the {@code minimumSize} property if set by user
-     *         or if not set, minimum size derived from
-     *         preferred size in one axis and fixed size in another axis
+     * @return the minimum size as specified above.
      */
     public Dimension getMinimumSize() {
-        if (isMinimumSizeSet()) {
-            return super.getMinimumSize();
-        }
         Dimension pref = getPreferredSize();
         if (orientation == VERTICAL) {
             return new Dimension(pref.width, 5);
@@ -802,17 +798,15 @@ public class JScrollBar extends JComponent implements Adjustable, Accessible
     }
 
     /**
-     * The scrollbar is flexible along it's scrolling axis and
+     * The scrollbar is flexible along its scrolling axis and
      * rigid along the other axis.
+     * As specified in {@code setMaximumSize} JScrollBar will derive the 
+     * maximum size from the preferred size in one axis and a 
+     * fixed maximum size in the other.
      *
-     * @return the value of the {@code maximumSize} property if set by user
-     *         or if not set, maximum size derived from
-     *         preferred size in one axis and fixed size in another axis
+     * @return the maximum size as specified above.
      */
     public Dimension getMaximumSize() {
-        if (isMaximumSizeSet()) {
-            return super.getMaximumSize();
-        }
         Dimension pref = getPreferredSize();
         if (getOrientation() == VERTICAL) {
             return new Dimension(pref.width, Short.MAX_VALUE);
