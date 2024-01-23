@@ -788,7 +788,6 @@ void ShenandoahHeap::notify_heap_changed() {
   // Update monitoring counters when we took a new region. This amortizes the
   // update costs on slow path.
   monitoring_support()->notify_heap_changed();
-
   control_thread()->notify_heap_changed();
 }
 

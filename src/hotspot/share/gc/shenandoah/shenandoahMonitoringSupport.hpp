@@ -36,14 +36,14 @@ class CollectorCounters;
 class ShenandoahHeapRegionCounters;
 class ShenandoahMonitoringSupport;
 
-class ShenandoahPeriodicCountersUpdate : public PeriodicTask {
+class ShenandoahPeriodicCountersUpdateTask : public PeriodicTask {
 private:
   ShenandoahSharedFlag _do_counters_update;
   ShenandoahSharedFlag _force_counters_update;
-  ShenandoahMonitoringSupport* _monitoring_support;
+  ShenandoahMonitoringSupport* const _monitoring_support;
 
 public:
-  explicit ShenandoahPeriodicCountersUpdate(ShenandoahMonitoringSupport* monitoring_support) :
+  explicit ShenandoahPeriodicCountersUpdateTask(ShenandoahMonitoringSupport* monitoring_support) :
     PeriodicTask(100),
     _monitoring_support(monitoring_support) { }
 
@@ -66,7 +66,7 @@ private:
   HSpaceCounters* _space_counters;
 
   ShenandoahHeapRegionCounters* _heap_region_counters;
-  ShenandoahPeriodicCountersUpdate _counters_update;
+  ShenandoahPeriodicCountersUpdateTask _counters_update_task;
 
 public:
   explicit ShenandoahMonitoringSupport(ShenandoahHeap* heap);
