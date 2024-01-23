@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -474,7 +474,7 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_storeStoreFence:
   case vmIntrinsics::_fullFence:                return inline_unsafe_fence(intrinsic_id());
 
-  case vmIntrinsics::_isConstantExpression:     return inline_is_constant_expression();
+  case vmIntrinsics::_isConstantExpression:     return inline_isCompileConstant();
 
   case vmIntrinsics::_onSpinWait:               return inline_onspinwait();
 
@@ -2750,14 +2750,6 @@ bool LibraryCallKit::inline_unsafe_fence(vmIntrinsics::ID id) {
       fatal_unexpected_iid(id);
       return false;
   }
-}
-
-bool LibraryCallKit::inline_is_constant_expression() {
-  Node* expr = argument(0);
-  const Type* t = gvn().type(expr);
-  int res = t->isa_long() && t->is_long()->is_con() ? 1 : 0;
-  set_result(gvn().intcon(res));
-  return true;
 }
 
 bool LibraryCallKit::inline_onspinwait() {
