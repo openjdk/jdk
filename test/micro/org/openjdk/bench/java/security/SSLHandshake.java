@@ -56,7 +56,8 @@ import javax.net.ssl.TrustManagerFactory;
 public class SSLHandshake {
 
     // one global server context
-    private static SSLContext sslServerCtx;
+    private static final SSLContext sslServerCtx = getServerContext();
+
     // per-thread client contexts
     private SSLContext sslClientCtx;
 
@@ -77,14 +78,26 @@ public class SSLHandshake {
     @Param({"TLSv1.2", "TLS"})
     String tlsVersion;
 
+    private static SSLContext getServerContext() {
+        try {
+            KeyStore ks = TestCertificates.getKeyStore();
+
+            KeyManagerFactory kmf = KeyManagerFactory.getInstance(
+                    KeyManagerFactory.getDefaultAlgorithm());
+            kmf.init(ks, new char[0]);
+
+            // server context will be set by every thread; last one wins
+            SSLContext sslCtx = SSLContext.getInstance("TLS");
+            sslCtx.init(kmf.getKeyManagers(), null, null);
+            return sslCtx;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     @Setup(Level.Trial)
     public void init() throws Exception {
-        KeyStore ks = TestCertificates.getKeyStore();
         KeyStore ts = TestCertificates.getTrustStore();
-
-        KeyManagerFactory kmf = KeyManagerFactory.getInstance(
-                KeyManagerFactory.getDefaultAlgorithm());
-        kmf.init(ks, new char[0]);
 
         TrustManagerFactory tmf = TrustManagerFactory.getInstance(
                 TrustManagerFactory.getDefaultAlgorithm());
@@ -92,11 +105,7 @@ public class SSLHandshake {
 
         // server context will be set by every thread; last one wins
         SSLContext sslCtx = SSLContext.getInstance(tlsVersion);
-        sslCtx.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
-        sslServerCtx = sslCtx;
-
-        sslCtx = SSLContext.getInstance(tlsVersion);
-        sslCtx.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
+        sslCtx.init(null, tmf.getTrustManagers(), null);
         sslClientCtx = sslCtx;
     }
 
