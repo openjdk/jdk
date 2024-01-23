@@ -217,7 +217,6 @@
                                                                             \
   declare_constant(Generation::DefNew)                                      \
   declare_constant(Generation::MarkSweepCompact)                            \
-  declare_constant(Generation::Other)                                       \
                                                                             \
   declare_constant(Generation::LogOfGenGrain)                               \
   declare_constant(Generation::GenGrain)                                    \

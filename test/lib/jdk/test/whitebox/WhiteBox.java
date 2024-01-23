@@ -119,6 +119,10 @@ public class WhiteBox {
     return isMonitorInflated0(obj);
   }
 
+  public native int getLockStackCapacity();
+
+  public native boolean supportsRecursiveLightweightLocking();
+
   public native void forceSafepoint();
 
   public native void forceClassLoaderStatsSafepoint();

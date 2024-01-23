@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -93,6 +93,9 @@ public class DocPaths {
 
     /** The name of the default javascript file. */
     public static final DocPath SCRIPT_JS = DocPath.create("script.js");
+
+    /** The name of the template of the default javascript file. */
+    public static final DocPath SCRIPT_JS_TEMPLATE = DocPath.create("script.js.template");
 
     /** The name of the copy-to-clipboard icon file. */
     public static final DocPath CLIPBOARD_SVG = DocPath.create("copy.svg");

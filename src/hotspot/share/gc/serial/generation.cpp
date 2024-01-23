@@ -113,14 +113,6 @@ size_t Generation::max_contiguous_available() const {
   return MAX2(avail, old_avail);
 }
 
-bool Generation::promotion_attempt_is_safe(size_t max_promotion_in_bytes) const {
-  size_t available = max_contiguous_available();
-  bool   res = (available >= max_promotion_in_bytes);
-  log_trace(gc)("Generation: promo attempt is%s safe: available(" SIZE_FORMAT ") %s max_promo(" SIZE_FORMAT ")",
-                res? "":" not", available, res? ">=":"<", max_promotion_in_bytes);
-  return res;
-}
-
 // Ignores "ref" and calls allocate().
 oop Generation::promote(oop obj, size_t obj_size) {
   assert(obj_size == obj->size(), "bad obj_size passed in");
@@ -190,19 +182,4 @@ bool Generation::block_is_obj(const HeapWord* p) const {
   // Cast away const
   ((Generation*)this)->space_iterate(&blk);
   return blk.is_obj;
-}
-
-class GenerationObjIterateClosure : public SpaceClosure {
- private:
-  ObjectClosure* _cl;
- public:
-  virtual void do_space(Space* s) {
-    s->object_iterate(_cl);
-  }
-  GenerationObjIterateClosure(ObjectClosure* cl) : _cl(cl) {}
-};
-
-void Generation::object_iterate(ObjectClosure* cl) {
-  GenerationObjIterateClosure blk(cl);
-  space_iterate(&blk);
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,17 +20,30 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+package compiler.c2;
 
-public class UseNativeLib implements java.io.Serializable, UseNativeLibMBean {
+/*
+ * @test
+ * @bug 8323154
+ * @summary Long counted loop exit check should not be transformed into an unsigned check
+ *
+ * @run main/othervm -Xbatch -XX:CompileCommand=compileonly,compiler.c2.TestMinValueStrideLongCountedLoop::test
+ *                   compiler.c2.TestMinValueStrideLongCountedLoop
+ */
 
-    public native int getRandom();
+public class TestMinValueStrideLongCountedLoop {
+    static long limit = 0;
+    static long res = 0;
 
-    static {
-        try {
-            System.loadLibrary("genrandom");
-        } catch (Exception e) {
-            e.printStackTrace();
+    public static void main(String[] args) {
+        for (int i = 0; i < 10000; i++) {
+            test();
         }
     }
 
+    static void test() {
+        for (long i = 0; i >= limit + (Long.MIN_VALUE + 1); i += Long.MIN_VALUE) {
+            res += 42;
+        }
+    }
 }
