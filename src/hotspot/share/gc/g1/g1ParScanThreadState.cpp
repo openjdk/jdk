@@ -95,7 +95,7 @@ G1ParScanThreadState::G1ParScanThreadState(G1CollectedHeap* g1h,
   // entries, since entry 0 keeps track of surviving bytes for non-young regions.
   // We also add a few elements at the beginning and at the end in
   // an attempt to eliminate cache contention
-  const size_t padding_elem_num = (DEFAULT_CACHE_LINE_SIZE / sizeof(size_t));
+  const size_t padding_elem_num = (DEFAULT_PADDING_SIZE / sizeof(size_t));
   size_t array_length = padding_elem_num + _surviving_words_length + padding_elem_num;
 
   _surviving_young_words_base = NEW_C_HEAP_ARRAY(size_t, array_length, mtGC);

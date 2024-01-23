@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -764,7 +764,7 @@ public final class ProcessTools {
      * @param cmds The command line to execute.
      * @return The output from the process.
      */
-    public static OutputAnalyzer executeProcess(String... cmds) throws Throwable {
+    public static OutputAnalyzer executeProcess(String... cmds) throws Exception {
         return executeProcess(new ProcessBuilder(cmds));
     }
 
@@ -809,8 +809,7 @@ public final class ProcessTools {
      * @param cmds The command line to execute.
      * @return The {@linkplain OutputAnalyzer} instance wrapping the process.
      */
-    public static OutputAnalyzer executeCommand(String... cmds)
-            throws Throwable {
+    public static OutputAnalyzer executeCommand(String... cmds) throws Exception {
         String cmdLine = String.join(" ", cmds);
         System.out.println("Command line: [" + cmdLine + "]");
         OutputAnalyzer analyzer = ProcessTools.executeProcess(cmds);
@@ -827,8 +826,7 @@ public final class ProcessTools {
      * @param pb The ProcessBuilder to execute.
      * @return The {@linkplain OutputAnalyzer} instance wrapping the process.
      */
-    public static OutputAnalyzer executeCommand(ProcessBuilder pb)
-            throws Throwable {
+    public static OutputAnalyzer executeCommand(ProcessBuilder pb) throws Exception {
         String cmdLine = pb.command().stream()
                 .map(x -> (x.contains(" ") || x.contains("$"))
                         ? ("'" + x + "'") : x)

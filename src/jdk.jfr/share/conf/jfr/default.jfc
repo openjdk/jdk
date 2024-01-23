@@ -756,6 +756,10 @@
       <setting name="stackTrace">true</setting>
     </event>
 
+    <event name="jdk.SerializationMisdeclaration">
+        <setting name="enabled">false</setting>
+    </event>
+
     <event name="jdk.InitialSecurityProperty">
       <setting name="enabled">true</setting>
       <setting name="period">beginChunk</setting>
