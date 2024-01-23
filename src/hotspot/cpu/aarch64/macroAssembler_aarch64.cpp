@@ -2066,8 +2066,9 @@ void MacroAssembler::membar(Membar_mask_bits order_constraint) {
   address last = code()->last_insn();
   if (last != nullptr && nativeInstruction_at(last)->is_Membar() && prev == last) {
     NativeMembar *bar = NativeMembar_at(prev);
-    // We need avoid promoting barrier to dmb.ish,
-    // Only merge same type or any one with ish type
+    // Don't promote DMB ST|DMB LD to DMB (a full barrier) because
+    // doing so would introduce  a StoreLoad which  the caller did not
+    // intend
     if (bar->get_kind() == order_constraint
         || bar->get_kind() == AnyAny
         || order_constraint == AnyAny) {

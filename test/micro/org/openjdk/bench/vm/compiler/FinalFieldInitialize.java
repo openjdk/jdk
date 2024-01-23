@@ -67,7 +67,7 @@ class TObj {
 
   public TObj() {
     i = 10;
-    l = 100l;
+    l = 100L;
     b = true;
   }
 }
@@ -79,7 +79,7 @@ class TObjWithFinal {
 
   public TObjWithFinal() {
     i = 10;
-    l = 100l;
+    l = 100L;
     b = true;
   }
 }
