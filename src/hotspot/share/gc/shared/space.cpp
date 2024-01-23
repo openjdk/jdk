@@ -146,7 +146,6 @@ bool Space::obj_is_alive(const HeapWord* p) const {
 }
 
 void ContiguousSpace::object_iterate(ObjectClosure* blk) {
-  if (is_empty()) return;
   HeapWord* addr = bottom();
   while (addr < top()) {
     oop obj = cast_to_oop(addr);
