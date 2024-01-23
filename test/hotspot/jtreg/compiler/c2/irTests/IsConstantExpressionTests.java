@@ -35,7 +35,18 @@ import jdk.internal.misc.JitCompiler;
  * @run driver compiler.c2.irTests.IsConstantExpressionTests
  */
 public class IsConstantExpressionTests {
-    private static final int CONSTANT = 3;
+    private record Point(int x, int y) {}
+
+    private static final boolean BOOL_CONSTANT = true;
+    private static final byte BYTE_CONSTANT = 3;
+    private static final short SHORT_CONSTANT = 3;
+    private static final char CHAR_CONSTANT = 3;
+    private static final int INT_CONSTANT = 3;
+    private static final long LONG_CONSTANT = 3;
+    private static final float FLOAT_CONSTANT = 3;
+    private static final double DOUBLE_CONSTANT = 3;
+    private static final Point POINT_CONSTANT = new Point(1, 2);
+
     private static final int[] LOOKUP_TABLE;
     static {
         LOOKUP_TABLE = new int[4];
@@ -45,18 +56,181 @@ public class IsConstantExpressionTests {
         LOOKUP_TABLE[3] = 460;
     }
 
-    private int variable = 3;
+    private boolean boolVariable = true;
+    private byte byteVariable = 3;
+    private short shortVariable = 3;
+    private char charVariable = 3;
+    private int intVariable = 3;
+    private long longVariable = 3;
+    private float floatVariable = 3;
+    private double doubleVariable = 3;
+    private Point pointVariable = new Point(1, 2);
+    private int hashCache = pointVariable.hashCode();
 
     @Test
-    @IR(failOn = IRNode.LOAD_I)
-    public int constant() {
-        return process(CONSTANT);
+    @IR(failOn = IRNode.LOAD)
+    public int boolConstant() {
+        return process(BOOL_CONSTANT);
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_I, "2"})
-    public int variable() {
-        return process(variable);
+    @IR(counts = {IRNode.LOAD, "2"})
+    public int boolVariable() {
+        return process(boolVariable);
+    }
+
+    @Test
+    @IR(failOn = IRNode.LOAD)
+    public int byteConstant() {
+        return process(BYTE_CONSTANT);
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD, "2"})
+    public int byteVariable() {
+        return process(byteVariable);
+    }
+
+    @Test
+    @IR(failOn = IRNode.LOAD)
+    public int shortConstant() {
+        return process(SHORT_CONSTANT);
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD, "2"})
+    public int shortVariable() {
+        return process(shortVariable);
+    }
+
+    @Test
+    @IR(failOn = IRNode.LOAD)
+    public int charConstant() {
+        return process(CHAR_CONSTANT);
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD, "2"})
+    public int charVariable() {
+        return process(charVariable);
+    }
+
+    @Test
+    @IR(failOn = IRNode.LOAD)
+    public int intConstant() {
+        return process(INT_CONSTANT);
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD, "2"})
+    public int intVariable() {
+        return process(intVariable);
+    }
+
+    @Test
+    @IR(failOn = IRNode.LOAD)
+    public int longConstant() {
+        return process(LONG_CONSTANT);
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD, "2"})
+    public int longVariable() {
+        return process(longVariable);
+    }
+
+    @Test
+    @IR(failOn = IRNode.LOAD)
+    public int floatConstant() {
+        return process(FLOAT_CONSTANT);
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD, "2"})
+    public int floatVariable() {
+        return process(floatVariable);
+    }
+
+    @Test
+    @IR(failOn = IRNode.LOAD)
+    public int doubleConstant() {
+        return process(DOUBLE_CONSTANT);
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD, "2"})
+    public int doubleVariable() {
+        return process(doubleVariable);
+    }
+
+    @Test
+    @IR(failOn = IRNode.LOAD)
+    public int objectConstant() {
+        return process(POINT_CONSTANT);
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD, "1"})
+    public int objectVariable() {
+        return process(pointVariable);
+    }
+
+    @ForceInline
+    public int process(boolean input) {
+        if (JitCompiler.isConstantExpression(input)) {
+            if (input) {
+                return 125;
+            } else {
+                return 341;
+            }
+        }
+
+        return LOOKUP_TABLE[input ? 1 : 0];
+    }
+
+    @ForceInline
+    public int process(byte input) {
+        if (JitCompiler.isConstantExpression(input)) {
+            return switch(input) {
+                case 0 -> 125;
+                case 1 -> 341;
+                case 2 -> 97;
+                case 3 -> 460;
+                default -> throw new AssertionError();
+            };
+        }
+
+        return LOOKUP_TABLE[input];
+    }
+
+    @ForceInline
+    public int process(short input) {
+        if (JitCompiler.isConstantExpression(input)) {
+            return switch(input) {
+                case 0 -> 125;
+                case 1 -> 341;
+                case 2 -> 97;
+                case 3 -> 460;
+                default -> throw new AssertionError();
+            };
+        }
+
+        return LOOKUP_TABLE[input];
+    }
+
+    @ForceInline
+    public int process(char input) {
+        if (JitCompiler.isConstantExpression(input)) {
+            return switch(input) {
+                case 0 -> 125;
+                case 1 -> 341;
+                case 2 -> 97;
+                case 3 -> 460;
+                default -> throw new AssertionError();
+            };
+        }
+
+        return LOOKUP_TABLE[input];
     }
 
     @ForceInline
@@ -72,6 +246,72 @@ public class IsConstantExpressionTests {
         }
 
         return LOOKUP_TABLE[input];
+    }
+
+    @ForceInline
+    public int process(long input) {
+        if (JitCompiler.isConstantExpression(input)) {
+            if (input == 0) {
+                return 125;
+            } else if (input == 1) {
+                return 341;
+            } else if (input == 2) {
+                return 97;
+            } else if (input == 3) {
+                return 460;
+            } else {
+                throw new AssertionError();
+            }
+        }
+
+        return LOOKUP_TABLE[(int)input];
+    }
+
+    @ForceInline
+    public int process(float input) {
+        if (JitCompiler.isConstantExpression(input)) {
+            if (input == 0) {
+                return 125;
+            } else if (input == 1) {
+                return 341;
+            } else if (input == 2) {
+                return 97;
+            } else if (input == 3) {
+                return 460;
+            } else {
+                throw new AssertionError();
+            }
+        }
+
+        return LOOKUP_TABLE[(int)input];
+    }
+
+    @ForceInline
+    public int process(double input) {
+        if (JitCompiler.isConstantExpression(input)) {
+            if (input == 0) {
+                return 125;
+            } else if (input == 1) {
+                return 341;
+            } else if (input == 2) {
+                return 97;
+            } else if (input == 3) {
+                return 460;
+            } else {
+                throw new AssertionError();
+            }
+        }
+
+        return LOOKUP_TABLE[(int)input];
+    }
+
+    @ForceInline
+    public int process(Point input) {
+        if (JitCompiler.isConstantExpression(input)) {
+            return input.hashCode();
+        }
+
+        return hashCache;
     }
 
     public static void main(String[] args) {

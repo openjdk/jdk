@@ -565,7 +565,12 @@ class SerializeClosure;
   template(int_int_signature,                         "(I)I")                                     \
   template(char_char_signature,                       "(C)C")                                     \
   template(short_short_signature,                     "(S)S")                                     \
+  template(bool_bool_signature,                       "(Z)Z")                                     \
+  template(byte_bool_signature,                       "(B)Z")                                     \
+  template(short_bool_signature,                      "(S)Z")                                     \
+  template(char_bool_signature,                       "(C)Z")                                     \
   template(int_bool_signature,                        "(I)Z")                                     \
+  template(long_bool_signature,                       "(J)Z")                                     \
   template(float_bool_signature,                      "(F)Z")                                     \
   template(double_bool_signature,                     "(D)Z")                                     \
   template(float_int_signature,                       "(F)I")                                     \

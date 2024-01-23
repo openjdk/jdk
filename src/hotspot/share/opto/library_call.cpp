@@ -474,7 +474,15 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_storeStoreFence:
   case vmIntrinsics::_fullFence:                return inline_unsafe_fence(intrinsic_id());
 
-  case vmIntrinsics::_isConstantExpression:     return inline_isCompileConstant();
+  case vmIntrinsics::_isConstantExpressionZ:
+  case vmIntrinsics::_isConstantExpressionB:
+  case vmIntrinsics::_isConstantExpressionS:
+  case vmIntrinsics::_isConstantExpressionC:
+  case vmIntrinsics::_isConstantExpressionI:
+  case vmIntrinsics::_isConstantExpressionJ:
+  case vmIntrinsics::_isConstantExpressionF:
+  case vmIntrinsics::_isConstantExpressionD:
+  case vmIntrinsics::_isConstantExpressionL:    return inline_isCompileConstant();
 
   case vmIntrinsics::_onSpinWait:               return inline_onspinwait();
 

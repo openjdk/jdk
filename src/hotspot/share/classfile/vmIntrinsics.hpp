@@ -924,10 +924,17 @@ class methodHandle;
    do_signature(getAndSetReference_signature,                           "(Ljava/lang/Object;JLjava/lang/Object;)Ljava/lang/Object;" ) \
                                                                                                                               \
   do_class(jdk_internal_misc_JitCompiler, "jdk/internal/misc/JitCompiler")                                                    \
-  do_intrinsic(_isConstantExpression,     jdk_internal_misc_JitCompiler,isConstantExpression_name, isConstantExpression_signature, F_S) \
+  do_intrinsic(_isConstantExpressionZ,    jdk_internal_misc_JitCompiler,isConstantExpression_name, bool_bool_signature, F_S)  \
+  do_intrinsic(_isConstantExpressionB,    jdk_internal_misc_JitCompiler,isConstantExpression_name, byte_bool_signature, F_S)  \
+  do_intrinsic(_isConstantExpressionS,    jdk_internal_misc_JitCompiler,isConstantExpression_name, short_bool_signature, F_S) \
+  do_intrinsic(_isConstantExpressionC,    jdk_internal_misc_JitCompiler,isConstantExpression_name, char_bool_signature, F_S)  \
+  do_intrinsic(_isConstantExpressionI,    jdk_internal_misc_JitCompiler,isConstantExpression_name, int_bool_signature, F_S)   \
+  do_intrinsic(_isConstantExpressionJ,    jdk_internal_misc_JitCompiler,isConstantExpression_name, long_bool_signature, F_S)  \
+  do_intrinsic(_isConstantExpressionF,    jdk_internal_misc_JitCompiler,isConstantExpression_name, float_bool_signature, F_S) \
+  do_intrinsic(_isConstantExpressionD,    jdk_internal_misc_JitCompiler,isConstantExpression_name, double_bool_signature, F_S)\
+  do_intrinsic(_isConstantExpressionL,    jdk_internal_misc_JitCompiler,isConstantExpression_name, object_boolean_signature, F_S) \
    do_name(     isConstantExpression_name,                              "isConstantExpression")                               \
-   do_signature(isConstantExpression_signature,                         "(J)Z")                                               \
-                                                                                                                                               \
+                                                                                                                              \
   /* Vector API intrinsification support */                                                                                                    \
                                                                                                                                                \
   do_intrinsic(_VectorUnaryOp, jdk_internal_vm_vector_VectorSupport, vector_unary_op_name, vector_unary_op_sig, F_S)                           \

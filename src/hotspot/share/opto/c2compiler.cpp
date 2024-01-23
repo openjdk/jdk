@@ -724,7 +724,15 @@ bool C2Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   case vmIntrinsics::_storeFence:
   case vmIntrinsics::_storeStoreFence:
   case vmIntrinsics::_fullFence:
-  case vmIntrinsics::_isConstantExpression:
+  case vmIntrinsics::_isConstantExpressionZ:
+  case vmIntrinsics::_isConstantExpressionB:
+  case vmIntrinsics::_isConstantExpressionS:
+  case vmIntrinsics::_isConstantExpressionC:
+  case vmIntrinsics::_isConstantExpressionI:
+  case vmIntrinsics::_isConstantExpressionJ:
+  case vmIntrinsics::_isConstantExpressionF:
+  case vmIntrinsics::_isConstantExpressionD:
+  case vmIntrinsics::_isConstantExpressionL:
   case vmIntrinsics::_currentCarrierThread:
   case vmIntrinsics::_currentThread:
   case vmIntrinsics::_setCurrentThread:

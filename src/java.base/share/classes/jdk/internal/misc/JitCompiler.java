@@ -53,7 +53,71 @@ public class JitCompiler {
      *         always evaluated to a constant value, {@code false} otherwise
      */
     @IntrinsicCandidate
+    public static boolean isConstantExpression(boolean expr) {
+        return false;
+    }
+
+    /**
+     * @see #isConstantExpression(boolean)
+     */
+    @IntrinsicCandidate
+    public static boolean isConstantExpression(byte expr) {
+        return false;
+    }
+
+    /**
+     * @see #isConstantExpression(boolean)
+     */
+    @IntrinsicCandidate
+    public static boolean isConstantExpression(short expr) {
+        return false;
+    }
+
+    /**
+     * @see #isConstantExpression(boolean)
+     */
+    @IntrinsicCandidate
+    public static boolean isConstantExpression(char expr) {
+        return false;
+    }
+
+    /**
+     * @see #isConstantExpression(boolean)
+     */
+    @IntrinsicCandidate
+    public static boolean isConstantExpression(int expr) {
+        return false;
+    }
+
+    /**
+     * @see #isConstantExpression(boolean)
+     */
+    @IntrinsicCandidate
     public static boolean isConstantExpression(long expr) {
+        return false;
+    }
+
+    /**
+     * @see #isConstantExpression(boolean)
+     */
+    @IntrinsicCandidate
+    public static boolean isConstantExpression(float expr) {
+        return false;
+    }
+
+    /**
+     * @see #isConstantExpression(boolean)
+     */
+    @IntrinsicCandidate
+    public static boolean isConstantExpression(double expr) {
+        return false;
+    }
+
+    /**
+     * @see #isConstantExpression(boolean)
+     */
+    @IntrinsicCandidate
+    public static boolean isConstantExpression(Object expr) {
         return false;
     }
 }
