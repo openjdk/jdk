@@ -102,6 +102,11 @@ inline bool LockStack::try_recursive_enter(oop o) {
     return false;
   }
 
+  // This will succeed iff the top oop on the stack matches o.
+  // When successful o will be pushed to the lock-stack creating
+  // a consecutive run at least 2 oops that matches o on top of
+  // the lock-stack.
+
   assert(!is_full(), "precond");
 
   int end = to_index(_top);
