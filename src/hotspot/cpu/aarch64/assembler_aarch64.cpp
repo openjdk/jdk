@@ -189,6 +189,8 @@ void Address::lea(MacroAssembler *as, Register r) const {
 
 // This encoding is similar (but not quite identical) to the encoding used
 // by literal ld/st. see JDK-8324123.
+// FIXME: PRFM should not be used with writeback modes, but the assembler
+// doesn't enfore that.
 void Assembler::prfm(const Address &adr, prfop pfop) {
   if (adr.getMode() == Address::literal) {
     starti;
