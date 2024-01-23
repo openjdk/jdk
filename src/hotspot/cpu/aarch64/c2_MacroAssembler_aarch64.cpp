@@ -271,24 +271,13 @@ void C2_MacroAssembler::fast_lock_lightweight(Register obj, Register box, Regist
 
     // Not inflated
     assert(oopDesc::mark_offset_in_bytes() == 0, "required to avoid a lea");
-    // Load-Acquire Exclusive Register to match Store Exclusive Register below.
-    // Acquire to satisfy the JMM.
-    ldaxr(mark, obj);
-
-    // Recheck for monitor (0b10).
-    tbnz(mark, exact_log2(markWord::monitor_value), inflated);
-
-    // Check that obj is unlocked (0b01).
-    orr(t, mark, markWord::unlocked_value);
-    cmp(mark, t);
-    br(Assembler::NE, slow_path);
-
-    // Clear unlock bit (0b01 => 0b00).
-    andr(mark, mark, ~markWord::unlocked_value);
 
     // Try to lock. Transition lock-bits 0b01 => 0b00
-    stxr(t, mark, obj);
-    cmpw(t, zr);
+    orr(mark, mark, markWord::unlocked_value);
+    eor(t, mark, markWord::unlocked_value);
+    // Acquire to satisfy the JMM.
+    cmpxchg(/*addr*/ obj, /*expected*/ mark, /*new*/ t, Assembler::xword,
+            /*acquire*/ true, /*release*/ false, /*weak*/ false, noreg);
     br(Assembler::NE, slow_path);
 
     bind(push);
@@ -382,18 +371,18 @@ void C2_MacroAssembler::fast_unlock_lightweight(Register obj, Register box, Regi
     br(Assembler::EQ, unlocked);
 
     // Not recursive.
-    assert(oopDesc::mark_offset_in_bytes() == 0, "required to avoid a lea");
-    // Load Exclusive Register to match Store-Release Exclusive Register below.
-    ldxr(mark, obj);
+    // Load Mark.
+    ldr(mark, Address(obj, oopDesc::mark_offset_in_bytes()));
 
     // Check header for monitor (0b10).
     tbnz(mark, exact_log2(markWord::monitor_value), inflated);
 
     // Try to unlock. Transition lock bits 0b00 => 0b01
+    assert(oopDesc::mark_offset_in_bytes() == 0, "required to avoid lea");
     orr(t, mark, markWord::unlocked_value);
     // Release to satisfy the JMM.
-    stlxr(rscratch1, t, obj);
-    cmpw(rscratch1, 0u);
+    cmpxchg(/*addr*/ obj, /*expected*/ mark, /*new*/ t, Assembler::xword,
+            /*acquire*/ false, /*release*/ true, /*weak*/ false, noreg);
     br(Assembler::EQ, unlocked);
 
     // Load link store conditional exclusive failed.
