@@ -649,8 +649,6 @@ javax/sound/sampled/Clip/ClipIsRunningAfterStop.java 8307574 linux-x64
 
 # jdk_swing
 
-javax/swing/plaf/basic/BasicTextUI/8001470/bug8001470.java 8233177 linux-all,windows-all
-
 javax/swing/JFrame/MaximizeWindowTest.java 8321289 linux-all
 javax/swing/JWindow/ShapedAndTranslucentWindows/ShapedTranslucentPerPixelTranslucentGradient.java 8233582 linux-all
 javax/swing/JWindow/ShapedAndTranslucentWindows/ShapedPerPixelTranslucentGradient.java 8233582 linux-all

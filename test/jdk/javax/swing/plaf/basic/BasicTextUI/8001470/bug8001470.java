@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,17 +26,22 @@
  * @key headful
  * @bug 8001470
  * @summary JTextField's size is computed incorrectly when it contains Indic or Thai characters
- * @author Semyon Sadetsky
  */
 
-import javax.swing.*;
-import java.awt.*;
+import java.awt.GridLayout;
+import javax.swing.JFrame;
+import javax.swing.JTextField;
+import javax.swing.SwingUtilities;
+import javax.swing.JPanel;
 
 public class bug8001470 {
 
     private static JFrame frame;
     private static JTextField textField1;
     private static JTextField textField2;
+
+    private static volatile int height1;
+    private static volatile int height2;
 
     public static void main(String[] args) throws Exception {
         SwingUtilities.invokeAndWait(new Runnable() {
@@ -48,8 +53,9 @@ public class bug8001470 {
                 JPanel container = (JPanel) frame.getContentPane();
                 container.setLayout(new GridLayout(2,1));
 
-                textField1 = new JTextField("\u0e01");
-                textField2 = new JTextField("\u0c01");
+
+                textField1 = new JTextField("\u2588");
+                textField2 = new JTextField("\u2588");
 
                 container.add(textField1);
                 container.add(textField2);
@@ -57,12 +63,17 @@ public class bug8001470 {
                 frame.pack();
             }
         });
-        if( textField1.getHeight() < 10 || textField2.getHeight() < 10 )
+        Thread.sleep(1000);
+        SwingUtilities.invokeAndWait(() -> {
+            height1 = textField1.getHeight();
+            height2 = textField2.getHeight();
+        });
+        if( height1 < 10 || height2 < 10 ) {
             throw new Exception("Wrong field height");
+        }
         System.out.println("ok");
-        SwingUtilities.invokeLater(new Runnable() {
-            @Override
-            public void run() {
+        SwingUtilities.invokeAndWait(() -> {
+            if (frame != null) {
                 frame.dispose();
             }
         });
