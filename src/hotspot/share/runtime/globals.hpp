@@ -2011,7 +2011,7 @@ const int ObjectAlignmentInBytes = 8;
           "Profile exception handlers")                                     \
                                                                             \
   product(bool, AlwaysRecordEvolDependencies, true, DIAGNOSTIC,             \
-                "Unconditionally record method dependencies on class "      \
+                "Unconditionally record nmethod dependencies on class "     \
                 "rewriting/transformation independently of the JVMTI "      \
                 " can_{retransform/redefine}_classes capabilities.")        \
 

@@ -4075,7 +4075,7 @@ void VM_RedefineClasses::transfer_old_native_function_registrations(InstanceKlas
 
 void VM_RedefineClasses::flush_dependent_code() {
   assert(SafepointSynchronize::is_at_safepoint(), "sanity check");
-  assert(AlwaysRecordEvolDependencies ? JvmtiExport::all_dependencies_are_recorded() : true, "sanity check");
+  assert(JvmtiExport::all_dependencies_are_recorded() || !AlwaysRecordEvolDependencies, "sanity check");
 
   DeoptimizationScope deopt_scope;
 
