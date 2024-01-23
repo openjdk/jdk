@@ -87,10 +87,6 @@ public class TenuredGeneration extends Generation {
     theSpace().printOn(tty);
   }
 
-  public Generation.Name kind() {
-    return Generation.Name.MARK_SWEEP_COMPACT;
-  }
-
   public String name() {
     return "tenured generation";
   }

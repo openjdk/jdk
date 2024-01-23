@@ -159,8 +159,6 @@ class DefNewGeneration: public Generation {
                    size_t max_byte_size,
                    const char* policy="Serial young collection pauses");
 
-  virtual Generation::Name kind() { return Generation::DefNew; }
-
   // allocate and initialize ("weak") refs processing support
   void ref_processor_init();
   ReferenceProcessor* ref_processor() { return _ref_processor; }

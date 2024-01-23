@@ -107,8 +107,6 @@ class TenuredGeneration: public Generation {
                     size_t max_byte_size,
                     CardTableRS* remset);
 
-  Generation::Name kind() { return Generation::MarkSweepCompact; }
-
   // Printing
   const char* name() const { return "tenured generation"; }
   const char* short_name() const { return "Tenured"; }

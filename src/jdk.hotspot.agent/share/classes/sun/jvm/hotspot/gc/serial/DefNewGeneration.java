@@ -62,10 +62,6 @@ public class DefNewGeneration extends Generation {
     super(addr);
   }
 
-  public Generation.Name kind() {
-    return Generation.Name.DEF_NEW;
-  }
-
   // Accessing spaces
   public ContiguousSpace eden() {
     return VMObjectFactory.newObject(ContiguousSpace.class, edenSpaceField.getValue(addr));
