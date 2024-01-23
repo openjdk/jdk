@@ -38,10 +38,6 @@ inline oop OopHandle::peek() const {
   return (_obj == nullptr) ? (oop)nullptr : NativeAccess<AS_NO_KEEPALIVE>::oop_load(_obj);
 }
 
-inline oop OopHandle::peek_raw() const {
-  return (_obj == nullptr) ? (oop)nullptr : NativeAccess<AS_RAW>::oop_load(_obj);
-}
-
 inline OopHandle::OopHandle(OopStorage* storage, oop obj) :
     _obj(storage->allocate()) {
   if (_obj == nullptr) {
