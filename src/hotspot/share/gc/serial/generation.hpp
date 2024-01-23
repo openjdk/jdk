@@ -87,7 +87,6 @@ class Generation: public CHeapObj<mtGC> {
   enum Name {
     DefNew,
     MarkSweepCompact,
-    Other
   };
 
   enum SomePublicConstants {
@@ -99,9 +98,6 @@ class Generation: public CHeapObj<mtGC> {
     GenGrain = 1 << LogOfGenGrain
   };
 
-
-  virtual Generation::Name kind() { return Generation::Other; }
-
   virtual size_t capacity() const = 0;  // The maximum number of object bytes the
                                         // generation can currently hold.
   virtual size_t used() const = 0;      // The number of used bytes in the gen.
@@ -111,10 +107,6 @@ class Generation: public CHeapObj<mtGC> {
   // Returns the total number of bytes  available in a generation
   // for the allocation of objects.
   virtual size_t max_capacity() const;
-
-  // If this is a young generation, the maximum number of bytes that can be
-  // allocated in this generation before a GC is triggered.
-  virtual size_t capacity_before_gc() const { return 0; }
 
   // The largest number of contiguous free bytes in the generation,
   // including expansion  (Assumes called at a safepoint.)
@@ -236,27 +228,9 @@ class Generation: public CHeapObj<mtGC> {
   GCStats* gc_stats() const { return _gc_stats; }
   virtual void update_gc_stats(Generation* current_generation, bool full) {}
 
-  // Accessing "marks".
-
-  // This function gives a generation a chance to note a point between
-  // collections.  For example, a contiguous generation might note the
-  // beginning allocation point post-collection, which might allow some later
-  // operations to be optimized.
-  virtual void save_marks() {}
-
-  // This function is "true" iff any no allocations have occurred in the
-  // generation since the last call to "save_marks".
-  virtual bool no_allocs_since_save_marks() = 0;
-
   // Printing
   virtual const char* name() const = 0;
   virtual const char* short_name() const = 0;
-
-  // Iteration.
-
-  // Iterate over all objects in the generation, calling "cl.do_object" on
-  // each.
-  virtual void object_iterate(ObjectClosure* cl);
 
   // Block abstraction.
 
