@@ -283,11 +283,6 @@ protected:
   template <typename OopClosureType>
   void oop_since_save_marks_iterate(OopClosureType* blk);
 
-  // Same as object_iterate, but starting from "mark", which is required
-  // to denote the start of an object.  Objects allocated by
-  // applications of the closure *are* included in the iteration.
-  virtual void object_iterate_from(HeapWord* mark, ObjectClosure* blk);
-
   // Very inefficient implementation.
   HeapWord* block_start_const(const void* p) const override;
   size_t block_size(const HeapWord* p) const override;
