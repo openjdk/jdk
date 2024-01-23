@@ -16445,7 +16445,7 @@ instruct cmpFastLock(rFlagsReg cr, iRegP object, iRegP box, iRegPNoSp tmp, iRegP
   effect(TEMP tmp, TEMP tmp2, TEMP tmp3);
 
   ins_cost(5 * INSN_COST);
-  format %{ "fastlock $object,$box\t! kills $tmp,$tmp2,tmp3" %}
+  format %{ "fastlock $object,$box\t! kills $tmp,$tmp2,$tmp3" %}
 
   ins_encode %{
     __ fast_lock($object$$Register, $box$$Register, $tmp$$Register, $tmp2$$Register, $tmp3$$Register);
