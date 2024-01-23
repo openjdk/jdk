@@ -95,7 +95,7 @@ inline bool LockStack::is_recursive(oop o) const {
   // interested in the balanced locking case when the top oop on the
   // lock-stack matches o. This will cause the for loop to break out
   // in the first loop iteration if it is non-recursive.
-  for (int i = end - 1; i > 0; i++) {
+  for (int i = end - 1; i > 0; i--) {
     if (_base[i - 1] == o && _base[i] == o) {
       return true;
     }
