@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2008,7 +2008,7 @@ void os::init(void) {
 
   Bsd::initialize_system_info();
 
-  // _main_thread points to the thread that created/loaded the JVM.
+  // _main_thread points to the thread that created/loaded the JVM
   Bsd::_main_thread = pthread_self();
 
   Bsd::clock_init();
@@ -2016,7 +2016,7 @@ void os::init(void) {
   os::Posix::init();
 }
 
-// To install functions for atexit system call
+// to install functions for atexit system call
 extern "C" {
   static void perfMemory_exit_helper() {
     perfMemory_exit();
@@ -2036,51 +2036,60 @@ jint os::init_2(void) {
     return JNI_ERR;
   }
 
-  // Check and sets minimum stack sizes against command line options
+  // check and sets minimum stack sizes against command line options
   if (set_minimum_stack_sizes() == JNI_ERR) {
     return JNI_ERR;
   }
 
-  // Not supported.
+  // not supported
   FLAG_SET_ERGO(UseNUMA, false);
   FLAG_SET_ERGO(UseNUMAInterleaving, false);
 
   if (MaxFDLimit) {
-    // set the number of file descriptors to max. print out error
+    // Set the number of file descriptors to max. Print out error
     // if getrlimit/setrlimit fails but continue regardless.
     struct rlimit nbr_files;
     int status = getrlimit(RLIMIT_NOFILE, &nbr_files);
     if (status != 0) {
       log_info(os)("os::init_2 getrlimit failed: %s", os::strerror(errno));
     } else {
-      nbr_files.rlim_cur = nbr_files.rlim_max;
+      rlim_t rlim_original = nbr_files.rlim_cur;
 
-#ifdef __APPLE__
-      // Darwin returns RLIM_INFINITY for rlim_max, but fails with EINVAL if
-      // you attempt to use RLIM_INFINITY. As per setrlimit(2), OPEN_MAX must
-      // be used instead
-      nbr_files.rlim_cur = MIN(OPEN_MAX, nbr_files.rlim_cur);
-#endif
+      // On macOS according to setrlimit(2), OPEN_MAX must be used instead
+      // of RLIM_INFINITY, but testing on macOS >= 10.6, reveals that
+      // we can, in fact, use even RLIM_INFINITY, so try the max value
+      // that the system claims can be used first, same as other BSD OSes.
+      // However, some terminals (ksh) will internally use "int" type
+      // to store this value and since RLIM_INFINITY overflows an "int"
+      // we might end up with a negative value, so cap the system limit max
+      // at INT_MAX instead, just in case, for everyone.
+      nbr_files.rlim_cur = MIN(INT_MAX, nbr_files.rlim_max);
 
       status = setrlimit(RLIMIT_NOFILE, &nbr_files);
+      if (status != 0) {
+        // If that fails then try lowering the limit to either OPEN_MAX
+        // (which is safe) or the original limit, whichever was greater.
+        nbr_files.rlim_cur = MAX(OPEN_MAX, rlim_original);
+        status = setrlimit(RLIMIT_NOFILE, &nbr_files);
+      }
       if (status != 0) {
         log_info(os)("os::init_2 setrlimit failed: %s", os::strerror(errno));
       }
     }
   }
 
-  // at-exit methods are called in the reverse order of their registration.
+  // At-exit methods are called in the reverse order of their registration.
   // atexit functions are called on return from main or as a result of a
   // call to exit(3C). There can be only 32 of these functions registered
   // and atexit() does not set errno.
 
   if (PerfAllowAtExitRegistration) {
-    // only register atexit functions if PerfAllowAtExitRegistration is set.
+    // Only register atexit functions if PerfAllowAtExitRegistration is set.
     // atexit functions can be delayed until process exit time, which
     // can be problematic for embedded VM situations. Embedded VMs should
     // call DestroyJavaVM() to assure that VM resources are released.
 
-    // note: perfMemory_exit_helper atexit function may be removed in
+    // Note: perfMemory_exit_helper atexit function may be removed in
     // the future if the appropriate cleanup code can be added to the
     // VM_Exit VMOperation's doit method.
     if (atexit(perfMemory_exit_helper) != 0) {
@@ -2103,7 +2112,7 @@ jint os::init_2(void) {
 }
 
 int os::active_processor_count() {
-  // User has overridden the number of active processors
+  // user has overridden the number of active processors
   if (ActiveProcessorCount > 0) {
     log_trace(os)("active_processor_count: "
                   "active processor count set by user : %d",
@@ -2156,9 +2165,9 @@ uint os::processor_id() {
 
 void os::set_native_thread_name(const char *name) {
 #if defined(__APPLE__) && MAC_OS_X_VERSION_MIN_REQUIRED > MAC_OS_X_VERSION_10_5
-  // This is only supported in Snow Leopard and beyond
+  // this is only supported in Snow Leopard and beyond
   if (name != nullptr) {
-    // Add a "Java: " prefix to the name
+    // add a "Java: " prefix to the name
     char buf[MAXTHREADNAMESIZE];
     snprintf(buf, sizeof(buf), "Java: %s", name);
     pthread_setname_np(buf);

@@ -82,8 +82,6 @@ class Space: public CHeapObj<mtGC> {
 
   HeapWord* saved_mark_word() const  { return _saved_mark_word; }
 
-  void set_saved_mark_word(HeapWord* p) { _saved_mark_word = p; }
-
   // Returns a subregion of the space containing only the allocated objects in
   // the space.
   virtual MemRegion used_region() const = 0;
@@ -284,11 +282,6 @@ protected:
   // iterated over.
   template <typename OopClosureType>
   void oop_since_save_marks_iterate(OopClosureType* blk);
-
-  // Same as object_iterate, but starting from "mark", which is required
-  // to denote the start of an object.  Objects allocated by
-  // applications of the closure *are* included in the iteration.
-  virtual void object_iterate_from(HeapWord* mark, ObjectClosure* blk);
 
   // Very inefficient implementation.
   HeapWord* block_start_const(const void* p) const override;
