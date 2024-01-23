@@ -536,6 +536,24 @@ void ObjectSynchronizer::enter(Handle obj, BasicLock* lock, JavaThread* current)
         // We unconditionally make room on the lock stack by inflating
         // the least recently locked object on the lock stack.
 
+        // About the choice to inflate least recently locked object.
+        // First we must chose to inflate a lock, either some lock on
+        // the lock-stack or the lock that is currently being entered
+        // (which may or may not be on the lock-stack).
+        // Second the best lock to inflate is a lock which is entered
+        // in a control flow where there are only a very few locks being
+        // used, as the costly part of inflated locking is inflation,
+        // not locking. But this property is entirely program dependent.
+        // Third inflating the lock currently being entered on when it
+        // is not present on the lock-stack will result in a still full
+        // lock-stack. This creates a scenario where every deeper nested
+        // monitorenter must call into the runtime.
+        // The rational here is as follows:
+        // Because we cannot (currently) figure out the second, and want
+        // to avoid the third, we inflate a lock on the lock-stack.
+        // The least recently locked lock is chosen as it is the lock
+        // with the longest critical section.
+
         log_info(fastlock)("LockStack capacity exceeded, inflating.");
         ObjectMonitor* monitor = inflate(current, lock_stack.bottom(), inflate_cause_vm_internal);
         assert(monitor->owner() == current, "must be owner=" PTR_FORMAT " current=" PTR_FORMAT " mark=" PTR_FORMAT,
