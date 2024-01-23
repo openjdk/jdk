@@ -42,6 +42,15 @@ import jdk.internal.jimage.decompressor.ResourceDecompressor.StringsProvider;
  */
 public final class Decompressor {
 
+    private static final ResourceDecompressor ZIP_DECOMPRESSOR;
+    static {
+        try {
+            ZIP_DECOMPRESSOR = new ZipDecompressorFactory().newDecompressor();
+        } catch (IOException io) {
+            throw new IllegalStateException("Couldn't initialize ZipDecompressor");
+        }
+    }
+
     private final Map<Integer, ResourceDecompressor> pluginsCache = new HashMap<>();
 
     public Decompressor() {
@@ -64,21 +73,12 @@ public final class Decompressor {
         do {
             header = CompressedResourceHeader.readFromResource(order, content);
             if (header != null) {
-                ResourceDecompressor decompressor =
-                        pluginsCache.get(header.getDecompressorNameOffset());
-                if (decompressor == null) {
-                    String pluginName =
-                            provider.getString(header.getDecompressorNameOffset());
-                    if (pluginName == null) {
-                        throw new IOException("Plugin name not found");
-                    }
-                    decompressor = ResourceDecompressorRepository.
-                            newResourceDecompressor(pluginName);
-                    if (decompressor == null) {
-                        throw new IOException("Plugin not found: " + pluginName);
-                    }
-
-                    pluginsCache.put(header.getDecompressorNameOffset(), decompressor);
+                int decompressorOffset = header.getDecompressorNameOffset();
+                ResourceDecompressor decompressor;
+                if (decompressorOffset == -1) {
+                    decompressor = ZIP_DECOMPRESSOR;
+                } else {
+                    decompressor = resolveResourceDecompressor(provider, header);
                 }
                 try {
                     content = decompressor.decompress(provider, content,
@@ -89,5 +89,25 @@ public final class Decompressor {
             }
         } while (header != null);
         return content;
+    }
+
+    private ResourceDecompressor resolveResourceDecompressor(StringsProvider provider, CompressedResourceHeader header) throws IOException {
+        ResourceDecompressor decompressor;
+        decompressor = pluginsCache.get(header.getDecompressorNameOffset());
+        if (decompressor == null) {
+            String pluginName =
+                    provider.getString(header.getDecompressorNameOffset());
+            if (pluginName == null) {
+                throw new IOException("Plugin name not found");
+            }
+            decompressor = ResourceDecompressorRepository.
+                    newResourceDecompressor(pluginName);
+            if (decompressor == null) {
+                throw new IOException("Plugin not found: " + pluginName);
+            }
+
+            pluginsCache.put(header.getDecompressorNameOffset(), decompressor);
+        }
+        return decompressor;
     }
 }

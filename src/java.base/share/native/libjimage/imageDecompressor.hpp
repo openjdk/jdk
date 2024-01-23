@@ -54,7 +54,7 @@
 struct ResourceHeader {
     /* magic bytes that identifies a compressed resource header*/
     static const u4 resource_header_magic = 0xCAFEFAFA;
-    static const u4 tiny_resource_header_magic = 0xCAFEDADA;
+    static const u4 tiny_resource_header_magic = 0xCAFEF0F0;
     u8 _size;    // Resource size
     u8 _uncompressed_size;  // Expected uncompressed size
     u4 _decompressor_name_offset;    // Strings table decompressor offset
@@ -86,6 +86,7 @@ private:
      * that can handle resource decompression.
      */
     static ImageDecompressor** _decompressors;
+    static ImageDecompressor*  _zip_decompressor;
     /**
      * Num of decompressors
      */

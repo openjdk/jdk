@@ -33,6 +33,7 @@
 #include "jvm.h"
 #include "imageDecompressor.hpp"
 #include "endian.hpp"
+#include <stdio.h>
 #ifdef WIN32
 #include <windows.h>
 #else
@@ -74,6 +75,8 @@ static void* findEntry(const char* name) {
  */
 int ImageDecompressor::_decompressors_num = 0;
 ImageDecompressor** ImageDecompressor::_decompressors = NULL;
+ImageDecompressor* ImageDecompressor::_zip_decompressor = NULL;
+
 void ImageDecompressor::image_decompressor_init() {
     if (_decompressors == NULL) {
         ZipInflateFully = (ZipInflateFully_t) findEntry("ZIP_InflateFully");
@@ -82,6 +85,7 @@ void ImageDecompressor::image_decompressor_init() {
         _decompressors = new ImageDecompressor*[_decompressors_num];
         _decompressors[0] = new ZipDecompressor("zip");
         _decompressors[1] = new SharedStringDecompressor("compact-cp");
+        _zip_decompressor = _decompressors[0];
     }
 }
 
@@ -153,13 +157,17 @@ void ImageDecompressor::decompress_resource(u1* compressed, u1* uncompressed,
         u1* compressed_resource_base = compressed_resource;
         u4 magic = getU4(compressed_resource, endian);
         ResourceHeader _header;
+        ImageDecompressor* decompressor;
         if (magic == ResourceHeader::tiny_resource_header_magic) {
-            u2 size_and_is_terminal = getU2(compressed_resource + 4, endian);
-            _header._size = size_and_is_terminal & 0x7FFF;
+            _header._size = getU2(compressed_resource + 4, endian);
             _header._uncompressed_size = getU2(compressed_resource + 6, endian);
-            _header._decompressor_name_offset = getU2(compressed_resource + 8, endian);
-            _header._is_terminal = (size_and_is_terminal & 0x8000) ? 1 : 0;
-            compressed_resource += 10;
+            compressed_resource += 8;
+
+            // Tiny headers imply use of zip compression and is_terminal == 1
+            image_decompressor_init();
+            decompressor = _zip_decompressor;
+            _header._is_terminal = 1;
+            assert(_header._uncompressed_size == uncompressed_size && "uncompressed size mismatch");
         } else if (magic == ResourceHeader::resource_header_magic) {
             _header._size = getU8(compressed_resource + 4, endian);
             _header._uncompressed_size = getU8(compressed_resource + 12, endian);
@@ -167,27 +175,37 @@ void ImageDecompressor::decompress_resource(u1* compressed, u1* uncompressed,
             compressed_resource += 28;
             _header._is_terminal = *compressed_resource;
             compressed_resource += 1;
+
+            // Retrieve the decompressor name
+            const char* decompressor_name = strings->get(_header._decompressor_name_offset);
+            assert(decompressor_name && "image decompressor not found");
+            // Retrieve the decompressor instance
+            decompressor = get_decompressor(decompressor_name);
+            assert(decompressor && "image decompressor not found");
         } else {
             break;
         }
         // decompressed_resource array contains the result of decompression
-        decompressed_resource = new u1[(size_t) _header._uncompressed_size];
-        // Retrieve the decompressor name
-        const char* decompressor_name = strings->get(_header._decompressor_name_offset);
-        assert(decompressor_name && "image decompressor not found");
-        // Retrieve the decompressor instance
-        ImageDecompressor* decompressor = get_decompressor(decompressor_name);
-        assert(decompressor && "image decompressor not found");
+        if (_header._is_terminal && _header._uncompressed_size == uncompressed_size) {
+            decompressed_resource = uncompressed;
+        } else {
+            decompressed_resource = new u1[(size_t) _header._uncompressed_size];
+        }
         // Ask the decompressor to decompress the compressed content
         decompressor->decompress_resource(compressed_resource, decompressed_resource,
             &_header, strings);
         if (compressed_resource_base != compressed) {
             delete[] compressed_resource_base;
         }
+        if (_header._is_terminal) {
+            break;
+        }
         compressed_resource = decompressed_resource;
     }
-    memcpy(uncompressed, decompressed_resource, (size_t) uncompressed_size);
-    delete[] decompressed_resource;
+    if (decompressed_resource != uncompressed) {
+        memcpy(uncompressed, decompressed_resource, (size_t) uncompressed_size);
+        delete[] decompressed_resource;
+    }
 }
 
 // Zip decompressor
