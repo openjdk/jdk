@@ -267,7 +267,6 @@ public:
 
   // Produce a report on output.
   static void report(VirtualMemory& mem, outputStream* output, size_t scale = K);
-  static void report_new(VirtualMemory& mem, outputStream* output, size_t scale = K);
   static const VirtualMemory& virtual_memory() {
     return *_virt_mem;
   }
