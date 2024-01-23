@@ -148,7 +148,7 @@ public final class Jlink {
         private final Set<String> modules;
         private final ModuleFinder finder;
         private final boolean linkFromRuntimeImage;
-        private final boolean singleHop;
+        private final boolean ignoreModifiedRuntime;
 
         /**
          * jlink configuration,
@@ -161,12 +161,12 @@ public final class Jlink {
                                   Set<String> modules,
                                   ModuleFinder finder,
                                   boolean linkFromRuntimeImage,
-                                  boolean singleHop) {
+                                  boolean ignoreModifiedRuntime) {
             this.output = output;
             this.modules = Objects.requireNonNull(modules);
             this.finder = finder;
             this.linkFromRuntimeImage = linkFromRuntimeImage;
-            this.singleHop = singleHop;
+            this.ignoreModifiedRuntime = ignoreModifiedRuntime;
         }
 
         /**
@@ -195,8 +195,8 @@ public final class Jlink {
             return linkFromRuntimeImage;
         }
 
-        public boolean singleHop() {
-            return singleHop;
+        public boolean ignoreModifiedRuntime() {
+            return ignoreModifiedRuntime;
         }
 
         /**

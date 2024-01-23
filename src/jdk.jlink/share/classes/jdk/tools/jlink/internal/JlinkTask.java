@@ -200,7 +200,7 @@ public class JlinkTask {
             task.options.ignoreSigning = true;
         }, "--ignore-signing-information"),
         new Option<JlinkTask>(false, (task, opt, arg) -> {
-            task.options.runImageSingleHop = false;
+            task.options.ignoreModifiedRuntime = true;
         }, true, "--ignore-modified-runtime"),
     };
 
@@ -243,7 +243,7 @@ public class JlinkTask {
         boolean ignoreSigning = false;
         boolean bindServices = false;
         boolean suggestProviders = false;
-        boolean runImageSingleHop = true;
+        boolean ignoreModifiedRuntime = false;
     }
 
     public static final String OPTIONS_RESOURCE = "jdk/tools/jlink/internal/options";
@@ -426,7 +426,7 @@ public class JlinkTask {
                                       roots,
                                       finder,
                                       options.modulePath.isEmpty(),
-                                      options.runImageSingleHop);
+                                      options.ignoreModifiedRuntime);
     }
 
     private void createImage(JlinkConfiguration config) throws Exception {
@@ -669,7 +669,7 @@ public class JlinkTask {
                         .orElse(Runtime.version());
 
         Set<Archive> archives = mods.entrySet().stream()
-                .map(e -> config.linkFromRuntimeImage() ? new JRTArchive(e.getKey(), e.getValue(), config.singleHop())
+                .map(e -> config.linkFromRuntimeImage() ? new JRTArchive(e.getKey(), e.getValue(), !config.ignoreModifiedRuntime())
                                                         : newArchive(e.getKey(), e.getValue(), version, ignoreSigning))
                 .collect(Collectors.toSet());
 
