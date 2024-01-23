@@ -99,8 +99,7 @@ void C2FastUnlockLightweightStub::emit(C2_MacroAssembler& masm) {
     // Restore held monitor count.
     __ increment(Address(_thread, JavaThread::held_monitor_count_offset()));
     // increment will always result in ZF = 0 (no overflows).
-    // continuation is the slow_path.
-    __ jmp(continuation());
+    __ jmp(slow_path_continuation());
   }
 
   { // Handle monitor medium path.
@@ -140,7 +139,7 @@ void C2FastUnlockLightweightStub::emit(C2_MacroAssembler& masm) {
 
     __ bind(fix_zf_and_unlocked);
     __ xorl(rax, rax);
-    __ jmp(unlocked());
+    __ jmp(unlocked_continuation());
   }
 }
 

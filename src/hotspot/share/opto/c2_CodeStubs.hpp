@@ -105,7 +105,7 @@ private:
   Register _thread;
   Label _push_and_slow_path;
   Label _check_successor;
-  Label _unlocked;
+  Label _unlocked_continuation;
 public:
   C2FastUnlockLightweightStub(Register obj, Register mark, Register t, Register thread) : C2CodeStub(),
     _obj(obj), _mark(mark), _t(t), _thread(thread) {}
@@ -113,7 +113,8 @@ public:
   void emit(C2_MacroAssembler& masm);
   Label& push_and_slow_path() { return _push_and_slow_path; }
   Label& check_successor() { return _check_successor; }
-  Label& unlocked() { return _unlocked; }
+  Label& unlocked_continuation() { return _unlocked_continuation; }
+  Label& slow_path_continuation() { return continuation(); }
 };
 
 #ifdef _LP64

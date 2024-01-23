@@ -1155,7 +1155,7 @@ void C2_MacroAssembler::fast_unlock_lightweight(Register obj, Register reg_rax, 
 
   bind(unlocked);
   if (stub != nullptr) {
-    bind(stub->unlocked());
+    bind(stub->unlocked_continuation());
   }
 
 #ifdef ASSERT
@@ -1166,7 +1166,7 @@ void C2_MacroAssembler::fast_unlock_lightweight(Register obj, Register reg_rax, 
 #endif
 
   if (stub != nullptr) {
-    bind(stub->continuation());
+    bind(stub->slow_path_continuation());
   }
 #ifdef ASSERT
   // Check that stub->continuation() label is reached with ZF not set.
