@@ -1642,6 +1642,15 @@ Specifies the path and name of the class data sharing (CDS) archive file
 See \f[B]Application Class Data Sharing\f[R].
 .RE
 .TP
+\f[V]-XX:+VerifySharedSpaces\f[R]
+If this option is specified, the JVM will load a CDS archive file only
+if it passes an integrity check based on CRC32 checksums.
+The purpose of this flag is to check for unintentional damage to CDS
+archive files in transmission or storage.
+To guarantee the security and proper operation of CDS, the user must
+ensure that the CDS archive files used by Java applications cannot be
+modified without proper authorization.
+.TP
 .B \f[CB]\-XX:SharedArchiveConfigFile\f[R]=\f[I]shared_config_file\f[R]
 Specifies additional shared data added to the archive file.
 .RS
