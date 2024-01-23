@@ -28,6 +28,7 @@ import static jdk.tools.jlink.internal.TaskHelper.JLINK_BUNDLE;
 
 import java.io.BufferedInputStream;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
@@ -574,8 +575,9 @@ public class JlinkTask {
 
         // Perform some setup for run-time image based links
         if (config.linkFromRuntimeImage()) {
-            // Check if the current run-time image is created from packaged modules.
-            // If it isn't, fail the link as recursive links are not allowed.
+            // Check if the current run-time image has already been created using
+            // a run-time image link. If it is, fail the link as recursive
+            // links are not allowed.
             try (InputStream in = JlinkTask.class.getModule().getResourceAsStream(RUNIMAGE_LINK_STAMP)) {
                 if (in != null) {
                     String msg = taskHelper.getMessage("err.runtime.link.recursive");
@@ -585,14 +587,24 @@ public class JlinkTask {
 
             // Print info message when a run-image link is being performed
             if (log != null) {
-                String verboseHint = " " + taskHelper.getMessage("runtime.link.verbose.hint");
+                Path detailsFile = Path.of("runtime-jlink-details.txt");
+                String verboseHint = " " + taskHelper.getMessage("runtime.link.info.hint", detailsFile.toString());
                 if (verbose) {
                     // Don't mention the hint if we already use --verbose.
                     verboseHint = "";
                 }
                 log.println(taskHelper.getMessage("runtime.link.info", verboseHint));
+                List<String> mergedCLIArgs = getMergedCliArgs(config.linkFromRuntimeImage());
                 if (verbose) {
-                    logPackagedModuleEquivalent(log, getMergedCliArgs(config.linkFromRuntimeImage()), opts);
+                    // Log to standard out with detailed info
+                    logPackagedModuleEquivalent(log, mergedCLIArgs, opts, verbose);
+                } else {
+                    // Log to a file 'runtime-jlink-details.txt' with the details
+                    // how the runtime-derived image can get produced using
+                    // packaged modules
+                    try (PrintWriter fileOut = new PrintWriter(new FileOutputStream(detailsFile.toFile()))) {
+                        logPackagedModuleEquivalent(fileOut, mergedCLIArgs, opts, verbose);
+                    }
                 }
             }
         }
@@ -729,7 +741,7 @@ public class JlinkTask {
      *            The parsed options of the current command line arguments.
      */
     private static void logPackagedModuleEquivalent(PrintWriter logWriter,
-            List<String> mergedCLI, OptionsValues opts) {
+            List<String> mergedCLI, OptionsValues opts, boolean isVerbose) {
         // parse options, produce plugins maps.
         TaskHelper scratchTaskHelper = new TaskHelper(JLINK_BUNDLE);
         OptionsHelper<JlinkTask> scratchOptionsHelper = scratchTaskHelper.newOptionsHelper(JlinkTask.class, recognizedOptions);
@@ -801,6 +813,9 @@ public class JlinkTask {
             }
         }
         logWriter.println();
+        if (isVerbose) {
+            logWriter.println(); // empty line to separate from modules output
+        }
     }
 
     private static List<String> getMergedCliArgs(boolean isRunTimeImageLink) throws IOException {
