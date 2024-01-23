@@ -474,15 +474,15 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_storeStoreFence:
   case vmIntrinsics::_fullFence:                return inline_unsafe_fence(intrinsic_id());
 
-  case vmIntrinsics::_isConstantExpressionZ:
-  case vmIntrinsics::_isConstantExpressionB:
-  case vmIntrinsics::_isConstantExpressionS:
-  case vmIntrinsics::_isConstantExpressionC:
-  case vmIntrinsics::_isConstantExpressionI:
-  case vmIntrinsics::_isConstantExpressionJ:
-  case vmIntrinsics::_isConstantExpressionF:
-  case vmIntrinsics::_isConstantExpressionD:
-  case vmIntrinsics::_isConstantExpressionL:    return inline_isCompileConstant();
+  case vmIntrinsics::_isCompileConstantZ:
+  case vmIntrinsics::_isCompileConstantB:
+  case vmIntrinsics::_isCompileConstantS:
+  case vmIntrinsics::_isCompileConstantC:
+  case vmIntrinsics::_isCompileConstantI:
+  case vmIntrinsics::_isCompileConstantJ:
+  case vmIntrinsics::_isCompileConstantF:
+  case vmIntrinsics::_isCompileConstantD:
+  case vmIntrinsics::_isCompileConstantL:    return inline_isCompileConstant();
 
   case vmIntrinsics::_onSpinWait:               return inline_onspinwait();
 
@@ -674,8 +674,6 @@ bool LibraryCallKit::try_to_inline(int predicate) {
 
   case vmIntrinsics::_profileBoolean:
     return inline_profileBoolean();
-  case vmIntrinsics::_isCompileConstant:
-    return inline_isCompileConstant();
 
   case vmIntrinsics::_countPositives:
     return inline_countPositives();

@@ -25,6 +25,7 @@
 
 package java.lang.invoke;
 
+import jdk.internal.misc.JitCompiler;
 import jdk.internal.vm.annotation.DontInline;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.Hidden;
@@ -619,7 +620,7 @@ class Invokers {
     @ForceInline
     /*non-public*/
     static void checkCustomized(MethodHandle mh) {
-        if (MethodHandleImpl.isCompileConstant(mh)) {
+        if (JitCompiler.isCompileConstant(mh)) {
             return; // no need to customize a MH when the instance is known to JIT
         }
         if (mh.form.customized == null) { // fast approximate check that the underlying form is already customized

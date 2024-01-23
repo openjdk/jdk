@@ -724,15 +724,15 @@ bool C2Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   case vmIntrinsics::_storeFence:
   case vmIntrinsics::_storeStoreFence:
   case vmIntrinsics::_fullFence:
-  case vmIntrinsics::_isConstantExpressionZ:
-  case vmIntrinsics::_isConstantExpressionB:
-  case vmIntrinsics::_isConstantExpressionS:
-  case vmIntrinsics::_isConstantExpressionC:
-  case vmIntrinsics::_isConstantExpressionI:
-  case vmIntrinsics::_isConstantExpressionJ:
-  case vmIntrinsics::_isConstantExpressionF:
-  case vmIntrinsics::_isConstantExpressionD:
-  case vmIntrinsics::_isConstantExpressionL:
+  case vmIntrinsics::_isCompileConstantZ:
+  case vmIntrinsics::_isCompileConstantB:
+  case vmIntrinsics::_isCompileConstantS:
+  case vmIntrinsics::_isCompileConstantC:
+  case vmIntrinsics::_isCompileConstantI:
+  case vmIntrinsics::_isCompileConstantJ:
+  case vmIntrinsics::_isCompileConstantF:
+  case vmIntrinsics::_isCompileConstantD:
+  case vmIntrinsics::_isCompileConstantL:
   case vmIntrinsics::_currentCarrierThread:
   case vmIntrinsics::_currentThread:
   case vmIntrinsics::_setCurrentThread:
@@ -801,7 +801,6 @@ bool C2Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   case vmIntrinsics::_updateBytesAdler32:
   case vmIntrinsics::_updateByteBufferAdler32:
   case vmIntrinsics::_profileBoolean:
-  case vmIntrinsics::_isCompileConstant:
   case vmIntrinsics::_Preconditions_checkIndex:
   case vmIntrinsics::_Preconditions_checkLongIndex:
   case vmIntrinsics::_getObjectSize:

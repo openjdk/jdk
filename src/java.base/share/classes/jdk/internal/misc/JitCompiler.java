@@ -32,9 +32,9 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
 public class JitCompiler {
     /**
      * Determine if {@code expr} can be evaluated to a constant value by the JIT
-     * compiler. For example, {@code isConstantExpression(5)} will be evaluated
+     * compiler. For example, {@code isCompileConstant(5)} will be evaluated
      * to {@code true} by the JIT compiler, while
-     * {@code isConstantExpression(random.nextLong())} will likely be evaluated
+     * {@code isCompileConstant(random.nextLong())} will likely be evaluated
      * to {@code false}.
      *
      * <p>Note that the JIT compiler is responsible to change the return value
@@ -53,71 +53,71 @@ public class JitCompiler {
      *         always evaluated to a constant value, {@code false} otherwise
      */
     @IntrinsicCandidate
-    public static boolean isConstantExpression(boolean expr) {
+    public static boolean isCompileConstant(boolean expr) {
         return false;
     }
 
     /**
-     * @see #isConstantExpression(boolean)
+     * @see #isCompileConstant(boolean)
      */
     @IntrinsicCandidate
-    public static boolean isConstantExpression(byte expr) {
+    public static boolean isCompileConstant(byte expr) {
         return false;
     }
 
     /**
-     * @see #isConstantExpression(boolean)
+     * @see #isCompileConstant(boolean)
      */
     @IntrinsicCandidate
-    public static boolean isConstantExpression(short expr) {
+    public static boolean isCompileConstant(short expr) {
         return false;
     }
 
     /**
-     * @see #isConstantExpression(boolean)
+     * @see #isCompileConstant(boolean)
      */
     @IntrinsicCandidate
-    public static boolean isConstantExpression(char expr) {
+    public static boolean isCompileConstant(char expr) {
         return false;
     }
 
     /**
-     * @see #isConstantExpression(boolean)
+     * @see #isCompileConstant(boolean)
      */
     @IntrinsicCandidate
-    public static boolean isConstantExpression(int expr) {
+    public static boolean isCompileConstant(int expr) {
         return false;
     }
 
     /**
-     * @see #isConstantExpression(boolean)
+     * @see #isCompileConstant(boolean)
      */
     @IntrinsicCandidate
-    public static boolean isConstantExpression(long expr) {
+    public static boolean isCompileConstant(long expr) {
         return false;
     }
 
     /**
-     * @see #isConstantExpression(boolean)
+     * @see #isCompileConstant(boolean)
      */
     @IntrinsicCandidate
-    public static boolean isConstantExpression(float expr) {
+    public static boolean isCompileConstant(float expr) {
         return false;
     }
 
     /**
-     * @see #isConstantExpression(boolean)
+     * @see #isCompileConstant(boolean)
      */
     @IntrinsicCandidate
-    public static boolean isConstantExpression(double expr) {
+    public static boolean isCompileConstant(double expr) {
         return false;
     }
 
     /**
-     * @see #isConstantExpression(boolean)
+     * @see #isCompileConstant(boolean)
      */
     @IntrinsicCandidate
-    public static boolean isConstantExpression(Object expr) {
+    public static boolean isCompileConstant(Object expr) {
         return false;
     }
 }

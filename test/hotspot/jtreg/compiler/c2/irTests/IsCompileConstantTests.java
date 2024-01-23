@@ -28,13 +28,13 @@ import jdk.internal.misc.JitCompiler;
 /*
  * @test
  * @bug 8324433
- * @summary Test that isConstantExpression is able to constant-fold the computation
+ * @summary Test that isCompileConstant is able to constant-fold the computation
  *          regarding constant inputs.
  * @modules java.base/jdk.internal.misc
  * @library /test/lib /
- * @run driver compiler.c2.irTests.IsConstantExpressionTests
+ * @run driver compiler.c2.irTests.IsCompileConstantTests
  */
-public class IsConstantExpressionTests {
+public class IsCompileConstantTests {
     private record Point(int x, int y) {}
 
     private static final boolean BOOL_CONSTANT = true;
@@ -177,7 +177,7 @@ public class IsConstantExpressionTests {
 
     @ForceInline
     public int process(boolean input) {
-        if (JitCompiler.isConstantExpression(input)) {
+        if (JitCompiler.isCompileConstant(input)) {
             if (input) {
                 return 125;
             } else {
@@ -190,7 +190,7 @@ public class IsConstantExpressionTests {
 
     @ForceInline
     public int process(byte input) {
-        if (JitCompiler.isConstantExpression(input)) {
+        if (JitCompiler.isCompileConstant(input)) {
             return switch(input) {
                 case 0 -> 125;
                 case 1 -> 341;
@@ -205,7 +205,7 @@ public class IsConstantExpressionTests {
 
     @ForceInline
     public int process(short input) {
-        if (JitCompiler.isConstantExpression(input)) {
+        if (JitCompiler.isCompileConstant(input)) {
             return switch(input) {
                 case 0 -> 125;
                 case 1 -> 341;
@@ -220,7 +220,7 @@ public class IsConstantExpressionTests {
 
     @ForceInline
     public int process(char input) {
-        if (JitCompiler.isConstantExpression(input)) {
+        if (JitCompiler.isCompileConstant(input)) {
             return switch(input) {
                 case 0 -> 125;
                 case 1 -> 341;
@@ -235,7 +235,7 @@ public class IsConstantExpressionTests {
 
     @ForceInline
     public int process(int input) {
-        if (JitCompiler.isConstantExpression(input)) {
+        if (JitCompiler.isCompileConstant(input)) {
             return switch(input) {
                 case 0 -> 125;
                 case 1 -> 341;
@@ -250,7 +250,7 @@ public class IsConstantExpressionTests {
 
     @ForceInline
     public int process(long input) {
-        if (JitCompiler.isConstantExpression(input)) {
+        if (JitCompiler.isCompileConstant(input)) {
             if (input == 0) {
                 return 125;
             } else if (input == 1) {
@@ -269,7 +269,7 @@ public class IsConstantExpressionTests {
 
     @ForceInline
     public int process(float input) {
-        if (JitCompiler.isConstantExpression(input)) {
+        if (JitCompiler.isCompileConstant(input)) {
             if (input == 0) {
                 return 125;
             } else if (input == 1) {
@@ -288,7 +288,7 @@ public class IsConstantExpressionTests {
 
     @ForceInline
     public int process(double input) {
-        if (JitCompiler.isConstantExpression(input)) {
+        if (JitCompiler.isCompileConstant(input)) {
             if (input == 0) {
                 return 125;
             } else if (input == 1) {
@@ -307,7 +307,7 @@ public class IsConstantExpressionTests {
 
     @ForceInline
     public int process(Point input) {
-        if (JitCompiler.isConstantExpression(input)) {
+        if (JitCompiler.isCompileConstant(input)) {
             return input.hashCode();
         }
 
@@ -315,7 +315,7 @@ public class IsConstantExpressionTests {
     }
 
     public static void main(String[] args) {
-        var test = new TestFramework(IsConstantExpressionTests.class);
+        var test = new TestFramework(IsCompileConstantTests.class);
         test.addFlags("--add-exports=java.base/jdk.internal.misc=ALL-UNNAMED");
         test.start();
     }

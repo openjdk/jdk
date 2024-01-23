@@ -639,9 +639,6 @@ class methodHandle;
   do_intrinsic(_profileBoolean, java_lang_invoke_MethodHandleImpl, profileBoolean_name, profileBoolean_signature, F_S)  \
    do_name(     profileBoolean_name,                             "profileBoolean")                                      \
    do_signature(profileBoolean_signature,                        "(Z[I)Z")                                              \
-  do_intrinsic(_isCompileConstant, java_lang_invoke_MethodHandleImpl, isCompileConstant_name, isCompileConstant_signature, F_S) \
-   do_name(     isCompileConstant_name,                          "isCompileConstant")                                   \
-   do_alias(    isCompileConstant_signature,                      object_boolean_signature)                             \
                                                                                                                         \
   do_intrinsic(_getObjectSize,   sun_instrument_InstrumentationImpl, getObjectSize_name, getObjectSize_signature, F_RN) \
    do_name(     getObjectSize_name,                               "getObjectSize0")                                     \
@@ -909,32 +906,41 @@ class methodHandle;
    do_signature(getAndAddShort_signature,                               "(Ljava/lang/Object;JS)S" )                           \
   do_intrinsic(_getAndSetInt,             jdk_internal_misc_Unsafe,     getAndSetInt_name, getAndSetInt_signature, F_R)       \
    do_name(     getAndSetInt_name,                                      "getAndSetInt")                                       \
-   do_alias(    getAndSetInt_signature,                                 /*"(Ljava/lang/Object;JI)I"*/ getAndAddInt_signature) \
+   do_alias(    getAndSetInt_signature,                                 /*"(Ljava/lang/Object;JI)I"*/ getAndAddInt_signature)   \
   do_intrinsic(_getAndSetLong,            jdk_internal_misc_Unsafe,     getAndSetLong_name, getAndSetLong_signature, F_R)     \
    do_name(     getAndSetLong_name,                                     "getAndSetLong")                                      \
-   do_alias(    getAndSetLong_signature,                                /*"(Ljava/lang/Object;JJ)J"*/ getAndAddLong_signature)\
+   do_alias(    getAndSetLong_signature,                                /*"(Ljava/lang/Object;JJ)J"*/ getAndAddLong_signature)  \
   do_intrinsic(_getAndSetByte,            jdk_internal_misc_Unsafe,     getAndSetByte_name, getAndSetByte_signature, F_R)     \
    do_name(     getAndSetByte_name,                                     "getAndSetByte")                                      \
-   do_alias(    getAndSetByte_signature,                                /*"(Ljava/lang/Object;JB)B"*/ getAndAddByte_signature)\
+   do_alias(    getAndSetByte_signature,                                /*"(Ljava/lang/Object;JB)B"*/ getAndAddByte_signature)  \
   do_intrinsic(_getAndSetShort,           jdk_internal_misc_Unsafe,     getAndSetShort_name, getAndSetShort_signature, F_R)   \
    do_name(     getAndSetShort_name,                                    "getAndSetShort")                                     \
    do_alias(    getAndSetShort_signature,                               /*"(Ljava/lang/Object;JS)S"*/ getAndAddShort_signature) \
   do_intrinsic(_getAndSetReference,       jdk_internal_misc_Unsafe,     getAndSetReference_name, getAndSetReference_signature, F_R) \
-   do_name(     getAndSetReference_name,                                "getAndSetReference")                                 \
+   do_name(     getAndSetReference_name,                                "getAndSetReference")                                  \
    do_signature(getAndSetReference_signature,                           "(Ljava/lang/Object;JLjava/lang/Object;)Ljava/lang/Object;" ) \
                                                                                                                               \
-  do_class(jdk_internal_misc_JitCompiler, "jdk/internal/misc/JitCompiler")                                                    \
-  do_intrinsic(_isConstantExpressionZ,    jdk_internal_misc_JitCompiler,isConstantExpression_name, bool_bool_signature, F_S)  \
-  do_intrinsic(_isConstantExpressionB,    jdk_internal_misc_JitCompiler,isConstantExpression_name, byte_bool_signature, F_S)  \
-  do_intrinsic(_isConstantExpressionS,    jdk_internal_misc_JitCompiler,isConstantExpression_name, short_bool_signature, F_S) \
-  do_intrinsic(_isConstantExpressionC,    jdk_internal_misc_JitCompiler,isConstantExpression_name, char_bool_signature, F_S)  \
-  do_intrinsic(_isConstantExpressionI,    jdk_internal_misc_JitCompiler,isConstantExpression_name, int_bool_signature, F_S)   \
-  do_intrinsic(_isConstantExpressionJ,    jdk_internal_misc_JitCompiler,isConstantExpression_name, long_bool_signature, F_S)  \
-  do_intrinsic(_isConstantExpressionF,    jdk_internal_misc_JitCompiler,isConstantExpression_name, float_bool_signature, F_S) \
-  do_intrinsic(_isConstantExpressionD,    jdk_internal_misc_JitCompiler,isConstantExpression_name, double_bool_signature, F_S)\
-  do_intrinsic(_isConstantExpressionL,    jdk_internal_misc_JitCompiler,isConstantExpression_name, object_boolean_signature, F_S) \
-   do_name(     isConstantExpression_name,                              "isConstantExpression")                               \
-                                                                                                                              \
+  do_class(jdk_internal_misc_JitCompiler, "jdk/internal/misc/JitCompiler")                                                                     \
+  do_intrinsic(_isCompileConstantZ,       jdk_internal_misc_JitCompiler,isCompileConstant_name, isCompileConstantZ_signature, F_S)             \
+   do_alias(    isCompileConstantZ_signature,                           bool_bool_signature)                                                   \
+  do_intrinsic(_isCompileConstantB,       jdk_internal_misc_JitCompiler,isCompileConstant_name, isCompileConstantB_signature, F_S)             \
+   do_alias(    isCompileConstantB_signature,                           byte_bool_signature)                                                   \
+  do_intrinsic(_isCompileConstantS,       jdk_internal_misc_JitCompiler,isCompileConstant_name, isCompileConstantS_signature, F_S)             \
+   do_alias(    isCompileConstantS_signature,                           short_bool_signature)                                                  \
+  do_intrinsic(_isCompileConstantC,       jdk_internal_misc_JitCompiler,isCompileConstant_name, isCompileConstantC_signature, F_S)             \
+   do_alias(    isCompileConstantC_signature,                           char_bool_signature)                                                   \
+  do_intrinsic(_isCompileConstantI,       jdk_internal_misc_JitCompiler,isCompileConstant_name, isCompileConstantI_signature, F_S)             \
+   do_alias(    isCompileConstantI_signature,                           int_bool_signature)                                                    \
+  do_intrinsic(_isCompileConstantJ,       jdk_internal_misc_JitCompiler,isCompileConstant_name, isCompileConstantJ_signature, F_S)             \
+   do_alias(    isCompileConstantJ_signature,                           long_bool_signature)                                                   \
+  do_intrinsic(_isCompileConstantF,       jdk_internal_misc_JitCompiler,isCompileConstant_name, isCompileConstantF_signature, F_S)             \
+   do_alias(    isCompileConstantF_signature,                           float_bool_signature)                                                  \
+  do_intrinsic(_isCompileConstantD,       jdk_internal_misc_JitCompiler,isCompileConstant_name, isCompileConstantD_signature, F_S)             \
+   do_alias(    isCompileConstantD_signature,                           double_bool_signature)                                                 \
+  do_intrinsic(_isCompileConstantL,       jdk_internal_misc_JitCompiler,isCompileConstant_name, isCompileConstantL_signature, F_S)             \
+   do_alias(    isCompileConstantL_signature,                           object_boolean_signature)                                              \
+   do_name(     isCompileConstant_name,                                 "isCompileConstant")                                                   \
+                                                                                                                                               \
   /* Vector API intrinsification support */                                                                                                    \
                                                                                                                                                \
   do_intrinsic(_VectorUnaryOp, jdk_internal_vm_vector_VectorSupport, vector_unary_op_name, vector_unary_op_sig, F_S)                           \
