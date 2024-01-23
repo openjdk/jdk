@@ -135,7 +135,7 @@ public:
   static size_t default_static_hugepage_size()  { return _static_hugepage_support.default_hugepage_size(); }
   static bool supports_static_hugepages()       { return default_static_hugepage_size() > 0 && !_static_hugepage_support.inconsistent(); }
 
-  static bool supports_thp()                    { return thp_mode() == THPMode::madvise || thp_mode() == THPMode::always; }
+  static bool supports_thp()                    { return (thp_mode() == THPMode::madvise || thp_mode() == THPMode::always) && thp_pagesize() != 0; }
   static THPMode thp_mode()                     { return _thp_support.mode(); }
   static size_t thp_pagesize()                  { return _thp_support.pagesize(); }
 

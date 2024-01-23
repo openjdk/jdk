@@ -88,7 +88,7 @@ class HugePageConfiguration {
 
     // Returns true if the THP support is enabled
     public boolean supportsTHP() {
-        return _thpMode == THPMode.always || _thpMode == THPMode.madvise;
+        return (_thpMode == THPMode.always || _thpMode == THPMode.madvise) && _thpPageSize != 0;
     }
 
     public ShmemTHPMode getShmemThpMode() {
