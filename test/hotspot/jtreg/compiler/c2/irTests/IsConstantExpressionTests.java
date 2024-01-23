@@ -27,8 +27,9 @@ import jdk.internal.misc.JitCompiler;
 
 /*
  * @test
- * @bug 8267265
- * @summary Test that Ideal transformations of DivLNode* are being performed as expected.
+ * @bug 8324433
+ * @summary Test that isConstantExpression is able to constant-fold the computation
+ *          regarding constant inputs.
  * @modules java.base/jdk.internal.misc
  * @library /test/lib /
  * @run driver compiler.c2.irTests.IsConstantExpressionTests
