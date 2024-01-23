@@ -53,7 +53,7 @@
   /*  We need to leave "breathing space" for the data segment when             */   \
   /*  placing the java heap. If the MaxExpectedDataSegmentSize setting         */   \
   /*  is too small, we might run into resource issues creating many native     */   \
-  /*  threads, if it is too large, we reduce our chance of getting a low hea   */   \
+  /*  threads, if it is too large, we reduce our chance of getting a low heap  */   \
   /*  address (needed for compressed Oops).                                    */   \
   product(uintx, MaxExpectedDataSegmentSize, 8*G,                                   \
           "Maximum expected Data Segment Size.")                                    \
