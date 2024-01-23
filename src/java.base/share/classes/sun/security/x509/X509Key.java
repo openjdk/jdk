@@ -36,7 +36,6 @@ import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.X509EncodedKeySpec;
-import java.util.Objects;
 
 import sun.security.util.HexDumpEncoder;
 import sun.security.util.*;
@@ -101,7 +100,7 @@ public class X509Key implements PublicKey, DerEncoder {
      * data is stored and transmitted losslessly, but no knowledge
      * about this particular algorithm is available.
      */
-    private X509Key(AlgorithmId algid, BitArray key) {
+    public X509Key(AlgorithmId algid, BitArray key) {
         this.algid = algid;
         setKey(key);
         encode();
@@ -127,7 +126,7 @@ public class X509Key implements PublicKey, DerEncoder {
      * Gets the key. The key may or may not be byte aligned.
      * @return a BitArray containing the key.
      */
-    protected BitArray getKey() {
+    public BitArray getKey() {
         /*
          * Do this for consistency in case a subclass
          * modifies byte[] key directly. Remove when
@@ -353,7 +352,7 @@ public class X509Key implements PublicKey, DerEncoder {
      * @param val a DER-encoded X.509 SubjectPublicKeyInfo value
      * @exception InvalidKeyException on parsing errors.
      */
-    void decode(DerValue val) throws InvalidKeyException {
+    public void decode(DerValue val) throws InvalidKeyException {
         try {
             if (val.tag != DerValue.tag_Sequence)
                 throw new InvalidKeyException("invalid key format");
@@ -375,6 +374,36 @@ public class X509Key implements PublicKey, DerEncoder {
         } catch (IOException e) {
             throw new InvalidKeyException("Unable to decode key", e);
         }
+    }
+
+    /**
+     * jfkdsl
+     * @param encoded fjdskl
+     * @return fjdaskl
+     * @throws InvalidKeyException jfkdlsa
+     */
+    public static PublicKey parseKey(byte[] encoded) throws IOException {
+        //  XXX I doesn't look like I need to know the details of decoding here
+        //      I can let X509EKS figure out the algorithm and let the provider do it
+        /*
+        X509Key key = new X509Key();
+        try {
+            key.decode(encoded);
+        } catch (InvalidKeyException e) {
+            throw new IOException("corrupt public key", e);
+        }
+
+         */
+        PublicKey pubKey;
+        try {
+            X509EncodedKeySpec spec = new X509EncodedKeySpec(encoded);
+            pubKey = KeyFactory.getInstance(spec.getAlgorithm())
+                .generatePublic(spec);
+        } catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
+            // Ignore and return raw key
+            throw new IOException("error with encoding");
+        }
+        return pubKey;
     }
 
     /**

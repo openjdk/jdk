@@ -1515,3 +1515,11 @@ jdk.tls.alpnCharset=ISO_8859_1
 #
 # [1] https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-sfu/bde93b0e-f3c9-4ddf-9f44-e1453be7af5a
 #jdk.security.krb5.s4u2proxy.acceptNonForwardableServiceTicket=false
+
+#
+# Default algorithm for PEMEncoder Encrypted PKCS#8
+#
+# This property defines the algorithm used when java.security.PEMEncoder is
+# configured for encryption with `withEncryption()`.
+#
+jdk.epkcs8.defaultAlgorithm=PBEWithHmacSHA256AndAES_128

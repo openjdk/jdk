@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,13 +25,16 @@
 
 package javax.crypto;
 
-import java.io.*;
+import sun.security.pkcs.PKCS8Key;
+import sun.security.util.*;
+import sun.security.x509.AlgorithmId;
+
+import javax.crypto.spec.PBEKeySpec;
+import java.io.IOException;
 import java.security.*;
 import java.security.spec.*;
-import sun.security.x509.AlgorithmId;
-import sun.security.util.DerValue;
-import sun.security.util.DerInputStream;
-import sun.security.util.DerOutputStream;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * This class implements the {@code EncryptedPrivateKeyInfo} type
@@ -50,12 +53,36 @@ import sun.security.util.DerOutputStream;
  *
  * @author Valerie Peng
  *
- * @see java.security.spec.PKCS8EncodedKeySpec
+ * @see PKCS8EncodedKeySpec
  *
  * @since 1.4
+ *
+ *
+ *
+ * <pre>
+ * EncryptedPrivateKeyInfo ::= SEQUENCE {
+ *       encryptionAlgorithm  EncryptionAlgorithmIdentifier,
+ *       encryptedData        EncryptedData
+ * }
+ *
+ *       encryption alg's AlgID...
+ *
+ * PBES2Algorithms ALGORITHM-IDENTIFIER ::= {
+ *       PBES2-params IDENTIFIED BY id-PBES2},
+ *       ...
+ * }
+ *
+ * id-PBES2 OBJECT IDENTIFIER ::= {pkcs-5 13}
+ *
+ * PBES2-params ::= SEQUENCE {
+ *       keyDerivationFunc AlgorithmIdentifier {{PBES2-KDFs}},
+ *       encryptionScheme AlgorithmIdentifier {{PBES2-Encs}}
+ * }
+ * </pre>
+ *
  */
 
-public class EncryptedPrivateKeyInfo {
+public class EncryptedPrivateKeyInfo implements SecurityObject {
 
     // The "encryptionAlgorithm" is stored in either the algid or
     // the params field. Precisely, if this object is created by
@@ -72,14 +99,16 @@ public class EncryptedPrivateKeyInfo {
     // the ASN.1 encoded contents of this class
     private final byte[] encoded;
 
+    //
+    private static final String DEFAULT_ALGO = "PBEWithHmacSHA256AndAES_128";
+
     /**
-     * Constructs (i.e., parses) an {@code EncryptedPrivateKeyInfo} from
-     * its ASN.1 encoding.
-     * @param encoded the ASN.1 encoding of this object. The contents of
-     * the array are copied to protect against subsequent modification.
-     * @exception NullPointerException if the {@code encoded} is
+     * Constructs an {@code EncryptedPrivateKeyInfo} from
+     * a given Encrypted PKCS#8 ASN.1 encoding.
+     * @param encoded the ASN.1 encoding to be parsed.
+     * @throws NullPointerException if {@code encoded} is
      * {@code null}.
-     * @exception IOException if error occurs when parsing the ASN.1 encoding.
+     * @throws IOException if error occurs when parsing the ASN.1 encoding.
      */
     public EncryptedPrivateKeyInfo(byte[] encoded) throws IOException {
         if (encoded == null) {
@@ -187,8 +216,13 @@ public class EncryptedPrivateKeyInfo {
             throw new NullPointerException("algParams must be non-null");
         }
         AlgorithmId tmp;
+//        List<KnownOIDs> list = getPBES2(algParams.getAlgorithm());
         try {
-            tmp = AlgorithmId.get(algParams);
+//            if (list == null) {
+                tmp = AlgorithmId.get(algParams);
+ //           } else {
+ //               tmp = AlgorithmId.get("PBES2");
+ //           }
         } catch (IllegalStateException e) {
             // This exception is thrown when algParams.getEncoded() fails.
             // While the spec of this constructor requires that
@@ -199,7 +233,7 @@ public class EncryptedPrivateKeyInfo {
             tmp = null;
         }
 
-        // one and only one is non null
+        // one and only one is non-null
         this.algid = tmp;
         this.params = this.algid != null ? null : algParams;
 
@@ -215,6 +249,14 @@ public class EncryptedPrivateKeyInfo {
         // delay the generation of ASN.1 encoding until
         // getEncoded() is called
         this.encoded = null;
+    }
+
+    private EncryptedPrivateKeyInfo(byte[] encoded, byte[] eData,
+        AlgorithmId id, AlgorithmParameters p) {
+        this.encoded = encoded;
+        encryptedData = eData;
+        algid = id;
+        params = p;
     }
 
     /**
@@ -301,6 +343,118 @@ public class EncryptedPrivateKeyInfo {
         } catch (GeneralSecurityException | IOException ex) {
             throw new InvalidKeyException(
                     "Cannot retrieve the PKCS8EncodedKeySpec", ex);
+        }
+    }
+
+    /**
+     * Encrypt key byte [].
+     *
+     * @param key      the PrivateKey object to encrypt.
+     * @param password the password used in the PBE encryption.
+     * @param pbeAlgo  the algorithm to encrypt with.
+     * @param aps      the AlgorithmParameterSpec to encrypt with.
+     * @param p        the Provider that will perform the encryption
+     * @return the byte [ ]
+     * @throws IOException the io exception
+     */
+    public static EncryptedPrivateKeyInfo encryptKey(PrivateKey key,
+        char[] password, String pbeAlgo, AlgorithmParameterSpec aps,
+        Provider p) throws IOException {
+
+        AlgorithmId algid;
+        byte[] encryptedData;
+        Cipher cipher;
+
+        DerOutputStream out = new DerOutputStream();
+
+        try {
+            var spec = new PBEKeySpec(password);
+            SecretKeyFactory factory;
+            if (p == null) {
+                factory = SecretKeyFactory.getInstance(pbeAlgo);
+                cipher = Cipher.getInstance(pbeAlgo);
+            } else {
+                factory = SecretKeyFactory.getInstance(pbeAlgo, p);
+                cipher = Cipher.getInstance(pbeAlgo, p);
+            }
+            var skey = factory.generateSecret(spec);
+            cipher.init(Cipher.ENCRYPT_MODE, skey, aps);
+            encryptedData = cipher.doFinal(key.getEncoded());
+            algid = new AlgorithmId(Pem.getPBEID(pbeAlgo), cipher.getParameters());
+            algid.encode(out);
+            out.putOctetString(encryptedData);
+            return new EncryptedPrivateKeyInfo(
+                DerValue.wrap(DerValue.tag_Sequence, out).toByteArray(),
+                encryptedData, algid, cipher.getParameters());
+        } catch (Exception e) {
+            throw new IOException(e);
+        }
+    }
+
+    /**
+     * Creates and encrypts an `EncryptedPrivateKeyInfo` from a given PrivateKey
+     * and password.
+     * The encryption uses the algorithm set by `jdk.epk8.defaultAlgorithm`
+     * Security Property by the default provider and default the
+     * AlgorithmParameterSpec of that provider.
+     *
+     * @param key The PrivateKey object to encrypt.
+     * @param password the password used in the PBE encryption.
+     * @return an EncryptedPrivateKeyInfo.
+     * @throws IOException if an encryption error occurs.
+     */
+    public static EncryptedPrivateKeyInfo encryptKey(PrivateKey key,
+        char[] password) throws IOException {
+        try {
+            return encryptKey(key, password, Pem.DEFAULT_ALGO, null, null);
+        } catch (IOException e) {
+            if (e.getCause() instanceof NoSuchAlgorithmException) {
+                throw new IOException("Security property " +
+                    "\"jdk.epkcs8.defaultAlgorithm\" may not specify a " +
+                    "valid algorithm.", e.getCause());
+            }
+            throw e;
+        }
+    }
+
+    /**
+     * Return a PrivateKey from the encrypted data
+     *
+     * @param password the password used in the PBE encryption.
+     * @return a PrivateKey
+     * @throws IOException if an error occurs during parsing of the encrypted
+     * data or creation of the key object.
+     */
+    public PrivateKey getKey(char[] password) throws IOException {
+        return getKey(password, null);
+    }
+    /**
+     * Return a PrivateKey from the encrypted data with a KeyFactory from the
+     * given Provider.
+     *
+     * @param password the password
+     * @param provider the KeyFactory provider used to generate the key.
+     * @return a PrivateKey
+     * @throws IOException if an error occurs during parsing of the encrypted
+     * data or creation of the key object.
+     */
+    public PrivateKey getKey(char[] password, Provider provider)
+        throws IOException {
+        try {
+            PBEKeySpec pks = new PBEKeySpec(password);
+            SecretKeyFactory skf;
+            PKCS8EncodedKeySpec keySpec;
+            if (provider == null) {
+                skf = SecretKeyFactory.getInstance(getAlgName());
+                keySpec = getKeySpec(skf.generateSecret(pks));
+            } else {
+                skf = SecretKeyFactory.getInstance(getAlgName(), provider);
+                keySpec = getKeySpec(skf.generateSecret(pks), provider);
+            }
+            return PKCS8Key.parseKey(keySpec.getEncoded());
+
+        } catch (Exception e) {
+            throw new IOException(e);
         }
     }
 
@@ -453,4 +607,34 @@ public class EncryptedPrivateKeyInfo {
             throw new IOException("invalid key encoding");
         }
     }
+
+    private static final String PBES2Header = "PBEWithHmacSHA";
+
+    /**
+     * Gets pbes 2.
+     *
+     * @param algo the algo
+     * @return the pbes 2
+     *//*
+    List<KnownOIDs> getPBES2(String algo) {
+        List<KnownOIDs> list = null;
+        if (!algo.startsWith(PBES2Header)) {
+            return list;
+        }
+
+        list =  new ArrayList<>(2);
+        if (algo.charAt(PBES2Header.length()) == '1') {
+            list.add(KnownOIDs.HmacSHA1);
+        } else {
+            list.add(KnownOIDs.findMatch(algo.substring(7, 17)));
+        }
+
+        if (algo.endsWith("AES_128")) {
+            list.add(KnownOIDs.findMatch("AES_128/CBC/NoPadding"));
+        } else if (algo.endsWith("AES_256")) {
+            list.add(KnownOIDs.findMatch("AES_258/CBC/NoPadding"));
+        }
+        return list;
+    }
+*/
 }

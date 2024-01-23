@@ -110,7 +110,7 @@ public final class RSAPrivateKeyImpl extends PKCS8Key implements RSAPrivateKey {
         out.putInteger(0);
         out.putInteger(0);
         DerValue val = DerValue.wrap(DerValue.tag_Sequence, out);
-        key = val.toByteArray();
+        privKeyMaterial = val.toByteArray();
         val.clear();
     }
 
