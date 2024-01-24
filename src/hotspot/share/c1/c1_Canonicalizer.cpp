@@ -845,6 +845,7 @@ void Canonicalizer::do_LookupSwitch(LookupSwitch* x) {
     for (int i = 0; i < x->length(); i++) {
       if (v == x->key_at(i)) {
         sux = x->sux_at(i);
+        break;
       }
     }
     set_canonical(new Goto(sux, x->state_before(), is_safepoint(x, sux)));
