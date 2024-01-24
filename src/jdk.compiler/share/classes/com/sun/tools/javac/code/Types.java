@@ -5042,11 +5042,9 @@ public class Types {
             return true;
         }
 
-        if (target.isPrimitive()) {
-            return checkUnconditionallyExactPrimitives(source, target);
-        } else {
-            return isSubtype(boxedTypeOrType(erasure(source)), target);
-        }
+        return target.isPrimitive()
+                ? checkUnconditionallyExactPrimitives(source, target)
+                : isSubtype(boxedTypeOrType(erasure(source)), target);
     }
 
     /** Check unconditionality between primitive types.
