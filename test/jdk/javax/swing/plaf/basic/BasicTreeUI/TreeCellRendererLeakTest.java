@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 6507038
- * @summary Verifies memory leak in BasicTreeUI TreeCellRenderer 
+ * @summary Verifies memory leak in BasicTreeUI TreeCellRenderer
  * @run main TreeCellRendererLeakTest
  */
 
@@ -42,9 +42,9 @@ import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreeNode;
 
 public class TreeCellRendererLeakTest {
-    
+
     static long smCount = 0;
-    static boolean done;    
+    static boolean done;
 
     private static JFrame frame;
     private JPanel jPanel1;
@@ -52,25 +52,24 @@ public class TreeCellRendererLeakTest {
     private JScrollPane jScrollPane1;
     private JTabbedPane jTabbedPane1;
     private JTree jTree1;
-    // End of variables declaration
-    
+
     // JLabel with an instance counter
     public class TestLabel extends JLabel {
         public TestLabel() {
             smCount++;
         }
-        
+
         public void finalize( ) {
             smCount--;
         }
     }
-    
+
     // Custom TreeCellRenderer
     public class TreeCellRenderer extends DefaultTreeCellRenderer {
-        
+
         public TreeCellRenderer( ) {
         }
-        
+
         // Create a new JLabel every time
         public Component getTreeCellRendererComponent(
                 JTree tree,
@@ -87,11 +86,11 @@ public class TreeCellRendererLeakTest {
             } else {
                 label.setBackground(getBackgroundNonSelectionColor());
             }
-            
+
             return label;
         }
     }
-    
+
     public TreeCellRendererLeakTest() {
         initComponents();
         jTree1.setCellRenderer(new TreeCellRenderer());
@@ -110,7 +109,7 @@ public class TreeCellRendererLeakTest {
         infoThread.setDaemon(true);
         infoThread.start();
     }
-    
+
     // <editor-fold defaultstate="collapsed" desc=" Generated Code ">
     private void initComponents() {
         jTabbedPane1 = new javax.swing.JTabbedPane();
@@ -140,7 +139,7 @@ public class TreeCellRendererLeakTest {
         frame.setLocationRelativeTo(null);
         frame.setVisible(true);
     }// </editor-fold>
-    
+
     public static void main(String args[]) throws Exception {
         try {
             SwingUtilities.invokeAndWait(() -> {
@@ -155,9 +154,9 @@ public class TreeCellRendererLeakTest {
                     frame.dispose();
                 }
             });
-        } 
+        }
     }
-    
+
     // Periodically cause a nodeChanged() for one of the nodes
     public void runChanges() {
         long count = 0;
@@ -185,7 +184,7 @@ public class TreeCellRendererLeakTest {
         }
         done = true;
     }
-    
+
     // Print number of uncollected TestLabels
     public void runInfo( ) {
         long time = System.currentTimeMillis();
@@ -203,5 +202,5 @@ public class TreeCellRendererLeakTest {
             throw new RuntimeException("TreeCellRenderer component leaked");
         }
     }
-    
+
 }
