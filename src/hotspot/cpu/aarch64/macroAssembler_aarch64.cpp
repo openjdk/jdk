@@ -2067,9 +2067,9 @@ void MacroAssembler::membar(Membar_mask_bits order_constraint) {
   if (last != nullptr && nativeInstruction_at(last)->is_Membar() && prev == last) {
     NativeMembar *bar = NativeMembar_at(prev);
     // Don't promote DMB ST|DMB LD to DMB (a full barrier) because
-    // doing so would introduce  a StoreLoad which  the caller did not
+    // doing so would introduce a StoreLoad which the caller did not
     // intend
-    if (bar->get_kind() == order_constraint
+    if (AlwaysMergeDMB || bar->get_kind() == order_constraint
         || bar->get_kind() == AnyAny
         || order_constraint == AnyAny) {
       // We are merging two memory barrier instructions.  On AArch64 we
