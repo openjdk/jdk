@@ -27,6 +27,7 @@ package sun.security.util;
 
 import java.io.PrintStream;
 import java.math.BigInteger;
+import java.text.Normalizer;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
@@ -51,10 +52,6 @@ public class Debug {
     private static boolean threadInfoAll;
     private static boolean timeStampInfoAll;
 
-    private static final String PATTERN = "yyyy-MM-dd kk:mm:ss.SSS z";
-    private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter
-                .ofPattern(PATTERN, Locale.ENGLISH)
-                .withZone(ZoneId.systemDefault());
     private static final HexFormat HEX_FORMATTER =
             HexFormat.of().withUpperCase();
 
@@ -183,7 +180,7 @@ public class Debug {
             if (d.printDateTime) {
                 // trigger loading of Locale service impl now to avoid
                 // possible bootstrap recursive class load issue
-                DATE_TIME_FORMATTER.format(Instant.now());
+                FormatHolder.DATE_TIME_FORMATTER.format(Instant.now());
             }
             return d;
         } else {
@@ -297,7 +294,7 @@ public class Debug {
         }
         if (printDateTime) {
             retString += (retString.isEmpty() ? "" : "|")
-                    + DATE_TIME_FORMATTER.format(Instant.now());
+                    + FormatHolder.DATE_TIME_FORMATTER.format(Instant.now());
         }
         return retString.isEmpty() ? "" : "[" + retString + "]";
 
@@ -435,6 +432,14 @@ public class Debug {
 
     public static String toString(BigInteger b) {
         return toString(b.toByteArray());
+    }
+
+    // Holder class to break cyclic dependency seen during build
+    private static class FormatHolder {
+        private static final String PATTERN = "yyyy-MM-dd kk:mm:ss.SSS z";
+        private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter
+                .ofPattern(PATTERN, Locale.ENGLISH)
+                .withZone(ZoneId.systemDefault());
     }
 
 }
