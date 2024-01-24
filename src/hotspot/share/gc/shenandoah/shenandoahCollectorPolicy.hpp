@@ -61,6 +61,11 @@ private:
 public:
   ShenandoahCollectorPolicy();
 
+  // A collection cycle may be "abbreviated" if Shenandoah finds a sufficient percentage
+  // of regions that contain no live objects (ShenandoahImmediateThreshold). These cycles
+  // end after final mark, skipping the evacuation and reference-updating phases. Such
+  // cycles are very efficient and are worth tracking. Note that both degenerated and
+  // concurrent cycles can be abbreviated.
   void record_success_concurrent(bool is_abbreviated);
   void record_success_degenerated(bool is_abbreviated);
   void record_success_full();
@@ -83,6 +88,9 @@ public:
     return _success_full_gcs + _alloc_failure_degenerated_upgrade_to_full;
   }
 
+  // If the heuristics find that the number of consecutive degenerated cycles is above
+  // ShenandoahFullGCThreshold, then they will initiate a Full GC upon an allocation
+  // failure.
   inline size_t consecutive_degenerated_gc_count() const {
     return _consecutive_degenerated_gcs;
   }
