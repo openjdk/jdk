@@ -52,11 +52,13 @@ import static java.util.stream.Collectors.toMap;
 @Measurement(iterations = 4, time = 2)
 @Fork(value = 3)
 public class HashMapBench {
-    private Supplier<Map<Integer, Integer>> mapSupplier;
-    private Map<Integer, Integer> bigMapToAdd;
+    private Map<Integer, Integer> mapToAdd;
 
-    @Param("1000000")
+    @Param({"0", "1", "100000"})
     private int size;
+
+    @Param({"0", "100000"})
+    private int addSize;
 
     @Param
     private MapType mapType;
@@ -66,44 +68,48 @@ public class HashMapBench {
         LINKED_HASH_MAP,
     }
 
-    @Setup
-    public void setup() {
+    private Map<Integer, Integer> getMap() {
+        return getMap(0);
+    }
+
+    private Map<Integer, Integer> getMap(int size) {
         switch (mapType) {
         case HASH_MAP:
-            mapSupplier = () -> new HashMap<>();
-            break;
+            return new HashMap<>(size);
         case LINKED_HASH_MAP:
-            mapSupplier = () -> new LinkedHashMap<>();
-            break;
+            return new LinkedHashMap<>(size);
         default:
             throw new AssertionError();
         }
+    }
 
+    @Setup
+    public void setup() {
+        mapToAdd = getMap(addSize);
         ThreadLocalRandom rnd = ThreadLocalRandom.current();
-        this.bigMapToAdd = IntStream.range(0, size).boxed()
-            .collect(toMap(i -> 7 + i * 128, i -> rnd.nextInt()));
+        for (int i = 0; i < addSize; ++i) {
+            int r = rnd.nextInt();
+            mapToAdd.put(r, r);
+        }
     }
 
     @Benchmark
-    public int putAllWithBigMapToNonEmptyMap() {
-        Map<Integer, Integer> map = mapSupplier.get();
-        map.put(-1, -1);
-        map.putAll(bigMapToAdd);
-        return map.size();
-    }
-
-    @Benchmark
-    public int putAllWithBigMapToEmptyMap() {
-        Map<Integer, Integer> map = mapSupplier.get();
-        map.putAll(bigMapToAdd);
+    public int putAll() {
+        Map<Integer, Integer> map = getMap(size);
+        ThreadLocalRandom rnd = ThreadLocalRandom.current();
+        for (int i = 0; i < size; ++i) {
+            int r = rnd.nextInt();
+            map.put(r, r);
+        }
+        map.putAll(mapToAdd);
         return map.size();
     }
 
     @Benchmark
     public int put() {
-        Map<Integer, Integer> map = mapSupplier.get();
-        for (int k : bigMapToAdd.keySet()) {
-            map.put(k, bigMapToAdd.get(k));
+        Map<Integer, Integer> map = getMap();
+        for (int k : mapToAdd.keySet()) {
+            map.put(k, mapToAdd.get(k));
         }
         return map.size();
     }
