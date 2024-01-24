@@ -54,12 +54,6 @@ static char *isFileIdentical(char* buf, size_t size, char *pathname);
 #define filegets        fgets
 #define fileclose       fclose
 
-#if defined(_ALLBSD_SOURCE)
-#define stat64 stat
-#define lstat64 lstat
-#define fstat64 fstat
-#endif
-
 #if defined(__linux__) || defined(_ALLBSD_SOURCE)
 static const char *ETC_TIMEZONE_FILE = "/etc/timezone";
 static const char *ZONEINFO_DIR = "/usr/share/zoneinfo";
@@ -219,12 +213,12 @@ static char *
 isFileIdentical(char *buf, size_t size, char *pathname)
 {
     char *possibleMatch = NULL;
-    struct stat64 statbuf;
+    struct stat statbuf;
     char *dbuf = NULL;
     int fd = -1;
     int res;
 
-    RESTARTABLE(stat64(pathname, &statbuf), res);
+    RESTARTABLE(stat(pathname, &statbuf), res);
     if (res == -1) {
         return NULL;
     }
@@ -264,7 +258,7 @@ isFileIdentical(char *buf, size_t size, char *pathname)
 static char *
 getPlatformTimeZoneID()
 {
-    struct stat64 statbuf;
+    struct stat statbuf;
     char *tz = NULL;
     FILE *fp;
     int fd;
@@ -301,7 +295,7 @@ getPlatformTimeZoneID()
     /*
      * Next, try /etc/localtime to find the zone ID.
      */
-    RESTARTABLE(lstat64(DEFAULT_ZONEINFO_FILE, &statbuf), res);
+    RESTARTABLE(lstat(DEFAULT_ZONEINFO_FILE, &statbuf), res);
     if (res == -1) {
         return NULL;
     }
@@ -343,7 +337,7 @@ getPlatformTimeZoneID()
         return NULL;
     }
 
-    RESTARTABLE(fstat64(fd, &statbuf), res);
+    RESTARTABLE(fstat(fd, &statbuf), res);
     if (res == -1) {
         (void) close(fd);
         return NULL;

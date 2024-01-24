@@ -46,11 +46,6 @@
 #include "zip_util.h"
 #include <zlib.h>
 
-#ifdef _ALLBSD_SOURCE
-#define off64_t off_t
-#define mmap64 mmap
-#endif
-
 /* USE_MMAP means mmap the CEN & ENDHDR part of the zip file. */
 #ifdef USE_MMAP
 #include <sys/mman.h>
@@ -656,7 +651,7 @@ readCEN(jzfile *zip, jint knownTotal)
             */
             zip->mlen = cenpos - offset + cenlen + endhdrlen;
             zip->offset = offset;
-            mappedAddr = mmap64(0, zip->mlen, PROT_READ, MAP_SHARED, zip->zfd, (off64_t) offset);
+            mappedAddr = mmap(0, zip->mlen, PROT_READ, MAP_SHARED, zip->zfd, (off_t) offset);
             zip->maddr = (mappedAddr == (void*) MAP_FAILED) ? NULL :
                 (unsigned char*)mappedAddr;
 

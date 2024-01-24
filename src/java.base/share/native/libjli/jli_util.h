@@ -100,16 +100,7 @@ JLI_CmdToArgs(char *cmdline);
 #define JLI_StrCaseCmp(p1, p2)          strcasecmp((p1), (p2))
 #define JLI_StrNCaseCmp(p1, p2, p3)     strncasecmp((p1), (p2), (p3))
 #define JLI_Open                        open
-#ifdef __linux__
-#define _LARGFILE64_SOURCE
-#define JLI_Lseek                       lseek64
-#endif
-#ifdef MACOSX
 #define JLI_Lseek                       lseek
-#endif
-#ifdef _AIX
-#define JLI_Lseek                       lseek
-#endif
 #endif /* _WIN32 */
 
 /*
