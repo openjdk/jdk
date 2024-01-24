@@ -46,7 +46,8 @@ package java.lang.runtime;
  * methods may be used, for example, by Java compiler implementations to
  * implement checks for {@code instanceof} and pattern matching runtime
  * implementations. Unconditionally exact testing conversions do not require a
- * corresponding action at run time.
+ * corresponding action at run time and, for this reason, methods corresponding
+ * to these exactness checks are omitted here.
  * <p>
  * The run time conversion checks examine whether loss of information would
  * occur if a testing conversion would be to be applied. In those cases where a
