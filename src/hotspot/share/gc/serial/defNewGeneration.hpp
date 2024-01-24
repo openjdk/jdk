@@ -257,6 +257,8 @@ class DefNewGeneration: public Generation {
   // at some additional cost.
   bool collection_attempt_is_safe();
 
+  bool block_is_obj(const HeapWord* addr) const;
+
   virtual void collect(bool   full,
                        bool   clear_all_soft_refs,
                        size_t size,

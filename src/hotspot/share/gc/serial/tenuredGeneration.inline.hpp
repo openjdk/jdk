@@ -62,7 +62,7 @@ HeapWord* TenuredGeneration::par_allocate(size_t word_size,
 }
 
 bool TenuredGeneration::block_is_obj(const HeapWord* addr) const {
-  return addr < _the_space  ->top();
+  return addr < _the_space->top();
 }
 
 template <typename OopClosureType>
