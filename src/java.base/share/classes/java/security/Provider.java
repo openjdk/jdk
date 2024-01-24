@@ -1557,11 +1557,21 @@ public abstract class Provider extends Properties {
         final String name;
         final boolean supportsParameter;
         final String constructorParameterClassName;
+        private volatile Class<?> constructorParameterClass;
 
         EngineDescription(String name, boolean sp, String paramName) {
             this.name = name;
             this.supportsParameter = sp;
             this.constructorParameterClassName = paramName;
+        }
+
+        Class<?> getConstructorParameterClass() throws ClassNotFoundException {
+            Class<?> clazz = constructorParameterClass;
+            if (clazz == null) {
+                clazz = Class.forName(constructorParameterClassName);
+                constructorParameterClass = clazz;
+            }
+            return clazz;
         }
     }
 
@@ -1896,7 +1906,7 @@ public abstract class Provider extends Properties {
                         null : constructorParameter.getClass();
                 } else {
                     ctrParamClz = cap.constructorParameterClassName == null?
-                        null : Class.forName(cap.constructorParameterClassName);
+                        null : cap.getConstructorParameterClass();
                     if (constructorParameter != null) {
                         if (ctrParamClz == null) {
                             throw new InvalidParameterException
