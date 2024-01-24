@@ -135,7 +135,7 @@ void VirtualMemoryView::unregister_memory(RegionStorage& storage, address base_a
 }
 
 void VirtualMemoryView::release_memory(address base_addr, size_t size) {
-  unregister_memory(_virt_mem->reserved_regions, base_addr, size);
+  unregister_memory(_virt_mem->reserved_regions.at(heap.id), base_addr, size);
 }
 
 void VirtualMemoryView::commit_memory(address base_addr, size_t size, const NativeCallStack& stack) {
@@ -186,7 +186,7 @@ void VirtualMemoryView::register_memory(RegionStorage& storage, address base_add
 }
 
 void VirtualMemoryView::reserve_memory(address base_addr, size_t size, MEMFLAGS flag, const NativeCallStack& stack) {
-  register_memory(_virt_mem->reserved_regions, base_addr, size, flag, stack);
+  register_memory(_virt_mem->reserved_regions.at(heap.id), base_addr, size, flag, stack);
 }
 
 void VirtualMemoryView::commit_memory_into_space(const PhysicalMemorySpace& space,

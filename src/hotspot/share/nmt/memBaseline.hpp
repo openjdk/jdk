@@ -83,7 +83,7 @@ class MemBaseline {
   SortingOrder         _virtual_memory_sites_order;
 
   BaselineType         _baseline_type;
-
+  void baseline_summary_vmemview();
  public:
   // create a memory baseline
   MemBaseline():

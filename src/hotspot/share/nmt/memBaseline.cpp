@@ -137,10 +137,15 @@ class VirtualMemoryAllocationWalker : public VirtualMemoryWalker {
   }
 };
 
+void MemBaseline::baseline_summary_vmemview() {
+  const VirtualMemoryView::VirtualMemory& vmem = VirtualMemoryView::virtual_memory();
+  
+}
 
 void MemBaseline::baseline_summary() {
   MallocMemorySummary::snapshot(&_malloc_memory_snapshot);
   VirtualMemorySummary::snapshot(&_virtual_memory_snapshot);
+
   _metaspace_stats = MetaspaceUtils::get_combined_statistics();
 }
 

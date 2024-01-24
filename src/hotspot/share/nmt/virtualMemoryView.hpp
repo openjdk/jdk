@@ -105,7 +105,7 @@ public:
 
   struct VirtualMemory : public CHeapObj<mtNMT> {
     // Reserved memory within this process' memory map
-    RegionStorage reserved_regions;
+    GrowableArrayCHeap<RegionStorage, mtNMT> reserved_regions;
     // Committed memory per PhysicalMemorySpace
     GrowableArrayCHeap<RegionStorage, mtNMT> committed_regions;
     // Mappings from virtual memory space to committed memory, per PhysicalMemorySpace.
@@ -124,7 +124,8 @@ public:
     // Deep copying of VirtualMemory
     VirtualMemory& operator=(const VirtualMemory& other) {
       if (this != &other) {
-        this->reserved_regions = RegionStorage{other.reserved_regions.length()};
+        this->reserved_regions =
+          GrowableArrayCHeap<RegionStorage, mtNMT>{other.reserved_regions.length()};
         this->mapped_regions =
             GrowableArrayCHeap<OffsetRegionStorage, mtNMT>{other.mapped_regions.length()};
         this->committed_regions =
@@ -132,8 +133,14 @@ public:
         this->summary = GrowableArrayCHeap<VirtualMemorySnapshot, mtNMT>(other.summary.length());
 
         for (int i = 0; i < other.reserved_regions.length(); i++) {
-          this->reserved_regions.push(other.reserved_regions.at(i));
+          const GrowableArrayCHeap<TrackedRange, MEMFLAGS::mtNMT>& ith = other.reserved_regions.at(i);
+          this->reserved_regions.push(ith);
+          GrowableArrayCHeap<TrackedRange, MEMFLAGS::mtNMT>& vith = this->reserved_regions.at(i);
+          for (int j = 0; j < ith.length(); j++) {
+            vith.push(ith.at(j));
+          }
         }
+
         for (int i = 0; i < other.mapped_regions.length(); i++) {
           const OffsetRegionStorage& ith = other.mapped_regions.at(i);
           this->mapped_regions.push(ith);
@@ -277,7 +284,7 @@ public:
       mem->uncommit_memory(mem->committed());
     }
     // Fill out summary
-    const RegionStorage& reserved_ranges = virtual_memory().reserved_regions;
+    const RegionStorage& reserved_ranges = virtual_memory().reserved_regions.at(space.id);
     for (int i = 0; i < virtual_memory().reserved_regions.length(); i++) {
       const TrackedRange& range = reserved_ranges.at(i);
       snap.by_type(range.flag)->reserve_memory(range.size);
