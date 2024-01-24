@@ -37,7 +37,7 @@ import java.util.concurrent.TimeUnit;
 public class SecureRandomBench {
 
     @Benchmark
-    public SecureRandom newSecureRandom() throws Exception {
+    public SecureRandom create() throws Exception {
         return new SecureRandom();
     }
 }
