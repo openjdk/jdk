@@ -26,12 +26,12 @@
  * @bug 8322996
  * @summary Ensure no assert error in C2 with deeply nested synchronize
  *          statements.
- * @run main/othervm -XX:CompileCommand=compileonly,compiler.c2.TestNestedSynchronize::test
+ * @run main/othervm -XX:CompileCommand=compileonly,compiler.locks.TestNestedSynchronize::test
  *                   -Xcomp
- *                   compiler.c2.TestNestedSynchronize
+ *                   compiler.locks.TestNestedSynchronize
  */
 
-package compiler.c2;
+package compiler.locks;
 
 public class TestNestedSynchronize {
 
