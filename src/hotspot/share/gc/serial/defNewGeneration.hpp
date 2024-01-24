@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -158,8 +158,6 @@ class DefNewGeneration: public Generation {
                    size_t min_byte_size,
                    size_t max_byte_size,
                    const char* policy="Serial young collection pauses");
-
-  virtual Generation::Name kind() { return Generation::DefNew; }
 
   // allocate and initialize ("weak") refs processing support
   void ref_processor_init();

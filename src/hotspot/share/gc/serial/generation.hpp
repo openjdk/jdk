@@ -83,12 +83,6 @@ class Generation: public CHeapObj<mtGC> {
   Generation(ReservedSpace rs, size_t initial_byte_size);
 
  public:
-  // The set of possible generation kinds.
-  enum Name {
-    DefNew,
-    MarkSweepCompact,
-  };
-
   enum SomePublicConstants {
     // Generations are GenGrain-aligned and have size that are multiples of
     // GenGrain.

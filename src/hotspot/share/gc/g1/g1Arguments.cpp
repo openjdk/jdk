@@ -143,11 +143,6 @@ void G1Arguments::initialize_card_set_configuration() {
                                                     G1RemSetArrayOfCardsEntriesBase << region_size_log_mb));
   }
 
-  // Round to next 8 byte boundary for array to maximize space usage.
-  size_t const cur_size = G1CardSetArray::size_in_bytes(G1RemSetArrayOfCardsEntries);
-  FLAG_SET_ERGO(G1RemSetArrayOfCardsEntries,
-                G1RemSetArrayOfCardsEntries + (uint)(align_up(cur_size, G1CardSetAllocOptions::SlotAlignment) - cur_size) / sizeof(G1CardSetArray::EntryDataType));
-
   // Howl card set container globals.
   if (FLAG_IS_DEFAULT(G1RemSetHowlNumBuckets)) {
     FLAG_SET_ERGO(G1RemSetHowlNumBuckets, G1CardSetHowl::num_buckets(HeapRegion::CardsPerRegion,
