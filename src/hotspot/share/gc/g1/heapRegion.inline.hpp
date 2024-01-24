@@ -553,4 +553,12 @@ inline void HeapRegion::record_surv_words_in_group(size_t words_survived) {
   _surv_rate_group->record_surviving_words(age, words_survived);
 }
 
+inline void HeapRegion::increment_pinned_object_count() {
+  Atomic::add(&_pinned_object_count, 1u, memory_order_relaxed);
+}
+
+inline void HeapRegion::decrement_pinned_object_count() {
+  Atomic::sub(&_pinned_object_count, 1u, memory_order_relaxed);
+}
+
 #endif // SHARE_GC_G1_HEAPREGION_INLINE_HPP

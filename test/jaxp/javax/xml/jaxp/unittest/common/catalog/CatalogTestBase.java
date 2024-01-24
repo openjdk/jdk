@@ -57,7 +57,7 @@ public class CatalogTestBase extends TestBase {
 
         // error (not from catalog) is expect when CATALOG=continue
         boolean isErrExpected = true;
-        String expected1 = "invalid.site.com";
+        String expected1 = UNKNOWN_HOST;
 
         // expected when reference is resolved by Catalog
         String expected3 = "", expected4 = "";

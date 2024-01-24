@@ -195,4 +195,9 @@
     }
   }
 
+  // Is SIMD sort supported for this CPU?
+  static bool supports_simd_sort(BasicType bt) {
+    return false;
+  }
+
 #endif // CPU_PPC_MATCHER_PPC_HPP

@@ -490,7 +490,12 @@ public class Flow {
             try {
                 for (List<JCTree> defs = classDef.defs; defs.nonEmpty(); defs = defs.tail) {
                     JCTree def = defs.head;
-                    if (!def.hasTag(METHODDEF) && ((TreeInfo.flags(def) & STATIC) != 0) == isStatic)
+                    /* we need to check for flags in the symbol too as there could be cases for which implicit flags are
+                     * represented in the symbol but not in the tree modifiers as they were not originally in the source
+                     * code
+                     */
+                    boolean isDefStatic = ((TreeInfo.flags(def) | (TreeInfo.symbolFor(def) == null ? 0 : TreeInfo.symbolFor(def).flags_field)) & STATIC) != 0;
+                    if (!def.hasTag(METHODDEF) && (isDefStatic == isStatic))
                         handler.accept(def);
                 }
             } finally {
@@ -940,8 +945,8 @@ public class Flow {
                 current.complete();
 
                 if (current.isSealed() && current.isAbstract()) {
-                    for (Symbol sym : current.permitted) {
-                        ClassSymbol csym = (ClassSymbol) sym;
+                    for (Type t : current.getPermittedSubclasses()) {
+                        ClassSymbol csym = (ClassSymbol) t.tsym;
 
                         if (accept.test(csym)) {
                             permittedSubtypesClosure = permittedSubtypesClosure.prepend(csym);

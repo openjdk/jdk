@@ -65,13 +65,15 @@ abstract class AbstractDCmd {
     // Remember to keep the two sides in synch.
     public abstract Argument[] getArgumentInfos();
 
-    // Called by native
     protected abstract void execute(ArgumentParser parser) throws DCmdException;
 
 
     // Called by native
     public final String[] execute(String source, String arg, char delimiter) throws DCmdException {
         this.source = source;
+        if (isInteractive()) {
+            JVM.exclude(Thread.currentThread());
+        }
         try {
             boolean log = Logger.shouldLog(LogTag.JFR_DCMD, LogLevel.DEBUG);
             if (log) {
@@ -92,7 +94,17 @@ abstract class AbstractDCmd {
             DCmdException e = new DCmdException(iae.getMessage());
             e.addSuppressed(iae);
             throw e;
+       } finally {
+           if (isInteractive()) {
+               JVM.include(Thread.currentThread());
+           }
        }
+    }
+
+    // Diagnostic commands that are meant to be used interactively
+    // should turn off events to avoid noise in the output.
+    protected boolean isInteractive() {
+        return false;
     }
 
     protected final Output getOutput() {

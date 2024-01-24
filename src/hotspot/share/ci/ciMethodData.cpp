@@ -474,6 +474,7 @@ ciBitData ciMethodData::exception_handler_bci_to_data(int bci) {
   }
   // called with invalid bci or wrong Method/MethodData
   ShouldNotReachHere();
+  return ciBitData(nullptr);
 }
 
 // Conservatively decode the trap_state of a ciProfileData.

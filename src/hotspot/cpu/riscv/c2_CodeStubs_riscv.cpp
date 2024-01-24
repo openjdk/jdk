@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
+ * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,7 @@ void C2SafepointPollStub::emit(C2_MacroAssembler& masm) {
   InternalAddress safepoint_pc(__ pc() - __ offset() + _safepoint_offset);
   __ relocate(safepoint_pc.rspec(), [&] {
     int32_t offset;
-    __ la_patchable(t0, safepoint_pc.target(), offset);
+    __ la(t0, safepoint_pc.target(), offset);
     __ addi(t0, t0, offset);
   });
   __ sd(t0, Address(xthread, JavaThread::saved_exception_pc_offset()));
@@ -60,12 +60,7 @@ int C2EntryBarrierStub::max_size() const {
 
 void C2EntryBarrierStub::emit(C2_MacroAssembler& masm) {
   __ bind(entry());
-  RuntimeAddress target(StubRoutines::method_entry_barrier());
-  __ relocate(target.rspec(), [&] {
-    int32_t offset;
-    __ la_patchable(t0, target, offset);
-    __ jalr(ra, t0, offset);
-  });
+  __ rt_call(StubRoutines::method_entry_barrier());
 
   __ j(continuation());
 

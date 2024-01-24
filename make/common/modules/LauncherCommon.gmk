@@ -112,7 +112,7 @@ define SetupBuildLauncherBody
     $1_PLIST_FILE := $$(SUPPORT_OUTPUTDIR)/native/$$(MODULE)/$1/Info.plist
 
     $$(eval $$(call SetupTextFileProcessing, BUILD_PLIST_$1, \
-        SOURCE_FILES := $(TOPDIR)/make/data/bundle/cmdline-Info.plist, \
+        SOURCE_FILES := $(TOPDIR)/make/data/bundle/cmdline-Info.plist.template, \
         OUTPUT_FILE := $$($1_PLIST_FILE), \
         REPLACEMENTS := \
             @@ID@@ => $(MACOSX_BUNDLE_ID_BASE).$1 ; \

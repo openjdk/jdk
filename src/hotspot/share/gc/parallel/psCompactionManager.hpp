@@ -105,7 +105,8 @@ class ParCompactionManager : public CHeapObj<mtGC> {
   // Returns true and a valid task if there has not been enough space in the shared
   // objArray stack, otherwise returns false and the task is invalid.
   bool publish_or_pop_objarray_tasks(ObjArrayTask& task);
- protected:
+
+  ParCompactionManager();
   // Array of task queues.  Needed by the task terminator.
   static RegionTaskQueueSet* region_task_queues()      { return _region_task_queues; }
   OopTaskQueue*  oop_stack()       { return &_oop_stack; }
@@ -155,7 +156,6 @@ class ParCompactionManager : public CHeapObj<mtGC> {
   // Simply use the first compaction manager here.
   static ParCompactionManager* get_vmthread_cm() { return _manager_array[0]; }
 
-  ParCompactionManager();
 
   ParMarkBitMap* mark_bitmap() { return _mark_bitmap; }
 

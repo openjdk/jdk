@@ -356,7 +356,6 @@ tier2_gc_shenandoah = \
 tier3_gc_shenandoah = \
   gc/stress/gcold/TestGCOldWithShenandoah.java \
   gc/stress/gcbasher/TestGCBasherWithShenandoah.java \
-  gc/stress/gclocker/TestGCLockerWithShenandoah.java \
   gc/stress/systemgc/TestSystemGCWithShenandoah.java \
   gc/shenandoah/TestStringDedupStress.java \
   -:tier2_gc_shenandoah

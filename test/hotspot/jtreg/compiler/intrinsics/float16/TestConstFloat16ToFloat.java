@@ -127,7 +127,8 @@ public class TestConstFloat16ToFloat {
         sRes[13] = Float.floatToFloat16(BinaryF16.POSITIVE_INFINITY);
     }
 
-    public static void run() {
+    public static int run() {
+        int errors = 0;
         short s = Float.floatToFloat16(0.0f); // Load Float class
         // Testing constant float16 values.
         float[] fRes = new float[sCon.length];
@@ -135,10 +136,12 @@ public class TestConstFloat16ToFloat {
         for (int i = 0; i < sCon.length; i++) {
             float fVal = Float.float16ToFloat(sCon[i]);
             if (Float.floatToRawIntBits(fRes[i]) != Float.floatToRawIntBits(fVal)) {
+                errors++;
                 String cVal_hex = Integer.toHexString(sCon[i] & 0xffff);
                 String fRes_hex = Integer.toHexString(Float.floatToRawIntBits(fRes[i]));
                 String fVal_hex = Integer.toHexString(Float.floatToRawIntBits(fVal));
-                throw new RuntimeException("Inconsistent result for Float.float16ToFloat(" + cVal_hex + "): " + fRes[i] + "/" + fRes_hex + " != " + fVal + "/" + fVal_hex);
+                System.out.println("Inconsistent result for Float.float16ToFloat(" + cVal_hex + "): " +
+                                    fRes[i] + "/" + fRes_hex + " != " + fVal + "/" + fVal_hex);
             }
         }
 
@@ -148,19 +151,26 @@ public class TestConstFloat16ToFloat {
         for (int i = 0; i < fCon.length; i++) {
             short sVal = Float.floatToFloat16(fCon[i]);
             if (sRes[i] != sVal) {
+                errors++;
                 String cVal_hex = Integer.toHexString(Float.floatToRawIntBits(fCon[i]));
                 String sRes_hex = Integer.toHexString(sRes[i] & 0xffff);
                 String sVal_hex = Integer.toHexString(sVal & 0xffff);
-                throw new RuntimeException("Inconsistent result for Float.floatToFloat16(" + fCon[i] + "/" + cVal_hex + "): " + sRes_hex + " != " + sVal_hex);
+                System.out.println("Inconsistent result for Float.floatToFloat16(" + fCon[i] + "/" + cVal_hex + "): " +
+                                    sRes_hex + "(" + sRes + ")" + " != " + sVal_hex + "(" + sVal + ")");
             }
         }
+        return errors;
 
     }
 
     public static void main(String[] args) {
+        int errors = 0;
         // Run twice to trigger compilation
         for (int i = 0; i < 2; i++) {
-            run();
+            errors += run();
+        }
+        if (errors > 0) {
+            throw new RuntimeException(errors + " errors");
         }
     }
 }

@@ -304,7 +304,7 @@ public final class JdkConstants {
      * System Property for the JDKCatalog' RESOLVE property
      * @since 22
      */
-    public static final String JDKCATALOG_RESOLVE = "jdk.xml.jdkCatalog.resolve";
+    public static final String JDKCATALOG_RESOLVE = "jdk.xml.jdkcatalog.resolve";
 
     // Catalog Resolve Integer mappings for String values
     public static final int CONTINUE = 0;

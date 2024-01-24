@@ -752,13 +752,15 @@ public class CreateSymbolsTestImpl {
         new CreateSymbols().createBaseLine(versions, acceptAll, ctSym, new String[0]);
         Path symbolsDesc = ctSym.resolve("symbols");
         Path modules = ctSym.resolve("modules");
+        Path modulesList = ctSym.resolve("modules-list");
 
         Files.createDirectories(modules);
+        try (Writer w = Files.newBufferedWriter(modulesList)) {}
 
         Path classesZip = output.resolve("classes.zip");
         Path classesDir = output.resolve("classes");
 
-        new CreateSymbols().createSymbols(null, symbolsDesc.toAbsolutePath().toString(), classesZip.toAbsolutePath().toString(), 0, "9", "", modules.toString());
+        new CreateSymbols().createSymbols(null, symbolsDesc.toAbsolutePath().toString(), classesZip.toAbsolutePath().toString(), 0, "9", "", modules.toString(), modulesList.toString());
 
         try (JarFile jf = new JarFile(classesZip.toFile())) {
             Enumeration<JarEntry> en = jf.entries();
@@ -835,7 +837,7 @@ public class CreateSymbolsTestImpl {
     void testExtendsInternalData1() throws Exception {
         doTestData("""
                    module name m
-                   header exports api,nonapi[java.base] requires name\\u0020;java.base\\u0020;flags\\u0020;8000\\u0020;version\\u0020;0 flags 8000
+                   header exports api extraModulePackages nonapi requires name\\u0020;java.base\\u0020;flags\\u0020;8000\\u0020;version\\u0020;0 flags 8000
 
                    class name api/Ann
                    header extends java/lang/Object implements java/lang/annotation/Annotation flags 2601
@@ -1038,15 +1040,12 @@ public class CreateSymbolsTestImpl {
         }.createBaseLine(versions, acceptAll, descDest, new String[0]);
         Path symbolsDesc = descDest.resolve("symbols");
         Path modules = descDest.resolve("modules");
+        Path modulesList = descDest.resolve("modules-list");
 
         Files.createDirectories(modules);
+        try (Writer w = Files.newBufferedWriter(modulesList)) {}
 
-        try {
-        new CreateSymbols().createSymbols(null, symbolsDesc.toAbsolutePath().toString(), classDest, 0, "8", "", modules.toString());
-        } catch (Throwable t) {
-            t.printStackTrace();
-            throw t;
-        }
+        new CreateSymbols().createSymbols(null, symbolsDesc.toAbsolutePath().toString(), classDest, 0, "8", "", modules.toString(), modulesList.toString());
     }
 
     void compileAndPack(Path output, Path outputFile, String... code) throws Exception {

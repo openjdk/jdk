@@ -165,6 +165,7 @@ enum Ampere_CPU_Model {
   static int dcache_line_size() { return _dcache_line_size; }
   static int get_initial_sve_vector_length()  { return _initial_sve_vector_length; };
 
+  // Aarch64 supports fast class initialization checks
   static bool supports_fast_class_init_checks() { return true; }
   constexpr static bool supports_stack_watermark_barrier() { return true; }
 

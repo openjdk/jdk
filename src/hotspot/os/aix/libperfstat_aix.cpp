@@ -114,7 +114,7 @@ bool libperfstat::init() {
 void libperfstat::cleanup() {
 
   if (g_libhandle) {
-    dlclose(g_libhandle);
+    os::dll_unload(g_libhandle);
     g_libhandle = nullptr;
   }
 

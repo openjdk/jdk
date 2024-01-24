@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -326,7 +326,7 @@ int Method::bci_from(address bcp) const {
   }
   // Do not have a ResourceMark here because AsyncGetCallTrace stack walking code
   // may call this after interrupting a nested ResourceMark.
-  assert(is_native() && bcp == code_base() || contains(bcp) || VMError::is_error_reported(),
+  assert((is_native() && bcp == code_base()) || contains(bcp) || VMError::is_error_reported(),
          "bcp doesn't belong to this method. bcp: " PTR_FORMAT, p2i(bcp));
 
   return int(bcp - code_base());
@@ -360,7 +360,7 @@ address Method::bcp_from(int bci) const {
   assert((is_native() && bci == 0) || (!is_native() && 0 <= bci && bci < code_size()),
          "illegal bci: %d for %s method", bci, is_native() ? "native" : "non-native");
   address bcp = code_base() + bci;
-  assert(is_native() && bcp == code_base() || contains(bcp), "bcp doesn't belong to this method");
+  assert((is_native() && bcp == code_base()) || contains(bcp), "bcp doesn't belong to this method");
   return bcp;
 }
 
@@ -2271,6 +2271,20 @@ void Method::record_gc_epoch() {
 // Called when the class loader is unloaded to make all methods weak.
 void Method::clear_jmethod_ids(ClassLoaderData* loader_data) {
   loader_data->jmethod_ids()->clear_all_methods();
+}
+
+void Method::clear_jmethod_id() {
+  // Being at a safepoint prevents racing against other class redefinitions
+  assert(SafepointSynchronize::is_at_safepoint(), "should be at safepoint");
+  // The jmethodID is not stored in the Method instance, we need to look it up first
+  jmethodID methodid = find_jmethod_id_or_null();
+  // We need to make sure that jmethodID actually resolves to this method
+  // - multiple redefined versions may share jmethodID slots and if a method
+  //   has already been rewired to a newer version we could be removing reference
+  //   to a still existing method instance
+  if (methodid != nullptr && *((Method**)methodid) == this) {
+    *((Method**)methodid) = nullptr;
+  }
 }
 
 bool Method::has_method_vptr(const void* ptr) {

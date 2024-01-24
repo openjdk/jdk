@@ -429,10 +429,6 @@ void NativePostCallNop::make_deopt() {
   NativeDeoptInstruction::insert(addr_at(0));
 }
 
-void NativePostCallNop::patch(jint diff) {
-  // unsupported for now
-}
-
 void NativeDeoptInstruction::verify() {
 }
 
