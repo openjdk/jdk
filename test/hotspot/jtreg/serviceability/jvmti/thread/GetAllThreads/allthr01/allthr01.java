@@ -39,7 +39,7 @@
  * @requires vm.continuations
  * @library /test/lib
  * @compile allthr01.java
- * @run main/othervm/native -Djdk.virtualThreadScheduler.parallelism=1 -agentlib:allthr01 allthr01
+ * @run main/othervm/native -Djdk.virtualThreadScheduler.maxPoolSize=1 -agentlib:allthr01 allthr01
  */
 
 import java.util.concurrent.atomic.AtomicBoolean;

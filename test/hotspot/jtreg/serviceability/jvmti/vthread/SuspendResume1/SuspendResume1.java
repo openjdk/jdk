@@ -29,7 +29,7 @@
  * @compile SuspendResume1.java
  * @run driver jdk.test.lib.FileInstaller . .
  * @run main/othervm/native/timeout=600
- *      -Djdk.virtualThreadScheduler.parallelism=1
+ *      -Djdk.virtualThreadScheduler.maxPoolSize=1
  *      -agentlib:SuspendResume1
  *      SuspendResume1
  */

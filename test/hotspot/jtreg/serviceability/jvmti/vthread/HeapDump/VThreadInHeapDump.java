@@ -184,7 +184,7 @@ public class VThreadInHeapDump {
             theApp = new VThreadInHeapDumpTarg();
 
             List<String> extraVMArgs = new ArrayList<>();
-            extraVMArgs.add("-Djdk.virtualThreadScheduler.parallelism=1");
+            extraVMArgs.add("-Djdk.virtualThreadScheduler.maxPoolSize=1");
             extraVMArgs.add("-Xlog:heapdump");
             extraVMArgs.addAll(Arrays.asList(extraOptions));
             LingeredApp.startApp(theApp, extraVMArgs.toArray(new String[0]));

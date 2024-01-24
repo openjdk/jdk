@@ -28,7 +28,7 @@
  * @compile SuspendResume2.java
  * @run driver jdk.test.lib.FileInstaller . .
  * @run main/othervm/native
- *      -Djdk.virtualThreadScheduler.parallelism=1
+ *      -Djdk.virtualThreadScheduler.maxPoolSize=1
  *      -agentlib:SuspendResume2
  *      SuspendResume2
  */

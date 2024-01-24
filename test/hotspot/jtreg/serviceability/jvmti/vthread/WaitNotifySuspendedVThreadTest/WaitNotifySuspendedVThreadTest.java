@@ -31,7 +31,7 @@
  * @library /test/lib
  * @compile WaitNotifySuspendedVThreadTest.java
  * @run main/othervm/native
- *     -Djdk.virtualThreadScheduler.parallelism=1
+ *     -Djdk.virtualThreadScheduler.maxPoolSize=1
  *     -agentlib:WaitNotifySuspendedVThread WaitNotifySuspendedVThreadTest
  */
 

@@ -26,7 +26,7 @@
  * @requires vm.jvmti
  * @requires vm.continuations
  * @run main/othervm/native
- *      -Djdk.virtualThreadScheduler.parallelism=1
+ *      -Djdk.virtualThreadScheduler.maxPoolSize=1
  *      -agentlib:VThreadStackRefTest
  *      VThreadStackRefTest
  */
