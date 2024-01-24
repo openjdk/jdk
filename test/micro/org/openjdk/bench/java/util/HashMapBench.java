@@ -53,6 +53,7 @@ import static java.util.stream.Collectors.toMap;
 @Fork(value = 3)
 public class HashMapBench {
     private Map<Integer, Integer> mapToAdd;
+    private Map<Integer, Integer> mapToAddLinear;
 
     @Param({"0", "1", "100000"})
     private int size;
@@ -86,10 +87,12 @@ public class HashMapBench {
     @Setup
     public void setup() {
         mapToAdd = getMap(addSize);
+        mapToAddLinear = getMap(addSize);
         ThreadLocalRandom rnd = ThreadLocalRandom.current();
         for (int i = 0; i < addSize; ++i) {
             int r = rnd.nextInt();
             mapToAdd.put(r, r);
+            mapToAddLinear.put(i, i);
         }
     }
 
@@ -102,6 +105,17 @@ public class HashMapBench {
             map.put(r, r);
         }
         map.putAll(mapToAdd);
+        return map.size();
+    }
+
+    @Benchmark
+    public int putAllSameKeys() {
+        Map<Integer, Integer> map = getMap(size);
+        ThreadLocalRandom rnd = ThreadLocalRandom.current();
+        for (int i = 0; i < size; ++i) {
+            map.put(i, i);
+        }
+        map.putAll(mapToAddLinear);
         return map.size();
     }
 
