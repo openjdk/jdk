@@ -43,10 +43,6 @@
   4. Reporting not part of Reporter class but part of VirtualMemoryView, not too bad.
   5. Insufficient amount of unit tests
   6. Need to fix includes, copyright stmts etc
-
-  I've gotten some input on just how large these mappings can be: Approx. 16 million mappings at once.
-  Perhaps we can introduce an alignment+maximum size for this in order to solve the problem? We can then statically allocate the mapping area and get
-  O(1) mapping info.
 */
 
 class VirtualMemoryView {
