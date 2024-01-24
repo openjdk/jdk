@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,7 @@ static jrawMonitorID stopping_agent_thread_lock;
 static const char main_name[] = "main";
 static const char thread1_name[] = "thread1";
 static const char sys_thread_name[] = "SysThread";
-// Tes uses -Djava.util.concurrent.ForkJoinPool.common.parallelism=1
+// Tes uses -Djdk.virtualThreadScheduler.parallelism=1
 // to make name of carrier thread deterministic
 static const char fj_thread_name[] = "ForkJoinPool-1-worker-1";
 
