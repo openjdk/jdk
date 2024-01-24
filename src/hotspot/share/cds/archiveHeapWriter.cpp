@@ -634,6 +634,11 @@ bool ArchiveHeapWriter::is_marked_as_native_pointer(ArchiveHeapInfo* heap_info, 
   assert((Metadata**)_requested_bottom <= requested_field_addr && requested_field_addr < (Metadata**) _requested_top, "range check");
 
   BitMap::idx_t idx = requested_field_addr - (Metadata**) _requested_bottom;
+  if (idx < 49792 /*ptrmap_leading_zeros*/) {
+    return false;
+  } else {
+    idx -= 49792 /*ptrmap_leading_zeros*/;
+  }
   return (idx < heap_info->ptrmap()->size()) && (heap_info->ptrmap()->at(idx) == true);
 }
 
@@ -670,7 +675,6 @@ void ArchiveHeapWriter::compute_ptrmap(ArchiveHeapInfo* heap_info) {
     address buffered_native_ptr = ArchiveBuilder::current()->get_buffered_addr((address)native_ptr);
     address requested_native_ptr = ArchiveBuilder::current()->to_requested(buffered_native_ptr);
     *buffered_field_addr = (Metadata*)requested_native_ptr;
-    if (UseNewCode) tty->print_cr("New addr: %p", *buffered_field_addr);
   }
 
   heap_info->ptrmap()->resize(max_idx + 1);
