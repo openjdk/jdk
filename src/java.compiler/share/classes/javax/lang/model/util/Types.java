@@ -336,11 +336,19 @@ public interface Types {
     TypeMirror asMemberOf(DeclaredType containing, Element element);
 
     /**
-     * {@return a type mirror equal to the argument and with no annotations}
+     * {@return a type mirror equivalent to the argument, but with no annotations}
      * If the type mirror is a composite type, such as an array type
      * or a wildcard type, any constitute types, such as the
      * component type of an array and the type of the bounds of a
      * wildcard type, also have no annotations, recursively.
+     *
+     * <p>For most kinds of type mirrors, the result of
+     * {@snippet lang="java" :
+     *   types.isSameType(typeMirror, types.stripAnnotations(typeMirror))
+     * }
+     * is {@code true}. The predicate is {@code false} on wildcard
+     * types for {@linkplain #isSameType(TypeMirror, TypeMirror)
+     * reasons discussed elsewhere}.
      *
      * @param t the type mirror
      * @param <T> the specific type of type mirror
