@@ -54,7 +54,7 @@ public class PrimitiveInstanceOfNumericValueTests {
         assertEquals(true,  (0) instanceof byte);
         assertEquals(false, (Integer.MIN_VALUE) instanceof byte);
         assertEquals(false, (Long.MAX_VALUE) instanceof byte);
-        assertEquals(true,  (0) instanceof byte);
+        assertEquals(true,  (0L) instanceof byte);
         assertEquals(false, (Long.MIN_VALUE) instanceof byte);
         assertEquals(false, (Float.MAX_VALUE) instanceof byte);
         assertEquals(true,  ((float) 0) instanceof byte);
@@ -86,7 +86,7 @@ public class PrimitiveInstanceOfNumericValueTests {
         assertEquals(true, (0) instanceof short);
         assertEquals(false, (Integer.MIN_VALUE) instanceof short);
         assertEquals(false, (Long.MAX_VALUE) instanceof short);
-        assertEquals(true, (0) instanceof short);
+        assertEquals(true, (0L) instanceof short);
         assertEquals(false, (Long.MIN_VALUE) instanceof short);
         assertEquals(false, (Float.MAX_VALUE) instanceof short);
         assertEquals(true, ((float) 0) instanceof short);
@@ -119,7 +119,7 @@ public class PrimitiveInstanceOfNumericValueTests {
         assertEquals(true, (0) instanceof char);
         assertEquals(false, (Integer.MIN_VALUE) instanceof char);
         assertEquals(false, (Long.MAX_VALUE) instanceof char);
-        assertEquals(true, (0) instanceof char);
+        assertEquals(true, (0L) instanceof char);
         assertEquals(false, (Long.MIN_VALUE) instanceof char);
         assertEquals(false, (Float.MAX_VALUE) instanceof char);
         assertEquals(true, ((float) 0) instanceof char);
@@ -151,7 +151,7 @@ public class PrimitiveInstanceOfNumericValueTests {
         assertEquals(true, (0) instanceof int);
         assertEquals(true, (Integer.MIN_VALUE) instanceof int);
         assertEquals(false, (Long.MAX_VALUE) instanceof int);
-        assertEquals(true, (0) instanceof int);
+        assertEquals(true, (0L) instanceof int);
         assertEquals(false, (Long.MIN_VALUE) instanceof int);
         assertEquals(false, (Float.MAX_VALUE) instanceof int);
         assertEquals(true, ((float) 0) instanceof int);
@@ -180,7 +180,7 @@ public class PrimitiveInstanceOfNumericValueTests {
         assertEquals(true, ((char) (Character.MAX_VALUE)) instanceof long);
         assertEquals(true, ((char) (Character.MIN_VALUE)) instanceof long);
         assertEquals(true, (Integer.MAX_VALUE) instanceof long);
-        assertEquals(true, (0) instanceof long);
+        assertEquals(true, (0L) instanceof long);
         assertEquals(true, (Integer.MIN_VALUE) instanceof long);
         assertEquals(true, (Long.MAX_VALUE) instanceof long);
         assertEquals(true, (0) instanceof long);
@@ -215,7 +215,7 @@ public class PrimitiveInstanceOfNumericValueTests {
         assertEquals(true, (0) instanceof float);
         assertEquals(true, (Integer.MIN_VALUE) instanceof float);
         assertEquals(false, (Long.MAX_VALUE) instanceof float);
-        assertEquals(true, (0) instanceof float);
+        assertEquals(true, (0L) instanceof float);
         assertEquals(true, (Long.MIN_VALUE) instanceof float);
         assertEquals(true, (Float.MAX_VALUE) instanceof float);
         assertEquals(true, ((float) 0) instanceof float);
@@ -247,7 +247,7 @@ public class PrimitiveInstanceOfNumericValueTests {
         assertEquals(true, (0) instanceof double);
         assertEquals(true, (Integer.MIN_VALUE) instanceof double);
         assertEquals(false, (Long.MAX_VALUE) instanceof double);
-        assertEquals(true, (0) instanceof double);
+        assertEquals(true, (0L) instanceof double);
         assertEquals(true, (Long.MIN_VALUE) instanceof double);
         assertEquals(true, (Float.MAX_VALUE) instanceof double);
         assertEquals(true, ((float) 0) instanceof double);
