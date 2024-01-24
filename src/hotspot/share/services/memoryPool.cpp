@@ -139,6 +139,7 @@ instanceOop MemoryPool::get_memory_pool_instance(TRAPS) {
       pool_handle.release(Universe::vm_global());
     } else {
       // Record the object we created via call_special.
+      assert(_memory_pool_obj.is_empty(), "already set pool obj");
       _memory_pool_obj = pool_handle;
       // Record pool has been created.  Release matching unlocked acquire, to
       // safely publish the pool object.

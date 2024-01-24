@@ -144,6 +144,7 @@ instanceOop MemoryManager::get_memory_manager_instance(TRAPS) {
       mgr_handle.release(Universe::vm_global());
     } else {
       // Record the object we created via call_special.
+      assert(_memory_mgr_obj.is_empty(), "already set manager obj");
       _memory_mgr_obj = mgr_handle;
       // Record manager has been created.  Release matching unlocked acquire,
       // to safely publish the manager object.

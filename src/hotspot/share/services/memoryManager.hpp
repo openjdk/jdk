@@ -63,8 +63,6 @@ protected:
   MemoryManager(const char* name);
 
 public:
-  virtual ~MemoryManager() = default; // FIXME
-
   int num_memory_pools() const           { return _num_pools; }
   MemoryPool* get_memory_pool(int index) {
     assert(index >= 0 && index < _num_pools, "Invalid index");
