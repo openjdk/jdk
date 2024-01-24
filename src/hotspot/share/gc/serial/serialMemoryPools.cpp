@@ -24,8 +24,8 @@
 
 #include "precompiled.hpp"
 #include "gc/serial/defNewGeneration.hpp"
-#include "gc/serial/tenuredGeneration.hpp"
 #include "gc/serial/serialMemoryPools.hpp"
+#include "gc/serial/tenuredGeneration.hpp"
 #include "gc/shared/space.hpp"
 
 ContiguousSpacePool::ContiguousSpacePool(ContiguousSpace* space,
