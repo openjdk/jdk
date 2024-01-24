@@ -165,7 +165,6 @@ public class SwitchBootstraps {
             throw new IllegalArgumentException("Illegal invocation type " + invocationType);
         requireNonNull(labels);
 
-        labels = labels.clone();
         Stream.of(labels).forEach(l -> verifyLabel(l, selectorType));
 
         MethodHandle target = generateInnerClass(lookup, selectorType, labels);
