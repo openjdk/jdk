@@ -135,7 +135,7 @@ class G1DirtyCardQueueSet: public PtrQueueSet {
     // and install the next list, and meanwhile there can be a thread dealing
     // with the previous list.
     PausedList* volatile _plist;
-    DEFINE_PAD_MINUS_SIZE(1, DEFAULT_CACHE_LINE_SIZE, sizeof(PausedList*));
+    DEFINE_PAD_MINUS_SIZE(1, DEFAULT_PADDING_SIZE, sizeof(PausedList*));
 
     NONCOPYABLE(PausedBuffers);
 
@@ -157,19 +157,19 @@ class G1DirtyCardQueueSet: public PtrQueueSet {
     HeadTail take_all();
   };
 
-  DEFINE_PAD_MINUS_SIZE(0, DEFAULT_CACHE_LINE_SIZE, 0);
+  DEFINE_PAD_MINUS_SIZE(0, DEFAULT_PADDING_SIZE, 0);
   // Upper bound on the number of cards in the completed and paused buffers.
   volatile size_t _num_cards;
-  DEFINE_PAD_MINUS_SIZE(1, DEFAULT_CACHE_LINE_SIZE, sizeof(size_t));
+  DEFINE_PAD_MINUS_SIZE(1, DEFAULT_PADDING_SIZE, sizeof(size_t));
   // If the queue contains more cards than configured here, the
   // mutator must start doing some of the concurrent refinement work.
   volatile size_t _mutator_refinement_threshold;
-  DEFINE_PAD_MINUS_SIZE(2, DEFAULT_CACHE_LINE_SIZE, sizeof(size_t));
+  DEFINE_PAD_MINUS_SIZE(2, DEFAULT_PADDING_SIZE, sizeof(size_t));
   // Buffers ready for refinement.
   // NonblockingQueue has inner padding of one cache line.
   NonblockingQueue<BufferNode, &BufferNode::next_ptr> _completed;
   // Add a trailer padding after NonblockingQueue.
-  DEFINE_PAD_MINUS_SIZE(3, DEFAULT_CACHE_LINE_SIZE, sizeof(BufferNode*));
+  DEFINE_PAD_MINUS_SIZE(3, DEFAULT_PADDING_SIZE, sizeof(BufferNode*));
   // Buffers for which refinement is temporarily paused.
   // PausedBuffers has inner padding, including trailer.
   PausedBuffers _paused;
