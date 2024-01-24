@@ -59,8 +59,7 @@ public class TestStressG1Uncommit {
             "-XX:+UseG1GC",
             StressUncommit.class.getName()
         );
-        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(options);
-        OutputAnalyzer output = new OutputAnalyzer(pb.start());
+        OutputAnalyzer output = ProcessTools.executeLimitedTestJava(options);
         output.shouldHaveExitValue(0);
         output.shouldMatch("Uncommit regions");
         output.outputTo(System.out);

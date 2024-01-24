@@ -396,7 +396,7 @@ void ShenandoahControlThread::service_concurrent_normal_cycle(GCCause::Cause cau
   if (gc.collect(cause)) {
     // Cycle is complete
     heap->heuristics()->record_success_concurrent();
-    heap->shenandoah_policy()->record_success_concurrent();
+    heap->shenandoah_policy()->record_success_concurrent(gc.abbreviated());
   } else {
     assert(heap->cancelled_gc(), "Must have been cancelled");
     check_cancellation_or_degen(gc.degen_point());
@@ -431,10 +431,6 @@ void ShenandoahControlThread::service_stw_full_cycle(GCCause::Cause cause) {
 
   ShenandoahFullGC gc;
   gc.collect(cause);
-
-  ShenandoahHeap* const heap = ShenandoahHeap::heap();
-  heap->heuristics()->record_success_full();
-  heap->shenandoah_policy()->record_success_full();
 }
 
 void ShenandoahControlThread::service_stw_degenerated_cycle(GCCause::Cause cause, ShenandoahGC::ShenandoahDegenPoint point) {
@@ -445,10 +441,6 @@ void ShenandoahControlThread::service_stw_degenerated_cycle(GCCause::Cause cause
 
   ShenandoahDegenGC gc(point);
   gc.collect(cause);
-
-  ShenandoahHeap* const heap = ShenandoahHeap::heap();
-  heap->heuristics()->record_success_degenerated();
-  heap->shenandoah_policy()->record_success_degenerated();
 }
 
 void ShenandoahControlThread::service_uncommit(double shrink_before, size_t shrink_until) {

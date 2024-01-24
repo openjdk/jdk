@@ -49,7 +49,6 @@ ShenandoahGCSession::ShenandoahGCSession(GCCause::Cause cause) :
   _tracer->report_gc_start(cause, _timer->gc_start());
   _heap->trace_heap_before_gc(_tracer);
 
-  _heap->shenandoah_policy()->record_cycle_start();
   _heap->heuristics()->record_cycle_start();
   _trace_cycle.initialize(_heap->cycle_memory_manager(), cause,
           "end of GC cycle",

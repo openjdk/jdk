@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3436,10 +3436,6 @@ bool os::can_commit_large_page_memory() {
   return false;
 }
 
-bool os::can_execute_large_page_memory() {
-  return true;
-}
-
 static char* reserve_large_pages_individually(size_t size, char* req_addr, bool exec) {
   log_debug(pagesize)("Reserving large pages individually.");
 
@@ -5358,7 +5354,8 @@ int PlatformEvent::park(jlong Millis) {
       phri = new HighResolutionInterval(prd);
     }
     rv = ::WaitForSingleObject(_ParkHandle, prd);
-    assert(rv == WAIT_OBJECT_0 || rv == WAIT_TIMEOUT, "WaitForSingleObject failed");
+    assert(rv != WAIT_FAILED,   "WaitForSingleObject failed with error code: %lu", GetLastError());
+    assert(rv == WAIT_OBJECT_0 || rv == WAIT_TIMEOUT, "WaitForSingleObject failed with return value: %lu", rv);
     if (rv == WAIT_TIMEOUT) {
       Millis -= prd;
     }
@@ -5397,7 +5394,8 @@ void PlatformEvent::park() {
   // spin attempts by this thread.
   while (_Event < 0) {
     DWORD rv = ::WaitForSingleObject(_ParkHandle, INFINITE);
-    assert(rv == WAIT_OBJECT_0, "WaitForSingleObject failed");
+    assert(rv != WAIT_FAILED,   "WaitForSingleObject failed with error code: %lu", GetLastError());
+    assert(rv == WAIT_OBJECT_0, "WaitForSingleObject failed with return value: %lu", rv);
   }
 
   // Usually we'll find _Event == 0 at this point, but as
@@ -5460,16 +5458,25 @@ void Parker::park(bool isAbsolute, jlong time) {
   JavaThread* thread = JavaThread::current();
 
   // Don't wait if interrupted or already triggered
-  if (thread->is_interrupted(false) ||
-      WaitForSingleObject(_ParkHandle, 0) == WAIT_OBJECT_0) {
+  if (thread->is_interrupted(false)) {
     ResetEvent(_ParkHandle);
     return;
   } else {
-    ThreadBlockInVM tbivm(thread);
-    OSThreadWaitState osts(thread->osthread(), false /* not Object.wait() */);
+    DWORD rv = WaitForSingleObject(_ParkHandle, 0);
+    assert(rv != WAIT_FAILED,   "WaitForSingleObject failed with error code: %lu", GetLastError());
+    assert(rv == WAIT_OBJECT_0 || rv == WAIT_TIMEOUT, "WaitForSingleObject failed with return value: %lu", rv);
+    if (rv == WAIT_OBJECT_0) {
+      ResetEvent(_ParkHandle);
+      return;
+    } else {
+      ThreadBlockInVM tbivm(thread);
+      OSThreadWaitState osts(thread->osthread(), false /* not Object.wait() */);
 
-    WaitForSingleObject(_ParkHandle, time);
-    ResetEvent(_ParkHandle);
+      rv = WaitForSingleObject(_ParkHandle, time);
+      assert(rv != WAIT_FAILED,   "WaitForSingleObject failed with error code: %lu", GetLastError());
+      assert(rv == WAIT_OBJECT_0 || rv == WAIT_TIMEOUT, "WaitForSingleObject failed with return value: %lu", rv);
+      ResetEvent(_ParkHandle);
+    }
   }
 }
 
@@ -5545,7 +5552,9 @@ int os::fork_and_exec(const char* cmd) {
 
   if (rslt) {
     // Wait until child process exits.
-    WaitForSingleObject(pi.hProcess, INFINITE);
+    DWORD rv = WaitForSingleObject(pi.hProcess, INFINITE);
+    assert(rv != WAIT_FAILED,   "WaitForSingleObject failed with error code: %lu", GetLastError());
+    assert(rv == WAIT_OBJECT_0, "WaitForSingleObject failed with return value: %lu", rv);
 
     GetExitCodeProcess(pi.hProcess, &exit_code);
 
