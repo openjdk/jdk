@@ -309,7 +309,7 @@ bool IdealLoopTree::is_associative(Node* n, Node* base) {
   }
 }
 
-//---------------------reassociate_add_sub------------------------
+//-------------------reassociate_add_sub_cmp---------------------
 // Reassociate invariant add and subtract expressions:
 //
 // inv1 + (x + inv2)  =>  ( inv1 + inv2) + x
@@ -407,8 +407,8 @@ Node* IdealLoopTree::reassociate_add_sub_cmp(Node* n1, int inv1_idx, int inv2_id
 
 //---------------------reassociate-----------------------------
 // Reassociate invariant binary expressions with add/sub/mul/
-// and/or/xor operators.
-// For add/sub expressions: see "reassociate_add_sub"
+// and/or/xor/cmp operators.
+// For add/sub/cmp expressions: see "reassociate_add_sub_cmp"
 //
 // For mul/and/or/xor expressions:
 //
