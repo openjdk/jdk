@@ -332,11 +332,10 @@ void C2_MacroAssembler::fast_lock_lightweight(Register obj, Register t1,
   // C2 uses the value of Flags (NE vs EQ) to determine the continuation.
 }
 
-void C2_MacroAssembler::fast_unlock_lightweight(Register obj, Register box, Register t1,
-                                                Register t2) {
+void C2_MacroAssembler::fast_unlock_lightweight(Register obj, Register t1, Register t2,
+                                                Register t3) {
   assert(LockingMode == LM_LIGHTWEIGHT, "must be");
-  // TODO: Current implementation uses box only as a TEMP, consider renaming.
-  assert_different_registers(obj, box, t1, t2);
+  assert_different_registers(obj, t1, t2, t3);
 
   // Handle inflated monitor.
   Label inflated, inflated_load_monitor;
@@ -345,9 +344,9 @@ void C2_MacroAssembler::fast_unlock_lightweight(Register obj, Register box, Regi
   // Finish fast unlock unsuccessfully. MUST branch to with flag == NE
   Label slow_path;
 
-  const Register mark = box;
-  const Register top = t1;
-  const Register t = t2;
+  const Register mark = t1;
+  const Register top = t2;
+  const Register t = t3;
 
   { // Lightweight unlock
 
@@ -422,7 +421,7 @@ void C2_MacroAssembler::fast_unlock_lightweight(Register obj, Register box, Regi
     // Untag the monitor.
     sub(monitor, mark, monitor_tag);
 
-    const Register recursions = t1;
+    const Register recursions = t2;
     Label not_recursive;
 
     // Check if recursive.
@@ -439,7 +438,7 @@ void C2_MacroAssembler::fast_unlock_lightweight(Register obj, Register box, Regi
     bind(not_recursive);
 
     Label release;
-    const Register owner_addr = t1;
+    const Register owner_addr = t2;
 
     // Compute owner address.
     lea(owner_addr, Address(monitor, ObjectMonitor::owner_offset()));
