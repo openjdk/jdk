@@ -79,9 +79,9 @@ class BaseTest extends AbstractTest {
         try {
             return testMethod.invoke(invocationTarget, arguments);
         } catch (Exception e) {
-            throw new TestRunException("There was an error while invoking @Test method " + testMethod
-                                       + ". Used arguments: " + arguments, e); // TODO formatting
-                                       //+ ". Used arguments: " + test.getArgumentsString(), e);
+            throw new TestRunException("There was an error while invoking @Test method " +
+                                       testMethod + ". Used arguments: " +
+                                       test.formatArguments(arguments) + ", " + e);
         }
     }
 

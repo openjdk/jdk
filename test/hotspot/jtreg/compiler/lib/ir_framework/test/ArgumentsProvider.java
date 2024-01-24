@@ -108,7 +108,7 @@ final class SetupArgumentsProvider extends ArgumentsProvider {
             return (Object[]) setupMethod.invoke(target, index);
         } catch (Exception e) {
             throw new TestRunException("There was an error while invoking Setup method " +
-                                       setupMethod + " on " + target);
+                                       setupMethod + " on " + target + ", " + e);
         }
     }
 }

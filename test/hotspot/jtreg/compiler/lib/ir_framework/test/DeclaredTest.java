@@ -61,11 +61,6 @@ public class DeclaredTest {
         return warmupIterations;
     }
 
-    // TODO remove
-    //public boolean hasArguments() {
-    //    return arguments != null;
-    //}
-
     // TODO desc
     public boolean hasDefaultArgumentsProvider() {
         return argumentsProvider.isDefault();
@@ -73,8 +68,6 @@ public class DeclaredTest {
 
     public Object[] getArguments(Object invocationTarget, int index) {
         return argumentsProvider.getArguments(invocationTarget, index);
-        // TODO
-        //return Arrays.stream(arguments).map(ArgumentValue::getArgument).toArray();
     }
 
     public void setAttachedMethod(Method m) {
@@ -110,19 +103,18 @@ public class DeclaredTest {
         //}
     }
 
-    // TODO what is this for?
-    //public String getArgumentsString() {
-    //    if (hasArguments()) {
-    //        StringBuilder builder = new StringBuilder();
-    //        for (int i = 0; i < arguments.length; i++) {
-    //            builder.append("arg ").append(i).append(": ").append(arguments[i].getArgument()).append(", ");
-    //        }
-    //        builder.setLength(builder.length() - 2);
-    //        return builder.toString();
-    //    } else {
-    //        return "<void>";
-    //    }
-    //}
+    public String formatArguments(Object[] arguments) {
+        if (arguments.length > 0) {
+            StringBuilder builder = new StringBuilder();
+            for (int i = 0; i < arguments.length; i++) {
+                builder.append("arg ").append(i).append(": ").append(arguments[i]).append(", ");
+            }
+            builder.setLength(builder.length() - 2);
+            return builder.toString();
+        } else {
+            return "<void>";
+        }
+    }
 
     public Object invoke(Object obj, Object... args) {
         try {

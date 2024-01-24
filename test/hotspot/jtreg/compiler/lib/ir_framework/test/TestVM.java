@@ -226,6 +226,8 @@ public class TestVM {
                                     "Cannot use @Run annotation in " + clazzType + " " + c + " at " + m);
             TestFormat.checkNoThrow(getAnnotation(m, Check.class) == null,
                                     "Cannot use @Check annotation in " + clazzType + " " + c + " at " + m);
+            TestFormat.checkNoThrow(getAnnotation(m, Setup.class) == null,
+                                    "Cannot use @Setup annotation in " + clazzType + " " + c + " at " + m);
         }
     }
 
@@ -257,6 +259,11 @@ public class TestVM {
         if (DUMP_REPLAY) {
             addReplay();
         }
+
+        // Collect the @Setup methods so we can reference them
+        // from the test methods
+        collectSetupMethods();
+
         // Make sure to first setup test methods and make them non-inlineable and only then process compile commands.
         setupDeclaredTests();
         processControlAnnotations(testClass);
@@ -494,6 +501,26 @@ public class TestVM {
         } else {
             System.out.println("Skipped compilation on level " + requestedCompLevel + " due to VM flags not allowing it.");
         }
+    }
+
+
+    /**
+     *  TODO
+     */
+    private void collectSetupMethods() {
+        for (Method m : testClass.getDeclaredMethods()) {
+            Setup setupAnnotation = getAnnotation(m, Setup.class);
+            if (setupAnnotation != null) {
+	        addSetupMethod(m);
+	    }
+        }
+    }
+
+    private void addSetupMethod(Method m) {
+        TestFormat.check(getAnnotation(m, Test.class) == null,
+                         "@Setup method cannot have @Test annotation: " + m);
+        m.setAccessible(true);
+        setupMethodMap.put(m.getName(), m);
     }
 
     /**
