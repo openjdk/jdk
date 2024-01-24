@@ -27,11 +27,13 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
 /**
- * This annotation is used to identify Setup methods, which are used to setup the environment (e.g. set fields) and to
- * provide the arguments for the test method (see {@link Test}). A test method can use a Setup method, by specifying it
- * in a {@link Arguments} annotation. TODO continue here: index input? args output? what allowed to access?
+ * This annotation is used to identify Setup methods. These can be used to compute arbitrary arguments for a test
+ * method (see {@link Test}), as well as set fields. A test method can use a Setup method, by specifying it
+ * in a {@link Arguments} annotation. A setup method has an int index as input, for which it computes an index'th
+ * set of arguments, and returns the argument in an Object[].
  *
  * @see Arguments
+ * @see Setup
  * @see Test
  */
 @Retention(RetentionPolicy.RUNTIME)
