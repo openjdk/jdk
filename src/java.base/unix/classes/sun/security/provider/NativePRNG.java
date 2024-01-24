@@ -202,6 +202,11 @@ public final class NativePRNG extends SecureRandomSpi {
         return INSTANCE != null;
     }
 
+    // constructor, unused argument to speed up lookups from Provider
+    public NativePRNG(SecureRandomParameters ignored) {
+        this();
+    }
+
     // constructor, called by the JCA framework
     public NativePRNG() {
         super();
@@ -248,6 +253,11 @@ public final class NativePRNG extends SecureRandomSpi {
         // return whether this is available
         static boolean isAvailable() {
             return INSTANCE != null;
+        }
+
+        // constructor, unused argument to speed up lookups from Provider
+        public Blocking(SecureRandomParameters ignored) {
+            this();
         }
 
         // constructor, called by the JCA framework
@@ -297,6 +307,11 @@ public final class NativePRNG extends SecureRandomSpi {
         // return whether this is available
         static boolean isAvailable() {
             return INSTANCE != null;
+        }
+
+        // constructor, unused argument to speed up lookups from Provider
+        public NonBlocking(SecureRandomParameters ignored) {
+            this();
         }
 
         // constructor, called by the JCA framework
