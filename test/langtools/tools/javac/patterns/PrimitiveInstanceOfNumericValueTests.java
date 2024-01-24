@@ -25,8 +25,9 @@
  * @test
  * @bug 8304487
  * @summary Compiler Implementation for Primitive types in patterns, instanceof, and switch (Preview)
- * @compile -g --enable-preview -source ${jdk.version} PrimitiveInstanceOfNumericValueTests.java
- * @run main/othervm --enable-preview PrimitiveInstanceOfNumericValueTests
+ * @enablePreview
+ * @compile PrimitiveInstanceOfNumericValueTests.java
+ * @run main/othervm PrimitiveInstanceOfNumericValueTests
  */
 public class PrimitiveInstanceOfNumericValueTests {
 

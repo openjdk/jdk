@@ -25,8 +25,9 @@
  * @test
  * @bug 8304487
  * @summary Compiler Implementation for Primitive types in patterns, instanceof, and switch (Preview)
- * @compile -g --enable-preview -source ${jdk.version} PrimitiveInstanceOfPatternOpWithRecordPatterns.java
- * @run main/othervm --enable-preview PrimitiveInstanceOfPatternOpWithRecordPatterns
+ * @enablePreview
+ * @compile PrimitiveInstanceOfPatternOpWithRecordPatterns.java
+ * @run main/othervm PrimitiveInstanceOfPatternOpWithRecordPatterns
  */
 public class PrimitiveInstanceOfPatternOpWithRecordPatterns {
 

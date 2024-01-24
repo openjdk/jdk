@@ -25,8 +25,9 @@
  * @test
  * @bug 8304487
  * @summary Compiler Implementation for Primitive types in patterns, instanceof, and switch (Preview)
- * @compile -g --enable-preview -source ${jdk.version} PrimitiveInstanceOfTypeComparisonOp.java
- * @run main/othervm --enable-preview PrimitiveInstanceOfTypeComparisonOp
+ * @enablePreview
+ * @compile PrimitiveInstanceOfTypeComparisonOp.java
+ * @run main/othervm PrimitiveInstanceOfTypeComparisonOp
  */
 public class PrimitiveInstanceOfTypeComparisonOp {
 

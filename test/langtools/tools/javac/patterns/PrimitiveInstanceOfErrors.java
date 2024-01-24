@@ -2,7 +2,8 @@
  * @test /nodynamiccopyright/
  * @bug 8304487
  * @summary Compiler Implementation for Primitive types in patterns, instanceof, and switch (Preview)
- * @compile/fail/ref=PrimitiveInstanceOfErrors.out --enable-preview -source ${jdk.version} -XDrawDiagnostics -XDshould-stop.at=FLOW PrimitiveInstanceOfErrors.java
+ * @enablePreview
+ * @compile/fail/ref=PrimitiveInstanceOfErrors.out -XDrawDiagnostics -XDshould-stop.at=FLOW PrimitiveInstanceOfErrors.java
  */
 public class PrimitiveInstanceOfErrors {
     public static boolean unboxingAndNarrowingPrimitiveNotAllowedPerCastingConversion() {
