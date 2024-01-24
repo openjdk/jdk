@@ -135,11 +135,6 @@ class Space: public CHeapObj<mtGC> {
   virtual size_t used() const = 0;
   virtual size_t free() const = 0;
 
-  // Iterate over all objects in the space, calling "cl.do_object" on
-  // each.  Objects allocated by applications of the closure are not
-  // included in the iteration.
-  virtual void object_iterate(ObjectClosure* blk) = 0;
-
   // If "p" is in the space, returns the address of the start of the
   // "block" that contains "p".  We say "block" instead of "object" since
   // some heaps may not pack objects densely; a chunk may either be an
@@ -271,7 +266,7 @@ protected:
   HeapWord* par_allocate(size_t word_size) override;
 
   // Iteration
-  void object_iterate(ObjectClosure* blk) override;
+  void object_iterate(ObjectClosure* blk);
 
   // Apply "blk->do_oop" to the addresses of all reference fields in objects
   // starting with the _saved_mark_word, which was noted during a generation's
