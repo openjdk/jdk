@@ -24,12 +24,12 @@
 /**
  * @test
  * @bug 4485755 6361370 6448717 5080051 6939417 8016343
+ * @key printer
  * @summary dialog doesn't have way to specify margins
  *          for 6361370, verify exception for offline printer in Windows
  *          for 6448717, faster display of print dialog
  *          for 6500903, verify status of printer if accepting jobs or not
  *          for 8016343, verify printing to non-default printer
- * @author prr
  * @run main/manual DialogMargins
  */
 

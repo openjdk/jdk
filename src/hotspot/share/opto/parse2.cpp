@@ -1730,10 +1730,10 @@ void Parse::sharpen_type_after_if(BoolTest::mask btest,
       const Type* tboth = tcon->join_speculative(tval);
       if (tboth == tval)  break;        // Nothing to gain.
       if (tcon->isa_int()) {
-        ccast = new CastIINode(val, tboth);
+        ccast = new CastIINode(control(), val, tboth);
       } else if (tcon == TypePtr::NULL_PTR) {
         // Cast to null, but keep the pointer identity temporarily live.
-        ccast = new CastPPNode(val, tboth);
+        ccast = new CastPPNode(control(), val, tboth);
       } else {
         const TypeF* tf = tcon->isa_float_constant();
         const TypeD* td = tcon->isa_double_constant();
@@ -1764,7 +1764,6 @@ void Parse::sharpen_type_after_if(BoolTest::mask btest,
     assert(tcc != tval && tcc->higher_equal(tval), "must improve");
     // Delay transform() call to allow recovery of pre-cast value
     // at the control merge.
-    ccast->set_req(0, control());
     _gvn.set_type_bottom(ccast);
     record_for_igvn(ccast);
     cast = ccast;
@@ -2779,7 +2778,7 @@ void Parse::do_one_bytecode() {
   }
 
 #ifndef PRODUCT
-  constexpr int perBytecode = 5;
+  constexpr int perBytecode = 6;
   if (C->should_print_igv(perBytecode)) {
     IdealGraphPrinter* printer = C->igv_printer();
     char buffer[256];

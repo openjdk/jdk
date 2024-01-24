@@ -3742,6 +3742,68 @@ instruct reinterpret_resize_gt128b(vReg dst, vReg src, pReg ptmp, rFlagsReg cr) 
   ins_pipe(pipe_slow);
 %}
 
+// ---------------------------- Vector zero extend --------------------------------
+
+instruct vzeroExtBtoX(vReg dst, vReg src) %{
+  match(Set dst (VectorUCastB2X src));
+  format %{ "vzeroExtBtoX $dst, $src" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    assert(bt == T_SHORT || bt == T_INT || bt == T_LONG, "must be");
+    uint length_in_bytes = Matcher::vector_length_in_bytes(this);
+    if (VM_Version::use_neon_for_vector(length_in_bytes)) {
+      // 4B to 4S/4I, 8B to 8S
+      __ neon_vector_extend($dst$$FloatRegister, bt, length_in_bytes,
+                            $src$$FloatRegister, T_BYTE, /* is_unsigned */ true);
+    } else {
+      assert(UseSVE > 0, "must be sve");
+      __ sve_vector_extend($dst$$FloatRegister, __ elemType_to_regVariant(bt),
+                           $src$$FloatRegister, __ B, /* is_unsigned */ true);
+    }
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vzeroExtStoX(vReg dst, vReg src) %{
+  match(Set dst (VectorUCastS2X src));
+  format %{ "vzeroExtStoX $dst, $src" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    assert(bt == T_INT || bt == T_LONG, "must be");
+    uint length_in_bytes = Matcher::vector_length_in_bytes(this);
+    if (VM_Version::use_neon_for_vector(length_in_bytes)) {
+      // 4S to 4I
+      __ neon_vector_extend($dst$$FloatRegister, T_INT, length_in_bytes,
+                            $src$$FloatRegister, T_SHORT, /* is_unsigned */ true);
+    } else {
+      assert(UseSVE > 0, "must be sve");
+      __ sve_vector_extend($dst$$FloatRegister, __ elemType_to_regVariant(bt),
+                           $src$$FloatRegister, __ H, /* is_unsigned */ true);
+    }
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vzeroExtItoX(vReg dst, vReg src) %{
+  match(Set dst (VectorUCastI2X src));
+  format %{ "vzeroExtItoX $dst, $src" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    assert(bt == T_LONG, "must be");
+    uint length_in_bytes = Matcher::vector_length_in_bytes(this);
+    if (VM_Version::use_neon_for_vector(length_in_bytes)) {
+      // 2I to 2L
+      __ neon_vector_extend($dst$$FloatRegister, T_LONG, length_in_bytes,
+                            $src$$FloatRegister, T_INT, /* is_unsigned */ true);
+    } else {
+      assert(UseSVE > 0, "must be sve");
+      __ sve_vector_extend($dst$$FloatRegister, __ D,
+                           $src$$FloatRegister, __ S, /* is_unsigned */ true);
+    }
+  %}
+  ins_pipe(pipe_slow);
+%}
+
 // ------------------------------ Vector cast ----------------------------------
 
 // VectorCastB2X

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -644,7 +644,12 @@ class ZipFileSystem extends FileSystem {
             if (e.type == Entry.CEN) {
                 e.type = Entry.COPY;     // copy e
             }
-            e.posixPerms = perms == null ? -1 : ZipUtils.permsToFlags(perms);
+            if (perms == null) {
+                e.posixPerms = -1;
+            } else {
+                e.posixPerms = ZipUtils.permsToFlags(perms) |
+                        (e.posixPerms & 0xFE00); // Preserve unrelated bits
+            }
             update(e);
         } finally {
             endWrite();
@@ -1593,8 +1598,13 @@ class ZipFileSystem extends FileSystem {
             if (method != METHOD_STORED && method != METHOD_DEFLATED) {
                 throw new ZipException("invalid CEN header (unsupported compression method: " + method + ")");
             }
-            if (pos + CENHDR + nlen > limit) {
-                throw new ZipException("invalid CEN header (bad header size)");
+            long headerSize = (long)CENHDR + nlen + clen + elen;
+            // CEN header size + name length + comment length + extra length
+            // should not exceed 65,535 bytes per the PKWare APP.NOTE
+            // 4.4.10, 4.4.11, & 4.4.12.  Also check that current CEN header will
+            // not exceed the length of the CEN array
+            if (headerSize > 0xFFFF || pos + headerSize > limit) {
+                zerror("invalid CEN header (bad header size)");
             }
             if (elen > 0) {
                 checkExtraFields(cen, pos, size, csize, locoff, diskNo,
@@ -1660,7 +1670,7 @@ class ZipFileSystem extends FileSystem {
 
             int tagBlockSize = SH(cen, currentOffset);
             currentOffset += Short.BYTES;
-            int tagBlockEndingOffset = currentOffset + tagBlockSize;
+            long tagBlockEndingOffset = (long)currentOffset + tagBlockSize;
 
             //  The ending offset for this tag block should not go past the
             //  offset for the end of the extra field
@@ -2568,7 +2578,10 @@ class ZipFileSystem extends FileSystem {
                 pos = -pos + locpos;
                 byte[] buf = new byte[LOCHDR];
                 if (readNBytesAt(buf, 0, buf.length, pos) != LOCHDR) {
-                    throw new ZipException("invalid loc " + pos + " for entry reading");
+                    throw new ZipException("invalid LOC " + pos + " for entry reading");
+                }
+                if (LOCSIG(buf) != LOCSIG) {
+                    throw new ZipException("invalid LOC header (bad signature)");
                 }
                 pos += LOCHDR + LOCNAM(buf) + LOCEXT(buf);
             }
@@ -3000,7 +3013,7 @@ class ZipFileSystem extends FileSystem {
             attrsEx     = CENATX(cen, pos);
             */
             if (CENVEM_FA(cen, pos) == FILE_ATTRIBUTES_UNIX) {
-                posixPerms = CENATX_PERMS(cen, pos) & 0xFFF; // 12 bits for setuid, setgid, sticky + perms
+                posixPerms = (CENATX_PERMS(cen, pos) & 0xFFFF); // 16 bits for file type, setuid, setgid, sticky + perms
             }
             locoff      = CENOFF(cen, pos);
             pos += CENHDR;

@@ -39,7 +39,6 @@
 
 #include "awt_p.h"
 #include "awt_Component.h"
-#include "awt_MenuComponent.h"
 #include "awt_util.h"
 
 #include "sun_awt_X11_XToolkit.h"
@@ -71,8 +70,6 @@ static int tracing = 0;
 
 
 struct ComponentIDs componentIDs;
-
-struct MenuComponentIDs menuComponentIDs;
 
 extern Display* awt_init_Display(JNIEnv *env, jobject this);
 extern void freeNativeStringArray(char **array, jsize length);
@@ -235,13 +232,6 @@ Java_java_awt_Frame_initIDs
 
 }
 
-
-JNIEXPORT void JNICALL
-Java_java_awt_MenuComponent_initIDs(JNIEnv *env, jclass cls)
-{
-    menuComponentIDs.appContext =
-      (*env)->GetFieldID(env, cls, "appContext", "Lsun/awt/AppContext;");
-}
 
 JNIEXPORT void JNICALL
 Java_java_awt_Cursor_initIDs(JNIEnv *env, jclass cls)

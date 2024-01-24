@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -193,6 +193,23 @@ public class JarBuilder {
         if (mainClass != null) {
             argList.add("--main-class=" + mainClass);
         }
+        argList.add("-C");
+        argList.add(classesDir);
+        argList.add(".");
+        createJar(argList);
+    }
+
+    public static void createModularJarWithManifest(String jarPath,
+                                                    String classesDir,
+                                                    String mainClass,
+                                                    String manifest) throws Exception {
+        ArrayList<String> argList = new ArrayList<String>();
+        argList.add("--create");
+        argList.add("--file=" + jarPath);
+        if (mainClass != null) {
+            argList.add("--main-class=" + mainClass);
+        }
+        argList.add("--manifest=" + manifest);
         argList.add("-C");
         argList.add(classesDir);
         argList.add(".");

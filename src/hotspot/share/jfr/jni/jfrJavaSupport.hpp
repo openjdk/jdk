@@ -86,6 +86,7 @@ class JfrJavaSupport : public AllStatic {
   static Klass* klass(const jobject handle);
   static const char* c_str(jstring string, Thread* thread, bool c_heap = false);
   static const char* c_str(oop string, Thread* thread, bool c_heap = false);
+  static void free_c_str(const char* str, bool c_heap);
   static Symbol** symbol_array(jobjectArray string_array, JavaThread* thread, intptr_t* result_size, bool c_heap = false);
 
   // exceptions

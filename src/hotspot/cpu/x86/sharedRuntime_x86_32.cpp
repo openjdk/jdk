@@ -528,8 +528,7 @@ int SharedRuntime::java_calling_convention(const BasicType *sig_bt,
     }
   }
 
-  // return value can be odd number of VMRegImpl stack slots make multiple of 2
-  return align_up(stack, 2);
+  return stack;
 }
 
 // Patch the callers callsite with entry to compiled code if it exists.
