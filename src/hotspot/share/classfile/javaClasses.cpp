@@ -1118,12 +1118,15 @@ bool java_lang_Class::restore_archived_mirror(Klass *k,
     return true;
   }
 
+  if (UseNewCode2 && k->name()->equals("[Ljava/lang/reflect/Executable;")) {
+    tty->print_cr("Found it");
+  }
+
   oop m = k->archived_java_mirror();
   assert(m != nullptr, "must have stored non-null archived mirror");
 
   // Sanity: clear it now to prevent re-initialization if any of the following fails
   k->clear_archived_mirror_index();
-
   // mirror is archived, restore
   log_debug(cds, mirror)("Archived mirror is: " PTR_FORMAT, p2i(m));
   assert(as_Klass(m) == k, "must be");

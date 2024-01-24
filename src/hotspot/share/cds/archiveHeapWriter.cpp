@@ -670,6 +670,7 @@ void ArchiveHeapWriter::compute_ptrmap(ArchiveHeapInfo* heap_info) {
     address buffered_native_ptr = ArchiveBuilder::current()->get_buffered_addr((address)native_ptr);
     address requested_native_ptr = ArchiveBuilder::current()->to_requested(buffered_native_ptr);
     *buffered_field_addr = (Metadata*)requested_native_ptr;
+    if (UseNewCode) tty->print_cr("New addr: %p", *buffered_field_addr);
   }
 
   heap_info->ptrmap()->resize(max_idx + 1);

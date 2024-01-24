@@ -429,8 +429,13 @@ class PatchNativePointers: public BitMapClosure {
   PatchNativePointers(Metadata** start) : _start(start) {}
 
   bool do_bit(size_t offset) {
-    Metadata** p = _start + offset;
+    size_t shift = UseNewCode ? 50752 : 0;
+    Metadata** p = _start + offset + shift;
+    address old = (address)*p;
     *p = (Metadata*)(address(*p) + MetaspaceShared::relocation_delta());
+    if (old == (address)0x8000467f8) {
+      tty->print_cr("Offset %ld should be patched, now %p", offset, (address)*p);
+    }
     // Currently we have only Klass pointers in heap objects.
     // This needs to be relaxed when we support other types of native
     // pointers such as Method.

@@ -394,6 +394,9 @@ void HeapShared::archive_java_mirrors() {
   assert(klasses != nullptr, "sanity");
   for (int i = 0; i < klasses->length(); i++) {
     Klass* orig_k = klasses->at(i);
+    if (UseNewCode && orig_k->name()->equals("[Ljava/lang/reflect/Executable;")) {
+      tty->print_cr("Found mirror");
+    }
     oop m = scratch_java_mirror(orig_k);
     if (m != nullptr) {
       Klass* buffered_k = ArchiveBuilder::get_buffered_klass(orig_k);

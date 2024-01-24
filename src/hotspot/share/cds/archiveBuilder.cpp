@@ -1129,7 +1129,6 @@ class ArchiveBuilder::CDSMapLogger : AllStatic {
           LP64_ONLY(_source_obj->long_field(fd->offset()))
           NOT_LP64( _source_obj->int_field (fd->offset()));
       ArchiveBuilder* builder = ArchiveBuilder::current();
-
       // The value of the native pointer at runtime.
       address requested_native_ptr = builder->to_requested(builder->get_buffered_addr(source_native_ptr));
 
