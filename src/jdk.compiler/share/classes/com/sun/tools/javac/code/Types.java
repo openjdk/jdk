@@ -5043,8 +5043,7 @@ public class Types {
         }
 
         if (target.isPrimitive()) {
-            return (source.isReference() && isSubtype(source, target)) ||
-                    checkUnconditionallyExactPrimitives(source, target);
+            return checkUnconditionallyExactPrimitives(source, target);
         } else {
             return isSubtype(boxedTypeOrType(erasure(source)), target);
         }
