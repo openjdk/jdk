@@ -53,6 +53,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 public class MessageFormatToPatternTest {
 
     private static final int NUM_RANDOM_TEST_CASES = 1000;
+
+    // Max levels of nesting of ChoiceFormats inside MessageFormats
     private static final int MAX_FORMAT_NESTING = 3;
 
     private static Locale savedLocale;
