@@ -22,14 +22,15 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.internal.misc;
+package jdk.internal.vm;
 
+import jdk.internal.vm.annotation.Hidden;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 
 /**
  * Just-in-time-compiler-related queries
  */
-public class JitCompiler {
+public class ConstantSupport {
     /**
      * Determine if {@code expr} can be evaluated to a constant value by the JIT
      * compiler. For example, {@code isCompileConstant(5)} will be evaluated
@@ -52,6 +53,7 @@ public class JitCompiler {
      * @return {@code true} if the JIT compiler determines the {@code expr} is
      *         always evaluated to a constant value, {@code false} otherwise
      */
+    @Hidden
     @IntrinsicCandidate
     public static boolean isCompileConstant(boolean expr) {
         return false;
@@ -60,6 +62,7 @@ public class JitCompiler {
     /**
      * @see #isCompileConstant(boolean)
      */
+    @Hidden
     @IntrinsicCandidate
     public static boolean isCompileConstant(byte expr) {
         return false;
@@ -68,6 +71,7 @@ public class JitCompiler {
     /**
      * @see #isCompileConstant(boolean)
      */
+    @Hidden
     @IntrinsicCandidate
     public static boolean isCompileConstant(short expr) {
         return false;
@@ -76,6 +80,7 @@ public class JitCompiler {
     /**
      * @see #isCompileConstant(boolean)
      */
+    @Hidden
     @IntrinsicCandidate
     public static boolean isCompileConstant(char expr) {
         return false;
@@ -84,6 +89,7 @@ public class JitCompiler {
     /**
      * @see #isCompileConstant(boolean)
      */
+    @Hidden
     @IntrinsicCandidate
     public static boolean isCompileConstant(int expr) {
         return false;
@@ -92,6 +98,7 @@ public class JitCompiler {
     /**
      * @see #isCompileConstant(boolean)
      */
+    @Hidden
     @IntrinsicCandidate
     public static boolean isCompileConstant(long expr) {
         return false;
@@ -100,6 +107,7 @@ public class JitCompiler {
     /**
      * @see #isCompileConstant(boolean)
      */
+    @Hidden
     @IntrinsicCandidate
     public static boolean isCompileConstant(float expr) {
         return false;
@@ -108,6 +116,7 @@ public class JitCompiler {
     /**
      * @see #isCompileConstant(boolean)
      */
+    @Hidden
     @IntrinsicCandidate
     public static boolean isCompileConstant(double expr) {
         return false;
@@ -116,6 +125,7 @@ public class JitCompiler {
     /**
      * @see #isCompileConstant(boolean)
      */
+    @Hidden
     @IntrinsicCandidate
     public static boolean isCompileConstant(Object expr) {
         return false;

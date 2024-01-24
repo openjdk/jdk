@@ -23,14 +23,14 @@
 package compiler.c2.irTests;
 
 import compiler.lib.ir_framework.*;
-import jdk.internal.misc.JitCompiler;
+import jdk.internal.vm.ConstantSupport;
 
 /*
  * @test
  * @bug 8324433
  * @summary Test that isCompileConstant is able to constant-fold the computation
  *          regarding constant inputs.
- * @modules java.base/jdk.internal.misc
+ * @modules java.base/jdk.internal.vm
  * @library /test/lib /
  * @run driver compiler.c2.irTests.IsCompileConstantTests
  */
@@ -177,7 +177,7 @@ public class IsCompileConstantTests {
 
     @ForceInline
     public int process(boolean input) {
-        if (JitCompiler.isCompileConstant(input)) {
+        if (ConstantSupport.isCompileConstant(input)) {
             if (input) {
                 return 125;
             } else {
@@ -190,7 +190,7 @@ public class IsCompileConstantTests {
 
     @ForceInline
     public int process(byte input) {
-        if (JitCompiler.isCompileConstant(input)) {
+        if (ConstantSupport.isCompileConstant(input)) {
             return switch(input) {
                 case 0 -> 125;
                 case 1 -> 341;
@@ -205,7 +205,7 @@ public class IsCompileConstantTests {
 
     @ForceInline
     public int process(short input) {
-        if (JitCompiler.isCompileConstant(input)) {
+        if (ConstantSupport.isCompileConstant(input)) {
             return switch(input) {
                 case 0 -> 125;
                 case 1 -> 341;
@@ -220,7 +220,7 @@ public class IsCompileConstantTests {
 
     @ForceInline
     public int process(char input) {
-        if (JitCompiler.isCompileConstant(input)) {
+        if (ConstantSupport.isCompileConstant(input)) {
             return switch(input) {
                 case 0 -> 125;
                 case 1 -> 341;
@@ -235,7 +235,7 @@ public class IsCompileConstantTests {
 
     @ForceInline
     public int process(int input) {
-        if (JitCompiler.isCompileConstant(input)) {
+        if (ConstantSupport.isCompileConstant(input)) {
             return switch(input) {
                 case 0 -> 125;
                 case 1 -> 341;
@@ -250,7 +250,7 @@ public class IsCompileConstantTests {
 
     @ForceInline
     public int process(long input) {
-        if (JitCompiler.isCompileConstant(input)) {
+        if (ConstantSupport.isCompileConstant(input)) {
             if (input == 0) {
                 return 125;
             } else if (input == 1) {
@@ -269,7 +269,7 @@ public class IsCompileConstantTests {
 
     @ForceInline
     public int process(float input) {
-        if (JitCompiler.isCompileConstant(input)) {
+        if (ConstantSupport.isCompileConstant(input)) {
             if (input == 0) {
                 return 125;
             } else if (input == 1) {
@@ -288,7 +288,7 @@ public class IsCompileConstantTests {
 
     @ForceInline
     public int process(double input) {
-        if (JitCompiler.isCompileConstant(input)) {
+        if (ConstantSupport.isCompileConstant(input)) {
             if (input == 0) {
                 return 125;
             } else if (input == 1) {
@@ -307,7 +307,7 @@ public class IsCompileConstantTests {
 
     @ForceInline
     public int process(Point input) {
-        if (JitCompiler.isCompileConstant(input)) {
+        if (ConstantSupport.isCompileConstant(input)) {
             return input.hashCode();
         }
 
@@ -316,7 +316,7 @@ public class IsCompileConstantTests {
 
     public static void main(String[] args) {
         var test = new TestFramework(IsCompileConstantTests.class);
-        test.addFlags("--add-exports=java.base/jdk.internal.misc=ALL-UNNAMED");
+        test.addFlags("--add-exports=java.base/jdk.internal.vm=ALL-UNNAMED");
         test.start();
     }
 }

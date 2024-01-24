@@ -920,24 +920,24 @@ class methodHandle;
    do_name(     getAndSetReference_name,                                "getAndSetReference")                                  \
    do_signature(getAndSetReference_signature,                           "(Ljava/lang/Object;JLjava/lang/Object;)Ljava/lang/Object;" ) \
                                                                                                                               \
-  do_class(jdk_internal_misc_JitCompiler, "jdk/internal/misc/JitCompiler")                                                                     \
-  do_intrinsic(_isCompileConstantZ,       jdk_internal_misc_JitCompiler,isCompileConstant_name, isCompileConstantZ_signature, F_S)             \
+  do_class(jdk_internal_vm_ConstantSupport, "jdk/internal/vm/ConstantSupport")                                                                 \
+  do_intrinsic(_isCompileConstantZ,       jdk_internal_vm_ConstantSupport, isCompileConstant_name, isCompileConstantZ_signature, F_S)          \
    do_alias(    isCompileConstantZ_signature,                           bool_bool_signature)                                                   \
-  do_intrinsic(_isCompileConstantB,       jdk_internal_misc_JitCompiler,isCompileConstant_name, isCompileConstantB_signature, F_S)             \
+  do_intrinsic(_isCompileConstantB,       jdk_internal_vm_ConstantSupport, isCompileConstant_name, isCompileConstantB_signature, F_S)          \
    do_alias(    isCompileConstantB_signature,                           byte_bool_signature)                                                   \
-  do_intrinsic(_isCompileConstantS,       jdk_internal_misc_JitCompiler,isCompileConstant_name, isCompileConstantS_signature, F_S)             \
+  do_intrinsic(_isCompileConstantS,       jdk_internal_vm_ConstantSupport, isCompileConstant_name, isCompileConstantS_signature, F_S)          \
    do_alias(    isCompileConstantS_signature,                           short_bool_signature)                                                  \
-  do_intrinsic(_isCompileConstantC,       jdk_internal_misc_JitCompiler,isCompileConstant_name, isCompileConstantC_signature, F_S)             \
+  do_intrinsic(_isCompileConstantC,       jdk_internal_vm_ConstantSupport, isCompileConstant_name, isCompileConstantC_signature, F_S)          \
    do_alias(    isCompileConstantC_signature,                           char_bool_signature)                                                   \
-  do_intrinsic(_isCompileConstantI,       jdk_internal_misc_JitCompiler,isCompileConstant_name, isCompileConstantI_signature, F_S)             \
+  do_intrinsic(_isCompileConstantI,       jdk_internal_vm_ConstantSupport, isCompileConstant_name, isCompileConstantI_signature, F_S)          \
    do_alias(    isCompileConstantI_signature,                           int_bool_signature)                                                    \
-  do_intrinsic(_isCompileConstantJ,       jdk_internal_misc_JitCompiler,isCompileConstant_name, isCompileConstantJ_signature, F_S)             \
+  do_intrinsic(_isCompileConstantJ,       jdk_internal_vm_ConstantSupport, isCompileConstant_name, isCompileConstantJ_signature, F_S)          \
    do_alias(    isCompileConstantJ_signature,                           long_bool_signature)                                                   \
-  do_intrinsic(_isCompileConstantF,       jdk_internal_misc_JitCompiler,isCompileConstant_name, isCompileConstantF_signature, F_S)             \
+  do_intrinsic(_isCompileConstantF,       jdk_internal_vm_ConstantSupport, isCompileConstant_name, isCompileConstantF_signature, F_S)          \
    do_alias(    isCompileConstantF_signature,                           float_bool_signature)                                                  \
-  do_intrinsic(_isCompileConstantD,       jdk_internal_misc_JitCompiler,isCompileConstant_name, isCompileConstantD_signature, F_S)             \
+  do_intrinsic(_isCompileConstantD,       jdk_internal_vm_ConstantSupport, isCompileConstant_name, isCompileConstantD_signature, F_S)          \
    do_alias(    isCompileConstantD_signature,                           double_bool_signature)                                                 \
-  do_intrinsic(_isCompileConstantL,       jdk_internal_misc_JitCompiler,isCompileConstant_name, isCompileConstantL_signature, F_S)             \
+  do_intrinsic(_isCompileConstantL,       jdk_internal_vm_ConstantSupport, isCompileConstant_name, isCompileConstantL_signature, F_S)          \
    do_alias(    isCompileConstantL_signature,                           object_boolean_signature)                                              \
    do_name(     isCompileConstant_name,                                 "isCompileConstant")                                                   \
                                                                                                                                                \
