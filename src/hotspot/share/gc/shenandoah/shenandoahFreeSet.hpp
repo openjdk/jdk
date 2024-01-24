@@ -181,7 +181,7 @@ private:
   void reserve_regions(size_t to_reserve);
 
   void prepare_to_rebuild(size_t &cset_regions);
-  void finish_rebuild(size_t cset_regions, bool from_corrupted);
+  void finish_rebuild(size_t cset_regions);
 
 public:
   ShenandoahFreeSet(ShenandoahHeap* heap, size_t max_regions);
@@ -191,17 +191,18 @@ public:
   inline size_t alloc_capacity(size_t idx) const;
 
   void clear();
-  void rebuild(bool from_corrupted = false);
+  void rebuild();
 
-  // kelvin new method: call this from worker thread 0 at start of
-  // update refs.  we no longer need to maintain a collector reserve.
-  // At end of update-refs, the cset regions will be added to the
-  // free set, and we will rebuild again, at which time we'll set
-  // aside the Collector reserve for next GC pass.
+  // After we have finished evacuation, we no longer need to hold regions in reserve for the Collector.
+  // Call this method at the start of update refs to make more memory available to the Mutator.  This
+  // benefits workloads that do not consume all of the evacuation waste reserve.
+  //
+  // Note that we plan to replenish the Collector reserve at the end of update refs, at which time all
+  // of the regions recycled from the collection set will be available.
   void move_collector_sets_to_mutator(size_t cset_regions);
 
   void recycle_trash();
-  void log_status(bool from_corrupted = false);
+  void log_status();
 
   inline size_t capacity()  const { return _free_sets.capacity_of(Mutator); }
   inline size_t used()      const { return _free_sets.used_by(Mutator);     }

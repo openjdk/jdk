@@ -34,8 +34,6 @@
 #include "memory/resourceArea.hpp"
 #include "runtime/orderAccess.hpp"
 
-#undef KELVIN_NOISE
-
 static const char* free_memory_type_name(ShenandoahFreeMemoryType t) {
   switch (t) {
     case NotFree: return "NotFree";
@@ -115,11 +113,6 @@ void ShenandoahSetsOfFree::clear_all() {
 void ShenandoahSetsOfFree::increase_used(ShenandoahFreeMemoryType which_set, size_t bytes) {
   assert (which_set > NotFree && which_set < NumFreeSets, "Set must correspond to a valid freeset");
   _used_by[which_set] += bytes;
-#ifdef KELVIN_NOISE
-  log_info(gc)("increase_used(%s, " SIZE_FORMAT ") yielding: " SIZE_FORMAT,
-               free_memory_type_name(which_set), bytes, _used_by[which_set]);
-#endif
-
   assert (_used_by[which_set] <= _capacity_of[which_set],
           "Must not use (" SIZE_FORMAT ") more than capacity (" SIZE_FORMAT ") after increase by " SIZE_FORMAT,
           _used_by[which_set], _capacity_of[which_set], bytes);
@@ -181,10 +174,6 @@ void ShenandoahSetsOfFree::retire_within_free_set(size_t idx, size_t used_bytes)
 
   _region_counts[orig_set]--;
   _region_counts[NotFree]++;
-
-#ifdef KELVIN_NOISE
-  log_info(gc)("Retiring " SIZE_FORMAT " from set %s with waste: " SIZE_FORMAT, idx, free_memory_type_name(orig_set), _region_size_bytes - used_bytes);
-#endif
 }
 
 void ShenandoahSetsOfFree::make_free(size_t idx, ShenandoahFreeMemoryType which_set, size_t available) {
@@ -197,11 +186,6 @@ void ShenandoahSetsOfFree::make_free(size_t idx, ShenandoahFreeMemoryType which_
   _capacity_of[which_set] += _region_size_bytes;
   _used_by[which_set] += _region_size_bytes - available;
   expand_bounds_maybe(which_set, idx, available);
-
-#ifdef KELVIN_NOISE
-  log_info(gc)("Making " SIZE_FORMAT " free as %s, used by remains: " SIZE_FORMAT ", capacity increased by: " SIZE_FORMAT " to " SIZE_FORMAT,
-               idx, free_memory_type_name(which_set), _used_by[which_set], _region_size_bytes, _capacity_of[which_set]);
-#endif
 
   _region_counts[NotFree]--;
   _region_counts[which_set]++;
@@ -235,13 +219,6 @@ void ShenandoahSetsOfFree::move_to_set(size_t idx, ShenandoahFreeMemoryType new_
   _capacity_of[new_set] += _region_size_bytes;;
   _used_by[new_set] += used;
   expand_bounds_maybe(new_set, idx, available);
-
-#ifdef KELVIN_NOISE
-  log_info(gc)("Moving " SIZE_FORMAT " from %s to %s, resulting used/capacity in from: " SIZE_FORMAT "/" SIZE_FORMAT
-               ", used/capacity in to: " SIZE_FORMAT "/" SIZE_FORMAT,
-               idx, free_memory_type_name(orig_set), free_memory_type_name(new_set),
-               _used_by[orig_set], _capacity_of[orig_set], _used_by[new_set], _capacity_of[new_set]);
-#endif
 
   _region_counts[orig_set]--;
   _region_counts[new_set]++;
@@ -314,44 +291,6 @@ inline size_t ShenandoahSetsOfFree::rightmost_empty(ShenandoahFreeMemoryType whi
   _rightmosts_empty[which_set] = 0;
   return 0;
 }
-
-#ifdef KELVIN_SINGLE_SHEN
-inline bool ShenandoahSetsOfFree::alloc_from_left_bias(ShenandoahFreeMemoryType which_set) {
-  assert (which_set > NotFree && which_set < NumFreeSets, "selected free set must be valid");
-  return _left_to_right_bias[which_set];
-}
-
-void ShenandoahSetsOfFree::establish_alloc_bias(ShenandoahFreeMemoryType which_set) {
-  ShenandoahHeap* heap = ShenandoahHeap::heap();
-  shenandoah_assert_heaplocked();
-  assert (which_set > NotFree && which_set < NumFreeSets, "selected free set must be valid");
-
-  size_t middle = (_leftmosts[which_set] + _rightmosts[which_set]) / 2;
-  size_t available_in_first_half = 0;
-  size_t available_in_second_half = 0;
-
-  for (size_t index = _leftmosts[which_set]; index < middle; index++) {
-    if (in_free_set(index, which_set)) {
-      ShenandoahHeapRegion* r = heap->get_region(index);
-      available_in_first_half += r->free();
-    }
-  }
-  for (size_t index = middle; index <= _rightmosts[which_set]; index++) {
-    if (in_free_set(index, which_set)) {
-      ShenandoahHeapRegion* r = heap->get_region(index);
-      available_in_second_half += r->free();
-    }
-  }
-
-  // We desire to first consume the sparsely distributed regions in order that the remaining regions are densely packed.
-  // Densely packing regions reduces the effort to search for a region that has sufficient memory to satisfy a new allocation
-  // request.  Regions become sparsely distributed following a Full GC, which tends to slide all regions to the front of the
-  // heap rather than allowing survivor regions to remain at the high end of the heap where we intend for them to congregate.
-
-  _left_to_right_bias[which_set] = (available_in_second_half > available_in_first_half);
-}
-#endif
-
 
 #ifdef ASSERT
 void ShenandoahSetsOfFree::assert_bounds() {
@@ -686,29 +625,17 @@ HeapWord* ShenandoahFreeSet::allocate_contiguous(ShenandoahAllocRequest& req) {
       used_words = ShenandoahHeapRegion::region_size_words();
     }
 
-#ifdef KELVIN_NOT_SINGLESHEN
-    r->set_affiliation(req.affiliation());
-#endif
     r->set_update_watermark(r->bottom());
     r->set_top(r->bottom() + used_words);
 
     // While individual regions report their true use, all humongous regions are marked used in the free set.
     _free_sets.retire_within_free_set(r->index(), ShenandoahHeapRegion::region_size_bytes());
   }
-#ifdef KELVIN_NOT_SINGLESHEN
-  // kelvin: what to do?
-  _heap->young_generation()->increase_affiliated_region_count(num);
-#endif
 
   size_t total_humongous_size = ShenandoahHeapRegion::region_size_bytes() * num;
   _free_sets.increase_used(Mutator, total_humongous_size);
   _free_sets.assert_bounds();
   req.set_actual_size(words_size);
-#ifdef KELVIN_NOT_SINGLESHEN
-  if (remainder != 0) {
-    req.set_waste(ShenandoahHeapRegion::region_size_words() - remainder);
-  }
-#endif
   return _heap->get_region(beg)->bottom();
 }
 
@@ -789,9 +716,6 @@ void ShenandoahFreeSet::find_regions_with_alloc_capacity(size_t &cset_regions) {
              "Region " SIZE_FORMAT " should not be in free set because alloc is not allowed and not is trash", idx);
     }
   }
-#ifdef KELVIN_NOISE
-  log_info(gc)("Done: find_regions_with_alloc_capacity");
-#endif
 }
 
 // Move no more than max_xfer_regions from the existing Collector free sets to the Mutator free set.
@@ -848,7 +772,7 @@ void ShenandoahFreeSet::prepare_to_rebuild(size_t &cset_regions) {
   find_regions_with_alloc_capacity(cset_regions);
 }
 
-void ShenandoahFreeSet::finish_rebuild(size_t cset_regions, bool from_corrupted) {
+void ShenandoahFreeSet::finish_rebuild(size_t cset_regions) {
   shenandoah_assert_heaplocked();
 
   // Our desire is to reserve this much memory for future evacuation.  We may end up reserving less, if
@@ -865,13 +789,13 @@ void ShenandoahFreeSet::finish_rebuild(size_t cset_regions, bool from_corrupted)
 
   reserve_regions(reserve);
   _free_sets.assert_bounds();
-  log_status(from_corrupted);
+  log_status();
 }
 
-void ShenandoahFreeSet::rebuild(bool from_corrupted) {
+void ShenandoahFreeSet::rebuild() {
   size_t cset_regions;
   prepare_to_rebuild(cset_regions);
-  finish_rebuild(cset_regions, from_corrupted);
+  finish_rebuild(cset_regions);
 }
 
 // Having placed all regions that have allocation capacity into the mutator set, move some of these regions from
@@ -913,7 +837,7 @@ void ShenandoahFreeSet::reserve_regions(size_t to_reserve) {
   }
 }
 
-void ShenandoahFreeSet::log_status(bool from_corrupted) {
+void ShenandoahFreeSet::log_status() {
   shenandoah_assert_heaplocked();
 
 #ifdef ASSERT
@@ -1001,18 +925,10 @@ void ShenandoahFreeSet::log_status(bool from_corrupted) {
           }
           total_used += r->used();
           total_free += free;
-#ifdef KELVIN_NOISE_NEVER_MIND
-          log_info(gc)("Region %s " SIZE_FORMAT ": used: " SIZE_FORMAT ", free: " SIZE_FORMAT ", total_used: " SIZE_FORMAT ", total free: " SIZE_FORMAT,
-                       free_memory_type_name(_free_sets.membership(idx)), idx, r->used(), free, total_used, total_free);
-#endif
           max_contig = MAX2(max_contig, empty_contig);
           last_idx = idx;
         }
       }
-
-#ifdef KELVIN_NOISE_NEVER_MIND
-      log_info(gc)(" capacity: " SIZE_FORMAT ", used: " SIZE_FORMAT, capacity(), used());
-#endif
 
       size_t max_humongous = max_contig * ShenandoahHeapRegion::region_size_bytes();
       size_t free = capacity() - used();

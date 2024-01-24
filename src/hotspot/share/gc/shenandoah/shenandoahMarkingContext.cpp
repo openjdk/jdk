@@ -88,23 +88,13 @@ void ShenandoahMarkingContext::clear_bitmap(ShenandoahHeapRegion* r) {
 
 bool ShenandoahMarkingContext::is_complete() {
   bool result = _is_complete.is_set();
-#undef KELVIN_MARKING
-#ifdef KELVIN_MARKING
-  log_info(gc)("Testing mark complete: %s", result? "yes": "no");
-#endif
   return result;
 }
 
 void ShenandoahMarkingContext::mark_complete() {
-#ifdef KELVIN_MARKING
-  log_info(gc)("Setting mark complete");
-#endif
   _is_complete.set();
 }
 
 void ShenandoahMarkingContext::mark_incomplete() {
-#ifdef KELVIN_MARKING
-  log_info(gc)("Clearing mark complete");
-#endif
   _is_complete.unset();
 }
