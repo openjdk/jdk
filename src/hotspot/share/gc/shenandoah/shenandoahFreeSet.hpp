@@ -68,8 +68,9 @@ public:
   void clear_all();
 
   // Retire region idx from within its free set.  Requires that idx is in a free set.  The free set's original capacity
-  // and usage is unaffected, but this region is no longer considered to be part of the free set insofar as future
-  // allocation requests are concerned.  
+  // and usage are unaffected, but this region is no longer considered to be part of the free set insofar as future
+  // allocation requests are concerned.  Any remnant of available memory at the time of retirement is added to the
+  // original free set's total of used bytes.
   void retire_within_free_set(size_t idx, size_t used_bytes);
 
   // Place region idx into free set which_set.  Requires that idx is currently NotFree.

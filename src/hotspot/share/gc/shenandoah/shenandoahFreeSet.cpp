@@ -156,7 +156,8 @@ inline void ShenandoahSetsOfFree::expand_bounds_maybe(ShenandoahFreeMemoryType s
   }
 }
 
-// Leave this region in the respective free set, but 
+// Remove this region from its free set, but leave its capacity and used as part of the original free set's totals.
+// When retiring a region, add any remnant of available memory within the region to the used total for the original free set.
 void ShenandoahSetsOfFree::retire_within_free_set(size_t idx, size_t used_bytes) {
   ShenandoahFreeMemoryType orig_set = membership(idx);
 
