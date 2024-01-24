@@ -120,7 +120,7 @@ void SerialHeap::initialize_serviceability() {
                                                    young->max_survivor_size(),
                                                    false /* support_usage_threshold */);
   TenuredGeneration* old = old_gen();
-  _old_pool = new GenerationPool(old, "Tenured Gen", true);
+  _old_pool = new TenuredGenerationPool(old, "Tenured Gen", true);
 
   _young_manager->add_pool(_eden_pool);
   _young_manager->add_pool(_survivor_pool);
