@@ -218,6 +218,7 @@ public class MaxStreams {
                     // client issues MAX_STREAMS + 3 requests in total
                     // but server should only see MAX_STREAMS + 2 in total. One is rejected by client
                     // counter c captured before increment so final value is MAX_STREAMS + 1
+                    System.err.println("Counter reset");
                     counter.set(0);
                 }
                 t.sendResponseHeaders(200, RESPONSE.length());
