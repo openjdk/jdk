@@ -249,7 +249,7 @@ public interface Types {
      *
      * @param componentType  the component type
      * @throws IllegalArgumentException if the component type is not valid for
-     *          an array, including executable, package, module, executable, and wildcard types
+     *          an array, including executable, package, module, and wildcard types
      * @jls 10.1 Array Types
      */
     ArrayType getArrayType(TypeMirror componentType);
