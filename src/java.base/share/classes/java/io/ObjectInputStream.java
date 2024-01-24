@@ -2012,7 +2012,7 @@ public class ObjectInputStream
     }
 
     // Generate an InvalidObjectException for an OutOfMemoryError
-    // Use String.concat() to avoid string formatting code generation
+    // Use String.concat() to avoid string formatting invoke dynamic
     private static InvalidObjectException genInvalidObjectException(OutOfMemoryError oome, String[] ifaces) {
         return new InvalidObjectException("Proxy interface limit exceeded: "
                 .concat(Arrays.toString(ifaces)), oome);
