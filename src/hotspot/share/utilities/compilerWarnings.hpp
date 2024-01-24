@@ -96,7 +96,7 @@
 //   tail allows the statement to contain non-nested commas.
 
 #ifndef FORBID_C_FUNCTION
-#define FORBID_C_FUNCTION(signature, alternative) namespace { [[deprecated(alternative)]] signature noexcept; }
+#define FORBID_C_FUNCTION(signature, alternative) namespace { [[deprecated(alternative)]] signature noexcept = delete; }
 #endif
 
 #ifndef ALLOW_C_FUNCTION
