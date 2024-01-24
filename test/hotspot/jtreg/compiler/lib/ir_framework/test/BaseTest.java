@@ -60,11 +60,6 @@ class BaseTest extends AbstractTest {
     }
 
     @Override
-    protected void onStart() {
-        test.printFixedRandomArguments();
-    }
-
-    @Override
     public void onWarmupFinished() {
         testInfo.setWarmUpFinished();
     }

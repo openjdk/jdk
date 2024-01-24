@@ -77,31 +77,6 @@ public class DeclaredTest {
         return attachedMethod;
     }
 
-    public void printFixedRandomArguments() {
-        // TODO refactor or something?
-        //if (hasArguments()) {
-        //    boolean hasRandomArgs = false;
-        //    StringBuilder builder = new StringBuilder("Fixed random arguments for method ").append(testMethod).append(": ");
-        //    for (int i = 0; i < arguments.length; i++) {
-        //        ArgumentValue argument = arguments[i];
-        //        if (argument.isFixedRandom()) {
-        //            hasRandomArgs = true;
-        //            Object argumentVal = argument.getArgument();
-        //            builder.append("arg ").append(i).append(": ").append(argumentVal.toString());
-        //            if (argumentVal instanceof Character) {
-        //                builder.append(" (").append((int)(Character)argumentVal).append(")");
-        //            }
-        //            builder.append(", ");
-        //        }
-        //    }
-        //    if (hasRandomArgs) {
-        //        // Drop the last comma and space.
-        //        builder.setLength(builder.length() - 2);
-        //        System.out.println(builder.toString());
-        //    }
-        //}
-    }
-
     public String formatArguments(Object[] arguments) {
         if (arguments.length > 0) {
             StringBuilder builder = new StringBuilder();
