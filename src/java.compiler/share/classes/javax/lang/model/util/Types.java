@@ -34,7 +34,7 @@ import javax.lang.model.type.*;
 
 /**
  * Utility methods for operating on types.
-
+ *
  * Most methods operate on {@linkplain PrimitiveType primitive types},
  * {@linkplain ReferenceType reference types} (including {@linkplain
  * ArrayType array types} and the {@linkplain NullType null type}),
@@ -43,7 +43,9 @@ import javax.lang.model.type.*;
  * ExecutableType Executable types} and the pseudo-types for
  * {@linkplain TypeKind#PACKAGE packages} and {@linkplain
  * TypeKind#MODULE modules} are generally out of scope for these
- * methods.
+ * methods. One or more out of scope arguments will typically result
+ * in a method throwing an {@link IllegalArgumentException
+ * IllegalArgumentException}.
  *
  * <p><b>Compatibility Note:</b> Methods may be added to this interface
  * in future releases of the platform.
