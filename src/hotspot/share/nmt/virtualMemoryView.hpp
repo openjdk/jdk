@@ -104,7 +104,8 @@ public:
   using RegionStorage = GrowableArrayCHeap<TrackedRange, mtNMT>;
 
   struct VirtualMemory : public CHeapObj<mtNMT> {
-    // Reserved memory within this process' memory map
+    // Reserved memory within this process' memory map.
+    // Separated by PhysicalMemorySpace to see who allocated where.
     GrowableArrayCHeap<RegionStorage, mtNMT> reserved_regions;
     // Committed memory per PhysicalMemorySpace
     GrowableArrayCHeap<RegionStorage, mtNMT> committed_regions;
@@ -274,29 +275,7 @@ public:
     return *_virt_mem;
   }
 
-  static VirtualMemorySnapshot summary_snapshot(PhysicalMemorySpace space) {
-    VirtualMemorySnapshot& snap = _virt_mem->summary.at(space.id);
-    // Reset all memory, keeping peak values
-    for (int i = 0; i < mt_number_of_types; i++) {
-      MEMFLAGS flag = NMTUtil::index_to_flag(i);
-      ::VirtualMemory* mem = snap.by_type(flag);
-      mem->release_memory(mem->reserved());
-      mem->uncommit_memory(mem->committed());
-    }
-    // Fill out summary
-    const RegionStorage& reserved_ranges = virtual_memory().reserved_regions.at(space.id);
-    for (int i = 0; i < virtual_memory().reserved_regions.length(); i++) {
-      const TrackedRange& range = reserved_ranges.at(i);
-      snap.by_type(range.flag)->reserve_memory(range.size);
-    }
-    const RegionStorage& committed_ranges = virtual_memory().committed_regions.at(space.id);
-    for (int i = 0; i < committed_ranges.length(); i++) {
-      const TrackedRange& range = committed_ranges.at(i);
-      snap.by_type(range.flag)->commit_memory(range.size);
-    }
-
-    return snap;
-  }
+  static VirtualMemorySnapshot summary_snapshot(PhysicalMemorySpace space);
 };
 
 #endif // SHARE_NMT_VIRTUALMEMORYVIEW_HPP

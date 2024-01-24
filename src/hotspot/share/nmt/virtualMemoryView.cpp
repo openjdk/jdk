@@ -89,7 +89,7 @@ void VirtualMemoryView::report(VirtualMemory& mem, outputStream* output, size_t 
     }
   };
   for (Id space_id = 0; space_id < PhysicalMemorySpace::unique_id; space_id++) {
-    RegionStorage& reserved_ranges = mem.reserved_regions;
+    RegionStorage& reserved_ranges = mem.reserved_regions.at(space_id);
     OffsetRegionStorage& mapped_ranges = mem.mapped_regions.at(space_id);
     RegionStorage& committed_ranges = mem.committed_regions.at(space_id);
     for (int i = 0; i < reserved_ranges.length(); i++) {
@@ -263,11 +263,12 @@ void VirtualMemoryView::add_view_into_space(const PhysicalMemorySpace& space,
 VirtualMemoryView::PhysicalMemorySpace VirtualMemoryView::register_space(const char* descriptive_name) {
   const PhysicalMemorySpace next_space = PhysicalMemorySpace{PhysicalMemorySpace::next_unique()};
   // These are allocated just to be copied for at_put_grow.
-  OffsetRegionStorage to_copy_res{};
-  RegionStorage to_copy_comm{};
+  OffsetRegionStorage to_copy_mapped{};
+  RegionStorage to_copy_reserved_committed{};
   VirtualMemorySnapshot to_copy_snapshot{};
-  _virt_mem->mapped_regions.at_put_grow(next_space.id, to_copy_res);
-  _virt_mem->committed_regions.at_put_grow(next_space.id, to_copy_comm);
+  _virt_mem->reserved_regions.at_put_grow(next_space.id, to_copy_reserved_committed);
+  _virt_mem->mapped_regions.at_put_grow(next_space.id, to_copy_mapped);
+  _virt_mem->committed_regions.at_put_grow(next_space.id, to_copy_reserved_committed);
   _virt_mem->summary.at_put_grow(next_space.id, to_copy_snapshot);
   _names->at_put_grow(next_space.id, descriptive_name, "");
   return next_space;
@@ -275,11 +276,11 @@ VirtualMemoryView::PhysicalMemorySpace VirtualMemoryView::register_space(const c
 
 void VirtualMemoryView::initialize(bool is_detailed_mode) {
   _virt_mem = new VirtualMemory();
-  _virt_mem->reserved_regions = RegionStorage{};
-  _virt_mem->mapped_regions = GrowableArrayCHeap<OffsetRegionStorage, mtNMT>{5};
-  _virt_mem->committed_regions = GrowableArrayCHeap<RegionStorage, mtNMT>{5};
+  _virt_mem->reserved_regions = GrowableArrayCHeap<RegionStorage, mtNMT>{};
+  _virt_mem->mapped_regions = GrowableArrayCHeap<OffsetRegionStorage, mtNMT>{};
+  _virt_mem->committed_regions = GrowableArrayCHeap<RegionStorage, mtNMT>{};
   _stack_storage = new NativeCallStackStorage{is_detailed_mode};
-  _names = new GrowableArrayCHeap<const char*, mtNMT>{5};
+  _names = new GrowableArrayCHeap<const char*, mtNMT>{};
   _is_detailed_mode = is_detailed_mode;
   heap = register_space("Heap");
 }
@@ -515,7 +516,7 @@ bool VirtualMemoryView::RegionIterator::next_committed(address& committed_start,
 
 void VirtualMemoryView::snapshot_thread_stacks() {
   thread_stacks->clear();
-  RegionStorage& reserved_ranges = _virt_mem->reserved_regions;
+  RegionStorage& reserved_ranges = _virt_mem->reserved_regions.at(heap.id);
   RegionStorage& committed_ranges = _virt_mem->committed_regions.at(heap.id);
   for (int i = 0; i < reserved_ranges.length(); i++) {
     TrackedRange& rng = reserved_ranges.at(i);
@@ -542,4 +543,28 @@ void VirtualMemoryView::snapshot_thread_stacks() {
 
   sort_regions(*thread_stacks);
   merge_thread_stacks(*thread_stacks);
+}
+
+VirtualMemorySnapshot VirtualMemoryView::summary_snapshot(PhysicalMemorySpace space) {
+  VirtualMemorySnapshot& snap = _virt_mem->summary.at(space.id);
+  // Reset all memory, keeping peak values
+  for (int i = 0; i < mt_number_of_types; i++) {
+    MEMFLAGS flag = NMTUtil::index_to_flag(i);
+    ::VirtualMemory* mem = snap.by_type(flag);
+    mem->release_memory(mem->reserved());
+    mem->uncommit_memory(mem->committed());
+  }
+  // Fill out summary
+  const RegionStorage& reserved_ranges = virtual_memory().reserved_regions.at(space.id);
+  for (int i = 0; i < virtual_memory().reserved_regions.length(); i++) {
+    const TrackedRange& range = reserved_ranges.at(i);
+    snap.by_type(range.flag)->reserve_memory(range.size);
+  }
+  const RegionStorage& committed_ranges = virtual_memory().committed_regions.at(space.id);
+  for (int i = 0; i < committed_ranges.length(); i++) {
+    const TrackedRange& range = committed_ranges.at(i);
+    snap.by_type(range.flag)->commit_memory(range.size);
+  }
+
+  return snap;
 }
