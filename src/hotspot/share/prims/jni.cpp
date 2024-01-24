@@ -931,6 +931,11 @@ static void jni_invoke_nonstatic(JNIEnv *env, JavaValue* result, jobject receive
     }
   }
 
+  if (selected_method->is_abstract()) {
+    ResourceMark rm(THREAD);
+    THROW_MSG(vmSymbols::java_lang_AbstractMethodError(), selected_method->name()->as_C_string());
+  }
+
   methodHandle method(THREAD, selected_method);
 
   // Create object to hold arguments for the JavaCall, and associate it with
