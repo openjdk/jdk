@@ -9887,6 +9887,10 @@ void MacroAssembler::lightweight_lock(Register obj, Register reg_rax, Register t
   Label push;
   const Register top = tmp;
 
+  // Preload the markWord. It is important that this is the first
+  // instruction emitted as it is part of C1's null check semantics.
+  movptr(reg_rax, Address(obj, oopDesc::mark_offset_in_bytes()));
+
   // Load top.
   movl(top, Address(thread, JavaThread::lock_stack_top_offset()));
 
@@ -9899,7 +9903,6 @@ void MacroAssembler::lightweight_lock(Register obj, Register reg_rax, Register t
   jcc(Assembler::equal, push);
 
   // Check header for monitor (0b10).
-  movptr(reg_rax, Address(obj, oopDesc::mark_offset_in_bytes()));
   testptr(reg_rax, markWord::monitor_value);
   jcc(Assembler::notZero, slow);
 
