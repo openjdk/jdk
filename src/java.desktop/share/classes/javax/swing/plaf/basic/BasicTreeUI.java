@@ -1334,9 +1334,6 @@ public class BasicTreeUI extends TreeUI
      */
     protected void uninstallComponents() {
         if(rendererPane != null) {
-            if (!tree.isVisible()) {
-                rendererPane.removeAll();
-            }
             tree.remove(rendererPane);
         }
     }
@@ -3283,6 +3280,9 @@ public class BasicTreeUI extends TreeUI
                      expanded, treeModel.isLeaf(value), row,
                      false);
                 if(tree != null) {
+                    for (int i = 0; i < rendererPane.getComponentCount(); i++) {
+                        rendererPane.remove(i);
+                    }
                     // Only ever removed when UI changes, this is OK!
                     rendererPane.add(aComponent);
                     aComponent.validate();
