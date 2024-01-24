@@ -81,20 +81,45 @@ public class MessageFormatToPatternTest {
 
 // Tests
 
-    @Test
-    public void testJDK_8323699() {
+    // Test expected output when given a MessageFormat pattern string and value 1.23
+    @ParameterizedTest
+    @MethodSource("generateOutputTestCases")
+    public void testOutput(String pattern, String expected) {
 
-        // This is the test case from JDK-8323699
-        testRoundTrip(new MessageFormat("{2,choice,0.0#option A: {0}|1.0#option B: {0}'}'}"));
+        // Test we get the expected output
+        MessageFormat format = new MessageFormat(pattern);
+        String actual = format.format(new Object[] { 1.23 });
+        assertEquals(expected, actual);
 
-        // A few more test cases from the PR#17416 discussion
-        testRoundTrip(new MessageFormat("Test: {0,number,foo'{'#.00}"));
-        testRoundTrip(new MessageFormat("Test: {0,number,foo'}'#.00}"));
+        // Test round trip as well
+        testRoundTrip(format);
+    }
+
+    public static Stream<Arguments> generateOutputTestCases() {
+        return Stream.of(
+
+            // This is the test case from JDK-8323699
+            Arguments.of("{0,choice,0.0#option A: {0}|1.0#option B: {0}'}'}", "option B: 1.23}"),
+            Arguments.of("{0,choice,0.0#option A: {0}|2.0#option B: {0}'}'}", "option A: 1.23"),
+
+            // A few more test cases from the PR#17416 discussion
+            Arguments.of("Test: {0,number,foo'{'#.00}", "Test: foo{1.23"),
+            Arguments.of("Test: {0,number,foo'}'#.00}", "Test: foo}1.23"),
+            Arguments.of("{0,number,' abc }'' ' 0.00}", " abc }'  1.23"),
+            Arguments.of("Wayne ''The Great One'' Gretsky", "Wayne 'The Great One' Gretsky"),
+            Arguments.of("'Wayne ''The Great One'' Gretsky'", "Wayne 'The Great One' Gretsky"),
+            Arguments.of("{0,choice,0.0#'''{''curly''}'' braces'}", "{curly} braces"),
+            Arguments.of("{0,choice,0.0#''{''curly''}'' braces}", "{curly} braces"),
+            Arguments.of("{0,choice,0.0#'{0,choice,0.0#''{0,choice,0.0#''''{0,choice,0.0#foo}''''}''}'}", "foo"),
+
+            // An absurdly complicated example
+            Arguments.of("{0,choice,0.0#text2887 [] '{'1,date,YYYY-MM-DD'}' text2888 [''*'']|1.0#found|2.0#'text2901 [oog'')!''] {2,choice,0.0#''text2897 ['''']''''wq1Q] {2,choice,0.0#''''text2891 [s''''''''&''''''''] {0,number,#0.##} text2892 [8''''''''|$'''''''''''''''''''''''']''''|1.0#''''text2893 [] {0,number,#0.##} text2894 [S'''''''']'''''''']''''|2.0#text2895 [''''''''.''''''''eB] {1,date,YYYY-MM-DD} text2896 [9Y]} text2898 []''|1.0#''text2899 [xk7] {0,number,#0.##} text2900 []''} text2902 [7'':$)''O]'}{0,choice,0.0#'text2903 [] {0,number,#0.##} text2904 [S'':'']'|1.0#'me'}", "foundme")
+        );
     }
 
     // Go roundrip from MessageFormat -> pattern string -> MessageFormat and verify equivalence
     @ParameterizedTest
-    @MethodSource("testCases")
+    @MethodSource("generateRoundTripTestCases")
     public void testRoundTrip(MessageFormat format1) {
 
         // Prepare MessageFormat argument
@@ -137,7 +162,7 @@ public class MessageFormatToPatternTest {
         }
     }
 
-    public static Stream<Arguments> testCases() {
+    public static Stream<Arguments> generateRoundTripTestCases() {
         final ArrayList<Arguments> argList = new ArrayList<>();
         for (int i = 0; i < NUM_RANDOM_TEST_CASES; i++)
             argList.add(Arguments.of(randomFormat()));
@@ -162,10 +187,8 @@ public class MessageFormatToPatternTest {
         // Replace all the "{0}" placeholders with random subformats
         MessageFormat format = new MessageFormat(tempPattern.toString());
         Format[] formats = format.getFormats();
-        for (int i = 0; i < formats.length; i++) {
+        for (int i = 0; i < formats.length; i++)
             formats[i] = randomSubFormat(0);
-
-        }
         format.setFormats(formats);
 
         // Done
@@ -210,7 +233,7 @@ public class MessageFormatToPatternTest {
         return buf.toString();
     }
 
-    // Create a random subformat
+    // Create a random subformat for a MessageFormat
     private static Format randomSubFormat(int nesting) {
         int which;
         if (nesting >= MAX_FORMAT_NESTING)
@@ -229,16 +252,21 @@ public class MessageFormatToPatternTest {
             final String[] formats = new String[numChoices];
             for (int i = 0; i < limits.length; i++) {
                 limits[i] = (double)i;
-                formats[i] = toChoiceOption(randomSubFormat(nesting + 1));
+                formats[i] = randomMessageFormatContaining(randomSubFormat(nesting + 1));
             }
             return new ChoiceFormat(limits, formats);
         }
     }
 
-    // Create one ChoiceFormat option containing the given subformat
-    private static String toChoiceOption(Format format) {
-        String beforeText = "";     //quoteText(randomText());
-        String afterText = "";      //quoteText(randomText());
+    // Create a MessageFormat pattern string that includes the given Format as a subformat.
+    // The result will be one option in a ChoiceFormat which is nested in an outer MessageFormat.
+    // A ChoiceFormat option string is just a plain string; it's only when that plain string
+    // bubbles up to a containing MessageFormat that it gets interpreted as a MessageFormat string,
+    // and that only happens if the option string contains a '{' character. That will always
+    // be the case for the strings returned by this method of course.
+    private static String randomMessageFormatContaining(Format format) {
+        String beforeText = quoteText(randomText().replaceAll("\\{", ""));     // avoid invalid MessageFormat syntax
+        String afterText = quoteText(randomText().replaceAll("\\{", ""));      // avoid invalid MessageFormat syntax
         String middleText;
         if (format instanceof DecimalFormat dfmt)
             middleText = String.format("{0,number,%s}", dfmt.toPattern());
