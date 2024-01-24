@@ -129,9 +129,6 @@ void VirtualMemoryView::unregister_memory(RegionStorage& storage, address base_a
     }
     // We're not breaking, no guarantee that there's exactly 1 region that matches
   }
-
-  sort_regions(storage);
-  merge_committed(storage);
 }
 
 void VirtualMemoryView::release_memory(address base_addr, size_t size) {
@@ -180,9 +177,6 @@ void VirtualMemoryView::register_memory(RegionStorage& storage, address base_add
     // Otherwise pass onto regular case.
   }
   storage.push(TrackedRange{base_addr, size, idx, flag});
-
-  sort_regions(storage);
-  merge_committed(storage);
 }
 
 void VirtualMemoryView::reserve_memory(address base_addr, size_t size, MEMFLAGS flag, const NativeCallStack& stack) {
