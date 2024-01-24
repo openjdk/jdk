@@ -223,6 +223,12 @@ public class IRExample {
         return a;
     }
 
+    @Test
+    @Arguments(values = {Argument.RANDOM_EACH, Argument.RANDOM_EACH})
+    static int testWithValueArguments(int a, int b) {
+        return a + b;
+    }
+
     // Example for Setup
     @Setup
     static Object[] setupTwoIntArrays(int index) {

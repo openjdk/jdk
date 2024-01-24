@@ -73,13 +73,9 @@ class ArgumentValue {
      * @param m The @Test method.
      * @return Returns an array with Argument objects for each specified argument in the @Arguments annotation of m.
      *         Returns null if method has no @Arguments annotation.
+     * TODO adjust
      */
-    public static ArgumentValue[] getArguments(Method m) {
-        Arguments argumentsAnno = m.getAnnotation(Arguments.class);
-        if (argumentsAnno == null) {
-            return null;
-        }
-        Argument[] values = argumentsAnno.value();
+    public static ArgumentValue[] getArgumentValues(Method m, Argument[] values) {
         ArgumentValue[] arguments = new ArgumentValue[values.length];
         Class<?>[] declaredParameters = m.getParameterTypes();
         Parameter[] declaredParameterObjects = m.getParameters();
@@ -250,7 +246,7 @@ class ArgumentValue {
         return isFixedRandom;
     }
 
-    public Object getArgument() {
+    public Object getValue(int index) {
         if (isRandomEach) {
             return getRandom(randomClass);
         } else {
@@ -322,7 +318,7 @@ class BooleanToggleValue extends ArgumentValue {
     }
 
     @Override
-    public Object getArgument() {
+    public Object getValue(int index) {
         previousBoolean = !previousBoolean;
         return previousBoolean;
     }

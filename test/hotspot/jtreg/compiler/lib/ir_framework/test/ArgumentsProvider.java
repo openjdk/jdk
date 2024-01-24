@@ -31,6 +31,7 @@ import compiler.lib.ir_framework.Arguments;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.HashMap;
+import java.util.Arrays;
 
 // TODO spec
 abstract class ArgumentsProvider {
@@ -58,11 +59,12 @@ abstract class ArgumentsProvider {
                              " for " + method);
             Method setupMethod = setupMethodMap.get(setupMethodName);
             return new SetupArgumentsProvider(setupMethod);
-	}
-        // TODO other cases
-        
- 
-        return new DefaultArgumentsProvider();
+	} else if (values.length > 0) {
+            ArgumentValue[] argumentValues = ArgumentValue.getArgumentValues(method, values);
+            return new ValueArgumentsProvider(argumentValues);
+        } else {
+            return new DefaultArgumentsProvider();
+        }
     }
 
     // TODO spec
@@ -87,9 +89,15 @@ final class DefaultArgumentsProvider extends ArgumentsProvider {
 }
 
 final class ValueArgumentsProvider extends ArgumentsProvider {
+    ArgumentValue[] argumentValues;
+
+    ValueArgumentsProvider(ArgumentValue[] argumentValues) {
+        this.argumentValues = argumentValues;
+    }
+
     @Override
     public Object[] getArguments(Object invocationTarget, int index) {
-        return new Object[]{};
+        return Arrays.stream(argumentValues).map(v -> v.getValue(index)).toArray();
     }
 }
 
