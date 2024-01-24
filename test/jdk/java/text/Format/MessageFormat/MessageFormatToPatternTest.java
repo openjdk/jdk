@@ -122,6 +122,9 @@ public class MessageFormatToPatternTest {
             // Check equivalence
             assertEquals(result1, result2);
             assertEquals(pattern1, pattern2);
+
+            // Debug
+            //showRoundTrip(format1, pattern1, result1, pattern2, result2);
         } catch (RuntimeException | Error e) {
             System.out.println(String.format("%n********** FAILURE **********%n"));
             System.out.println(String.format("%s%n", e));
@@ -129,17 +132,7 @@ public class MessageFormatToPatternTest {
                 System.out.println(String.format("*** Random seed was 0x%016xL%n", randomSeed));
                 spitSeed = true;
             }
-            print(0, format1);
-            System.out.println();
-            if (pattern1 != null)
-                System.out.println(String.format("  pattern1 = %s", javaLiteral(pattern1)));
-            if (result1 != null)
-                System.out.println(String.format("   result1 = %s", javaLiteral(result1)));
-            if (pattern2 != null)
-                System.out.println(String.format("  pattern2 = %s", javaLiteral(pattern2)));
-            if (result2 != null)
-                System.out.println(String.format("   result2 = %s", javaLiteral(result2)));
-            System.out.println();
+            showRoundTrip(format1, pattern1, result1, pattern2, result2);
             throw e;
         }
     }
@@ -259,6 +252,20 @@ public class MessageFormatToPatternTest {
     }
 
 // Debug printing
+
+    private void showRoundTrip(MessageFormat format1, String pattern1, String result1, String pattern2, String result2) {
+        print(0, format1);
+        System.out.println();
+        if (pattern1 != null)
+            System.out.println(String.format("  pattern1 = %s", javaLiteral(pattern1)));
+        if (result1 != null)
+            System.out.println(String.format("   result1 = %s", javaLiteral(result1)));
+        if (pattern2 != null)
+            System.out.println(String.format("  pattern2 = %s", javaLiteral(pattern2)));
+        if (result2 != null)
+            System.out.println(String.format("   result2 = %s", javaLiteral(result2)));
+        System.out.println();
+    }
 
     private static void print(int depth, Object format) {
         if (format == null)
