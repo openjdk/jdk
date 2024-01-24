@@ -125,7 +125,16 @@ public class TestHugePageDecisionsAtVMStartup {
             out.shouldContain("[info][pagesize] UseLargePages=1, UseTransparentHugePages=0");
             out.shouldContain("[info][pagesize] Large page support enabled");
         } else if (useLP && useTHP && configuration.supportsTHP()) {
-            String thpPageSizeString = buildSizeString(configuration.getThpPageSize());
+            long thpPageSize = configuration.getThpPageSize();
+            if (thpPageSize == 0) {
+                thpPageSize = configuration.getStaticDefaultHugePageSize();
+                if (thpPageSize == 0) {
+                    out.shouldContain("[info][pagesize] Large page support disabled");
+                    return;
+                }
+		thpPageSize = Math.min(thpPageSize, 16 * 1024 * 1024);
+            }
+            String thpPageSizeString = buildSizeString(thpPageSize);
             // We expect to see exactly two "Usable page sizes" :  the system page size and the THP page size. The system
             // page size differs, but its always in KB).
             out.shouldContain("[info][pagesize] UseLargePages=1, UseTransparentHugePages=1");
