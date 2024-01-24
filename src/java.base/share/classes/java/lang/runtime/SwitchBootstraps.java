@@ -46,6 +46,7 @@ import jdk.internal.access.SharedSecrets;
 import java.lang.classfile.ClassFile;
 import java.lang.classfile.Label;
 import java.lang.classfile.instruction.SwitchCase;
+import jdk.internal.misc.PreviewFeatures;
 import jdk.internal.vm.annotation.Stable;
 
 import static java.lang.invoke.MethodHandles.Lookup.ClassOption.NESTMATE;
@@ -69,7 +70,7 @@ public class SwitchBootstraps {
 
     private static final Object SENTINEL = new Object();
     private static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
-    private static final boolean previewEnabled = true;
+    private static final boolean previewEnabled = PreviewFeatures.isEnabled();
 
     private static final MethodHandle NULL_CHECK;
     private static final MethodHandle IS_ZERO;
@@ -160,7 +161,6 @@ public class SwitchBootstraps {
         Class<?> selectorType = invocationType.parameterType(0);
         if (invocationType.parameterCount() != 2
             || (!invocationType.returnType().equals(int.class))
-            || (selectorType.isPrimitive() && !previewEnabled)
             || !invocationType.parameterType(1).equals(int.class))
             throw new IllegalArgumentException("Illegal invocation type " + invocationType);
         requireNonNull(labels);
