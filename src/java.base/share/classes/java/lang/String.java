@@ -4226,7 +4226,7 @@ public final class String
      *   <tr>
      *     <th scope="row">{@code \u005Cu...uXXXX}</th>
      *     <td>unicode escape</td>
-     *     <td>single character UTF-16 equivalent</td>
+     *     <td>single UTF-16 code unit equivalent</td>
      *   </tr>
      *   </tbody>
      * </table>
@@ -4239,8 +4239,11 @@ public final class String
      * literals are translated. However, as a convenience for use with constructed
      * strings, this method also translates unicode escapes. For example, this
      * method could be used when ASCII encoded text files need to maintain unicode
-     * content.
-     * 
+     * content. The translation is done in a single pass and is non-recursive. That is,
+     * escape sequences and unicode escapes are translated as encountered in one pass and
+     * <strong>not</strong> done as an unicode escapes pass followed by an escape sequences
+     * pass.
+     *
      * @jls 3.10.7 Escape Sequences
      * @jls 3.3 Unicode Escapes
      *
