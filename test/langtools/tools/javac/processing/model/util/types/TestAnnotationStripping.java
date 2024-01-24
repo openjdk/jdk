@@ -142,7 +142,7 @@ public class TestAnnotationStripping extends JavacTestingAbstractProcessor {
     void testVacuous(TypeMirror tm ) {
         try {
             var result = vacuousTypes.stripAnnotations(tm);
-            messager.printError("Unexpected non-exceptional result returned" +  result);
+            messager.printError("Unexpected non-exceptional result returned " +  result);
         } catch(UnsupportedOperationException uoe) {
             ; // Expected
         }
