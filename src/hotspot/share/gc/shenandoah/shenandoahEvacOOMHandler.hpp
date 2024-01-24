@@ -68,11 +68,11 @@ public:
  *
  *  1. If we fail to evacuate the entirety of live memory from all cset regions,
  *     we will transition first to degenerated GC and if that fails, to full GC at
- *     the end of this canceeled concurrent evacuation phase.  To heal heap invariants
+ *     the end of this cancelled concurrent evacuation phase.  To heal heap invariants
  *     that may be violated temporarily during the Evac-OOM protocol, degenerated GC
  *     overwrites the update_watermark field of every heap region with its current top
  *     (because a pointer to the cset may have been leaked through a failed LRB and
- *     written into the heap above the original value of update_watermark.  Furthermore,
+ *     written into the heap above the original value of update_watermark).  Furthermore,
  *     the degenerated GC restarts the evacuation effort, revisiting every region in
  *     the cset (because we have no assurance that cset regions already evacuated during
  *     the concurrent evacuation were fully evacuated; at least one object failed to
