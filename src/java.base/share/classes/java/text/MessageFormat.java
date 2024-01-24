@@ -581,12 +581,12 @@ public class MessageFormat extends Format {
                 } else if (fmt.equals(NumberFormat.getIntegerInstance(locale))) {
                     result.append(",number,integer");
                 } else {
-                    if (fmt instanceof DecimalFormat) {
+                    if (fmt instanceof DecimalFormat dfmt) {
                         result.append(",number");
-                        subformatPattern = ((DecimalFormat)fmt).toPattern();
-                    } else if (fmt instanceof ChoiceFormat) {
+                        subformatPattern = dfmt.toPattern();
+                    } else if (fmt instanceof ChoiceFormat cfmt) {
                         result.append(",choice");
-                        subformatPattern = ((ChoiceFormat)fmt).toPattern();
+                        subformatPattern = cfmt.toPattern();
                     } else {
                         // UNKNOWN
                     }
@@ -608,9 +608,9 @@ public class MessageFormat extends Format {
                     }
                 }
                 if (index >= DATE_TIME_MODIFIERS.length) {
-                    if (fmt instanceof SimpleDateFormat) {
+                    if (fmt instanceof SimpleDateFormat sdfmt) {
                         result.append(",date");
-                        subformatPattern = ((SimpleDateFormat)fmt).toPattern();
+                        subformatPattern = sdfmt.toPattern();
                     } else {
                         // UNKNOWN
                     }

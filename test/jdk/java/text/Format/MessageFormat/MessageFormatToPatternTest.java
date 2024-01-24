@@ -245,12 +245,12 @@ public class MessageFormatToPatternTest {
         String beforeText = "";     //quoteText(randomText());
         String afterText = "";      //quoteText(randomText());
         String middleText;
-        if (format instanceof DecimalFormat)
-            middleText = String.format("{0,number,%s}", ((DecimalFormat)format).toPattern());
-        else if (format instanceof SimpleDateFormat)
-            middleText = String.format("{1,date,%s}", ((SimpleDateFormat)format).toPattern());
-        else if (format instanceof ChoiceFormat)
-            middleText = String.format("{2,choice,%s}", ((ChoiceFormat)format).toPattern());
+        if (format instanceof DecimalFormat dfmt)
+            middleText = String.format("{0,number,%s}", dfmt.toPattern());
+        else if (format instanceof SimpleDateFormat sdfmt)
+            middleText = String.format("{1,date,%s}", sdfmt.toPattern());
+        else if (format instanceof ChoiceFormat cfmt)
+            middleText = String.format("{2,choice,%s}", cfmt.toPattern());
         else
             throw new RuntimeException("internal error");
         return String.format("text%d [%s] %s text%d [%s]", ++textCount, beforeText, middleText, ++textCount, afterText);
