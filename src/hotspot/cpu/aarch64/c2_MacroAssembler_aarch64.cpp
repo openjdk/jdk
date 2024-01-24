@@ -224,11 +224,10 @@ void C2_MacroAssembler::fast_unlock(Register objectReg, Register boxReg, Registe
   bind(no_count);
 }
 
-void C2_MacroAssembler::fast_lock_lightweight(Register obj, Register box, Register t1,
+void C2_MacroAssembler::fast_lock_lightweight(Register obj, Register t1,
                                               Register t2, Register t3) {
   assert(LockingMode == LM_LIGHTWEIGHT, "must be");
-  // TODO: Current implementation does not use the box, consider removing.
-  assert_different_registers(obj, box, t1, t2, t3);
+  assert_different_registers(obj, t1, t2, t3);
 
   // Handle inflated monitor.
   Label inflated;
