@@ -222,6 +222,18 @@ public class IRExample {
         }
         return a;
     }
+
+    // Example for Setup
+    @Setup
+    static Object[] setupRandomIntArray(int i) {
+        int[] a = new int[10_000];
+        return new Object[]{};
+    }
+
+    @Test
+    @Arguments(setup = "setupRandomIntArray")
+    static void testWithSetupRandomIntArray(int[] a) {
+    }
 }
 
 class FailingExamples {

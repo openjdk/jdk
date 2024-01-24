@@ -107,6 +107,7 @@ public class TestVM {
     private final HashMap<Method, DeclaredTest> declaredTests = new HashMap<>();
     private final List<AbstractTest> allTests = new ArrayList<>();
     private final HashMap<String, Method> testMethodMap = new HashMap<>();
+    private final HashMap<String, Method> setupMethodMap = new HashMap<>();
     private final List<String> excludeList;
     private final List<String> testList;
     private Set<Class<?>> helperClasses = null; // Helper classes that contain framework annotations to be processed.
@@ -540,7 +541,8 @@ public class TestVM {
         if (EXCLUDE_RANDOM) {
             compLevel = compLevel.excludeCompilationRandomly(m);
         }
-        DeclaredTest test = new DeclaredTest(m, ArgumentValue.getArguments(m), compLevel, warmupIterations);
+        ArgumentsProvider argumentsProvider = ArgumentsProvider.getArgumentsProvider(m, setupMethodMap);
+        DeclaredTest test = new DeclaredTest(m, argumentsProvider, compLevel, warmupIterations);
         declaredTests.put(m, test);
         testMethodMap.put(m.getName(), m);
     }
@@ -729,7 +731,7 @@ public class TestVM {
         TestFormat.check(attachedMethod == null,
                          "Cannot use @Test " + testMethod + " for more than one @Run/@Check method. Found: "
                          + m + ", " + attachedMethod);
-        TestFormat.check(!test.hasArguments(),
+        TestFormat.check(test.hasDefaultArgumentsProvider(),
                          "Cannot use @Arguments at test method " + testMethod + " in combination with @Run method " + m);
         Warmup warmupAnno = getAnnotation(testMethod, Warmup.class);
         TestFormat.checkNoThrow(warmupAnno == null,

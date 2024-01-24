@@ -34,17 +34,17 @@ import java.util.Arrays;
  */
 public class DeclaredTest {
     private final Method testMethod;
-    private final ArgumentValue[] arguments;
+    private final ArgumentsProvider argumentsProvider;
     private final int warmupIterations;
     private final CompLevel compLevel;
     private Method attachedMethod;
 
-    public DeclaredTest(Method testMethod, ArgumentValue[] arguments, CompLevel compLevel, int warmupIterations) {
+    public DeclaredTest(Method testMethod, ArgumentsProvider argumentsProvider, CompLevel compLevel, int warmupIterations) {
         // Make sure we can also call non-public or public methods in package private classes
         testMethod.setAccessible(true);
         this.testMethod = testMethod;
         this.compLevel = compLevel;
-        this.arguments = arguments;
+        this.argumentsProvider = argumentsProvider;
         this.warmupIterations = warmupIterations;
         this.attachedMethod = null;
     }
@@ -61,12 +61,20 @@ public class DeclaredTest {
         return warmupIterations;
     }
 
-    public boolean hasArguments() {
-        return arguments != null;
+    // TODO remove
+    //public boolean hasArguments() {
+    //    return arguments != null;
+    //}
+
+    // TODO desc
+    public boolean hasDefaultArgumentsProvider() {
+        return argumentsProvider.isDefault();
     }
 
-    public Object[] getArguments() {
-        return Arrays.stream(arguments).map(ArgumentValue::getArgument).toArray();
+    public Object[] getArguments(Object invocationTarget, int index) {
+        return argumentsProvider.getArguments(invocationTarget, index);
+        // TODO
+        //return Arrays.stream(arguments).map(ArgumentValue::getArgument).toArray();
     }
 
     public void setAttachedMethod(Method m) {
@@ -78,41 +86,43 @@ public class DeclaredTest {
     }
 
     public void printFixedRandomArguments() {
-        if (hasArguments()) {
-            boolean hasRandomArgs = false;
-            StringBuilder builder = new StringBuilder("Fixed random arguments for method ").append(testMethod).append(": ");
-            for (int i = 0; i < arguments.length; i++) {
-                ArgumentValue argument = arguments[i];
-                if (argument.isFixedRandom()) {
-                    hasRandomArgs = true;
-                    Object argumentVal = argument.getArgument();
-                    builder.append("arg ").append(i).append(": ").append(argumentVal.toString());
-                    if (argumentVal instanceof Character) {
-                        builder.append(" (").append((int)(Character)argumentVal).append(")");
-                    }
-                    builder.append(", ");
-                }
-            }
-            if (hasRandomArgs) {
-                // Drop the last comma and space.
-                builder.setLength(builder.length() - 2);
-                System.out.println(builder.toString());
-            }
-        }
+        // TODO refactor or something?
+        //if (hasArguments()) {
+        //    boolean hasRandomArgs = false;
+        //    StringBuilder builder = new StringBuilder("Fixed random arguments for method ").append(testMethod).append(": ");
+        //    for (int i = 0; i < arguments.length; i++) {
+        //        ArgumentValue argument = arguments[i];
+        //        if (argument.isFixedRandom()) {
+        //            hasRandomArgs = true;
+        //            Object argumentVal = argument.getArgument();
+        //            builder.append("arg ").append(i).append(": ").append(argumentVal.toString());
+        //            if (argumentVal instanceof Character) {
+        //                builder.append(" (").append((int)(Character)argumentVal).append(")");
+        //            }
+        //            builder.append(", ");
+        //        }
+        //    }
+        //    if (hasRandomArgs) {
+        //        // Drop the last comma and space.
+        //        builder.setLength(builder.length() - 2);
+        //        System.out.println(builder.toString());
+        //    }
+        //}
     }
 
-    public String getArgumentsString() {
-        if (hasArguments()) {
-            StringBuilder builder = new StringBuilder();
-            for (int i = 0; i < arguments.length; i++) {
-                builder.append("arg ").append(i).append(": ").append(arguments[i].getArgument()).append(", ");
-            }
-            builder.setLength(builder.length() - 2);
-            return builder.toString();
-        } else {
-            return "<void>";
-        }
-    }
+    // TODO what is this for?
+    //public String getArgumentsString() {
+    //    if (hasArguments()) {
+    //        StringBuilder builder = new StringBuilder();
+    //        for (int i = 0; i < arguments.length; i++) {
+    //            builder.append("arg ").append(i).append(": ").append(arguments[i].getArgument()).append(", ");
+    //        }
+    //        builder.setLength(builder.length() - 2);
+    //        return builder.toString();
+    //    } else {
+    //        return "<void>";
+    //    }
+    //}
 
     public Object invoke(Object obj, Object... args) {
         try {

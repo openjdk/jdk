@@ -75,15 +75,13 @@ class BaseTest extends AbstractTest {
     }
 
     private Object invokeTestMethod() {
+        Object[] arguments = test.getArguments(invocationTarget, 0); // TODO index
         try {
-            if (test.hasArguments()) {
-                return testMethod.invoke(invocationTarget, test.getArguments());
-            } else {
-                return testMethod.invoke(invocationTarget);
-            }
+            return testMethod.invoke(invocationTarget, arguments);
         } catch (Exception e) {
             throw new TestRunException("There was an error while invoking @Test method " + testMethod
-                                       + ". Used arguments: " + test.getArgumentsString(), e);
+                                       + ". Used arguments: " + arguments, e); // TODO formatting
+                                       //+ ". Used arguments: " + test.getArgumentsString(), e);
         }
     }
 

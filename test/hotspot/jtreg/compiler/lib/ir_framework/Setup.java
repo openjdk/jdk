@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,19 +27,13 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
 /**
- * This annotation is used to specify well-defined {@link Argument} values for test methods (specifying {@link Test}) when
- * used as part of a <b>base test</b> or <b>checked test</b>. TODO adapt spec here
+ * This annotation is used to identify Setup methods, which are used to setup the environment (e.g. set fields) and to
+ * provide the arguments for the test method (see {@link Test}). A test method can use a Setup method, by specifying it
+ * in a {@link Arguments} annotation. TODO continue here: index input? args output? what allowed to access?
  *
- * @see Argument
+ * @see Arguments
  * @see Test
- * @see Check
  */
 @Retention(RetentionPolicy.RUNTIME)
-public @interface Arguments {
-    /**
-     * Get the argument value.
-     */
-    Argument[] values() default {};
-    // TODO desc
-    String[] setup() default {};
+public @interface Setup {
 }
