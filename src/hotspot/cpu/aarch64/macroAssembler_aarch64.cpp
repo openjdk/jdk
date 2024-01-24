@@ -6341,6 +6341,10 @@ void MacroAssembler::lightweight_lock(Register obj, Register t1, Register t2, Re
   const Register mark = t2;
   const Register t = t3;
 
+  // Preload the markWord. It is important that this is the first
+  // instruction emitted as it is part of C1's null check semantics.
+  ldr(mark, Address(obj, oopDesc::mark_offset_in_bytes()));
+
   // Check if the lock-stack is full.
   ldrw(top, Address(rthread, JavaThread::lock_stack_top_offset()));
   cmpw(top, (unsigned)LockStack::end_offset());
@@ -6353,7 +6357,6 @@ void MacroAssembler::lightweight_lock(Register obj, Register t1, Register t2, Re
   br(Assembler::EQ, push);
 
   // Check header for monitor (0b10).
-  ldr(mark, Address(obj, oopDesc::mark_offset_in_bytes()));
   tst(mark, markWord::monitor_value);
   br(Assembler::NE, slow);
 

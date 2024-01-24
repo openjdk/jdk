@@ -78,9 +78,6 @@ int C1_MacroAssembler::lock_object(Register hdr, Register obj, Register disp_hdr
     ldrw(hdr, Address(hdr, Klass::access_flags_offset()));
     tstw(hdr, JVM_ACC_IS_VALUE_BASED_CLASS);
     br(Assembler::NE, slow_case);
-  } else if (LockingMode == LM_LIGHTWEIGHT) {
-    // null check obj. load_klass performs load if DiagnoseSyncOnValueBasedClasses != 0.
-    ldr(hdr, Address(obj));
   }
 
   if (LockingMode == LM_LIGHTWEIGHT) {
