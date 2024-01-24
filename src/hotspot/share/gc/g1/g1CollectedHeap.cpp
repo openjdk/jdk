@@ -59,6 +59,7 @@
 #include "gc/g1/g1PeriodicGCTask.hpp"
 #include "gc/g1/g1Policy.hpp"
 #include "gc/g1/g1RedirtyCardsQueue.hpp"
+#include "gc/g1/g1RegionPinCache.inline.hpp"
 #include "gc/g1/g1RegionToSpaceMapper.hpp"
 #include "gc/g1/g1RemSet.hpp"
 #include "gc/g1/g1RootClosures.hpp"
@@ -2473,10 +2474,7 @@ void G1CollectedHeap::retire_tlabs() {
 
 void G1CollectedHeap::flush_region_pin_cache() {
   for (JavaThreadIteratorWithHandle jtiwh; JavaThread *thread = jtiwh.next(); ) {
-    Pair<uint, size_t> stats = G1ThreadLocalData::get_and_reset_pin_cache(thread);
-    if (stats.second != 0) {
-      region_at(stats.first)->add_pinned_object_count(stats.second);
-    }
+    G1ThreadLocalData::pin_count_cache(thread).flush();
   }
 }
 

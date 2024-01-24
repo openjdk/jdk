@@ -32,6 +32,7 @@
 #include "gc/g1/g1ConcurrentMark.inline.hpp"
 #include "gc/g1/g1EvacFailureRegions.hpp"
 #include "gc/g1/g1Policy.hpp"
+#include "gc/g1/g1RegionPinCache.inline.hpp"
 #include "gc/g1/g1RemSet.hpp"
 #include "gc/g1/heapRegion.inline.hpp"
 #include "gc/g1/heapRegionManager.inline.hpp"
@@ -269,16 +270,7 @@ inline void G1CollectedHeap::pin_object(JavaThread* thread, oop obj) {
   HeapRegion* r = heap_region_containing(obj);
   uint obj_region_idx = r->hrm_index();
 
-  uint cache_region_idx = G1ThreadLocalData::cached_pinned_region_idx(thread);
-  if (cache_region_idx == obj_region_idx) {
-    G1ThreadLocalData::inc_cached_pin_count(thread);
-  } else {
-    // Flush old.
-    size_t cache_pin_count = G1ThreadLocalData::get_and_set_pin_cache(thread, obj_region_idx, (size_t)1);
-    if (cache_pin_count != 0) {
-      region_at(cache_region_idx)->add_pinned_object_count(cache_pin_count);
-    }
-  }
+  G1ThreadLocalData::pin_count_cache(thread).inc_count(obj_region_idx);
 }
 
 inline void G1CollectedHeap::unpin_object(JavaThread* thread, oop obj) {
@@ -287,16 +279,7 @@ inline void G1CollectedHeap::unpin_object(JavaThread* thread, oop obj) {
   HeapRegion* r = heap_region_containing(obj);
   uint obj_region_idx = r->hrm_index();
 
-  uint cache_region_idx = G1ThreadLocalData::cached_pinned_region_idx(thread);
-  if (cache_region_idx == obj_region_idx) {
-    G1ThreadLocalData::dec_cached_pin_count(thread);
-  } else {
-    // Flush old.
-    size_t cache_pin_count = G1ThreadLocalData::get_and_set_pin_cache(thread, obj_region_idx, ~(size_t)0);
-    if (cache_pin_count != 0) {
-      region_at(cache_region_idx)->add_pinned_object_count(cache_pin_count);
-    }
-  }
+  G1ThreadLocalData::pin_count_cache(thread).dec_count(obj_region_idx);
 }
 
 inline bool G1CollectedHeap::is_obj_dead(const oop obj) const {

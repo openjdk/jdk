@@ -28,6 +28,7 @@
 #include "gc/g1/g1ConcurrentRefineStats.hpp"
 #include "gc/g1/g1DirtyCardQueue.hpp"
 #include "gc/g1/g1YoungGCPreEvacuateTasks.hpp"
+#include "gc/g1/g1RegionPinCache.inline.hpp"
 #include "gc/g1/g1ThreadLocalData.hpp"
 #include "gc/shared/barrierSet.inline.hpp"
 #include "gc/shared/threadLocalAllocBuffer.inline.hpp"
@@ -65,11 +66,8 @@ class G1PreEvacuateCollectionSetBatchTask::JavaThreadRetireTLABAndFlushLogs : pu
       // Concatenate logs.
       G1DirtyCardQueueSet& qset = G1BarrierSet::dirty_card_queue_set();
       _refinement_stats += qset.concatenate_log_and_stats(thread);
-      // Flush region pincount cache.
-      Pair<uint, size_t> region_pin_cache = G1ThreadLocalData::get_and_reset_pin_cache(thread);
-      if (region_pin_cache.second != 0) {
-        G1CollectedHeap::heap()->region_at(region_pin_cache.first)->add_pinned_object_count(region_pin_cache.second);
-      }
+      // Flush region pin count cache.
+      G1ThreadLocalData::pin_count_cache(thread).flush();
     }
   };
 
@@ -140,7 +138,7 @@ class G1PreEvacuateCollectionSetBatchTask::NonJavaThreadFlushLogs : public G1Abs
       G1DirtyCardQueueSet& qset = G1BarrierSet::dirty_card_queue_set();
       _refinement_stats += qset.concatenate_log_and_stats(thread);
 
-      assert(G1ThreadLocalData::cached_pin_count(thread) == 0, "NonJava thread has pinned Java objects");
+      assert(G1ThreadLocalData::pin_count_cache(thread).count() == 0, "NonJava thread has pinned Java objects");
     }
   } _tc;
 

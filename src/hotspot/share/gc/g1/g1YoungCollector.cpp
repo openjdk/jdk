@@ -41,6 +41,7 @@
 #include "gc/g1/g1ParScanThreadState.inline.hpp"
 #include "gc/g1/g1Policy.hpp"
 #include "gc/g1/g1RedirtyCardsQueue.hpp"
+#include "gc/g1/g1RegionPinCache.inline.hpp"
 #include "gc/g1/g1RemSet.hpp"
 #include "gc/g1/g1RootProcessor.hpp"
 #include "gc/g1/g1Trace.hpp"
@@ -535,6 +536,12 @@ void G1YoungCollector::pre_evacuate_collection_set(G1EvacInfo* evacuation_info) 
 #endif
 
   allocation_failure_injector()->arm_if_needed();
+
+#ifdef ASSERT
+  for (JavaThreadIteratorWithHandle jtiwh; JavaThread *thread = jtiwh.next(); ) {
+    assert(G1ThreadLocalData::pin_count_cache(thread).count() == 0, "must be flushed");
+  }
+#endif
 }
 
 class G1ParEvacuateFollowersClosure : public VoidClosure {
@@ -1086,12 +1093,6 @@ void G1YoungCollector::collect() {
     policy()->record_young_collection_start();
 
     pre_evacuate_collection_set(jtm.evacuation_info());
-
-#ifdef ASSERT
-    for (JavaThreadIteratorWithHandle jtiwh; JavaThread *thread = jtiwh.next(); ) {
-      assert(G1ThreadLocalData::cached_pin_count(thread) == 0, "must be flushed");
-    }
-#endif
 
     G1ParScanThreadStateSet per_thread_states(_g1h,
                                               workers()->active_workers(),

@@ -98,30 +98,8 @@ public:
     return dirty_card_queue_offset() + G1DirtyCardQueue::byte_offset_of_buf();
   }
 
-  static uint cached_pinned_region_idx(Thread* thread) {
-    return data(thread)->_pin_cache.region_idx();
-  }
-
-#ifdef ASSERT
-  static size_t cached_pin_count(Thread* thread) {
-    return data(thread)->_pin_cache.count();
-  }
-#endif
-
-  static void inc_cached_pin_count(Thread* thread) {
-    data(thread)->_pin_cache.inc_count();
-  }
-
-  static void dec_cached_pin_count(Thread* thread) {
-    data(thread)->_pin_cache.dec_count();
-  }
-
-  static size_t get_and_set_pin_cache(Thread* thread, uint region_idx, size_t new_count) {
-    return data(thread)->_pin_cache.get_and_set(region_idx, new_count);
-  }
-
-  static Pair<uint, size_t> get_and_reset_pin_cache(Thread* thread) {
-    return data(thread)->_pin_cache.get_and_reset();
+  static G1RegionPinCache& pin_count_cache(Thread* thread) {
+    return data(thread)->_pin_cache;
   }
 };
 

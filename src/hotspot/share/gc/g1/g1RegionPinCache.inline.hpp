@@ -22,12 +22,39 @@
  *
  */
 
-#include "precompiled.hpp"
+#ifndef SHARE_GC_G1_G1REGIONPINCACHE_INLINE_HPP
+#define SHARE_GC_G1_G1REGIONPINCACHE_INLINE_HPP
 
-#include "gc/g1/g1RegionPinCache.inline.hpp"
+#include "gc/g1/g1RegionPinCache.hpp"
+
 #include "gc/g1/g1CollectedHeap.inline.hpp"
-#include "gc/g1/heapRegion.inline.hpp"
 
-G1RegionPinCache::~G1RegionPinCache() {
-  flush();
+inline void G1RegionPinCache::inc_count(uint region_idx) {
+  if (region_idx == _region_idx) {
+    ++_count;
+  } else {
+    flush_and_set(region_idx, (size_t)1);
+  }
 }
+
+inline void G1RegionPinCache::dec_count(uint region_idx) {
+  if (region_idx == _region_idx) {
+    --_count;
+  } else {
+    flush_and_set(region_idx, ~(size_t)0);
+  }
+}
+
+inline void G1RegionPinCache::flush_and_set(uint new_region_idx, size_t new_count) {
+  if (_count != 0) {
+    G1CollectedHeap::heap()->region_at(_region_idx)->add_pinned_object_count(_count);
+  }
+  _region_idx = new_region_idx;
+  _count = new_count;
+}
+
+inline void G1RegionPinCache::flush() {
+  flush_and_set(0, 0);
+}
+
+#endif /* SHARE_GC_G1_G1REGIONPINCACHE_INLINE_HPP */

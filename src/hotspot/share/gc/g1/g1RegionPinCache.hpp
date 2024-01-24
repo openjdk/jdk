@@ -26,7 +26,6 @@
 #define SHARE_GC_G1_G1REGIONPINCACHE_HPP
 
 #include "memory/allocation.hpp"
-#include "utilities/pair.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 // Holds the pinned object count increment for the given region for a Java thread.
@@ -36,27 +35,20 @@ class G1RegionPinCache : public StackObj {
   uint _region_idx;
   size_t _count;
 
+  void flush_and_set(uint new_region_idx, size_t new_count);
+
 public:
   G1RegionPinCache() : _region_idx(0), _count(0) { }
   ~G1RegionPinCache();
 
-  uint region_idx() const { return _region_idx; }
+#ifdef ASSERT
   size_t count() const { return _count; }
+#endif
 
-  void inc_count() { ++_count; }
-  void dec_count() { --_count; }
+  void inc_count(uint region_idx);
+  void dec_count(uint region_idx);
 
-  size_t get_and_set(uint new_region_idx, size_t new_count) {
-    size_t result = _count;
-    _region_idx = new_region_idx;
-    _count = new_count;
-    return result;
-  }
-
-  // Gets current region and pin count and resets the values to defaults.
-  Pair<uint, size_t> get_and_reset() {
-    return Pair<uint, size_t> { _region_idx, get_and_set(0, 0) };
-  }
+  void flush();
 };
 
 #endif /* SHARE_GC_G1_G1REGIONPINCACHE_HPP */
