@@ -6332,9 +6332,7 @@ void MacroAssembler::double_move(VMRegPair src, VMRegPair dst, Register tmp) {
 //
 //  - obj: the object to be locked
 //  - t1, t2, t3: temporary registers, will be destroyed
-//  - preload_mark: signals if the markWord needs to be loaded as  the first
-//                  instruction emitted. May be required by C1.
-void MacroAssembler::lightweight_lock(Register obj, Register t1, Register t2, Register t3, Label& slow, bool preload_mark) {
+void MacroAssembler::lightweight_lock(Register obj, Register t1, Register t2, Register t3, Label& slow) {
   assert(LockingMode == LM_LIGHTWEIGHT, "only used with new lightweight locking");
   assert_different_registers(obj, t1, t2, t3, rscratch1);
 
@@ -6342,12 +6340,6 @@ void MacroAssembler::lightweight_lock(Register obj, Register t1, Register t2, Re
   const Register top = t1;
   const Register mark = t2;
   const Register t = t3;
-
-  if (preload_mark) {
-    // C1 requires the first instruction emitted to trap if obj is null as
-    // an implicit null check.
-    ldr(mark, Address(obj, oopDesc::mark_offset_in_bytes()));
-  }
 
   // Check if the lock-stack is full.
   ldrw(top, Address(rthread, JavaThread::lock_stack_top_offset()));
@@ -6361,9 +6353,7 @@ void MacroAssembler::lightweight_lock(Register obj, Register t1, Register t2, Re
   br(Assembler::EQ, push);
 
   // Check header for monitor (0b10).
-  if (!preload_mark) {
-    ldr(mark, Address(obj, oopDesc::mark_offset_in_bytes()));
-  }
+  ldr(mark, Address(obj, oopDesc::mark_offset_in_bytes()));
   tst(mark, markWord::monitor_value);
   br(Assembler::NE, slow);
 

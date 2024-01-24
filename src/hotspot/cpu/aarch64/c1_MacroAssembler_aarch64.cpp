@@ -78,13 +78,13 @@ int C1_MacroAssembler::lock_object(Register hdr, Register obj, Register disp_hdr
     ldrw(hdr, Address(hdr, Klass::access_flags_offset()));
     tstw(hdr, JVM_ACC_IS_VALUE_BASED_CLASS);
     br(Assembler::NE, slow_case);
+  } else if (LockingMode == LM_LIGHTWEIGHT) {
+    // null check obj. load_klass performs load if DiagnoseSyncOnValueBasedClasses != 0.
+    ldr(hdr, Address(obj));
   }
 
   if (LockingMode == LM_LIGHTWEIGHT) {
-    // If DiagnoseSyncOnValueBasedClasses is turned off we must instruct
-    // lightweight_lock to preload the markWord as implicit null check.
-    const bool preload_mark = DiagnoseSyncOnValueBasedClasses == 0;
-    lightweight_lock(obj, hdr, temp, rscratch2, slow_case, preload_mark);
+    lightweight_lock(obj, hdr, temp, rscratch2, slow_case);
   } else if (LockingMode == LM_LEGACY) {
     Label done;
     // Load object header
