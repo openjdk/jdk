@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,51 +21,53 @@
  * questions.
  */
 
-/**
- * @test
- * @bug 4956397
- * @key printer
- * @run main/manual PageDlgPrnButton
- */
-
-import java.awt.print.PrinterJob;
-import java.awt.print.PageFormat;
-import java.awt.print.Printable;
-import java.awt.print.PrinterException;
-
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
-import java.awt.* ;
+import java.awt.print.PageFormat;
+import java.awt.print.Printable;
+import java.awt.print.PrinterException;
+import java.awt.print.PrinterJob;
 
+import jtreg.SkippedException;
+
+/*
+ * @test
+ * @bug 4956397
+ * @key printer
+ * @library /java/awt/regtesthelpers
+ * @library /test/lib
+ * @build PassFailJFrame
+ * @build jtreg.SkippedException
+ * @run main/manual PageDlgPrnButton
+ */
 public class PageDlgPrnButton implements Printable
 {
-    public static void main ( String args[] ) {
 
-        String[] instructions =
-           {"For non-windows OS, this test PASSes.",
-            "You must have at least 2 printers available to perform this test.",
-            "This test brings up a native Windows page dialog.",
-            "Click on the Printer... button and change the selected printer. ",
-            "Test passes if the printout comes from the new selected printer.",
-         };
+    private static final String instructions =
+            "For non-windows OS, this test PASSes.\n" +
+            "You must have at least 2 printers available to perform this test.\n" +
+            "This test brings up a native Windows page dialog.\n" +
+            "Click on the Printer... button and change the selected printer. \n" +
+            "Test passes if the printout comes from the new selected printer.";
 
-         Sysout.createDialog( );
-         Sysout.printInstructions( instructions );
+    public static void main (String[] args) throws Exception {
 
-        PageDlgPrnButton pdpb = new PageDlgPrnButton() ;
+        PassFailJFrame passFailJFrame = new PassFailJFrame.Builder()
+                .title("CustomPaper Test Instructions")
+                .instructions(instructions)
+                .testTimeOut(5)
+                .rows((int) instructions.lines().count() + 1)
+                .columns(45)
+                .build();
+
+        new PageDlgPrnButton() ;
+        passFailJFrame.awaitAndCheck();
     }
 
-    public PageDlgPrnButton()
-    {
-        try
-        {
-            pageDialogExample();
-        }
-        catch(Exception e)
-        {e.printStackTrace(System.err);}
+    public PageDlgPrnButton() throws PrinterException {
+        pageDialogExample();
     }
-
 
     // This example just displays the page dialog - you cannot change
     // the printer (press the "Printer..." button and choose one if you like).
@@ -80,8 +82,6 @@ public class PageDlgPrnButton implements Printable
         job.setPrintable(this,pageFormat);
         job.print();
     }
-
-
 
     public int print(Graphics g, PageFormat pageFormat, int pageIndex)
     {
@@ -113,117 +113,3 @@ public class PageDlgPrnButton implements Printable
         return(PAGE_EXISTS);
     }
 }
-
-class Sysout {
-   private static TestDialog dialog;
-
-   public static void createDialogWithInstructions( String[] instructions )
-    {
-      dialog = new TestDialog( new Frame(), "Instructions" );
-      dialog.printInstructions( instructions );
-      dialog.show();
-      println( "Any messages for the tester will display here." );
-    }
-
-   public static void createDialog( )
-    {
-      dialog = new TestDialog( new Frame(), "Instructions" );
-      String[] defInstr = { "Instructions will appear here. ", "" } ;
-      dialog.printInstructions( defInstr );
-      dialog.show();
-      println( "Any messages for the tester will display here." );
-    }
-
-
-   public static void printInstructions( String[] instructions )
-    {
-      dialog.printInstructions( instructions );
-    }
-
-
-   public static void println( String messageIn )
-    {
-      dialog.displayMessage( messageIn );
-    }
-
-}// Sysout  class
-
-/**
-  This is part of the standard test machinery.  It provides a place for the
-   test instructions to be displayed, and a place for interactive messages
-   to the user to be displayed.
-  To have the test instructions displayed, see Sysout.
-  To have a message to the user be displayed, see Sysout.
-  Do not call anything in this dialog directly.
-  */
-class TestDialog extends Dialog {
-
-   TextArea instructionsText;
-   TextArea messageText;
-   int maxStringLength = 80;
-
-   //DO NOT call this directly, go through Sysout
-   public TestDialog( Frame frame, String name )
-    {
-      super( frame, name );
-      int scrollBoth = TextArea.SCROLLBARS_BOTH;
-      instructionsText = new TextArea( "", 15, maxStringLength, scrollBoth );
-      add( "North", instructionsText );
-
-      messageText = new TextArea( "", 5, maxStringLength, scrollBoth );
-      add("Center", messageText);
-
-      pack();
-
-      show();
-    }// TestDialog()
-
-   //DO NOT call this directly, go through Sysout
-   public void printInstructions( String[] instructions )
-    {
-      //Clear out any current instructions
-      instructionsText.setText( "" );
-
-      //Go down array of instruction strings
-
-      String printStr, remainingStr;
-      for( int i=0; i < instructions.length; i++ )
-       {
-         //chop up each into pieces maxSringLength long
-         remainingStr = instructions[ i ];
-         while( remainingStr.length() > 0 )
-          {
-            //if longer than max then chop off first max chars to print
-            if( remainingStr.length() >= maxStringLength )
-             {
-               //Try to chop on a word boundary
-               int posOfSpace = remainingStr.
-                  lastIndexOf( ' ', maxStringLength - 1 );
-
-               if( posOfSpace <= 0 ) posOfSpace = maxStringLength - 1;
-
-               printStr = remainingStr.substring( 0, posOfSpace + 1 );
-               remainingStr = remainingStr.substring( posOfSpace + 1 );
-             }
-            //else just print
-            else
-             {
-               printStr = remainingStr;
-               remainingStr = "";
-             }
-
-            instructionsText.append( printStr + "\n" );
-
-          }// while
-
-       }// for
-
-    }//printInstructions()
-
-   //DO NOT call this directly, go through Sysout
-   public void displayMessage( String messageIn )
-    {
-      messageText.append( messageIn + "\n" );
-    }
-
- }// TestDialog  class
