@@ -84,10 +84,10 @@ import java.util.Objects;
  *
  * <i>FormatType: one of </i>
  *         number
- *         java_temporal_date
- *         java_temporal_time
- *         java_temporal_datetime
- *         <i>DateTimeFormatter predefined formats</i>
+ *         dtf_date
+ *         dtf_time
+ *         dtf_datetime
+ *         <i>pre-defined DateTimeFormatter(s)</i>
  *         date
  *         time
  *         choice
@@ -197,66 +197,66 @@ import java.util.Objects;
  *       <th scope="row" style="font-weight:normal"><i>SubformatPattern</i>
  *       <td>{@code new} {@link DecimalFormat#DecimalFormat(String,DecimalFormatSymbols) DecimalFormat}{@code (subformatPattern,} {@link DecimalFormatSymbols#getInstance(Locale) DecimalFormatSymbols.getInstance}{@code (getLocale()))}
  *    <tr>
- *       <th scope="row" style="font-weight:normal" rowspan=6>{@code java_temporal_date}
+ *       <th scope="row" style="font-weight:normal" rowspan=6>{@code dtf_date}
  *       <th scope="row" style="font-weight:normal"><i>(none)</i>
- *       <td>{@link DateTimeFormatter#ofLocalizedDate(java.time.format.FormatStyle) DateTimeFormatter.ofLocalizedDate(}{@link java.time.format.FormatStyle#MEDIUM}{@code ).withLocale(getLocale()).toFormat()}
+ *       <td>{@link DateTimeFormatter#ofLocalizedDate(java.time.format.FormatStyle) DateTimeFormatter.ofLocalizedDate(}{@link java.time.format.FormatStyle#MEDIUM}{@code ).withLocale(getLocale())}
  *    <tr>
  *       <th scope="row" style="font-weight:normal">{@code short}
- *       <td>{@link DateTimeFormatter#ofLocalizedDate(java.time.format.FormatStyle) DateTimeFormatter.ofLocalizedDate(}{@link java.time.format.FormatStyle#SHORT}{@code ).withLocale(getLocale()).toFormat()}
+ *       <td>{@link DateTimeFormatter#ofLocalizedDate(java.time.format.FormatStyle) DateTimeFormatter.ofLocalizedDate(}{@link java.time.format.FormatStyle#SHORT}{@code ).withLocale(getLocale())}
  *    <tr>
  *       <th scope="row" style="font-weight:normal">{@code medium}
- *       <td>{@link DateTimeFormatter#ofLocalizedDate(java.time.format.FormatStyle) DateTimeFormatter.ofLocalizedDate(}{@link java.time.format.FormatStyle#MEDIUM}{@code ).withLocale(getLocale()).toFormat()}
+ *       <td>{@link DateTimeFormatter#ofLocalizedDate(java.time.format.FormatStyle) DateTimeFormatter.ofLocalizedDate(}{@link java.time.format.FormatStyle#MEDIUM}{@code ).withLocale(getLocale())}
  *    <tr>
  *       <th scope="row" style="font-weight:normal">{@code long}
- *       <td>{@link DateTimeFormatter#ofLocalizedDate(java.time.format.FormatStyle) DateTimeFormatter.ofLocalizedDate(}{@link java.time.format.FormatStyle#LONG}{@code ).withLocale(getLocale()).toFormat()}
+ *       <td>{@link DateTimeFormatter#ofLocalizedDate(java.time.format.FormatStyle) DateTimeFormatter.ofLocalizedDate(}{@link java.time.format.FormatStyle#LONG}{@code ).withLocale(getLocale())}
  *    <tr>
  *       <th scope="row" style="font-weight:normal">{@code full}
- *       <td>{@link DateTimeFormatter#ofLocalizedDate(java.time.format.FormatStyle) DateTimeFormatter.ofLocalizedDate(}{@link java.time.format.FormatStyle#FULL}{@code ).withLocale(getLocale()).toFormat()}
+ *       <td>{@link DateTimeFormatter#ofLocalizedDate(java.time.format.FormatStyle) DateTimeFormatter.ofLocalizedDate(}{@link java.time.format.FormatStyle#FULL}{@code ).withLocale(getLocale())}
  *    <tr>
  *       <th scope="row" style="font-weight:normal"><i>SubformatPattern</i>
- *       <td>{@link DateTimeFormatter#ofPattern(String, Locale)   DateTimeFormatter.ofPattern}{@code (subformatPattern, getLocale()).toFormat()}
+ *       <td>{@link DateTimeFormatter#ofPattern(String, Locale)   DateTimeFormatter.ofPattern}{@code (subformatPattern, getLocale())}
  *    <tr>
- *       <th scope="row" style="font-weight:normal" rowspan=6>{@code java_temporal_time}
+ *       <th scope="row" style="font-weight:normal" rowspan=6>{@code dtf_time}
  *       <th scope="row" style="font-weight:normal"><i>(none)</i>
- *       <td>{@link DateTimeFormatter#ofLocalizedTime(java.time.format.FormatStyle) DateTimeFormatter.ofLocalizedTime(}{@link java.time.format.FormatStyle#MEDIUM}{@code ).withLocale(getLocale()).toFormat()}
+ *       <td>{@link DateTimeFormatter#ofLocalizedTime(java.time.format.FormatStyle) DateTimeFormatter.ofLocalizedTime(}{@link java.time.format.FormatStyle#MEDIUM}{@code ).withLocale(getLocale())}
  *    <tr>
  *       <th scope="row" style="font-weight:normal">{@code short}
- *       <td>{@link DateTimeFormatter#ofLocalizedTime(java.time.format.FormatStyle) DateTimeFormatter.ofLocalizedTime(}{@link java.time.format.FormatStyle#SHORT}{@code ).withLocale(getLocale()).toFormat()}
+ *       <td>{@link DateTimeFormatter#ofLocalizedTime(java.time.format.FormatStyle) DateTimeFormatter.ofLocalizedTime(}{@link java.time.format.FormatStyle#SHORT}{@code ).withLocale(getLocale())}
  *    <tr>
  *       <th scope="row" style="font-weight:normal">{@code medium}
- *       <td>{@link DateTimeFormatter#ofLocalizedTime(java.time.format.FormatStyle) DateTimeFormatter.ofLocalizedTime(}{@link java.time.format.FormatStyle#MEDIUM}{@code ).withLocale(getLocale()).toFormat()}
+ *       <td>{@link DateTimeFormatter#ofLocalizedTime(java.time.format.FormatStyle) DateTimeFormatter.ofLocalizedTime(}{@link java.time.format.FormatStyle#MEDIUM}{@code ).withLocale(getLocale())}
  *    <tr>
  *       <th scope="row" style="font-weight:normal">{@code long}
- *       <td>{@link DateTimeFormatter#ofLocalizedTime(java.time.format.FormatStyle) DateTimeFormatter.ofLocalizedTime(}{@link java.time.format.FormatStyle#LONG}{@code ).withLocale(getLocale()).toFormat()}
+ *       <td>{@link DateTimeFormatter#ofLocalizedTime(java.time.format.FormatStyle) DateTimeFormatter.ofLocalizedTime(}{@link java.time.format.FormatStyle#LONG}{@code ).withLocale(getLocale())}
  *    <tr>
  *       <th scope="row" style="font-weight:normal">{@code full}
- *       <td>{@link DateTimeFormatter#ofLocalizedTime(java.time.format.FormatStyle) DateTimeFormatter.ofLocalizedTime(}{@link java.time.format.FormatStyle#FULL}{@code ).withLocale(getLocale()).toFormat()}
+ *       <td>{@link DateTimeFormatter#ofLocalizedTime(java.time.format.FormatStyle) DateTimeFormatter.ofLocalizedTime(}{@link java.time.format.FormatStyle#FULL}{@code ).withLocale(getLocale())}
  *    <tr>
  *       <th scope="row" style="font-weight:normal"><i>SubformatPattern</i>
- *       <td>{@link DateTimeFormatter#ofPattern(String, Locale)   DateTimeFormatter.ofPattern}{@code (subformatPattern, getLocale()).toFormat()}
+ *       <td>{@link DateTimeFormatter#ofPattern(String, Locale)   DateTimeFormatter.ofPattern}{@code (subformatPattern, getLocale())}
  *    <tr>
- *       <th scope="row" style="font-weight:normal" rowspan=6>{@code java_temporal_datetime}
+ *       <th scope="row" style="font-weight:normal" rowspan=6>{@code dtf_datetime}
  *       <th scope="row" style="font-weight:normal"><i>(none)</i>
- *       <td>{@link DateTimeFormatter#ofLocalizedDateTime(java.time.format.FormatStyle) DateTimeFormatter.ofLocalizedDateTime(}{@link java.time.format.FormatStyle#MEDIUM}{@code ).withLocale(getLocale()).toFormat()}
+ *       <td>{@link DateTimeFormatter#ofLocalizedDateTime(java.time.format.FormatStyle) DateTimeFormatter.ofLocalizedDateTime(}{@link java.time.format.FormatStyle#MEDIUM}{@code ).withLocale(getLocale())}
  *    <tr>
  *       <th scope="row" style="font-weight:normal">{@code short}
- *       <td>{@link DateTimeFormatter#ofLocalizedDateTime(java.time.format.FormatStyle) DateTimeFormatter.ofLocalizedDateTime(}{@link java.time.format.FormatStyle#SHORT}{@code ).withLocale(getLocale()).toFormat()}
+ *       <td>{@link DateTimeFormatter#ofLocalizedDateTime(java.time.format.FormatStyle) DateTimeFormatter.ofLocalizedDateTime(}{@link java.time.format.FormatStyle#SHORT}{@code ).withLocale(getLocale())}
  *    <tr>
  *       <th scope="row" style="font-weight:normal">{@code medium}
- *       <td>{@link DateTimeFormatter#ofLocalizedDateTime(java.time.format.FormatStyle) DateTimeFormatter.ofLocalizedDateTime(}{@link java.time.format.FormatStyle#MEDIUM}{@code ).withLocale(getLocale()).toFormat()}
+ *       <td>{@link DateTimeFormatter#ofLocalizedDateTime(java.time.format.FormatStyle) DateTimeFormatter.ofLocalizedDateTime(}{@link java.time.format.FormatStyle#MEDIUM}{@code ).withLocale(getLocale())}
  *    <tr>
  *       <th scope="row" style="font-weight:normal">{@code long}
- *       <td>{@link DateTimeFormatter#ofLocalizedDateTime(java.time.format.FormatStyle) DateTimeFormatter.ofLocalizedDateTime(}{@link java.time.format.FormatStyle#LONG}{@code ).withLocale(getLocale()).toFormat()}
+ *       <td>{@link DateTimeFormatter#ofLocalizedDateTime(java.time.format.FormatStyle) DateTimeFormatter.ofLocalizedDateTime(}{@link java.time.format.FormatStyle#LONG}{@code ).withLocale(getLocale())}
  *    <tr>
  *       <th scope="row" style="font-weight:normal">{@code full}
- *       <td>{@link DateTimeFormatter#ofLocalizedDateTime(java.time.format.FormatStyle) DateTimeFormatter.ofLocalizedDateTime(}{@link java.time.format.FormatStyle#FULL}{@code ).withLocale(getLocale()).toFormat()}
+ *       <td>{@link DateTimeFormatter#ofLocalizedDateTime(java.time.format.FormatStyle) DateTimeFormatter.ofLocalizedDateTime(}{@link java.time.format.FormatStyle#FULL}{@code ).withLocale(getLocale())}
  *    <tr>
  *       <th scope="row" style="font-weight:normal"><i>SubformatPattern</i>
- *       <td>{@link DateTimeFormatter#ofPattern(String, Locale)   DateTimeFormatter.ofPattern}{@code (subformatPattern, getLocale()).toFormat()}
+ *       <td>{@link DateTimeFormatter#ofPattern(String, Locale)   DateTimeFormatter.ofPattern}{@code (subformatPattern, getLocale())}
  *    <tr>
- *       <th scope="row" style="font-weight:normal" rowspan=1>{@code java_temporal predefined formatters}
+ *       <th scope="row" style="font-weight:normal" rowspan=1>{@code pre-defined DateTimeFormatter(s)}
  *       <th scope="row" style="font-weight:normal"><i>(none)</i>
- *       <td>See {@link ##dtf_formatters DateTimeFormatter Predefined Formatters (ISO and RFC1123)} for usage.
+ *       <td>The {@code pre-defined DateTimeFormatter(s)} are used 1-1 as a {@code FormatType} | {@link DateTimeFormatter#BASIC_ISO_DATE BASIC_ISO_DATE}, {@link DateTimeFormatter#ISO_LOCAL_DATE ISO_LOCAL_DATE}, {@link DateTimeFormatter#ISO_OFFSET_DATE ISO_OFFSET_DATE}, {@link DateTimeFormatter#ISO_DATE ISO_DATE}, {@link DateTimeFormatter#ISO_LOCAL_TIME ISO_LOCAL_TIME}, {@link DateTimeFormatter#ISO_OFFSET_TIME ISO_OFFSET_TIME}, {@link DateTimeFormatter#ISO_TIME ISO_TIME}, {@link DateTimeFormatter#ISO_LOCAL_DATE_TIME ISO_LOCAL_DATE_TIME}, {@link DateTimeFormatter#ISO_OFFSET_DATE_TIME ISO_OFFSET_DATE_TIME}, {@link DateTimeFormatter#ISO_ZONED_DATE_TIME ISO_ZONED_DATE_TIME}, {@link DateTimeFormatter#ISO_DATE_TIME ISO_DATE_TIME}, {@link DateTimeFormatter#ISO_ORDINAL_DATE ISO_ORDINAL_DATE}, {@link DateTimeFormatter#ISO_WEEK_DATE ISO_WEEK_DATE}, {@link DateTimeFormatter#ISO_INSTANT ISO_INSTANT}, {@link DateTimeFormatter#RFC_1123_DATE_TIME RFC_1123_DATE_TIME}
  *    <tr>
  *       <th scope="row" style="font-weight:normal" rowspan=6>{@code date}
  *       <th scope="row" style="font-weight:normal"><i>(none)</i>
@@ -311,15 +311,6 @@ import java.util.Objects;
  *       <td>{@link ListFormat#getInstance(Locale, ListFormat.Type, ListFormat.Style)  ListFormat.getInstance}{@code (getLocale()}, {@link ListFormat.Type#UNIT}, {@link ListFormat.Style#FULL}}
  * </tbody>
  * </table>
- *
- * <h3 id="dtf_formatters">DateTimeFormatter Predefined Formatters (ISO and RFC1123)</h3>
- * The {@link DateTimeFormatter} predefined formats are also supported
- * in MessageFormat patterns. To utilize one of these formatter constants, the
- * constant field name can be used as a {@code FormatType}. There are no associated {@code FormatStyles}
- * for these {@code FormatTypes}. For example, the {@code FormatType} <i>iso_date_time</i>
- * returns {@link DateTimeFormatter#ISO_DATE_TIME}{@code .toFormat()}. Similar
- * to <i>java_temporal_time</i> and <i>java_temporal_date</i>, these {@code FormatTypes} should not be used
- * with {@link Date} and are intended to be used with the {@link java.time} package.
  *
  * <h3>Usage Information</h3>
  *
@@ -399,10 +390,10 @@ import java.util.Objects;
  * fmt.format(arg); // returns "The date was Thursday, November 16, 2023"
  * }
  *
- * <p>2) a <i>java_temporal_date</i> {@code FormatType} with a <i>full</i> {@code FormatStyle},
+ * <p>2) a <i>dtf_date</i> {@code FormatType} with a <i>full</i> {@code FormatStyle},
  * {@snippet lang=java :
  * Object[] arg = {LocalDate.of(2023, 11, 16)};
- * var fmt = new MessageFormat("The date was {0,java_temporal_date,full}");
+ * var fmt = new MessageFormat("The date was {0,dtf_date,full}");
  * fmt.format(arg); // returns "The date was Thursday, November 16, 2023"
  * }
  *
@@ -1673,7 +1664,7 @@ public class MessageFormat extends Format {
                         DateFormat.getTimeInstance(DateFormat.FULL, locale);
                 default -> formatFromSubformatPattern(fType, style);
             };
-            case JAVA_TEMPORAL_DATE -> switch (fStyle) {
+            case dtf_DATE -> switch (fStyle) {
                 case DEFAULT, MEDIUM ->
                         DateTimeFormatter.ofLocalizedDate(java.time.format.FormatStyle.MEDIUM).withLocale(locale).toFormat();
                 case SHORT ->
@@ -1684,7 +1675,7 @@ public class MessageFormat extends Format {
                         DateTimeFormatter.ofLocalizedDate(java.time.format.FormatStyle.FULL).withLocale(locale).toFormat();
                 default -> formatFromSubformatPattern(fType, style);
             };
-            case JAVA_TEMPORAL_TIME -> switch (fStyle) {
+            case dtf_TIME -> switch (fStyle) {
                 case DEFAULT, MEDIUM ->
                         DateTimeFormatter.ofLocalizedTime(java.time.format.FormatStyle.MEDIUM).withLocale(locale).toFormat();
                 case SHORT ->
@@ -1695,7 +1686,7 @@ public class MessageFormat extends Format {
                         DateTimeFormatter.ofLocalizedTime(java.time.format.FormatStyle.FULL).withLocale(locale).toFormat();
                 default -> formatFromSubformatPattern(fType, style);
             };
-            case JAVA_TEMPORAL_DATETIME -> switch (fStyle) {
+            case dtf_DATETIME -> switch (fStyle) {
                 case DEFAULT, MEDIUM ->
                         DateTimeFormatter.ofLocalizedDateTime(java.time.format.FormatStyle.MEDIUM).withLocale(locale).toFormat();
                 case SHORT ->
@@ -1759,7 +1750,7 @@ public class MessageFormat extends Format {
             return switch(fType) {
                 case NUMBER -> new DecimalFormat(pattern, DecimalFormatSymbols.getInstance(locale));
                 case DATE, TIME -> new SimpleDateFormat(pattern, locale);
-                case JAVA_TEMPORAL_DATE, JAVA_TEMPORAL_TIME, JAVA_TEMPORAL_DATETIME ->
+                case dtf_DATE, dtf_TIME, dtf_DATETIME ->
                         DateTimeFormatter.ofPattern(pattern).toFormat();
                 case CHOICE -> new ChoiceFormat(pattern);
                 default ->  throw new IllegalArgumentException(String.format(
@@ -1812,9 +1803,9 @@ public class MessageFormat extends Format {
         NUMBER("number"),
         DATE("date"),
         TIME("time"),
-        JAVA_TEMPORAL_DATE("java_temporal_date"),
-        JAVA_TEMPORAL_TIME("java_temporal_time"),
-        JAVA_TEMPORAL_DATETIME("java_temporal_datetime"),
+        dtf_DATE("dtf_date"),
+        dtf_TIME("dtf_time"),
+        dtf_DATETIME("dtf_datetime"),
         CHOICE("choice"),
         LIST("list"),
 
