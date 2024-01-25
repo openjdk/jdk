@@ -270,6 +270,8 @@ public interface Types {
      * for example, this method may be used to get the
      * parameterized type {@code Set<String>}.
      *
+     * Annotations on the type arguments are preserved.
+     *
      * <p> The number of type arguments must either equal the
      * number of the type element's formal type parameters, or must be
      * zero.  If zero, and if the type element is generic,

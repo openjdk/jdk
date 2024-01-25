@@ -114,6 +114,7 @@ public class TestAnnotationStripping extends JavacTestingAbstractProcessor {
 
                 if (!returnType.getKind().isPrimitive()) {
                     /*
+                     * For getWildcardType()
                      * "Annotations on the bounds are preserved."
                      */
                     WildcardType wcType;
@@ -122,6 +123,15 @@ public class TestAnnotationStripping extends JavacTestingAbstractProcessor {
 
                     checkEmptyAnnotations(wcType = typeUtils.getWildcardType(null,       returnType));
                     checkEqualTypeAndAnnotations(returnType, wcType.getSuperBound());
+
+                    /*
+                     * For getDeclaredType()
+                     * "Annotations on the type arguments are preserved."
+                     */
+                    DeclaredType declaredType =
+                        typeUtils.getDeclaredType(elements.getTypeElement("java.util.Set"),
+                                                  returnType);
+                    checkEqualTypeAndAnnotations(returnType, declaredType.getTypeArguments().get(0));
                 }
 
                 System.out.println(returnType.getAnnotation(TestTypeAnnotation.class));
