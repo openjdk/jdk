@@ -257,6 +257,10 @@ class DefNewGeneration: public Generation {
   // at some additional cost.
   bool collection_attempt_is_safe();
 
+  // Requires "addr" to be the start of a block, and returns "TRUE" iff
+  // the block is an object.
+  bool block_is_obj(const HeapWord* addr) const;
+
   virtual void collect(bool   full,
                        bool   clear_all_soft_refs,
                        size_t size,

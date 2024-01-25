@@ -164,22 +164,3 @@ HeapWord* Generation::block_start(const void* p) const {
   ((Generation*)this)->space_iterate(&blk);
   return blk._start;
 }
-
-class GenerationBlockIsObjClosure : public SpaceClosure {
- public:
-  const HeapWord* _p;
-  bool is_obj;
-  virtual void do_space(Space* s) {
-    if (!is_obj && s->is_in_reserved(_p)) {
-      is_obj |= s->block_is_obj(_p);
-    }
-  }
-  GenerationBlockIsObjClosure(const HeapWord* p) { _p = p; is_obj = false; }
-};
-
-bool Generation::block_is_obj(const HeapWord* p) const {
-  GenerationBlockIsObjClosure blk(p);
-  // Cast away const
-  ((Generation*)this)->space_iterate(&blk);
-  return blk.is_obj;
-}
