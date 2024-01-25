@@ -35,6 +35,7 @@
 #include "gc/serial/genMarkSweep.hpp"
 #include "gc/serial/markSweep.hpp"
 #include "gc/serial/serialHeap.hpp"
+#include "gc/serial/serialMemoryPools.hpp"
 #include "gc/serial/serialVMOperations.hpp"
 #include "gc/serial/tenuredGeneration.inline.hpp"
 #include "gc/shared/cardTableBarrierSet.hpp"
@@ -50,7 +51,6 @@
 #include "gc/shared/gcTraceTime.inline.hpp"
 #include "gc/shared/gcVMOperations.hpp"
 #include "gc/shared/genArguments.hpp"
-#include "gc/shared/genMemoryPools.hpp"
 #include "gc/shared/locationPrinter.inline.hpp"
 #include "gc/shared/oopStorage.inline.hpp"
 #include "gc/shared/oopStorageParState.inline.hpp"
@@ -97,7 +97,6 @@ SerialHeap::SerialHeap() :
     _soft_ref_policy(),
     _gc_policy_counters(new GCPolicyCounters("Copy:MSC", 2, 2)),
     _incremental_collection_failed(false),
-    _full_collections_completed(0),
     _young_manager(nullptr),
     _old_manager(nullptr),
     _eden_pool(nullptr),
@@ -121,7 +120,7 @@ void SerialHeap::initialize_serviceability() {
                                                    young->max_survivor_size(),
                                                    false /* support_usage_threshold */);
   TenuredGeneration* old = old_gen();
-  _old_pool = new GenerationPool(old, "Tenured Gen", true);
+  _old_pool = new TenuredGenerationPool(old, "Tenured Gen", true);
 
   _young_manager->add_pool(_eden_pool);
   _young_manager->add_pool(_survivor_pool);
@@ -302,15 +301,6 @@ void SerialHeap::save_used_regions() {
 
 size_t SerialHeap::max_capacity() const {
   return _young_gen->max_capacity() + _old_gen->max_capacity();
-}
-
-// Update the _full_collections_completed counter
-// at the end of a stop-world full GC.
-unsigned int SerialHeap::update_full_collections_completed() {
-  assert(_full_collections_completed <= _total_full_collections,
-         "Can't complete more collections than were started");
-  _full_collections_completed = _total_full_collections;
-  return _full_collections_completed;
 }
 
 // Return true if any of the following is true:
@@ -645,7 +635,6 @@ void SerialHeap::do_collection(bool full,
 
     // Resize the metaspace capacity after full collections
     MetaspaceGC::compute_new_size();
-    update_full_collections_completed();
 
     print_heap_change(pre_gc_values);
 
@@ -1063,35 +1052,13 @@ void SerialHeap::print_heap_change(const PreGenGCValues& pre_gc_values) const {
   MetaspaceUtils::print_metaspace_change(pre_gc_values.metaspace_sizes());
 }
 
-class GenGCPrologueClosure: public SerialHeap::GenClosure {
- private:
-  bool _full;
- public:
-  void do_generation(Generation* gen) {
-    gen->gc_prologue(_full);
-  }
-  GenGCPrologueClosure(bool full) : _full(full) {};
-};
-
 void SerialHeap::gc_prologue(bool full) {
   assert(InlineCacheBuffer::is_empty(), "should have cleaned up ICBuffer");
 
   // Fill TLAB's and such
   ensure_parsability(true);   // retire TLABs
 
-  // Walk generations
-  GenGCPrologueClosure blk(full);
-  generation_iterate(&blk, false);  // not old-to-young.
-};
-
-class GenGCEpilogueClosure: public SerialHeap::GenClosure {
- private:
-  bool _full;
- public:
-  void do_generation(Generation* gen) {
-    gen->gc_epilogue(_full);
-  }
-  GenGCEpilogueClosure(bool full) : _full(full) {};
+  _old_gen->gc_prologue();
 };
 
 void SerialHeap::gc_epilogue(bool full) {
@@ -1101,8 +1068,8 @@ void SerialHeap::gc_epilogue(bool full) {
 
   resize_all_tlabs();
 
-  GenGCEpilogueClosure blk(full);
-  generation_iterate(&blk, false);  // not old-to-young.
+  _young_gen->gc_epilogue(full);
+  _old_gen->gc_epilogue();
 
   MetaspaceCounters::update_performance_counters();
 };

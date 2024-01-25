@@ -64,6 +64,7 @@ compiler/rtm/locking/TestUseRTMXendForLockBusy.java 8183263 generic-x64,generic-
 compiler/rtm/print/TestPrintPreciseRTMLockingStatistics.java 8183263 generic-x64,generic-i586
 
 compiler/c2/Test8004741.java 8235801 generic-all
+compiler/c2/irTests/TestDuplicateBackedge.java 8318904 generic-all
 
 compiler/codecache/jmx/PoolsIndependenceTest.java 8264632 macosx-all
 
@@ -89,7 +90,6 @@ gc/TestAllocHumongousFragment.java#iu-aggressive 8298781 generic-all
 gc/TestAllocHumongousFragment.java#g1 8298781 generic-all
 gc/TestAllocHumongousFragment.java#static 8298781 generic-all
 gc/stress/gclocker/TestExcessGCLockerCollections.java 8229120 generic-all
-gc/stress/TestStressG1Humongous.java 8286554 windows-x64
 
 #############################################################################
 

@@ -99,9 +99,6 @@ private:
   // condition that caused that incremental collection to fail.
   bool _incremental_collection_failed;
 
-  // In support of ExplicitGCInvokesConcurrent functionality
-  unsigned int _full_collections_completed;
-
   // Collects the given generation.
   void collect_generation(Generation* gen, bool full, size_t size, bool is_tlab,
                           bool run_verification, bool clear_soft_refs);
@@ -233,22 +230,10 @@ public:
                               size_t requested_size,
                               size_t* actual_size) override;
 
-  // Total number of full collections completed.
-  unsigned int total_full_collections_completed() {
-    assert(_full_collections_completed <= _total_full_collections,
-           "Can't complete more collections than were started");
-    return _full_collections_completed;
-  }
-
-  // Update above counter, as appropriate, at the end of a stop-world GC cycle
-  unsigned int update_full_collections_completed();
-
   // Update the gc statistics for each generation.
   void update_gc_stats(Generation* current_generation, bool full) {
     _old_gen->update_gc_stats(current_generation, full);
   }
-
-  bool no_gc_in_progress() { return !is_gc_active(); }
 
   void prepare_for_verify() override;
   void verify(VerifyOption option) override;
@@ -379,13 +364,11 @@ public:
   GrowableArray<MemoryPool*> memory_pools() override;
 
   DefNewGeneration* young_gen() const {
-    assert(_young_gen->kind() == Generation::DefNew, "Wrong generation type");
-    return static_cast<DefNewGeneration*>(_young_gen);
+    return _young_gen;
   }
 
   TenuredGeneration* old_gen() const {
-    assert(_old_gen->kind() == Generation::MarkSweepCompact, "Wrong generation type");
-    return static_cast<TenuredGeneration*>(_old_gen);
+    return _old_gen;
   }
 
   // Apply "cur->do_oop" or "older->do_oop" to all the oops in objects

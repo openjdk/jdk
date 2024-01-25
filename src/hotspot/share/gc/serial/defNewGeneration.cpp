@@ -723,6 +723,12 @@ void DefNewGeneration::adjust_desired_tenuring_threshold() {
   age_table()->print_age_table(_tenuring_threshold);
 }
 
+bool DefNewGeneration::block_is_obj(const HeapWord* addr) const {
+  return eden()->is_in(addr)
+      || from()->is_in(addr)
+      || to()  ->is_in(addr);
+}
+
 void DefNewGeneration::collect(bool   full,
                                bool   clear_all_soft_refs,
                                size_t size,
@@ -1102,11 +1108,6 @@ void DefNewGeneration::print_on(outputStream* st) const {
 
 const char* DefNewGeneration::name() const {
   return "def new generation";
-}
-
-// Moved from inline file as they are not called inline
-ContiguousSpace* DefNewGeneration::first_compaction_space() const {
-  return eden();
 }
 
 HeapWord* DefNewGeneration::allocate(size_t word_size, bool is_tlab) {
