@@ -1300,6 +1300,17 @@ public class MessageFormat extends Format {
         return pattern.hashCode(); // enough for reasonable distribution
     }
 
+    /**
+     * {@return a string identifying this {@code MessageFormat}, for debugging}
+     */
+    @Override
+    public String toString() {
+        return
+            """
+            MessageFormat [locale: %s, pattern: "%s"]
+            """.formatted(locale == null ? null : '"' + locale.getDisplayName() + '"', toPattern());
+    }
+
 
     /**
      * Defines constants that are used as attribute keys in the

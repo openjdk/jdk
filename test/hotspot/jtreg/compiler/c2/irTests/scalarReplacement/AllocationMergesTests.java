@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -117,7 +117,7 @@ public class AllocationMergesTests {
         Asserts.assertEQ(testMergedAccessAfterCallWithWrite_Interp(cond1, x, y),    testMergedAccessAfterCallWithWrite_C2(cond1, x, y));
         Asserts.assertEQ(testLoadAfterTrap_Interp(cond1, x, y),                     testLoadAfterTrap_C2(cond1, x, y));
         Asserts.assertEQ(testCondAfterMergeWithNull_Interp(cond1, cond2, x, y),     testCondAfterMergeWithNull_C2(cond1, cond2, x, y));
-        Asserts.assertEQ(testLoadAfterLoopAlias_Interp(cond1, x, y),                testLoadAfterLoopAlias_C2(cond1, x, y));
+        Asserts.assertEQ(testLoadAfterLoopAlias_Interp(x, y),                       testLoadAfterLoopAlias_C2(x, y));
         Asserts.assertEQ(testCallTwoSide_Interp(cond1, x, y),                       testCallTwoSide_C2(cond1, x, y));
         Asserts.assertEQ(testMergedAccessAfterCallNoWrite_Interp(cond1, x, y),      testMergedAccessAfterCallNoWrite_C2(cond1, x, y));
         Asserts.assertEQ(testCmpMergeWithNull_Second_Interp(cond1, x, y),           testCmpMergeWithNull_Second_C2(cond1, x, y));
@@ -414,27 +414,26 @@ public class AllocationMergesTests {
     // -------------------------------------------------------------------------
 
     @ForceInline
-    int testLoadAfterLoopAlias(boolean cond, int x, int y) {
+    int testLoadAfterLoopAlias(int x, int y) {
         Point a = new Point(x, y);
         Point b = new Point(y, x);
-        Point c = a;
+        int acc = 0;
 
         for (int i=10; i<232; i++) {
-            if (i == x) {
-                c = b;
-            }
+            Point c = (i % 2 == 0) ? a : b;
+            acc += c.x + c.y;
         }
 
-        return cond ? c.x : c.y;
+        return acc;
     }
 
     @Test
     @IR(failOn = { IRNode.ALLOC })
     // Both allocations should be removed
-    int testLoadAfterLoopAlias_C2(boolean cond, int x, int y) { return testLoadAfterLoopAlias(cond, x, y); }
+    int testLoadAfterLoopAlias_C2(int x, int y) { return testLoadAfterLoopAlias(x, y); }
 
     @DontCompile
-    int testLoadAfterLoopAlias_Interp(boolean cond, int x, int y) { return testLoadAfterLoopAlias(cond, x, y); }
+    int testLoadAfterLoopAlias_Interp(int x, int y) { return testLoadAfterLoopAlias(x, y); }
 
     // -------------------------------------------------------------------------
 
