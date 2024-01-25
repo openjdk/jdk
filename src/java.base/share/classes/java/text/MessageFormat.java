@@ -157,8 +157,7 @@ import java.util.Objects;
  * a {@code Format} instance for the format element. The following
  * table shows how the values map to {@code Format} instances. These values
  * are case-insensitive when passed to {@link #applyPattern(String)}. Combinations
- * not shown in the table are illegal, except for the DateTimeFormatter
- * predefined formatters. A <i>SubformatPattern</i> must
+ * not shown in the table are illegal. A <i>SubformatPattern</i> must
  * be a valid pattern string for the {@code Format} subclass used.
  *
  * <table class="plain">
