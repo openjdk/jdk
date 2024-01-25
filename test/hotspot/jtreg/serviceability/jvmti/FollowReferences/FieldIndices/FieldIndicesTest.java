@@ -89,7 +89,7 @@ public class FieldIndicesTest {
     }
 
     private static native void prepare(Object testObject);
-    
+
     private static native void test(Object rootObject);
 
     private static native boolean testFailed();
@@ -117,7 +117,7 @@ public class FieldIndicesTest {
 
         test("obj1", obj1);
         test("obj2", obj2);
-        
+
         Reference.reachabilityFence(obj1);
         Reference.reachabilityFence(obj2);
 

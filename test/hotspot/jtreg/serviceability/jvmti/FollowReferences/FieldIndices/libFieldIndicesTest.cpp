@@ -32,38 +32,38 @@ static jvmtiEnv* jvmti = nullptr;
 static bool test_failed = false;
 
 static void* allocate(JNIEnv* env, jlong size) {
-	unsigned char* result = nullptr;
-	check_jvmti_status(env,
-	    jvmti->Allocate(size, &result),
-	    "Allocate failed");
-	return result;
+    unsigned char* result = nullptr;
+    check_jvmti_status(env,
+        jvmti->Allocate(size, &result),
+        "Allocate failed");
+    return result;
 }
 
 static void deallocate(JNIEnv* env, void* mem) {
-	check_jvmti_status(env,
-	    jvmti->Deallocate((unsigned char*)mem),
-	    "Deallocate failed");
+    check_jvmti_status(env,
+        jvmti->Deallocate((unsigned char*)mem),
+        "Deallocate failed");
 }
 
 // Converts JNI class name signature to simple name (in place).
 static void sig2name(char* str) {
-	size_t len = strlen(str);
-	if (len >=2 && str[0] == 'L' && str[len-1] == ';') {
-		len -=2;
-		memmove(str, str+1, len);
-		str[len] = '\0';
-	}
-	// Replace '/' with '.'.
-	for (char* pos = str; (pos = strchr(pos, '/')) != nullptr; ) {
-		*pos = '.';
-	}
+    size_t len = strlen(str);
+    if (len >=2 && str[0] == 'L' && str[len-1] == ';') {
+        len -=2;
+        memmove(str, str+1, len);
+        str[len] = '\0';
+    }
+    // Replace '/' with '.'.
+    for (char* pos = str; (pos = strchr(pos, '/')) != nullptr; ) {
+        *pos = '.';
+    }
 }
 
 static bool is_static_field(JNIEnv* env, jclass klass, jfieldID fid) {
     enum {
        ACC_STATIC        = 0x0008,
     };
-	
+
     jint access_flags = 0;
     check_jvmti_status(env,
         jvmti->GetFieldModifiers(klass, fid, &access_flags),
@@ -122,10 +122,10 @@ struct Klass {
         // Field value for static fields (0 for instance fields).
         // All fields in the test classes are 'int'.
         jint value;
-    
+
         void init(JNIEnv* env, jclass klass, jfieldID fid);
     };
-    
+
     // Fields of the class and its superclasses
     // as described in jvmtiHeapReferenceInfoField spec.
     Field* fields;
@@ -134,10 +134,10 @@ struct Klass {
     // Interfaces implemented by this klass, superclasses and superinterfaces.
     Klass** interfaces;
     jint interface_count;
-    
+
     // Number of fields in all implemented interfaces.
     jint interface_field_count;
-    
+
     static Klass* explore(JNIEnv* env, jclass klass);
 
 private:
@@ -146,7 +146,7 @@ private:
     // Initializes interfaces, interface_count.
     void explore_interfaces(JNIEnv* env);
 
-	void print() const;
+    void print() const;
 };
 
 /*
@@ -157,7 +157,7 @@ struct Object {
     // Values of instance fields (0 for static fields).
     // Size of the array == klass->field_count.
     jint* field_values;
-    
+
     static Object* explore(JNIEnv* env, jobject obj);
 };
 
@@ -215,9 +215,9 @@ static jint get_max_interface_count(JNIEnv* env, jclass klass) {
     for (jint i = 0; i < interface_count; i++) {
         result += get_max_interface_count(env, interfaces[i]);
     }
-        
+
     deallocate(env, interfaces);
-        
+
     return result;
 }
 
@@ -230,7 +230,7 @@ static jint fill_interfaces(Klass** arr, jint index, JNIEnv* env, jclass klass) 
     check_jvmti_status(env,
         jvmti->GetImplementedInterfaces(klass, &interface_count, &interfaces),
         "GetImplementedInterfaces failed");
-    
+
     jint count = 0;
     for (jint i = 0; i < interface_count; i++) {
         // Skip interface if it's already in the array
@@ -245,17 +245,17 @@ static jint fill_interfaces(Klass** arr, jint index, JNIEnv* env, jclass klass) 
         if (dup) {
             continue;
         }
-        
+
         // Add the interface.
         arr[index + count] = Klass::explore(env, interfaces[i]);
         count++;
-        
+
         // And explore its superinterfaces.
         count += fill_interfaces(arr, index + count, env, interfaces[i]);
     }
-    
+
     deallocate(env, interfaces);
-        
+
     return count;
 }
 
@@ -302,10 +302,10 @@ Klass* Klass::explore(JNIEnv* env, jclass klass) {
     if (tag != 0) { // already explored
         return (Klass*)tag;
     }
-            
+
     Klass* result = (Klass*)allocate(env, sizeof(Klass));
-        
-    result->klass = (jclass)env->NewGlobalRef(klass);        
+
+    result->klass = (jclass)env->NewGlobalRef(klass);
 
     check_jvmti_status(env,
         jvmti->GetClassSignature(klass, &result->name, nullptr),
@@ -317,7 +317,7 @@ Klass* Klass::explore(JNIEnv* env, jclass klass) {
     result->super_klass = super_klass == nullptr ? nullptr : Klass::explore(env, super_klass);
 
     result->explore_fields(env);
-    
+
     result->explore_interfaces(env);
 
     // Calculate interface_field_count.
@@ -325,7 +325,7 @@ Klass* Klass::explore(JNIEnv* env, jclass klass) {
     for (jint i = 0; i < result->interface_count; i++) {
         result->interface_field_count += result->interfaces[i]->field_count;
     }
-    
+
     check_jvmti_status(env,
         jvmti->SetTag(klass, (jlong)result),
         "SetTag failed");
@@ -343,13 +343,13 @@ Object* Object::explore(JNIEnv* env, jobject obj) {
     if (tag != 0) { // already explored
         return (Object*)tag;
     }
-    
+
     jclass obj_klass = env->GetObjectClass(obj);
-    
+
     Klass* klass = Klass::explore(env, obj_klass);
-    
+
     jint* values = (jint*)allocate(env, sizeof(jint) * klass->field_count);
-        
+
     for (jint i = 0; i < klass->field_count; i++) {
         jfieldID fid = klass->fields[i].id;
         if (is_static_field(env, obj_klass, fid)) {
@@ -359,9 +359,9 @@ Object* Object::explore(JNIEnv* env, jobject obj) {
             values[i] = env->GetIntField(obj, fid);
         }
     }
-    
+
     Object* result = (Object*)allocate(env, sizeof(Object));
-        
+
     result->klass = klass;
     result->field_values = values;
 
@@ -380,7 +380,7 @@ JNIEXPORT jint JNICALL Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) 
         fflush(0);
         return JNI_ERR;
     }
-    
+
     jvmtiCapabilities caps;
     memset(&caps, 0, sizeof(caps));
     caps.can_tag_objects = 1;
@@ -432,7 +432,7 @@ jint JNICALL primitiveFieldCallback(
     if (*tag_ptr == 0) {
         return 0;
     }
-    
+
     jint index = reference_info->field.index;
     jint int_value = value.i;
     if (value_type != JVMTI_PRIMITIVE_TYPE_INT) {
@@ -440,7 +440,7 @@ jint JNICALL primitiveFieldCallback(
         test_failed = true;
         int_value = -1;
     }
-    
+
     if (reference_kind == JVMTI_HEAP_REFERENCE_FIELD) {
         Object* obj = (Object*)(*tag_ptr);
         Klass* klass = obj->klass;
@@ -480,7 +480,7 @@ jint JNICALL primitiveFieldCallback(
         printf("ERROR: unexpected reference_kind in primitiveFieldCallback: %d\n", (int)reference_kind);
         test_failed = true;
     }
-               
+
     fflush(0);
     return 0;
 }
@@ -496,9 +496,9 @@ JNIEXPORT void JNICALL
 Java_FieldIndicesTest_test(JNIEnv *env, jclass cls, jobject rootObject) {
     jvmtiHeapCallbacks heapCallbacks;
     memset(&heapCallbacks, 0, sizeof(heapCallbacks));
-    
+
     heapCallbacks.primitive_field_callback = primitiveFieldCallback;
-    
+
     check_jvmti_status(env,
         jvmti->FollowReferences(JVMTI_HEAP_FILTER_UNTAGGED, // heap_filter
                                 nullptr,                    // class
