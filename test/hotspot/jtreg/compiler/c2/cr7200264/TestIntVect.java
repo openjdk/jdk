@@ -52,12 +52,12 @@ public class TestIntVect {
     @Run(test = {
            "test_addc", "test_addv", "test_adda", "test_subc", "test_subv",
            "test_suba", "test_mulc", "test_mulc_n", "test_mulv", "test_mula",
-           "test_andc", "test_andv", "test_anda", "test_orc", "test_orv",
-           "test_ora", "test_xorc", "test_xorv", "test_xora", "test_sllc",
-           "test_sllc_n", "test_sllc_o", "test_sllc_on", "test_sllv",
-           "test_srlc", "test_srlc_n", "test_srlc_o", "test_srlc_on",
-           "test_srlv", "test_srac", "test_srac_n", "test_srac_o",
-           "test_srac_on", "test_srav"
+           "test_divc", "test_divc_n", "test_andc", "test_andv", "test_anda",
+           "test_orc", "test_orv", "test_ora", "test_xorc", "test_xorv",
+           "test_xora", "test_sllc", "test_sllc_n", "test_sllc_o",
+           "test_sllc_on", "test_sllv", "test_srlc", "test_srlc_n",
+           "test_srlc_o", "test_srlc_on", "test_srlv", "test_srac",
+           "test_srac_n", "test_srac_o", "test_srac_on", "test_srav"
          },
          mode = RunMode.STANDALONE)
     public void run() {
@@ -507,16 +507,22 @@ public class TestIntVect {
         }
     }
 
-    // Not vectorized: no vector div. Might vectorize after JDK-8282365
-    // (transform div to mul/add/shift).
+    @Test
+    @IR(counts = { IRNode.ADD_VI,    "> 0",
+                   IRNode.RSHIFT_VI, "> 0",
+                   IRNode.SUB_VI,    "> 0" },
+        applyIfCPUFeatureOr = {"sse2", "true", "asimd", "true"})
     void test_divc(int[] a0, int[] a1) {
         for (int i = 0; i < a0.length; i+=1) {
             a0[i] = (int)(a1[i]/VALUE);
         }
     }
 
-    // Not vectorized: no vector div. Might vectorize after JDK-8282365
-    // (transform div to mul/add/shift).
+    @Test
+    @IR(counts = { IRNode.ADD_VI,    "> 0",
+                   IRNode.RSHIFT_VI, "> 0",
+                   IRNode.SUB_VI,    "> 0" },
+        applyIfCPUFeatureOr = {"sse2", "true", "asimd", "true"})
     void test_divc_n(int[] a0, int[] a1) {
         for (int i = 0; i < a0.length; i+=1) {
             a0[i] = (int)(a1[i]/(-VALUE));
