@@ -34,10 +34,10 @@ class PerfMemoryTest : public ::testing::Test {
 TEST_VM_F(PerfMemoryTest, destroy) {
   PerfMemory::destroy();
 
-  ASSERT_NE(PerfMemory::start(), (char*)nullptr) << "PerfMemory::_start should not be nullptr";
-  ASSERT_NE(PerfMemory::end(), (char*)nullptr) << "PerfMemory::_end should not be nullptr";
-  ASSERT_NE(PerfMemoryTest::top(), (char*)nullptr) << "PerfMemory::_top should not be nullptr";
-  ASSERT_NE(PerfMemoryTest::prologue(), (PerfDataPrologue*)nullptr) << "PerfMemory::_prologue should not be nullptr";
+  ASSERT_NE(PerfMemory::start(), (char*)nullptr) << "PerfMemory::_start should not be null";
+  ASSERT_NE(PerfMemory::end(), (char*)nullptr) << "PerfMemory::_end should not be null";
+  ASSERT_NE(PerfMemoryTest::top(), (char*)nullptr) << "PerfMemory::_top should not be null";
+  ASSERT_NE(PerfMemoryTest::prologue(), (PerfDataPrologue*)nullptr) << "PerfMemory::_prologue should not be null";
   ASSERT_NE(PerfMemory::capacity(), (size_t)0) << "PerfMemory::_capacity should not be 0";
 }
 

@@ -84,9 +84,9 @@ TEST_VM(ThreadsListHandle, sanity) {
 
   // Verify the current thread refers to no ThreadsListHandle:
   EXPECT_EQ(ThreadsListHandleTest::get_Thread_threads_hazard_ptr(thr), (ThreadsList*)nullptr)
-      << "thr->_threads_hazard_ptr must be nullptr";
+      << "thr->_threads_hazard_ptr must be null";
   EXPECT_EQ(ThreadsListHandleTest::get_Thread_threads_list_ptr(thr), (SafeThreadsListPtr*) nullptr)
-      << "thr->_threads_list_ptr must be nullptr";
+      << "thr->_threads_list_ptr must be null";
   EXPECT_EQ(ThreadsListHandleTest::get_Thread_nested_threads_hazard_ptr_cnt(thr), (uint)0)
       << "thr->_nested_threads_hazard_ptr_cnt must be 0";
 
@@ -106,7 +106,7 @@ TEST_VM(ThreadsListHandle, sanity) {
 
     // Verify tlh1 has the right field values:
     EXPECT_EQ(list_ptr1->previous(), (SafeThreadsListPtr*)nullptr)
-        << "list_ptr1->previous() must be nullptr";
+        << "list_ptr1->previous() must be null";
     EXPECT_EQ(ThreadsListHandleTest::get_STLP_thread(list_ptr1), thr)
         << "list_ptr1->_thread must match current thread";
     EXPECT_EQ(list_ptr1->list(), tlh1.list())
@@ -126,9 +126,9 @@ TEST_VM(ThreadsListHandle, sanity) {
 
   // Verify the current thread refers to no ThreadsListHandle:
   EXPECT_EQ(ThreadsListHandleTest::get_Thread_threads_hazard_ptr(thr), (ThreadsList*)nullptr)
-      << "thr->_threads_hazard_ptr must match be nullptr";
+      << "thr->_threads_hazard_ptr must match be null";
   EXPECT_EQ(ThreadsListHandleTest::get_Thread_threads_list_ptr(thr), (SafeThreadsListPtr*) nullptr)
-      << "thr->_threads_list_ptr must be nullptr";
+      << "thr->_threads_list_ptr must be null";
   EXPECT_EQ(ThreadsListHandleTest::get_Thread_nested_threads_hazard_ptr_cnt(thr), (uint)0)
       << "thr->_nested_threads_hazard_ptr_cnt must be 0";
 
@@ -148,7 +148,7 @@ TEST_VM(ThreadsListHandle, sanity) {
 
     // Verify tlh1 has the right field values:
     EXPECT_EQ(list_ptr1->previous(), (SafeThreadsListPtr*)nullptr)
-        << "list_ptr1->previous() must be nullptr";
+        << "list_ptr1->previous() must be null";
     EXPECT_EQ(ThreadsListHandleTest::get_STLP_thread(list_ptr1), thr)
         << "list_ptr1->_thread must match current thread";
     EXPECT_EQ(list_ptr1->list(), tlh1.list())
@@ -194,7 +194,7 @@ TEST_VM(ThreadsListHandle, sanity) {
 
       // Verify tlh1 has the right field values:
       EXPECT_EQ(list_ptr1->previous(), (SafeThreadsListPtr*)nullptr)
-          << "list_ptr1->previous() must be nullptr";
+          << "list_ptr1->previous() must be null";
       EXPECT_EQ(ThreadsListHandleTest::get_STLP_thread(list_ptr1), thr)
           << "list_ptr1->_thread must match current thread";
       EXPECT_EQ(list_ptr1->list(), tlh1.list())
@@ -215,7 +215,7 @@ TEST_VM(ThreadsListHandle, sanity) {
 
     // Verify the current thread's hazard ptr is nullptr:
     EXPECT_EQ(ThreadsListHandleTest::get_Thread_threads_hazard_ptr(thr), (ThreadsList*)nullptr)
-        << "thr->_threads_hazard_ptr must be nullptr";
+        << "thr->_threads_hazard_ptr must be null";
     // Verify the current thread's threads list ptr refers to tlh1:
     EXPECT_EQ(ThreadsListHandleTest::get_Thread_threads_list_ptr(thr), list_ptr1)
         << "thr->_threads_list_ptr must match list_ptr1";
@@ -224,7 +224,7 @@ TEST_VM(ThreadsListHandle, sanity) {
 
     // Verify tlh1 has the right field values:
     EXPECT_EQ(list_ptr1->previous(), (SafeThreadsListPtr*)nullptr)
-        << "list_ptr1->previous() must be nullptr";
+        << "list_ptr1->previous() must be null";
     EXPECT_EQ(ThreadsListHandleTest::get_STLP_thread(list_ptr1), thr)
         << "list_ptr1->_thread must match current thread";
     EXPECT_EQ(list_ptr1->list(), tlh1.list())
@@ -246,9 +246,9 @@ TEST_VM(ThreadsListHandle, sanity) {
 
   // Verify the current thread refers to no ThreadsListHandle:
   EXPECT_EQ(ThreadsListHandleTest::get_Thread_threads_hazard_ptr(thr), (ThreadsList*)nullptr)
-      << "thr->_threads_hazard_ptr must match be nullptr";
+      << "thr->_threads_hazard_ptr must match be null";
   EXPECT_EQ(ThreadsListHandleTest::get_Thread_threads_list_ptr(thr), (SafeThreadsListPtr*) nullptr)
-      << "thr->_threads_list_ptr must be nullptr";
+      << "thr->_threads_list_ptr must be null";
   EXPECT_EQ(ThreadsListHandleTest::get_Thread_nested_threads_hazard_ptr_cnt(thr), (uint)0)
       << "thr->_nested_threads_hazard_ptr_cnt must be 0";
 
@@ -268,7 +268,7 @@ TEST_VM(ThreadsListHandle, sanity) {
 
     // Verify tlh1 has the right field values:
     EXPECT_EQ(list_ptr1->previous(), (SafeThreadsListPtr*)nullptr)
-        << "list_ptr1->previous() must be nullptr";
+        << "list_ptr1->previous() must be null";
     EXPECT_EQ(ThreadsListHandleTest::get_STLP_thread(list_ptr1), thr)
         << "list_ptr1->_thread must match current thread";
     EXPECT_EQ(list_ptr1->list(), tlh1.list())
@@ -314,7 +314,7 @@ TEST_VM(ThreadsListHandle, sanity) {
 
       // Verify tlh1 has the right field values:
       EXPECT_EQ(list_ptr1->previous(), (SafeThreadsListPtr*)nullptr)
-          << "list_ptr1->previous() must be nullptr";
+          << "list_ptr1->previous() must be null";
       EXPECT_EQ(ThreadsListHandleTest::get_STLP_thread(list_ptr1), thr)
           << "list_ptr1->_thread must match current thread";
       EXPECT_EQ(list_ptr1->list(), tlh1.list())
@@ -378,7 +378,7 @@ TEST_VM(ThreadsListHandle, sanity) {
 
         // Verify tlh1 has the right field values:
         EXPECT_EQ(list_ptr1->previous(), (SafeThreadsListPtr*)nullptr)
-            << "list_ptr1->previous() must be nullptr";
+            << "list_ptr1->previous() must be null";
         EXPECT_EQ(ThreadsListHandleTest::get_STLP_thread(list_ptr1), thr)
             << "list_ptr1->_thread must match current thread";
         EXPECT_EQ(list_ptr1->list(), tlh1.list())
@@ -399,7 +399,7 @@ TEST_VM(ThreadsListHandle, sanity) {
 
       // Verify the current thread's hazard ptr is nullptr:
       EXPECT_EQ(ThreadsListHandleTest::get_Thread_threads_hazard_ptr(thr), (ThreadsList*)nullptr)
-          << "thr->_threads_hazard_ptr must be nullptr";
+          << "thr->_threads_hazard_ptr must be null";
       // Verify the current thread's threads list ptr refers to tlh2:
       EXPECT_EQ(tlh1.list(), tlh2.list())
           << "tlh1.list() must match tlh2.list()";
@@ -426,7 +426,7 @@ TEST_VM(ThreadsListHandle, sanity) {
 
       // Verify tlh1 has the right field values:
       EXPECT_EQ(list_ptr1->previous(), (SafeThreadsListPtr*)nullptr)
-          << "list_ptr1->previous() must be nullptr";
+          << "list_ptr1->previous() must be null";
       EXPECT_EQ(ThreadsListHandleTest::get_STLP_thread(list_ptr1), thr)
           << "list_ptr1->_thread must match current thread";
       EXPECT_EQ(list_ptr1->list(), tlh1.list())
@@ -447,7 +447,7 @@ TEST_VM(ThreadsListHandle, sanity) {
 
     // Verify the current thread's hazard ptr is nullptr:
     EXPECT_EQ(ThreadsListHandleTest::get_Thread_threads_hazard_ptr(thr), (ThreadsList*)nullptr)
-        << "thr->_threads_hazard_ptr must be nullptr";
+        << "thr->_threads_hazard_ptr must be null";
     // Verify the current thread's threads list ptr refers to tlh1:
     EXPECT_EQ(ThreadsListHandleTest::get_Thread_threads_list_ptr(thr), list_ptr1)
         << "thr->_threads_list_ptr must match list_ptr1";
@@ -456,7 +456,7 @@ TEST_VM(ThreadsListHandle, sanity) {
 
     // Verify tlh1 has the right field values:
     EXPECT_EQ(list_ptr1->previous(), (SafeThreadsListPtr*)nullptr)
-        << "list_ptr1->previous() must be nullptr";
+        << "list_ptr1->previous() must be null";
     EXPECT_EQ(ThreadsListHandleTest::get_STLP_thread(list_ptr1), thr)
         << "list_ptr1->_thread must match current thread";
     EXPECT_EQ(list_ptr1->list(), tlh1.list())
@@ -478,9 +478,9 @@ TEST_VM(ThreadsListHandle, sanity) {
 
   // Verify the current thread refers to no ThreadsListHandle:
   EXPECT_EQ(ThreadsListHandleTest::get_Thread_threads_hazard_ptr(thr), (ThreadsList*)nullptr)
-      << "thr->_threads_hazard_ptr must match be nullptr";
+      << "thr->_threads_hazard_ptr must match be null";
   EXPECT_EQ(ThreadsListHandleTest::get_Thread_threads_list_ptr(thr), (SafeThreadsListPtr*) nullptr)
-      << "thr->_threads_list_ptr must be nullptr";
+      << "thr->_threads_list_ptr must be null";
   EXPECT_EQ(ThreadsListHandleTest::get_Thread_nested_threads_hazard_ptr_cnt(thr), (uint)0)
       << "thr->_nested_threads_hazard_ptr_cnt must be 0";
 
@@ -500,7 +500,7 @@ TEST_VM(ThreadsListHandle, sanity) {
 
     // Verify tlh1 has the right field values:
     EXPECT_EQ(list_ptr1->previous(), (SafeThreadsListPtr*)nullptr)
-        << "list_ptr1->previous() must be nullptr";
+        << "list_ptr1->previous() must be null";
     EXPECT_EQ(ThreadsListHandleTest::get_STLP_thread(list_ptr1), thr)
         << "list_ptr1->_thread must match current thread";
     EXPECT_EQ(list_ptr1->list(), tlh1.list())
@@ -546,7 +546,7 @@ TEST_VM(ThreadsListHandle, sanity) {
 
       // Verify tlh1 has the right field values:
       EXPECT_EQ(list_ptr1->previous(), (SafeThreadsListPtr*)nullptr)
-          << "list_ptr1->previous() must be nullptr";
+          << "list_ptr1->previous() must be null";
       EXPECT_EQ(ThreadsListHandleTest::get_STLP_thread(list_ptr1), thr)
           << "list_ptr1->_thread must match current thread";
       EXPECT_EQ(list_ptr1->list(), tlh1.list())
@@ -567,7 +567,7 @@ TEST_VM(ThreadsListHandle, sanity) {
 
     // Verify the current thread's hazard ptr is nullptr:
     EXPECT_EQ(ThreadsListHandleTest::get_Thread_threads_hazard_ptr(thr), (ThreadsList*)nullptr)
-        << "thr->_threads_hazard_ptr must be nullptr";
+        << "thr->_threads_hazard_ptr must be null";
     // Verify the current thread's threads list ptr refers to tlh1:
     EXPECT_EQ(ThreadsListHandleTest::get_Thread_threads_list_ptr(thr), list_ptr1)
         << "thr->_threads_list_ptr must match list_ptr1";
@@ -576,7 +576,7 @@ TEST_VM(ThreadsListHandle, sanity) {
 
     // Verify tlh1 has the right field values:
     EXPECT_EQ(list_ptr1->previous(), (SafeThreadsListPtr*)nullptr)
-        << "list_ptr1->previous() must be nullptr";
+        << "list_ptr1->previous() must be null";
     EXPECT_EQ(ThreadsListHandleTest::get_STLP_thread(list_ptr1), thr)
         << "list_ptr1->_thread must match current thread";
     EXPECT_EQ(list_ptr1->list(), tlh1.list())
@@ -624,7 +624,7 @@ TEST_VM(ThreadsListHandle, sanity) {
 
       // Verify tlh1 has the right field values:
       EXPECT_EQ(list_ptr1->previous(), (SafeThreadsListPtr*)nullptr)
-          << "list_ptr1->previous() must be nullptr";
+          << "list_ptr1->previous() must be null";
       EXPECT_EQ(ThreadsListHandleTest::get_STLP_thread(list_ptr1), thr)
           << "list_ptr1->_thread must match current thread";
       EXPECT_EQ(list_ptr1->list(), tlh1.list())
@@ -645,7 +645,7 @@ TEST_VM(ThreadsListHandle, sanity) {
 
     // Verify the current thread's hazard ptr is nullptr:
     EXPECT_EQ(ThreadsListHandleTest::get_Thread_threads_hazard_ptr(thr), (ThreadsList*)nullptr)
-        << "thr->_threads_hazard_ptr must be nullptr";
+        << "thr->_threads_hazard_ptr must be null";
     // Verify the current thread's threads list ptr refers to tlh1:
     EXPECT_EQ(ThreadsListHandleTest::get_Thread_threads_list_ptr(thr), list_ptr1)
         << "thr->_threads_list_ptr must match list_ptr1";
@@ -654,7 +654,7 @@ TEST_VM(ThreadsListHandle, sanity) {
 
     // Verify tlh1 has the right field values:
     EXPECT_EQ(list_ptr1->previous(), (SafeThreadsListPtr*)nullptr)
-        << "list_ptr1->previous() must be nullptr";
+        << "list_ptr1->previous() must be null";
     EXPECT_EQ(ThreadsListHandleTest::get_STLP_thread(list_ptr1), thr)
         << "list_ptr1->_thread must match current thread";
     EXPECT_EQ(list_ptr1->list(), tlh1.list())
@@ -676,9 +676,9 @@ TEST_VM(ThreadsListHandle, sanity) {
 
   // Verify the current thread refers to no ThreadsListHandle:
   EXPECT_EQ(ThreadsListHandleTest::get_Thread_threads_hazard_ptr(thr), (ThreadsList*)nullptr)
-      << "thr->_threads_hazard_ptr must match be nullptr";
+      << "thr->_threads_hazard_ptr must match be null";
   EXPECT_EQ(ThreadsListHandleTest::get_Thread_threads_list_ptr(thr), (SafeThreadsListPtr*) nullptr)
-      << "thr->_threads_list_ptr must be nullptr";
+      << "thr->_threads_list_ptr must be null";
   EXPECT_EQ(ThreadsListHandleTest::get_Thread_nested_threads_hazard_ptr_cnt(thr), (uint)0)
       << "thr->_nested_threads_hazard_ptr_cnt must be 0";
 
