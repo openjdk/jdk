@@ -193,8 +193,7 @@ void Address::lea(MacroAssembler *as, Register r) const {
 void Assembler::prfm(const Address &adr, prfop pfop) {
   Address::mode mode = adr.getMode();
   // PRFM does not support pre/post index
-  guarantee((mode != Address::pre), "prfm does not support pre index");
-  guarantee((mode != Address::post), "prfm does not support post index");
+  guarantee((mode != Address::pre) && (mode != Address::post), "prfm does not support pre/post indexing");
   if (mode == Address::literal) {
     starti;
     f(0b11, 31, 30), f(0b011, 29, 27), f(0b000, 26, 24);
