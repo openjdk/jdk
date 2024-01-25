@@ -120,7 +120,7 @@ void SerialHeap::initialize_serviceability() {
                                                    young->max_survivor_size(),
                                                    false /* support_usage_threshold */);
   TenuredGeneration* old = old_gen();
-  _old_pool = new GenerationPool(old, "Tenured Gen", true);
+  _old_pool = new TenuredGenerationPool(old, "Tenured Gen", true);
 
   _young_manager->add_pool(_eden_pool);
   _young_manager->add_pool(_survivor_pool);
@@ -1052,35 +1052,13 @@ void SerialHeap::print_heap_change(const PreGenGCValues& pre_gc_values) const {
   MetaspaceUtils::print_metaspace_change(pre_gc_values.metaspace_sizes());
 }
 
-class GenGCPrologueClosure: public SerialHeap::GenClosure {
- private:
-  bool _full;
- public:
-  void do_generation(Generation* gen) {
-    gen->gc_prologue(_full);
-  }
-  GenGCPrologueClosure(bool full) : _full(full) {};
-};
-
 void SerialHeap::gc_prologue(bool full) {
   assert(InlineCacheBuffer::is_empty(), "should have cleaned up ICBuffer");
 
   // Fill TLAB's and such
   ensure_parsability(true);   // retire TLABs
 
-  // Walk generations
-  GenGCPrologueClosure blk(full);
-  generation_iterate(&blk, false);  // not old-to-young.
-};
-
-class GenGCEpilogueClosure: public SerialHeap::GenClosure {
- private:
-  bool _full;
- public:
-  void do_generation(Generation* gen) {
-    gen->gc_epilogue(_full);
-  }
-  GenGCEpilogueClosure(bool full) : _full(full) {};
+  _old_gen->gc_prologue();
 };
 
 void SerialHeap::gc_epilogue(bool full) {
@@ -1090,8 +1068,8 @@ void SerialHeap::gc_epilogue(bool full) {
 
   resize_all_tlabs();
 
-  GenGCEpilogueClosure blk(full);
-  generation_iterate(&blk, false);  // not old-to-young.
+  _young_gen->gc_epilogue(full);
+  _old_gen->gc_epilogue();
 
   MetaspaceCounters::update_performance_counters();
 };

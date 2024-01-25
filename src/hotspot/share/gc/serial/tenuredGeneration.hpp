@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,7 +81,7 @@ class TenuredGeneration: public Generation {
 
   void compute_new_size_inner();
  public:
-  virtual void compute_new_size();
+  void compute_new_size();
 
   TenuredSpace* space() const { return _the_space; }
 
@@ -106,8 +106,6 @@ class TenuredGeneration: public Generation {
                     size_t min_byte_size,
                     size_t max_byte_size,
                     CardTableRS* remset);
-
-  Generation::Name kind() { return Generation::MarkSweepCompact; }
 
   // Printing
   const char* name() const { return "tenured generation"; }
@@ -140,8 +138,8 @@ class TenuredGeneration: public Generation {
 
   HeapWord* expand_and_allocate(size_t size, bool is_tlab);
 
-  virtual void gc_prologue(bool full);
-  virtual void gc_epilogue(bool full);
+  void gc_prologue();
+  void gc_epilogue();
 
   bool should_collect(bool   full,
                       size_t word_size,

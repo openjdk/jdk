@@ -2868,7 +2868,7 @@ void TemplateTable::jvmti_post_field_mod(Register cache,
   __ z_lgr(fieldEntry, cache);
 
   if (is_static) {
-    // Life is simple. NULL the object pointer.
+    // Life is simple. Null the object pointer.
     __ clear_reg(obj, true, false); // Don't set CC.
   } else {
     // Life is harder. The stack holds the value on top, followed by

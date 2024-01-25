@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -130,17 +130,23 @@ void print_method_profiling_data() {
     if (count > 0) {
       for (int index = 0; index < count; index++) {
         Method* m = collected_profiled_methods->at(index);
-        ttyLocker ttyl;
-        tty->print_cr("------------------------------------------------------------------------");
-        m->print_invocation_count();
-        tty->print_cr("  mdo size: %d bytes", m->method_data()->size_in_bytes());
-        tty->cr();
+
+        // Instead of taking tty lock, we collect all lines into a string stream
+        // and then print them all at once.
+        ResourceMark rm2;
+        stringStream ss;
+
+        ss.print_cr("------------------------------------------------------------------------");
+        m->print_invocation_count(&ss);
+        ss.print_cr("  mdo size: %d bytes", m->method_data()->size_in_bytes());
+        ss.cr();
         // Dump data on parameters if any
         if (m->method_data() != nullptr && m->method_data()->parameters_type_data() != nullptr) {
-          tty->fill_to(2);
-          m->method_data()->parameters_type_data()->print_data_on(tty);
+          ss.fill_to(2);
+          m->method_data()->parameters_type_data()->print_data_on(&ss);
         }
-        m->print_codes();
+        m->print_codes_on(&ss);
+        tty->print("%s", ss.as_string()); // print all at once
         total_size += m->method_data()->size_in_bytes();
       }
       tty->print_cr("------------------------------------------------------------------------");
@@ -192,7 +198,7 @@ void print_method_invocation_histogram() {
     Method* m = collected_invoked_methods->at(index);
     uint64_t iic = (uint64_t)m->invocation_count();
     uint64_t cic = (uint64_t)m->compiled_invocation_count();
-    if ((iic + cic) >= (uint64_t)MethodHistogramCutoff) m->print_invocation_count();
+    if ((iic + cic) >= (uint64_t)MethodHistogramCutoff) m->print_invocation_count(tty);
     int_total  += iic;
     comp_total += cic;
     if (m->is_final())        final_total  += iic + cic;
