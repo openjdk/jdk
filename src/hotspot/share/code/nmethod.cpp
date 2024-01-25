@@ -1228,7 +1228,7 @@ void nmethod::verify_clean_inline_caches() {
         CodeBlob *cb = CodeCache::find_blob(ic->destination());
         assert(cb != nullptr, "destination not in CodeBlob?");
         nmethod* nm = cb->as_nmethod_or_null();
-        if( nm != nullptr ) {
+        if (nm != nullptr) {
           // Verify that inline caches pointing to bad nmethods are clean
           if (!nm->is_in_use() || nm->is_unloading()) {
             assert(ic->is_clean(), "IC should be clean");
