@@ -206,7 +206,7 @@ jobs:
         if: always()
 
       - name: 'Upload test results'
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           path: results
           name: ${{ steps.package.outputs.artifact-name }}

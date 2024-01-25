@@ -66,7 +66,7 @@ runs:
       shell: bash
 
     - name: 'Upload build logs'
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: failure-logs-${{ inputs.platform }}${{ inputs.debug-suffix }}
         path: failure-logs
