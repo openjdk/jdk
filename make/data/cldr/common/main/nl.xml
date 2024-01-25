@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2023 Unicode, Inc.
+<!-- Copyright © 1991-2024 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -3561,9 +3561,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<regionFormat>tijd in {0}</regionFormat>
 			<regionFormat type="daylight">zomertijd in {0}</regionFormat>
 			<regionFormat type="standard">standaardtijd in {0}</regionFormat>
-			<zone type="America/Santa_Isabel">
-				<exemplarCity>Santa Isabel</exemplarCity>
-			</zone>
 			<zone type="Etc/UTC">
 				<long>
 					<standard>gecoördineerde wereldtijd</standard>
@@ -3589,9 +3586,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Europe/Vienna">
 				<exemplarCity>Wenen</exemplarCity>
-			</zone>
-			<zone type="Australia/Currie">
-				<exemplarCity>Currie</exemplarCity>
 			</zone>
 			<zone type="Asia/Baku">
 				<exemplarCity>Bakoe</exemplarCity>
@@ -3844,14 +3838,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Europe/Istanbul">
 				<exemplarCity>Istanboel</exemplarCity>
 			</zone>
-			<zone type="Europe/Uzhgorod">
-				<exemplarCity>Oezjhorod</exemplarCity>
-			</zone>
 			<zone type="Europe/Kiev">
 				<exemplarCity>Kiev</exemplarCity>
-			</zone>
-			<zone type="Europe/Zaporozhye">
-				<exemplarCity>Zaporizja</exemplarCity>
 			</zone>
 			<zone type="Pacific/Honolulu">
 				<short>
@@ -4550,13 +4538,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<metazone type="Mawson">
 				<long>
 					<standard>Mawson-tijd</standard>
-				</long>
-			</metazone>
-			<metazone type="Mexico_Northwest">
-				<long>
-					<generic>Northwest Mexico Time</generic>
-					<standard>Northwest Mexico Standard Time</standard>
-					<daylight>Northwest Mexico Daylight Time</daylight>
 				</long>
 			</metazone>
 			<metazone type="Mexico_Pacific">

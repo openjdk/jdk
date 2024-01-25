@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2023 Unicode, Inc.
+<!-- Copyright © 1991-2024 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -2839,9 +2839,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<timeZoneNames>
 			<hourFormat>+H:mm;-H:mm</hourFormat>
 			<regionFormat>časové pásmo {0}</regionFormat>
-			<zone type="America/Santa_Isabel">
-				<exemplarCity>Santa Isabel</exemplarCity>
-			</zone>
 			<zone type="Etc/UTC">
 				<long>
 					<standard>koordinovaný světový čas</standard>
@@ -2867,9 +2864,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Europe/Vienna">
 				<exemplarCity>Vídeň</exemplarCity>
-			</zone>
-			<zone type="Australia/Currie">
-				<exemplarCity>Currie</exemplarCity>
 			</zone>
 			<zone type="Asia/Dhaka">
 				<exemplarCity>Dháka</exemplarCity>
@@ -3278,14 +3272,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Asia/Taipei">
 				<exemplarCity>Tchaj-pej</exemplarCity>
 			</zone>
-			<zone type="Europe/Uzhgorod">
-				<exemplarCity>Užhorod</exemplarCity>
-			</zone>
 			<zone type="Europe/Kiev">
 				<exemplarCity>Kyjev</exemplarCity>
-			</zone>
-			<zone type="Europe/Zaporozhye">
-				<exemplarCity>Záporoží</exemplarCity>
 			</zone>
 			<zone type="Pacific/Honolulu">
 				<short>
@@ -3969,13 +3957,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<metazone type="Mawson">
 				<long>
 					<standard>čas Mawsonovy stanice</standard>
-				</long>
-			</metazone>
-			<metazone type="Mexico_Northwest">
-				<long>
-					<generic>severozápadní mexický čas</generic>
-					<standard>severozápadní mexický standardní čas</standard>
-					<daylight>severozápadní mexický letní čas</daylight>
 				</long>
 			</metazone>
 			<metazone type="Mexico_Pacific">

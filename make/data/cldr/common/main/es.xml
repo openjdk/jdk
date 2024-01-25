@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2023 Unicode, Inc.
+<!-- Copyright © 1991-2024 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -2650,9 +2650,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<regionFormat>hora de {0}</regionFormat>
 			<regionFormat type="daylight">horario de verano de {0}</regionFormat>
 			<regionFormat type="standard">horario estándar de {0}</regionFormat>
-			<zone type="America/Santa_Isabel">
-				<exemplarCity>Santa Isabel</exemplarCity>
-			</zone>
 			<zone type="Etc/UTC">
 				<long>
 					<standard>tiempo universal coordinado</standard>
@@ -2687,9 +2684,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Australia/Adelaide">
 				<exemplarCity>Adelaida</exemplarCity>
-			</zone>
-			<zone type="Australia/Currie">
-				<exemplarCity>Currie</exemplarCity>
 			</zone>
 			<zone type="Australia/Sydney">
 				<exemplarCity>Sídney</exemplarCity>
@@ -3150,17 +3144,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Africa/Dar_es_Salaam">
 				<exemplarCity>Dar es-Salam</exemplarCity>
 			</zone>
-			<zone type="Europe/Uzhgorod">
-				<exemplarCity>Úzhgorod</exemplarCity>
-			</zone>
 			<zone type="Europe/Kiev">
 				<exemplarCity>Kiev</exemplarCity>
 			</zone>
 			<zone type="Europe/Simferopol">
 				<exemplarCity>Simferópol</exemplarCity>
-			</zone>
-			<zone type="Europe/Zaporozhye">
-				<exemplarCity>Zaporiyia</exemplarCity>
 			</zone>
 			<zone type="Pacific/Honolulu">
 				<exemplarCity>Honolulú</exemplarCity>
@@ -3825,13 +3813,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<metazone type="Mawson">
 				<long>
 					<standard>hora de Mawson</standard>
-				</long>
-			</metazone>
-			<metazone type="Mexico_Northwest">
-				<long>
-					<generic>hora del noroeste de México</generic>
-					<standard>hora estándar del noroeste de México</standard>
-					<daylight>hora de verano del noroeste de México</daylight>
 				</long>
 			</metazone>
 			<metazone type="Mexico_Pacific">

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2023 Unicode, Inc.
+<!-- Copyright © 1991-2024 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -1106,9 +1106,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Australia/Adelaide">
 				<exemplarCity>阿德萊德</exemplarCity>
 			</zone>
-			<zone type="Australia/Currie">
-				<exemplarCity>卡里</exemplarCity>
-			</zone>
 			<zone type="Australia/Hobart">
 				<exemplarCity>荷伯特</exemplarCity>
 			</zone>
@@ -1181,17 +1178,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="America/Dawson_Creek">
 				<exemplarCity>道森灣</exemplarCity>
 			</zone>
-			<zone type="America/Yellowknife">
-				<exemplarCity>黃刀鎮</exemplarCity>
-			</zone>
 			<zone type="America/Edmonton">
 				<exemplarCity>愛民頓</exemplarCity>
-			</zone>
-			<zone type="America/Thunder_Bay">
-				<exemplarCity>雷灣</exemplarCity>
-			</zone>
-			<zone type="America/Nipigon">
-				<exemplarCity>尼皮貢</exemplarCity>
 			</zone>
 			<zone type="America/Halifax">
 				<exemplarCity>哈利法克斯</exemplarCity>
@@ -1481,17 +1469,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Africa/Dar_es_Salaam">
 				<exemplarCity>達累斯薩拉姆</exemplarCity>
 			</zone>
-			<zone type="Europe/Uzhgorod">
-				<exemplarCity>烏日哥羅德</exemplarCity>
-			</zone>
 			<zone type="Pacific/Wake">
 				<exemplarCity>威克島</exemplarCity>
 			</zone>
 			<zone type="America/Adak">
 				<exemplarCity>埃達克</exemplarCity>
-			</zone>
-			<zone type="Pacific/Johnston">
-				<exemplarCity>約翰斯頓環礁</exemplarCity>
 			</zone>
 			<zone type="America/Anchorage">
 				<exemplarCity>安克雷奇</exemplarCity>

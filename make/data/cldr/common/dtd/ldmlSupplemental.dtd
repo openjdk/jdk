@@ -1,21 +1,21 @@
 <!--
-Copyright © 1991-2023 Unicode, Inc.
+Copyright © 1991-2024 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 
-<!ELEMENT supplementalData ( version, generation?, cldrVersion?, currencyData?, territoryContainment?, subdivisionContainment?, languageData?, territoryInfo?, postalCodeData?, calendarData?, calendarPreferenceData?, weekData?, timeData?, measurementData?, unitIdComponents?, unitConstants*, unitQuantities*, convertUnits*, unitPreferenceData?, timezoneData?, characters?, transforms?, metadata?, codeMappings?, parentLocales*, personNamesDefaults?, likelySubtags?, metazoneInfo?, plurals?, telephoneCodeData?, numberingSystems?, bcp47KeywordMappings?, gender?, references?, languageMatching?, dayPeriodRuleSet*, metaZones?, primaryZones?, windowsZones?, coverageLevels?, idValidity?, rgScope?, languageGroups?, grammaticalData? ) >
+<!ELEMENT supplementalData ( version, generation?, cldrVersion?, currencyData?, territoryContainment?, subdivisionContainment?, languageData?, territoryInfo?, postalCodeData?, calendarData?, calendarPreferenceData?, weekData?, timeData?, measurementData?, unitIdComponents?, unitPrefixes?, unitConstants*, unitQuantities*, convertUnits*, unitPreferenceData?, timezoneData?, characters?, transforms?, metadata?, codeMappings?, parentLocales*, personNamesDefaults?, likelySubtags?, metazoneInfo?, plurals?, telephoneCodeData?, numberingSystems?, bcp47KeywordMappings?, gender?, references?, languageMatching?, dayPeriodRuleSet*, metaZones?, primaryZones?, windowsZones?, coverageLevels?, idValidity?, rgScope?, languageGroups?, grammaticalData? ) >
 
 <!ELEMENT version EMPTY >
     <!--@METADATA-->
 <!ATTLIST version number CDATA #REQUIRED >
     <!--@MATCH:any-->
     <!--@METADATA-->
-<!ATTLIST version cldrVersion CDATA #FIXED "44" >
+<!ATTLIST version cldrVersion CDATA #FIXED "45" >
     <!--@MATCH:version-->
     <!--@VALUE-->
-<!ATTLIST version unicodeVersion CDATA #FIXED "15.0.0" >
+<!ATTLIST version unicodeVersion CDATA #FIXED "15.1.0" >
     <!--@MATCH:version-->
     <!--@VALUE-->
 
@@ -386,6 +386,25 @@ CLDR data files are interpreted according to the LDML specification (http://unic
     <!--@MATCH:literal/prefix, suffix, power, and, per-->
 <!ATTLIST unitIdComponent values NMTOKENS #REQUIRED >
     <!--@MATCH:set/regex/[a-z]+[0-9]*-->
+    <!--@VALUE-->
+
+
+<!ELEMENT unitPrefixes ( unitPrefix* ) >
+
+<!ELEMENT unitPrefix EMPTY >
+<!--		<unitPrefix type='quecto' symbol='q' power10='-30'>
+		<unitPrefix type='kibi' symbol='Ki' power2='10'>
+-->
+<!ATTLIST unitPrefix type NMTOKEN #REQUIRED >
+    <!--@MATCH:regex/[A-Za-z]{3,6}-->
+<!ATTLIST unitPrefix symbol NMTOKEN #REQUIRED >
+    <!--@MATCH:regex/[a-zA-Zμ]{1,2}-->
+    <!--@VALUE-->
+<!ATTLIST unitPrefix power10 NMTOKEN #IMPLIED >
+    <!--@MATCH:regex/-?[0-9]{1,2}-->
+    <!--@VALUE-->
+<!ATTLIST unitPrefix power2 NMTOKEN #IMPLIED >
+    <!--@MATCH:regex/[0-9]0-->
     <!--@VALUE-->
 
 <!ELEMENT unitConstants ( unitConstant* ) >

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2023 Unicode, Inc.
+<!-- Copyright © 1991-2024 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -489,14 +489,14 @@ annotations.
 						<intervalFormatItem id="GyMMMd">
 							<greatestDifference id="d">G y MMM d–d</greatestDifference>
 							<greatestDifference id="G">G y MMM d – G y MMM d</greatestDifference>
-							<greatestDifference id="M">G y MMM d  – MMM d</greatestDifference>
-							<greatestDifference id="y">G y MMM d –  y d MMM</greatestDifference>
+							<greatestDifference id="M">G y MMM d – MMM d</greatestDifference>
+							<greatestDifference id="y">G y MMM d – y d MMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyMMMEd">
 							<greatestDifference id="d">G y MMM d, E – MMM d, E</greatestDifference>
-							<greatestDifference id="G">G y MMM d, E –  G y MMM d, E</greatestDifference>
-							<greatestDifference id="M">G y MMM d, E –  MMM d, E</greatestDifference>
-							<greatestDifference id="y">G y MMM d, E –  y MMM d, E</greatestDifference>
+							<greatestDifference id="G">G y MMM d, E – G y MMM d, E</greatestDifference>
+							<greatestDifference id="M">G y MMM d, E – MMM d, E</greatestDifference>
+							<greatestDifference id="y">G y MMM d, E – y MMM d, E</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="H">
 							<greatestDifference id="H">HH – HH</greatestDifference>
@@ -1233,9 +1233,6 @@ annotations.
 			</zone>
 			<zone type="Africa/Sao_Tome">
 				<exemplarCity>Sao Tome</exemplarCity>
-			</zone>
-			<zone type="Europe/Uzhgorod">
-				<exemplarCity>Uzhgorod</exemplarCity>
 			</zone>
 			<zone type="Pacific/Honolulu">
 				<short>

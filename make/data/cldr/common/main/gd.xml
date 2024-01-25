@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2023 Unicode, Inc.
+<!-- Copyright © 1991-2024 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -3240,9 +3240,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<timeZoneNames>
 			<regionFormat type="daylight">Tìde samhraidh: {0}</regionFormat>
 			<regionFormat type="standard">Bun-àm: {0}</regionFormat>
-			<zone type="America/Santa_Isabel">
-				<exemplarCity>Santa Isabel</exemplarCity>
-			</zone>
 			<zone type="Etc/UTC">
 				<long>
 					<standard>Àm Uile-choitcheann Co-òrdanaichte</standard>
@@ -3268,9 +3265,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</zone>
 			<zone type="America/Cordoba">
 				<exemplarCity>Córdoba</exemplarCity>
-			</zone>
-			<zone type="Australia/Currie">
-				<exemplarCity>Currie</exemplarCity>
 			</zone>
 			<zone type="Australia/Sydney">
 				<exemplarCity>Sidni</exemplarCity>
@@ -3331,9 +3325,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</zone>
 			<zone type="America/Rankin_Inlet">
 				<exemplarCity>Kangiqliniq</exemplarCity>
-			</zone>
-			<zone type="America/Pangnirtung">
-				<exemplarCity>Pangniqtuuq</exemplarCity>
 			</zone>
 			<zone type="America/Glace_Bay">
 				<exemplarCity>Glasbaidh</exemplarCity>
@@ -4320,13 +4311,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<metazone type="Mawson">
 				<long>
 					<standard>Àm Mhawson</standard>
-				</long>
-			</metazone>
-			<metazone type="Mexico_Northwest">
-				<long>
-					<generic>Àm Mheagsago an Iar-thuath</generic>
-					<standard>Bun-àm Mheagsago an Iar-thuath</standard>
-					<daylight>Tìde samhraidh Mheagsago an Iar-thuath</daylight>
 				</long>
 			</metazone>
 			<metazone type="Mexico_Pacific">

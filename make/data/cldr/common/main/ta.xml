@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2023 Unicode, Inc.
+<!-- Copyright © 1991-2024 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -2582,9 +2582,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<regionFormat>{0} நேரம்</regionFormat>
 			<regionFormat type="daylight">{0} பகலொளி நேரம்</regionFormat>
 			<regionFormat type="standard">{0} நிலையான நேரம்</regionFormat>
-			<zone type="America/Santa_Isabel">
-				<exemplarCity>சான்டா இசபெல்</exemplarCity>
-			</zone>
 			<zone type="Etc/UTC">
 				<long>
 					<standard>ஒருங்கிணைந்த சர்வதேச நேரம்</standard>
@@ -2706,9 +2703,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Australia/Melbourne">
 				<exemplarCity>மெல்போர்ன்</exemplarCity>
-			</zone>
-			<zone type="Australia/Currie">
-				<exemplarCity>கியூரி</exemplarCity>
 			</zone>
 			<zone type="Australia/Hobart">
 				<exemplarCity>ஹோபர்ட்</exemplarCity>
@@ -2863,9 +2857,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="America/Creston">
 				<exemplarCity>க்ரெஸ்டான்</exemplarCity>
 			</zone>
-			<zone type="America/Yellowknife">
-				<exemplarCity>யெல்லோநைஃப்</exemplarCity>
-			</zone>
 			<zone type="America/Edmonton">
 				<exemplarCity>எட்மான்டான்</exemplarCity>
 			</zone>
@@ -2884,29 +2875,17 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="America/Resolute">
 				<exemplarCity>ரெசலூட்</exemplarCity>
 			</zone>
-			<zone type="America/Rainy_River">
-				<exemplarCity>ரெய்னி ரிவர்</exemplarCity>
-			</zone>
 			<zone type="America/Rankin_Inlet">
 				<exemplarCity>ரான்கின் இன்லெட்</exemplarCity>
 			</zone>
 			<zone type="America/Coral_Harbour">
 				<exemplarCity>அடிகோகன்</exemplarCity>
 			</zone>
-			<zone type="America/Thunder_Bay">
-				<exemplarCity>தண்டர் பே</exemplarCity>
-			</zone>
-			<zone type="America/Nipigon">
-				<exemplarCity>நிபிகான்</exemplarCity>
-			</zone>
 			<zone type="America/Toronto">
 				<exemplarCity>டொரொன்டோ</exemplarCity>
 			</zone>
 			<zone type="America/Iqaluit">
 				<exemplarCity>இகாலூயித்</exemplarCity>
-			</zone>
-			<zone type="America/Pangnirtung">
-				<exemplarCity>பாங்னிர்துங்</exemplarCity>
 			</zone>
 			<zone type="America/Moncton">
 				<exemplarCity>மாங்டான்</exemplarCity>
@@ -3721,17 +3700,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Africa/Dar_es_Salaam">
 				<exemplarCity>தார் எஸ் சலாம்</exemplarCity>
 			</zone>
-			<zone type="Europe/Uzhgorod">
-				<exemplarCity>உஷோரோட்</exemplarCity>
-			</zone>
 			<zone type="Europe/Kiev">
 				<exemplarCity>கீவ்</exemplarCity>
 			</zone>
 			<zone type="Europe/Simferopol">
 				<exemplarCity>சிம்ஃபெரோபோல்</exemplarCity>
-			</zone>
-			<zone type="Europe/Zaporozhye">
-				<exemplarCity>ஜபோரோஸியே</exemplarCity>
 			</zone>
 			<zone type="Africa/Kampala">
 				<exemplarCity>கம்பாலா</exemplarCity>
@@ -3750,9 +3723,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Pacific/Honolulu">
 				<exemplarCity>ஹோனோலூலூ</exemplarCity>
-			</zone>
-			<zone type="Pacific/Johnston">
-				<exemplarCity>ஜோன்ஸ்டன்</exemplarCity>
 			</zone>
 			<zone type="America/Anchorage">
 				<exemplarCity>அங்கோரேஜ்</exemplarCity>
@@ -4493,13 +4463,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<metazone type="Mawson">
 				<long>
 					<standard>மாசன் நேரம்</standard>
-				</long>
-			</metazone>
-			<metazone type="Mexico_Northwest">
-				<long>
-					<generic>வடமேற்கு மெக்ஸிகோ நேரம்</generic>
-					<standard>வடமேற்கு மெக்ஸிகோ நிலையான நேரம்</standard>
-					<daylight>வடமேற்கு மெக்ஸிகோ பகலொளி நேரம்</daylight>
 				</long>
 			</metazone>
 			<metazone type="Mexico_Pacific">

@@ -5,7 +5,7 @@ Note: DTD @-annotations are not currently converted to .xsd. For full CLDR file 
 -->
 
 <!--
-  Copyright © 1991-2023 Unicode, Inc.
+  Copyright © 1991-2024 Unicode, Inc.
   For terms of use, see http://www.unicode.org/copyright.html
   SPDX-License-Identifier: Unicode-DFS-2016
   CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2023 Unicode, Inc.
+<!-- Copyright © 1991-2024 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -24,7 +24,7 @@ annotations.
 		<languages>
 			<language type="aa">Afar</language>
 			<language type="ab">Abkhazian</language>
-			<language type="ace">Achinese</language>
+			<language type="ace">Acehnese</language>
 			<language type="ach">Acoli</language>
 			<language type="ada">Adangme</language>
 			<language type="ady">Adyghe</language>
@@ -3919,9 +3919,6 @@ annotations.
 			<zone type="Asia/Qostanay">
 				<exemplarCity>Kostanay</exemplarCity>
 			</zone>
-			<zone type="Europe/Uzhgorod">
-				<exemplarCity>Uzhhorod</exemplarCity>
-			</zone>
 			<zone type="Pacific/Honolulu">
 				<short>
 					<generic>HST</generic>
@@ -4362,6 +4359,13 @@ annotations.
 					<standard>GMT</standard>
 				</short>
 			</metazone>
+			<metazone type="Greenland">
+				<long>
+					<generic>Greenland Time</generic>
+					<standard>Greenland Standard Time</standard>
+					<daylight>Greenland Summer Time</daylight>
+				</long>
+			</metazone>
 			<metazone type="Greenland_Eastern">
 				<long>
 					<generic>East Greenland Time</generic>
@@ -4582,13 +4586,6 @@ annotations.
 			<metazone type="Mawson">
 				<long>
 					<standard>Mawson Time</standard>
-				</long>
-			</metazone>
-			<metazone type="Mexico_Northwest">
-				<long>
-					<generic>Northwest Mexico Time</generic>
-					<standard>Northwest Mexico Standard Time</standard>
-					<daylight>Northwest Mexico Daylight Time</daylight>
 				</long>
 			</metazone>
 			<metazone type="Mexico_Pacific">

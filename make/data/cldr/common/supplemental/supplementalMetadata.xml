@@ -1797,6 +1797,16 @@ For terms of use, see http://www.unicode.org/copyright.html
             <zoneAlias type="Asia/Chongqing" replacement="Asia/Shanghai" reason="deprecated"/>
             <zoneAlias type="Asia/Harbin" replacement="Asia/Shanghai" reason="deprecated"/>
             <zoneAlias type="Asia/Kashgar" replacement="Asia/Urumqi" reason="deprecated"/>
+            <zoneAlias type="America/Nipigon" replacement="America/Toronto" reason="deprecated"/>
+            <zoneAlias type="America/Pangnirtung" replacement="America/Iqaluit" reason="deprecated"/>
+            <zoneAlias type="America/Rainy_River" replacement="America/Winnipeg" reason="deprecated"/>
+            <zoneAlias type="America/Santa_Isabel" replacement="America/Tijuana" reason="deprecated"/>
+            <zoneAlias type="America/Thunder_Bay" replacement="America/Toronto" reason="deprecated"/>
+            <zoneAlias type="America/Yellowknife" replacement="America/Edmonton" reason="deprecated"/>
+            <zoneAlias type="Australia/Currie" replacement="Australia/Hobart" reason="deprecated"/>
+            <zoneAlias type="Europe/Uzhgorod" replacement="Europe/Kiev" reason="deprecated"/>
+            <zoneAlias type="Europe/Zaporozhye" replacement="Europe/Kiev" reason="deprecated"/>
+            <zoneAlias type="Pacific/Johnston" replacement="Pacific/Honolulu" reason="deprecated"/>
         </alias>
 		<defaultContent locales="
 			aa_ET ab_GE af_ZA agq_CM ak_GH am_ET an_ES ann_NG apc_SY ar_001 arn_CL as_IN
