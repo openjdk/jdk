@@ -33,10 +33,32 @@ import java.lang.reflect.Modifier;
 import java.util.HashMap;
 import java.util.Arrays;
 
-// TODO spec
+/**
+ * This class provides arguments (and can set fields) for a test method. Different implementations are chosen
+ * based on the @Arguments annotation for the @Test method.
+ */
 abstract class ArgumentsProvider {
+    /**
+     * The ArgumentsProvider is default, if there is no @Arguments annotation.
+     */
+    public boolean isDefault() {
+        return this instanceof DefaultArgumentsProvider;
+    }
 
-    // TODO spec
+    /**
+     * Compute arguments (and possibly set fields) for a test method.
+     *
+     * @param invocationTarget object on which the test method is called, or null if the test method is static.
+     * @param index is incremented for every set of arguments to be provided for the test method. Can be used
+     *              to create deterministic inputs, that vary between different invocations of the test method.
+     * @return Returns the arguments to be passed into the test method.
+     */
+    public abstract Object[] getArguments(Object invocationTarget, int index);
+
+    /**
+     * For a test method, determine what ArgumentsProvider is to be constructed, given its @Arguments annotation,
+     * and the available setup methods.
+     */
     public static ArgumentsProvider getArgumentsProvider(Method method,
                                                          HashMap<String, Method> setupMethodMap) {
         Arguments argumentsAnnotation = method.getAnnotation(Arguments.class);
@@ -47,7 +69,7 @@ abstract class ArgumentsProvider {
         Argument[] values = argumentsAnnotation.values();
         String[] setup = argumentsAnnotation.setup();
 
-        if (setup.length != 0) {
+        if (setup.length > 0) {
             TestFormat.check(setup.length == 1,
                              "@Arguments: setup should specify exactly one setup method " +
                              " but got " + setup.length + " in " + method);
@@ -59,28 +81,19 @@ abstract class ArgumentsProvider {
                              " for " + method);
             Method setupMethod = setupMethodMap.get(setupMethodName);
             return new SetupArgumentsProvider(setupMethod);
-	} else if (values.length > 0) {
+        } else {
+            TestFormat.check(values.length > 0,
+                             "@Arguments: empty annotation not allowed, need to have at least one values " +
+                             "argument, or specify a setup method. In method " + method);
             ArgumentValue[] argumentValues = ArgumentValue.getArgumentValues(method, values);
             return new ValueArgumentsProvider(argumentValues);
-        } else {
-            return new DefaultArgumentsProvider();
         }
     }
-
-    // TODO spec
-    public boolean isDefault() {
-        return this instanceof DefaultArgumentsProvider;
-    }
-
-    /**
-     *
-     * invocationTarget: of the test method, or null if static.
-     *
-     */
-    // TODO spec
-    public abstract Object[] getArguments(Object invocationTarget, int index);
 }
 
+/**
+ * Default: when no @Arguments annotation is provided (including for custom run tests).
+ */
 final class DefaultArgumentsProvider extends ArgumentsProvider {
     @Override
     public Object[] getArguments(Object invocationTarget, int index) {
@@ -88,6 +101,9 @@ final class DefaultArgumentsProvider extends ArgumentsProvider {
     }
 }
 
+/**
+ * Used for @Arguments(values = {...}) to specify individual arguments directly.
+ */
 final class ValueArgumentsProvider extends ArgumentsProvider {
     ArgumentValue[] argumentValues;
 
@@ -101,6 +117,10 @@ final class ValueArgumentsProvider extends ArgumentsProvider {
     }
 }
 
+/**
+ * Used for @Arguments(setup = {"setupMethodName"}) to specify a setup method to provide arguments
+ * and possibly set fields.
+ */
 final class SetupArgumentsProvider extends ArgumentsProvider {
     Method setupMethod;
 
@@ -115,7 +135,7 @@ final class SetupArgumentsProvider extends ArgumentsProvider {
         try {
             return (Object[]) setupMethod.invoke(target, index);
         } catch (Exception e) {
-            throw new TestRunException("There was an error while invoking Setup method " +
+            throw new TestRunException("There was an error while invoking setup method " +
                                        setupMethod + " on " + target + ", " + e);
         }
     }

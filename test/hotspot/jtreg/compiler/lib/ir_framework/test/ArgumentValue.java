@@ -68,12 +68,12 @@ class ArgumentValue {
     }
 
     /**
-     * Return all arguments for the @Arguments annotation.
+     * From the @Arguments(value = {...}) annotation, determine the list of ArgumentValues for a specific test method m.
      *
      * @param m The @Test method.
+     * @param values The argument values specified in the annotation.
      * @return Returns an array with Argument objects for each specified argument in the @Arguments annotation of m.
      *         Returns null if method has no @Arguments annotation.
-     * TODO adjust
      */
     public static ArgumentValue[] getArgumentValues(Method m, Argument[] values) {
         ArgumentValue[] arguments = new ArgumentValue[values.length];

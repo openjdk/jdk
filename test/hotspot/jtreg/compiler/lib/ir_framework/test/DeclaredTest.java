@@ -60,7 +60,9 @@ public class DeclaredTest {
         return warmupIterations;
     }
 
-    // TODO desc
+    /**
+     * The ArgumentsProvider is default, if there is no @Arguments annotation.
+     */
     public boolean hasDefaultArgumentsProvider() {
         return argumentsProvider.isDefault();
     }
@@ -77,6 +79,9 @@ public class DeclaredTest {
         return attachedMethod;
     }
 
+    /**
+     * Format an array of arguments to string for error reporting.
+     */
     public String formatArguments(Object[] arguments) {
         if (arguments.length > 0) {
             StringBuilder builder = new StringBuilder();

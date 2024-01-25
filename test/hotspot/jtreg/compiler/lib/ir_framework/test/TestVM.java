@@ -512,8 +512,8 @@ public class TestVM {
         for (Method m : testClass.getDeclaredMethods()) {
             Setup setupAnnotation = getAnnotation(m, Setup.class);
             if (setupAnnotation != null) {
-	        addSetupMethod(m);
-	    }
+                addSetupMethod(m);
+            }
         }
     }
 
