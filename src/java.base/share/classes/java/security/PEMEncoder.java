@@ -127,8 +127,9 @@ final public class PEMEncoder implements Encoder<SecurityObject> {
         if (encoding.length == 0) {
             return new byte[0];
         }
-        Base64.Encoder e = Base64.getEncoder();
+        Base64.Encoder e = Base64.getMimeEncoder(64, Pem.LINESEPARATOR);
         ByteArrayOutputStream os = new ByteArrayOutputStream(1024);
+        /*
         byte[] pem = e.encode(encoding);
         int len = pem.length;
         int i = 0;
@@ -138,7 +139,9 @@ final public class PEMEncoder implements Encoder<SecurityObject> {
             i += 64;
         }
         os.write(pem, i, pem.length - i);
-        os.writeBytes(Pem.LINESEPARATOR);
+         */
+        os.writeBytes(e.encode(encoding));
+        os.writeBytes(Pem.LINESEPARATOR);  // Maybe can remove if the encoder changes
         return os.toByteArray();
     }
 
