@@ -1549,10 +1549,10 @@ void C2_MacroAssembler::arrays_hashcode_v(Register ary, Register cnt, Register r
   assert(StubRoutines::riscv::arrays_hashcode_powers_of_31() != nullptr, "sanity");
   assert_different_registers(ary, cnt, result, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6, t0, t1);
 
-  const int num_8b_elems_in_vec = MaxVectorSize;
+  const int nof_vec_elems = MaxVectorSize;
   const int elsize_bytes = arrays_hashcode_elsize(eltype);
   const int elsize_shift = exact_log2(elsize_bytes);
-  const int vec_step_bytes = num_8b_elems_in_vec << elsize_shift;
+  const int vec_step_bytes = nof_vec_elems << elsize_shift;
   const address adr_pows31 = StubRoutines::riscv::arrays_hashcode_powers_of_31()
                            + sizeof(jint);
 
@@ -1588,7 +1588,7 @@ void C2_MacroAssembler::arrays_hashcode_v(Register ary, Register cnt, Register r
 
   beqz(cnt, DONE);
 
-  andi(chunks, cnt, ~(num_8b_elems_in_vec-1));
+  andi(chunks, cnt, ~(nof_vec_elems-1));
   beqz(chunks, WIDE_TAIL);
 
   subw(cnt, cnt, chunks);
@@ -1599,7 +1599,7 @@ void C2_MacroAssembler::arrays_hashcode_v(Register ary, Register cnt, Register r
   //   31^^MaxVectorSize             ==> scalar register
   //   31^^(MaxVectorSize-1)...31^^0 ==> vector registers
   la(pows31, ExternalAddress(adr_pows31));
-  mv(t1, num_8b_elems_in_vec);
+  mv(t1, nof_vec_elems);
   vsetvli(t0, t1, Assembler::e32, Assembler::m4);
   vle32_v(v_coeffs, pows31);
   lw(pows31, Address(pows31, -1 * sizeof(jint)));
