@@ -302,6 +302,8 @@ public:
   static uint   LogOfHRGrainBytes;
   static uint   LogCardsPerRegion;
 
+  // Atomically adjust the pinned object count by the given value. Value must not
+  // be zero.
   inline void add_pinned_object_count(size_t value);
 
   static size_t GrainBytes;

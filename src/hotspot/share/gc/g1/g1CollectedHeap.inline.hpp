@@ -267,18 +267,16 @@ inline void G1CollectedHeap::pin_object(JavaThread* thread, oop obj) {
   assert(obj != nullptr, "obj must not be null");
   assert(!is_gc_active(), "must not pin objects during a GC");
   assert(obj->is_typeArray(), "must be typeArray");
-  HeapRegion* r = heap_region_containing(obj);
-  uint obj_region_idx = r->hrm_index();
 
+  uint obj_region_idx = heap_region_containing(obj)->hrm_index();
   G1ThreadLocalData::pin_count_cache(thread).inc_count(obj_region_idx);
 }
 
 inline void G1CollectedHeap::unpin_object(JavaThread* thread, oop obj) {
   assert(obj != nullptr, "obj must not be null");
   assert(!is_gc_active(), "must not unpin objects during a GC");
-  HeapRegion* r = heap_region_containing(obj);
-  uint obj_region_idx = r->hrm_index();
 
+  uint obj_region_idx = heap_region_containing(obj)->hrm_index();
   G1ThreadLocalData::pin_count_cache(thread).dec_count(obj_region_idx);
 }
 

@@ -25,12 +25,16 @@
 #ifndef SHARE_GC_G1_G1REGIONPINCACHE_HPP
 #define SHARE_GC_G1_G1REGIONPINCACHE_HPP
 
+#include "gc/g1/heapRegion.hpp"
 #include "memory/allocation.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-// Holds the pinned object count increment for the given region for a Java thread.
-// I.e. the _count value may actually be negative temporarily if pinning operations
-// were interleaved between two regions.
+// Holds (caches) the pending pinned object count adjustment for the region
+// _region_idx on a per thread basis.
+// Keeping such a cache avoids the expensive atomic operations when updating the
+// pin count for the very common case that the application pins and unpins the
+// same object with any interleaving by a garbage collection or pinning/unpinning
+// to an object in another region.
 class G1RegionPinCache : public StackObj {
   uint _region_idx;
   size_t _count;
@@ -38,8 +42,7 @@ class G1RegionPinCache : public StackObj {
   void flush_and_set(uint new_region_idx, size_t new_count);
 
 public:
-  G1RegionPinCache() : _region_idx(0), _count(0) { }
-  ~G1RegionPinCache();
+  G1RegionPinCache() : _region_idx(G1_NO_HRM_INDEX), _count(0) { }
 
 #ifdef ASSERT
   size_t count() const { return _count; }

@@ -54,7 +54,7 @@ inline void G1RegionPinCache::flush_and_set(uint new_region_idx, size_t new_coun
 }
 
 inline void G1RegionPinCache::flush() {
-  flush_and_set(0, 0);
+  flush_and_set(G1_NO_HRM_INDEX, 0);
 }
 
 #endif /* SHARE_GC_G1_G1REGIONPINCACHE_INLINE_HPP */
