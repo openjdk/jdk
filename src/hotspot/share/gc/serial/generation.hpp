@@ -83,13 +83,6 @@ class Generation: public CHeapObj<mtGC> {
   Generation(ReservedSpace rs, size_t initial_byte_size);
 
  public:
-  // The set of possible generation kinds.
-  enum Name {
-    DefNew,
-    MarkSweepCompact,
-    Other
-  };
-
   enum SomePublicConstants {
     // Generations are GenGrain-aligned and have size that are multiples of
     // GenGrain.
@@ -98,9 +91,6 @@ class Generation: public CHeapObj<mtGC> {
     LogOfGenGrain = 16 ARM32_ONLY(+1),
     GenGrain = 1 << LogOfGenGrain
   };
-
-
-  virtual Generation::Name kind() { return Generation::Other; }
 
   virtual size_t capacity() const = 0;  // The maximum number of object bytes the
                                         // generation can currently hold.
@@ -112,21 +102,11 @@ class Generation: public CHeapObj<mtGC> {
   // for the allocation of objects.
   virtual size_t max_capacity() const;
 
-  // If this is a young generation, the maximum number of bytes that can be
-  // allocated in this generation before a GC is triggered.
-  virtual size_t capacity_before_gc() const { return 0; }
-
   // The largest number of contiguous free bytes in the generation,
   // including expansion  (Assumes called at a safepoint.)
   virtual size_t contiguous_available() const = 0;
   // The largest number of contiguous free bytes in this or any higher generation.
   virtual size_t max_contiguous_available() const;
-
-  // Returns true if promotions of the specified amount are
-  // likely to succeed without a promotion failure.
-  // Promotion of the full amount is not guaranteed but
-  // might be attempted in the worst case.
-  virtual bool promotion_attempt_is_safe(size_t max_promotion_in_bytes) const;
 
   // Return an estimate of the maximum allocation that could be performed
   // in the generation without triggering any collection or expansion
@@ -230,14 +210,6 @@ class Generation: public CHeapObj<mtGC> {
   // still unsuccessful, return "null".
   virtual HeapWord* expand_and_allocate(size_t word_size, bool is_tlab) = 0;
 
-  // Some generations may require some cleanup or preparation actions before
-  // allowing a collection.  The default is to do nothing.
-  virtual void gc_prologue(bool full) {}
-
-  // Some generations may require some cleanup actions after a collection.
-  // The default is to do nothing.
-  virtual void gc_epilogue(bool full) {}
-
   // Save the high water marks for the used space in a generation.
   virtual void record_spaces_top() {}
 
@@ -250,32 +222,9 @@ class Generation: public CHeapObj<mtGC> {
   GCStats* gc_stats() const { return _gc_stats; }
   virtual void update_gc_stats(Generation* current_generation, bool full) {}
 
-  // Accessing "marks".
-
-  // This function gives a generation a chance to note a point between
-  // collections.  For example, a contiguous generation might note the
-  // beginning allocation point post-collection, which might allow some later
-  // operations to be optimized.
-  virtual void save_marks() {}
-
-  // This function is "true" iff any no allocations have occurred in the
-  // generation since the last call to "save_marks".
-  virtual bool no_allocs_since_save_marks() = 0;
-
-  // When an older generation has been collected, and perhaps resized,
-  // this method will be invoked on all younger generations (from older to
-  // younger), allowing them to resize themselves as appropriate.
-  virtual void compute_new_size() = 0;
-
   // Printing
   virtual const char* name() const = 0;
   virtual const char* short_name() const = 0;
-
-  // Iteration.
-
-  // Iterate over all objects in the generation, calling "cl.do_object" on
-  // each.
-  virtual void object_iterate(ObjectClosure* cl);
 
   // Block abstraction.
 
@@ -284,10 +233,6 @@ class Generation: public CHeapObj<mtGC> {
   // may not pack objects densely; a chunk may either be an object or a
   // non-object.
   virtual HeapWord* block_start(const void* addr) const;
-
-  // Requires "addr" to be the start of a block, and returns "TRUE" iff
-  // the block is an object.
-  virtual bool block_is_obj(const HeapWord* addr) const;
 
   virtual void print() const;
   virtual void print_on(outputStream* st) const;
