@@ -306,9 +306,6 @@ private:
   void capture_gc_no_progress_count_at_last_oom();
   intptr_t get_gc_no_progress_count_at_last_oom() const;
 
-  void set_gc_state_all_threads(char state);
-  void set_gc_state_mask(uint mask, bool value);
-
   // This updates the singular, global gc state. This must happen on a safepoint.
   void set_gc_state(uint mask, bool value);
 
