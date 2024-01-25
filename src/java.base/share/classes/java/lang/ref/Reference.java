@@ -392,8 +392,8 @@ public abstract sealed class Reference<T>
      * object, and the garbage collector will no longer clear or enqueue this
      * object.
      *
-     * <p>When the garbage collector
-     * clears references it does so directly, without invoking this method.
+     * <p>When the garbage collector or the {@link #enqueue()} method clear
+     * references they do so directly, without invoking this method.
      *
      * @apiNote
      * There is a potential race condition with the garbage collector. When this
@@ -498,14 +498,15 @@ public abstract sealed class Reference<T>
      * or {@link ReferenceQueue#remove}. <b><i>Unsuccessful</i></b>
      * {@code enqueue} calls have no specified memory consistency effects.
      *
-     * <p>When the garbage collector
-     * clears and enqueues references it does so directly, without invoking this
-     * method or the {@link #clear()} method.
+     * <p> When this method clears references it does so directly, without
+     * invoking the {@link #clear()} method. When the garbage collector clears
+     * and enqueues references it does so directly, without invoking the
+     * {@link #clear()} method or this method.
      *
      * @apiNote
      * Use of this method allows the registered queue's
      * {@link ReferenceQueue#poll} and {@link ReferenceQueue#remove} methods
-     * to return this reference even though the referent is still strongly
+     * to return this reference even though the referent may still be strongly
      * reachable.
      *
      * @return   {@code true} if this reference object was successfully
