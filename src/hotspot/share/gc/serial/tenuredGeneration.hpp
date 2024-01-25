@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,7 +81,7 @@ class TenuredGeneration: public Generation {
 
   void compute_new_size_inner();
  public:
-  virtual void compute_new_size();
+  void compute_new_size();
 
   TenuredSpace* space() const { return _the_space; }
 
@@ -101,15 +101,11 @@ class TenuredGeneration: public Generation {
 
   bool is_in(const void* p) const;
 
-  ContiguousSpace* first_compaction_space() const;
-
   TenuredGeneration(ReservedSpace rs,
                     size_t initial_byte_size,
                     size_t min_byte_size,
                     size_t max_byte_size,
                     CardTableRS* remset);
-
-  Generation::Name kind() { return Generation::MarkSweepCompact; }
 
   // Printing
   const char* name() const { return "tenured generation"; }
@@ -133,6 +129,8 @@ class TenuredGeneration: public Generation {
 
   bool no_allocs_since_save_marks();
 
+  // Requires "addr" to be the start of a block, and returns "TRUE" iff
+  // the block is an object.
   inline bool block_is_obj(const HeapWord* addr) const;
 
   virtual void collect(bool full,
@@ -142,8 +140,8 @@ class TenuredGeneration: public Generation {
 
   HeapWord* expand_and_allocate(size_t size, bool is_tlab);
 
-  virtual void gc_prologue(bool full);
-  virtual void gc_epilogue(bool full);
+  void gc_prologue();
+  void gc_epilogue();
 
   bool should_collect(bool   full,
                       size_t word_size,
@@ -158,7 +156,11 @@ class TenuredGeneration: public Generation {
 
   virtual void update_gc_stats(Generation* current_generation, bool full);
 
-  virtual bool promotion_attempt_is_safe(size_t max_promoted_in_bytes) const;
+  // Returns true if promotions of the specified amount are
+  // likely to succeed without a promotion failure.
+  // Promotion of the full amount is not guaranteed but
+  // might be attempted in the worst case.
+  bool promotion_attempt_is_safe(size_t max_promoted_in_bytes) const;
 
   virtual void verify();
   virtual void print_on(outputStream* st) const;
