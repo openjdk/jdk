@@ -28,34 +28,58 @@ import jdk.internal.vm.annotation.Hidden;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 
 /**
- * Just-in-time-compiler-related queries
+ * This class defines methods to test if a value has been evaluated to a
+ * compile-time constant by the HotSpot VM.
  */
 public class ConstantSupport {
     /**
-     * Determine if {@code expr} can be evaluated to a constant value by the JIT
+     * Determine if {@code val} can be proved to be a constant by the JIT
      * compiler. For example, {@code isCompileConstant(5)} will be evaluated
-     * to {@code true} by the JIT compiler, while
-     * {@code isCompileConstant(random.nextLong())} will likely be evaluated
-     * to {@code false}.
+     * to {@code true}, while {@code isCompileConstant(random.nextLong())}
+     * will likely be evaluated to {@code false}.
      *
-     * <p>Note that the JIT compiler is responsible to change the return value
-     * of this method to {@code true}, the interpreter always returns {@code false}.
+     * <p>Note that the JIT compiler is responsible for changing the return
+     * value of this method to {@code true}, the interpreter always returns
+     * {@code false}.
      *
      * <p>Given the nondeterministic nature of this method, the result of the
      * program must not depend on the return value of this method. It must be
      * used as a pure optimization to take advantage of the constant nature of
-     * {@code expr}. E.g. for a runtime variable, looking up a hashmap may be
-     * the most efficient look up method, however, if the look up table is
-     * constant, it may be better to use a chain of if-else in cases where the
-     * input is also a constant.
+     * {@code val}.
      *
-     * @param expr the expression to be evaluated
-     * @return {@code true} if the JIT compiler determines the {@code expr} is
-     *         always evaluated to a constant value, {@code false} otherwise
+     * <p>Since we will not have profile information in the branch that this
+     * method returns {@code true}, the compiler may have a harder time
+     * optimizing it. As a result, apart from simple cases, this technique
+     * should be used with care.
+     *
+     * <p>Usage example:
+     *
+     * {@snippet lang=java:
+     * void checkIndex(int index, int length) {
+     *     // Normally, we check length >= 0 && index u< length because
+     *     // length >= 0 can often be hoisted out of loops, however, if
+     *     // we know that index >= 0, just signed compare index and length
+     *     boolean indexPos = index >= 0;
+     *     if (isCompileConstant(indexPos) && indexPos) {
+     *         if (index >= length) {
+     *             throw new IndexOutOfBoundsException();
+     *         }
+     *         return;
+     *     }
+     *
+     *     if (length < 0 || Integer.compareUnsigned(index, length) >= 0) {
+     *         throw new IndexOutOfBoundsException();
+     *     }
+     * }
+     * }
+     *
+     * @param val the tested value
+     * @return {@code true} if the JIT compiler determines that {@code val} is
+     *         a constant, {@code false} otherwise
      */
     @Hidden
     @IntrinsicCandidate
-    public static boolean isCompileConstant(boolean expr) {
+    public static boolean isCompileConstant(boolean val) {
         return false;
     }
 
@@ -64,7 +88,7 @@ public class ConstantSupport {
      */
     @Hidden
     @IntrinsicCandidate
-    public static boolean isCompileConstant(byte expr) {
+    public static boolean isCompileConstant(byte val) {
         return false;
     }
 
@@ -73,7 +97,7 @@ public class ConstantSupport {
      */
     @Hidden
     @IntrinsicCandidate
-    public static boolean isCompileConstant(short expr) {
+    public static boolean isCompileConstant(short val) {
         return false;
     }
 
@@ -82,7 +106,7 @@ public class ConstantSupport {
      */
     @Hidden
     @IntrinsicCandidate
-    public static boolean isCompileConstant(char expr) {
+    public static boolean isCompileConstant(char val) {
         return false;
     }
 
@@ -91,7 +115,7 @@ public class ConstantSupport {
      */
     @Hidden
     @IntrinsicCandidate
-    public static boolean isCompileConstant(int expr) {
+    public static boolean isCompileConstant(int val) {
         return false;
     }
 
@@ -100,7 +124,7 @@ public class ConstantSupport {
      */
     @Hidden
     @IntrinsicCandidate
-    public static boolean isCompileConstant(long expr) {
+    public static boolean isCompileConstant(long val) {
         return false;
     }
 
@@ -109,7 +133,7 @@ public class ConstantSupport {
      */
     @Hidden
     @IntrinsicCandidate
-    public static boolean isCompileConstant(float expr) {
+    public static boolean isCompileConstant(float val) {
         return false;
     }
 
@@ -118,7 +142,7 @@ public class ConstantSupport {
      */
     @Hidden
     @IntrinsicCandidate
-    public static boolean isCompileConstant(double expr) {
+    public static boolean isCompileConstant(double val) {
         return false;
     }
 
@@ -127,7 +151,7 @@ public class ConstantSupport {
      */
     @Hidden
     @IntrinsicCandidate
-    public static boolean isCompileConstant(Object expr) {
+    public static boolean isCompileConstant(Object val) {
         return false;
     }
 }
