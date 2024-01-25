@@ -130,6 +130,11 @@ public final class Utils {
     public static final String SEED_PROPERTY_NAME = "jdk.test.lib.random.seed";
 
     /**
+     * Returns the value of 'file.separator' system property
+     */
+    public static final String FILE_SEPARATOR = System.getProperty("file.separator");
+
+    /**
      * Random generator with predefined seed.
      */
     private static volatile Random RANDOM_GENERATOR;
