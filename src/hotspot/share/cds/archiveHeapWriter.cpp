@@ -635,7 +635,6 @@ bool ArchiveHeapWriter::is_marked_as_native_pointer(ArchiveHeapInfo* heap_info, 
 
   BitMap::idx_t idx = requested_field_addr - (Metadata**) _requested_bottom;
   // Leading zeros have been removed so some addresses may not be in the ptrmap
-  if (UseNewCode) {  tty->print_cr("Leading zeros: %ld", MetaspaceShared::ptrmap_leading_zeros()); }
   if (idx < MetaspaceShared::ptrmap_leading_zeros()) {
     return false;
   } else {
