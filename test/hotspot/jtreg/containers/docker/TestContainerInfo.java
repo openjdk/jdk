@@ -79,21 +79,21 @@ public class TestContainerInfo {
             out.shouldContain("memory_swap_max_limit_in_bytes");
             for (String s : str.split(System.lineSeparator())) {
                 if (s.contains("memory_swap_max_limit_in_bytes")) {
-									  if (!s.contains("0")) {
-    			              throw new RuntimeException("memory_swap_max_limit_in_bytes NOT 0!");
-									  }
+                    if (!s.contains("0")) {
+                        throw new RuntimeException("memory_swap_max_limit_in_bytes NOT 0!");
+                    }
                 }
             }
             out.shouldContain("memory_swap_current_in_bytes");
             for (String s : str.split(System.lineSeparator())) {
                 if (s.contains("memory_swap_current_in_bytes")) {
-								  if (!s.contains("0")) {
-  			              throw new RuntimeException("memory_swap_current_in_bytes NOT 0!");
-								  }
-								  if (s.contains("Unlimited")) {
-										  // '0' means '0', not 'Unlimited'
-  			              throw new RuntimeException("memory_swap_current_in_bytes is Unlimited (should be 0)!");
-								  }
+                    if (!s.contains("0")) {
+                        throw new RuntimeException("memory_swap_current_in_bytes NOT 0!");
+                    }
+                    if (s.contains("Unlimited")) {
+                        // '0' means '0', not 'Unlimited'
+                        throw new RuntimeException("memory_swap_current_in_bytes is Unlimited (should be 0)!");
+                    }
                 }
             }
         } else {
