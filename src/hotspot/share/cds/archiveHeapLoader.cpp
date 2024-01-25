@@ -106,7 +106,7 @@ class PatchCompressedEmbeddedPointers: public BitMapClosure {
   PatchCompressedEmbeddedPointers(narrowOop* start) : _start(start) {}
 
   bool do_bit(size_t offset) {
-    size_t shift = UseNewCode ? MetaspaceShared::oopmap_leading_zeros() : 0;
+    size_t shift = MetaspaceShared::oopmap_leading_zeros();
     narrowOop* p = _start + offset + shift;
     narrowOop v = *p;
     assert(!CompressedOops::is_null(v), "null oops should have been filtered out at dump time, %ld", shift);
@@ -124,7 +124,7 @@ class PatchCompressedEmbeddedPointersQuick: public BitMapClosure {
   PatchCompressedEmbeddedPointersQuick(narrowOop* start, uint32_t delta) : _start(start), _delta(delta) {}
 
   bool do_bit(size_t offset) {
-    size_t shift = UseNewCode ? MetaspaceShared::oopmap_leading_zeros() : 0;
+    size_t shift = MetaspaceShared::oopmap_leading_zeros();
     narrowOop* p = _start + offset + shift;
     narrowOop v = *p;
     assert(!CompressedOops::is_null(v), "null oops should have been filtered out at dump time");
@@ -147,7 +147,7 @@ class PatchUncompressedEmbeddedPointers: public BitMapClosure {
   PatchUncompressedEmbeddedPointers(oop* start) : _start(start) {}
 
   bool do_bit(size_t offset) {
-    size_t shift = UseNewCode ? MetaspaceShared::ptrmap_leading_zeros() : 0;
+    size_t shift = MetaspaceShared::oopmap_leading_zeros();
     oop* p = _start + offset + shift;
     intptr_t dumptime_oop = (intptr_t)((void*)*p);
     assert(dumptime_oop != 0, "null oops should have been filtered out at dump time");
@@ -249,7 +249,7 @@ class ArchiveHeapLoader::PatchLoadedRegionPointers: public BitMapClosure {
 
   bool do_bit(size_t offset) {
     assert(UseCompressedOops, "PatchLoadedRegionPointers for uncompressed oops is unimplemented");
-    size_t shift = UseNewCode ? MetaspaceShared::ptrmap_leading_zeros() : 0;
+    size_t shift = MetaspaceShared::oopmap_leading_zeros();
     narrowOop* p = _start + offset + shift;
     narrowOop v = *p;
     assert(!CompressedOops::is_null(v), "null oops should have been filtered out at dump time");
@@ -433,7 +433,7 @@ class PatchNativePointers: public BitMapClosure {
   PatchNativePointers(Metadata** start) : _start(start) {}
 
   bool do_bit(size_t offset) {
-    size_t shift = UseNewCode ? MetaspaceShared::ptrmap_leading_zeros() : 0;
+    size_t shift = MetaspaceShared::ptrmap_leading_zeros();
     Metadata** p = _start + offset + shift;
     *p = (Metadata*)(address(*p) + MetaspaceShared::relocation_delta());
     // Currently we have only Klass pointers in heap objects.

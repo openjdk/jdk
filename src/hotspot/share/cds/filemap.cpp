@@ -1572,36 +1572,31 @@ char* FileMapInfo::write_bitmap_region(const CHeapBitMap* ptrmap, ArchiveHeapInf
   size_in_bytes = ptrmap->size_in_bytes();
 
   if (heap_info->is_used()) {
-    if (UseNewCode) {
-      // Remove leading zeros
-      header()->set_heap_oopmap_leading_zeros(heap_info->oopmap()->find_first_set_bit(0));
-      header()->set_heap_ptrmap_leading_zeros(heap_info->ptrmap()->find_first_set_bit(0));
+    // Remove leading zeros
+    header()->set_heap_oopmap_leading_zeros(heap_info->oopmap()->find_first_set_bit(0));
+    header()->set_heap_ptrmap_leading_zeros(heap_info->ptrmap()->find_first_set_bit(0));
 
-      size_t old_oop_zeros = header()->heap_oopmap_leading_zeros();
-      size_t old_ptr_zeros = header()->heap_ptrmap_leading_zeros();
+    size_t old_oop_zeros = header()->heap_oopmap_leading_zeros();
+    size_t old_ptr_zeros = header()->heap_ptrmap_leading_zeros();
 
-      size_t old_oop_size = heap_info->oopmap()->size_in_bytes();
-      size_t old_ptr_size = heap_info->ptrmap()->size_in_bytes();
+    size_t old_oop_size = heap_info->oopmap()->size_in_bytes();
+    size_t old_ptr_size = heap_info->ptrmap()->size_in_bytes();
 
-      // Slice and resize bitmaps
-      heap_info->oopmap()->slice(old_oop_zeros);
-      heap_info->ptrmap()->slice(old_ptr_zeros);
+    // Slice and resize bitmaps
+    heap_info->oopmap()->slice(old_oop_zeros);
+    heap_info->ptrmap()->slice(old_ptr_zeros);
 
-      // Bitmap is word aligned so some leading zeros will be left over
-      // We want to keep track of how many zeros were removed
-      size_t new_oop_zeros = heap_info->oopmap()->find_first_set_bit(0);
-      size_t new_ptr_zeros = heap_info->ptrmap()->find_first_set_bit(0);
-      header()->set_heap_oopmap_leading_zeros(old_oop_zeros - new_oop_zeros);
-      header()->set_heap_ptrmap_leading_zeros(old_ptr_zeros - new_ptr_zeros);
+    // Bitmap is word aligned so some leading zeros will be left over
+    // We want to keep track of how many zeros were removed
+    size_t new_oop_zeros = heap_info->oopmap()->find_first_set_bit(0);
+    size_t new_ptr_zeros = heap_info->ptrmap()->find_first_set_bit(0);
+    header()->set_heap_oopmap_leading_zeros(old_oop_zeros - new_oop_zeros);
+    header()->set_heap_ptrmap_leading_zeros(old_ptr_zeros - new_ptr_zeros);
 
-      assert(new_oop_zeros <= old_oop_zeros, "Should have removed leading zeros");
-      assert(new_ptr_zeros <= old_ptr_zeros, "Should have removed leading zeros");
-      assert(heap_info->oopmap()->size_in_bytes() <= old_oop_size, "Bitmap size should have decreased: %ld -> %ld", old_oop_size, heap_info->oopmap()->size_in_bytes());
-      assert(heap_info->ptrmap()->size_in_bytes() <= old_ptr_size, "Bitmap size should have decreased: %ld -> %ld", old_ptr_size, heap_info->ptrmap()->size_in_bytes());
-
-      //tty->print_cr("Oop leading zeroes: %ld -> %ld", old_oop_zeros, new_oop_zeros);
-      //tty->print_cr("Ptr leading zeroes: %ld -> %ld", old_ptr_zeros, new_ptr_zeros);
-    }
+    assert(new_oop_zeros <= old_oop_zeros, "Should have removed leading zeros");
+    assert(new_ptr_zeros <= old_ptr_zeros, "Should have removed leading zeros");
+    assert(heap_info->oopmap()->size_in_bytes() <= old_oop_size, "Bitmap size should have decreased: %ld -> %ld", old_oop_size, heap_info->oopmap()->size_in_bytes());
+    assert(heap_info->ptrmap()->size_in_bytes() <= old_ptr_size, "Bitmap size should have decreased: %ld -> %ld", old_ptr_size, heap_info->ptrmap()->size_in_bytes());
 
     size_in_bytes += heap_info->oopmap()->size_in_bytes();
     size_in_bytes += heap_info->ptrmap()->size_in_bytes();
