@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, Amazon.com, Inc. or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -39,7 +39,7 @@ import java.security.spec.*;
  * @library /test/lib ..
  * @run main/othervm TestP11KeyFactoryGetRSAKeySpec
  * @run main/othervm -Djava.security.manager=allow TestP11KeyFactoryGetRSAKeySpec sm rsakeys.ks.policy
- * @run main/othervm -DCUSTOM_P11_CONFIG_NAME=p11-nss-sensitive.txt -DNO_DEIMOS=true -DNO_DEFAULT=true TestP11KeyFactoryGetRSAKeySpec
+ * @run main/othervm -DCUSTOM_P11_CONFIG_NAME=p11-nss-sensitive.txt TestP11KeyFactoryGetRSAKeySpec
  * @modules jdk.crypto.cryptoki
  */
 
