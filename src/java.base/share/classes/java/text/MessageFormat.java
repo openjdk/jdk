@@ -108,45 +108,6 @@ import java.util.Objects;
  *         <i>SubformatPattern</i>
  * </pre></blockquote>
  *
- * <p>Within a <i>String</i>, a pair of single quotes can be used to
- * quote any arbitrary characters except single quotes. For example,
- * pattern string <code>"'{0}'"</code> represents string
- * <code>"{0}"</code>, not a <i>FormatElement</i>. A single quote itself
- * must be represented by doubled single quotes {@code ''} throughout a
- * <i>String</i>.  For example, pattern string <code>"'{''}'"</code> is
- * interpreted as a sequence of <code>'{</code> (start of quoting and a
- * left curly brace), {@code ''} (a single quote), and
- * <code>}'</code> (a right curly brace and end of quoting),
- * <em>not</em> <code>'{'</code> and <code>'}'</code> (quoted left and
- * right curly braces): representing string <code>"{'}"</code>,
- * <em>not</em> <code>"{}"</code>.
- *
- * <p>A <i>SubformatPattern</i> is interpreted by its corresponding
- * subformat, and subformat-dependent pattern rules apply. For example,
- * pattern string <code>"{1,number,<u>$'#',##</u>}"</code>
- * (<i>SubformatPattern</i> with underline) will produce a number format
- * with the pound-sign quoted, with a result such as: {@code
- * "$#31,45"}. Refer to each {@code Format} subclass documentation for
- * details.
- *
- * <p>Any unmatched quote is treated as closed at the end of the given
- * pattern. For example, pattern string {@code "'{0}"} is treated as
- * pattern {@code "'{0}'"}.
- *
- * <p>Any curly braces within an unquoted pattern must be balanced. For
- * example, <code>"ab {0} de"</code> and <code>"ab '}' de"</code> are
- * valid patterns, but <code>"ab {0'}' de"</code>, <code>"ab } de"</code>
- * and <code>"''{''"</code> are not.
- *
- * <dl><dt><b>Warning:</b><dd>The rules for using quotes within message
- * format patterns unfortunately have shown to be somewhat confusing.
- * In particular, it isn't always obvious to localizers whether single
- * quotes need to be doubled or not. Make sure to inform localizers about
- * the rules, and tell them (for example, by using comments in resource
- * bundle source files) which strings will be processed by {@code MessageFormat}.
- * Note that localizers may need to use single quotes in translated
- * strings where the original version doesn't have them.
- * </dl>
  * <p>
  * The <i>ArgumentIndex</i> value is a non-negative integer written
  * using the digits {@code '0'} through {@code '9'}, and represents an index into the
@@ -311,6 +272,48 @@ import java.util.Objects;
  * </tbody>
  * </table>
  *
+ * <h3>Quoting Rules in Patterns</h3>
+ *
+ * <p>Within a <i>String</i>, a pair of single quotes can be used to
+ * quote any arbitrary characters except single quotes. For example,
+ * pattern string <code>"'{0}'"</code> represents string
+ * <code>"{0}"</code>, not a <i>FormatElement</i>. A single quote itself
+ * must be represented by doubled single quotes {@code ''} throughout a
+ * <i>String</i>.  For example, pattern string <code>"'{''}'"</code> is
+ * interpreted as a sequence of <code>'{</code> (start of quoting and a
+ * left curly brace), {@code ''} (a single quote), and
+ * <code>}'</code> (a right curly brace and end of quoting),
+ * <em>not</em> <code>'{'</code> and <code>'}'</code> (quoted left and
+ * right curly braces): representing string <code>"{'}"</code>,
+ * <em>not</em> <code>"{}"</code>.
+ *
+ * <p>A <i>SubformatPattern</i> is interpreted by its corresponding
+ * subformat, and subformat-dependent pattern rules apply. For example,
+ * pattern string <code>"{1,number,<u>$'#',##</u>}"</code>
+ * (<i>SubformatPattern</i> with underline) will produce a number format
+ * with the pound-sign quoted, with a result such as: {@code
+ * "$#31,45"}. Refer to each {@code Format} subclass documentation for
+ * details.
+ *
+ * <p>Any unmatched quote is treated as closed at the end of the given
+ * pattern. For example, pattern string {@code "'{0}"} is treated as
+ * pattern {@code "'{0}'"}.
+ *
+ * <p>Any curly braces within an unquoted pattern must be balanced. For
+ * example, <code>"ab {0} de"</code> and <code>"ab '}' de"</code> are
+ * valid patterns, but <code>"ab {0'}' de"</code>, <code>"ab } de"</code>
+ * and <code>"''{''"</code> are not.
+ *
+ * <dl><dt><b>Warning:</b><dd>The rules for using quotes within message
+ * format patterns unfortunately have shown to be somewhat confusing.
+ * In particular, it isn't always obvious to localizers whether single
+ * quotes need to be doubled or not. Make sure to inform localizers about
+ * the rules, and tell them (for example, by using comments in resource
+ * bundle source files) which strings will be processed by {@code MessageFormat}.
+ * Note that localizers may need to use single quotes in translated
+ * strings where the original version doesn't have them.
+ * </dl>
+ *
  * <h3>Usage Information</h3>
  *
  * <p>
@@ -325,6 +328,7 @@ import java.util.Objects;
  * Object[] args = {"MyDisk", 1273};
  * System.out.println(msgFmt.format(args));
  * }
+ *
  * The output with different values for {@code fileCount}:
  * <blockquote><pre>
  * The disk "MyDisk" contains no files.
@@ -353,30 +357,8 @@ import java.util.Objects;
  * If you create both a {@code MessageFormat} and {@code ChoiceFormat}
  * programmatically (instead of using the string patterns), then be careful not to
  * produce a format that recurses on itself, which will cause an infinite loop.
- * <p>
- * When a single argument is parsed more than once in the string, the last match
- * will be the final result of the parsing.  For example,
- * {@snippet lang=java :
- * MessageFormat mf = new MessageFormat("{0,number,#.##}, {0,number,#.#}");
- * Object[] objs = {Double.valueOf(3.1415)};
- * String result = mf.format( objs );
- * // result now equals "3.14, 3.1"
- * objs = mf.parse(result, new ParsePosition(0));
- * // objs now equals {Double.valueOf(3.1)}
- * }
  *
- * <p>
- * Likewise, parsing with a {@code MessageFormat} object using patterns containing
- * multiple occurrences of the same argument would return the last match.  For
- * example,
- * {@snippet lang=java :
- * MessageFormat mf = new MessageFormat("{0}, {0}, {0}");
- * String forParsing = "x, y, z";
- * Object[] objs = mf.parse(forParsing, new ParsePosition(0));
- * // objs now equals {new String("z")}
- * }
- *
- * <h3>Formatting Time and Date</h3>
+ * <h3>Formatting Date and Time</h3>
  *
  * MessageFormat provides patterns that support both the {@link java.time} package
  * and the {@link Date} type. Consider the 3 following examples,
@@ -401,6 +383,30 @@ import java.util.Objects;
  * Object[] arg = {LocalDate.of(2023, 11, 16)};
  * var fmt = new MessageFormat("The date was {0,iso_local_date}");
  * fmt.format(arg); // returns "The date was 2023-11-16"
+ * }
+ *
+ * <h3>Parsing</h3>
+ * <p>
+ * When a single argument is parsed more than once in the string, the last match
+ * will be the final result of the parsing.  For example,
+ * {@snippet lang=java :
+ * MessageFormat mf = new MessageFormat("{0,number,#.##}, {0,number,#.#}");
+ * Object[] objs = {Double.valueOf(3.1415)};
+ * String result = mf.format( objs );
+ * // result now equals "3.14, 3.1"
+ * objs = mf.parse(result, new ParsePosition(0));
+ * // objs now equals {Double.valueOf(3.1)}
+ * }
+ *
+ * <p>
+ * Likewise, parsing with a {@code MessageFormat} object using patterns containing
+ * multiple occurrences of the same argument would return the last match.  For
+ * example,
+ * {@snippet lang=java :
+ * MessageFormat mf = new MessageFormat("{0}, {0}, {0}");
+ * String forParsing = "x, y, z";
+ * Object[] objs = mf.parse(forParsing, new ParsePosition(0));
+ * // objs now equals {new String("z")}
  * }
  *
  * <h3><a id="synchronization">Synchronization</a></h3>
@@ -661,8 +667,8 @@ public class MessageFormat extends Format {
      * class can provide one. The following subformats do not provide a {@code
      * SubformatPattern}: {@link CompactNumberFormat}, {@link ListFormat}, and {@link
      * java.time.format.DateTimeFormatter}. In addition, {@code DateTimeFormatter}
-     * does not implement {@code equals()}, and thus cannot be synthesized as a
-     * pattern. Any "default"/"medium" styles are omitted per the specification.
+     * does not implement {@code equals()}, and thus cannot be represented as a
+     * pattern. Any "default"/"medium" styles are omitted according to the specification.
      */
     private String patternFromFormat(Format fmt) {
         if (fmt instanceof NumberFormat) {
