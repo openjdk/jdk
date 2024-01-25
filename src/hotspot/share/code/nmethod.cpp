@@ -1409,9 +1409,7 @@ bool nmethod::make_not_entrant() {
 // For concurrent GCs, there must be a handshake between unlink and flush
 void nmethod::unlink() {
   if (_is_unlinked) {
-    // Already unlinked. It can be invoked twice because concurrent code cache
-    // unloading might need to restart when inline cache cleaning fails due to
-    // running out of ICStubs, which can only be refilled at safepoints
+    // Already unlinked.
     return;
   }
 
