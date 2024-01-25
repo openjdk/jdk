@@ -37,7 +37,6 @@ package gc.arguments;
 
 import jdk.test.lib.Asserts;
 import jdk.test.lib.process.OutputAnalyzer;
-import jdk.test.lib.process.ProcessTools;
 import java.math.BigInteger;
 
 public class TestArrayAllocatorMallocLimit {
