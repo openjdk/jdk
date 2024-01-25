@@ -492,4 +492,61 @@ public final class Objects {
     long checkFromIndexSize(long fromIndex, long size, long length) {
         return Preconditions.checkFromIndexSize(fromIndex, size, length, null);
     }
+
+    /**
+     * {@return {@code true} if {@code a} and {@code b} produce equivalent values
+     * when they are passed in as parameters to {@code first} and the functions of
+     * {@code rest}, and {@code false} otherwise.}
+     *
+     * If any of the arguments are {@code null}, a {@code NullPointerException}
+     * will be thrown. If any of the functions inside of {@code rest} are
+     * {@code null}, a {@code NullPointerException} *may* be thrown, depending on
+     * if this function short-circuits prior to reaching the {@code null} function.
+     *
+     * Value equivalence is determined by calling {@link Objects#equals equals} on
+     * the values produced by passing in {@code a} and {@code b} to the given
+     * functions.
+     *
+     * <p>This method is useful for implementing {@link Object#equals()}.
+     * Consider the following example.</p>
+     *
+     * <blockquote><pre>
+     * &#064;Override public boolean equals(Object obj) {
+     *     //Assume that there's a class Point3D with the fields int x, int y, and int z.
+     *     //Also assume that each field has an accompanying getter.
+     *     return (this == obj) 
+     *         || (obj instanceof Point3D other 
+     *             && Objects.equalsBy(this, other, Point3D::getX, Point3D::getY, Point3D::getZ));
+     * }
+     * </pre></blockquote>
+     *
+     * @param a the first object to be compared for equality
+     * @param b the second object to be compared for equality
+     * @param first the first function to be applied to {@code a} and {@code b}
+     * @param rest the rest of the functions to be applied to {@code a} and {@code b}
+     * @throws NullPointerException if any of the arguments are {@code null} and (potentially) if {@code rest} contains a {@code null}
+     * @since 23
+     */
+    @SafeVarargs
+    public static <T,R> boolean equalsBy(T a, T b, Function<? super T, ? extends R> first, Function<? super T, ? extends R>... rest) {
+
+        requireNonNull(a);
+        requireNonNull(b);
+        requireNonNull(first);
+        requireNonNull(rest);
+
+        if (!equals(first.apply(a), first.apply(b))) {
+            return false;
+        }
+
+        for (final var function : rest) {
+            final var aValue = function.apply(a);
+            final var bValue = function.apply(b);
+
+            if (!equals(aValue, bValue)) {
+                return false;
+            }
+        }
+        return true;
+    }
 }
