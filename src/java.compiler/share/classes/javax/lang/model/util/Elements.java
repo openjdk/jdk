@@ -687,14 +687,15 @@ public interface Elements {
      *          elements.getTypeElement("C")); }
      * </blockquote>
      *
-     * Consistent with the usage of the {@code @Override} annotation, if an
+     * Consistent with the usage of the {@link Override @Override} annotation, if an
      * interface declares a method override-equivalent to a {@code
-     * public} method of {@code java.lang.Object}, this method treats
+     * public} method of {@link Object java.lang.Object}, this method treats
      * any such interface methods as overriding the corresponding {@code
-     * Object} method:
+     * Object} method; example:
      *
      * <blockquote><pre>
      * interface I {
+     *   &commat;Override
      *   String toString();
      * }
      * ...
