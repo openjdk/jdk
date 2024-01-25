@@ -1879,3 +1879,16 @@ void MethodData::release_C_heap_structures() {
   FailedSpeculation::free_failed_speculations(get_failed_speculations_address());
 #endif
 }
+
+#ifdef ASSERT
+void MethodData::check_extra_data_locked() const {
+    // Cast const away, just to be able to verify the lock
+    // Usually we only want non-const accesses on the lock,
+    // so this here is an exception.
+    MethodData* self = (MethodData*)this;
+    assert(self->extra_data_lock()->owned_by_self(), "must have lock");
+    assert(!Thread::current()->is_Java_thread() ||
+           JavaThread::current()->is_in_no_safepoint_scope(),
+           "JavaThread must have NoSafepointVerifier inside lock scope");
+}
+#endif

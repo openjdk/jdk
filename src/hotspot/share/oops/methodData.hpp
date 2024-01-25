@@ -33,7 +33,6 @@
 #include "runtime/atomic.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/mutex.hpp"
-#include "runtime/mutexLocker.hpp"
 #include "utilities/align.hpp"
 #include "utilities/copy.hpp"
 
@@ -2311,24 +2310,12 @@ public:
   intx arg_local()                               { return _arg_local; }
   intx arg_stack()                               { return _arg_stack; }
   intx arg_returned()                            { return _arg_returned; }
-  uint arg_modified(int a)                       { // Lock and avoid breaking lock with Safepoint
-                                                   MutexLocker ml(extra_data_lock(), Mutex::_no_safepoint_check_flag);
-                                                   ArgInfoData *aid = arg_info();
-                                                   assert(aid != nullptr, "arg_info must be not null");
-                                                   assert(a >= 0 && a < aid->number_of_args(), "valid argument number");
-                                                   return aid->arg_modified(a); }
-
+  uint arg_modified(int a);
   void set_eflags(intx v)                        { _eflags = v; }
   void set_arg_local(intx v)                     { _arg_local = v; }
   void set_arg_stack(intx v)                     { _arg_stack = v; }
   void set_arg_returned(intx v)                  { _arg_returned = v; }
-  void set_arg_modified(int a, uint v)           { // Lock and avoid breaking lock with Safepoint
-                                                   MutexLocker ml(extra_data_lock(), Mutex::_no_safepoint_check_flag);
-                                                   ArgInfoData *aid = arg_info();
-                                                   assert(aid != nullptr, "arg_info must be not null");
-                                                   assert(a >= 0 && a < aid->number_of_args(), "valid argument number");
-                                                   aid->set_arg_modified(a, v); }
-
+  void set_arg_modified(int a, uint v);
   void clear_escape_info()                       { _eflags = _arg_local = _arg_stack = _arg_returned = 0; }
 
   // Location and size of data area
@@ -2539,18 +2526,7 @@ public:
   void clean_method_data(bool always_clean);
   void clean_weak_method_links();
   Mutex* extra_data_lock() { return &_extra_data_lock; }
-  void check_extra_data_locked() const {
-#ifdef ASSERT
-    // Cast const away, just to be able to verify the lock
-    // Usually we only want non-const accesses on the lock,
-    // so this here is an exception.
-    MethodData* self = (MethodData*)this;
-    assert(self->extra_data_lock()->owned_by_self(), "must have lock");
-    assert(!Thread::current()->is_Java_thread() ||
-           JavaThread::current()->is_in_no_safepoint_scope(),
-           "JavaThread must have NoSafepointVerifier inside lock scope");
-#endif
-  }
+  void check_extra_data_locked() const NOT_DEBUG_RETURN;
 };
 
 #endif // SHARE_OOPS_METHODDATA_HPP
