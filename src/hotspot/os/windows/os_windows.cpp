@@ -840,6 +840,20 @@ julong os::win32::available_memory() {
   return (julong)ms.ullAvailPhys;
 }
 
+jlong os::total_swap_space() {
+  MEMORYSTATUSEX ms;
+  ms.dwLength = sizeof(ms);
+  GlobalMemoryStatusEx(&ms);
+  return (jlong) ms.ullTotalPageFile;
+}
+
+jlong os::free_swap_space() {
+  MEMORYSTATUSEX ms;
+  ms.dwLength = sizeof(ms);
+  GlobalMemoryStatusEx(&ms);
+  return (jlong) ms.ullAvailPageFile;
+}
+
 julong os::physical_memory() {
   return win32::physical_memory();
 }

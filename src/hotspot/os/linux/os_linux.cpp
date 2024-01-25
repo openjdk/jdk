@@ -289,6 +289,25 @@ julong os::Linux::free_memory() {
   return free_mem;
 }
 
+// do we need to handle container envs separately ?
+jlong os::total_swap_space() {
+  struct sysinfo si;
+  int ret = sysinfo(&si);
+  if (ret != 0) {
+    return -1;
+  }
+  return  (jlong)(si.totalswap * si.mem_unit);
+}
+
+jlong os::free_swap_space() {
+  struct sysinfo si;
+  int ret = sysinfo(&si);
+  if (ret != 0) {
+    return -1;
+  }
+  return (jlong)(si.freeswap * si.mem_unit);
+}
+
 julong os::physical_memory() {
   jlong phys_mem = 0;
   if (OSContainer::is_containerized()) {
