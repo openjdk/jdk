@@ -1217,7 +1217,7 @@ public:
     // result = slowGet();
     // goto continue;
     //
-    // the transformed graph includes 2 copies of the cache probing logic. One represented by the
+    // The transformed graph includes 2 copies of the cache probing logic. One represented by the
     // ScopedValueGetHitsInCache/ScopedValueGetLoadFromCache pair that is amenable to optimizations. The other from
     // the result of the parsing of the java code where the success path ends with an Halt node. The reason for that is
     // that some paths may end with an uncommon trap and if one traps, we want the trap to be recorded for the right bci.
