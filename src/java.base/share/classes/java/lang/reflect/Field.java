@@ -178,6 +178,16 @@ class Field extends AccessibleObject implements Member {
         setAccessible0(flag);
     }
 
+    /**
+     * @throws InaccessibleObjectException {@inheritDoc}
+     * @throws SecurityException {@inheritDoc}
+     */
+    @CallerSensitive
+    public Field setAccessible() {
+        setAccessible(true);
+        return this;
+    }
+
     @Override
     void checkCanSetAccessible(Class<?> caller) {
         checkCanSetAccessible(caller, clazz);
