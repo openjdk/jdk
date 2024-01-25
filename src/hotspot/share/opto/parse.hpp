@@ -564,7 +564,6 @@ class Parse : public GraphKit {
   float   branch_prediction(float &cnt, BoolTest::mask btest, int target_bci, Node* test);
   bool    seems_never_taken(float prob) const;
   bool    path_is_suitable_for_uncommon_trap(float prob) const;
-  bool    seems_stable_comparison() const;
 
   void    do_ifnull(BoolTest::mask btest, Node* c);
   void    do_if(BoolTest::mask btest, Node* c);
