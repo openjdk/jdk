@@ -929,6 +929,10 @@ void MetaspaceShared::initialize_runtime_shared_and_meta_spaces() {
     log_info(cds)("Core region alignment: " SIZE_FORMAT, static_mapinfo->core_region_alignment());
     dynamic_mapinfo = open_dynamic_archive();
 
+    // Leading zeros are needed to get correct offsets
+    _oopmap_leading_zeros = static_mapinfo->header()->heap_oopmap_leading_zeros();
+    _ptrmap_leading_zeros = static_mapinfo->header()->heap_ptrmap_leading_zeros();
+
     // First try to map at the requested address
     result = map_archives(static_mapinfo, dynamic_mapinfo, true);
     if (result == MAP_ARCHIVE_MMAP_FAILURE) {
@@ -948,10 +952,6 @@ void MetaspaceShared::initialize_runtime_shared_and_meta_spaces() {
     set_shared_metaspace_range(cds_base, static_mapinfo->mapped_end(), cds_end);
     _relocation_delta = static_mapinfo->relocation_delta();
     _requested_base_address = static_mapinfo->requested_base_address();
-    // Leading zeros are needed to get correct offsets
-    _oopmap_leading_zeros = static_mapinfo->header()->heap_oopmap_leading_zeros();
-    _ptrmap_leading_zeros = static_mapinfo->header()->heap_ptrmap_leading_zeros();
-
     if (dynamic_mapped) {
       FileMapInfo::set_shared_path_table(dynamic_mapinfo);
       // turn AutoCreateSharedArchive off if successfully mapped

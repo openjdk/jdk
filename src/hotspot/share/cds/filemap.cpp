@@ -1597,8 +1597,10 @@ char* FileMapInfo::write_bitmap_region(const CHeapBitMap* ptrmap, ArchiveHeapInf
 
     assert(new_oop_zeros <= old_oop_zeros, "Should have removed leading zeros");
     assert(new_ptr_zeros <= old_ptr_zeros, "Should have removed leading zeros");
-    assert(heap_info->oopmap()->size_in_bytes() <= old_oop_size, "Bitmap size should have decreased: %ld -> %ld", old_oop_size, heap_info->oopmap()->size_in_bytes());
-    assert(heap_info->ptrmap()->size_in_bytes() <= old_ptr_size, "Bitmap size should have decreased: %ld -> %ld", old_ptr_size, heap_info->ptrmap()->size_in_bytes());
+    assert(heap_info->oopmap()->size_in_bytes() <= old_oop_size, "Heap oopmap size should have decreased");
+    assert(heap_info->ptrmap()->size_in_bytes() <= old_ptr_size, "Heap ptrmap size should have decreased");
+
+    tty->print_cr("Oop leading zeroes: %ld -> %ld", old_oop_zeros, new_oop_zeros);
 
     size_in_bytes += heap_info->oopmap()->size_in_bytes();
     size_in_bytes += heap_info->ptrmap()->size_in_bytes();
