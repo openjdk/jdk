@@ -5263,7 +5263,7 @@ static const int64_t right_3_bits = right_n_bits(3);
       StubRoutines::_bigIntegerRightShiftWorker = generate_bigIntegerRightShift();
     }
 
-    if (UseVectorizedHashCodeIntrinsic && UseRVV && (MaxVectorSize >= 16)) {
+    if (UseVectorizedHashCodeIntrinsic && UseRVV) {
       StubRoutines::riscv::_arrays_hashcode_powers_of_31 = generate_arrays_hashcode_powers_of_31();
     }
 #endif // COMPILER2
