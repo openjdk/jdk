@@ -2924,44 +2924,48 @@ public class Lower extends TreeTranslator {
     }
 
     /**
-     * All the exactness checks between primitive types that require a run-time check
-     * are in `java.lang.runtime.ExactConversionsSupport`. Those methods are in the
-     * form `ExactConversionsSupport.<S>_<T>` where both `S` and `T` are primitive
-     * types and correspond to the runtime check that will be executed when the program
-     * needs to check whether a certain value (that is passed as a parameter) can be
-     * converted to T without loss of information.
-     * Rewrite instanceof if expr : Object and Type is primitive type
+     * All the exactness checks between primitive types that require a run-time
+     * check are in {@code java.lang.runtime.ExactConversionsSupport}. Those methods
+     * are in the form {@code ExactConversionsSupport.is<S>To<T>Exact} where both
+     * {@code S} and {@code T} are primitive types and correspond to the runtime
+     * action that will be executed to check whether a certain value (that is passed
+     * as a parameter) can be converted to {@code T} without loss of information.
      *
-     * According to the Table 5.5-A. Casting conversions to primitive types in the JLS this
-     * conversion is permitted under a casting context, and employs a narrowing reference conversion
-     * followed by an unboxing conversion. As a result the only check that needs to be done is an
-     * `instanceof` to `Float`. The unboxing conversion from `Float` to `float` is always exact
-     * so if `v` is `Float` then `v` will be `instanceof float` too (without further checks).
+     * Rewrite {@code instanceof if expr : Object} and Type is primitive type:
      *
+     * {@snippet :
      *   Object v = ...
      *   if (v instanceof float)
      *   =>
-     *   if (v instanceof Float)
+     *   if (let tmp$123 = v; tmp$123 instanceof Float)
+     * }
      *
-     * Rewrite instanceof if expr : wrapper reference type
+     * Rewrite {@code instanceof if expr : wrapper reference type}
      *
+     * {@snippet :
      *   Integer v = ...
      *   if (v instanceof float)
      *   =>
      *   if (let tmp$123 = v; tmp$123 != null && ExactConversionsSupport.intToFloatExact(tmp$123.intValue()))
+     * }
      *
-     * Rewrite instanceof if expr : primitive
+     * Rewrite {@code instanceof if expr : primitive}
      *
+     * {@snippet :
      *   int v = ...
      *   if (v instanceof float)
      *   =>
      *   if (let tmp$123 = v; ExactConversionsSupport.intToFloatExact(tmp$123))
+     * }
      *
      * More rewritings:
-     *
-     * - If the `instanceof` check is unconditionally exact rewrite to true.
-     * - If expression type is `Byte`, `Short`, `Integer`, an unboxing conversion followed by a widening primitive conversion.
-     * - If expression type is a supertype: `Number`, a narrowing reference conversion followed by an unboxing conversion
+     * <ul>
+     * <li>If the `instanceof` check is unconditionally exact rewrite to true.</li>
+     * <li>If expression type is {@code Byte}, {@code Short}, {@code Integer}, ..., an
+     *     unboxing conversion followed by a widening primitive conversion.</li>
+     * <li>If expression type is a supertype: {@code Number}, a narrowing reference
+     *     conversion followed by an unboxing conversion.</li>
+     * </ul>
      */
     public void visitTypeTest(JCInstanceOf tree) {
         if (tree.expr.type.isPrimitive() || tree.pattern.type.isPrimitive()) {
