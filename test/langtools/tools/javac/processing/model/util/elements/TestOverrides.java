@@ -107,7 +107,7 @@ interface ObjectInterface {
     @OverrideExpected(value=false) // protected, not public method
     void finalize();
 
-    // Final methods on Object (getClass, wait, notify[all]) rejected
+    // Final methods of Object (getClass, wait, notify[all]) rejected
     // if declared in an interface.
 }
 
