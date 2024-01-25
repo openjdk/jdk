@@ -690,32 +690,32 @@ public class MessageFormat extends Format {
             } else {
                 // No pre-defined styles match, return the SubformatPattern
                 if (fmt instanceof DecimalFormat dFmt) {
-                    return ",number,"+dFmt.toPattern();
+                    return ",number," + dFmt.toPattern();
                 } else if (fmt instanceof ChoiceFormat cFmt) {
-                    return ",choice,"+cFmt.toPattern();
+                    return ",choice," + cFmt.toPattern();
                 }
             }
         } else if (fmt instanceof DateFormat) {
             // Match to any pre-defined DateFormat styles
             for (DateFormat.Style style : DateFormat.Style.values()) {
                 if (fmt.equals(DateFormat.getDateInstance(style.getValue(), locale))) {
-                    return ",date"+((style.getValue() != DateFormat.DEFAULT)
-                            ? ","+style.name().toLowerCase(Locale.ROOT) : "");
+                    return ",date" + ((style.getValue() != DateFormat.DEFAULT)
+                            ? "," + style.name().toLowerCase(Locale.ROOT) : "");
                 }
                 if (fmt.equals(DateFormat.getTimeInstance(style.getValue(), locale))) {
-                    return ",time"+((style.getValue() != DateFormat.DEFAULT)
-                            ? ","+style.name().toLowerCase(Locale.ROOT) : "");
+                    return ",time" + ((style.getValue() != DateFormat.DEFAULT)
+                            ? "," + style.name().toLowerCase(Locale.ROOT) : "");
                 }
             }
             // If no styles match, return the SubformatPattern
             if (fmt instanceof SimpleDateFormat sdFmt) {
-                return ",date,"+sdFmt.toPattern();
+                return ",date," + sdFmt.toPattern();
             }
         } else if (fmt instanceof ListFormat) {
             for (ListFormat.Type type : ListFormat.Type.values()) {
                 if (fmt.equals(ListFormat.getInstance(locale, type, ListFormat.Style.FULL))) {
-                    return ",list"+((type != ListFormat.Type.STANDARD)
-                            ? ","+type.name().toLowerCase(Locale.ROOT) : "");
+                    return ",list" + ((type != ListFormat.Type.STANDARD)
+                            ? "," + type.name().toLowerCase(Locale.ROOT) : "");
                 }
             }
         }
@@ -1153,7 +1153,7 @@ public class MessageFormat extends Format {
                     return null; // leave index as is to signal error
                 } else {
                     String strValue= source.substring(sourceOffset,next);
-                    if (!strValue.equals("{"+argumentNumbers[i]+"}"))
+                    if (!strValue.equals("{" + argumentNumbers[i] + "}"))
                         resultArray[argumentNumbers[i]]
                             = source.substring(sourceOffset,next);
                     sourceOffset = next;
@@ -1750,7 +1750,7 @@ public class MessageFormat extends Format {
      */
     private Format formatFromSubformatPattern(FormatType fType, String pattern) {
         // Modified for neater exception value if needed
-        String type = fType.text.substring(0,1).toUpperCase(Locale.ROOT)+fType.text.substring(1);
+        String type = fType.text.substring(0,1).toUpperCase(Locale.ROOT) + fType.text.substring(1);
         try {
             return switch(fType) {
                 case NUMBER -> new DecimalFormat(pattern, DecimalFormatSymbols.getInstance(locale));
