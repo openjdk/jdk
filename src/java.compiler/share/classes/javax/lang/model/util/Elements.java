@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -687,11 +687,12 @@ public interface Elements {
      *          elements.getTypeElement("C")); }
      * </blockquote>
      *
-     * Consistent with the usage of the {@link Override @Override} annotation, if an
-     * interface declares a method override-equivalent to a {@code
-     * public} method of {@link Object java.lang.Object}, this method treats
-     * any such interface methods as overriding the corresponding {@code
-     * Object} method; example:
+     * Consistent with the usage of the {@link Override @Override}
+     * annotation, if an interface declares a method
+     * override-equivalent to a {@code public} method of {@link Object
+     * java.lang.Object}, such a method of the interface is regarded
+     * as overriding the corresponding {@code Object} method; for
+     * example:
      *
      * <blockquote><pre>
      * interface I {
