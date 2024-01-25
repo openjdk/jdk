@@ -119,8 +119,7 @@ void GrowableBitMap<BitMapWithAllocator>::slice(idx_t start_bit, idx_t end_bit, 
 
 template <class BitMapWithAllocator>
 void GrowableBitMap<BitMapWithAllocator>::slice(idx_t start_bit, bool clear) {
-  const size_t old_size_in_bits = size();
-  slice(start_bit, old_size_in_bits, clear);
+  slice(start_bit, size(), clear);
 }
 
 ArenaBitMap::ArenaBitMap(Arena* arena, idx_t size_in_bits, bool clear)

@@ -189,12 +189,6 @@ void ArchiveHeapLoader::patch_embedded_pointers(FileMapInfo* info,
                                                 MemRegion region, address oopmap,
                                                 size_t oopmap_size_in_bits) {
   BitMapView bm((BitMap::bm_word_t*)oopmap, oopmap_size_in_bits);
-
-#ifndef PRODUCT
-  ResourceMark rm;
-  ResourceBitMap checkBm = HeapShared::calculate_oopmap(region);
-#endif
-
   if (UseCompressedOops) {
     patch_compressed_embedded_pointers(bm, info, region);
   } else {

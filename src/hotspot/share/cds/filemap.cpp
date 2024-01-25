@@ -1592,6 +1592,8 @@ char* FileMapInfo::write_bitmap_region(const CHeapBitMap* ptrmap, ArchiveHeapInf
     size_t new_ptr_zeros = heap_info->ptrmap()->find_first_set_bit(0);
     header()->set_heap_oopmap_leading_zeros(old_oop_zeros - new_oop_zeros);
     header()->set_heap_ptrmap_leading_zeros(old_ptr_zeros - new_ptr_zeros);
+    MetaspaceShared::set_heap_oopmap_leading_zeros(old_oop_zeros - new_oop_zeros);
+    MetaspaceShared::set_heap_ptrmap_leading_zeros(old_ptr_zeros - new_ptr_zeros);
 
     assert(new_oop_zeros <= old_oop_zeros, "Should have removed leading zeros");
     assert(new_ptr_zeros <= old_ptr_zeros, "Should have removed leading zeros");
@@ -1630,7 +1632,6 @@ size_t FileMapInfo::write_heap_region(ArchiveHeapInfo* heap_info) {
   size_t buffer_size = heap_info->buffer_byte_size();
   write_region(MetaspaceShared::hp, buffer_start, buffer_size, false, false);
   header()->set_heap_roots_offset(heap_info->heap_roots_offset());
-
   return buffer_size;
 }
 

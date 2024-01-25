@@ -169,6 +169,9 @@ public:
   static size_t oopmap_leading_zeros() { return _oopmap_leading_zeros; }
   static size_t ptrmap_leading_zeros() { return _ptrmap_leading_zeros; }
 
+  static void set_heap_oopmap_leading_zeros(size_t leading_zeros) { _oopmap_leading_zeros = leading_zeros; }
+  static void set_heap_ptrmap_leading_zeros(size_t leading_zeros) { _ptrmap_leading_zeros = leading_zeros; }
+
 private:
   static void read_extra_data(JavaThread* current, const char* filename) NOT_CDS_RETURN;
   static FileMapInfo* open_static_archive();
