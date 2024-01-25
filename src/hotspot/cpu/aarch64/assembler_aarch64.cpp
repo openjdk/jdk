@@ -193,8 +193,6 @@ void Address::lea(MacroAssembler *as, Register r) const {
 void Assembler::prfm(const Address &adr, prfop pfop) {
   Address::mode mode = adr.getMode();
   // PRFM does not support pre/post index
-  // Passing Address with pre/post mode to ld_st2 will generate an undefined instruction.
-  // So use guarantee to avoid pre/post mode Address operand
   guarantee((mode != Address::pre), "prfm does not support pre index");
   guarantee((mode != Address::post), "prfm does not support post index");
   if (mode == Address::literal) {
