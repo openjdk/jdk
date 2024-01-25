@@ -56,7 +56,7 @@ public class TestScopedValue {
         // Fast path tests need to be run one at a time to prevent profile pollution
         List<String> tests = List.of("testFastPath1", "testFastPath2", "testFastPath3", "testFastPath5",
                 "testFastPath6", "testFastPath7", "testFastPath8", "testFastPath9", "testFastPath10",
-                "testFastPath11", "testFastPath12", "testFastPath13","testFastPath14",
+                "testFastPath11", "testFastPath12", "testFastPath13", "testFastPath14",
                 "testSlowPath1,testSlowPath2,testSlowPath3,testSlowPath4,testSlowPath5,testSlowPath6,testSlowPath7,testSlowPath8,testSlowPath9");
         for (String test : tests) {
             TestFramework.runWithFlags("-XX:+TieredCompilation", "--enable-preview", "-XX:CompileCommand=dontinline,java.lang.ScopedValue::slowGet", "-DTest=" + test);
