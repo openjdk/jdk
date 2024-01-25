@@ -145,14 +145,15 @@ public class SwitchBootstraps {
      *               and {@code Class} and {@code EnumDesc} instances, in any combination
      * @return a {@code CallSite} returning the first matching element as described above
      *
-     * @throws NullPointerException if any argument is {@code null}
-     * @throws IllegalArgumentException if any element in the labels array is null, if the
-     * invocation type is not a method type of first parameter of a reference type,
-     * second parameter of type {@code int} and with {@code int} as its return type,
-     * or if {@code labels} contains an element that is not of type {@code String},
-     * {@code Integer}, {@code Long}, {@code Float}, {@code Double}, {@code Boolean},
-     * {@code Class} or {@code EnumDesc}. Additionally, if {@code labels} contains an element
-     * that is not of type {@code Boolean} when {@code target} is a {@code Boolean.class}.
+     * @throws NullPointerException     if any argument is {@code null}
+     * @throws IllegalArgumentException if any element in the labels array is null
+     * @throws IllegalArgumentException if the invocation type is not a method type of first parameter of a reference type,
+     *                                  second parameter of type {@code int} and with {@code int} as its return type,
+     * @throws IllegalArgumentException if {@code labels} contains an element that is not of type {@code String},
+     *                                  {@code Integer}, {@code Long}, {@code Float}, {@code Double}, {@code Boolean},
+     *                                  {@code Class} or {@code EnumDesc}.
+     * @throws IllegalArgumentException if {@code labels} contains an element that is not of type {@code Boolean}
+     *                                  when {@code target} is a {@code Boolean.class}.
      * @jvms 4.4.6 The CONSTANT_NameAndType_info Structure
      * @jvms 4.4.10 The CONSTANT_Dynamic_info and CONSTANT_InvokeDynamic_info Structures
      */
