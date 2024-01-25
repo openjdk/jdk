@@ -26,6 +26,7 @@
 package java.lang.runtime;
 
 import java.lang.Enum.EnumDesc;
+import java.lang.classfile.CodeBuilder;
 import java.lang.constant.ClassDesc;
 import java.lang.constant.ConstantDesc;
 import java.lang.constant.ConstantDescs;
@@ -41,6 +42,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.BiPredicate;
+import java.util.function.Consumer;
 import java.util.stream.Stream;
 import jdk.internal.access.SharedSecrets;
 import java.lang.classfile.ClassFile;
@@ -167,7 +169,7 @@ public class SwitchBootstraps {
 
         Stream.of(labels).forEach(l -> verifyLabel(l, selectorType));
 
-        MethodHandle target = generateInnerClass(lookup, selectorType, labels);
+        MethodHandle target = generateTypeSwitch(lookup, selectorType, labels);
 
         target = withIndexCheck(target, labels.length);
 
@@ -285,11 +287,11 @@ public class SwitchBootstraps {
                     MethodHandles.guardWithTest(MethodHandles.dropArguments(NULL_CHECK, 0, int.class),
                                                 MethodHandles.dropArguments(MethodHandles.constant(int.class, -1), 0, int.class, Object.class),
                                                 MethodHandles.guardWithTest(MethodHandles.dropArguments(IS_ZERO, 1, Object.class),
-                                                                            generateInnerClass(lookup, invocationType.parameterType(0), labels),
+                                                                            generateTypeSwitch(lookup, invocationType.parameterType(0), labels),
                                                                             MethodHandles.insertArguments(MAPPED_ENUM_LOOKUP, 1, lookup, enumClass, labels, new EnumMap())));
             target = MethodHandles.permuteArguments(body, MethodType.methodType(int.class, Object.class, int.class), 1, 0);
         } else {
-            target = generateInnerClass(lookup, invocationType.parameterType(0), labels);
+            target = generateTypeSwitch(lookup, invocationType.parameterType(0), labels);
         }
 
         target = target.asType(invocationType);
@@ -400,223 +402,235 @@ public class SwitchBootstraps {
      *     ...
      * }
      */
-    @SuppressWarnings("removal")
-    private static MethodHandle generateInnerClass(MethodHandles.Lookup caller, Class<?> selectorType, Object[] labels) {
+    private static Consumer<CodeBuilder> generateTypeSwitchSkeleton(Class<?> selectorType, Object[] labelConstants, List<EnumDesc<?>> enumDescs, List<Class<?>> extraClassLabels) {
+        int SELECTOR_OBJ        = 0;
+        int RESTART_IDX         = 1;
+        int ENUM_CACHE          = 2;
+        int EXTRA_CLASS_LABELS  = 3;
+
+        return cb -> {
+            cb.aload(SELECTOR_OBJ);
+            Label nonNullLabel = cb.newLabel();
+            cb.if_nonnull(nonNullLabel);
+            cb.iconst_m1();
+            cb.ireturn();
+            cb.labelBinding(nonNullLabel);
+            if (labelConstants.length == 0) {
+                cb.constantInstruction(0)
+                        .ireturn();
+                return;
+            }
+            cb.iload(RESTART_IDX);
+            Label dflt = cb.newLabel();
+            record Element(Label target, Label next, Object caseLabel) { }
+            List<Element> cases = new ArrayList<>();
+            List<SwitchCase> switchCases = new ArrayList<>();
+            Object lastLabel = null;
+            for (int idx = labelConstants.length - 1; idx >= 0; idx--) {
+                Object currentLabel = labelConstants[idx];
+                Label target = cb.newLabel();
+                Label next;
+                if (lastLabel == null) {
+                    next = dflt;
+                } else if (lastLabel.equals(currentLabel)) {
+                    next = cases.getLast().next();
+                } else {
+                    next = cases.getLast().target();
+                }
+                lastLabel = currentLabel;
+                cases.add(new Element(target, next, currentLabel));
+                switchCases.add(SwitchCase.of(idx, target));
+            }
+            cases = cases.reversed();
+            switchCases = switchCases.reversed();
+            cb.tableswitch(0, labelConstants.length - 1, dflt, switchCases);
+            for (int idx = 0; idx < cases.size(); idx++) {
+                Element element = cases.get(idx);
+                Label next = element.next();
+                cb.labelBinding(element.target());
+                if (element.caseLabel() instanceof Class<?> classLabel) {
+                    if (unconditionalExactnessCheck(selectorType, classLabel)) {
+                        //nothing - unconditionally use this case
+                    } else if (classLabel.isPrimitive()) {
+                        if (!selectorType.isPrimitive() && !Wrapper.isWrapperNumericOrBooleanType(selectorType)) {
+                            // Object o = ...
+                            // o instanceof Wrapped(float)
+                            cb.aload(SELECTOR_OBJ);
+                            cb.instanceof_(Wrapper.forBasicType(classLabel)
+                                    .wrapperType()
+                                    .describeConstable()
+                                    .orElseThrow());
+                            cb.ifeq(next);
+                        } else if (!unconditionalExactnessCheck(Wrapper.asPrimitiveType(selectorType), classLabel)) {
+                            // Integer i = ... or int i = ...
+                            // o instanceof float
+                            Label notNumber = cb.newLabel();
+                            cb.aload(SELECTOR_OBJ);
+                            cb.instanceof_(ConstantDescs.CD_Number);
+                            if (selectorType == long.class || selectorType == float.class || selectorType == double.class) {
+                                cb.ifeq(next);
+                            } else {
+                                cb.ifeq(notNumber);
+                            }
+                            cb.aload(SELECTOR_OBJ);
+                            cb.checkcast(ConstantDescs.CD_Number);
+                            if (selectorType == long.class) {
+                                cb.invokevirtual(ConstantDescs.CD_Number,
+                                        "longValue",
+                                        MethodTypeDesc.of(ConstantDescs.CD_long));
+                            } else if (selectorType == float.class) {
+                                cb.invokevirtual(ConstantDescs.CD_Number,
+                                        "floatValue",
+                                        MethodTypeDesc.of(ConstantDescs.CD_float));
+                            } else if (selectorType == double.class) {
+                                cb.invokevirtual(ConstantDescs.CD_Number,
+                                        "doubleValue",
+                                        MethodTypeDesc.of(ConstantDescs.CD_double));
+                            } else {
+                                Label compare = cb.newLabel();
+                                cb.invokevirtual(ConstantDescs.CD_Number,
+                                        "intValue",
+                                        MethodTypeDesc.of(ConstantDescs.CD_int));
+                                cb.goto_(compare);
+                                cb.labelBinding(notNumber);
+                                cb.aload(SELECTOR_OBJ);
+                                cb.instanceof_(ConstantDescs.CD_Character);
+                                cb.ifeq(next);
+                                cb.aload(SELECTOR_OBJ);
+                                cb.checkcast(ConstantDescs.CD_Character);
+                                cb.invokevirtual(ConstantDescs.CD_Character,
+                                        "charValue",
+                                        MethodTypeDesc.of(ConstantDescs.CD_char));
+                                cb.labelBinding(compare);
+                            }
+
+                            TypePairs typePair = TypePairs.of(Wrapper.asPrimitiveType(selectorType), classLabel);
+                            String methodName = typePairToName.get(typePair);
+                            cb.invokestatic(ExactConversionsSupport.class.describeConstable().orElseThrow(),
+                                    methodName,
+                                    MethodTypeDesc.of(ConstantDescs.CD_boolean, typePair.from.describeConstable().orElseThrow()));
+                            cb.ifeq(next);
+                        }
+                    } else {
+                        Optional<ClassDesc> classLabelConstableOpt = classLabel.describeConstable();
+                        if (classLabelConstableOpt.isPresent()) {
+                            cb.aload(SELECTOR_OBJ);
+                            cb.instanceof_(classLabelConstableOpt.orElseThrow());
+                            cb.ifeq(next);
+                        } else {
+                            cb.aload(EXTRA_CLASS_LABELS);
+                            cb.constantInstruction(extraClassLabels.size());
+                            cb.invokeinterface(ConstantDescs.CD_List,
+                                    "get",
+                                    MethodTypeDesc.of(ConstantDescs.CD_Object,
+                                            ConstantDescs.CD_int));
+                            cb.checkcast(ConstantDescs.CD_Class);
+                            cb.aload(SELECTOR_OBJ);
+                            cb.invokevirtual(ConstantDescs.CD_Class,
+                                    "isInstance",
+                                    MethodTypeDesc.of(ConstantDescs.CD_boolean,
+                                            ConstantDescs.CD_Object));
+                            cb.ifeq(next);
+                            extraClassLabels.add(classLabel);
+                        }
+                    }
+                } else if (element.caseLabel() instanceof EnumDesc<?> enumLabel) {
+                    int enumIdx = enumDescs.size();
+                    enumDescs.add(enumLabel);
+                    cb.aload(ENUM_CACHE);
+                    cb.constantInstruction(enumIdx);
+                    cb.invokestatic(ConstantDescs.CD_Integer,
+                            "valueOf",
+                            MethodTypeDesc.of(ConstantDescs.CD_Integer,
+                                    ConstantDescs.CD_int));
+                    cb.aload(SELECTOR_OBJ);
+                    cb.invokeinterface(BiPredicate.class.describeConstable().orElseThrow(),
+                            "test",
+                            MethodTypeDesc.of(ConstantDescs.CD_boolean,
+                                    ConstantDescs.CD_Object,
+                                    ConstantDescs.CD_Object));
+                    cb.ifeq(next);
+                } else if (element.caseLabel() instanceof String stringLabel) {
+                    cb.ldc(stringLabel);
+                    cb.aload(SELECTOR_OBJ);
+                    cb.invokevirtual(ConstantDescs.CD_Object,
+                            "equals",
+                            MethodTypeDesc.of(ConstantDescs.CD_boolean,
+                                    ConstantDescs.CD_Object));
+                    cb.ifeq(next);
+                } else if (element.caseLabel() instanceof Integer integerLabel) {
+                    Label compare = cb.newLabel();
+                    Label notNumber = cb.newLabel();
+                    cb.aload(SELECTOR_OBJ);
+                    cb.instanceof_(ConstantDescs.CD_Number);
+                    cb.ifeq(notNumber);
+                    cb.aload(SELECTOR_OBJ);
+                    cb.checkcast(ConstantDescs.CD_Number);
+                    cb.invokevirtual(ConstantDescs.CD_Number,
+                            "intValue",
+                            MethodTypeDesc.of(ConstantDescs.CD_int));
+                    cb.goto_(compare);
+                    cb.labelBinding(notNumber);
+                    cb.aload(SELECTOR_OBJ);
+                    cb.instanceof_(ConstantDescs.CD_Character);
+                    cb.ifeq(next);
+                    cb.aload(SELECTOR_OBJ);
+                    cb.checkcast(ConstantDescs.CD_Character);
+                    cb.invokevirtual(ConstantDescs.CD_Character,
+                            "charValue",
+                            MethodTypeDesc.of(ConstantDescs.CD_char));
+                    cb.labelBinding(compare);
+
+                    cb.ldc(integerLabel);
+                    cb.if_icmpne(next);
+                } else if ((element.caseLabel() instanceof Long ||
+                        element.caseLabel() instanceof Float ||
+                        element.caseLabel() instanceof Double ||
+                        element.caseLabel() instanceof Boolean)) {
+                    if (element.caseLabel() instanceof Boolean c) {
+                        cb.constantInstruction(c ? 1 : 0);
+                    } else {
+                        cb.constantInstruction((ConstantDesc) element.caseLabel());
+                    }
+                    cb.invokestatic(element.caseLabel().getClass().describeConstable().orElseThrow(),
+                            "valueOf",
+                            MethodTypeDesc.of(element.caseLabel().getClass().describeConstable().orElseThrow(),
+                                    Wrapper.asPrimitiveType(element.caseLabel().getClass()).describeConstable().orElseThrow()));
+                    cb.aload(SELECTOR_OBJ);
+                    cb.invokevirtual(ConstantDescs.CD_Object,
+                            "equals",
+                            MethodTypeDesc.of(ConstantDescs.CD_boolean,
+                                    ConstantDescs.CD_Object));
+                    cb.ifeq(next);
+                } else {
+                    throw new InternalError("Unsupported label type: " +
+                            element.caseLabel().getClass());
+                }
+                cb.constantInstruction(idx);
+                cb.ireturn();
+            }
+            cb.labelBinding(dflt);
+            cb.constantInstruction(cases.size());
+            cb.ireturn();
+        };
+    }
+
+    /*
+     * Construct the method handle that represents the method int typeSwitch(Object, int, BiPredicate, List)
+     */
+    private static MethodHandle generateTypeSwitch(MethodHandles.Lookup caller, Class<?> selectorType, Object[] labelConstants) {
         List<EnumDesc<?>> enumDescs = new ArrayList<>();
         List<Class<?>> extraClassLabels = new ArrayList<>();
 
-        byte[] classBytes = ClassFile.of().build(ClassDesc.of(typeSwitchClassName(caller.lookupClass())), clb -> {
-            clb.withFlags(AccessFlag.FINAL, AccessFlag.SUPER, AccessFlag.SYNTHETIC)
-               .withMethodBody("typeSwitch",
-                               TYPES_SWITCH_DESCRIPTOR,
-                               ClassFile.ACC_FINAL | ClassFile.ACC_PUBLIC | ClassFile.ACC_STATIC,
-                               cb -> {
-                    cb.aload(0);
-                    Label nonNullLabel = cb.newLabel();
-                    cb.if_nonnull(nonNullLabel);
-                    cb.iconst_m1();
-                    cb.ireturn();
-                    cb.labelBinding(nonNullLabel);
-                    if (labels.length == 0) {
-                        cb.constantInstruction(0)
-                          .ireturn();
-                        return ;
-                    }
-                    cb.iload(1);
-                    Label dflt = cb.newLabel();
-                    record Element(Label target, Label next, Object caseLabel) {}
-                    List<Element> cases = new ArrayList<>();
-                    List<SwitchCase> switchCases = new ArrayList<>();
-                    Object lastLabel = null;
-                    for (int idx = labels.length - 1; idx >= 0; idx--) {
-                        Object currentLabel = labels[idx];
-                        Label target = cb.newLabel();
-                        Label next;
-                        if (lastLabel == null) {
-                            next = dflt;
-                        } else if (lastLabel.equals(currentLabel)) {
-                            next = cases.getLast().next();
-                        } else {
-                            next = cases.getLast().target();
-                        }
-                        lastLabel = currentLabel;
-                        cases.add(new Element(target, next, currentLabel));
-                        switchCases.add(SwitchCase.of(idx, target));
-                    }
-                    cases = cases.reversed();
-                    switchCases = switchCases.reversed();
-                    cb.tableswitch(0, labels.length - 1, dflt, switchCases);
-                    for (int idx = 0; idx < cases.size(); idx++) {
-                        Element element = cases.get(idx);
-                        Label next = element.next();
-                        cb.labelBinding(element.target());
-                        if (element.caseLabel() instanceof Class<?> classLabel) {
-                            if (unconditionalExactnessCheck(selectorType, classLabel)) {
-                                //nothing - unconditionally use this case
-                            } else if (classLabel.isPrimitive()) {
-                                if (!selectorType.isPrimitive() && !Wrapper.isWrapperNumericOrBooleanType(selectorType)) {
-                                    // Object o = ...
-                                    // o instanceof Wrapped(float)
-                                    cb.aload(0);
-                                    cb.instanceof_(Wrapper.forBasicType(classLabel)
-                                                          .wrapperType()
-                                                          .describeConstable()
-                                                          .orElseThrow());
-                                    cb.ifeq(next);
-                                } else if (!unconditionalExactnessCheck(Wrapper.asPrimitiveType(selectorType), classLabel)) {
-                                    // Integer i = ... or int i = ...
-                                    // o instanceof float
-                                    Label notNumber = cb.newLabel();
-                                    cb.aload(0);
-                                    cb.instanceof_(ConstantDescs.CD_Number);
-                                    if (selectorType == long.class || selectorType == float.class || selectorType == double.class) {
-                                        cb.ifeq(next);
-                                    } else {
-                                        cb.ifeq(notNumber);
-                                    }
-                                    cb.aload(0);
-                                    cb.checkcast(ConstantDescs.CD_Number);
-                                    if (selectorType == long.class) {
-                                        cb.invokevirtual(ConstantDescs.CD_Number,
-                                                     "longValue",
-                                                     MethodTypeDesc.of(ConstantDescs.CD_long));
-                                    } else if (selectorType == float.class) {
-                                        cb.invokevirtual(ConstantDescs.CD_Number,
-                                                     "floatValue",
-                                                     MethodTypeDesc.of(ConstantDescs.CD_float));
-                                    } else if (selectorType == double.class) {
-                                        cb.invokevirtual(ConstantDescs.CD_Number,
-                                                     "doubleValue",
-                                                     MethodTypeDesc.of(ConstantDescs.CD_double));
-                                    } else {
-                                        Label compare = cb.newLabel();
-                                        cb.invokevirtual(ConstantDescs.CD_Number,
-                                                         "intValue",
-                                                         MethodTypeDesc.of(ConstantDescs.CD_int));
-                                        cb.goto_(compare);
-                                        cb.labelBinding(notNumber);
-                                        cb.aload(0);
-                                        cb.instanceof_(ConstantDescs.CD_Character);
-                                        cb.ifeq(next);
-                                        cb.aload(0);
-                                        cb.checkcast(ConstantDescs.CD_Character);
-                                        cb.invokevirtual(ConstantDescs.CD_Character,
-                                                         "charValue",
-                                                         MethodTypeDesc.of(ConstantDescs.CD_char));
-                                        cb.labelBinding(compare);
-                                    }
-
-                                    TypePairs typePair = TypePairs.of(Wrapper.asPrimitiveType(selectorType), classLabel);
-                                    String methodName = typePairToName.get(typePair);
-                                    cb.invokestatic(ExactConversionsSupport.class.describeConstable().orElseThrow(),
-                                                    methodName,
-                                                    MethodTypeDesc.of(ConstantDescs.CD_boolean, typePair.from.describeConstable().orElseThrow()));
-                                    cb.ifeq(next);
-                                }
-                            } else {
-                                Optional<ClassDesc> classLabelConstableOpt = classLabel.describeConstable();
-                                if (classLabelConstableOpt.isPresent()) {
-                                    cb.aload(0);
-                                    cb.instanceof_(classLabelConstableOpt.orElseThrow());
-                                    cb.ifeq(next);
-                                } else {
-                                    cb.aload(3);
-                                    cb.constantInstruction(extraClassLabels.size());
-                                    cb.invokeinterface(ConstantDescs.CD_List,
-                                                       "get",
-                                                       MethodTypeDesc.of(ConstantDescs.CD_Object,
-                                                                         ConstantDescs.CD_int));
-                                    cb.checkcast(ConstantDescs.CD_Class);
-                                    cb.aload(0);
-                                    cb.invokevirtual(ConstantDescs.CD_Class,
-                                                     "isInstance",
-                                                     MethodTypeDesc.of(ConstantDescs.CD_boolean,
-                                                                       ConstantDescs.CD_Object));
-                                    cb.ifeq(next);
-                                    extraClassLabels.add(classLabel);
-                                }
-                            }
-                        } else if (element.caseLabel() instanceof EnumDesc<?> enumLabel) {
-                            int enumIdx = enumDescs.size();
-                            enumDescs.add(enumLabel);
-                            cb.aload(2);
-                            cb.constantInstruction(enumIdx);
-                            cb.invokestatic(ConstantDescs.CD_Integer,
-                                            "valueOf",
-                                            MethodTypeDesc.of(ConstantDescs.CD_Integer,
-                                                              ConstantDescs.CD_int));
-                            cb.aload(0);
-                            cb.invokeinterface(BiPredicate.class.describeConstable().orElseThrow(),
-                                               "test",
-                                               MethodTypeDesc.of(ConstantDescs.CD_boolean,
-                                                                 ConstantDescs.CD_Object,
-                                                                 ConstantDescs.CD_Object));
-                            cb.ifeq(next);
-                        } else if (element.caseLabel() instanceof String stringLabel) {
-                            cb.ldc(stringLabel);
-                            cb.aload(0);
-                            cb.invokevirtual(ConstantDescs.CD_Object,
-                                             "equals",
-                                             MethodTypeDesc.of(ConstantDescs.CD_boolean,
-                                                               ConstantDescs.CD_Object));
-                            cb.ifeq(next);
-                        } else if (element.caseLabel() instanceof Integer integerLabel) {
-                            Label compare = cb.newLabel();
-                            Label notNumber = cb.newLabel();
-                            cb.aload(0);
-                            cb.instanceof_(ConstantDescs.CD_Number);
-                            cb.ifeq(notNumber);
-                            cb.aload(0);
-                            cb.checkcast(ConstantDescs.CD_Number);
-                            cb.invokevirtual(ConstantDescs.CD_Number,
-                                             "intValue",
-                                             MethodTypeDesc.of(ConstantDescs.CD_int));
-                            cb.goto_(compare);
-                            cb.labelBinding(notNumber);
-                            cb.aload(0);
-                            cb.instanceof_(ConstantDescs.CD_Character);
-                            cb.ifeq(next);
-                            cb.aload(0);
-                            cb.checkcast(ConstantDescs.CD_Character);
-                            cb.invokevirtual(ConstantDescs.CD_Character,
-                                             "charValue",
-                                             MethodTypeDesc.of(ConstantDescs.CD_char));
-                            cb.labelBinding(compare);
-
-                            cb.ldc(integerLabel);
-                            cb.if_icmpne(next);
-                        } else if ((element.caseLabel() instanceof Long ||
-                                    element.caseLabel() instanceof Float ||
-                                    element.caseLabel() instanceof Double ||
-                                    element.caseLabel() instanceof Boolean)) {
-                            //TODO: should call equals on the constant, not on the selector, check
-                            if (element.caseLabel() instanceof Boolean c) {
-                                cb.constantInstruction(c ? 1 : 0);
-                            } else {
-                                cb.constantInstruction((ConstantDesc) element.caseLabel());
-                            }
-                            cb.invokestatic(element.caseLabel().getClass().describeConstable().orElseThrow(),
-                                            "valueOf",
-                                            MethodTypeDesc.of(element.caseLabel().getClass().describeConstable().orElseThrow(),
-                                                              Wrapper.asPrimitiveType(element.caseLabel().getClass()).describeConstable().orElseThrow()));
-                            cb.aload(0);
-                            cb.invokevirtual(ConstantDescs.CD_Object,
-                                             "equals",
-                                             MethodTypeDesc.of(ConstantDescs.CD_boolean,
-                                                               ConstantDescs.CD_Object));
-                            cb.ifeq(next);
-                        } else {
-                            throw new InternalError("Unsupported label type: " +
-                                                    element.caseLabel().getClass());
-                        }
-                        cb.constantInstruction(idx);
-                        cb.ireturn();
-                    }
-                    cb.labelBinding(dflt);
-                    cb.constantInstruction(cases.size());
-                    cb.ireturn();
-                });
+        byte[] classBytes = ClassFile.of().build(ClassDesc.of(typeSwitchClassName(caller.lookupClass())),
+                clb -> {
+                    clb.withFlags(AccessFlag.FINAL, AccessFlag.SUPER, AccessFlag.SYNTHETIC)
+                       .withMethodBody("typeSwitch",
+                                       TYPES_SWITCH_DESCRIPTOR,
+                                       ClassFile.ACC_FINAL | ClassFile.ACC_PUBLIC | ClassFile.ACC_STATIC,
+                                       generateTypeSwitchSkeleton(selectorType, labelConstants, enumDescs, extraClassLabels));
         });
+
         try {
             // this class is linked at the indy callsite; so define a hidden nestmate
             MethodHandles.Lookup lookup;

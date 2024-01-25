@@ -122,6 +122,15 @@ public class SwitchBootstrapsTest {
         testType("", 3, 3, String.class, String.class, String.class, String.class, String.class);
         testType("", 4, 4, String.class, String.class, String.class, String.class, String.class);
         testType("", 0, 0);
+        testType(new Object() {
+            @Override
+            public boolean equals(Object obj) {
+                if (obj instanceof Long i) {
+                    return i == 1;
+                }
+                return super.equals(obj);
+            }
+        }, 0, 1, 1L);
     }
 
     public void testEnums() throws Throwable {
