@@ -109,7 +109,7 @@ DEFINE_TEST(test_double_free, "header canary")
 ///////
 
 static void test_invalid_block_address() {
-  // very low, like the result of an overflow or of accessing a NULL this pointer
+  // very low, like the result of an overflow or of accessing a nullptr this pointer
   os::free((void*)0x100);
 }
 DEFINE_TEST(test_invalid_block_address, "invalid block address")

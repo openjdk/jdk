@@ -89,7 +89,7 @@ public:
 
   // Allocate a chunk but expect it to fail.
   void alloc_chunk_expect_failure(chunklevel_t preferred_level, chunklevel_t max_level, size_t min_committed_size) {
-    Metachunk* c = NULL;
+    Metachunk* c = nullptr;
     checked_alloc_chunk_0(&c, preferred_level, max_level, min_committed_size);
     ASSERT_NULL(c);
   }
