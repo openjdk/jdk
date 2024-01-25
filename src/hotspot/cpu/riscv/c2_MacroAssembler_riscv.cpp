@@ -1829,6 +1829,49 @@ void C2_MacroAssembler::float16_to_float(FloatRegister dst, Register src, Regist
   bind(stub->continuation());
 }
 
+static void float_to_float16_slow_path(C2_MacroAssembler& masm, C2GeneralStub<Register, FloatRegister, Register>& stub) {
+#define __ masm.
+  Register dst = stub.data<0>();
+  FloatRegister src = stub.data<1>();
+  Register tmp = stub.data<2>();
+  __ bind(stub.entry());
+
+  __ fmv_x_w(dst, src);
+
+  // preserve the payloads of non-canonical NaNs.
+  __ srai(dst, dst, 13);
+  // preserve the sign bit.
+  __ srai(tmp, dst, 13);
+  __ slli(tmp, tmp, 10);
+  __ mv(t0, 0x3ff);
+  __ orr(tmp, tmp, t0);
+
+  // get the result by merging sign bit and payloads of preserved non-canonical NaNs.
+  __ andr(dst, dst, tmp);
+
+  __ j(stub.continuation());
+#undef __
+}
+
+// j.l.Float.floatToFloat16
+void C2_MacroAssembler::float_to_float16(Register dst, FloatRegister src, FloatRegister ftmp, Register xtmp) {
+  auto stub = C2CodeStub::make<Register, FloatRegister, Register>(dst, src, xtmp, 130, float_to_float16_slow_path);
+
+  // in riscv, NaN needs a special process as fcvt does not work in that case.
+
+  // check whether it's a NaN.
+  // replace fclass with feq as performance optimization.
+  feq_s(t0, src, src);
+  // jump to stub processing NaN cases.
+  beqz(t0, stub->entry());
+
+  // non-NaN cases, just use built-in instructions.
+  fcvt_h_s(ftmp, src);
+  fmv_x_h(dst, ftmp);
+
+  bind(stub->continuation());
+}
+
 void C2_MacroAssembler::signum_fp_v(VectorRegister dst, VectorRegister one, BasicType bt, int vlen) {
   vsetvli_helper(bt, vlen);
 

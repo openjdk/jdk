@@ -364,13 +364,11 @@ public:
   GrowableArray<MemoryPool*> memory_pools() override;
 
   DefNewGeneration* young_gen() const {
-    assert(_young_gen->kind() == Generation::DefNew, "Wrong generation type");
-    return static_cast<DefNewGeneration*>(_young_gen);
+    return _young_gen;
   }
 
   TenuredGeneration* old_gen() const {
-    assert(_old_gen->kind() == Generation::MarkSweepCompact, "Wrong generation type");
-    return static_cast<TenuredGeneration*>(_old_gen);
+    return _old_gen;
   }
 
   // Apply "cur->do_oop" or "older->do_oop" to all the oops in objects

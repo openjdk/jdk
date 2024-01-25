@@ -213,12 +213,6 @@
   declare_constant(CollectedHeap::Parallel)                                 \
   declare_constant(CollectedHeap::G1)                                       \
                                                                             \
-  /* constants from Generation::Name enum */                                \
-                                                                            \
-  declare_constant(Generation::DefNew)                                      \
-  declare_constant(Generation::MarkSweepCompact)                            \
-  declare_constant(Generation::Other)                                       \
-                                                                            \
   declare_constant(Generation::LogOfGenGrain)                               \
   declare_constant(Generation::GenGrain)                                    \
 
