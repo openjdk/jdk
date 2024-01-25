@@ -723,6 +723,12 @@ void DefNewGeneration::adjust_desired_tenuring_threshold() {
   age_table()->print_age_table(_tenuring_threshold);
 }
 
+bool DefNewGeneration::block_is_obj(const HeapWord* addr) const {
+  return eden()->is_in(addr)
+      || from()->is_in(addr)
+      || to()  ->is_in(addr);
+}
+
 void DefNewGeneration::collect(bool   full,
                                bool   clear_all_soft_refs,
                                size_t size,

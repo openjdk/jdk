@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -194,7 +194,7 @@ oop JavaThread::scopedValueCache() const {
 }
 
 void JavaThread::set_scopedValueCache(oop p) {
-  if (_scopedValueCache.ptr_raw() != nullptr) { // i.e. if the OopHandle has been allocated
+  if (!_scopedValueCache.is_empty()) { // i.e. if the OopHandle has been allocated
     _scopedValueCache.replace(p);
   } else {
     assert(p == nullptr, "not yet initialized");
