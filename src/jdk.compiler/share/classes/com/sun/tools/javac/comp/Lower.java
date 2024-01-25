@@ -2960,7 +2960,7 @@ public class Lower extends TreeTranslator {
      *
      * More rewritings:
      * <ul>
-     * <li>If the `instanceof` check is unconditionally exact rewrite to true.</li>
+     * <li>If the {@code instanceof} check is unconditionally exact rewrite to true.</li>
      * <li>If expression type is {@code Byte}, {@code Short}, {@code Integer}, ..., an
      *     unboxing conversion followed by a widening primitive conversion.</li>
      * <li>If expression type is a supertype: {@code Number}, a narrowing reference
