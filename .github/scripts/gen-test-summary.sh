@@ -32,7 +32,7 @@ results_dir=build/run-test-prebuilt/test-results/$test_suite_name/text
 
 if [[ ! -f build/run-test-prebuilt/make-support/exit-with-error ]]; then
   # There were no failures, exit now
-  exit
+  exit 0
 fi
 
 failures=$(sed -E -e 's/(.*)\.(java|sh)/\1/' -e '/^#/d' $results_dir/newfailures.txt 2> /dev/null || true)
@@ -43,7 +43,7 @@ error_count=$(echo $errors | wc -w || true)
 if [[ "$failures" = "" && "$errors" = "" ]]; then
   # We know something went wrong, but not what
   echo 'error-message=Unspecified test suite failure. Please see log for job for details.' >> $GITHUB_OUTPUT
-  exit 0
+  exit 1
 fi
 
 echo 'failure=true' >> $GITHUB_OUTPUT
@@ -68,3 +68,6 @@ if [[ "$errors" != "" ]]; then
     echo "* [$test](#user-content-$anchor)"
   done >> $GITHUB_STEP_SUMMARY
 fi
+
+# We know something went wrong
+exit 1
