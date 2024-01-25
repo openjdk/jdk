@@ -42,14 +42,14 @@ import sun.security.util.*;
 import sun.security.x509.*;
 
 /**
- * This class provides the keystores implementation referred to as
+ * This class provides the keystore implementations referred to as
  * "KeychainStore" and "KeychainStore-ROOT".
- * It uses the current user's and system root keychains accordingly
- * as its backing storage, and does NOT support a file-based
+ * They use the current user's and system root keychains accordingly
+ * as their backing storage, and does NOT support a file-based
  * implementation.
  */
 
-abstract class KeychainStore extends KeyStoreSpi {
+abstract sealed class KeychainStore extends KeyStoreSpi {
 
     /**
      * Current user's keychain
@@ -207,14 +207,6 @@ abstract class KeychainStore extends KeyStoreSpi {
      */
     private KeychainStore(String name) {
         this.storeName = name;
-    }
-
-    /**
-     * Returns the name of the keystore.
-     */
-    private String getName()
-    {
-        return storeName;
     }
 
     /**
@@ -543,7 +535,6 @@ abstract class KeychainStore extends KeyStoreSpi {
         permissionCheck();
 
         synchronized(entries) {
-
             // key must be encoded as EncryptedPrivateKeyInfo as defined in
             // PKCS#8
             KeyEntry entry = new KeyEntry();
@@ -833,7 +824,7 @@ abstract class KeychainStore extends KeyStoreSpi {
             }
 
             entries.clear();
-            _scanKeychain(getName());
+            _scanKeychain(storeName);
             if (debug != null) {
                 debug.println("KeychainStore load entry count: " +
                         entries.size());

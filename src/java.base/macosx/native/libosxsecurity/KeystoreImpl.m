@@ -412,39 +412,71 @@ static void addTrustSettingsToInputTrust(JNIEnv *env, jmethodID jm_listAdd, CFAr
     }
 }
 
-static void addCertificatesToKeystore(JNIEnv *env, jobject keyStore)
-{
+static bool loadTrustSettings(JNIEnv *env,
+                              SecCertificateRef certRef,
+                              SecTrustSettingsDomain domain,
+                              jclass jc_arrayListClass,
+                              jmethodID jm_arrayListCons,
+                              jmethodID jm_listAdd,
+                              jobject *inputTrust) {
+    CFArrayRef trustSettings;
+    // Load trustSettings into inputTrust
+    if (SecTrustSettingsCopyTrustSettings(certRef, domain, &trustSettings) == errSecSuccess && trustSettings != NULL) {
+        if (*inputTrust == NULL) {
+            *inputTrust = (*env)->NewObject(env, jc_arrayListClass, jm_arrayListCons);
+            if (*inputTrust == NULL) {
+                CFRelease(trustSettings);
+                return false;
+            }
+        }
+        addTrustSettingsToInputTrust(env, jm_listAdd, trustSettings, *inputTrust);
+        CFRelease(trustSettings);
+    }
+    return true;
+}
+
+static bool createTrustedCertEntry(JNIEnv *env,  jobject keyStore,
+                              SecCertificateRef certRef,
+                              jmethodID jm_createTrustedCertEntry,
+                              jobject inputTrust) {
+
+    SecKeychainItemRef theItem = (SecKeychainItemRef)certRef;
+    CSSM_DATA currCertificate;
+    OSStatus err = SecCertificateGetData(certRef, &currCertificate);
+    jbyteArray certData = (*env)->NewByteArray(env, currCertificate.Length);
+    if (certData == NULL) {
+        return false;
+    }
+    (*env)->SetByteArrayRegion(env, certData, 0, currCertificate.Length, (jbyte *)currCertificate.Data);
+
+    // Find the label.  It's a 'blob', but we interpret as characters.
+    jstring alias = getLabelFromItem(env, theItem);
+    if (alias == NULL) {
+        return false;
+    }
+
+    // Find the creation date.
+    jlong creationDate = getModDateFromItem(env, theItem);
+
+    // Call back to the Java object to create Java objects corresponding to this security object.
+    jlong nativeRef = ptr_to_jlong(certRef);
+    (*env)->CallVoidMethod(env, keyStore, jm_createTrustedCertEntry, alias, inputTrust, nativeRef, creationDate, certData);
+    if ((*env)->ExceptionCheck(env)) {
+        return false;
+    }
+    return true;
+}
+
+static void addCertificatesToKeystore(JNIEnv *env, jobject keyStore,
+                                        jmethodID jm_createTrustedCertEntry,
+                                        jclass jc_arrayListClass,
+                                        jmethodID jm_arrayListCons,
+                                        jmethodID jm_listAdd) {
     // Search the user keychain list for all X509 certificates.
     SecKeychainSearchRef keychainItemSearch = NULL;
     OSStatus err = SecKeychainSearchCreateFromAttributes(NULL, kSecCertificateItemClass, NULL, &keychainItemSearch);
     SecKeychainItemRef theItem = NULL;
     OSErr searchResult = noErr;
-
-    jclass jc_KeychainStore = (*env)->FindClass(env, "apple/security/KeychainStore");
-    if (jc_KeychainStore == NULL) {
-        goto errOut;
-    }
-
-    jmethodID jm_createTrustedCertEntry = (*env)->GetMethodID(
-            env, jc_KeychainStore, "createTrustedCertEntry", "(Ljava/lang/String;Ljava/util/List;JJ[B)V");
-    if (jm_createTrustedCertEntry == NULL) {
-        goto errOut;
-    }
-
-    jclass jc_arrayListClass = (*env)->FindClass(env, "java/util/ArrayList");
-    if (jc_arrayListClass == NULL) {
-        goto errOut;
-    }
-
-    jmethodID jm_arrayListCons = (*env)->GetMethodID(env, jc_arrayListClass, "<init>", "()V");
-    if (jm_arrayListCons == NULL) {
-        goto errOut;
-    }
-
-    jmethodID jm_listAdd = (*env)->GetMethodID(env, jc_arrayListClass, "add", "(Ljava/lang/Object;)Z");
-    if (jm_listAdd == NULL) {
-        goto errOut;
-    }
 
     do {
         searchResult = SecKeychainSearchCopyNext(keychainItemSearch, &theItem);
@@ -452,51 +484,30 @@ static void addCertificatesToKeystore(JNIEnv *env, jobject keyStore)
         if (searchResult == noErr) {
             // Make a byte array with the DER-encoded contents of the certificate.
             SecCertificateRef certRef = (SecCertificateRef)theItem;
-            CSSM_DATA currCertificate;
-            err = SecCertificateGetData(certRef, &currCertificate);
-            jbyteArray certData = (*env)->NewByteArray(env, currCertificate.Length);
-            if (certData == NULL) {
-                goto errOut;
-            }
-            (*env)->SetByteArrayRegion(env, certData, 0, currCertificate.Length, (jbyte *)currCertificate.Data);
-
-            // Find the label.  It's a 'blob', but we interpret as characters.
-            jstring alias = getLabelFromItem(env, theItem);
-            if (alias == NULL) {
-                goto errOut;
-            }
 
             // See KeychainStore::createTrustedCertEntry for content of inputTrust
             // We load trust settings from domains kSecTrustSettingsDomainUser and kSecTrustSettingsDomainAdmin
             // kSecTrustSettingsDomainSystem is ignored because it seems to only contain data for root certificates
             jobject inputTrust = NULL;
-            CFArrayRef trustSettings = NULL;
-            for (SecTrustSettingsDomain domain = kSecTrustSettingsDomainUser; domain <= kSecTrustSettingsDomainAdmin; domain++) {
-                trustSettings = NULL;
-                // Load user trustSettings into inputTrust
-                if (SecTrustSettingsCopyTrustSettings(certRef, domain, &trustSettings) == errSecSuccess && trustSettings != NULL) {
-                    if(inputTrust == NULL) {
-                        inputTrust = (*env)->NewObject(env, jc_arrayListClass, jm_arrayListCons);
-                    }
-                    if (inputTrust == NULL) {
-                        CFRelease(trustSettings);
-                        goto errOut;
-                    }
-                    addTrustSettingsToInputTrust(env, jm_listAdd, trustSettings, inputTrust);
-                    CFRelease(trustSettings);
-                }
+
+            // Load user trustSettings into inputTrust
+            if (!loadTrustSettings(env, certRef, kSecTrustSettingsDomainUser,
+                                   jc_arrayListClass, jm_arrayListCons, jm_listAdd, &inputTrust)) {
+                goto errOut;
             }
+            // Load admin trustSettings into inputTrust
+            if (!loadTrustSettings(env, certRef, kSecTrustSettingsDomainAdmin,
+                                   jc_arrayListClass, jm_arrayListCons, jm_listAdd, &inputTrust)) {
+                goto errOut;
+            }
+
+            // Only add certificates with trust settings
             if (inputTrust == NULL) {
                 continue;
             }
 
-            // Find the creation date.
-            jlong creationDate = getModDateFromItem(env, theItem);
-
-            // Call back to the Java object to create Java objects corresponding to this security object.
-            jlong nativeRef = ptr_to_jlong(certRef);
-            (*env)->CallVoidMethod(env, keyStore, jm_createTrustedCertEntry, alias, inputTrust, nativeRef, creationDate, certData);
-            if ((*env)->ExceptionCheck(env)) {
+            // Create java object for certificate with trust settings
+            if (!createTrustedCertEntry(env, keyStore, certRef, jm_createTrustedCertEntry, inputTrust)) {
                 goto errOut;
             }
         }
@@ -508,94 +519,51 @@ errOut:
     }
 }
 
-static void addCertificatesToKeystoreRoot(JNIEnv *env, jobject keyStore)
-{
-    OSStatus err;
-    SecKeychainItemRef theItem = NULL;
+static void addCertificatesToKeystoreRoot(JNIEnv *env, jobject keyStore,
+                                        jmethodID jm_createTrustedCertEntry,
+                                        jclass jc_arrayListClass,
+                                        jmethodID jm_arrayListCons,
+                                        jmethodID jm_listAdd) {
     CFArrayRef currAnchors = NULL;
 
-    jclass jc_KeychainStore = (*env)->FindClass(env, "apple/security/KeychainStore");
-    if (jc_KeychainStore == NULL) {
-        goto errOut;
-    }
-
-    jmethodID jm_createTrustedCertEntry = (*env)->GetMethodID(
-            env, jc_KeychainStore, "createTrustedCertEntry", "(Ljava/lang/String;Ljava/util/List;JJ[B)V");
-    if (jm_createTrustedCertEntry == NULL) {
-        goto errOut;
-    }
-
-    jclass jc_arrayListClass = (*env)->FindClass(env, "java/util/ArrayList");
-    if (jc_arrayListClass == NULL) {
-        goto errOut;
-    }
-
-    jmethodID jm_arrayListCons = (*env)->GetMethodID(env, jc_arrayListClass, "<init>", "()V");
-    if (jm_arrayListCons == NULL) {
-        goto errOut;
-    }
-
-    jmethodID jm_listAdd = (*env)->GetMethodID(env, jc_arrayListClass, "add", "(Ljava/lang/Object;)Z");
-    if (jm_listAdd == NULL) {
-        goto errOut;
-    }
-
     // Read Trust Anchors
-    if(SecTrustCopyAnchorCertificates(&currAnchors) == errSecSuccess) {
+    if (SecTrustCopyAnchorCertificates(&currAnchors) == errSecSuccess) {
         CFIndex nAnchors = CFArrayGetCount(currAnchors);
 
         for (CFIndex i = 0; i < nAnchors; i++) {
             SecCertificateRef certRef = (SecCertificateRef)CFArrayGetValueAtIndex(currAnchors, i);
-            CSSM_DATA currCertificate;
-            err = SecCertificateGetData(certRef, &currCertificate);
-            jbyteArray certData = (*env)->NewByteArray(env, currCertificate.Length);
-            if (certData == NULL) {
-                goto errOut;
-            }
-            (*env)->SetByteArrayRegion(env, certData, 0, currCertificate.Length, (jbyte *)currCertificate.Data);
-
-            // Find the label.  It's a 'blob', but we interpret as characters.
-            jstring alias = getLabelFromItem(env, (SecKeychainItemRef)certRef);
-            if (alias == NULL) {
-                goto errOut;
-            }
 
             // See KeychainStore::createTrustedCertEntry for content of inputTrust for system root certs
             // This time we load trust settings from domains kSecTrustSettingsDomainUser,
             // kSecTrustSettingsDomainAdmin and kSecTrustSettingsDomainSystem
             jobject inputTrust = NULL;
-            CFArrayRef trustSettings = NULL;
-            for (SecTrustSettingsDomain domain = kSecTrustSettingsDomainUser; domain <= kSecTrustSettingsDomainSystem; domain++) {
-                trustSettings = NULL;
-                // Load user trustSettings into inputTrust
-                if (SecTrustSettingsCopyTrustSettings(certRef, domain, &trustSettings) == errSecSuccess && trustSettings != NULL) {
-                    if(inputTrust == NULL) {
-                        inputTrust = (*env)->NewObject(env, jc_arrayListClass, jm_arrayListCons);
-                    }
-                    if (inputTrust == NULL) {
-                        CFRelease(trustSettings);
-                        goto errOut;
-                    }
-                    addTrustSettingsToInputTrust(env, jm_listAdd, trustSettings, inputTrust);
-                    CFRelease(trustSettings);
-                }
+
+            // Load user trustSettings into inputTrust
+            if (!loadTrustSettings(env, certRef, kSecTrustSettingsDomainUser,
+                                   jc_arrayListClass, jm_arrayListCons, jm_listAdd, &inputTrust)) {
+                goto errOut;
             }
+            // Load admin trustSettings into inputTrust
+            if (!loadTrustSettings(env, certRef, kSecTrustSettingsDomainAdmin,
+                                   jc_arrayListClass, jm_arrayListCons, jm_listAdd, &inputTrust)) {
+                goto errOut;
+            }
+            // Load system trustSettings into inputTrust
+            if (!loadTrustSettings(env, certRef, kSecTrustSettingsDomainSystem,
+                                   jc_arrayListClass, jm_arrayListCons, jm_listAdd, &inputTrust)) {
+                goto errOut;
+            }
+
             if (inputTrust == NULL) {
                 continue;
             }
 
-            // Find the creation date.
-            jlong creationDate = getModDateFromItem(env, (SecKeychainItemRef)certRef);
-
-            // Call back to the Java object to create Java objects corresponding to this security object.
-            jlong nativeRef = ptr_to_jlong(certRef);
-            (*env)->CallVoidMethod(env, keyStore, jm_createTrustedCertEntry, alias, inputTrust, nativeRef, creationDate, certData);
-            if ((*env)->ExceptionCheck(env)) {
+            // Create java object for certificate with trust settings
+            if (!createTrustedCertEntry(env, keyStore, certRef, jm_createTrustedCertEntry, inputTrust)) {
                 goto errOut;
             }
             CFRetain(certRef);
         }
-
     }
 
 errOut:
@@ -690,12 +658,46 @@ JNIEXPORT void JNICALL Java_apple_security_KeychainStore__1scanKeychain
     jboolean isCopy;
     const char *name_utf = (*env)->GetStringUTFChars(env, name, &isCopy);
     if (name_utf != NULL) {
+        jclass jc_KeychainStore = (*env)->FindClass(env, "apple/security/KeychainStore");
+        if (jc_KeychainStore == NULL) {
+            return;
+        }
+
+        jmethodID jm_createTrustedCertEntry = (*env)->GetMethodID(
+                env, jc_KeychainStore, "createTrustedCertEntry", "(Ljava/lang/String;Ljava/util/List;JJ[B)V");
+        if (jm_createTrustedCertEntry == NULL) {
+            return;
+        }
+
+        jclass jc_arrayListClass = (*env)->FindClass(env, "java/util/ArrayList");
+        if (jc_arrayListClass == NULL) {
+            return;
+        }
+
+        jmethodID jm_arrayListCons = (*env)->GetMethodID(env, jc_arrayListClass, "<init>", "()V");
+        if (jm_arrayListCons == NULL) {
+            return;
+        }
+
+        jmethodID jm_listAdd = (*env)->GetMethodID(env, jc_arrayListClass, "add", "(Ljava/lang/Object;)Z");
+        if (jm_listAdd == NULL) {
+            return;
+        }
+
         if (strcmp(name_utf, "ROOT") == 0) {
             // Scan Trusted Anchors keychain for trusted certificates.
-            addCertificatesToKeystoreRoot(env, this);
+            addCertificatesToKeystoreRoot(env, this,
+                                          jm_createTrustedCertEntry,
+                                          jc_arrayListClass,
+                                          jm_arrayListCons,
+                                          jm_listAdd);
         } else {
             // Scan current keychain for trusted certificates.
-            addCertificatesToKeystore(env, this);
+            addCertificatesToKeystore(env, this,
+                                      jm_createTrustedCertEntry,
+                                      jc_arrayListClass,
+                                      jm_arrayListCons,
+                                      jm_listAdd);
         }
     }
 }

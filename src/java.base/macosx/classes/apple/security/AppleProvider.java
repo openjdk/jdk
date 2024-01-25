@@ -84,9 +84,9 @@ public final class AppleProvider extends Provider {
         AccessController.doPrivileged(new PrivilegedAction<Void>() {
             public Void run() {
                 putService(new ProviderService(p, "KeyStore",
-                           "KeychainStore", "apple.security.KeychainStore.USER"));
+                           "KeychainStore", "apple.security.KeychainStore$USER"));
                 putService(new ProviderService(p, "KeyStore",
-                           "KeychainStore-ROOT", "apple.security.KeychainStore.ROOT"));
+                           "KeychainStore-ROOT", "apple.security.KeychainStore$ROOT"));
                 return null;
             }
         });
