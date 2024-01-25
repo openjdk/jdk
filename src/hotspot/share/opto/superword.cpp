@@ -2954,27 +2954,55 @@ void VTransform::adjust_pre_loop_limit_to_align_main_loop_vectors() {
   TRACE_ALIGN_VECTOR_NODE(mask_AW);
   TRACE_ALIGN_VECTOR_NODE(adjust_pre_iter);
 
-  // 4: Compute (3a, b):
+  // 4: The computation of the new pre-loop limit could overflow (for 3a) or
+  //    underflow (for 3b) the int range. This is problematic in combination
+  //    with Range Check Elimination (RCE), which determines a "safe" range
+  //    where a RangeCheck will always succeed. RCE adjusts the pre-loop limit
+  //    such that we only enter the main-loop once we have reached the "safe"
+  //    range, and adjusts the main-loop limit so that we exit the main-loop
+  //    before we leave the "safe" range. After RCE, the range of the main-loop
+  //    can only be safely narrowed, and should never be widened. Hence, the
+  //    pre-loop limit can only be increased (for stride > 0), but an add
+  //    overflow might decrease it, or decreased (for stride < 0), but a sub
+  //    underflow might increase it. To prevent that, we perform the Sub / Add
+  //    and Max / Min with long operations.
+  old_limit       = new ConvI2LNode(old_limit);
+  orig_limit      = new ConvI2LNode(orig_limit);
+  adjust_pre_iter = new ConvI2LNode(adjust_pre_iter);
+  phase()->register_new_node(old_limit, pre_ctrl);
+  phase()->register_new_node(orig_limit, pre_ctrl);
+  phase()->register_new_node(adjust_pre_iter, pre_ctrl);
+  TRACE_ALIGN_VECTOR_NODE(old_limit);
+  TRACE_ALIGN_VECTOR_NODE(orig_limit);
+  TRACE_ALIGN_VECTOR_NODE(adjust_pre_iter);
+
+  // 5: Compute (3a, b):
   //    new_limit = old_limit + adjust_pre_iter     (stride > 0)
   //    new_limit = old_limit - adjust_pre_iter     (stride < 0)
+  //
   Node* new_limit = nullptr;
   if (stride < 0) {
-    new_limit = new SubINode(old_limit, adjust_pre_iter);
+    new_limit = new SubLNode(old_limit, adjust_pre_iter);
   } else {
-    new_limit = new AddINode(old_limit, adjust_pre_iter);
+    new_limit = new AddLNode(old_limit, adjust_pre_iter);
   }
   phase()->register_new_node(new_limit, pre_ctrl);
   TRACE_ALIGN_VECTOR_NODE(new_limit);
 
-  // 5: Compute (15a, b):
+  // 6: Compute (15a, b):
   //    Prevent pre-loop from going past the original limit of the loop.
   Node* constrained_limit =
-    (stride > 0) ? (Node*) new MinINode(new_limit, orig_limit)
-                 : (Node*) new MaxINode(new_limit, orig_limit);
+    (stride > 0) ? (Node*) new MinLNode(phase()->C, new_limit, orig_limit)
+                 : (Node*) new MaxLNode(phase()->C, new_limit, orig_limit);
   phase()->register_new_node(constrained_limit, pre_ctrl);
   TRACE_ALIGN_VECTOR_NODE(constrained_limit);
 
-  // 6: Hack the pre-loop limit
+  // 7: We know that the result is in the int range, there is never truncation
+  constrained_limit = new ConvL2INode(constrained_limit);
+  phase()->register_new_node(constrained_limit, pre_ctrl);
+  TRACE_ALIGN_VECTOR_NODE(constrained_limit);
+
+  // 8: Hack the pre-loop limit
   igvn().replace_input_of(pre_opaq, 1, constrained_limit);
 }
 
