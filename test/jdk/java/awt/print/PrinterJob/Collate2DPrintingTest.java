@@ -71,7 +71,6 @@ public class Collate2DPrintingTest
         butPanel.add(printMerlin);
         print2D.addActionListener(this);
         printMerlin.addActionListener(this);
-        
         add("South", butPanel);
 
         defService = PrintServiceLookup.lookupDefaultPrintService();
