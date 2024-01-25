@@ -60,7 +60,7 @@ public class TestOverrides extends JavacTestingAbstractProcessor {
             boolean expectedOverrideResult = method.getAnnotation(OverrideExpected.class).value();
             if (expectedOverrideResult !=
                 elements.overrides(method, findMethod(methodName, objectElt), objectInterfaceElt ) ) {
-                throw new RuntimeException("Unexpected overrding relation found for " + method);
+                throw new RuntimeException("Unexpected overriding relation found for " + method);
             }
 
             if (!elementSeen) {
@@ -85,7 +85,7 @@ public class TestOverrides extends JavacTestingAbstractProcessor {
 }
 
 /**
- * Interface that has methods override-equivalent to methods on
+ * Interface that has methods override-equivalent to methods of
  * java.lang.Object.
  */
 interface ObjectInterface {
