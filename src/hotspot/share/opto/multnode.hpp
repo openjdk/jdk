@@ -100,8 +100,8 @@ public:
   //                                             other_proj->[region->..]call_uct"
   // null otherwise
   CallStaticJavaNode* is_uncommon_trap_if_pattern(Deoptimization::DeoptReason reason = Deoptimization::Reason_none) const;
-  // Return true if this projection doesn't end with an uncommon trap but, even though several cfg paths are branching out
-  // from here, they all end with an uncommon trap
+  // Check if all cfg paths lead to some (possibly multiple different) uncommon trap or Halt node.
+  // Traverse Region, If, IfProj nodes.
   bool is_multi_uncommon_trap_proj();
   bool is_multi_uncommon_trap_if_pattern();
 

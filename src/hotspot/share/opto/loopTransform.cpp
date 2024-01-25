@@ -499,7 +499,7 @@ uint IdealLoopTree::estimate_peeling(PhaseIdealLoop* phase, bool scoped_value_on
       if (!is_member(phase->get_loop(ctrl)) && is_loop_exit(test)) {
         return estimate;    // Found reason to peel!
       }
-    } else if (test->Opcode() == Op_ScopedValueGetResult && !is_member(phase->get_loop(phase->get_ctrl(((ScopedValueGetResultNode*)test)->scoped_value())))) {
+    } else if (test->Opcode() == Op_ScopedValueGetResult && !is_member(phase->get_loop(phase->get_ctrl((test->as_ScopedValueGetResult())->scoped_value())))) {
       return estimate;
     }
     // Walk up dominators to loop _head looking for test which is executed on

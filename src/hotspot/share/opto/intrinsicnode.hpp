@@ -344,6 +344,7 @@ class ScopedValueGetLoadFromCacheNode : public Node {
 public:
   ScopedValueGetLoadFromCacheNode(Compile* C, Node* c, Node* hits_in_cache)
           : Node(c, hits_in_cache) {
+    init_class_id(Class_ScopedValueGetLoadFromCache);
   }
 
   Node* scoped_value() const;

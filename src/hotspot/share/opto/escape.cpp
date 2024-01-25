@@ -1105,12 +1105,12 @@ void ConnectionGraph::add_node_to_connection_graph(Node *n, Unique_Node_List *de
       break;
     }
     case Op_ScopedValueGetLoadFromCache: {
-      ScopedValueGetLoadFromCacheNode* get_from_cache = (ScopedValueGetLoadFromCacheNode*)n;
-      map_ideal_node(get_from_cache, phantom_obj);
+      ScopedValueGetLoadFromCacheNode* load_from_cache = n->as_ScopedValueGetLoadFromCache();
+      map_ideal_node(load_from_cache, phantom_obj);
       break;
     }
     case Op_ScopedValueGetResult: {
-      ScopedValueGetResultNode* get_result = (ScopedValueGetResultNode*)n;
+      ScopedValueGetResultNode* get_result = n->as_ScopedValueGetResult();
       add_local_var_and_edge(get_result, PointsToNode::NoEscape, get_result->result_in(), delayed_worklist);
       break;
     }
@@ -1285,7 +1285,7 @@ void ConnectionGraph::add_final_edges(Node *n) {
       break;
     }
     case Op_ScopedValueGetResult: {
-      ScopedValueGetResultNode* get_result = (ScopedValueGetResultNode*)n;
+      ScopedValueGetResultNode* get_result = n->as_ScopedValueGetResult();
       add_local_var_and_edge(get_result, PointsToNode::NoEscape, get_result->result_in(), nullptr);
       break;
     }

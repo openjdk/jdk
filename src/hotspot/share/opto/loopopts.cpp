@@ -3938,17 +3938,17 @@ bool PhaseIdealLoop::partial_peel( IdealLoopTree *loop, Node_List &old_new ) {
 
 void PhaseIdealLoop::move_scoped_value_nodes_to_not_peel(VectorSet &peel, VectorSet &not_peel, Node_List &peel_list,
                                                          Node_List &sink_list, uint i) const {
-  ScopedValueGetHitsInCacheNode* sv_hits_in_cache = (ScopedValueGetHitsInCacheNode*)peel_list.at(i);
-  sv_hits_in_cache->verify();
-  ScopedValueGetLoadFromCacheNode* load_from_cache = sv_hits_in_cache->load_from_cache();
-  assert(load_from_cache == nullptr || not_peel.test(load_from_cache->_idx), "");
-  Node* bol = sv_hits_in_cache->find_unique_out_with(Op_Bool);
-  assert(not_peel.test(bol->_idx), "");
+  ScopedValueGetHitsInCacheNode* hits_in_cache = peel_list.at(i)->as_ScopedValueGetHitsInCache();
+  hits_in_cache->verify();
+  ScopedValueGetLoadFromCacheNode* load_from_cache = hits_in_cache->load_from_cache();
+  assert(load_from_cache == nullptr || not_peel.test(load_from_cache->_idx), "unexpected ScopedValueGetHitsInCache/ScopedValueGetLoadFromCache shape");
+  Node* bol = hits_in_cache->find_unique_out_with(Op_Bool);
+  assert(not_peel.test(bol->_idx), "should be in not peel subgraph");
   Node* iff = bol->unique_ctrl_out();
-  assert(not_peel.test(iff->_idx), "");
-  sink_list.push(sv_hits_in_cache);
-  peel.remove(sv_hits_in_cache->_idx);
-  not_peel.set(sv_hits_in_cache->_idx);
+  assert(not_peel.test(iff->_idx), "should be in not peel subgraph");
+  sink_list.push(hits_in_cache);
+  peel.remove(hits_in_cache->_idx);
+  not_peel.set(hits_in_cache->_idx);
   peel_list.remove(i);
 }
 

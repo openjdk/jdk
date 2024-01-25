@@ -228,12 +228,36 @@ ProjNode* ProjNode::other_if_proj() const {
   return in(0)->as_If()->proj_out(1-_con);
 }
 
+// This handles a pattern that may show up with ScopedValue.get():
+//
+// if (hits_in_the_cache) {
+//   result = load_from_cache;
+// } else {
+//   if (cache == null) {
+//     unc;
+//   }
+//   if (first_entry_hits) {
+//     halt;
+//   } else {
+//     if (second_entry_hits) {
+//        halt;
+//      } else {
+//        unc;
+//     }
+//   }
+// }
+//
+// The paths that end with a Halt node are never taken. So in practice, all taken paths end with an uncommon trap. Loop
+// predication takes advantage of this, to hoist:
+// if (hits_in_the_cache) {
 bool ProjNode::is_multi_uncommon_trap_if_pattern() {
   Node* iff = in(0);
   if (!iff->is_If() || iff->outcnt() < 2) {
     // Not a projection of an If or variation of a dead If node.
     return false;
   }
+  assert(iff->in(1)->is_Bool() &&
+         iff->in(1)->in(1)->Opcode() == Op_ScopedValueGetHitsInCache, "this only makes sense for ScopedValueGetHitsInCache");
   return other_if_proj()->is_multi_uncommon_trap_proj();
 }
 

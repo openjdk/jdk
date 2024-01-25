@@ -1740,27 +1740,32 @@ public:
   void update_addp_chain_base(Node* x, Node* old_base, Node* new_base);
 
   bool can_move_to_inner_loop(Node* n, LoopNode* n_loop, Node* x);
-  void expand_get_from_sv_cache(ScopedValueGetHitsInCacheNode* get_from_cache);
+  void expand_sv_get_hits_in_cache_and_load_from_cache(ScopedValueGetHitsInCacheNode* hits_in_cache);
   void test_and_load_from_cache(Node* load_of_cache, Node* mem, Node* index, Node* c, float prob, float cnt,
                                 Node* sv, Node*& failure, Node*& hit, Node*& res);
 
-  bool is_uncommon_trap_if_pattern(IfProjNode* proj);
+  static bool is_uncommon_or_multi_uncommon_trap_if_pattern(IfProjNode* proj);
 
   bool optimize_scoped_value_get_nodes();
 
   bool expand_scoped_value_get_nodes();
 
-  void remove_scoped_value_get_at(uint i);
+  bool loop_predication_for_scoped_value_get(IdealLoopTree* loop, IfProjNode* if_success_proj,
+                                             ParsePredicateSuccessProj* parse_predicate_proj,
+                                             Invariance& invar, Deoptimization::DeoptReason reason,
+                                             IfNode* iff, IfProjNode*& new_predicate_proj);
 
-  bool
-  loop_predication_for_scoped_value_get(IdealLoopTree* loop, IfProjNode* if_success_proj,
-                                        ParsePredicateSuccessProj* parse_predicate_proj,
-                                        Invariance &invar, Deoptimization::DeoptReason reason,
-                                        IfNode* iff, IfProjNode*&new_predicate_proj);
+  void move_scoped_value_nodes_to_not_peel(VectorSet &peel, VectorSet &not_peel, Node_List &peel_list,
+                                           Node_List &sink_list, uint i) const;
 
-  void
-  move_scoped_value_nodes_to_not_peel(VectorSet &peel, VectorSet &not_peel, Node_List &peel_list,
-                                      Node_List &sink_list, uint i) const;
+  Node* scoped_value_cache_node(Node* raw_mem);
+
+  void find_most_likely_cache_index(const ScopedValueGetHitsInCacheNode* hits_in_cache, Node*&first_index,
+                                    Node*&second_index,
+                                    float &prob_cache_miss_at_first_if, float &first_if_cnt,
+                                    float &prob_cache_miss_at_second_if, float &second_if_cnt) const;
+
+  bool replace_scoped_value_result_by_dominator(ScopedValueGetResultNode* get_result, Node* scoped_value_object, Node* dom_ctrl);
 };
 
 

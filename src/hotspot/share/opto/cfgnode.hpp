@@ -730,11 +730,12 @@ public:
     init_req(Control, ctrl);
     init_req(ScopedValue, sv);
     init_req(GetResult, res);
+    init_class_id(Class_ScopedValueGetResult);
   }
   virtual int   Opcode() const;
   virtual const Type* bottom_type() const { return TypeTuple::SV_GET_RESULT; }
 
-  ProjNode* result_out() {
+  ProjNode* result_out_or_null() {
     return proj_out_or_null(Result);
   }
 

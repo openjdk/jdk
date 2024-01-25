@@ -614,12 +614,12 @@ void Type::Initialize_shared(Compile* current) {
   TypeInstKlassPtr::OBJECT = TypeInstKlassPtr::make(TypePtr::NotNull, current->env()->Object_klass(), 0);
   TypeInstKlassPtr::OBJECT_OR_NULL = TypeInstKlassPtr::make(TypePtr::BotPTR, current->env()->Object_klass(), 0);
 
-  const Type **fgetfromcache =(const Type**)shared_type_arena->AmallocWords(3*sizeof(Type*));
+  const Type** fgetfromcache =(const Type**)shared_type_arena->AmallocWords(3*sizeof(Type*));
   fgetfromcache[0] = TypeInt::BOOL;
   fgetfromcache[1] = TypeInstPtr::BOTTOM;
   fgetfromcache[2] = TypeAryPtr::OOPS;
   TypeTuple::make(3, fgetfromcache);
-  const Type **fsvgetresult =(const Type**)shared_type_arena->AmallocWords(2*sizeof(Type*));
+  const Type** fsvgetresult =(const Type**)shared_type_arena->AmallocWords(2*sizeof(Type*));
   fsvgetresult[0] = Type::CONTROL;
   fsvgetresult[1] = TypeInstPtr::BOTTOM;
   TypeTuple::SV_GET_RESULT = TypeTuple::make(2, fsvgetresult);

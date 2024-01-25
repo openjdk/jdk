@@ -298,6 +298,7 @@ public:
 };
 
 // Does a ScopedValue.get() hits in the cache?
+// This node returns true in case of cache hit (cache reference not null, and at least one of the indices leads to a hit).
 class ScopedValueGetLoadFromCacheNode;
 class ScopedValueGetHitsInCacheNode : public CmpNode {
 private:
@@ -321,14 +322,15 @@ public:
   ScopedValueGetHitsInCacheNode(Compile* C, Node* c, Node* scoped_value_cache, Node* null_con, Node* mem, Node* sv,
                                 Node* index1, Node* index2) :
           CmpNode(scoped_value_cache, null_con) {
+    init_class_id(Class_ScopedValueGetHitsInCache);
     init_req(0, c);
-    assert(req() == ScopedValue, "");
+    assert(req() == ScopedValue, "wrong of inputs for ScopedValueGetHitsInCacheNode");
     add_req(sv);
-    assert(req() == Memory, "");
+    assert(req() == Memory, "wrong of inputs for ScopedValueGetHitsInCacheNode");
     add_req(mem);
-    assert(req() == Index1, "");
+    assert(req() == Index1, "wrong of inputs for ScopedValueGetHitsInCacheNode");
     add_req(index1);
-    assert(req() == Index2, "");
+    assert(req() == Index2, "wrong of inputs for ScopedValueGetHitsInCacheNode");
     add_req(index2);
   }
 
@@ -354,25 +356,27 @@ public:
 
   virtual int Opcode() const;
 
-
   const Type* sub(const Type* type, const Type* type1) const {
     return CmpNode::bottom_type();
   }
+
   void set_profile_data(uint i, float cnt, float prob) {
-    assert(i < sizeof(_profile_data) / sizeof(_profile_data[0]), "");
+    assert(i < sizeof(_profile_data) / sizeof(_profile_data[0]), "out of bounds");
     _profile_data[i]._cnt = cnt;
     _profile_data[i]._prob = prob;
   }
 
  float prob(uint i) const {
-    assert(i < sizeof(_profile_data) / sizeof(_profile_data[0]), "");
+    assert(i < sizeof(_profile_data) / sizeof(_profile_data[0]), "out of bounds");
     return _profile_data[i]._prob;
   }
 
  float cnt(uint i) const {
-    assert(i < sizeof(_profile_data) / sizeof(_profile_data[0]), "");
+    assert(i < sizeof(_profile_data) / sizeof(_profile_data[0]), "out of bounds");
     return _profile_data[i]._cnt;
   }
+
+  IfProjNode* success_proj() const;
 
   void verify() const NOT_DEBUG_RETURN;
 

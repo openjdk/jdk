@@ -4913,77 +4913,130 @@ void PhaseIdealLoop::build_and_optimize() {
 // further loop optimizations (see comment in LateInlineScopedValueCallGenerator::process_result)
 bool PhaseIdealLoop::expand_scoped_value_get_nodes() {
   bool progress = false;
-  assert(!_igvn.delay_transform(), "");
+  assert(!_igvn.delay_transform(), "about to delay igvn transform");
   _igvn.set_delay_transform(true);
-  for (uint i = _scoped_value_get_nodes.size(); i > 0; i--) {
-    Node* n = _scoped_value_get_nodes.at(i - 1);
+  while (_scoped_value_get_nodes.size() > 0) {
+    Node* n = _scoped_value_get_nodes.pop();
     if (n->Opcode() == Op_ScopedValueGetResult) {
-      // Remove the ScopedValueGetResult entirely
-      ScopedValueGetResultNode* get_result = (ScopedValueGetResultNode*) n;
-      Node* result_out = get_result->result_out();
+      // Remove the ScopedValueGetResult and its projections entirely
+      ScopedValueGetResultNode* get_result = n->as_ScopedValueGetResult();
+      Node* result_out_proj = get_result->result_out_or_null();
       Node* result_in = get_result->in(ScopedValueGetResultNode::GetResult);
-      if (result_out != nullptr) {
-        _igvn.replace_node(result_out, result_in);
+      if (result_out_proj != nullptr) {
+        _igvn.replace_node(result_out_proj, result_in);
       } else {
         _igvn.replace_input_of(get_result, ScopedValueGetResultNode::GetResult, C->top());
       }
       lazy_replace(get_result->control_out(), get_result->in(ScopedValueGetResultNode::Control));
-      progress = true;
-      remove_scoped_value_get_at(i-1);
+    } else {
+      ScopedValueGetHitsInCacheNode* hits_in_cache = n->as_ScopedValueGetHitsInCache();
+      expand_sv_get_hits_in_cache_and_load_from_cache(hits_in_cache);
     }
-  }
-  while (_scoped_value_get_nodes.size() > 0) {
-    Node* n = _scoped_value_get_nodes.pop();
-    assert (n->Opcode() == Op_ScopedValueGetHitsInCache, "");
-    ScopedValueGetHitsInCacheNode* get_from_cache = (ScopedValueGetHitsInCacheNode*) n;
-    expand_get_from_sv_cache(get_from_cache);
     progress = true;
   }
   _igvn.set_delay_transform(false);
   return progress;
 }
 
-void PhaseIdealLoop::expand_get_from_sv_cache(ScopedValueGetHitsInCacheNode* get_from_cache) {
-  get_from_cache->verify();
-#ifdef ASSERT
-  for (DUIterator_Fast imax, i = get_from_cache->fast_outs(imax); i < imax; i++) {
-    Node* u = get_from_cache->fast_out(i);
-    assert(u->is_Bool() || u->Opcode() == Op_ScopedValueGetLoadFromCache, "");
-  }
-#endif
-  BoolNode* bol = get_from_cache->find_unique_out_with(Op_Bool)->as_Bool();
-  assert(bol->_test._test == BoolTest::ne, "");
+// On entry to this, IR shape in pseudo-code:
+//
+// if (hits_in_the_cache) {
+//   result = load_from_cache;
+// } else {
+//   if (cache == null) {
+//     goto slow_call;
+//   }
+//   if (first_entry_hits) {
+//     halt;
+//   } else {
+//     if (second_entry_hits) {
+//        halt;
+//      } else {
+//        goto slow_call;
+//     }
+//   }
+// }
+// continue:
+// ...
+// return;
+//
+// slow_call:
+// result = slowGet();
+// goto continue;
+//
+// The hits_in_the_cache and load_from_cache are expanded back:
+//
+// if (cache == null) {
+//   goto slow_path;
+// }
+// if (first_entry_hits) {
+//   goto continue;
+// } else {
+//   if (second_entry_hits) {
+//      goto continue;
+//    } else {
+//      goto slow_path;
+//   }
+// }
+// slow_path:
+// if (cache == null) {
+//   goto slow_call;
+// }
+// if (first_entry_hits) {
+//   halt;
+// } else {
+//   if (second_entry_hits) {
+//      halt;
+//    } else {
+//      goto slow_call;
+//   }
+// }
+// continue:
+// ...
+// return;
+//
+// slow_call:
+// result = slowGet();
+// goto continue;
+//
+// Split if in subsequent loop opts rounds will have a chance to clean the duplicated cache null, first_entry_hits,
+// second_entry_hits checks
+// The reason for having the duplicate checks is so that, if some checks branch to an uncommon trap, and a trap is hit,
+// the right bci in the java method is marked as having trapped.
+void PhaseIdealLoop::expand_sv_get_hits_in_cache_and_load_from_cache(ScopedValueGetHitsInCacheNode* hits_in_cache) {
+  hits_in_cache->verify();
+  BoolNode* bol = hits_in_cache->find_unique_out_with(Op_Bool)->as_Bool();
+  assert(bol->_test._test == BoolTest::ne, "unexpected ScopedValueGetHitsInCache shape");
   IfNode* iff = bol->find_unique_out_with(Op_If)->as_If();
   ProjNode* success = iff->proj_out(1);
   ProjNode* failure = iff->proj_out(0);
 
-
-  ScopedValueGetLoadFromCacheNode* load_from_cache = (ScopedValueGetLoadFromCacheNode*)success->find_unique_out_with(Op_ScopedValueGetLoadFromCache);
+  ScopedValueGetLoadFromCacheNode* load_from_cache = hits_in_cache->load_from_cache();
   if (load_from_cache != nullptr) {
     load_from_cache->verify();
   }
-  Node* first_index = get_from_cache->index1();
-  Node* second_index = get_from_cache->index2();
+  Node* first_index = hits_in_cache->index1();
+  Node* second_index = hits_in_cache->index2();
 
+  // The cache was always seen to be null so no code to probe the cache was added to the IR.
   if (first_index == C->top() && second_index == C->top()) {
     Node* zero = _igvn.intcon(0);
     set_ctrl(zero, C->root());
     _igvn.replace_input_of(iff, 1, zero);
-    _igvn.replace_node(get_from_cache, C->top());
-
+    _igvn.replace_node(hits_in_cache, C->top());
     return;
   }
 
-  Node* load_of_cache = get_from_cache->in(1);
+  Node* load_of_cache = hits_in_cache->in(1);
 
-  Node* null_ptr = get_from_cache->in(2);
+  Node* null_ptr = hits_in_cache->in(2);
   Node* cache_not_null_cmp = new CmpPNode(load_of_cache, null_ptr);
   _igvn.register_new_node_with_optimizer(cache_not_null_cmp);
   Node* cache_not_null_bol = new BoolNode(cache_not_null_cmp, BoolTest::ne);
   _igvn.register_new_node_with_optimizer(cache_not_null_bol);
   set_subtree_ctrl(cache_not_null_bol, true);
-  IfNode* cache_not_null_iff = new IfNode(iff->in(0), cache_not_null_bol, get_from_cache->prob(0),
-                                          get_from_cache->cnt(0));
+  IfNode* cache_not_null_iff = new IfNode(iff->in(0), cache_not_null_bol, hits_in_cache->prob(0),
+                                          hits_in_cache->cnt(0));
   IdealLoopTree* loop = get_loop(iff->in(0));
   register_control(cache_not_null_iff, loop, iff->in(0));
   Node* cache_not_null_proj = new IfTrueNode(cache_not_null_iff);
@@ -4994,40 +5047,31 @@ void PhaseIdealLoop::expand_get_from_sv_cache(ScopedValueGetHitsInCacheNode* get
   Node* not_null_load_of_cache = new CastPPNode(cache_not_null_proj, load_of_cache, _igvn.type(load_of_cache)->join(TypePtr::NOTNULL));
   register_new_node(not_null_load_of_cache, cache_not_null_proj);
 
-  Node* mem = get_from_cache->mem();
+  Node* mem = hits_in_cache->mem();
 
-  Node* sv = get_from_cache->scoped_value();
+  Node* sv = hits_in_cache->scoped_value();
   Node* hit_proj = nullptr;
   Node* failure_proj = nullptr;
   Node* res = nullptr;
   Node* success_region = new RegionNode(3);
   Node* success_phi = new PhiNode(success_region, TypeInstPtr::BOTTOM);
   Node* failure_region = new RegionNode(3);
-  float first_prob = get_from_cache->prob(1);
-  float first_cnt = get_from_cache->cnt(1);
-  float second_prob = get_from_cache->prob(2);
-  if (first_prob != PROB_UNKNOWN && second_prob != PROB_UNKNOWN) {
-    second_prob = (1 - first_prob) * second_prob;
-  }
-  float second_cnt = get_from_cache->cnt(2);
-
-  if (second_index != C->top() && second_prob < first_prob) {
-    swap(first_index, second_index);
-    swap(first_prob, second_prob);
-    second_prob = (1 - first_prob) * second_prob;
-    if (first_cnt != COUNT_UNKNOWN && first_prob != PROB_UNKNOWN) {
-      second_cnt = first_cnt * first_prob;
-    }
-  }
+  float prob_cache_miss_at_first_if;
+  float first_if_cnt;
+  float prob_cache_miss_at_second_if;
+  float second_if_cnt;
+  find_most_likely_cache_index(hits_in_cache, first_index, second_index, prob_cache_miss_at_first_if, first_if_cnt,
+                               prob_cache_miss_at_second_if,
+                               second_if_cnt);
 
   test_and_load_from_cache(not_null_load_of_cache, mem, first_index, cache_not_null_proj,
-                           first_prob, first_cnt, sv, failure_proj, hit_proj, res);
+                           prob_cache_miss_at_first_if, first_if_cnt, sv, failure_proj, hit_proj, res);
   Node* success_region_dom = hit_proj;
   success_region->init_req(1, hit_proj);
   success_phi->init_req(1, res);
   if (second_index != C->top()) {
     test_and_load_from_cache(not_null_load_of_cache, mem, second_index, failure_proj,
-                             second_prob, second_cnt, sv, failure_proj, hit_proj, res);
+                             prob_cache_miss_at_second_if, second_if_cnt, sv, failure_proj, hit_proj, res);
     success_region->init_req(2, hit_proj);
     success_phi->init_req(2, res);
     success_region_dom = success_region_dom->in(0);
@@ -5047,7 +5091,39 @@ void PhaseIdealLoop::expand_get_from_sv_cache(ScopedValueGetHitsInCacheNode* get
   if (load_from_cache != nullptr) {
     _igvn.replace_node(load_from_cache, success_phi);
   }
-  _igvn.replace_node(get_from_cache, C->top());
+  _igvn.replace_node(hits_in_cache, C->top());
+}
+
+// Java code for ScopedValue.get() probes a first cache location and in case of a miss, a second one. We should have
+// probabilities for both tests. If the second location is more likely than the first one, have it be tested first.
+void PhaseIdealLoop::find_most_likely_cache_index(const ScopedValueGetHitsInCacheNode* hits_in_cache, Node*& first_index,
+                                                  Node*& second_index, float& prob_cache_miss_at_first_if,
+                                                  float& first_if_cnt, float& prob_cache_miss_at_second_if,
+                                                  float& second_if_cnt) const {
+  prob_cache_miss_at_first_if= hits_in_cache->prob(1);
+  first_if_cnt= hits_in_cache->cnt(1);
+  prob_cache_miss_at_second_if= hits_in_cache->prob(2);
+  second_if_cnt= hits_in_cache->cnt(2);
+  if (prob_cache_miss_at_first_if != PROB_UNKNOWN && prob_cache_miss_at_second_if != PROB_UNKNOWN) {
+    float prob_cache_miss_at_first_index = prob_cache_miss_at_first_if;
+    float prob_cache_hit_at_second_if = 1 - prob_cache_miss_at_second_if;
+    // Compute the probability of a hit in the second location. We have the probability that the test at the second
+    // location fails once the test at the first location has failed.
+    float prob_cache_hit_at_second_index = prob_cache_miss_at_first_if * prob_cache_hit_at_second_if;
+    float prob_cache_miss_at_second_index = 1 - prob_cache_hit_at_second_index;
+    if (second_index != C->top() && prob_cache_miss_at_second_index < prob_cache_miss_at_first_index) {
+      // The second location is more likely to lead to a hit than the first one. Have it be tested first.
+      swap(first_index, second_index);
+      swap(prob_cache_miss_at_first_index, prob_cache_miss_at_second_index);
+      prob_cache_miss_at_first_if = prob_cache_miss_at_first_index;
+      prob_cache_hit_at_second_index = 1 - prob_cache_miss_at_second_index;
+      prob_cache_hit_at_second_if = prob_cache_hit_at_second_index / prob_cache_miss_at_first_if;
+      prob_cache_miss_at_second_if = 1 - prob_cache_hit_at_second_if;
+      if (first_if_cnt != COUNT_UNKNOWN) {
+        second_if_cnt = first_if_cnt * prob_cache_miss_at_first_if;
+      }
+    }
+  }
 }
 
 void PhaseIdealLoop::test_and_load_from_cache(Node* load_of_cache, Node* mem, Node* index, Node* c, float prob, float cnt,
@@ -5105,117 +5181,90 @@ bool PhaseIdealLoop::optimize_scoped_value_get_nodes() {
   for (uint i = _scoped_value_get_nodes.size(); i > 0; i--) {
     Node* n = _scoped_value_get_nodes.at(i - 1);
     if (n->Opcode() == Op_ScopedValueGetHitsInCache) {
-      ScopedValueGetHitsInCacheNode* get_from_sv_cache = (ScopedValueGetHitsInCacheNode*)n;
-      get_from_sv_cache->verify();
-      ScopedValueGetLoadFromCacheNode* load_from_cache = get_from_sv_cache->load_from_cache();
+      ScopedValueGetHitsInCacheNode* hits_in_cache = n->as_ScopedValueGetHitsInCache();
+      hits_in_cache->verify();
+      ScopedValueGetLoadFromCacheNode* load_from_cache = hits_in_cache->load_from_cache();
       if (load_from_cache != nullptr) {
         load_from_cache->verify();
       }
-      BoolNode* bol = get_from_sv_cache->find_unique_out_with(Op_Bool)->as_Bool();
-      assert(bol->_test._test == BoolTest::ne, "");
-      IfNode* iff = bol->find_unique_out_with(Op_If)->as_If();
-      assert(load_from_cache == nullptr || load_from_cache->iff() == iff, "");
+      IfNode* iff = hits_in_cache->success_proj()->in(0)->as_If();
       for (uint j = 0; j < _scoped_value_get_nodes.size(); j++) {
         Node* m = _scoped_value_get_nodes.at(j);
         if (m == n) {
           continue;
         }
-        assert(m != n, "");
         if (m->Opcode() == Op_ScopedValueGetHitsInCache) {
-          ScopedValueGetHitsInCacheNode* get_from_sv_cache_dom = (ScopedValueGetHitsInCacheNode*) m;
-          ScopedValueGetLoadFromCacheNode* load_from_cache_dom = get_from_sv_cache_dom->load_from_cache();
-          BoolNode* bol_dom = get_from_sv_cache_dom->find_unique_out_with(Op_Bool)->as_Bool();
-          assert(bol_dom->_test._test == BoolTest::ne, "");
-          IfNode* iff_dom = bol_dom->find_unique_out_with(Op_If)->as_If();
-          assert(load_from_cache_dom == nullptr || load_from_cache_dom->iff() == iff_dom, "");
-          IfProjNode* dom_proj = iff_dom->proj_out(1)->as_IfProj();
-          assert(load_from_cache_dom == nullptr || dom_proj == load_from_cache_dom->in(0), "");
-          if (get_from_sv_cache_dom->scoped_value() == get_from_sv_cache->scoped_value() &&
+          ScopedValueGetHitsInCacheNode* hits_in_cache_dom = m->as_ScopedValueGetHitsInCache();
+          ScopedValueGetLoadFromCacheNode* load_from_cache_dom = hits_in_cache_dom->load_from_cache();
+          IfProjNode* dom_proj = hits_in_cache_dom->success_proj();
+          if (hits_in_cache_dom->scoped_value() == hits_in_cache->scoped_value() &&
               is_dominator(dom_proj, iff)) {
             // The success projection of a dominating ScopedValueGetHitsInCache dominates this ScopedValueGetHitsInCache
             // for the same ScopedValue object: replace this ScopedValueGetHitsInCache by the dominating one
-            _igvn.replace_node(get_from_sv_cache, get_from_sv_cache_dom);
+            _igvn.replace_node(hits_in_cache, hits_in_cache_dom);
             if (load_from_cache_dom != nullptr && load_from_cache != nullptr) {
               _igvn.replace_node(load_from_cache, load_from_cache_dom);
             }
+            Node* bol = iff->in(1);
             dominated_by(dom_proj, iff, false, false);
             _igvn.replace_node(bol, C->top());
             progress = true;
-            remove_scoped_value_get_at(i-1);
+            _scoped_value_get_nodes.delete_at(i-1);
             break;
           }
         } else {
-          ScopedValueGetResultNode* sv_get_result_dom = (ScopedValueGetResultNode*) m;
-          if (sv_get_result_dom->scoped_value() == get_from_sv_cache->scoped_value() &&
-              is_dominator(sv_get_result_dom, iff)) {
+          ScopedValueGetResultNode* get_result_dom = m->as_ScopedValueGetResult();
+          if (get_result_dom->scoped_value() == hits_in_cache->scoped_value() &&
+              is_dominator(get_result_dom, iff)) {
             // A ScopedValueGetResult dominates this ScopedValueGetHitsInCache for the same ScopedValue object:
             // the result of the dominating ScopedValue.get() makes this ScopedValueGetHitsInCache useless
             Node* one = _igvn.intcon(1);
             set_ctrl(one, C->root());
             _igvn.replace_input_of(iff, 1, one);
             if (load_from_cache != nullptr) {
-              Node* result_out = sv_get_result_dom->result_out();
+              Node* result_out = get_result_dom->result_out_or_null();
               if (result_out == nullptr) {
-                result_out = new ProjNode(sv_get_result_dom, ScopedValueGetResultNode::Result);
-                register_new_node(result_out, sv_get_result_dom);
+                result_out = new ProjNode(get_result_dom, ScopedValueGetResultNode::Result);
+                register_new_node(result_out, get_result_dom);
               }
               _igvn.replace_node(load_from_cache, result_out);
             }
-            _igvn.replace_node(get_from_sv_cache, C->top());
+            _igvn.replace_node(hits_in_cache, C->top());
             progress = true;
-            remove_scoped_value_get_at(i-1);
+            _scoped_value_get_nodes.delete_at(i-1);
             break;
           }
         }
       }
     } else {
-      assert(n->Opcode() == Op_ScopedValueGetResult, "");
-      ScopedValueGetResultNode* sv_get_result = (ScopedValueGetResultNode*)n;
+      ScopedValueGetResultNode* get_result = n->as_ScopedValueGetResult();
       for (uint j = 0; j < _scoped_value_get_nodes.size(); j++) {
         Node* m = _scoped_value_get_nodes.at(j);
         if (m == n) {
           continue;
         }
         if (m->Opcode() == Op_ScopedValueGetHitsInCache) {
-          ScopedValueGetHitsInCacheNode* get_from_sv_cache_dom = (ScopedValueGetHitsInCacheNode*) m;
-          ScopedValueGetLoadFromCacheNode* load_from_cache_dom = get_from_sv_cache_dom->load_from_cache();
-          BoolNode* bol_dom = get_from_sv_cache_dom->find_unique_out_with(Op_Bool)->as_Bool();
-          assert(bol_dom->_test._test == BoolTest::ne, "");
-          IfNode* iff_dom = bol_dom->find_unique_out_with(Op_If)->as_If();
-          assert(load_from_cache_dom == nullptr || load_from_cache_dom->iff() == iff_dom, "");
-          IfProjNode* dom_proj = iff_dom->proj_out(1)->as_IfProj();
-          assert(load_from_cache_dom == nullptr || dom_proj == load_from_cache_dom->in(0), "");
-          if (get_from_sv_cache_dom->scoped_value() == sv_get_result->scoped_value() &&
-              is_dominator(dom_proj, sv_get_result)) {
+          ScopedValueGetHitsInCacheNode* hits_in_cache_dom = m->as_ScopedValueGetHitsInCache();
+          IfProjNode* dom_proj = hits_in_cache_dom->success_proj();
+          if (replace_scoped_value_result_by_dominator(get_result, hits_in_cache_dom->scoped_value(), dom_proj)) {
             // This ScopedValueGetResult is dominated by the success projection of ScopedValueGetHitsInCache for the same
             // ScopedValue object: either the ScopedValueGetResult and ScopedValueGetHitsInCache are from the same
             // ScopedValue.get() and we remove the ScopedValueGetResult because it's only useful to optimize
             // ScopedValue.get() where the slow path is taken. Or They are from difference ScopedValue.get() and we
             // remove the ScopedValueGetResult. Its companion ScopedValueGetHitsInCache should be removed as well as part
             // of this round of optimizations.
-            lazy_replace(sv_get_result->control_out(), sv_get_result->in(0));
-            ProjNode* result_out = sv_get_result->result_out();
-            if (result_out != nullptr) {
-              _igvn.replace_node(result_out, sv_get_result->in(ScopedValueGetResultNode::GetResult));
-            }
             progress = true;
-            remove_scoped_value_get_at(i-1);
+            _scoped_value_get_nodes.delete_at(i-1);
             break;
           }
         } else {
-          assert(m->Opcode() == Op_ScopedValueGetResult, "");
-          ScopedValueGetResultNode* sv_get_result_dom = (ScopedValueGetResultNode*) m;
-          if (sv_get_result_dom->scoped_value() == sv_get_result->scoped_value() &&
-              is_dominator(sv_get_result_dom, sv_get_result)) {
+          assert(m->Opcode() == Op_ScopedValueGetResult, "There's no other ScopedValue,get() related nodes");
+          ScopedValueGetResultNode* get_result_dom = m->as_ScopedValueGetResult();
+          if (replace_scoped_value_result_by_dominator(get_result, get_result_dom->scoped_value(), get_result_dom)) {
             // This ScopedValueGetResult is dominated by another ScopedValueGetResult for the same ScopedValue object:
             // remove this one and use the result from the dominating ScopedValue.get()
-            lazy_replace(sv_get_result->control_out(), sv_get_result->in(0));
-            ProjNode* result_out = sv_get_result->result_out();
-            if (result_out != nullptr) {
-              _igvn.replace_node(result_out, sv_get_result->in(ScopedValueGetResultNode::GetResult));
-            }
             progress = true;
-            remove_scoped_value_get_at(i-1);
+            _scoped_value_get_nodes.delete_at(i-1);
             break;
           }
         }
@@ -5225,11 +5274,17 @@ bool PhaseIdealLoop::optimize_scoped_value_get_nodes() {
   return progress;
 }
 
-void PhaseIdealLoop::remove_scoped_value_get_at(uint i) {
-  Node* top_of_stack = _scoped_value_get_nodes.pop();
-  if (i < _scoped_value_get_nodes.size()) {
-    _scoped_value_get_nodes.map(i, top_of_stack);
+bool PhaseIdealLoop::replace_scoped_value_result_by_dominator(ScopedValueGetResultNode* get_result, Node* scoped_value_object, Node* dom_ctrl) {
+  if (scoped_value_object == get_result->scoped_value() &&
+      is_dominator(dom_ctrl, get_result)) {
+    lazy_replace(get_result->control_out(), get_result->in(0));
+    ProjNode* result_out = get_result->result_out_or_null();
+    if (result_out != nullptr) {
+      _igvn.replace_node(result_out, get_result->in(ScopedValueGetResultNode::GetResult));
+    }
+    return true;
   }
+  return false;
 }
 
 #ifndef PRODUCT
@@ -6617,9 +6672,9 @@ void PhaseIdealLoop::build_loop_late_post_work(Node *n, bool pinned) {
   if (!_verify_only && (n->Opcode() == Op_ScopedValueGetResult || n->Opcode() == Op_ScopedValueGetHitsInCache)) {
 #ifdef ASSERT
     if (n->Opcode() == Op_ScopedValueGetHitsInCache) {
-      ((ScopedValueGetHitsInCacheNode*) n)->verify();
+      n->as_ScopedValueGetHitsInCache()->verify();
     } else if (n->Opcode() == Op_ScopedValueGetLoadFromCache) {
-      ((ScopedValueGetLoadFromCacheNode*) n)->verify();
+      n->as_ScopedValueGetLoadFromCache()->verify();
     }
 #endif
     _scoped_value_get_nodes.push(n);

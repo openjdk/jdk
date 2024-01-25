@@ -372,8 +372,7 @@ const Type* ExpandBitsNode::Value(PhaseGVN* phase) const {
 
 Node* ScopedValueGetLoadFromCacheNode::scoped_value() const {
   Node* hits_in_cache = in(1);
-  assert(hits_in_cache->Opcode() == Op_ScopedValueGetHitsInCache, "");
-  return ((ScopedValueGetHitsInCacheNode*)hits_in_cache)->scoped_value();
+  return hits_in_cache->as_ScopedValueGetHitsInCache()->scoped_value();
 }
 
 IfNode* ScopedValueGetLoadFromCacheNode::iff() const {
@@ -382,9 +381,10 @@ IfNode* ScopedValueGetLoadFromCacheNode::iff() const {
 
 #ifdef ASSERT
 void ScopedValueGetLoadFromCacheNode::verify() const {
-  assert(in(0)->Opcode() == Op_IfTrue, "");
-  assert(in(0)->in(0)->in(1)->is_Bool(), "");
-  assert(in(0)->in(0)->in(1)->in(1)->Opcode() == Op_ScopedValueGetHitsInCache, "");
-  assert(in(0)->in(0)->in(1)->in(1) == in(1), "");
+  // check a ScopedValueGetHitsInCache guards this ScopedValueGetLoadFromCache
+  assert(in(0)->Opcode() == Op_IfTrue, "unexpected ScopedValueGetLoadFromCache shape");
+  assert(in(0)->in(0)->in(1)->is_Bool(), "unexpected ScopedValueGetLoadFromCache shape");
+  assert(in(0)->in(0)->in(1)->in(1)->Opcode() == Op_ScopedValueGetHitsInCache, "unexpected ScopedValueGetLoadFromCache shape");
+  assert(in(0)->in(0)->in(1)->in(1) == in(1), "unexpected ScopedValueGetLoadFromCache shape");
 }
 #endif

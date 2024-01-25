@@ -814,12 +814,467 @@ CallGenerator* CallGenerator::for_vector_reboxing_late_inline(ciMethod* method, 
 }
 
 class LateInlineScopedValueCallGenerator : public LateInlineCallGenerator {
-  Node* _sv;
+private:
+  Node* _scoped_value_object;
   bool _process_result;
+
+  CallNode* _scoped_value_cache; // call to Thread.scopedValueCache()
+  IfNode* _cache_not_null_iff; // test that scopedValueCache() is not null
+  IfNode* _first_cache_probe_iff; // test for a hit in the cache with first hash
+  IfNode* _second_cache_probe_iff; // test for a hit in the cache with second hash
+  Node* _first_index_in_cache; // index in the cache for first hash
+  Node* _second_index_in_cache; // index in the cache for second hash
+  CallStaticJavaNode* _slow_call; // slowGet() call if any
+  GraphKit* _kit;
+
+  bool cache_null_check_with_input(Node* in1, Node* in2, Node* c) {
+    if (in1->is_Proj() && in1->in(0)->is_Call() &&
+        in1->in(0)->as_CallJava()->method()->intrinsic_id() == vmIntrinsics::_scopedValueCache) {
+      assert(in2->bottom_type() == TypePtr::NULL_PTR, "should be a test with null");
+      assert(_cache_not_null_iff == nullptr, "should only find one get_cache_if");
+      _cache_not_null_iff = c->as_If();
+      assert(_scoped_value_cache == nullptr || _scoped_value_cache == in1->in(0),
+             "should only find one scoped_value_cache");
+      _scoped_value_cache = in1->in(0)->as_Call();
+      return true;
+    }
+    return false;
+  }
+
+  // Pattern matches:
+  // if ((objects = scopedValueCache()) != null) {
+  bool cache_null_check(Node* c) {
+    if (c->Opcode() == Op_If) {
+      BoolNode* bol = c->in(1)->as_Bool();
+      Node* cmp = bol->in(1);
+      assert(cmp->Opcode() == Op_CmpP, "only reference comparisons in ScopedValue.get()");
+      Node* in1 = cmp->in(1)->uncast();
+      Node* in2 = cmp->in(2)->uncast();
+      if (cache_null_check_with_input(in1, in2, c)) {
+        return true;
+      }
+      if (cache_null_check_with_input(in2, in1, c)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  // Pattern matches:
+  // if (objects[n] == this) {
+  bool cache_probe(Node* c) {
+    if (c->Opcode() == Op_If) {
+      BoolNode* bol = c->in(1)->as_Bool();
+      Node* cmp = bol->in(1);
+      assert(cmp->Opcode() == Op_CmpP, "only reference comparisons in ScopedValue.get()");
+      Node* in1 = cmp->in(1)->uncast();
+      Node* in2 = cmp->in(2)->uncast();
+      Node* uncasted_scoped_value_object = _scoped_value_object->uncast();
+      assert(in1 == uncasted_scoped_value_object || in2 == uncasted_scoped_value_object,
+             "one of the comparison inputs must be the scoped value oop");
+      Node* in = in1 == uncasted_scoped_value_object ? in2 : in1;
+      BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
+      in = bs->step_over_gc_barrier(in);
+      if (in->Opcode() == Op_DecodeN) {
+        in = in->in(1);
+      }
+      assert(in->Opcode() == Op_LoadP || in->Opcode() == Op_LoadN, "load from cache array expected");
+      assert(_kit->C->get_alias_index(in->adr_type()) == _kit->C->get_alias_index(TypeAryPtr::OOPS),
+             "load from cache array expected");
+      AddPNode* addp1 = in->in(MemNode::Address)->as_AddP();
+      ProjNode* sv_cache_proj = addp1->in(AddPNode::Base)->uncast()->as_Proj();
+      assert(sv_cache_proj->in(0)->as_CallJava()->method()->intrinsic_id() == vmIntrinsics::_scopedValueCache,
+             "should be call to Thread.scopedValueCache()");
+      assert(_scoped_value_cache == nullptr || _scoped_value_cache == sv_cache_proj->in(0),
+             "only one cache expected");
+      _scoped_value_cache = sv_cache_proj->in(0)->as_Call();
+      assert(in->in(MemNode::Memory)->is_Proj() && in->in(MemNode::Memory)->in(0) == _scoped_value_cache,
+             "load from cache expected right after Thread.scopedValueCache() call");
+      Node* addp2 = addp1->in(AddPNode::Address);
+      Node* offset1 = addp1->in(AddPNode::Offset);
+      intptr_t const_offset = offset1->find_intptr_t_con(-1);
+      BasicType bt = TypeAryPtr::OOPS->array_element_basic_type();
+      int shift = exact_log2(type2aelembytes(bt));
+      int header = arrayOopDesc::base_offset_in_bytes(bt);
+      assert(const_offset >= header, "load from cache doesn't access the cache array?");
+      const_offset -= header;
+
+      Node* index_in_cache_array = _kit->gvn().intcon(const_offset >> shift);
+      if (addp2->is_AddP()) {
+        assert(!addp2->in(AddPNode::Address)->is_AddP() && addp2->in(AddPNode::Base) == addp1->in(AddPNode::Base),
+               "only 2 AddPs for address computation");
+        Node* offset2 = addp2->in(AddPNode::Offset);
+        assert(offset2->Opcode() == Op_LShiftX && offset2->in(2)->find_int_con(-1) == shift, "Not an array access?");
+        offset2 = offset2->in(1);
+#ifdef _LP64
+        assert(offset2->Opcode() == Op_ConvI2L, "unexpected address calculation shape");
+        offset2 = offset2->in(1);
+        assert(!(offset2->Opcode() == Op_CastII && offset2->in(0)->is_Proj() &&
+                 offset2->in(0)->in(0) == _cache_not_null_iff), "no CastII because index_in_cache_array is known non null");
+#endif
+        index_in_cache_array = _kit->gvn().transform(new AddINode(offset2, index_in_cache_array));
+      }
+
+      if (_first_cache_probe_iff == nullptr) {
+        _first_cache_probe_iff = c->as_If();
+        _first_index_in_cache = index_in_cache_array;
+      } else {
+        assert(_second_cache_probe_iff == nullptr, "no more than 2 cache probes");
+        _second_cache_probe_iff = c->as_If();
+        _second_index_in_cache = index_in_cache_array;
+      }
+      return true;
+    }
+    return false;
+  }
+
+  // First traversal of the get() subgraph starts from the end of the method and follows control paths until it reaches
+  // the Thread.scopedValueCache() call. Given the shape of the method and some paths may have been trimmed and end with
+  // an uncommon trap, it could reach either the first or the second cache probe if first. Figure out which is the first
+  // here.
+  void find_first_probe_if(Unique_Node_List &wq) {
+    if (_second_cache_probe_iff != nullptr) {
+      Node_Stack stack(0);
+      stack.push(_cache_not_null_iff, 0);
+      while (stack.is_nonempty()) {
+        Node* c = stack.node();
+        assert(c->is_CFG(), "only cfg nodes");
+        uint i = stack.index();
+        if (i < c->outcnt()) {
+          stack.set_index(i + 1);
+          Node* u = c->raw_out(i);
+          if (wq.member(u) && u != c) {
+            if (u == _first_cache_probe_iff) {
+              break;
+            } else if (u == _second_cache_probe_iff) {
+              swap(_first_cache_probe_iff, _second_cache_probe_iff);
+              swap(_first_index_in_cache, _second_index_in_cache);
+              break;
+            }
+            stack.push(u, 0);
+          }
+        } else {
+          stack.pop();
+        }
+      }
+    }
+  }
+
+  // ScopedValue.get() probes 2 cache locations. If, when pattern matching the get() subgraph, we found 2 ifs, then the
+  // first and second locations were probed. If the first if's other branch is to an uncommon trap, then that location
+  // never saw a cache hit. In that case, when the ScopedValueGetHitsInCacheNode is expanded, only code to probe
+  // the second location is added back to the IR.
+  void remove_first_probe_if_when_it_never_hits() {
+    if (_first_cache_probe_iff != nullptr && _second_cache_probe_iff != nullptr) {
+      ProjNode* get_first_iff_failure = _first_cache_probe_iff->proj_out(
+              _first_cache_probe_iff->in(1)->as_Bool()->_test._test == BoolTest::ne ? 0 : 1);
+      CallStaticJavaNode* get_first_iff_unc = get_first_iff_failure->is_uncommon_trap_proj(Deoptimization::Reason_none);
+      if (get_first_iff_unc != nullptr) {
+        // first cache check never hits, keep only the second.
+        swap(_first_cache_probe_iff, _second_cache_probe_iff);
+        swap(_first_index_in_cache, _second_index_in_cache);
+        _second_cache_probe_iff = nullptr;
+        _second_index_in_cache = nullptr;
+      }
+    }
+  }
+
+  // The call for ScopedValue.get() was just inlined. The code here pattern matches the resulting subgraph. To make it
+  // easier:
+  // - the slow path call to slowGet() is not inlined. If heuristics decided it should be, it was enqueued for late
+  // inlining which will happen later.
+  // - The call to Thread.scopedValueCache() is not inlined either.
+  // The pattern matching here starts from the current control (end of inlining) and looks for the call for
+  // Thread.scopedValueCache() which acts as a marker for the beginning of the subgraph of interest. In the process a
+  // number of checks from the java code of ScopedValue.get() are expected to be encountered. They are recorded:
+  void pattern_match() {
+    ResourceMark rm;
+    Unique_Node_List wq;
+    wq.push(_kit->control());
+    for (uint i = 0; i < wq.size(); ++i) {
+      Node* c = wq.at(i);
+      if (c->is_Region()) {
+        for (uint j = 1; j < c->req(); ++j) {
+          Node* in = c->in(j);
+          if (in != nullptr) {
+            assert(!in->is_top(), "no dead path here");
+            wq.push(in);
+          }
+        }
+      } else {
+        if (cache_null_check(c)) {
+          // we reached the start of ScopedValue.get()
+          continue;
+        }
+        if (!cache_probe(c)) {
+          if (c->is_RangeCheck()) {
+            // Kill the range checks as they are known to always succeed
+            _kit->gvn().hash_delete(c);
+            c->set_req(1, _kit->gvn().intcon(1));
+            _kit->C->record_for_igvn(c);
+          } else if (c->is_CallStaticJava()) {
+            assert(_slow_call == nullptr &&
+                   c->as_CallStaticJava()->method()->intrinsic_id() == vmIntrinsics::_ScopedValue_slowGet,
+                   "ScopedValue.slowGet() call expected");
+            _slow_call = c->as_CallStaticJava();
+          } else {
+            assert(c->is_Proj() || c->is_Catch(), "unexpected node when pattern matching ScopedValue.get()");
+          }
+        }
+        wq.push(c->in(0));
+      }
+    }
+    assert(_cache_not_null_iff != nullptr, "pattern matching should find cache null check");
+    assert(_second_cache_probe_iff == nullptr || _first_cache_probe_iff != nullptr, "second cache probe iff only if first one exists");
+
+    // get_first_iff/get_second_iff contain the first/second check we ran into during the graph traversal but they may
+    // not be the first/second one in execution order. Perform another traversal to figure out which is first.
+    find_first_probe_if(wq);
+    remove_first_probe_if_when_it_never_hits();
+  }
+
+  // Before the transformation of the subgraph we have (some branches may not be present depending on profile data),
+  // in pseudo code:
+  //
+  // if (cache == null) {
+  //   goto slow_call;
+  // }
+  // if (first_entry_hits) {
+  //   result = first_entry;
+  // } else {
+  //   if (second_entry_hits) {
+  //     result = second_entry;
+  //   } else {
+  //     goto slow_call;
+  //   }
+  // }
+  // continue:
+  // ...
+  // return;
+  //
+  // slow_call:
+  // result = slowGet();
+  // goto continue;
+  //
+  // After transformation:
+  // if (hits_in_the_cache) {
+  //   result = load_from_cache;
+  // } else {
+  //   if (cache == null) {
+  //     goto slow_call;
+  //   }
+  //   if (first_entry_hits) {
+  //     halt;
+  //   } else {
+  //     if (second_entry_hits) {
+  //        halt;
+  //      } else {
+  //        goto slow_call;
+  //     }
+  //   }
+  // }
+  // continue:
+  // ...
+  // return;
+  //
+  // slow_call:
+  // result = slowGet();
+  // goto continue;
+  //
+  // the transformed graph includes 2 copies of the cache probing logic. One represented by the
+  // ScopedValueGetHitsInCache/ScopedValueGetLoadFromCache pair that is amenable to optimizations. The other from
+  // the result of the parsing of the java code where the success path ends with an Halt node. The reason for that is
+  // that some paths may end with an uncommon trap and if one traps, we want the trap to be recorded for the right bci.
+  // When the ScopedValueGetHitsInCache/ScopedValueGetLoadFromCache pair is expanded, split if finds the duplicate
+  // logic and cleans it up.
+  void transform_get_subgraph() {
+    Compile* C = _kit->C;
+    make_current_exit_of_get_dead();
+
+    // Move right above the scopedValueCache() call
+    Node* input_mem = _scoped_value_cache->in(TypeFunc::Memory);
+    Node* input_ctrl = _scoped_value_cache->in(TypeFunc::Control);
+    Node* input_io = _scoped_value_cache->in(TypeFunc::I_O);
+
+    _kit->set_control(input_ctrl);
+    _kit->set_all_memory(input_mem);
+    _kit->set_i_o(input_io);
+
+    CallProjections scoped_value_cache_projs;
+    _scoped_value_cache->extract_projections(&scoped_value_cache_projs, true);
+
+    // remove the scopedValueCache() call
+    remove_thread_scoped_cache_call(scoped_value_cache_projs);
+
+    // replace it with its intrinsic code:
+    Node* scoped_value_cache_load = scoped_value_cache_node();
+    // A single ScopedValueGetHitsInCache node represents all checks that are needed to probe the cache (cache not null,
+    // cache_miss_prob with first hash, cache_miss_prob with second hash)
+    // It will later be expanded back to all the checks so record profile data
+    ScopedValueGetHitsInCacheNode* hits_in_cache = new ScopedValueGetHitsInCacheNode(C, _kit->control(),
+                                                                                     scoped_value_cache_load,
+                                                                                     _kit->gvn().makecon(TypePtr::NULL_PTR),
+                                                                                     _kit->memory(TypeAryPtr::OOPS),
+                                                                                     _scoped_value_object,
+                                                                                     _first_index_in_cache == nullptr ? C->top() : _first_index_in_cache,
+                                                                                     _second_index_in_cache == nullptr ? C->top() : _second_index_in_cache);
+
+    float probability_cache_exists = canonical_if_prob(_cache_not_null_iff);
+    hits_in_cache->set_profile_data(0, _cache_not_null_iff->_fcnt, probability_cache_exists);
+    float probability_first_cache_probe_fails = canonical_if_prob(_first_cache_probe_iff);
+    hits_in_cache->set_profile_data(1, if_cnt(_first_cache_probe_iff), probability_first_cache_probe_fails);
+    float probability_second_cache_probe_fails = canonical_if_prob(_second_cache_probe_iff);
+    hits_in_cache->set_profile_data(2, if_cnt(_second_cache_probe_iff), probability_second_cache_probe_fails);
+
+    Node* sv_hits_in_cachex = _kit->gvn().transform(hits_in_cache);
+    assert(sv_hits_in_cachex == hits_in_cache, "shouldn't be transformed to new node");
+
+    // And compute the probability of a miss in the cache
+    float cache_miss_prob;
+    // probability_cache_exists: probability that cache array is not null
+    // probability_first_cache_probe_fails: probability of a miss
+    // probability_second_cache_probe_fails: probability of a miss
+    if (probability_cache_exists == PROB_UNKNOWN || probability_first_cache_probe_fails == PROB_UNKNOWN || probability_second_cache_probe_fails == PROB_UNKNOWN) {
+      cache_miss_prob = PROB_UNKNOWN;
+    } else {
+      float probability_cache_does_not_exist = 1 - probability_cache_exists;
+      cache_miss_prob = probability_cache_does_not_exist + probability_cache_exists * probability_first_cache_probe_fails * probability_second_cache_probe_fails;
+    }
+
+    // Add the control flow that checks whether ScopedValueGetHitsInCache succeeds
+    Node* bol = _kit->gvn().transform(new BoolNode(hits_in_cache, BoolTest::ne));
+    IfNode* iff = new IfNode(_kit->control(), bol, 1 - cache_miss_prob, _cache_not_null_iff->_fcnt);
+    Node* transformed_iff = _kit->gvn().transform(iff);
+    assert(transformed_iff == iff, "shouldn't be transformed to new node");
+    Node* not_in_cache = _kit->gvn().transform(new IfFalseNode(iff));
+    Node* in_cache = _kit->gvn().transform(new IfTrueNode(iff));
+
+    // Merge the paths that produce the result (in case there's a slow path)
+    Node* region_fast_slow = new RegionNode(_slow_call == nullptr ? 2 : 3);
+    Node* phi_cache_value = new PhiNode(region_fast_slow, TypeInstPtr::BOTTOM);
+    Node* phi_mem = new PhiNode(region_fast_slow, Type::MEMORY, TypePtr::BOTTOM);
+    Node* phi_io = new PhiNode(region_fast_slow, Type::ABIO);
+
+    C->gvn_replace_by(scoped_value_cache_projs.fallthrough_catchproj, not_in_cache);
+    C->gvn_replace_by(scoped_value_cache_projs.resproj, scoped_value_cache_load);
+
+    if (_slow_call != nullptr) {
+      CallProjections slow_projs;
+      _slow_call->extract_projections(&slow_projs, false);
+      Node* fallthrough = slow_projs.fallthrough_catchproj->clone();
+      _kit->gvn().set_type(fallthrough, fallthrough->bottom_type());
+      region_fast_slow->init_req(2, fallthrough);
+      C->gvn_replace_by(slow_projs.fallthrough_catchproj, C->top());
+      phi_mem->init_req(2, slow_projs.fallthrough_memproj);
+      phi_io->init_req(2, slow_projs.fallthrough_ioproj);
+      phi_cache_value->init_req(2, slow_projs.resproj);
+    }
+    region_fast_slow->init_req(1, in_cache);
+
+    // ScopedValueGetLoadFromCache is a single that represents the result of a hit in the cache
+    Node* sv_load_from_cache = _kit->gvn().transform(new ScopedValueGetLoadFromCacheNode(C, in_cache, hits_in_cache));
+    phi_cache_value->init_req(1, sv_load_from_cache);
+    phi_mem->init_req(1, _kit->reset_memory());
+    phi_io->init_req(1, _kit->i_o());
+    _kit->set_all_memory(_kit->gvn().transform(phi_mem));
+    _kit->set_i_o(_kit->gvn().transform(phi_io));
+    _kit->set_control(_kit->gvn().transform(region_fast_slow));
+    C->record_for_igvn(region_fast_slow);
+    _kit->pop();
+    _kit->push(phi_cache_value);
+    // The if nodes from parsing are now only reachable if get() doesn't hit in the cache. Adjust count/probability for
+    // those nodes.
+    float cache_miss_cnt = cache_miss_prob * _cache_not_null_iff->_fcnt;
+    reset_iff_prob_and_cnt(_cache_not_null_iff, true, cache_miss_cnt);
+    reset_iff_prob_and_cnt(_first_cache_probe_iff, false, cache_miss_cnt);
+    reset_iff_prob_and_cnt(_second_cache_probe_iff, false, cache_miss_cnt);
+  }
+
+  float canonical_if_prob(IfNode* iff) const {
+    if (iff == nullptr) {
+      return 0;
+    }
+    float prob = iff->_prob;
+    if (prob != PROB_UNKNOWN && !iff->in(1)->as_Bool()->_test.is_canonical()) {
+      prob = 1 - prob;
+    }
+    return prob;
+  }
+
+  float if_cnt(IfNode* iff) const {
+    if (iff == nullptr) {
+      return 0;
+    }
+    return iff->_fcnt;
+  }
+
+  Node* scoped_value_cache_node() {
+    Compile* C = _kit->C;
+    Node* thread = _kit->gvn().transform(new ThreadLocalNode());
+    Node* p = _kit->basic_plus_adr(C->top()/*!oop*/, thread, in_bytes(JavaThread::scopedValueCache_offset()));
+    Node* cache_obj_handle = _kit->make_load(nullptr, p, p->bottom_type()->is_ptr(), T_ADDRESS, MemNode::unordered);
+    ciInstanceKlass* object_klass = ciEnv::current()->Object_klass();
+    const TypeOopPtr* etype = TypeOopPtr::make_from_klass(object_klass);
+    const TypeAry* arr0 = TypeAry::make(etype, TypeInt::POS);
+    const TypeAryPtr* objects_type = TypeAryPtr::make(TypePtr::BotPTR, arr0, nullptr, true, 0);
+    Node* scoped_value_cache_load = _kit->access_load(cache_obj_handle, objects_type, T_OBJECT, IN_NATIVE);
+    return scoped_value_cache_load;
+  }
+
+  void remove_thread_scoped_cache_call(const CallProjections& scoped_value_cache_projs) const {
+    Compile* C = _kit->C;
+    C->gvn_replace_by(scoped_value_cache_projs.fallthrough_memproj, _kit->merged_memory());
+    C->gvn_replace_by(scoped_value_cache_projs.fallthrough_ioproj, _kit->i_o());
+
+    _kit->gvn().hash_delete(_scoped_value_cache);
+    _scoped_value_cache->set_req(0, C->top());
+    C->record_for_igvn(_scoped_value_cache);
+  }
+
+  void make_current_exit_of_get_dead() const {
+    // The path on exit of the method from parsing ends here
+    Compile* C = _kit->C;
+    Node* current_ctrl = _kit->control();
+    Node* frame = _kit->gvn().transform(new ParmNode(C->start(), TypeFunc::FramePtr));
+    Node* halt = _kit->gvn().transform(new HaltNode(current_ctrl, frame, "Dead path for ScopedValueCall::get"));
+    C->root()->add_req(halt);
+  }
+
+  // Either the if leads to an Halt: that branch is never taken or it leads to an uncommon trap and the probability is
+  // left unchanged.
+  static void reset_iff_prob_and_cnt(IfNode* iff, bool expected, float cnt) {
+    if (iff == nullptr) {
+      return;
+    }
+    if (!iff->in(1)->as_Bool()->_test.is_canonical()) {
+      ProjNode* proj = iff->proj_out(expected);
+      if (!proj->is_uncommon_trap_proj()) {
+        float prob = expected ? PROB_ALWAYS : PROB_NEVER;
+        iff->_prob = prob;
+      }
+    } else {
+      ProjNode* proj = iff->proj_out(!expected);
+      if (!proj->is_uncommon_trap_proj()) {
+        float prob = expected ? PROB_NEVER : PROB_ALWAYS;
+        iff->_prob = prob;
+      }
+    }
+    iff->_fcnt = cnt;
+  }
 
 public:
   LateInlineScopedValueCallGenerator(ciMethod* method, CallGenerator* inline_cg, bool process_result) :
-          LateInlineCallGenerator(method, inline_cg), _sv(nullptr), _process_result(process_result) {}
+          LateInlineCallGenerator(method, inline_cg),
+          _scoped_value_object(nullptr),
+          _process_result(process_result),
+          _scoped_value_cache(nullptr),
+          _cache_not_null_iff(nullptr),
+          _first_cache_probe_iff(nullptr),
+          _second_cache_probe_iff(nullptr),
+          _first_index_in_cache(nullptr),
+          _second_index_in_cache(nullptr),
+          _slow_call(nullptr),
+          _kit(nullptr) {}
 
   virtual JVMState* generate(JVMState* jvms) {
     Compile *C = Compile::current();
@@ -840,7 +1295,7 @@ public:
 
   void do_late_inline() {
     CallNode* call = call_node();
-    _sv = call->in(TypeFunc::Parms);
+    _scoped_value_object = call->in(TypeFunc::Parms);
     CallGenerator::do_late_inline_helper();
   }
 
@@ -852,377 +1307,12 @@ public:
     if (!_process_result) {
       return;
     }
-    // The call for ScopedValue.get() was just inlined. The code here pattern matches the resulting subgraph. To make it
-    // easier:
-    // - the slow path call to slowGet() is not inlined. If heuristics decided it should be, it was enqueued for late
-    // inlining which will happen later.
-    // - The call to Thread.scopedValueCache() is not inlined either.
-    // The pattern matching here starts from the current control (end of inlining) and looks for the call for
-    // Thread.scopedValueCache() which acts as a marker for the beginning of the subgraph of interest. In the process a
-    // number of checks from the java code of ScopedValue.get() are expected to be encountered. They are recorded:
-    assert(method()->intrinsic_id() == vmIntrinsics::_SVget, "");
-    Compile* C = Compile::current();
-    CallNode* scoped_value_cache = nullptr; // call to Thread.scopedValueCache()
-    IfNode* get_cache_iff = nullptr; // test that scopedValueCache() is not null
-    IfNode* get_first_iff = nullptr; // test for a hit in the cache with first hash
-    IfNode* get_second_iff = nullptr; // test for a hit in the cache with second hash
-    Node* first_index = nullptr; // index in the cache for first hash
-    Node* second_index = nullptr; // index in the cache for second hash
-    CallStaticJavaNode* slow_call = nullptr; // slowGet() call if any
-    {
-      ResourceMark rm;
-      Unique_Node_List wq;
-      wq.push(kit.control());
-      for (uint i = 0; i < wq.size(); ++i) {
-        Node* c = wq.at(i);
-        if (c->is_Region()) {
-          for (uint j = 1; j < c->req(); ++j) {
-            Node* in = c->in(j);
-            if (in != nullptr) {
-              assert(!in->is_top(), "");
-              wq.push(in);
-            }
-          }
-        } else {
-          if (c->Opcode() == Op_If) {
-            Node* bol = c->in(1);
-            assert(bol->is_Bool(), "");
-            Node* cmp = bol->in(1);
-            assert(cmp->Opcode() == Op_CmpP, "");
-            Node* in1 = cmp->in(1)->uncast();
-            Node* in2 = cmp->in(2)->uncast();
-            if (in1->is_Proj() && in1->in(0)->is_Call() &&
-                in1->in(0)->as_CallJava()->method()->intrinsic_id() == vmIntrinsics::_scopedValueCache) {
-              assert(in2->bottom_type() == TypePtr::NULL_PTR, "");
-              assert(get_cache_iff == nullptr, "");
-              get_cache_iff = c->as_If();
-              if (scoped_value_cache == nullptr) {
-                scoped_value_cache = in1->in(0)->as_Call();
-              } else {
-                assert(scoped_value_cache == in1->in(0), "");
-              }
-              continue;
-            } else if (in2->is_Proj() && in2->in(0)->is_Call() &&
-                       in2->in(0)->as_CallJava()->method()->intrinsic_id() == vmIntrinsics::_scopedValueCache) {
-              assert(in1->bottom_type() == TypePtr::NULL_PTR, "");
-              assert(get_cache_iff == nullptr, "");
-              get_cache_iff = c->as_If();
-              if (scoped_value_cache == nullptr) {
-                scoped_value_cache = in1->in(0)->as_Call();
-              } else {
-                assert(scoped_value_cache == in1->in(0), "");
-              }
-              continue;
-            } else {
-              Node* in;
-              if (in1 == _sv) {
-                in = in2;
-              } else {
-                assert(in2 = _sv, "");
-                in = in1;
-              }
-              BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
-              in = bs->step_over_gc_barrier(in);
-              if (in->Opcode() == Op_DecodeN) {
-                in = in->in(1);
-              }
-              assert(in->Opcode() == Op_LoadP || in->Opcode() == Op_LoadN, "");
-              assert(C->get_alias_index(in->adr_type()) == C->get_alias_index(TypeAryPtr::OOPS), "");
-              Node* addp1 = in->in(MemNode::Address);
-              assert(addp1->is_AddP(), "");
-              assert(addp1->in(AddPNode::Base)->uncast()->is_Proj() &&
-                     addp1->in(AddPNode::Base)->uncast()->in(0)->as_CallJava()->method()->intrinsic_id() ==
-                     vmIntrinsics::_scopedValueCache, "");
-              if (scoped_value_cache == nullptr) {
-                scoped_value_cache = addp1->in(AddPNode::Base)->uncast()->in(0)->as_Call();
-              } else {
-                assert(scoped_value_cache == addp1->in(AddPNode::Base)->uncast()->in(0), "");
-              }
-              assert(in->in(MemNode::Memory)->is_Proj() && in->in(MemNode::Memory)->in(0) == scoped_value_cache, "");
-              Node* addp2 = addp1->in(AddPNode::Address);
-              Node* offset1 = addp1->in(AddPNode::Offset);
-              intptr_t const_offset = offset1->find_intptr_t_con(-1);
-              BasicType bt = TypeAryPtr::OOPS->array_element_basic_type();
-              int shift = exact_log2(type2aelembytes(bt));
-              int header = arrayOopDesc::base_offset_in_bytes(bt);
-              assert(const_offset >= header, "");
-              const_offset -= header;
-
-              Node* index = kit.gvn().intcon(const_offset >> shift);
-              if (addp2->is_AddP()) {
-                assert(!addp2->in(AddPNode::Address)->is_AddP() &&
-                       addp2->in(AddPNode::Base) == addp1->in(AddPNode::Base),
-                       "");
-                Node* offset2 = addp2->in(AddPNode::Offset);
-                assert(offset2->Opcode() == Op_LShiftX && offset2->in(2)->find_int_con(-1) == shift, "");
-                offset2 = offset2->in(1);
-#ifdef _LP64
-                assert(offset2->Opcode() == Op_ConvI2L, "");
-                offset2 = offset2->in(1);
-                if (offset2->Opcode() == Op_CastII && offset2->in(0)->is_Proj() &&
-                    offset2->in(0)->in(0) == get_cache_iff) {
-                  ShouldNotReachHere();
-                  offset2 = offset2->in(1);
-                }
-#endif
-                index = kit.gvn().transform(new AddINode(offset2, index));
-              }
-
-              if (get_first_iff == nullptr) {
-                get_first_iff = c->as_If();
-                first_index = index;
-              } else {
-                assert(get_second_iff == nullptr, "");
-                get_second_iff = c->as_If();
-                second_index = index;
-              }
-            }
-          } else if (c->is_RangeCheck()) {
-            // Kill the range checks as they are known to always succeed
-            kit.gvn().hash_delete(c);
-            c->set_req(1, kit.gvn().intcon(1));
-            C->record_for_igvn(c);
-          } else if (c->is_CallStaticJava()) {
-            assert(slow_call == nullptr, "");
-            slow_call = c->as_CallStaticJava();
-            assert(slow_call->method()->intrinsic_id() == vmIntrinsics::_SVslowGet, "");
-          } else {
-            assert(c->is_Proj() || c->is_Catch(), "");
-          }
-          wq.push(c->in(0));
-        }
-      }
-      // get_first_iff/get_second_iff contain the first/second check we ran into during the graph traversal but they may
-      // not be the first/second one in execution order. Perform another traversal to figure out which is first.
-      if (get_second_iff != nullptr) {
-        Node_Stack stack(0);
-        stack.push(get_cache_iff, 0);
-        while (stack.is_nonempty()) {
-          Node* c = stack.node();
-          uint i = stack.index();
-          if (i < c->outcnt()) {
-            stack.set_index(i + 1);
-            Node* u = c->raw_out(i);
-            if (wq.member(u) && u != c) {
-              if (u == get_first_iff) {
-                break;
-              } else if (u == get_second_iff) {
-                swap(get_first_iff, get_second_iff);
-                swap(first_index, second_index);
-                break;
-              }
-              stack.push(u, 0);
-            }
-          } else {
-            stack.pop();
-          }
-        }
-      }
-    }
-
-    assert(get_cache_iff != nullptr, "");
-    assert(get_second_iff == nullptr || get_first_iff != nullptr, "");
-
-    if (get_first_iff != nullptr && get_second_iff != nullptr) {
-      ProjNode* get_first_iff_failure = get_first_iff->proj_out(
-              get_first_iff->in(1)->as_Bool()->_test._test == BoolTest::ne ? 0 : 1);
-      CallStaticJavaNode* get_first_iff_unc = get_first_iff_failure->is_uncommon_trap_proj(Deoptimization::Reason_none);
-      if (get_first_iff_unc != nullptr) {
-        // first cache check never hits, keep only the second.
-        swap(get_first_iff, get_second_iff);
-        swap(first_index, second_index);
-        get_second_iff = nullptr;
-        second_index = nullptr;
-      }
-    }
-
-    // Now transform the subgraph in a way that makes is amenable to optimizations
-
-    // The path on exit of the method from parsing ends here
-    Node* current_ctrl = kit.control();
-    Node* frame = kit.gvn().transform(new ParmNode(C->start(), TypeFunc::FramePtr));
-    Node* halt = kit.gvn().transform(new HaltNode(current_ctrl, frame, "Dead path for ScopedValueCall::get"));
-    C->root()->add_req(halt);
-    current_ctrl = nullptr;
-
-    // Now move right above the scopedValueCache() call
-    Node* mem = scoped_value_cache->in(TypeFunc::Memory);
-    Node* c = scoped_value_cache->in(TypeFunc::Control);
-    Node* io = scoped_value_cache->in(TypeFunc::I_O);
-
-    kit.set_control(c);
-    kit.set_all_memory(mem);
-    kit.set_i_o(io);
-
-    // remove the scopedValueCache() call
-    CallProjections scoped_value_cache_projs = CallProjections();
-    scoped_value_cache->extract_projections(&scoped_value_cache_projs, true);
-
-    C->gvn_replace_by(scoped_value_cache_projs.fallthrough_memproj, mem);
-    C->gvn_replace_by(scoped_value_cache_projs.fallthrough_ioproj, io);
-
-    kit.gvn().hash_delete(scoped_value_cache);
-    scoped_value_cache->set_req(0, C->top());
-    C->record_for_igvn(scoped_value_cache);
-
-    // replace it with its intrinsic code:
-    Node* thread = kit.gvn().transform(new ThreadLocalNode());
-    Node* p = kit.basic_plus_adr(C->top()/*!oop*/, thread, in_bytes(JavaThread::scopedValueCache_offset()));
-    Node* cache_obj_handle = kit.make_load(nullptr, p, p->bottom_type()->is_ptr(), T_ADDRESS, MemNode::unordered);
-    ciInstanceKlass* object_klass = ciEnv::current()->Object_klass();
-    const TypeOopPtr* etype = TypeOopPtr::make_from_klass(object_klass);
-    const TypeAry* arr0 = TypeAry::make(etype, TypeInt::POS);
-    const TypeAryPtr* objects_type = TypeAryPtr::make(TypePtr::BotPTR, arr0, nullptr, true, 0);
-    Node* scoped_value_cache_load = kit.access_load(cache_obj_handle, objects_type, T_OBJECT, IN_NATIVE);
-
-    // A single ScopedValueGetHitsInCache node represents all checks that are needed to probe the cache (cache not null,
-    // prob with first hash, prob with second hash)
-    ScopedValueGetHitsInCacheNode* sv_hits_in_cache = new ScopedValueGetHitsInCacheNode(C, kit.control(),
-                                                                                        scoped_value_cache_load,
-                                                                                        kit.gvn().makecon(
-                                                                                                TypePtr::NULL_PTR),
-                                                                                        kit.memory(TypeAryPtr::OOPS),
-                                                                                        _sv,
-                                                                                        first_index == nullptr ? C->top() : first_index,
-                                                                                        second_index == nullptr ? C->top() : second_index);
-
-    // It will later be expanded back to all the checks so record profile data
-    float get_cache_prob = get_cache_iff->_prob;
-    BoolNode* get_cache_bool = get_cache_iff->in(1)->as_Bool();
-    if (get_cache_prob != PROB_UNKNOWN && !get_cache_bool->_test.is_canonical()) {
-      get_cache_prob = 1 - get_cache_prob;
-    }
-    sv_hits_in_cache->set_profile_data(0, get_cache_iff->_fcnt, get_cache_prob);
-    float get_first_prob = 0;
-    if (get_first_iff != nullptr) {
-      get_first_prob = get_first_iff->_prob;
-      if (get_first_prob != PROB_UNKNOWN && !get_first_iff->in(1)->as_Bool()->_test.is_canonical()) {
-        get_first_prob = 1 - get_first_prob;
-      }
-      sv_hits_in_cache->set_profile_data(1, get_first_iff->_fcnt, get_first_prob);
-    } else {
-      sv_hits_in_cache->set_profile_data(1, 0, 0);
-    }
-    float get_second_prob = 0;
-    if (get_second_iff != nullptr) {
-      get_second_prob = get_second_iff->_prob;
-      if (get_second_prob != PROB_UNKNOWN && !get_second_iff->in(1)->as_Bool()->_test.is_canonical()) {
-        get_second_prob = 1 - get_second_prob;
-      }
-      sv_hits_in_cache->set_profile_data(2, get_second_iff->_fcnt, get_second_prob);
-    } else {
-      sv_hits_in_cache->set_profile_data(2, 0, 0);
-    }
-    Node* sv_hits_in_cachex = kit.gvn().transform(sv_hits_in_cache);
-    assert(sv_hits_in_cachex == sv_hits_in_cache, "");
-
-    // And compute the probability of a miss in the cache
-    float prob;
-    // get_cache_prob: probability that cache array is not null
-    // get_first_prob: probability of a miss
-    // get_second_prob: probability of a miss
-    if (get_cache_prob == PROB_UNKNOWN || get_first_prob == PROB_UNKNOWN || get_second_prob == PROB_UNKNOWN) {
-      prob = PROB_UNKNOWN;
-    } else {
-      prob = (1 - get_cache_prob) + get_cache_prob * (get_first_prob + (1 - get_first_prob) * get_second_prob);
-    }
-
-    // Add the control flow that checks whether ScopedValueGetHitsInCache succeeds
-    Node* bol = kit.gvn().transform(new BoolNode(sv_hits_in_cache, BoolTest::ne));
-    IfNode* iff = new IfNode(kit.control(), bol, 1 - prob, get_cache_iff->_fcnt);
-    Node* transformed_iff = kit.gvn().transform(iff);
-    assert(transformed_iff == iff, "");
-    Node* not_in_cache = kit.gvn().transform(new IfFalseNode(iff));
-    Node* in_cache = kit.gvn().transform(new IfTrueNode(iff));
-
-    // Merge the paths that produce the result (in case there's a slow path)
-    Node* r = new RegionNode(3);
-    Node* phi_cache_value = new PhiNode(r, TypeInstPtr::BOTTOM);
-    Node* phi_mem = new PhiNode(r, Type::MEMORY, TypePtr::BOTTOM);
-    Node* phi_io = new PhiNode(r, Type::ABIO);
-
-    C->gvn_replace_by(scoped_value_cache_projs.fallthrough_catchproj, not_in_cache);
-    C->gvn_replace_by(scoped_value_cache_projs.resproj, scoped_value_cache_load);
-
-    if (slow_call == nullptr) {
-      r->init_req(1, C->top());
-      phi_cache_value->init_req(1, C->top());
-      phi_mem->init_req(1, C->top());
-      phi_io->init_req(1, C->top());
-    } else {
-      CallProjections slow_projs;
-      slow_call->extract_projections(&slow_projs, false);
-      Node* fallthrough = slow_projs.fallthrough_catchproj->clone();
-      kit.gvn().set_type(fallthrough, fallthrough->bottom_type());
-      r->init_req(1, fallthrough);
-      C->gvn_replace_by(slow_projs.fallthrough_catchproj, C->top());
-      phi_mem->init_req(1, slow_projs.fallthrough_memproj);
-      phi_io->init_req(1, slow_projs.fallthrough_ioproj);
-      phi_cache_value->init_req(1, slow_projs.resproj);
-    }
-    r->init_req(2, in_cache);
-
-    // ScopedValueGetLoadFromCache is a single that represents the result of a hit in the cache
-    Node* cache_value = kit.gvn().transform(new ScopedValueGetLoadFromCacheNode(C, in_cache, sv_hits_in_cache));
-    phi_cache_value->init_req(2, cache_value);
-    phi_mem->init_req(2, kit.reset_memory());
-    phi_io->init_req(2, kit.i_o());
-    kit.set_all_memory(kit.gvn().transform(phi_mem));
-    kit.set_i_o(kit.gvn().transform(phi_io));
-    kit.set_control(kit.gvn().transform(r));
-    C->record_for_igvn(r);
-    kit.pop();
-    kit.push(phi_cache_value);
-    // Before the transformation of the subgraph we had (some branch may not be present depending on profile data),
-    // in pseudo code:
-    //
-    // if (cache == null) {
-    //   goto slow_call;
-    // }
-    // if (first_entry_hits) {
-    //   result = first_entry;
-    // } else {
-    //   if (second_entry_hits) {
-    //     result = second_entry;
-    //   } else {
-    //     goto slow_call;
-    //   }
-    // }
-    // continue:
-    //
-    // slow_call:
-    // result = slowGet();
-    // goto continue;
-    //
-    // After transformation:
-    // if (hits_in_the_cache) {
-    //   result = load_from_cache;
-    // } else {
-    //   if (cache == null) {
-    //     goto slow_call;
-    //   }
-    //   if (first_entry_hits) {
-    //     halt;
-    //   } else {
-    //     if (second_entry_hits) {
-    //        halt;
-    //      } else {
-    //        goto slow_call;
-    //     }
-    //   }
-    // }
-    // continue:
-    //
-    // slow_call:
-    // result = slowGet();
-    // goto continue;
-    //
-    // The transformed graph includes 2 copies of the cache probing logic. One represented by the
-    // ScopedValueGetHitsInCache/ScopedValueGetLoadFromCache pair that is amenable to optimizations. The other from
-    // the result of the parsing of the java code where the success path ends with an Halt node. The reason for that is
-    // that some paths may end with an uncommon trap and if one traps, we want the trap to be recorded for the right bci.
-    // When the ScopedValueGetHitsInCache/ScopedValueGetLoadFromCache pair is expanded, split if finds the duplicate
-    // logic and cleans it up.
+    assert(_scoped_value_object != nullptr, "must have set scoped value to be pattern matched");
+    assert(method()->intrinsic_id() == vmIntrinsics::_ScopedValue_get, "should be run after late inlining of ScopedValue.get()");
+    _kit = &kit;
+    pattern_match();
+    // Now transform the subgraph in a way that makes it amenable to optimizations
+    transform_get_subgraph();
   }
 };
 

@@ -105,7 +105,6 @@ Node* BarrierSetC2::store_at_resolved(C2Access& access, C2AccessValue& val) cons
     assert(access.is_opt_access(), "either parse or opt access");
     C2OptAccess& opt_access = static_cast<C2OptAccess&>(access);
     Node* ctl = opt_access.ctl();
-    assert(opt_access.mem()->is_MergeMem(), "");
     MergeMemNode* mm = opt_access.mem()->as_MergeMem();
     PhaseGVN& gvn = opt_access.gvn();
     const TypePtr* adr_type = access.addr().type();

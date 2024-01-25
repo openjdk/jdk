@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2024, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,10 +54,10 @@ public class TestScopedValue {
 
     public static void main(String[] args) {
         // Fast path tests need to be run one at a time to prevent profile pollution
-        List<String> tests = List.of("testFastPath1", "testFastPath2", "testFastPath3", "testFastPath5",
-                "testFastPath6", "testFastPath7", "testFastPath8", "testFastPath9", "testFastPath10",
-                "testFastPath11", "testFastPath12", "testFastPath13", "testFastPath14",
-                "testSlowPath1,testSlowPath2,testSlowPath3,testSlowPath4,testSlowPath5,testSlowPath6,testSlowPath7,testSlowPath8,testSlowPath9");
+        List<String> tests = List.of("testFastPath1", "testFastPath2", "testFastPath3", "testFastPath4",
+                "testFastPath5", "testFastPath6", "testFastPath7", "testFastPath8", "testFastPath9",
+                "testFastPath10", "testFastPath11", "testFastPath12", "testFastPath13", "testFastPath14",
+                "testSlowPath1,testSlowPath2,testSlowPath3,testSlowPath4,testSlowPath5,testSlowPath6,testSlowPath7,testSlowPath8,testSlowPath9,testSlowPath10");
         for (String test : tests) {
             TestFramework.runWithFlags("-XX:+TieredCompilation", "--enable-preview", "-XX:CompileCommand=dontinline,java.lang.ScopedValue::slowGet", "-DTest=" + test);
         }
@@ -150,52 +150,10 @@ public class TestScopedValue {
         forceCompilation("testFastPath3");
     }
 
-    // Split if test but it doesn't trigger at this point
-    // @Test
-    // @IR(failOn = {IRNode.CALL_OF_METHOD, "slowGet"})
-    // @IR(counts = {IRNode.LOAD_L, "2" })
-    // public static long test4(boolean flag) throws Exception {
-    //     ScopedValue<MyLong> scopedValue;
-    //     MyLong long1;
-    //     if (flag) {
-    //         scopedValue = svFinal;
-    //         long1 = (MyLong)svFinal.get();
-    //     } else {
-    //         scopedValue = svFinal2;
-    //         long1 = (MyLong)svFinal2.get();
-    //     }
-    //     MyLong long2 = (MyLong)scopedValue.get();
-    //     return long1.getValue() + long2.getValue();
-    // }
-
-    // @Run(test = "test4", mode = RunMode.STANDALONE)
-    // private void test4Runner() throws Exception {
-    //     ScopedValue.where(svFinal, new MyLong(42)).where(svFinal2, new MyLong(42)).run(
-    //             () -> {
-    //                 try {
-    //                     MyLong unused = (MyLong)svFinal.get();
-    //                     unused = (MyLong)svFinal2.get();
-    //                     for (int i = 0; i < 20_000; i++) {
-    //                         if (test4(true) != 42 + 42) {
-    //                             throw new RuntimeException();
-    //                         }
-    //                         if (test4(false) != 42 + 42) {
-    //                             throw new RuntimeException();
-    //                         }
-    //                     }
-    //                 } catch(Exception ex) {}
-    //             });
-    //     Method m = TestScopedValue.class.getDeclaredMethod("test4", boolean.class);
-    //     WHITE_BOX.enqueueMethodForCompilation(m, CompilerWhiteBoxTest.COMP_LEVEL_FULL_OPTIMIZATION);
-    //     if (!WHITE_BOX.isMethodCompiled(m) || WHITE_BOX.getMethodCompilationLevel(m) != CompilerWhiteBoxTest.COMP_LEVEL_FULL_OPTIMIZATION) {
-    //         throw new RuntimeException("should be compiled");
-    //     }
-    // }
-
     @Test
     @IR(failOn = {IRNode.CALL_OF_METHOD, "slowGet", IRNode.LOOP, IRNode.COUNTED_LOOP})
     @IR(counts = {IRNode.LOAD_D, "1" })
-    public static double testFastPath5() {
+    public static double testFastPath4() {
         double res = 0;
         for (int i = 0; i < 10_000; i++) {
             res = sv.get().getValue(); // should be hoisted out of loop and loop should optimize out
@@ -203,18 +161,46 @@ public class TestScopedValue {
         return res;
     }
 
-    @Run(test = "testFastPath5", mode = RunMode.STANDALONE)
-    private void testFastPath5Runner() throws Exception {
+    @Run(test = "testFastPath4", mode = RunMode.STANDALONE)
+    private void testFastPath4Runner() throws Exception {
         ScopedValue.where(sv, new MyDouble(42)).run(
                 () -> {
                     MyDouble unused = sv.get();
                     for (int i = 0; i < 20_000; i++) {
-                        if (testFastPath5() != 42) {
+                        if (testFastPath4() != 42) {
                             throw new RuntimeException();
                         }
                     }
                 });
+        forceCompilation("testFastPath4");
+    }
+
+    @Test
+    @IR(failOn = {IRNode.CALL_OF_METHOD, "slowGet"})
+    @IR(counts = {IRNode.IF, ">= 3", IRNode.LOAD_P_OR_N, ">= 4" })
+    @IR(counts = {IRNode.IF, "<= 4", IRNode.LOAD_P_OR_N, "<= 5" })
+    public static void testFastPath5() {
+        Object unused = svObject.get(); // cannot be removed if result not used
+    }
+
+    @Run(test = "testFastPath5", mode = RunMode.STANDALONE)
+    private void testFastPath5Runner() throws Exception {
+        ScopedValue.where(svObject, new Object()).run(
+                () -> {
+                    Object unused = svObject.get();
+                    for (int i = 0; i < 20_000; i++) {
+                        testFastPath5();
+                    }
+                });
         forceCompilation("testFastPath5");
+    }
+
+    static Object testFastPath6Field;
+    @ForceInline
+    static void testFastPath6Helper(int i, Object o) {
+        if (i != 10) {
+            testFastPath6Field = o;
+        }
     }
 
     @Test
@@ -222,7 +208,10 @@ public class TestScopedValue {
     @IR(counts = {IRNode.IF, ">= 3", IRNode.LOAD_P_OR_N, ">= 4" })
     @IR(counts = {IRNode.IF, "<= 4", IRNode.LOAD_P_OR_N, "<= 5" })
     public static void testFastPath6() {
-        Object unused = svObject.get(); // cannot be removed if result not used
+        Object unused = svObject.get(); // cannot be removed even if result not used (after opts)
+        int i;
+        for (i = 0; i < 10; i++);
+        testFastPath6Helper(i, unused);
     }
 
     @Run(test = "testFastPath6", mode = RunMode.STANDALONE)
@@ -232,47 +221,16 @@ public class TestScopedValue {
                     Object unused = svObject.get();
                     for (int i = 0; i < 20_000; i++) {
                         testFastPath6();
+                        testFastPath6Helper(9, null);
                     }
                 });
         forceCompilation("testFastPath6");
     }
 
-    static Object testFastPath7Field;
-    @ForceInline
-    static void testFastPath7Helper(int i, Object o) {
-        if (i != 10) {
-            testFastPath7Field = o;
-        }
-    }
-
-    @Test
-    @IR(failOn = {IRNode.CALL_OF_METHOD, "slowGet"})
-    @IR(counts = {IRNode.IF, ">= 3", IRNode.LOAD_P_OR_N, ">= 4" })
-    @IR(counts = {IRNode.IF, "<= 4", IRNode.LOAD_P_OR_N, "<= 5" })
-    public static void testFastPath7() {
-        Object unused = svObject.get(); // cannot be removed even if result not used (after opts)
-        int i;
-        for (i = 0; i < 10; i++);
-        testFastPath7Helper(i, unused);
-    }
-
-    @Run(test = "testFastPath7", mode = RunMode.STANDALONE)
-    private void testFastPath7Runner() throws Exception {
-        ScopedValue.where(svObject, new Object()).run(
-                () -> {
-                    Object unused = svObject.get();
-                    for (int i = 0; i < 20_000; i++) {
-                        testFastPath7();
-                        testFastPath7Helper(9, null);
-                    }
-                });
-        forceCompilation("testFastPath7");
-    }
-
     @Test
     @IR(failOn = {IRNode.CALL_OF_METHOD, "slowGet", IRNode.LOOP, IRNode.COUNTED_LOOP})
     @IR(counts = {IRNode.LOAD_D, "1" })
-    public static double testFastPath8(boolean[] flags) {
+    public static double testFastPath7(boolean[] flags) {
         double res = 0;
         for (int i = 0; i < 10_000; i++) {
             if (flags[i]) {
@@ -284,14 +242,50 @@ public class TestScopedValue {
         return res;
     }
 
-    @Run(test = "testFastPath8", mode = RunMode.STANDALONE)
-    private void testFastPath8Runner() throws Exception {
+    @Run(test = "testFastPath7", mode = RunMode.STANDALONE)
+    private void testFastPath7Runner() throws Exception {
         boolean[] allTrue = new boolean[10_000];
         Arrays.fill(allTrue, true);
         boolean[] allFalse = new boolean[10_000];
         ScopedValue.where(sv, new MyDouble(42)).run(
                 () -> {
                     MyDouble unused = sv.get();
+                    for (int i = 0; i < 20_000; i++) {
+                        if (testFastPath7(allTrue) != 42) {
+                            throw new RuntimeException();
+                        }
+                        if (testFastPath7(allFalse) != 42) {
+                            throw new RuntimeException();
+                        }
+                    }
+                });
+        forceCompilation("testFastPath7", boolean[].class);
+    }
+
+    @Test
+    @IR(failOn = {IRNode.CALL_OF_METHOD, "slowGet"})
+    @IR(counts = {IRNode.LOAD_D, "1" })
+    public static double testFastPath8(boolean[] flags) {
+        double res = 0;
+        for (int i = 0; i < 10_000; i++) {
+            notInlined();
+            if (flags[i]) {
+                res = svFinal.get().getValue(); // should be hoisted by predication
+            } else {
+                res = svFinal.get().getValue(); // should be hoisted by predication
+            }
+        }
+        return res;
+    }
+
+    @Run(test = "testFastPath8", mode = RunMode.STANDALONE)
+    private void testFastPath8Runner() throws Exception {
+        boolean[] allTrue = new boolean[10_000];
+        Arrays.fill(allTrue, true);
+        boolean[] allFalse = new boolean[10_000];
+        ScopedValue.where(svFinal, new MyDouble(42)).run(
+                () -> {
+                    MyDouble unused = svFinal.get();
                     for (int i = 0; i < 20_000; i++) {
                         if (testFastPath8(allTrue) != 42) {
                             throw new RuntimeException();
@@ -306,43 +300,7 @@ public class TestScopedValue {
 
     @Test
     @IR(failOn = {IRNode.CALL_OF_METHOD, "slowGet"})
-    @IR(counts = {IRNode.LOAD_D, "1" })
-    public static double testFastPath9(boolean[] flags) {
-        double res = 0;
-        for (int i = 0; i < 10_000; i++) {
-            notInlined();
-            if (flags[i]) {
-                res = svFinal.get().getValue(); // should be hoisted by predication
-            } else {
-                res = svFinal.get().getValue(); // should be hoisted by predication
-            }
-        }
-        return res;
-    }
-
-    @Run(test = "testFastPath9", mode = RunMode.STANDALONE)
-    private void testFastPath9Runner() throws Exception {
-        boolean[] allTrue = new boolean[10_000];
-        Arrays.fill(allTrue, true);
-        boolean[] allFalse = new boolean[10_000];
-        ScopedValue.where(svFinal, new MyDouble(42)).run(
-                () -> {
-                    MyDouble unused = svFinal.get();
-                    for (int i = 0; i < 20_000; i++) {
-                        if (testFastPath9(allTrue) != 42) {
-                            throw new RuntimeException();
-                        }
-                        if (testFastPath9(allFalse) != 42) {
-                            throw new RuntimeException();
-                        }
-                    }
-                });
-        forceCompilation("testFastPath9", boolean[].class);
-    }
-
-    @Test
-    @IR(failOn = {IRNode.CALL_OF_METHOD, "slowGet"})
-    public static Object testFastPath10(boolean[] flags) {
+    public static Object testFastPath9(boolean[] flags) {
         // result of get() is candidate for sinking
         Object res = null;
         for (int i = 0; i < 10_000; i++) {
@@ -353,6 +311,35 @@ public class TestScopedValue {
             }
         }
         return res;
+    }
+
+    @Run(test = "testFastPath9", mode = RunMode.STANDALONE)
+    private void testFastPath9Runner() throws Exception {
+        boolean[] allTrue = new boolean[10_000];
+        Arrays.fill(allTrue, true);
+        boolean[] allFalse = new boolean[10_000];
+        ScopedValue.where(svObject, new MyDouble(42)).run(
+                () -> {
+                    Object unused = svObject.get();
+                    for (int i = 0; i < 20_000; i++) {
+                        testFastPath9(allTrue);
+                        testFastPath9(allFalse);
+                    }
+                });
+        forceCompilation("testFastPath9", boolean[].class);
+    }
+    @Test
+    @IR(failOn = {IRNode.CALL_OF_METHOD, "slowGet"})
+    public static Object testFastPath10(boolean[] flags) {
+        for (int i = 0; i < 10_000; i++) {
+            volatileField = 0x42;
+            final boolean flag = flags[i];
+            Object res = svObject.get(); // result used out of loop
+            if (flag) {
+                return res;
+            }
+        }
+        return null;
     }
 
     @Run(test = "testFastPath10", mode = RunMode.STANDALONE)
@@ -370,34 +357,27 @@ public class TestScopedValue {
                 });
         forceCompilation("testFastPath10", boolean[].class);
     }
+
     @Test
     @IR(failOn = {IRNode.CALL_OF_METHOD, "slowGet"})
-    public static Object testFastPath11(boolean[] flags) {
-        for (int i = 0; i < 10_000; i++) {
-            volatileField = 0x42;
-            final boolean flag = flags[i];
-            Object res = svObject.get(); // result used out of loop
-            if (flag) {
-                return res;
-            }
-        }
-        return null;
+    @IR(counts = {IRNode.IF, ">= 3", IRNode.LOAD_P_OR_N, ">= 5" })
+    @IR(counts = {IRNode.IF, "<= 4", IRNode.LOAD_P_OR_N, "<= 7" })
+    public static Object testFastPath11() {
+        // test commoning when the result of one is unused
+        Object unused = svObject.get();
+        return svObject.get();
     }
 
     @Run(test = "testFastPath11", mode = RunMode.STANDALONE)
     private void testFastPath11Runner() throws Exception {
-        boolean[] allTrue = new boolean[10_000];
-        Arrays.fill(allTrue, true);
-        boolean[] allFalse = new boolean[10_000];
-        ScopedValue.where(svObject, new MyDouble(42)).run(
+        ScopedValue.where(svObject, new Object()).run(
                 () -> {
                     Object unused = svObject.get();
                     for (int i = 0; i < 20_000; i++) {
-                        testFastPath11(allTrue);
-                        testFastPath11(allFalse);
+                        testFastPath11();
                     }
                 });
-        forceCompilation("testFastPath11", boolean[].class);
+        forceCompilation("testFastPath11");
     }
 
     @Test
@@ -406,8 +386,22 @@ public class TestScopedValue {
     @IR(counts = {IRNode.IF, "<= 4", IRNode.LOAD_P_OR_N, "<= 7" })
     public static Object testFastPath12() {
         // test commoning when the result of one is unused
+        int i;
+        for (i = 0; i < 10; i++) {
+
+        }
+        final Object result = testFastPath12Inlined(i);
         Object unused = svObject.get();
-        return svObject.get();
+        return result;
+    }
+
+    @ForceInline
+    private static Object testFastPath12Inlined(int i) {
+        Object result = null;
+        if (i == 10) {
+            result = svObject.get();
+        }
+        return result;
     }
 
     @Run(test = "testFastPath12", mode = RunMode.STANDALONE)
@@ -417,6 +411,7 @@ public class TestScopedValue {
                     Object unused = svObject.get();
                     for (int i = 0; i < 20_000; i++) {
                         testFastPath12();
+                        testFastPath12Inlined(0);
                     }
                 });
         forceCompilation("testFastPath12");
@@ -425,25 +420,10 @@ public class TestScopedValue {
     @Test
     @IR(failOn = {IRNode.CALL_OF_METHOD, "slowGet"})
     @IR(counts = {IRNode.IF, ">= 3", IRNode.LOAD_P_OR_N, ">= 5" })
-    @IR(counts = {IRNode.IF, "<= 4", IRNode.LOAD_P_OR_N, "<= 7" })
+    @IR(counts = {IRNode.IF, "<= 4", IRNode.LOAD_P_OR_N, "<= 6" })
     public static Object testFastPath13() {
-        // test commoning when the result of one is unused
-        int i;
-        for (i = 0; i < 10; i++) {
-
-        }
-        final Object result = testFastPath13Inlined(i);
-        Object unused = svObject.get();
-        return result;
-    }
-
-    @ForceInline
-    private static Object testFastPath13Inlined(int i) {
-        Object result = null;
-        if (i == 10) {
-            result = svObject.get();
-        }
-        return result;
+        // checks code shape once fully expanded
+        return svObject.get();
     }
 
     @Run(test = "testFastPath13", mode = RunMode.STANDALONE)
@@ -453,7 +433,6 @@ public class TestScopedValue {
                     Object unused = svObject.get();
                     for (int i = 0; i < 20_000; i++) {
                         testFastPath13();
-                        testFastPath13Inlined(0);
                     }
                 });
         forceCompilation("testFastPath13");
@@ -461,23 +440,24 @@ public class TestScopedValue {
 
     @Test
     @IR(failOn = {IRNode.CALL_OF_METHOD, "slowGet"})
-    @IR(counts = {IRNode.IF, ">= 3", IRNode.LOAD_P_OR_N, ">= 5" })
-    @IR(counts = {IRNode.IF, "<= 4", IRNode.LOAD_P_OR_N, "<= 6" })
-    public static Object testFastPath14() {
-        // checks code shape once fully expanded
-        return svObject.get();
+    @IR(counts = {IRNode.LOAD_VECTOR_D, ">=1" })
+    public static void testFastPath14(double[] src, double[] dst) {
+        for (int i = 0; i < 10_000; i++) {
+            dst[i] = src[i] * sv.get().getValue();
+        }
     }
 
     @Run(test = "testFastPath14", mode = RunMode.STANDALONE)
     private void testFastPath14Runner() throws Exception {
-        ScopedValue.where(svObject, new Object()).run(
+        double[] array = new double[10_000];
+        ScopedValue.where(sv, new MyDouble(42)).run(
                 () -> {
-                    Object unused = svObject.get();
+                    MyDouble unused = sv.get();
                     for (int i = 0; i < 20_000; i++) {
-                        testFastPath14();
+                        testFastPath14(array, array);
                     }
                 });
-        forceCompilation("testFastPath14");
+        forceCompilation("testFastPath14", double[].class, double[].class);
     }
 
     @Test
@@ -656,6 +636,25 @@ public class TestScopedValue {
                     testSlowPath9();
                 });
     }
+
+    @Test
+    @IR(counts = {IRNode.CALL_OF_METHOD, "slowGet", "1", IRNode.LOAD_VECTOR_D, ">=1" })
+    public static void testSlowPath10(double[] src, double[] dst) {
+        ScopedValue<MyDouble> localSV = sv;
+        for (int i = 0; i < 10_000; i++) {
+            dst[i] = src[i] * localSV.get().getValue();
+        }
+    }
+
+    @Run(test = "testSlowPath10")
+    private void testSlowPath10Runner() throws Exception {
+        double[] array = new double[10_000];
+        ScopedValue.where(sv, new MyDouble(42)).run(
+                () -> {
+                    testSlowPath10(array, array);
+                });
+    }
+
 
     static class MyDouble {
         final private double value;

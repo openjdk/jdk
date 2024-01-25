@@ -28,9 +28,9 @@
 #include "compiler/compileBroker.hpp"
 #include "opto/callnode.hpp"
 #include "opto/compile.hpp"
+#include "opto/graphKit.hpp"
 #include "opto/type.hpp"
 #include "runtime/deoptimization.hpp"
-#include "graphKit.hpp"
 
 //---------------------------CallGenerator-------------------------------------
 // The subclasses of this class handle generation of ideal nodes for

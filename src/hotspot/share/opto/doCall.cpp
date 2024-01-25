@@ -176,7 +176,7 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
     return cg;
   }
 
-  if (callee->intrinsic_id() == vmIntrinsics::_SVCacheInvalidate) {
+  if (callee->intrinsic_id() == vmIntrinsics::_ScopedValueCache_invalidate) {
     C->set_has_scoped_value_invalidate(true);
   }
 
@@ -218,9 +218,9 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
             return CallGenerator::for_boxing_late_inline(callee, cg);
           } else if (should_delay_vector_reboxing_inlining(callee, jvms)) {
             return CallGenerator::for_vector_reboxing_late_inline(callee, cg);
-          } else if (callee->intrinsic_id() == vmIntrinsics::_SVget && IncrementalInline) {
+          } else if (callee->intrinsic_id() == vmIntrinsics::_ScopedValue_get && IncrementalInline) {
             return CallGenerator::for_scoped_value_late_inline(callee, cg, true);
-          } else if (callee->intrinsic_id() == vmIntrinsics::_SVslowGet && IncrementalInline) {
+          } else if (callee->intrinsic_id() == vmIntrinsics::_ScopedValue_slowGet && IncrementalInline) {
             return CallGenerator::for_late_inline(callee, cg);
           } else {
             return cg;
