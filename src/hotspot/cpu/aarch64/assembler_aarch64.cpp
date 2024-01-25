@@ -189,16 +189,23 @@ void Address::lea(MacroAssembler *as, Register r) const {
 
 // This encoding is similar (but not quite identical) to the encoding used
 // by literal ld/st. see JDK-8324123.
-// FIXME: PRFM should not be used with writeback modes, but the assembler
-// doesn't enfore that.
+// PRFM does not support writeback or pre/post index.
 void Assembler::prfm(const Address &adr, prfop pfop) {
-  if (adr.getMode() == Address::literal) {
+  Address::mode mode = adr.getMode();
+  // PRFM does not support pre/post index
+  // Passing Address with pre/post mode to ld_st2 will generate an undefined instruction.
+  // So use guarantee to avoid pre/post mode Address operand
+  guarantee((mode != Address::pre), "prfm does not support pre index");
+  guarantee((mode != Address::post), "prfm does not support post index");
+  if (mode == Address::literal) {
     starti;
     f(0b11, 31, 30), f(0b011, 29, 27), f(0b000, 26, 24);
     f(pfop, 4, 0);
     int64_t offset = (adr.target() - pc()) >> 2;
     sf(offset, 23, 5);
   } else {
+    assert((mode == Address::base_plus_offset)
+            || (mode == Address::base_plus_offset_reg), "must be base_plus_offset/base_plus_offset_reg");
     ld_st2(as_Register(pfop), adr, 0b11, 0b10);
   }
 }
