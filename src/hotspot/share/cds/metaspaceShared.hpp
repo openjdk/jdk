@@ -53,6 +53,8 @@ class MetaspaceShared : AllStatic {
   static intx _relocation_delta;
   static char* _requested_base_address;
   static bool _use_optimized_module_handling;
+  static size_t _ptrmap_leading_zeros;
+  static size_t _oopmap_leading_zeros;
  public:
   enum {
     // core archive spaces
@@ -162,6 +164,10 @@ public:
   // Can we skip some expensive operations related to modules?
   static bool use_optimized_module_handling() { return NOT_CDS(false) CDS_ONLY(_use_optimized_module_handling); }
   static void disable_optimized_module_handling() { _use_optimized_module_handling = false; }
+
+  // Leading zeros are removed from heap bitmaps
+  static size_t oopmap_leading_zeros() { return _oopmap_leading_zeros; }
+  static size_t ptrmap_leading_zeros() { return _ptrmap_leading_zeros; }
 
 private:
   static void read_extra_data(JavaThread* current, const char* filename) NOT_CDS_RETURN;

@@ -97,6 +97,8 @@ void* MetaspaceShared::_shared_metaspace_static_top = nullptr;
 intx MetaspaceShared::_relocation_delta;
 char* MetaspaceShared::_requested_base_address;
 bool MetaspaceShared::_use_optimized_module_handling = true;
+size_t MetaspaceShared::_ptrmap_leading_zeros;
+size_t MetaspaceShared::_oopmap_leading_zeros;
 
 // The CDS archive is divided into the following regions:
 //     rw  - read-write metadata
@@ -946,6 +948,10 @@ void MetaspaceShared::initialize_runtime_shared_and_meta_spaces() {
     set_shared_metaspace_range(cds_base, static_mapinfo->mapped_end(), cds_end);
     _relocation_delta = static_mapinfo->relocation_delta();
     _requested_base_address = static_mapinfo->requested_base_address();
+    // Leading zeros are needed to get correct offsets
+    _oopmap_leading_zeros = static_mapinfo->header()->heap_oopmap_leading_zeros();
+    _ptrmap_leading_zeros = static_mapinfo->header()->heap_ptrmap_leading_zeros();
+
     if (dynamic_mapped) {
       FileMapInfo::set_shared_path_table(dynamic_mapinfo);
       // turn AutoCreateSharedArchive off if successfully mapped

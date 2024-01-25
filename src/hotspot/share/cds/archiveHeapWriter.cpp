@@ -634,10 +634,11 @@ bool ArchiveHeapWriter::is_marked_as_native_pointer(ArchiveHeapInfo* heap_info, 
   assert((Metadata**)_requested_bottom <= requested_field_addr && requested_field_addr < (Metadata**) _requested_top, "range check");
 
   BitMap::idx_t idx = requested_field_addr - (Metadata**) _requested_bottom;
-  if (idx < 49792 /*ptrmap_leading_zeros*/) {
+  // Leading zeros have been removed so some addresses may not be in the ptrmap
+  if (idx < MetaspaceShared::ptrmap_leading_zeros()) { // 49792 for osx
     return false;
   } else {
-    idx -= 49792 /*ptrmap_leading_zeros*/;
+    idx -= MetaspaceShared::ptrmap_leading_zeros();
   }
   return (idx < heap_info->ptrmap()->size()) && (heap_info->ptrmap()->at(idx) == true);
 }
