@@ -342,12 +342,8 @@ import java.util.Objects;
  * For more sophisticated patterns, {@link ChoiceFormat} can be used with
  * {@code MessageFormat} to produce accurate forms for singular and plural:
  * {@snippet lang=java :
- * MessageFormat msgFmt = new MessageFormat("The disk \"{0}\" contains {1}.");
- * double[] fileLimits = {0,1,2};
- * String[] filePart = {"no files","one file","{1,number} files"};
- * ChoiceFormat fileChoices = new ChoiceFormat(fileLimits, filePart);
- * msgFmt.setFormatByArgumentIndex(1, fileChoices);
- * Object[] args = {"MyDisk", 1273};
+ * MessageFormat msgFmt = new MessageFormat("The disk \"{0}\" contains {1,choice,0#no files|1#one file|1< {1,number,integer} files}.");
+ * Object[] args = {"MyDisk", fileCount};
  * System.out.println(msgFmt.format(args));
  * }
  *
@@ -357,15 +353,6 @@ import java.util.Objects;
  * The disk "MyDisk" contains one file.
  * The disk "MyDisk" contains 1,273 files.
  * </pre></blockquote>
- *
- * <p>
- * You can create the {@code ChoiceFormat} programmatically, as in the
- * above example, or by using a pattern. See {@link ChoiceFormat}
- * for more information.
- * {@snippet lang=java :
- * msgFmt.applyPattern(
- *    "There {0,choice,0#are no files|1#is one file|1<are {1,number,integer} files}.");
- * }
  *
  * <p>
  * <strong id="pattern_caveats">Notes:</strong> As seen in the previous snippet,
