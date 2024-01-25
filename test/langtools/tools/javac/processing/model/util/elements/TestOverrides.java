@@ -62,7 +62,7 @@ public class TestOverrides extends JavacTestingAbstractProcessor {
                 elements.overrides(method, findMethod(methodName, objectElt), objectInterfaceElt ) ) {
                 throw new RuntimeException("Unexpected overrding relation found for " + method);
             }
-                 
+
             if (!elementSeen) {
                 throw new RuntimeException("No elements seen.");
             }
@@ -77,7 +77,7 @@ public class TestOverrides extends JavacTestingAbstractProcessor {
         }
         return null;
     }
-        
+
 }
 
 @interface OverrideExpected {
