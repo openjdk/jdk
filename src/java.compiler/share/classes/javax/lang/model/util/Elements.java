@@ -694,16 +694,16 @@ public interface Elements {
      * as overriding the corresponding {@code Object} method; for
      * example:
      *
-     * <blockquote><pre>
+     * {@snippet lang=java :
      * interface I {
-     *   &commat;Override
+     *   @Override
      *   String toString();
      * }
      * ...
      * assert elements.overrides(elementForItoString,
      *                           elementForObjecttoString,
      *                           elements.getTypeElement("I"));
-     * </pre></blockquote>
+     * }
      *
      * @param overrider  the first method, possible overrider
      * @param overridden  the second method, possibly being overridden
