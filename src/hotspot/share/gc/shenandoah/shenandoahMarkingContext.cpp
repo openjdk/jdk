@@ -87,8 +87,7 @@ void ShenandoahMarkingContext::clear_bitmap(ShenandoahHeapRegion* r) {
 }
 
 bool ShenandoahMarkingContext::is_complete() {
-  bool result = _is_complete.is_set();
-  return result;
+  return _is_complete.is_set();
 }
 
 void ShenandoahMarkingContext::mark_complete() {
