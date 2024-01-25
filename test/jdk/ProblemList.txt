@@ -624,7 +624,6 @@ sun/security/provider/PolicyFile/GrantAllPermToExtWhenNoPolicy.java 8039280 gene
 sun/security/provider/PolicyParser/PrincipalExpansionError.java 8039280 generic-all
 
 sun/security/pkcs11/sslecc/ClientJSSEServerJSSE.java            8316183 linux-ppc64le
-sun/security/pkcs11/Provider/MultipleLogins.sh                  8319128 linux-aarch64
 
 ############################################################################
 
