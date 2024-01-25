@@ -924,12 +924,15 @@ HeapWord* SerialHeap::block_start(const void* addr) const {
 bool SerialHeap::block_is_obj(const HeapWord* addr) const {
   assert(is_in_reserved(addr), "block_is_obj of address outside of heap");
   assert(block_start(addr) == addr, "addr must be a block start");
+
   if (_young_gen->is_in_reserved(addr)) {
-    return _young_gen->block_is_obj(addr);
+    return _young_gen->eden()->is_in(addr)
+        || _young_gen->from()->is_in(addr)
+        || _young_gen->to()  ->is_in(addr);
   }
 
-  assert(_old_gen->is_in_reserved(addr), "Some generation should contain the address");
-  return _old_gen->block_is_obj(addr);
+  assert(_old_gen->is_in_reserved(addr), "must be in old-gen");
+  return addr < _old_gen->space()->top();
 }
 
 size_t SerialHeap::tlab_capacity(Thread* thr) const {
