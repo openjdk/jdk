@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -1584,7 +1584,7 @@ static char* reserve_shmated_memory (size_t bytes, char* requested_addr) {
 
   // Now attach the shared segment.
   // Note that we deliberately *don't* pass SHM_RND. The contract of os::attempt_reserve_memory_at() -
-  // which invokes this function with a request address != NULL - is to map at the specified address
+  // which invokes this function with a request address != nullptr - is to map at the specified address
   // excactly, or to fail. If the caller passed us an address that is not usable (aka not a valid segment
   // boundary), shmat should not round down the address, or think up a completely new one.
   // (In places where this matters, e.g. when reserving the heap, we take care of passing segment-aligned
