@@ -274,7 +274,6 @@ void C2_MacroAssembler::fast_lock_lightweight(Register obj, Register t1,
     // Try to lock. Transition lock-bits 0b01 => 0b00
     orr(mark, mark, markWord::unlocked_value);
     eor(t, mark, markWord::unlocked_value);
-    // Acquire to satisfy the JMM.
     cmpxchg(/*addr*/ obj, /*expected*/ mark, /*new*/ t, Assembler::xword,
             /*acquire*/ true, /*release*/ false, /*weak*/ false, noreg);
     br(Assembler::NE, slow_path);
@@ -378,7 +377,6 @@ void C2_MacroAssembler::fast_unlock_lightweight(Register obj, Register t1, Regis
     // Try to unlock. Transition lock bits 0b00 => 0b01
     assert(oopDesc::mark_offset_in_bytes() == 0, "required to avoid lea");
     orr(t, mark, markWord::unlocked_value);
-    // Release to satisfy the JMM.
     cmpxchg(/*addr*/ obj, /*expected*/ mark, /*new*/ t, Assembler::xword,
             /*acquire*/ false, /*release*/ true, /*weak*/ false, noreg);
     br(Assembler::EQ, unlocked);
