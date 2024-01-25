@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Intel Corporation. All rights reserved.
+ * Copyright (c) 2022, 2024, Intel Corporation. All rights reserved.
  *
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -926,9 +926,20 @@ address StubGenerator::generate_poly1305_processBlocks() {
   __ push(r14);
   __ push(r15);
 
+  bool use_stack_avx2 = UseAVX > 2 ? false : true;
+  // Function entry (setup stack frame)
+  if (use_stack_avx2) {
+    // Save rbp and rsp
+    __ push(rbp);
+    __ movq(rbp, rsp);
+    // Align stack
+    __ andq(rsp, -32);
+    __ subptr(rsp, 32*8);
+  }
+
   // Register Map
-  const Register input        = rdi;
-  const Register length       = rbx;
+  const Register input        = rdi; // msg
+  const Register length       = rbx; // msg length in bytes
   const Register accumulator  = rcx;
   const Register R            = r8;
 
@@ -985,9 +996,16 @@ address StubGenerator::generate_poly1305_processBlocks() {
   __ cmpl(length, 16*16);
   __ jcc(Assembler::less, L_process16Loop);
 
-  poly1305_process_blocks_avx512(input, length,
+  if (UseAVX > 2) {
+    poly1305_process_blocks_avx512(input, length,
                                   a0, a1, a2,
                                   r0, r1, c1);
+  } else {
+    poly1305_process_blocks_avx2(input, length,
+                                  a0, a1, a2,
+                                  r0, r1, c1);
+  }
+
 
   // SCALAR LOOP: process one 16-byte message block at a time
   __ bind(L_process16Loop);
@@ -1009,6 +1027,11 @@ address StubGenerator::generate_poly1305_processBlocks() {
   // Write output
   poly1305_limbs_out(a0, a1, a2, accumulator, t0, t1);
 
+  if (use_stack_avx2) {
+    // Save rbp and rsp
+    __ movq(rsp, rbp);
+    __ pop(rbp);
+  }
   __ pop(r15);
   __ pop(r14);
   __ pop(r13);
@@ -1022,4 +1045,498 @@ address StubGenerator::generate_poly1305_processBlocks() {
   __ leave();
   __ ret(0);
   return start;
+}
+
+void StubGenerator::poly1305_process_blocks_avx2(
+    const Register input, const Register length,
+    const Register a0, const Register a1, const Register a2,
+    const Register r0, const Register r1, const Register c1)
+{
+  Label L_process256Loop, L_process256LoopDone;
+  const Register t0 = r13;
+  const Register t1 = r14;
+  const Register t2 = r15;
+  const Register mulql = rax;
+  const Register mulqh = rdx;
+
+  const XMMRegister YMM_ACC0 = xmm0;
+  const XMMRegister YMM_ACC1 = xmm1;
+  const XMMRegister YMM_ACC2 = xmm2;
+
+  const XMMRegister YTMP1 = xmm3;
+  const XMMRegister YTMP2 = xmm4;
+  const XMMRegister YTMP3 = xmm5;
+  const XMMRegister YTMP4 = xmm6;
+  const XMMRegister YTMP5 = xmm7;
+  const XMMRegister YTMP6 = xmm8;
+  const XMMRegister YTMP7 = xmm9;
+  const XMMRegister YTMP8 = xmm10;
+  const XMMRegister YTMP9 = xmm11;
+  const XMMRegister YTMP10 = xmm12;
+  const XMMRegister YTMP11 = xmm13;
+  const XMMRegister YTMP12 = xmm14;
+  const XMMRegister YTMP13 = xmm15;
+
+  const XMMRegister YMM_R0 = YTMP11;
+  const XMMRegister YMM_R1 = YTMP12;
+  const XMMRegister YMM_R2 = YTMP13;
+
+  // XWORD of YMM registers 
+  const XMMRegister XTMP1 = YTMP1;
+  const XMMRegister XTMP2 = YTMP2;
+  const XMMRegister XTMP3 = YTMP3;
+
+  // Spread accumulator into 44-bit limbs in quadwords XTMP1, XTMP2, XTMP3
+  // First limb (Acc[43:0])
+  __ movq(t0, a0);
+  __ andq(t0, ExternalAddress(poly1305_mask44()), t1 /*rscratch*/);
+  __ movq(XTMP1, t0);
+  // Second limb (Acc[87:44])
+  __ movq(t0, a1);
+  __ shrdq(a0, t0, 44);
+  __ andq(a0, ExternalAddress(poly1305_mask44()), t1 /*rscratch*/);
+  __ movq(XTMP2, a0);
+  // Third limb (Acc[129:88])
+  __ shrdq(a1, a2, 24);
+  __ andq(a1, ExternalAddress(poly1305_mask42()), t1 /*rscratch*/);
+  __ movq(XTMP3, a1);
+
+  // To add accumulator, we must unroll first loop iteration
+
+  // Load first block of data (64 bytes)and pad
+  __ vmovdqu(YTMP4, Address(input, 0));
+  __ vmovdqu(YTMP5, Address(input, 32));
+
+  // Interleave the data to form 44-bit limbs
+  // YMM_ACC0 to have bits 0-43 of all 4 blocks in 4 qwords
+  // YMM_ACC1 to have bits 87-44 of all 4 blocks in 4 qwords
+  // YMM_ACC2 to have bits 127-88 of all 4 blocks in 4 qwords
+  // Interleave blocks of data
+  __ vpunpckhqdq(YMM_ACC2, YTMP4, YTMP5, Assembler::AVX_256bit);
+  __ vpunpcklqdq(YMM_ACC0, YTMP4, YTMP5, Assembler::AVX_256bit);
+
+  // Middle 44-bit limbs of new blocks
+  __ vpsrlq(YMM_ACC1, YMM_ACC0, 44, Assembler::AVX_256bit);
+  __ vpsllq(YTMP4, YMM_ACC2, 20, Assembler::AVX_256bit);
+  __ vpor(YMM_ACC1, YMM_ACC1, YTMP4, Assembler::AVX_256bit);
+  __ vpand(YMM_ACC1, YMM_ACC1, ExternalAddress(poly1305_mask44()), Assembler::AVX_256bit);
+
+  // Lowest 44-bit limbs of new blocks
+  __ vpand(YMM_ACC0, YMM_ACC0, ExternalAddress(poly1305_mask44()), Assembler::AVX_256bit);
+
+  // Highest 42-bit limbs of new blocks; pad the msg with 2^128
+  __ vpsrlq(YMM_ACC2, YMM_ACC2, 24, Assembler::AVX_256bit);
+
+  // Add 2^128 to all 4 final qwords for the message
+  __ vpor(YMM_ACC2, YMM_ACC2, ExternalAddress(poly1305_pad_msg()), Assembler::AVX_256bit);
+
+  // Add accumulator to the fist message block
+  __ vpaddq(YMM_ACC0, YMM_ACC0, YTMP1, Assembler::AVX_256bit);
+  __ vpaddq(YMM_ACC1, YMM_ACC1, YTMP2, Assembler::AVX_256bit);
+  __ vpaddq(YMM_ACC2, YMM_ACC2, YTMP3, Assembler::AVX_256bit);
+
+  // Compute the powers of R^1..R^4 and form 44-bit limbs of each
+  __ movq(XTMP1, r0);
+  __ vpinsrq(XTMP1, XTMP1, r1, 1);
+  __ vinserti128(YTMP5, YTMP5, XTMP1, 1);
+
+  __ vpxorq(YTMP10, YTMP10, YTMP10, Assembler::AVX_256bit);
+  __ vpxorq(YTMP6, YTMP6, YTMP6, Assembler::AVX_256bit);
+
+  // Calculate R^2
+  __ movq(t0, r1);
+  __ shrq(t0, 2);
+  __ addq(t0, r1); // T0 = R1 + (R1 >> 2)
+  __ movq(a0, r0);
+  __ movq(a1, r1);
+
+  poly1305_multiply_scalar(a0, a1, a2,
+                           r0, r1, c1, true,
+                           t0, t1, t2, mulql, mulqh);
+  __ movq(XTMP1, a0);
+  __ vpinsrq(XTMP1, XTMP1, a1, 1);
+  __ vinserti128(YTMP5, YTMP5, XTMP1, 0);
+
+  __ movq(XTMP1, a2);
+  __ vinserti128(YTMP6, YTMP6, XTMP1, 0);
+
+  // Calculate R^3
+  poly1305_multiply_scalar(a0, a1, a2,
+                           r0, r1, c1, false,
+                           t0, t1, t2, mulql, mulqh);
+  __ movq(XTMP1, a0);
+  __ vpinsrq(XTMP1, XTMP1, a1, 1);
+  __ vinserti128(YTMP7, YTMP7, XTMP1, 1);
+
+  __ movq(XTMP1, a2);
+  __ vinserti128(YTMP2, YTMP2, XTMP1, 1);
+
+  // Calculate R^4
+  poly1305_multiply_scalar(a0, a1, a2,
+                           r0, r1, c1, false,
+                           t0, t1, t2, mulql, mulqh);
+  __ movq(XTMP1, a0);
+  __ vpinsrq(XTMP1, XTMP1, a1, 1);
+  __ vinserti128(YTMP7, YTMP7, XTMP1, 0);
+
+  __ movq(XTMP1, a2);
+  __ vinserti128(YTMP2, YTMP2, XTMP1, 0);
+
+  // Interleave the powers of R^1..R^4 to form 44-bit limbs (half-empty)
+  __ vpunpckhqdq(YMM_R2, YTMP5, YTMP10, Assembler::AVX_256bit);
+  __ vpunpcklqdq(YMM_R0, YTMP5, YTMP10, Assembler::AVX_256bit);
+  __ vpunpckhqdq(YTMP3, YTMP7, YTMP10, Assembler::AVX_256bit);
+  __ vpunpcklqdq(YTMP4, YTMP7, YTMP10, Assembler::AVX_256bit);
+
+  __ vpslldq(YMM_R2, YMM_R2, 8, Assembler::AVX_256bit);
+  __ vpslldq(YTMP6, YTMP6, 8, Assembler::AVX_256bit);
+  __ vpslldq(YMM_R0, YMM_R0, 8, Assembler::AVX_256bit);
+  __ vpor(YMM_R2, YMM_R2, YTMP3, Assembler::AVX_256bit);
+  __ vpor(YMM_R0, YMM_R0, YTMP4, Assembler::AVX_256bit);
+  __ vpor(YTMP6, YTMP6, YTMP2, Assembler::AVX_256bit);
+  // Move 2 MSbits to top 24 bits, to be OR'ed later
+  __ vpsllq(YTMP6, YTMP6, 40, Assembler::AVX_256bit);
+
+  __ vpsrlq(YMM_R1, YMM_R0, 44, Assembler::AVX_256bit);
+  __ vpsllq(YTMP5, YMM_R2, 20, Assembler::AVX_256bit);
+  __ vpor(YMM_R1, YMM_R1, YTMP5, Assembler::AVX_256bit);
+  __ vpand(YMM_R1, YMM_R1, ExternalAddress(poly1305_mask44()), Assembler::AVX_256bit);
+
+  __ vpand(YMM_R0, YMM_R0, ExternalAddress(poly1305_mask44()), Assembler::AVX_256bit);
+  __ vpsrlq(YMM_R2, YMM_R2, 24, Assembler::AVX_256bit);
+
+  __ vpor(YMM_R2, YMM_R2, YTMP6, Assembler::AVX_256bit);
+
+  // Store R^4-R for later use
+  // TODO: switch to aligned ( and -32); replace with vmovdqa
+  int _r4_r1_save = 0;
+  __ vmovdqu(Address(rsp, _r4_r1_save + 0), YMM_R0);
+  __ vmovdqu(Address(rsp, _r4_r1_save + 32), YMM_R1);
+  __ vmovdqu(Address(rsp, _r4_r1_save + 32*2), YMM_R2);
+
+  // Broadcast 44-bit limbs of R^4
+  __ mov(t0, a0);
+  __ andq(t0, ExternalAddress(poly1305_mask44()), t1 /*rscratch*/); // First limb (R^4[43:0])
+  __ movq(YMM_R0, t0);
+  __ vpermq(YMM_R0, YMM_R0, 0x0, Assembler::AVX_256bit);
+
+  __ movq(t0, a1);
+  __ shrdq(a0, t0, 44);
+  __ andq(a0, ExternalAddress(poly1305_mask44()), t1 /*rscratch*/); // Second limb (R^4[87:44])
+  __ movq(YMM_R1, a0);
+  __ vpermq(YMM_R1, YMM_R1, 0x0, Assembler::AVX_256bit);
+
+  __ shrdq(a1, a2, 24);
+  __ andq(a1, ExternalAddress(poly1305_mask42()), t1 /*rscratch*/); // Third limb (R^4[129:88])
+  __ movq(YMM_R2, a1);
+  __ vpermq(YMM_R2, YMM_R2, 0x0, Assembler::AVX_256bit);
+
+  // Generate 4*5*R^4
+  __ vpsllq(YTMP1, YMM_R1, 2, Assembler::AVX_256bit);
+  __ vpsllq(YTMP2, YMM_R2, 2, Assembler::AVX_256bit);
+  // 5*R^4
+  __ vpaddq(YTMP1, YTMP1, YMM_R1, Assembler::AVX_256bit);
+  __ vpaddq(YTMP2, YTMP2, YMM_R2, Assembler::AVX_256bit);
+  // 4*5*R^4
+  __ vpsllq(YTMP1, YTMP1, 2, Assembler::AVX_256bit);
+  __ vpsllq(YTMP2, YTMP2, 2, Assembler::AVX_256bit);
+
+  //Store R^4-R for later use
+  // TODO: switch to vmovdqa
+  int _r4_save = 32*3;
+  int _r4p_save = 32*6;
+  __ vmovdqu(Address(rsp, _r4_save + 0), YMM_R0);
+  __ vmovdqu(Address(rsp, _r4_save + 32), YMM_R1);
+  __ vmovdqu(Address(rsp, _r4_save + 32*2), YMM_R2);
+  __ vmovdqu(Address(rsp, _r4p_save), YTMP1);
+  __ vmovdqu(Address(rsp, _r4p_save + 32), YTMP2);
+
+  // Get the number of multiples of 64 bytes for vectorization
+  __ movq(t0, length);
+  __ mov64(t1, 0xffffffffffffffc0);
+  __ andq(t0, t1);
+
+  // VECTOR LOOP: process 4 * 16-byte message blocks at a time
+  __ bind(L_process256Loop);
+  __ cmpl(t0, 16*4); //64 bytes (4 blocks at a time)
+  __ jcc(Assembler::belowEqual, L_process256LoopDone);
+
+  // load next block
+  poly1305_msg_mul_reduce_vec4_avx2(YMM_ACC0, YMM_ACC1, YMM_ACC2,
+                          Address(rsp, _r4_save + 0), Address(rsp, _r4_save + 32), Address(rsp, _r4_save + 32*2),
+                          Address(rsp, _r4p_save), Address(rsp, _r4p_save + 32),
+                          YTMP1, YTMP2, YTMP3, YTMP4, YTMP5, YTMP6,
+                          YTMP7, YTMP8, YTMP9, YTMP10, YTMP11, YTMP12,
+                          input, t0, t1 /*rscratch*/);
+  __ jmp(L_process256Loop);
+  // end of vector loop
+  __ bind(L_process256LoopDone);
+
+  // Need to multiply by r^4, r^3, r^2, r
+
+  //Read R^4-R; TODO: replace with vmovdqa
+  __ vmovdqu(YMM_R0, Address(rsp, _r4_r1_save + 0));
+  __ vmovdqu(YMM_R1, Address(rsp, _r4_r1_save + 32));
+  __ vmovdqu(YMM_R2, Address(rsp, _r4_r1_save + 32*2));
+
+  // YTMP1 to have bits 87-44 of all 1-4th powers of R' in 4 qwords
+  // YTMP2 to have bits 129-88 of all 1-4th powers of R' in 4 qwords
+  __ vpsllq(YTMP10, YMM_R1, 2, Assembler::AVX_256bit);
+  __ vpaddq(YTMP1, YMM_R1, YTMP10, Assembler::AVX_256bit);  //R1' (R1*5)
+  __ vpsllq(YTMP10, YMM_R2, 2, Assembler::AVX_256bit);
+  __ vpaddq(YTMP2, YMM_R2, YTMP10, Assembler::AVX_256bit);  //R2' (R2*5)
+
+  // 4*5*R
+  __ vpsllq(YTMP1, YTMP1, 2, Assembler::AVX_256bit);
+  __ vpsllq(YTMP2, YTMP2, 2, Assembler::AVX_256bit);
+
+  poly1305_mul_reduce_vec4_avx2(YMM_ACC0, YMM_ACC1, YMM_ACC2,
+                          YMM_R0, YMM_R1, YMM_R2, YTMP1, YTMP2,
+                          YTMP3, YTMP4, YTMP5, YTMP6,
+                          YTMP7, YTMP8, YTMP9, t1);
+  __ vextracti128(YTMP1, YMM_ACC0, 1);
+  __ vextracti128(YTMP2, YMM_ACC1, 1);
+  __ vextracti128(YTMP3, YMM_ACC2, 1);
+
+  __ vpaddq(YMM_ACC0, YMM_ACC0, YTMP1, Assembler::AVX_128bit);
+  __ vpaddq(YMM_ACC1, YMM_ACC1, YTMP2, Assembler::AVX_128bit);
+  __ vpaddq(YMM_ACC2, YMM_ACC2, YTMP3, Assembler::AVX_128bit);
+
+  __ vpsrldq(YTMP1, YMM_ACC0, 8, Assembler::AVX_128bit);
+  __ vpsrldq(YTMP2, YMM_ACC1, 8, Assembler::AVX_128bit);
+  __ vpsrldq(YTMP3, YMM_ACC2, 8, Assembler::AVX_128bit);
+
+  // Finish folding and clear second qword
+  __ vpaddq(YMM_ACC0, YMM_ACC0, YTMP1, Assembler::AVX_128bit);
+  __ vpaddq(YMM_ACC1, YMM_ACC1, YTMP2, Assembler::AVX_128bit);
+  __ vpaddq(YMM_ACC2, YMM_ACC2, YTMP3, Assembler::AVX_128bit);
+
+  __ movq(YMM_ACC0, YMM_ACC0); //vmovq
+  __ movq(YMM_ACC1, YMM_ACC1); //vmovq
+  __ movq(YMM_ACC2, YMM_ACC2); //vmovq
+
+  // add     %%MSG, POLY1305_BLOCK_SIZE*4
+  // and     %%LEN, (POLY1305_BLOCK_SIZE*4 - 1) ; Get remaining lengths (LEN < 64 bytes)
+  __ lea(input, Address(input,16*4));
+  __ andq(length, 63+0); // remaining bytes < length 64
+  // carry propagation
+  __ vpsrlq(YTMP1, YMM_ACC0, 44, Assembler::AVX_128bit);
+  __ vpand(YMM_ACC0, YMM_ACC0, ExternalAddress(poly1305_mask44()), Assembler::AVX_128bit, t1); // Clear top 20 bits
+  __ vpaddq(YMM_ACC1, YMM_ACC1, YTMP1, Assembler::AVX_128bit);
+  __ vpsrlq(YTMP1, YMM_ACC1, 44, Assembler::AVX_128bit);
+  __ vpand(YMM_ACC1, YMM_ACC1, ExternalAddress(poly1305_mask44()), Assembler::AVX_128bit, t1); // Clear top 20 bits
+  __ vpaddq(YMM_ACC2, YMM_ACC2, YTMP1, Assembler::AVX_128bit);
+  __ vpsrlq(YTMP1, YMM_ACC2, 42, Assembler::AVX_128bit);
+  __ vpand(YMM_ACC2, YMM_ACC2, ExternalAddress(poly1305_mask42()), Assembler::AVX_128bit, t1); // Clear top 20 bits
+  __ vpsllq(YTMP2, YTMP1, 2, Assembler::AVX_128bit);
+  __ vpaddq(YTMP1, YTMP1, YTMP2, Assembler::AVX_128bit);
+  __ vpaddq(YMM_ACC0, YMM_ACC0, YTMP1, Assembler::AVX_128bit);
+
+  // Put together A
+  __ movq(a0, YMM_ACC0);
+  __ movq(t0, YMM_ACC1);
+  __ movq(t1, t0);
+  __ shlq(t1, 44);
+  __ orq(a0, t1);
+  __ shrq(t0, 20);
+  __ movq(a2, YMM_ACC2);
+  __ movq(a1, a2);
+  __ shlq(a1, 24);
+  __ orq(a1, t0);
+  __ shrq(a2, 40);
+
+  // SAFE DATA (clear powers of R) TODO: switch to vmovdqa
+  __ vpxor(YTMP1, YTMP1, YTMP1, Assembler::AVX_256bit);
+  __ vmovdqu(Address(rsp, _r4_r1_save + 0), YTMP1);
+  __ vmovdqu(Address(rsp, _r4_r1_save + 32), YTMP1);
+  __ vmovdqu(Address(rsp, _r4_r1_save + 32*2), YTMP1);
+  __ vmovdqu(Address(rsp, _r4_save + 0), YTMP1);
+  __ vmovdqu(Address(rsp, _r4_save + 32), YTMP1);
+  __ vmovdqu(Address(rsp, _r4_save + 32*2), YTMP1);
+  __ vmovdqu(Address(rsp, _r4p_save), YTMP1);
+  __ vmovdqu(Address(rsp, _r4p_save + 32), YTMP1);
+
+}
+
+
+void StubGenerator::poly1305_mul_reduce_vec4_avx2(
+  const XMMRegister A0, const XMMRegister A1, const XMMRegister A2,
+  const XMMRegister R0, const XMMRegister R1, const XMMRegister R2,
+  const XMMRegister R1P, const XMMRegister R2P,
+  const XMMRegister P0L, const XMMRegister P0H,
+  const XMMRegister P1L, const XMMRegister P1H,
+  const XMMRegister P2L, const XMMRegister P2H,
+  const XMMRegister YTMP1, const Register rscratch)
+{
+  // POLY1305_MUL_REDUCE_VEC4
+  // Reset accumulator
+  __ vpxor(P0L, P0L, P0L, Assembler::AVX_256bit);
+  __ vpxor(P0H, P0H, P0H, Assembler::AVX_256bit);
+  __ vpxor(P1L, P1L, P1L, Assembler::AVX_256bit);
+  __ vpxor(P1H, P1H, P1H, Assembler::AVX_256bit);
+  __ vpxor(P2L, P2L, P2L, Assembler::AVX_256bit);
+  __ vpxor(P2H, P2H, P2H, Assembler::AVX_256bit);
+
+  // Calculate partial products
+  // p0 = a2xr1'
+  // p1 = a2xr2'
+  // p2 = a2xr0
+  __ vpmadd52luq(P0L, A2, R1P, Assembler::AVX_256bit);
+  __ vpmadd52huq(P0H, A2, R1P, Assembler::AVX_256bit);
+
+  __ vpmadd52luq(P1L, A2, R2P, Assembler::AVX_256bit);
+  __ vpmadd52huq(P1H, A2, R2P, Assembler::AVX_256bit);
+
+  __ vpmadd52luq(P0L, A0, R0, Assembler::AVX_256bit);
+  __ vpmadd52huq(P0H, A0, R0, Assembler::AVX_256bit);
+
+  // p2 = a2xr0
+  __ vpmadd52luq(P2L, A2, R0, Assembler::AVX_256bit);
+  __ vpmadd52huq(P2H, A2, R0, Assembler::AVX_256bit);
+
+  __ vpmadd52luq(P1L, A0, R1, Assembler::AVX_256bit);
+  __ vpmadd52huq(P1H, A0, R1, Assembler::AVX_256bit);
+
+  __ vpmadd52luq(P0L, A1, R2P, Assembler::AVX_256bit);
+  __ vpmadd52huq(P0H, A1, R2P, Assembler::AVX_256bit);
+
+  __ vpmadd52luq(P2L, A0, R2, Assembler::AVX_256bit);
+  __ vpmadd52huq(P2H, A0, R2, Assembler::AVX_256bit);
+
+  // Carry propgation (first pass)
+  __ vpsrlq(YTMP1, P0L, 44, Assembler::AVX_256bit);
+  __ vpsllq(P0H, P0H, 8, Assembler::AVX_256bit);
+  //
+  __ vpmadd52luq(P1L, A1, R0, Assembler::AVX_256bit);
+  __ vpmadd52huq(P1H, A1, R0, Assembler::AVX_256bit);
+  // Carry propagation (first pass) - continue
+  __ vpand(A0, P0L, ExternalAddress(poly1305_mask44()), Assembler::AVX_256bit, rscratch); // Clear top 20 bits
+  __ vpaddq(P0H, P0H, YTMP1, Assembler::AVX_256bit);
+  //
+  __ vpmadd52luq(P2L, A1, R1, Assembler::AVX_256bit);
+  __ vpmadd52huq(P2H, A1, R1, Assembler::AVX_256bit);
+
+  // Carry propagation (first pass) - continue
+  __ vpaddq(P1L, P1L, P0H, Assembler::AVX_256bit);
+  __ vpsllq(P1H, P1H, 8, Assembler::AVX_256bit);
+  __ vpsrlq(YTMP1, P1L, 44, Assembler::AVX_256bit);
+  __ vpand(A1, P1L, ExternalAddress(poly1305_mask44()), Assembler::AVX_256bit, rscratch); // Clear top 20 bits
+
+  __ vpaddq(P2L, P2L, P1H, Assembler::AVX_256bit);
+  __ vpaddq(P2L, P2L, YTMP1, Assembler::AVX_256bit);
+  __ vpand(A2, P2L, ExternalAddress(poly1305_mask42()), Assembler::AVX_256bit, rscratch); // Clear top 22 bits
+  __ vpsrlq(YTMP1, P2L, 42, Assembler::AVX_256bit);
+  __ vpsllq(P2H, P2H, 10, Assembler::AVX_256bit);
+  __ vpaddq(P2H, P2H, YTMP1, Assembler::AVX_256bit);
+
+  // Carry propagation (second pass)
+  // Multiply by 5 the highest bits (above 130 bits)
+  __ vpaddq(A0, A0, P2H, Assembler::AVX_256bit);
+  __ vpsllq(P2H, P2H, 2, Assembler::AVX_256bit);
+  __ vpaddq(A0, A0, P2H, Assembler::AVX_256bit);
+
+  __ vpsrlq(YTMP1, A0, 44, Assembler::AVX_256bit);
+  __ vpand(A0, A0, ExternalAddress(poly1305_mask44()), Assembler::AVX_256bit, rscratch); // Clear top 20 bits
+  __ vpaddq(A1, A1, YTMP1, Assembler::AVX_256bit);
+
+}
+
+void StubGenerator::poly1305_msg_mul_reduce_vec4_avx2(
+  const XMMRegister A0, const XMMRegister A1, const XMMRegister A2,
+  const Address R0, const Address R1, const Address R2,
+  const Address R1P, const Address R2P,
+  const XMMRegister P0L, const XMMRegister P0H,
+  const XMMRegister P1L, const XMMRegister P1H,
+  const XMMRegister P2L, const XMMRegister P2H,
+  const XMMRegister YTMP1, const XMMRegister YTMP2,
+  const XMMRegister YTMP3, const XMMRegister YTMP4,
+  const XMMRegister YTMP5, const XMMRegister YTMP6,
+  const Register input, const Register length, const Register rscratch)
+{
+  // Reset accumulator
+  __ vpxor(P0L, P0L, P0L, Assembler::AVX_256bit);
+  __ vpxor(P0H, P0H, P0H, Assembler::AVX_256bit);
+  __ vpxor(P1L, P1L, P1L, Assembler::AVX_256bit);
+  __ vpxor(P1H, P1H, P1H, Assembler::AVX_256bit);
+  __ vpxor(P2L, P2L, P2L, Assembler::AVX_256bit);
+  __ vpxor(P2H, P2H, P2H, Assembler::AVX_256bit);
+
+  // Calculate partial products
+  // p0 = a2xr1'
+  // p1 = a2xr2'
+  // p2 = a2xr0
+      __ vpmadd52luq(P0L, A2, R1P, Assembler::AVX_256bit);
+      __ vpmadd52huq(P0H, A2, R1P, Assembler::AVX_256bit);
+  // Interleave input loading with hash computation
+  __ lea(input, Address(input,16*4));
+  __ subl(length, 16*4);
+      __ vpmadd52luq(P1L, A2, R2P, Assembler::AVX_256bit);
+      __ vpmadd52huq(P1H, A2, R2P, Assembler::AVX_256bit);
+  // Load next block of data (64 bytes)
+  __ vmovdqu(YTMP1, Address(input, 0));
+  __ vmovdqu(YTMP2, Address(input, 32));
+  // interleave new blocks of data
+  __ vpunpckhqdq(YTMP3, YTMP1, YTMP2, Assembler::AVX_256bit);
+  __ vpunpcklqdq(YTMP1, YTMP1, YTMP2, Assembler::AVX_256bit);
+      __ vpmadd52luq(P0L, A0, R0, Assembler::AVX_256bit);
+      __ vpmadd52huq(P0H, A0, R0, Assembler::AVX_256bit);
+  // Highest 42-bit limbs of new blocks
+  __ vpsrlq(YTMP6, YTMP3, 24, Assembler::AVX_256bit);
+  __ vpor(YTMP6, YTMP6, ExternalAddress(poly1305_pad_msg()), Assembler::AVX_256bit);
+
+  //Middle 44-bit limbs of new blocks
+  __ vpsrlq(YTMP2, YTMP1, 44, Assembler::AVX_256bit);
+  __ vpsllq(YTMP4, YTMP3, 20, Assembler::AVX_256bit);
+      // p2 = a2xr0
+      __ vpmadd52luq(P2L, A2, R0, Assembler::AVX_256bit);
+      __ vpmadd52huq(P2H, A2, R0, Assembler::AVX_256bit);
+  __ vpor(YTMP2, YTMP2, YTMP4, Assembler::AVX_256bit);
+  __ vpand(YTMP2, YTMP2, ExternalAddress(poly1305_mask44()), Assembler::AVX_256bit);
+  // Lowest 44-bit limbs of new blocks
+  __ vpand(YTMP1, YTMP1, ExternalAddress(poly1305_mask44()), Assembler::AVX_256bit);
+
+      __ vpmadd52luq(P1L, A0, R1, Assembler::AVX_256bit);
+      __ vpmadd52huq(P1H, A0, R1, Assembler::AVX_256bit);
+      __ vpmadd52luq(P0L, A1, R2P, Assembler::AVX_256bit);
+      __ vpmadd52huq(P0H, A1, R2P, Assembler::AVX_256bit);
+      __ vpmadd52luq(P2L, A0, R2, Assembler::AVX_256bit);
+      __ vpmadd52huq(P2H, A0, R2, Assembler::AVX_256bit);
+
+  // Carry propgation (first pass)
+  __ vpsrlq(YTMP5, P0L, 44, Assembler::AVX_256bit);
+  __ vpsllq(P0H, P0H, 8, Assembler::AVX_256bit);
+      __ vpmadd52luq(P1L, A1, R0, Assembler::AVX_256bit);
+      __ vpmadd52huq(P1H, A1, R0, Assembler::AVX_256bit);
+  // Carry propagation (first pass) - continue
+  __ vpand(A0, P0L, ExternalAddress(poly1305_mask44()), Assembler::AVX_256bit, rscratch); // Clear top 20 bits
+  __ vpaddq(P0H, P0H, YTMP5, Assembler::AVX_256bit);
+      __ vpmadd52luq(P2L, A1, R1, Assembler::AVX_256bit);
+      __ vpmadd52huq(P2H, A1, R1, Assembler::AVX_256bit);
+
+  // Carry propagation (first pass) - continue 2
+  __ vpaddq(P1L, P1L, P0H, Assembler::AVX_256bit);
+  __ vpsllq(P1H, P1H, 8, Assembler::AVX_256bit);
+  __ vpsrlq(YTMP5, P1L, 44, Assembler::AVX_256bit);
+  __ vpand(A1, P1L, ExternalAddress(poly1305_mask44()), Assembler::AVX_256bit, rscratch); // Clear top 20 bits
+
+  __ vpaddq(P2L, P2L, P1H, Assembler::AVX_256bit);
+  __ vpaddq(P2L, P2L, YTMP5, Assembler::AVX_256bit);
+  __ vpand(A2, P2L, ExternalAddress(poly1305_mask42()), Assembler::AVX_256bit, rscratch); // Clear top 20 bits
+  __ vpaddq(A2, A2, YTMP6, Assembler::AVX_256bit);
+  __ vpsrlq(YTMP5, P2L, 42, Assembler::AVX_256bit);
+  __ vpsllq(P2H, P2H, 10, Assembler::AVX_256bit);
+  __ vpaddq(P2H, P2H, YTMP5, Assembler::AVX_256bit);
+
+  // Carry propagation (second pass)
+  // Multiply by 5 the highest bits (above 130 bits)
+  __ vpaddq(A0, A0, P2H, Assembler::AVX_256bit);
+  __ vpsllq(P2H, P2H, 2, Assembler::AVX_256bit);
+  __ vpaddq(A0, A0, P2H, Assembler::AVX_256bit);
+
+  __ vpsrlq(YTMP5, A0, 44, Assembler::AVX_256bit);
+  __ vpand(A0, A0, ExternalAddress(poly1305_mask44()), Assembler::AVX_256bit, rscratch); // Clear top 20 bits
+  __ vpaddq(A0, A0, YTMP1, Assembler::AVX_256bit); //Add low 42-bit bits from new blocks to accumulator
+  __ vpaddq(A1, A1, YTMP2, Assembler::AVX_256bit); //Add medium 42-bit bits from new blocks to accumulator
+  __ vpaddq(A1, A1, YTMP5, Assembler::AVX_256bit);
+
 }

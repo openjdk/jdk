@@ -9365,6 +9365,17 @@ void MacroAssembler::vpshufb(XMMRegister dst, XMMRegister nds, AddressLiteral sr
   }
 }
 
+void MacroAssembler::vpor(XMMRegister dst, XMMRegister nds, AddressLiteral src, int vector_len, Register rscratch) {
+  assert(rscratch != noreg || always_reachable(src), "missing");
+
+  if (reachable(src)) {
+    vpor(dst, nds, as_Address(src), vector_len);
+  } else {
+    lea(rscratch, src);
+    vpor(dst, nds, Address(rscratch, 0), vector_len);
+  }
+}
+
 void MacroAssembler::vpternlogq(XMMRegister dst, int imm8, XMMRegister src2, AddressLiteral src3, int vector_len, Register rscratch) {
   assert(rscratch != noreg || always_reachable(src3), "missing");
 

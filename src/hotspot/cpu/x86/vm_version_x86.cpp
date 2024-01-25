@@ -1351,8 +1351,8 @@ void VM_Version::get_processor_features() {
   } else
 #endif
   if (UsePoly1305Intrinsics) {
-    warning("Intrinsics for Poly1305 crypto hash functions not available on this CPU.");
-    FLAG_SET_DEFAULT(UsePoly1305Intrinsics, false);
+    warning("Intrinsics for Poly1305 crypto hash functions available FORCIBLY on this CPU.");
+    FLAG_SET_DEFAULT(UsePoly1305Intrinsics, true);
   }
 
 #ifdef _LP64
