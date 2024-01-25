@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -454,7 +454,7 @@ public:
   void mask_for(int bci, InterpreterOopMap* mask);
 
   // operations on invocation counter
-  void print_invocation_count();
+  void print_invocation_count(outputStream* st);
 
   // byte codes
   void    set_code(address code)      { return constMethod()->set_code(code); }
