@@ -367,19 +367,18 @@ public:
 static ContiguousSpace* space_containing(HeapWord* addr) {
   SerialHeap* heap = SerialHeap::heap();
   TenuredGeneration* old_gen = heap->old_gen();
-  if (old_gen->is_in_reserved(addr)) {
-    ContiguousSpace* tenured = old_gen->space();
-    assert(tenured->is_in_reserved(addr), "must be");
-    return tenured;
-  }
-  Generation* young_gen = heap->young_gen();
-  assert(young_gen->is_in_reserved(addr), "must be");
-  ContiguousSpace* space = young_gen->first_compaction_space();
-  while (space != nullptr) {
+  DefNewGeneration* young_gen = heap->young_gen();
+  const int NUM_SPACES = 4;
+  ContiguousSpace* spaces[NUM_SPACES];
+  spaces[0] = old_gen->space();
+  spaces[1] = young_gen->eden();
+  spaces[2] = young_gen->from();
+  spaces[3] = young_gen->to();
+  for (int i = 0; i < NUM_SPACES; i++) {
+    ContiguousSpace* space = spaces[i];
     if (space->is_in_reserved(addr)) {
       return space;
     }
-    space = space->next_compaction_space();
   }
   assert(false, "must find a space containing heap obj");
   return nullptr;
