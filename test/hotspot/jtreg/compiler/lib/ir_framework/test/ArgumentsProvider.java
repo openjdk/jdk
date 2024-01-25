@@ -49,11 +49,12 @@ abstract class ArgumentsProvider {
      * Compute arguments (and possibly set fields) for a test method.
      *
      * @param invocationTarget object on which the test method is called, or null if the test method is static.
-     * @param index is incremented for every set of arguments to be provided for the test method. Can be used
-     *              to create deterministic inputs, that vary between different invocations of the test method.
+     * @param invocationCounter is incremented for every set of arguments to be provided for the test method.
+     *                          It can be used to create deterministic inputs, that vary between different
+     *                          invocations of the test method.
      * @return Returns the arguments to be passed into the test method.
      */
-    public abstract Object[] getArguments(Object invocationTarget, int index);
+    public abstract Object[] getArguments(Object invocationTarget, int invocationCounter);
 
     /**
      * For a test method, determine what ArgumentsProvider is to be constructed, given its @Arguments annotation,
@@ -96,7 +97,7 @@ abstract class ArgumentsProvider {
  */
 final class DefaultArgumentsProvider extends ArgumentsProvider {
     @Override
-    public Object[] getArguments(Object invocationTarget, int index) {
+    public Object[] getArguments(Object invocationTarget, int invocationCounter) {
         return new Object[]{};
     }
 }
@@ -112,8 +113,8 @@ final class ValueArgumentsProvider extends ArgumentsProvider {
     }
 
     @Override
-    public Object[] getArguments(Object invocationTarget, int index) {
-        return Arrays.stream(argumentValues).map(v -> v.getValue(index)).toArray();
+    public Object[] getArguments(Object invocationTarget, int invocationCounter) {
+        return Arrays.stream(argumentValues).map(v -> v.getValue(invocationCounter)).toArray();
     }
 }
 
@@ -129,11 +130,11 @@ final class SetupArgumentsProvider extends ArgumentsProvider {
     }
     
     @Override
-    public Object[] getArguments(Object invocationTarget, int index) {
+    public Object[] getArguments(Object invocationTarget, int invocationCounter) {
         Object target = Modifier.isStatic(setupMethod.getModifiers()) ? null
                                                                       : invocationTarget;
         try {
-            return (Object[]) setupMethod.invoke(target, index);
+            return (Object[]) setupMethod.invoke(target, invocationCounter);
         } catch (Exception e) {
             throw new TestRunException("There was an error while invoking setup method " +
                                        setupMethod + " on " + target + ", " + e);

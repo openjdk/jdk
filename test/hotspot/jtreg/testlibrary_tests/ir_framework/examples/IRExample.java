@@ -231,7 +231,7 @@ public class IRExample {
 
     // Example for Setup
     @Setup
-    static Object[] setupTwoIntArrays(int index) {
+    static Object[] setupTwoIntArrays(int invocationCounter) {
         int[] a = new int[10_000];
         int[] b = new int[10_000];
         for (int i = 0; i < a.length; i++) {

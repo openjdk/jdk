@@ -246,7 +246,7 @@ class ArgumentValue {
         return isFixedRandom;
     }
 
-    public Object getValue(int index) {
+    public Object getValue(int invocationCounter) {
         if (isRandomEach) {
             return getRandom(randomClass);
         } else {
@@ -318,7 +318,7 @@ class BooleanToggleValue extends ArgumentValue {
     }
 
     @Override
-    public Object getValue(int index) {
+    public Object getValue(int invocationCounter) {
         previousBoolean = !previousBoolean;
         return previousBoolean;
     }

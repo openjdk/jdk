@@ -29,8 +29,9 @@ import java.lang.annotation.RetentionPolicy;
 /**
  * This annotation is used to identify Setup methods. These can be used to compute arbitrary arguments for a test
  * method (see {@link Test}), as well as set fields. A test method can use a Setup method, by specifying it
- * in a {@link Arguments} annotation. A setup method has an int index as input, for which it computes an index'th
- * set of arguments, and returns the argument in an Object[].
+ * in a {@link Arguments} annotation. A setup method has an int invocationCounter as input, which is increased
+ * for every setup invocation, and can be used to create deterministic inputs, if that is desired. The arguments
+ * are returned in an Object[].
  *
  * @see Arguments
  * @see Setup

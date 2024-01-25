@@ -38,6 +38,7 @@ class BaseTest extends AbstractTest {
     protected final Object invocationTarget;
     private final boolean shouldCompile;
     private final boolean waitForCompilation;
+    private int invocationCounter;
 
     public BaseTest(DeclaredTest test, boolean skip) {
         super(test.getWarmupIterations(), skip);
@@ -47,6 +48,7 @@ class BaseTest extends AbstractTest {
         this.invocationTarget = createInvocationTarget(testMethod);
         this.shouldCompile = shouldCompile(test);
         this.waitForCompilation = isWaitForCompilation(test);
+        this.invocationCounter = 0;
     }
 
     @Override
@@ -69,8 +71,11 @@ class BaseTest extends AbstractTest {
         verify(invokeTestMethod());
     }
 
+    /**
+     * Compute arguments (and possibly set fields), and invoke the test method.
+     */
     private Object invokeTestMethod() {
-        Object[] arguments = test.getArguments(invocationTarget, 0); // TODO index
+        Object[] arguments = test.getArguments(invocationTarget, invocationCounter);
         try {
             return testMethod.invoke(invocationTarget, arguments);
         } catch (Exception e) {

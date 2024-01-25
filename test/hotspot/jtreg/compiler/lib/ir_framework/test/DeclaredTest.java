@@ -67,8 +67,8 @@ public class DeclaredTest {
         return argumentsProvider.isDefault();
     }
 
-    public Object[] getArguments(Object invocationTarget, int index) {
-        return argumentsProvider.getArguments(invocationTarget, index);
+    public Object[] getArguments(Object invocationTarget, int invocationCounter) {
+        return argumentsProvider.getArguments(invocationTarget, invocationCounter);
     }
 
     public void setAttachedMethod(Method m) {
