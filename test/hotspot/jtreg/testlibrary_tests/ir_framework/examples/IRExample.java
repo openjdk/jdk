@@ -222,38 +222,6 @@ public class IRExample {
         }
         return a;
     }
-
-    @Test
-    @Arguments(values = {Argument.RANDOM_EACH, Argument.RANDOM_EACH})
-    static int testWithValueArguments(int a, int b) {
-        return a + b;
-    }
-
-    // Example for Setup
-    @Setup
-    static Object[] setupTwoIntArrays(int invocationCounter) {
-        int[] a = new int[10_000];
-        int[] b = new int[10_000];
-        for (int i = 0; i < a.length; i++) {
-            a[i] = i - 2;
-            b[i] = i + 2;
-        }
-        return new Object[]{a, b};
-    }
-
-    @Test
-    @Arguments(setup = "setupTwoIntArrays")
-    static void testWithSetupRandomIntArray(int[] a, int[] b) {
-        // Verification code shows that the values are getting through
-        if (a.length != 10_000 || b.length != 10_000) {
-            throw new RuntimeException("bad length");
-        }
-        for (int i = 0; i < a.length; i++) {
-            if ((a[i] != i - 2) || (b[i] != i + 2)) {
-                throw new RuntimeException("bad value: " + i + ": " + a[i] + " " + b[i]);
-            }
-        }
-    }
 }
 
 class FailingExamples {
