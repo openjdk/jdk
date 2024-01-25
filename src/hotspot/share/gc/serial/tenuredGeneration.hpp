@@ -129,6 +129,8 @@ class TenuredGeneration: public Generation {
 
   bool no_allocs_since_save_marks();
 
+  // Requires "addr" to be the start of a block, and returns "TRUE" iff
+  // the block is an object.
   inline bool block_is_obj(const HeapWord* addr) const;
 
   virtual void collect(bool full,
