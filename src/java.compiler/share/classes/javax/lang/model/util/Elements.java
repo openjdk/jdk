@@ -688,10 +688,10 @@ public interface Elements {
      * </blockquote>
      *
      * Consistent with the usage of the {@code @Override} annotation, if an
-     * interface declares methods override-equivalent to {@code
-     * public} methods on {@code java.lang.Object}, this method treats
-     * those interface methods as overriding the corresponding {@code
-     * Object} methods:
+     * interface declares a method override-equivalent to a {@code
+     * public} method on {@code java.lang.Object}, this method treats
+     * any such interface methods as overriding the corresponding {@code
+     * Object} method:
      *
      * <blockquote><pre>
      * interface I {
