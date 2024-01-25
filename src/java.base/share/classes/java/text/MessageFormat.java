@@ -553,7 +553,7 @@ public class MessageFormat extends Format {
      * The string is constructed from internal information and therefore
      * does not necessarily equal the previously applied pattern.
      *
-     * @implNote The implementation in {@link MessageFormat} returns a string
+     * @implSpec The implementation in {@link MessageFormat} returns a string
      * that can be used to create a new instance that is semantically equivalent
      * to this instance.
      *
