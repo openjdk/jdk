@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@
  * @test
  * @bug 8049321
  * @summary Support SHA256WithDSA in JSSE
+ * @library /javax/net/ssl/templates
  * @run main/othervm SignatureAlgorithms PKIX "SHA-224,SHA-256"
  *                   TLS_DHE_DSS_WITH_AES_128_CBC_SHA
  * @run main/othervm SignatureAlgorithms PKIX "SHA-1,SHA-224"
@@ -46,20 +47,14 @@
  *                   TLS_DHE_DSS_WITH_AES_128_CBC_SHA256
  */
 
-import java.net.*;
 import java.util.*;
 import java.io.*;
 import javax.net.ssl.*;
 import java.security.Security;
-import java.security.KeyStore;
-import java.security.KeyFactory;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
-import java.security.cert.CertificateFactory;
-import java.security.spec.*;
-import java.security.interfaces.*;
 
-public class SignatureAlgorithms {
+public class SignatureAlgorithms extends SSLContextTemplate {
 
     /*
      * =============================================================
@@ -75,131 +70,6 @@ public class SignatureAlgorithms {
     static boolean separateServerThread = true;
 
     /*
-     * Where do we find the keystores?
-     */
-    // Certificates and key (DSA) used in the test.
-    static String trustedCertStr =
-        "-----BEGIN CERTIFICATE-----\n" +
-        "MIIDYTCCAyGgAwIBAgIJAK8/gw6zg/DPMAkGByqGSM44BAMwOzELMAkGA1UEBhMC\n" +
-        "VVMxDTALBgNVBAoTBEphdmExHTAbBgNVBAsTFFN1bkpTU0UgVGVzdCBTZXJpdmNl\n" +
-        "MB4XDTE1MTIwMzEzNTIyNVoXDTM2MTExMjEzNTIyNVowOzELMAkGA1UEBhMCVVMx\n" +
-        "DTALBgNVBAoTBEphdmExHTAbBgNVBAsTFFN1bkpTU0UgVGVzdCBTZXJpdmNlMIIB\n" +
-        "uDCCASwGByqGSM44BAEwggEfAoGBAPH+b+GSMX6KS7jXDRevzc464DFG4X+uxu5V\n" +
-        "b3U4yhsU8A8cuH4gwin6L/IDkmZQ7N0zC0jRsiGVSMsFETTq10F39pH2eBfUv/hJ\n" +
-        "cLfBnIjBEtVqV/dExK88Hul2sZ4mQihQ4issPl7hsroS9EWYicnX0oNAqAB9PO5Y\n" +
-        "zKbfpL7TAhUA13WW48rln2UP/LaAgtnzKhqcNtMCgYEA3Rv0GirTbAaor8iURd82\n" +
-        "b5FlDTevOCTuq7ZIpfZVV30neS7cBYNet6m/3/4cfUlbbrqhbqIJ2I+I81drnN0Y\n" +
-        "lyN4KkuxEcB6OTwfWkIUj6rvPaCQrBH8Q213bDq3HHtYNaP8OoeQUyVXW+SEGADC\n" +
-        "J1+z8uqP3lIB6ltdgOiV/GQDgYUAAoGBAOXRppuJSGdt6AiZkb81P1DCUgIUlZFI\n" +
-        "J9GxWrjbbHDmGllMwPNhK6dU7LJKJJuYVPW+95rUGlSJEjRqSlHuyHkNb6e3e7qx\n" +
-        "tmx1/oIyq+oLult50hBS7uBvLLR0JbIKjBzzkudL8Rjze4G/Wq7KDM2T1JOP49tW\n" +
-        "eocCvaC8h8uQo4GtMIGqMB0GA1UdDgQWBBT17HcqLllsqnZzP+kElcGcBGmubjBr\n" +
-        "BgNVHSMEZDBigBT17HcqLllsqnZzP+kElcGcBGmubqE/pD0wOzELMAkGA1UEBhMC\n" +
-        "VVMxDTALBgNVBAoTBEphdmExHTAbBgNVBAsTFFN1bkpTU0UgVGVzdCBTZXJpdmNl\n" +
-        "ggkArz+DDrOD8M8wDwYDVR0TAQH/BAUwAwEB/zALBgNVHQ8EBAMCAQYwCQYHKoZI\n" +
-        "zjgEAwMvADAsAhQ6Y1I6LtIEBMqNo8o6GIe4LLEJuwIUbVQUKi8tvtWyRoxm8AFV\n" +
-        "0axJYUU=\n" +
-        "-----END CERTIFICATE-----";
-
-    static String[] targetCertStr = {
-        // DSA-SHA1
-        "-----BEGIN CERTIFICATE-----\n" +
-        "MIIDKTCCAumgAwIBAgIJAOy5c0b+8stFMAkGByqGSM44BAMwOzELMAkGA1UEBhMC\n" +
-        "VVMxDTALBgNVBAoTBEphdmExHTAbBgNVBAsTFFN1bkpTU0UgVGVzdCBTZXJpdmNl\n" +
-        "MB4XDTE1MTIwMzEzNTIyNVoXDTM1MDgyMDEzNTIyNVowTzELMAkGA1UEBhMCVVMx\n" +
-        "DTALBgNVBAoMBEphdmExHTAbBgNVBAsMFFN1bkpTU0UgVGVzdCBTZXJpdmNlMRIw\n" +
-        "EAYDVQQDDAlsb2NhbGhvc3QwggG3MIIBLAYHKoZIzjgEATCCAR8CgYEA8f5v4ZIx\n" +
-        "fopLuNcNF6/NzjrgMUbhf67G7lVvdTjKGxTwDxy4fiDCKfov8gOSZlDs3TMLSNGy\n" +
-        "IZVIywURNOrXQXf2kfZ4F9S/+Elwt8GciMES1WpX90TErzwe6XaxniZCKFDiKyw+\n" +
-        "XuGyuhL0RZiJydfSg0CoAH087ljMpt+kvtMCFQDXdZbjyuWfZQ/8toCC2fMqGpw2\n" +
-        "0wKBgQDdG/QaKtNsBqivyJRF3zZvkWUNN684JO6rtkil9lVXfSd5LtwFg163qb/f\n" +
-        "/hx9SVtuuqFuognYj4jzV2uc3RiXI3gqS7ERwHo5PB9aQhSPqu89oJCsEfxDbXds\n" +
-        "Orcce1g1o/w6h5BTJVdb5IQYAMInX7Py6o/eUgHqW12A6JX8ZAOBhAACgYB+zYqn\n" +
-        "jJwG4GZpBIN/6qhzbp0flChsV+Trlu0SL0agAQzb6XdI/4JnO87Pgbxaxh3VNAj3\n" +
-        "3+Ghr1NLBuBfTKzJ4j9msWT3EpLupkMyNtXvBYM0iyMrll67lSjMdv++wLEw35Af\n" +
-        "/bzVcjGyA5Q0i0cuEzDmHTVfi0OydynbwSLxtKNjMGEwCwYDVR0PBAQDAgPoMB0G\n" +
-        "A1UdDgQWBBQXJI8AxM0qsYCbbkIMuI5zJ+nMEDAfBgNVHSMEGDAWgBT17HcqLlls\n" +
-        "qnZzP+kElcGcBGmubjASBgNVHREBAf8ECDAGhwR/AAABMAkGByqGSM44BAMDLwAw\n" +
-        "LAIUXgyJ0xll4FrZAKXi8bj7Kiz+SA4CFH9WCSZIBYA9lmJkiTgRS7iM/6IC\n" +
-        "-----END CERTIFICATE-----",
-
-        // DSA-SHA224
-        "-----BEGIN CERTIFICATE-----\n" +
-        "MIIDLzCCAuugAwIBAgIJAOy5c0b+8stGMAsGCWCGSAFlAwQDATA7MQswCQYDVQQG\n" +
-        "EwJVUzENMAsGA1UEChMESmF2YTEdMBsGA1UECxMUU3VuSlNTRSBUZXN0IFNlcml2\n" +
-        "Y2UwHhcNMTUxMjAzMTU0NDM5WhcNMzUwODIwMTU0NDM5WjBPMQswCQYDVQQGEwJV\n" +
-        "UzENMAsGA1UECgwESmF2YTEdMBsGA1UECwwUU3VuSlNTRSBUZXN0IFNlcml2Y2Ux\n" +
-        "EjAQBgNVBAMMCWxvY2FsaG9zdDCCAbcwggEsBgcqhkjOOAQBMIIBHwKBgQDx/m/h\n" +
-        "kjF+iku41w0Xr83OOuAxRuF/rsbuVW91OMobFPAPHLh+IMIp+i/yA5JmUOzdMwtI\n" +
-        "0bIhlUjLBRE06tdBd/aR9ngX1L/4SXC3wZyIwRLValf3RMSvPB7pdrGeJkIoUOIr\n" +
-        "LD5e4bK6EvRFmInJ19KDQKgAfTzuWMym36S+0wIVANd1luPK5Z9lD/y2gILZ8yoa\n" +
-        "nDbTAoGBAN0b9Boq02wGqK/IlEXfNm+RZQ03rzgk7qu2SKX2VVd9J3ku3AWDXrep\n" +
-        "v9/+HH1JW266oW6iCdiPiPNXa5zdGJcjeCpLsRHAejk8H1pCFI+q7z2gkKwR/ENt\n" +
-        "d2w6txx7WDWj/DqHkFMlV1vkhBgAwidfs/Lqj95SAepbXYDolfxkA4GEAAKBgA81\n" +
-        "CJKEv+pwiqYgxtw/9rkQ9748WP3mKrEC06kjUG+94/Z9dQloNFFfj6LiO1bymc5l\n" +
-        "6QIR8XCi4Po3N80K3+WxhBGFhY+RkVWTh43JV8epb41aH2qiWErarBwBGEh8LyGT\n" +
-        "i30db+Nkz2gfvyz9H/9T0jmYgfLEOlMCusali1qHo2MwYTALBgNVHQ8EBAMCA+gw\n" +
-        "HQYDVR0OBBYEFBqSP0S4+X+zOCTEnlp2hbAjV/W5MB8GA1UdIwQYMBaAFPXsdyou\n" +
-        "WWyqdnM/6QSVwZwEaa5uMBIGA1UdEQEB/wQIMAaHBH8AAAEwCwYJYIZIAWUDBAMB\n" +
-        "AzEAMC4CFQChiRaOnAnsCSJFwdpK22jSxU/mhQIVALgLbj/G39+1Ej8UuSWnEQyU\n" +
-        "4DA+\n" +
-        "-----END CERTIFICATE-----",
-
-        // DSA-SHA256
-        "-----BEGIN CERTIFICATE-----\n" +
-        "MIIDLTCCAuugAwIBAgIJAOy5c0b+8stHMAsGCWCGSAFlAwQDAjA7MQswCQYDVQQG\n" +
-        "EwJVUzENMAsGA1UEChMESmF2YTEdMBsGA1UECxMUU3VuSlNTRSBUZXN0IFNlcml2\n" +
-        "Y2UwHhcNMTUxMjAzMTU0NjUxWhcNMzUwODIwMTU0NjUxWjBPMQswCQYDVQQGEwJV\n" +
-        "UzENMAsGA1UECgwESmF2YTEdMBsGA1UECwwUU3VuSlNTRSBUZXN0IFNlcml2Y2Ux\n" +
-        "EjAQBgNVBAMMCWxvY2FsaG9zdDCCAbcwggEsBgcqhkjOOAQBMIIBHwKBgQDx/m/h\n" +
-        "kjF+iku41w0Xr83OOuAxRuF/rsbuVW91OMobFPAPHLh+IMIp+i/yA5JmUOzdMwtI\n" +
-        "0bIhlUjLBRE06tdBd/aR9ngX1L/4SXC3wZyIwRLValf3RMSvPB7pdrGeJkIoUOIr\n" +
-        "LD5e4bK6EvRFmInJ19KDQKgAfTzuWMym36S+0wIVANd1luPK5Z9lD/y2gILZ8yoa\n" +
-        "nDbTAoGBAN0b9Boq02wGqK/IlEXfNm+RZQ03rzgk7qu2SKX2VVd9J3ku3AWDXrep\n" +
-        "v9/+HH1JW266oW6iCdiPiPNXa5zdGJcjeCpLsRHAejk8H1pCFI+q7z2gkKwR/ENt\n" +
-        "d2w6txx7WDWj/DqHkFMlV1vkhBgAwidfs/Lqj95SAepbXYDolfxkA4GEAAKBgEF7\n" +
-        "2qiYxGrjX4KCOy0k5nK/RYlgLy4gYDChihQpiaa+fbA5JOBOxPWsh7rdtmJuDrEJ\n" +
-        "keacU223+DIhOKC49fa+EvhLNqo6U1oPn8n/yvBsvvnWkcynw5KfNzaLlaPmzugh\n" +
-        "v9xl/GhyZNAXc1QUcW3C+ceHVNrKnkfbTKZz5eRSo2MwYTALBgNVHQ8EBAMCA+gw\n" +
-        "HQYDVR0OBBYEFNMkPrt40oO9Dpy+bcbQdEvOlNlyMB8GA1UdIwQYMBaAFPXsdyou\n" +
-        "WWyqdnM/6QSVwZwEaa5uMBIGA1UdEQEB/wQIMAaHBH8AAAEwCwYJYIZIAWUDBAMC\n" +
-        "Ay8AMCwCFCvA2QiKSe/n+6GqSYQwgQ/zL5M9AhQfSiuWdMJKWpgPJKakvzhBUbMb\n" +
-        "vA==\n" +
-        "-----END CERTIFICATE-----"};
-
-    // Private key in the format of PKCS#8, key size is 1024 bits.
-    static String[] targetPrivateKey = {
-        // For cert DSA-SHA1
-        "MIIBSwIBADCCASwGByqGSM44BAEwggEfAoGBAPH+b+GSMX6KS7jXDRevzc464DFG\n" +
-        "4X+uxu5Vb3U4yhsU8A8cuH4gwin6L/IDkmZQ7N0zC0jRsiGVSMsFETTq10F39pH2\n" +
-        "eBfUv/hJcLfBnIjBEtVqV/dExK88Hul2sZ4mQihQ4issPl7hsroS9EWYicnX0oNA\n" +
-        "qAB9PO5YzKbfpL7TAhUA13WW48rln2UP/LaAgtnzKhqcNtMCgYEA3Rv0GirTbAao\n" +
-        "r8iURd82b5FlDTevOCTuq7ZIpfZVV30neS7cBYNet6m/3/4cfUlbbrqhbqIJ2I+I\n" +
-        "81drnN0YlyN4KkuxEcB6OTwfWkIUj6rvPaCQrBH8Q213bDq3HHtYNaP8OoeQUyVX\n" +
-        "W+SEGADCJ1+z8uqP3lIB6ltdgOiV/GQEFgIUOiB7J/lrFrNduQ8nDNTe8VspoAI=",
-
-        // For cert DSA-SHA224
-        "MIIBSwIBADCCASwGByqGSM44BAEwggEfAoGBAPH+b+GSMX6KS7jXDRevzc464DFG\n" +
-        "4X+uxu5Vb3U4yhsU8A8cuH4gwin6L/IDkmZQ7N0zC0jRsiGVSMsFETTq10F39pH2\n" +
-        "eBfUv/hJcLfBnIjBEtVqV/dExK88Hul2sZ4mQihQ4issPl7hsroS9EWYicnX0oNA\n" +
-        "qAB9PO5YzKbfpL7TAhUA13WW48rln2UP/LaAgtnzKhqcNtMCgYEA3Rv0GirTbAao\n" +
-        "r8iURd82b5FlDTevOCTuq7ZIpfZVV30neS7cBYNet6m/3/4cfUlbbrqhbqIJ2I+I\n" +
-        "81drnN0YlyN4KkuxEcB6OTwfWkIUj6rvPaCQrBH8Q213bDq3HHtYNaP8OoeQUyVX\n" +
-        "W+SEGADCJ1+z8uqP3lIB6ltdgOiV/GQEFgIUOj9F5mxWd9W1tiLSdsOAt8BUBzE=",
-
-        // For cert DSA-SHA256
-        "MIIBSwIBADCCASwGByqGSM44BAEwggEfAoGBAPH+b+GSMX6KS7jXDRevzc464DFG\n" +
-        "4X+uxu5Vb3U4yhsU8A8cuH4gwin6L/IDkmZQ7N0zC0jRsiGVSMsFETTq10F39pH2\n" +
-        "eBfUv/hJcLfBnIjBEtVqV/dExK88Hul2sZ4mQihQ4issPl7hsroS9EWYicnX0oNA\n" +
-        "qAB9PO5YzKbfpL7TAhUA13WW48rln2UP/LaAgtnzKhqcNtMCgYEA3Rv0GirTbAao\n" +
-        "r8iURd82b5FlDTevOCTuq7ZIpfZVV30neS7cBYNet6m/3/4cfUlbbrqhbqIJ2I+I\n" +
-        "81drnN0YlyN4KkuxEcB6OTwfWkIUj6rvPaCQrBH8Q213bDq3HHtYNaP8OoeQUyVX\n" +
-        "W+SEGADCJ1+z8uqP3lIB6ltdgOiV/GQEFgIUQ2WGgg+OO39Aujj0e4lM4pP4/9g="};
-
-
-    static char passphrase[] = "passphrase".toCharArray();
-
-    /*
      * Turn on SSL debugging?
      */
     static boolean debug = false;
@@ -209,6 +79,12 @@ public class SignatureAlgorithms {
      */
     volatile boolean serverReady = false;
 
+    private final Cert[] SERVER_CERTS = {
+            SSLContextTemplate.Cert.EE_DSA_SHA1_1024,
+            SSLContextTemplate.Cert.EE_DSA_SHA224_1024,
+            SSLContextTemplate.Cert.EE_DSA_SHA256_1024,
+    };
+
     /*
      * Define the server side of the test.
      *
@@ -216,9 +92,7 @@ public class SignatureAlgorithms {
      * to avoid infinite hangs.
      */
     void doServerSide() throws Exception {
-
-        SSLContext context = generateSSLContext(
-                null, targetCertStr, targetPrivateKey);
+        SSLContext context = createSSLContext(null, SERVER_CERTS, getServerContextParameters());
         SSLServerSocketFactory sslssf = context.getServerSocketFactory();
         try (SSLServerSocket sslServerSocket =
                 (SSLServerSocket)sslssf.createServerSocket(serverPort)) {
@@ -260,7 +134,7 @@ public class SignatureAlgorithms {
             Thread.sleep(50);
         }
 
-        SSLContext context = generateSSLContext(trustedCertStr, null, null);
+        SSLContext context = createSSLContext(new Cert[]{Cert.CA_DSA_SHA1_1024}, null, getClientContextParameters());
         SSLSocketFactory sslsf = context.getSocketFactory();
 
         try (SSLSocket sslSocket =
@@ -343,75 +217,14 @@ public class SignatureAlgorithms {
         cipherSuite = args[2];
     }
 
-    private static SSLContext generateSSLContext(String trustedCertStr,
-            String[] keyCertStrs, String[] keySpecStrs) throws Exception {
+    @Override
+    protected ContextParameters getServerContextParameters() {
+        return new ContextParameters("TLSv1.2", tmAlgorithm, "NewSunX509");
+    }
 
-        // generate certificate from cert string
-        CertificateFactory cf = CertificateFactory.getInstance("X.509");
-
-        // create a key store
-        KeyStore ks = KeyStore.getInstance("JKS");
-        ks.load(null, null);
-
-        // import the trused cert
-        Certificate trusedCert = null;
-        ByteArrayInputStream is = null;
-        if (trustedCertStr != null) {
-            is = new ByteArrayInputStream(trustedCertStr.getBytes());
-            trusedCert = cf.generateCertificate(is);
-            is.close();
-
-            ks.setCertificateEntry("DSA Signer", trusedCert);
-        }
-
-        if (keyCertStrs != null && keyCertStrs.length != 0) {
-            for (int i = 0; i < keyCertStrs.length; i++) {
-                String keyCertStr = keyCertStrs[i];
-                String keySpecStr = keySpecStrs[i];
-
-                // generate the private key.
-                PKCS8EncodedKeySpec priKeySpec = new PKCS8EncodedKeySpec(
-                                Base64.getMimeDecoder().decode(keySpecStr));
-                KeyFactory kf = KeyFactory.getInstance("DSA");
-                DSAPrivateKey priKey =
-                        (DSAPrivateKey)kf.generatePrivate(priKeySpec);
-
-                // generate certificate chain
-                is = new ByteArrayInputStream(keyCertStr.getBytes());
-                Certificate keyCert = cf.generateCertificate(is);
-                is.close();
-
-                Certificate[] chain = null;
-                if (trusedCert != null) {
-                    chain = new Certificate[2];
-                    chain[0] = keyCert;
-                    chain[1] = trusedCert;
-                } else {
-                    chain = new Certificate[1];
-                    chain[0] = keyCert;
-                }
-
-                // import the key entry.
-                ks.setKeyEntry("DSA Entry " + i, priKey, passphrase, chain);
-            }
-        }
-
-        // create SSL context
-        TrustManagerFactory tmf = TrustManagerFactory.getInstance(tmAlgorithm);
-        tmf.init(ks);
-
-        SSLContext ctx = SSLContext.getInstance("TLS");
-        if (keyCertStrs != null && keyCertStrs.length != 0) {
-            KeyManagerFactory kmf = KeyManagerFactory.getInstance("NewSunX509");
-            kmf.init(ks, passphrase);
-
-            ctx.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
-            ks = null;
-        } else {
-            ctx.init(null, tmf.getTrustManagers(), null);
-        }
-
-        return ctx;
+    @Override
+    protected ContextParameters getClientContextParameters() {
+        return new ContextParameters("TLSv1.2", tmAlgorithm, "NewSunX509");
     }
 
 

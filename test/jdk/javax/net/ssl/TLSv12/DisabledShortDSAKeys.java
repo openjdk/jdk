@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@
  * @test
  * @bug 8139565
  * @summary Restrict certificates with DSA keys less than 1024 bits
- *
+ * @library /javax/net/ssl/templates
  * @run main/othervm DisabledShortDSAKeys PKIX TLSv1.2
  * @run main/othervm DisabledShortDSAKeys SunX509 TLSv1.2
  * @run main/othervm DisabledShortDSAKeys PKIX TLSv1.1
@@ -55,72 +55,14 @@ import java.security.interfaces.*;
 import java.util.Base64;
 
 
-public class DisabledShortDSAKeys {
+public class DisabledShortDSAKeys extends SSLContextTemplate {
 
-    /*
-     * =============================================================
-     * Set the various variables needed for the tests, then
-     * specify what tests to run on each side.
-     */
-
-    /*
+     /*
      * Should we run the client or server in a separate thread?
      * Both sides can throw exceptions, but do you have a preference
      * as to which side should be the main thread.
      */
     static boolean separateServerThread = true;
-
-    /*
-     * Where do we find the keystores?
-     */
-    // Certificates and key used in the test.
-    static String trustedCertStr =
-        "-----BEGIN CERTIFICATE-----\n" +
-        "MIIDDjCCAs2gAwIBAgIJAO5/hbm1ByJOMAkGByqGSM44BAMwHzELMAkGA1UEBhMC\n" +
-        "VVMxEDAOBgNVBAoTB0V4YW1wbGUwHhcNMTYwMjE2MDQzNTQ2WhcNMzcwMTI2MDQz\n" +
-        "NTQ2WjAfMQswCQYDVQQGEwJVUzEQMA4GA1UEChMHRXhhbXBsZTCCAbgwggEsBgcq\n" +
-        "hkjOOAQBMIIBHwKBgQC4aSK8nBYdWJtuBkz6yoDyjZnNuGFSpDmx1ggKpLpcnPuw\n" +
-        "YKAbUhqdYhZtaIqQ4aO0T1ZS/HuOM0zvddnMUidFNX3RUvDkvdD/JYOnjqzCm+xW\n" +
-        "U0NFuPHZdapQY5KFk3ugkqZpHLY1StZbu0qugZOZjbBOMwB7cHAbMDuVpEr8DQIV\n" +
-        "AOi+ig+h3okFbWEE9MztiI2+DqNrAoGBAKh2EZbuWU9NoHglhVzfDUoz8CeyW6W6\n" +
-        "rUZuIOQsjWaYOeRPWX0UVAGq9ykIOfamEpurKt4H8ge/pHaL9iazJjonMHOXG12A\n" +
-        "0lALsMDGv22zVaJzXjOBvdPzc87opr0LIVgHASKOcDYjsICKNYPlS2cL3MJoD+bj\n" +
-        "NAR67b90VBbEA4GFAAKBgQCGrkRp2tdj2mZF7Qz0tO6p3xSysbEfN6QZxOJYPTvM\n" +
-        "yIYfLV9Yoy7XaRd/mCpJo/dqmsZMzowtyi+u+enuVpOLKiq/lyCktL+xUzZAjLT+\n" +
-        "9dafHlS1wR3pDSa1spo9xTEi4Ff/DQDHcdGalBxSXX/UdRtSecIYAp5/fkt3QZ5v\n" +
-        "0aOBkTCBjjAdBgNVHQ4EFgQUX4qbP5PgBx1J8BJ8qEgfoKVLSnQwTwYDVR0jBEgw\n" +
-        "RoAUX4qbP5PgBx1J8BJ8qEgfoKVLSnShI6QhMB8xCzAJBgNVBAYTAlVTMRAwDgYD\n" +
-        "VQQKEwdFeGFtcGxlggkA7n+FubUHIk4wDwYDVR0TAQH/BAUwAwEB/zALBgNVHQ8E\n" +
-        "BAMCAgQwCQYHKoZIzjgEAwMwADAtAhUAkr5bINXyy/McAx6qwhb6r0/QJUgCFFUP\n" +
-        "CZokA4/NqJIgq8ThpTQAE8SB\n" +
-        "-----END CERTIFICATE-----";
-
-    static String targetCertStr =
-        "-----BEGIN CERTIFICATE-----\n" +
-        "MIICUjCCAhGgAwIBAgIJAIiDrs/4W8rtMAkGByqGSM44BAMwHzELMAkGA1UEBhMC\n" +
-        "VVMxEDAOBgNVBAoTB0V4YW1wbGUwHhcNMTYwMjE2MDQzNTQ2WhcNMzUxMTAzMDQz\n" +
-        "NTQ2WjA5MQswCQYDVQQGEwJVUzEQMA4GA1UECgwHRXhhbXBsZTEYMBYGA1UEAwwP\n" +
-        "d3d3LmV4YW1wbGUuY29tMIHwMIGoBgcqhkjOOAQBMIGcAkEAs6A0p3TysTtVXGSv\n" +
-        "ThR/8GHpbL49KyWRJBMIlmLc5jl/wxJgnL1t07p4YTOEa6ecyTFos04Z8n2GARmp\n" +
-        "zYlUywIVAJLDcf4JXhZbguRFSQdWwWhZkh+LAkBLCzh3Xvpmc/5CDqU+QHqDcuSk\n" +
-        "5B8+ZHaHRi2KQ00ejilpF2qZpW5JdHe4m3Pggh0MIuaAGX+leM4JKlnObj14A0MA\n" +
-        "AkAYb+DYlFgStFhF1ip7rFzY8K6i/3ellkXI2umI/XVwxUQTHSlk5nFOep5Dfzm9\n" +
-        "pADJwuSe1qGHsHB5LpMZPVpto4GEMIGBMAkGA1UdEwQCMAAwCwYDVR0PBAQDAgPo\n" +
-        "MB0GA1UdDgQWBBT8nsFyccF4q1dtpWE1dkNK5UiXtTAfBgNVHSMEGDAWgBRfips/\n" +
-        "k+AHHUnwEnyoSB+gpUtKdDAnBgNVHSUEIDAeBggrBgEFBQcDAQYIKwYBBQUHAwIG\n" +
-        "CCsGAQUFBwMDMAkGByqGSM44BAMDMAAwLQIUIcIlxpIwaZXdpMC+U076unR1Mp8C\n" +
-        "FQCD/NE8O0xwq57nwFfp7tUvUHYMMA==\n" +
-        "-----END CERTIFICATE-----";
-
-    // Private key in the format of PKCS#8, key size is 512 bits.
-    static String targetPrivateKey =
-        "MIHGAgEAMIGoBgcqhkjOOAQBMIGcAkEAs6A0p3TysTtVXGSvThR/8GHpbL49KyWR\n" +
-        "JBMIlmLc5jl/wxJgnL1t07p4YTOEa6ecyTFos04Z8n2GARmpzYlUywIVAJLDcf4J\n" +
-        "XhZbguRFSQdWwWhZkh+LAkBLCzh3Xvpmc/5CDqU+QHqDcuSk5B8+ZHaHRi2KQ00e\n" +
-        "jilpF2qZpW5JdHe4m3Pggh0MIuaAGX+leM4JKlnObj14BBYCFHB2Wek2g5hpNj5y\n" +
-        "RQfCc6CFO0dv";
-
-    static char passphrase[] = "passphrase".toCharArray();
 
     /*
      * Is the server ready to serve?
@@ -139,8 +81,8 @@ public class DisabledShortDSAKeys {
      * to avoid infinite hangs.
      */
     void doServerSide() throws Exception {
-        SSLContext context = generateSSLContext(null, targetCertStr,
-                                            targetPrivateKey);
+        SSLContext context = createSSLContext(null,
+                new Cert[]{Cert.CA_DSA_512}, getServerContextParameters());
         SSLServerSocketFactory sslssf = context.getServerSocketFactory();
         SSLServerSocket sslServerSocket =
             (SSLServerSocket)sslssf.createServerSocket(serverPort);
@@ -178,7 +120,8 @@ public class DisabledShortDSAKeys {
             Thread.sleep(50);
         }
 
-        SSLContext context = generateSSLContext(trustedCertStr, null, null);
+        SSLContext context = createSSLContext(new Cert[]{Cert.CA_DSA_1024},
+                null, getClientContextParameters());
         SSLSocketFactory sslsf = context.getSocketFactory();
 
         try (SSLSocket sslSocket =
@@ -215,72 +158,15 @@ public class DisabledShortDSAKeys {
         enabledProtocol = args[1];
     }
 
-    private static SSLContext generateSSLContext(String trustedCertStr,
-            String keyCertStr, String keySpecStr) throws Exception {
-
-        // generate certificate from cert string
-        CertificateFactory cf = CertificateFactory.getInstance("X.509");
-
-        // create a key store
-        KeyStore ks = KeyStore.getInstance("JKS");
-        ks.load(null, null);
-
-        // import the trused cert
-        Certificate trusedCert = null;
-        ByteArrayInputStream is = null;
-        if (trustedCertStr != null) {
-            is = new ByteArrayInputStream(trustedCertStr.getBytes());
-            trusedCert = cf.generateCertificate(is);
-            is.close();
-
-            ks.setCertificateEntry("DSA Export Signer", trusedCert);
-        }
-
-        if (keyCertStr != null) {
-            // generate the private key.
-            PKCS8EncodedKeySpec priKeySpec = new PKCS8EncodedKeySpec(
-                                Base64.getMimeDecoder().decode(keySpecStr));
-            KeyFactory kf = KeyFactory.getInstance("DSA");
-            DSAPrivateKey priKey =
-                    (DSAPrivateKey)kf.generatePrivate(priKeySpec);
-
-            // generate certificate chain
-            is = new ByteArrayInputStream(keyCertStr.getBytes());
-            Certificate keyCert = cf.generateCertificate(is);
-            is.close();
-
-            Certificate[] chain = null;
-            if (trusedCert != null) {
-                chain = new Certificate[2];
-                chain[0] = keyCert;
-                chain[1] = trusedCert;
-            } else {
-                chain = new Certificate[1];
-                chain[0] = keyCert;
-            }
-
-            // import the key entry.
-            ks.setKeyEntry("Whatever", priKey, passphrase, chain);
-        }
-
-        // create SSL context
-        TrustManagerFactory tmf = TrustManagerFactory.getInstance(tmAlgorithm);
-        tmf.init(ks);
-
-        SSLContext ctx = SSLContext.getInstance("TLS");
-        if (keyCertStr != null && !keyCertStr.isEmpty()) {
-            KeyManagerFactory kmf = KeyManagerFactory.getInstance("NewSunX509");
-            kmf.init(ks, passphrase);
-
-            ctx.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
-            ks = null;
-        } else {
-            ctx.init(null, tmf.getTrustManagers(), null);
-        }
-
-        return ctx;
+    @Override
+    protected ContextParameters getServerContextParameters() {
+        return new ContextParameters(enabledProtocol, tmAlgorithm, "NewSunX509");
     }
 
+    @Override
+    protected ContextParameters getClientContextParameters() {
+        return new ContextParameters(enabledProtocol, tmAlgorithm, "NewSunX509");
+    }
 
     // use any free port by default
     volatile int serverPort = 0;
