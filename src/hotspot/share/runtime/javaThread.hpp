@@ -868,6 +868,7 @@ private:
 
  public:
   MonitorChunk* monitor_chunks() const           { return _monitor_chunks; }
+  MonitorChunk* monitor_chunks_safe() const;
   void add_monitor_chunk(MonitorChunk* chunk);
   void remove_monitor_chunk(MonitorChunk* chunk);
   bool in_deopt_handler() const                  { return _in_deopt_handler > 0; }

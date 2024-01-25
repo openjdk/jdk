@@ -249,7 +249,8 @@ bool ReferenceToThreadRootClosure::do_thread_stack_detailed(JavaThread* jt) {
 
   if (jt->has_last_Java_frame()) {
     // Traverse the monitor chunks
-    MonitorChunk* chunk = jt->monitor_chunks();
+    // Consider removing, chunk will always be null.
+    MonitorChunk* chunk = jt->monitor_chunks_safe();
     for (; chunk != nullptr; chunk = chunk->next()) {
       chunk->oops_do(&rcl);
     }
