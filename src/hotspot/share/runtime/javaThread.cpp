@@ -1031,20 +1031,18 @@ class ReadMonitorChunksHandshake : public HandshakeClosure {
 };
 
 // _monitor_chunks is set and cleared by deoptimization.
-// If non-null, deoptimization is in progress and the value
-// will become junk soon.  Waiting for deopt is the only action.
+// If non-null, deoptimization is happening and the value
+// will be cleared soon.  Waiting for deopt is the only action.
 // A ThreadLocalHandshake will mean deopt is complete.
-// If at a Safepoint, the value can be read but it is surely nullptr.
 MonitorChunk* JavaThread::monitor_chunks_safe() const {
-  MonitorChunk* chunks = nullptr;
-  if (SafepointSynchronize::is_at_safepoint() || this == Thread::current()) {
-    chunks = _monitor_chunks; // will be null, as deopt frees when finished
-  } else {
+  MonitorChunk* chunks = _monitor_chunks;
+  if (chunks != nullptr) {
+    // Deopt is working, not at a safepoint.  Use Handshake:
     ReadMonitorChunksHandshake rmch;
     Handshake::execute(&rmch, (JavaThread*) JavaThread::cast(this));
     chunks = rmch.monitor_chunks(); // will be null, deopt has finished after handshake
+    assert(chunks == nullptr, "_monitor_chunks not null");
   }
-  assert(chunks == nullptr, "_monitor_chunks not null");
   return chunks;
 }
 
