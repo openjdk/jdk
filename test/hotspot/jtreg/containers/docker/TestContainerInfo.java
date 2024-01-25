@@ -79,14 +79,14 @@ public class TestContainerInfo {
             out.shouldContain("memory_swap_max_limit_in_bytes");
             for (String s : str.split(System.lineSeparator())) {
                 if (s.contains("memory_swap_max_limit_in_bytes")) {
-                  s.shouldContain("0");
+                    s.shouldContain("0");
                 }
             }
             out.shouldContain("memory_swap_current_in_bytes");
             for (String s : str.split(System.lineSeparator())) {
                 if (s.contains("memory_swap_current_in_bytes")) {
-                  s.shouldContain("0");
-                  s.shouldNotContain("unlimited");
+                    s.shouldContain("0");
+                    s.shouldNotContain("unlimited");
                 }
             }
         } else {
